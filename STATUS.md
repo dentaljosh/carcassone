@@ -2,13 +2,44 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-04-28, Phase 3 prerequisites landed; production gen up next)
+## Right now (2026-04-28, Phase 3 production gen running)
 
-**Branch:** `phase-2-mcts` (Phase 2 acceptance + Phase 3 prep + 3 prereqs stacked here; main still at root)
+**Branch:** `phase-2-mcts`. Latest commit `0fee04d` (3 prereqs landed). Main still at root.
 
-**Phase 3 status:** smoke comparison decided (heuristic over MCTS by 24.7× wins/hour-of-gen). Three prerequisite fixes for production scale-up have now landed (this session): board encoding 40→78 channels with internal-topology + per-side meeples; scalar normalization; streaming/IterableDataset trainer (`scripts/train_warmstart.py`). 108 tests pass.
+**Active job:** 100K-position heuristic warm-start generation (16-worker Pool). Started ~16:08 EDT. Output to `data/warmstart/heuristic/`. ETA ~40-60 min wallclock from start (script ETA: 37.8 min; observed rate suggests ~50-70 min). Resumable.
 
-**Next:** 100-position validation smoke on the new encoding, then 500K-position production warm-start gen, then Phase 3 acceptance tournaments.
+**Sized down from the plan's 500K target:** the new encoding (78 ch vs 40) makes generation ~3× more expensive per position. 500K would take ~5h; 100K (still 20× the smoke) is the better risk-adjusted point for testing the "more data > higher-quality labels" hypothesis. If acceptance fails by a small margin, scale to 250K or 500K. If it passes, the additional gain from more data is marginal.
+
+**Validation smoke results (200 positions, 3 epochs, 6×96 net):**
+- Pipeline runs end-to-end on the new encoding without errors
+- Net beat random 4/5 even at this minimal training
+- 7.4M params confirmed for 6×96 net
+- Streaming DataLoader with 2 workers ran 4 batches/epoch in 1.2s
+
+**Heuristic policy quality check (300 positions sampled from prod gen):**
+- value distribution: mean=-0.02, std=0.43 (reasonable mid-game variance)
+- top-1 action gets 42% of probability mass on average
+- top-3 cumulatively gets 53% — soft policy, not one-hot
+- Most discriminative on positions with few legal moves; uniform-ish on high-fanout positions
+- Tau=10.0 in `_heuristic_policy` is the magic-number knob; possible BACKLOG follow-up if signal turns out too weak
+
+**Phase 3 status:** smoke comparison decided (heuristic over MCTS by 24.7× wins/hour-of-gen). Three prerequisite fixes for production scale-up landed (commit 0fee04d): board encoding 40→78 channels with internal-topology + per-side meeples; scalar normalization; streaming/IterableDataset trainer. 108 tests pass.
+
+**Pipeline for after gen finishes:**
+```bash
+python -u scripts/train_warmstart.py \
+  --data-root data/warmstart/heuristic \
+  --epochs 20 --filters 96 --blocks 6 \
+  --batch-size 256 --num-workers 4 \
+  --output checkpoints/warmstart_heuristic_prod.pt
+# Tournament 1 (standalone net vs random, ≥90% target)
+python -u scripts/eval_warmstart_smoke.py \
+  --checkpoint checkpoints/warmstart_heuristic_prod.best.pt --n 100
+# Tournament 2 (NeuralMCTS s=50 vs vanilla MCTS s=100, >55% target)
+python -u scripts/eval_neural_mcts_vs_vanilla.py \
+  --checkpoint checkpoints/warmstart_heuristic_prod.best.pt \
+  --n 100 --neural-sims 50 --vanilla-sims 100
+```
 
 ### Smoke comparison — COMPLETE (2026-04-28)
 
