@@ -29,6 +29,18 @@ class StateUpdater:
         game_state.last_river_rotation = RiverRotationUtil.get_river_rotation(game_state=game_state,
                                                                               tile=tile_action.tile)
         game_state.last_tile_action = tile_action
+
+        # Patched (vendored fork): maintain open_positions for fast legal-move
+        # queries. Remove the just-placed coordinate; add its 4 empty neighbors.
+        # See carcassonne_game_state.open_positions and TilePositionFinder.
+        from wingedsheep.carcassonne.objects.coordinate import Coordinate
+        r, c = tile_action.coordinate.row, tile_action.coordinate.column
+        game_state.open_positions.discard(tile_action.coordinate)
+        n_rows = len(game_state.board)
+        n_cols = len(game_state.board[0])
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            if 0 <= nr < n_rows and 0 <= nc < n_cols and game_state.board[nr][nc] is None:
+                game_state.open_positions.add(Coordinate(row=nr, column=nc))
         return game_state
 
     @staticmethod

@@ -14,18 +14,27 @@ class TilePositionFinder:
 
         playing_positions = []
 
-        for row_index, board_row in enumerate(game_state.board):
-            for column_index, column_tile in enumerate(board_row):
-                if column_tile is not None:
-                    continue
+        # Patched (vendored fork): iterate only the precomputed open_positions
+        # set (cells empty AND adjacent to a placed tile) instead of scanning
+        # the full 35x35 grid. Maintained incrementally by StateUpdater.play_tile.
+        # Reduces get_possible_actions from ~50ms to a few ms in mid-game.
+        candidates = sorted(
+            game_state.open_positions,
+            key=lambda c: (c.row, c.column),
+        )
 
-                for tile_turns in range(0, 4):
-                    top = game_state.get_tile(row_index - 1, column_index)
-                    bottom = game_state.get_tile(row_index + 1, column_index)
-                    left = game_state.get_tile(row_index, column_index - 1)
-                    right = game_state.get_tile(row_index, column_index + 1)
+        for coord in candidates:
+            row_index, column_index = coord.row, coord.column
+            for tile_turns in range(0, 4):
+                top = game_state.get_tile(row_index - 1, column_index)
+                bottom = game_state.get_tile(row_index + 1, column_index)
+                left = game_state.get_tile(row_index, column_index - 1)
+                right = game_state.get_tile(row_index, column_index + 1)
 
-                    if TileFitter.fits(tile_to_play.turn(tile_turns), top=top, bottom=bottom, left=left, right=right, game_state=game_state):
-                        playing_positions.append(PlayingPosition(coordinate=Coordinate(row=row_index, column=column_index), turns=tile_turns))
+                if TileFitter.fits(tile_to_play.turn(tile_turns), top=top, bottom=bottom,
+                                   left=left, right=right, game_state=game_state):
+                    playing_positions.append(
+                        PlayingPosition(coordinate=Coordinate(row=row_index, column=column_index),
+                                        turns=tile_turns))
 
         return playing_positions

@@ -39,6 +39,11 @@ class CarcassonneGameState:
         self.phase = GamePhase.TILES
         self.last_tile_action: Optional[TileAction] = None
         self.last_river_rotation: Rotation = Rotation.NONE
+        # Patched (vendored fork): track empty cells adjacent to placed tiles
+        # so TilePositionFinder doesn't need to scan the entire 35x35 grid on
+        # every legal-move query. Maintained by StateUpdater.play_tile.
+        # Set of Coordinate objects.
+        self.open_positions: set = set()
 
     def get_tile(self, row: int, column: int):
         if row < 0 or column < 0:
