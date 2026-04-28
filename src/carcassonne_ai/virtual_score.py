@@ -37,7 +37,9 @@ def virtual_score(state: "CarcassonneGameState", player: int) -> int:
     Returns a raw integer (not normalized). Apply `tanh(diff / 15)` at the
     call site if you want a value-head training target.
 
-    Mutates nothing — operates on a deep copy.
+    Mutates nothing — operates on a deep copy. For perf-critical inner
+    loops where the caller already owns a scratch copy, prefer
+    `virtual_score_inplace` to skip the second deepcopy.
     """
     if state.players != 2:
         raise ValueError(
@@ -48,3 +50,23 @@ def virtual_score(state: "CarcassonneGameState", player: int) -> int:
     PointsCollector.count_final_scores(game_state=snapshot)
     opp = 1 - player
     return int(snapshot.scores[player]) - int(snapshot.scores[opp])
+
+
+def virtual_score_inplace(state: "CarcassonneGameState", player: int) -> int:
+    """Same return value as `virtual_score`, but MUTATES the input state
+    by invoking the engine's `count_final_scores` directly on it. After
+    this call the state's `scores` reflect end-of-game resolution and the
+    state should not be used for further play.
+
+    Use only when the caller already owns the state (e.g. just deepcopied
+    it) and is going to discard it after reading the score. Skips the
+    deepcopy that otherwise dominates heuristic-policy lookahead cost.
+    """
+    if state.players != 2:
+        raise ValueError(
+            f"virtual_score_inplace is implemented for 2-player only; "
+            f"got {state.players}"
+        )
+    PointsCollector.count_final_scores(game_state=state)
+    opp = 1 - player
+    return int(state.scores[player]) - int(state.scores[opp])

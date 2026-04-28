@@ -29,7 +29,7 @@ import numpy as np
 
 from .action_space import action_size as compute_action_size
 from .game_wrapper import Game
-from .virtual_score import virtual_score
+from .virtual_score import virtual_score, virtual_score_inplace
 
 
 SCORE_NORM_SCALE_FOR_LABELS = 15.0  # matches game_wrapper's reward normalization
@@ -111,10 +111,31 @@ def _heuristic_policy(
         return np.zeros_like(valid_mask, dtype=np.float32)
     scores = np.empty(legal.size, dtype=np.float32)
     player = board.state.current_player
+    # Single-deepcopy-per-action: clone the engine state once, apply the
+    # action in place, run virtual_score_inplace on the mutated state.
+    # Replaces the previous double-deepcopy path (get_next_state copied via
+    # apply_action, then virtual_score copied again). Skips Board.from_state
+    # entirely — virtual_score doesn't need the window offset, only state.
+    # Reviewer flag, 2026-04-28 round 2.
+    import copy as _copy
+    from .action_space import decode
+    from wingedsheep.carcassonne.utils.state_updater import StateUpdater
     for i, action_idx in enumerate(legal):
-        next_board, _ = game.get_next_state(board, int(action_idx))
+        action = decode(
+            int(action_idx),
+            off=board.offset,
+            phase=board.state.phase.value,
+            next_tile=board.state.next_tile,
+            last_tile_coord=(
+                board.state.last_tile_action.coordinate
+                if board.state.last_tile_action is not None
+                else None
+            ),
+        )
+        scratch_state = _copy.deepcopy(board.state)
+        StateUpdater.apply_action_inplace(game_state=scratch_state, action=action)
         # virtual_score from CURRENT player's perspective; positive = good for us
-        scores[i] = virtual_score(next_board.state, player)
+        scores[i] = virtual_score_inplace(scratch_state, player)
     z = scores / tau
     z -= z.max()
     e = np.exp(z)
