@@ -36,13 +36,12 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ---
 
-## 2026-04-28 — Phase 3 production-prerequisites (must land before scaling smoke up)
-**Context:** External review (2026-04-28) flagged three issues that don't break the in-flight 5K-each smoke comparison but would degrade any production warm-start training. See DECISIONS.md "External review findings + bug fixes".
-**Items:**
-1. **Board encoding richness** — add channels for meeple side/corner and tile internal topology. Two tiles with identical outer-edge categories but different internal connectivity (e.g., a road-corner vs a road-T-junction) currently look identical. ~25 new channels, ~half-day fix.
-2. **Scalar feature normalization** — divide raw scores by 100, tiles by 85, meeples by 7. ~30 min.
-3. **Streaming/IterableDataset training** — current trainer loads all positions to RAM. 50K ≈ 6 GB, 500K ≈ 60 GB. Need lazy `.npz` loading. Few hours.
-**Why deferred (until smoke completes):** the smoke comparison's verdict isn't affected — both strategies share these limitations. Address before committing to the full production generation.
+## 2026-04-28 — Phase 3 production-prerequisites — DONE (moved to DECISIONS.md)
+All three items landed in this session:
+- Scalar normalization (features.py: divide by 7/100/50/85)
+- Board encoding richness: 40 → 78 channels with internal-topology + per-side meeples
+- Streaming/IterableDataset trainer (warmstart.py.make_streaming_dataset + scripts/train_warmstart.py)
+108 tests pass. See DECISIONS.md "Phase 3 production prerequisites landed" for full detail.
 
 ## 2026-04-28 — 2-ply heuristic-policy labels (sees both phases of one turn)
 **Context:** External review (2026-04-28). Current `_heuristic_policy` evaluates `virtual_score(after applying TILE-action)` — it doesn't see the meeple follow-up. Many strong tile placements depend on the meeple choice, so the policy target may be miscalibrated for tile-phase positions.

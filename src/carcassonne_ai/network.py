@@ -5,7 +5,8 @@ DECISIONS.md "Phase 3 network starting capacity" for rationale. If
 acceptance fails (network can't beat random ≥90%, or net+MCTS(s=50)
 doesn't beat vanilla MCTS(s=100) >55%), bump to 10×128.
 
-Input: (B, 40, 25, 25) board tensor + (B, 10) scalar features
+Input: (B, N_CHANNELS, 25, 25) board tensor + (B, 10) scalar features
+       (N_CHANNELS = 78 post-encoding-richness fix; was 40 in the smoke run)
 Output:
     policy_logits: (B, 2511) — masked-softmax at inference
     value:         (B,)      — tanh-bounded, range [-1, +1]

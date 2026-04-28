@@ -218,3 +218,123 @@ def generate_one_game_dataset(
 def iter_game_dataset_files(root: Path) -> Iterator[Path]:
     """Yield all .npz files in the warmstart root, sorted by name."""
     yield from sorted(root.glob("seed_*.npz"))
+
+
+# ---------------------------------------------------------------------------
+# Streaming dataset
+# ---------------------------------------------------------------------------
+#
+# A torch IterableDataset that lazy-loads one .npz at a time. Designed for
+# the production warmstart at 500K-position scale, where loading everything
+# into RAM (~60 GB raw, ~10x compressed) is infeasible. The smoke trainer
+# still uses the in-memory TensorDataset path; this is the production path.
+
+# Imports are deferred to the class body so the warmstart module stays
+# usable in environments without torch installed (e.g. data-gen-only nodes).
+def _torch_modules():
+    import torch
+    from torch.utils.data import IterableDataset, get_worker_info
+    return torch, IterableDataset, get_worker_info
+
+
+def split_files_train_val(
+    files: list[Path], val_fraction: float, seed: int = 0
+) -> tuple[list[Path], list[Path]]:
+    """Deterministically partition a file list into train/val by FILE
+    (= by GAME, since one .npz = one game). Each file goes to exactly one
+    side; positions never leak across the split.
+    """
+    n = len(files)
+    if n == 0:
+        return [], []
+    rng = random.Random(seed)
+    perm = list(range(n))
+    rng.shuffle(perm)
+    n_val = max(1, int(round(n * val_fraction))) if n >= 2 else 0
+    val_idx = set(perm[:n_val])
+    train = [f for i, f in enumerate(files) if i not in val_idx]
+    val = [f for i, f in enumerate(files) if i in val_idx]
+    return train, val
+
+
+def make_streaming_dataset(
+    files: list[Path],
+    *,
+    shuffle_files_each_epoch: bool = True,
+    shuffle_within_file: bool = True,
+    seed: int = 0,
+):
+    """Build a torch IterableDataset that streams (board, scalar, policy,
+    value, mask) tuples from the given .npz file list.
+
+    Worker sharding: when used with DataLoader(num_workers > 0), each worker
+    sees a disjoint slice of the file list. File order is shuffled per-epoch
+    with a worker-local epoch counter so different workers don't yield in
+    lock-step. Within a file, position order is also optionally shuffled.
+
+    Each .npz holds ~10 positions; loading one is ~50ms. 500K positions
+    across 50K files ≈ ~5 min per epoch of pure file-IO with 1 worker, or
+    ~1.3 min with 4 workers.
+    """
+    torch, IterableDataset, get_worker_info = _torch_modules()
+
+    files = list(files)
+
+    class StreamingWarmstartDataset(IterableDataset):  # type: ignore[valid-type, misc]
+        def __init__(self) -> None:
+            super().__init__()
+            self.files = files
+            self.seed = seed
+            self.epoch = 0
+
+        def set_epoch(self, epoch: int) -> None:
+            """Called once per training epoch by the trainer to vary the
+            file-shuffle seed. Without this, every epoch sees the same
+            file order — fine if `shuffle_files_each_epoch=False`, bad
+            otherwise.
+            """
+            self.epoch = epoch
+
+        def __iter__(self):
+            wi = get_worker_info()
+            n_workers = wi.num_workers if wi is not None else 1
+            worker_id = wi.id if wi is not None else 0
+            local_files = list(self.files)
+            if shuffle_files_each_epoch:
+                rng = random.Random(hash((self.seed, self.epoch)) & 0xFFFFFFFF)
+                rng.shuffle(local_files)
+            # Shard across workers AFTER the shuffle so each worker still
+            # gets a representative slice.
+            local_files = local_files[worker_id::n_workers]
+            for path in local_files:
+                ds = GameDataset.load(path)
+                if len(ds) == 0:
+                    continue
+                idx_order = list(range(len(ds)))
+                if shuffle_within_file:
+                    rng2 = random.Random(
+                        hash((self.seed, self.epoch, str(path))) & 0xFFFFFFFF
+                    )
+                    rng2.shuffle(idx_order)
+                for i in idx_order:
+                    yield (
+                        torch.from_numpy(ds.boards[i]),
+                        torch.from_numpy(ds.scalars[i]),
+                        torch.from_numpy(ds.policies[i]),
+                        torch.tensor(ds.values[i], dtype=torch.float32),
+                        torch.from_numpy(ds.valid_masks[i]),
+                    )
+
+    return StreamingWarmstartDataset()
+
+
+def count_positions(files: list[Path]) -> int:
+    """Cheap pass to sum position counts without loading the full arrays.
+    Used by the trainer to log dataset size; relies on .npz storing the
+    `boards` array's shape header, which np.load reads lazily.
+    """
+    total = 0
+    for f in files:
+        with np.load(f) as data:
+            total += int(data["values"].shape[0])
+    return total

@@ -3,22 +3,24 @@
 Concatenated to the network's flat layer alongside the (channels, W, W) tensor
 from board_repr.
 
-Layout (current-player-relative):
+Layout (current-player-relative, all values normalized to roughly [-1, 1]):
 
-  0  meeples_remaining_mine     (raw count, divide by 7 to normalize)
-  1  meeples_remaining_opp
-  2  score_mine                 (raw)
-  3  score_opp
-  4  score_diff_mine_minus_opp
-  5  tiles_remaining_in_deck
-  6  current_player_flag        (1.0 if mine == player 0 else 0.0;
-                                 redundant under canonical form but useful
-                                 for debugging)
-  7  phase_tiles                (1.0 if state.phase == TILES else 0.0)
-  8  phase_meeples              (1.0 if state.phase == MEEPLES else 0.0)
-  9  game_progress              (1 - tiles_remaining / total_tiles)
+  0  meeples_remaining_mine     / 7      (max meeples per player in our scope)
+  1  meeples_remaining_opp      / 7
+  2  score_mine                 / 100    (typical end-of-game ~80-150)
+  3  score_opp                  / 100
+  4  score_diff_mine_minus_opp  / 50     (typical |diff| <= 50; saturation OK)
+  5  tiles_remaining_in_deck    / 85     (total deck ~83 with BASE+THE_RIVER)
+  6  current_player_flag        (already 0/1)
+  7  phase_tiles                (already 0/1)
+  8  phase_meeples              (already 0/1)
+  9  game_progress              (already in [0, 1])
 
-Length: 10.
+Length: 10. Normalization rationale: Phase 3 external review flagged that raw
+scalars (scores up to 150, deck size up to 83) had vastly different magnitudes
+than the binary phase one-hots, slowing learning by forcing the dense head to
+absorb the scaling. Constants are deliberately conservative (rare saturation is
+preferable to compressing the typical range).
 """
 from __future__ import annotations
 
@@ -31,6 +33,11 @@ if TYPE_CHECKING:
 
 N_SCALAR_FEATURES = 10
 
+MEEPLE_NORM = 7.0
+SCORE_NORM = 100.0
+SCORE_DIFF_NORM = 50.0
+DECK_NORM = 85.0
+
 
 def encode_scalars(state: "CarcassonneGameState", player: int, total_tiles: int) -> np.ndarray:
     opp = 1 - player
@@ -39,12 +46,12 @@ def encode_scalars(state: "CarcassonneGameState", player: int, total_tiles: int)
     is_tiles = state.phase.value == "tiles"
     return np.array(
         [
-            state.meeples[player],
-            state.meeples[opp],
-            float(state.scores[player]),
-            float(state.scores[opp]),
-            float(state.scores[player] - state.scores[opp]),
-            float(tiles_remaining),
+            state.meeples[player] / MEEPLE_NORM,
+            state.meeples[opp] / MEEPLE_NORM,
+            float(state.scores[player]) / SCORE_NORM,
+            float(state.scores[opp]) / SCORE_NORM,
+            float(state.scores[player] - state.scores[opp]) / SCORE_DIFF_NORM,
+            float(tiles_remaining) / DECK_NORM,
             1.0 if state.current_player == player else 0.0,
             1.0 if is_tiles else 0.0,
             0.0 if is_tiles else 1.0,

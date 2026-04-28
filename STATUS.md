@@ -2,11 +2,13 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-04-28, Phase 3 smoke comparison)
+## Right now (2026-04-28, Phase 3 prerequisites landed; production gen up next)
 
-**Branch:** `phase-2-mcts` (Phase 2 acceptance + Phase 3 prep stacked here; main still at root)
+**Branch:** `phase-2-mcts` (Phase 2 acceptance + Phase 3 prep + 3 prereqs stacked here; main still at root)
 
-**Phase 3 status:** post-plan-mode, smoke comparison in flight to settle warmstart label strategy (Option C MCTS s=50 vs Option D heuristic-only) per the protocol in `~/.claude/plans/new-project-in-this-spicy-finch.md`.
+**Phase 3 status:** smoke comparison decided (heuristic over MCTS by 24.7× wins/hour-of-gen). Three prerequisite fixes for production scale-up have now landed (this session): board encoding 40→78 channels with internal-topology + per-side meeples; scalar normalization; streaming/IterableDataset trainer (`scripts/train_warmstart.py`). 108 tests pass.
+
+**Next:** 100-position validation smoke on the new encoding, then 500K-position production warm-start gen, then Phase 3 acceptance tournaments.
 
 ### Smoke comparison — COMPLETE (2026-04-28)
 
