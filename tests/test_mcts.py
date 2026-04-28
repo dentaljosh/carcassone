@@ -100,10 +100,9 @@ def test_best_action_prefers_higher_q_when_visit_counts_tied() -> None:
     assert chosen == 200, f"expected action 200 (highest Q from root view), got {chosen}"
 
 
-def test_virtual_score_not_implemented_yet() -> None:
-    """Phase 2 uses random rollouts. virtual_score_estimate is a Phase 3 stub
-    that raises until implemented."""
+def test_virtual_score_estimate_works_at_init() -> None:
+    """virtual_score_estimate is now implemented (Phase 3); should return 0
+    at init (empty board, no realized or pending value)."""
     g = Game()
     board = g.get_init_board()
-    with pytest.raises(NotImplementedError):
-        virtual_score_estimate(board, 0)
+    assert virtual_score_estimate(board, 0) == 0

@@ -251,21 +251,11 @@ class MCTS:
 
 
 def virtual_score_estimate(board: Board, player: int) -> float:
-    """Ameneyro et al. heuristic value function: estimated final score
+    """Ameneyro et al. 2020 §III.B equivalent — estimate final score
     differential without playing rollouts to game end.
 
-    Components (matching the paper's structure):
-      - Current scores
-      - Expected closure value of partially-completed features owned by each
-        player (cities, roads, cloisters)
-      - Field/farmer expected end-game contribution
-
-    NOT IMPLEMENTED YET — Phase 2 stretch goal. Vanilla MCTS uses random
-    rollouts, which is the paper's primary configuration. The virtual_score
-    estimator is used in their "reduced-rollout" variant and would be useful
-    for Phase 3 as the heuristic-warm-start training target.
+    Implementation in `src/carcassonne_ai/virtual_score.py`. Returns a raw
+    integer differential; apply `tanh(diff / 15)` to get a value-head target.
     """
-    raise NotImplementedError(
-        "virtual_score_estimate is a Phase 3 prerequisite; "
-        "vanilla MCTS in Phase 2 uses uniform random rollouts."
-    )
+    from .virtual_score import virtual_score
+    return virtual_score(board.state, player)

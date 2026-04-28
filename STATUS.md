@@ -2,7 +2,55 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-04-28, mid-Phase-2)
+## Right now (2026-04-28, Phase 3 smoke comparison)
+
+**Branch:** `phase-2-mcts` (Phase 2 acceptance + Phase 3 prep stacked here; main still at root)
+
+**Phase 3 status:** post-plan-mode, smoke comparison in flight to settle warmstart label strategy (Option C MCTS s=50 vs Option D heuristic-only) per the protocol in `~/.claude/plans/new-project-in-this-spicy-finch.md`.
+
+### Smoke comparison progress so far
+
+| Step | Status | Result |
+|---|---|---|
+| Heuristic gen (5K positions) | DONE | 1.5 min wallclock |
+| Heuristic train (4×64, 20 ep) | DONE | val MSE 0.21→0.10; pol CE flat at 1.93 (diffuse target) |
+| Heuristic tournament (50 games vs random) | DONE | **36/50 (72%)** wins, +4.6 avg diff |
+| MCTS s=50 gen (5K positions) | **in flight, ~55 min ETA** | 16-worker Pool active |
+| MCTS train | pending after gen | |
+| MCTS tournament | pending after train | |
+| `compare_warmstart_smoke.py` decision | pending | written and ready |
+
+### Active background tasks
+
+- **MCTS s=50 generation:** 500 games × 10 positions/game = 5K labeled positions. 16-worker Pool. **Revised ETA ~2.5 hours total** (steady-state 5 min/game/worker; my earlier 55-min estimate from the 2-game smoke was too low — that test had low SMT contention).
+   - Output dir: `data/warmstart/mcts/seed_*.npz`
+   - Script: `scripts/generate_warmstart_smoke.py --label-strategy mcts --n 5000`
+   - Resumable: skips cached seeds. To wipe: `--reset`.
+
+### When both background tasks finish
+
+1. Train MCTS-net on the just-generated 5K MCTS dataset: same params (4×64, 20 epochs). ~5 min.
+2. Eval both nets vs random, 50 games each (no MCTS at inference, network argmax-policy):
+   - `python -u scripts/eval_warmstart_smoke.py --checkpoint checkpoints/warmstart_heuristic_smoke.best.pt --n 50`
+   - `python -u scripts/eval_warmstart_smoke.py --checkpoint checkpoints/warmstart_mcts_smoke.best.pt --n 50`
+3. Decision rule: pick winner by **wins per hour of generation cost**. Heuristic gen ≈ 1 min for 5K, MCTS gen ≈ 55 min. So heuristic must produce non-zero useful signal to win; if it lands at 30+/50 wins, it's the right answer (10x cheaper for similar quality).
+4. Commit smoke results + decision in DECISIONS.md.
+5. Run the full chosen-strategy generation: 500K positions for D (~1.5h) or 50K for C (~9h post-fix from the plan's 26h estimate).
+
+### Files added this session (Phase 3 prep, uncommitted)
+
+- `src/carcassonne_ai/virtual_score.py` — engine-`count_final_scores`-based labeler. 8 tests pass.
+- `src/carcassonne_ai/network.py` — 6×96 ResNet with 1×1 conv heads (~7.4M params). 7 tests pass.
+- `src/carcassonne_ai/warmstart.py` — dataset IO + heuristic/MCTS labeling.
+- `scripts/generate_warmstart_smoke.py` — Pool-parallel labeled-position generation, --reset / --summary-only.
+- `scripts/train_warmstart_smoke.py` — supervised training, train/val split by game.
+- `scripts/eval_warmstart_smoke.py` — N-game tournament vs random.
+- `tests/test_virtual_score.py`, `tests/test_network.py` — coverage.
+- DECISIONS.md updated with Phase 3 network-capacity rationale.
+
+All 63 tests pass.
+
+## (Archive) Phase 2 status (now historical)
 
 **Branch:** `phase-2-mcts` (all Phase 0 + 1 + 2 commits stacked here; not yet merged to `main`)
 

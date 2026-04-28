@@ -9,7 +9,12 @@ AlphaZero-style Carcassonne agent + position analyzer for family games.
 
 ## Status
 
-Phase 1 — AlphaZero-style game wrapper. Phase 2 (MCTS) skeleton placeholder in `src/carcassonne_ai/mcts.py`.
+- **Phase 0** ✅ scaffolding, sanity checks, measurements, vendoring + engine patches
+- **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache (39 tests pass)
+- **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random.
+- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + warmstart pipeline implemented; smoke comparison (Option C MCTS-labels vs Option D heuristic-labels, 5K each) running to settle production label strategy.
+
+See [STATUS.md](STATUS.md) for live state and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the project spec.
 
 ## Quick start
 
@@ -24,11 +29,19 @@ pip install pytest pytest-xdist torch tensorboard tqdm matplotlib
 python scripts/phase0_smoke.py
 python scripts/phase0_sanity_checks.py
 
-# Full pytest suite (Phase 1 acceptance)
+# Full pytest suite
 pytest tests/
 
-# 1000-game wrapper fuzz (Phase 1 acceptance)
+# 1000-game wrapper fuzz
 python -m carcassonne_ai.game_wrapper --self-play-random --n 1000
+
+# Phase 2 MCTS-vs-random tournament (resumable, per-game checkpoints)
+python -u scripts/play_mcts_vs_random.py --n 100 --sims 20
+
+# Phase 3 warm-start pipeline (smoke versions; production will scale up)
+python -u scripts/generate_warmstart_smoke.py --label-strategy heuristic --n 5000
+python -u scripts/train_warmstart_smoke.py --strategy heuristic --epochs 20 --output checkpoints/warmstart_heuristic_smoke.pt
+python -u scripts/eval_warmstart_smoke.py --checkpoint checkpoints/warmstart_heuristic_smoke.best.pt --n 50
 
 # Profiling
 python scripts/bench_quick.py            # per-call cost map + GPU sanity
