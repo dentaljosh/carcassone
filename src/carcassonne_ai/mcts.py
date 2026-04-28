@@ -101,13 +101,37 @@ class MCTS:
         return {a: child.N for a, child in root.children.items()}
 
     def best_action(self, root_board: Board) -> int:
-        """Return the most-visited action at the root after a search. If no
-        search has been run for this state, runs one now."""
+        """Return the best action at the root after a search.
+
+        Selection priority (in order):
+          1. Highest mean rollout value Q (most informative at low s, where
+             visit counts are sparse and tied at 1).
+          2. Tie-broken by visit count (acts like the standard high-s pick).
+
+        At the canonical AlphaZero high-s regime, Q and N agree (UCT shifts
+        visits to high-Q actions). At low s (e.g. s=10 with ~50 actions),
+        many children have N=1 — picking by N then is essentially random
+        across them, while Q discriminates by their single rollout value.
+
+        If no search has been run for this state, runs one now.
+        """
         root = self._nodes.get(self.game.string_representation(root_board))
         if root is None or root.N == 0:
             self.search(root_board)
             root = self._nodes[self.game.string_representation(root_board)]
-        return max(root.children.items(), key=lambda kv: kv[1].N)[0]
+        # Only consider visited children. Unvisited (N==0) have undefined Q.
+        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        if not visited:
+            # Pathological: search ran but no child was visited. Fall back to
+            # any legal action.
+            return next(iter(root.children))
+        # Q is from child's player_to_move perspective; flip if different
+        # player than root.
+        def score(item):
+            action, child = item
+            q = child.Q if child.player_to_move == root.player_to_move else -child.Q
+            return (q, child.N)
+        return max(visited, key=score)[0]
 
     def clear(self) -> None:
         """Drop the search tree and the legal-moves cache. Call between root
