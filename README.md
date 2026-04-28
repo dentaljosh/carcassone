@@ -12,7 +12,7 @@ AlphaZero-style Carcassonne agent + position analyzer for family games.
 - **Phase 0** ✅ scaffolding, sanity checks, measurements, vendoring + engine patches
 - **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache (39 tests pass)
 - **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random.
-- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + warmstart pipeline implemented; smoke comparison (Option C MCTS-labels vs Option D heuristic-labels, 5K each) running to settle production label strategy.
+- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + `warmstart` pipeline + `NeuralMCTS` all implemented (85 tests pass). Smoke comparison **complete**: heuristic-only labels won by 24.7× in wins-per-hour-of-generation; production warm-start will use Option D (500K heuristic-labeled positions). **Gated** on three pre-production fixes (encoding richness, scalar normalization, streaming dataset trainer) — see `BACKLOG.md`.
 
 See [STATUS.md](STATUS.md) for live state and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the project spec.
 
