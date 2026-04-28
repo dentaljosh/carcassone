@@ -56,6 +56,50 @@ def test_canonical_swap_actually_swaps_meeple_channels() -> None:
     assert swapped[B.CH_FARMER_OPP, 1, 4] == 0.0
 
 
+def test_canonical_swap_covers_all_18_meeple_channels() -> None:
+    """Direct sentinel-value test over every per-side and per-corner slot.
+
+    Reviewer flagged that the legacy-alias test above only exercises the
+    first slot in each block. After the encoding-richness fix, the meeple
+    block has 18 channels (5 normal sides x 2 owners + 4 farmer corners x
+    2 owners). Every one of them must round-trip on swap-of-swap and
+    must move to its paired owner-slot on a single swap.
+    """
+    arr = np.zeros((B.N_CHANNELS, 3, 3), dtype=np.float32)
+    # Plant a unique sentinel in every mine and opp slot at (0, 0) so we
+    # can verify each one independently after the swap.
+    sentinel: dict[int, float] = {}
+    val = 0.1
+    for ch in range(B.CH_NORMAL_MEEPLE_MINE, B.CH_NORMAL_MEEPLE_MINE + 5):
+        arr[ch, 0, 0] = val
+        sentinel[ch] = val
+        val += 0.1
+    for ch in range(B.CH_NORMAL_MEEPLE_OPP, B.CH_NORMAL_MEEPLE_OPP + 5):
+        arr[ch, 0, 0] = val
+        sentinel[ch] = val
+        val += 0.1
+    for ch in range(B.CH_FARMER_MEEPLE_MINE, B.CH_FARMER_MEEPLE_MINE + 4):
+        arr[ch, 0, 0] = val
+        sentinel[ch] = val
+        val += 0.1
+    for ch in range(B.CH_FARMER_MEEPLE_OPP, B.CH_FARMER_MEEPLE_OPP + 4):
+        arr[ch, 0, 0] = val
+        sentinel[ch] = val
+        val += 0.1
+
+    swapped = B.canonical_swap(arr)
+    # Each mine slot j (offset 0..4 normal, 0..3 farmer) must equal what
+    # the corresponding opp slot held pre-swap, and vice versa.
+    for j in range(5):
+        assert swapped[B.CH_NORMAL_MEEPLE_MINE + j, 0, 0] == sentinel[B.CH_NORMAL_MEEPLE_OPP + j]
+        assert swapped[B.CH_NORMAL_MEEPLE_OPP + j, 0, 0] == sentinel[B.CH_NORMAL_MEEPLE_MINE + j]
+    for j in range(4):
+        assert swapped[B.CH_FARMER_MEEPLE_MINE + j, 0, 0] == sentinel[B.CH_FARMER_MEEPLE_OPP + j]
+        assert swapped[B.CH_FARMER_MEEPLE_OPP + j, 0, 0] == sentinel[B.CH_FARMER_MEEPLE_MINE + j]
+    # Idempotency: swap of swap is identity.
+    np.testing.assert_array_equal(B.canonical_swap(swapped), arr)
+
+
 def test_init_board_has_no_tiles_yet_but_after_first_move_has_one() -> None:
     """At init the board is empty (river_start is in next_tile, not placed).
     After the first action it should have one tile placed."""

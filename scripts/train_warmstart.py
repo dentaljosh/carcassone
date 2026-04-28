@@ -175,6 +175,9 @@ def main(argv: list[str] | None = None) -> int:
     best_val = math.inf
     best_path = args.output.with_suffix(".best.pt")
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    do_validation = n_val > 0
+    if not do_validation:
+        print("  --val-fraction == 0.0: skipping validation + best-by-val checkpoint")
 
     for epoch in range(args.epochs):
         train_ds.set_epoch(epoch)
@@ -209,34 +212,45 @@ def main(argv: list[str] | None = None) -> int:
         train_pol_loss /= max(n_batches, 1)
         train_val_loss /= max(n_batches, 1)
 
-        net.train(False)
-        val_pol_loss = 0.0
-        val_val_loss = 0.0
-        v_n = 0
-        with torch.no_grad():
-            for board_b, scalar_b, policy_b, value_b, mask_b in val_loader:
-                board_b = board_b.to(device, non_blocking=True)
-                scalar_b = scalar_b.to(device, non_blocking=True)
-                policy_b = policy_b.to(device, non_blocking=True)
-                value_b = value_b.to(device, non_blocking=True)
-                mask_b = mask_b.to(device, non_blocking=True)
-                policy_logits, value_pred = net(board_b, scalar_b)
-                val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
-                val_val_loss += F.mse_loss(value_pred, value_b).item()
-                v_n += 1
-        val_pol_loss /= max(v_n, 1)
-        val_val_loss /= max(v_n, 1)
-        val_total = val_pol_loss + val_val_loss
+        if do_validation:
+            net.train(False)
+            val_pol_loss = 0.0
+            val_val_loss = 0.0
+            v_n = 0
+            with torch.no_grad():
+                for board_b, scalar_b, policy_b, value_b, mask_b in val_loader:
+                    board_b = board_b.to(device, non_blocking=True)
+                    scalar_b = scalar_b.to(device, non_blocking=True)
+                    policy_b = policy_b.to(device, non_blocking=True)
+                    value_b = value_b.to(device, non_blocking=True)
+                    mask_b = mask_b.to(device, non_blocking=True)
+                    policy_logits, value_pred = net(board_b, scalar_b)
+                    val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
+                    val_val_loss += F.mse_loss(value_pred, value_b).item()
+                    v_n += 1
+            val_pol_loss /= max(v_n, 1)
+            val_val_loss /= max(v_n, 1)
+            val_total = val_pol_loss + val_val_loss
+        else:
+            val_pol_loss = float("nan")
+            val_val_loss = float("nan")
+            val_total = float("inf")
 
         elapsed = time.perf_counter() - t0
-        print(
-            f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-            f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  "
-            f"val pol/val={val_pol_loss:.3f}/{val_val_loss:.4f}"
-        )
+        if do_validation:
+            print(
+                f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
+                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  "
+                f"val pol/val={val_pol_loss:.3f}/{val_val_loss:.4f}"
+            )
+        else:
+            print(
+                f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
+                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  (no val)"
+            )
         sys.stdout.flush()
 
-        if val_total < best_val:
+        if do_validation and val_total < best_val:
             best_val = val_total
             torch.save(
                 {

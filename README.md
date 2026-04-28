@@ -12,7 +12,7 @@ AlphaZero-style Carcassonne agent + position analyzer for family games.
 - **Phase 0** ✅ scaffolding, sanity checks, measurements, vendoring + engine patches
 - **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache (39 tests pass)
 - **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random.
-- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + `warmstart` pipeline + `NeuralMCTS` all implemented (85 tests pass). Smoke comparison **complete**: heuristic-only labels won by 24.7× in wins-per-hour-of-generation; production warm-start will use Option D (500K heuristic-labeled positions). **Gated** on three pre-production fixes (encoding richness, scalar normalization, streaming dataset trainer) — see `BACKLOG.md`.
+- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + `warmstart` pipeline + `NeuralMCTS` all implemented. Smoke comparison **complete**: heuristic-only labels won by 24.7× in wins-per-hour-of-generation. Three production prereqs landed (encoding richness 40→78 ch, scalar normalization, streaming/IterableDataset trainer). **v1 100K production attempt missed acceptance** (T1 net-vs-random 84/100; needed ≥90); diagnosis: heuristic policy targets at tau=10 were too soft (top-1 ~45%) for the policy head to fit. **v2 in flight at tau=0.5** (top-1 ~64% expected). See [STATUS.md](STATUS.md). 115 tests pass.
 
 See [STATUS.md](STATUS.md) for live state and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the project spec.
 

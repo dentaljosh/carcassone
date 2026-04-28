@@ -43,6 +43,21 @@ All three items landed in this session:
 - Streaming/IterableDataset trainer (warmstart.py.make_streaming_dataset + scripts/train_warmstart.py)
 108 tests pass. See DECISIONS.md "Phase 3 production prerequisites landed" for full detail.
 
+## 2026-04-28 — Heuristic policy: avoid double-deepcopy per legal action
+**Context:** Reviewer pass 2026-04-28 (round 2). `_heuristic_policy` calls `get_next_state` (which deepcopies the engine state via `apply_action`) then passes the result to `virtual_score`, which deepcopies *again* before counting final scores. Two deepcopies per legal action × 20 legal actions × 10 sampled positions × 10K games is the dominant cost of generation.
+**Idea:** make one owned copy per candidate (deepcopy upfront), apply the action in-place via `apply_action_inplace`, then run a mutating `count_final_scores` on that same owned copy. Should roughly halve heuristic generation wallclock.
+**Why deferred:** the v2 100K regen was already mid-flight when the reviewer flagged this. Land before any future regen at >100K scale.
+
+## 2026-04-28 — encode_board() scans full 35×35 board
+**Context:** Reviewer pass 2026-04-28 (round 2). `board_repr.encode_board` iterates every cell of `state.board` (1225 cells) on every encode call, even though the centered window is 25×25 and only ~80 tiles are placed mid/late game. Edge/internal blocks are also recomputed per-tile per-call instead of memoized.
+**Idea:** scan only the bounding box of placed tiles (or the window bounds), and memoize tile edge/internal encodings keyed by `(tile.description, rotation_signature)`. Probably 3-5x speedup at gen scale.
+**Why deferred:** not on the hot path for training (encoding happens once per position before .npz save). Hot path is generation; benchmark first to confirm encoding is meaningful fraction of gen cost before optimizing.
+
+## 2026-04-28 — Many tiny .npz files: I/O-noisy at 500K+ scale
+**Context:** Reviewer pass 2026-04-28 (round 2). 100K positions = 10K .npz files, ~100KB each. Streaming reads one file at a time → lots of file opens. Fine for 100K (10K files); at 500K (50K files) the I/O becomes meaningful overhead.
+**Idea:** after train/val split, optionally pack many game files into split-preserving shards (e.g. 100 games per shard → 100 shard files instead of 10K).
+**Why deferred:** premature for current scale. If we do scale to 500K and observe DataLoader stalling, this is the fix.
+
 ## 2026-04-28 — 2-ply heuristic-policy labels (sees both phases of one turn)
 **Context:** External review (2026-04-28). Current `_heuristic_policy` evaluates `virtual_score(after applying TILE-action)` — it doesn't see the meeple follow-up. Many strong tile placements depend on the meeple choice, so the policy target may be miscalibrated for tile-phase positions.
 **Idea:** for tile-phase labels, look 2 ply ahead: try each tile placement, then for each, find the best meeple decision (or "skip"), score the resulting state. Use that 2-ply best-score as the tile's heuristic value.
