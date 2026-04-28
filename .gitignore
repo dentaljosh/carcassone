@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Project artifacts (large / regenerable)
+data/
+checkpoints/
+runs/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
