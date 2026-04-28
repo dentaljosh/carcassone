@@ -23,13 +23,14 @@ from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
 
 
-def network_action(net: CarcassonneNet, board, mask: np.ndarray, device: torch.device) -> int:
-    """Take the network's argmax over valid moves."""
-    obs, scalars = Game().get_canonical_form(board, board.state.current_player)
+def network_action(net: CarcassonneNet, game: Game, board, mask: np.ndarray, device: torch.device) -> int:
+    """Take the network's argmax over valid moves. Reuses the caller's Game
+    so we don't allocate a new wrapper per inference call."""
+    obs, scalars = game.get_canonical_form(board, board.state.current_player)
     obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(device)
     scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(device)
     # Cached masks from get_valid_moves are non-writable (read-only protection
-     # against accidental cache corruption). Copy before tensor conversion.
+    # against accidental cache corruption). Copy before tensor conversion.
     mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
     with torch.no_grad():
         logits, _ = net(obs_t, scalars_t)
@@ -48,7 +49,7 @@ def play_one_game(net: CarcassonneNet, net_player: int, seed: int, device: torch
         mask = game.get_valid_moves(board)
         legal = np.flatnonzero(mask)
         if cur == net_player:
-            action = network_action(net, board, mask, device)
+            action = network_action(net, game, board, mask, device)
             # Defensive: if the network somehow picked an invalid action, fall
             # back to argmax over visible-from-mask. Shouldn't happen with the
             # masked_fill above.
