@@ -85,25 +85,41 @@ class StateUpdater:
     @classmethod
     def apply_action(cls, game_state: CarcassonneGameState, action: Action) -> CarcassonneGameState:
         new_game_state: CarcassonneGameState = copy.deepcopy(game_state)
+        cls._apply_action_to(new_game_state, game_state.phase, action)
+        return new_game_state
 
+    @classmethod
+    def apply_action_inplace(cls, game_state: CarcassonneGameState, action: Action) -> CarcassonneGameState:
+        """Mutate game_state in place. Caller MUST own the state; the original
+        is destroyed. Use only when the resulting state is the only thing the
+        caller needs (e.g., MCTS rollouts where the trajectory is discarded
+        after value extraction). Skips the deepcopy that dominates state-copy
+        cost in mid-game (board has 80+ Tile references with FarmerConnections).
+
+        Patched (vendored fork) for Phase 2/4 speed. See DECISIONS.md.
+        """
+        cls._apply_action_to(game_state, game_state.phase, action)
+        return game_state
+
+    @classmethod
+    def _apply_action_to(cls, target: CarcassonneGameState, original_phase, action: Action) -> None:
+        """Shared body of apply_action / apply_action_inplace. Mutates `target`."""
         if isinstance(action, TileAction):
-            cls.play_tile(game_state=new_game_state, tile_action=action)
-            new_game_state.phase = GamePhase.MEEPLES
+            cls.play_tile(game_state=target, tile_action=action)
+            target.phase = GamePhase.MEEPLES
         elif isinstance(action, MeepleAction):
-            cls.play_meeple(game_state=new_game_state, meeple_action=action)
+            cls.play_meeple(game_state=target, meeple_action=action)
         elif isinstance(action, PassAction):
-            if game_state.phase == GamePhase.TILES:
-                cls.draw_tile(game_state=new_game_state)
-                new_game_state.phase = GamePhase.MEEPLES
-            elif game_state.phase == GamePhase.MEEPLES:
+            if original_phase == GamePhase.TILES:
+                cls.draw_tile(game_state=target)
+                target.phase = GamePhase.MEEPLES
+            elif original_phase == GamePhase.MEEPLES:
                 pass
 
-        if game_state.phase == GamePhase.MEEPLES:
-            cls.remove_meeples_and_update_score(game_state=new_game_state)
-            cls.draw_tile(game_state=new_game_state)
-            cls.next_player(game_state=new_game_state)
+        if original_phase == GamePhase.MEEPLES:
+            cls.remove_meeples_and_update_score(game_state=target)
+            cls.draw_tile(game_state=target)
+            cls.next_player(game_state=target)
 
-        if new_game_state.is_terminated():
-            PointsCollector.count_final_scores(game_state=new_game_state)
-
-        return new_game_state
+        if target.is_terminated():
+            PointsCollector.count_final_scores(game_state=target)

@@ -14,10 +14,11 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
-## 2026-04-27 — In-place state mutation for MCTS rollouts
-**Context:** Game.get_next_state does `copy.deepcopy(state)` before applying an action. Necessary for tree expansion (each node owns its state), but during MCTS rollouts the trajectory state is discarded — the deepcopy is wasted work. State copy is a hot path in Phase 2 MCTS.
-**Idea:** add `Game.apply_action_inplace(board, action_idx)` that mutates the engine state directly. Use it in rollout loops only; tree expansion keeps deepcopy.
-**Why deferred:** premature until Phase 2 measurements confirm this is a bottleneck. The legal-moves cache is the bigger first win.
+## 2026-04-27 — In-place state mutation for MCTS rollouts (CONFIRMED bottleneck)
+**Context:** Game.get_next_state calls StateUpdater.apply_action which deepcopies the entire CarcassonneGameState every step. Phase 2 measurement (post-adjacency-fix): each MCTS sim's rollout (~165 random moves) takes ~600ms total, of which ~70% is in the deepcopy. With s=50 sims/move and ~165 game moves, that's ~80 min/game in pure copy cost.
+**Idea:** add `Game.apply_action_inplace(board, action_idx)` that bypasses the engine's internal deepcopy (we already deep-cloned the engine to do this). Use only for rollouts where the state is discarded; tree expansion keeps the safe copy path. Patch StateUpdater to expose an inplace variant.
+**Why deferred:** Phase 2 acceptance can run at lower s (s=10 vs s=50) to compensate. Implementing this BEFORE Phase 4 would let us run at s=200+ during self-play, which is what AlphaZero needs.
+**Expected speedup:** 3-5x on MCTS sim cost.
 
 ---
 
