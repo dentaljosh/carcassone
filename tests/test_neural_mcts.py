@@ -129,28 +129,82 @@ def test_evaluator_with_nonfinite_value_clamps_safely() -> None:
     assert sum(visits.values()) == 8
 
 
-def test_transposition_table_shares_nodes_across_paths() -> None:
-    """If two parents reach the same state, NeuralMCTS should share the child
-    node (visit counts combine). Previously the setdefault return value was
-    ignored, creating duplicate nodes. (External review 2026-04-28.)
+def test_transposition_table_shares_nodes_across_paths(monkeypatch) -> None:
+    """If a path reaches a state already in the transposition table, NeuralMCTS
+    must reuse the existing node and connect the parent to it (instead of
+    silently creating a duplicate). Previously the setdefault return value was
+    ignored. (External review 2026-04-28.)
 
-    Construct a stub MCTS where the evaluator returns a deterministic prior
-    so we can predict that two distinct parent paths converge on a common
-    child via different first-actions.
+    This test forces the transposition through the actual _simulate code path
+    by pre-populating _nodes with a node whose state_key matches what
+    _create_node will produce on the next visit.
     """
     g = Game(enable_legal_moves_cache=True)
-    mcts = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=10, seed=0)
-    # Inject a fake transposition: pretend two parent nodes (with different
-    # state_keys) each route to a child whose state_key already exists in
-    # _nodes. After the second insert, the parent's child reference must
-    # equal the original (shared) node.
-    from carcassonne_ai.mcts import _NeuralNode
+    board = g.get_init_board()
+    mcts = NeuralMCTS(game=g, evaluator=_uniform_evaluator, simulations=1, seed=0)
 
-    shared = _NeuralNode(state_key="SHARED", player_to_move=0, expanded=True, leaf_value=0.5)
-    mcts._nodes["SHARED"] = shared
+    # Run one search to populate the root and pick a real action.
+    mcts.search(board)
+    root_key = g.string_representation(board)
+    root = mcts._nodes[root_key]
 
-    # Re-running the setdefault with a fresh node should return the shared one.
-    fresh = _NeuralNode(state_key="SHARED", player_to_move=0)
-    returned = mcts._nodes.setdefault(fresh.state_key, fresh)
-    assert returned is shared
-    assert returned is not fresh
+    # Pick an action whose child node already exists in our tree.
+    sample_action, original_child = next(iter(root.children.items()))
+
+    # Now: erase the parent's link to that child, but leave the child node
+    # in _nodes (simulating a transposition where some other path created
+    # the child). Then run another simulation. _simulate will descend from
+    # root via the same action, _create_node will produce a fresh node with
+    # the same state_key, and the setdefault must return the EXISTING
+    # `original_child`. The parent's children[sample_action] must be set to
+    # `original_child`, NOT a duplicate.
+    del root.children[sample_action]
+    # Force the next selection to pick this action by making it the only
+    # legal choice in the parent. Backup priors and replace temporarily.
+    orig_priors = dict(root.priors)
+    orig_valid = list(root.valid_actions)
+    root.priors = {sample_action: 1.0}
+    root.valid_actions = [sample_action]
+
+    try:
+        # Run one simulation. After it, the parent should be reconnected to
+        # the original_child, not to a new duplicate node.
+        mcts._simulate(board, root)
+        reconnected = root.children[sample_action]
+        assert reconnected is original_child, (
+            "transposition table not shared: simulate created a duplicate node "
+            "instead of reusing the existing one"
+        )
+        # Sanity: only ONE node with the child's state_key in _nodes.
+        keys_matching = sum(1 for n in mcts._nodes.values() if n is original_child)
+        assert keys_matching == 1
+    finally:
+        root.priors = orig_priors
+        root.valid_actions = orig_valid
+
+
+def test_evaluator_with_negative_priors_falls_back_to_uniform() -> None:
+    """A malformed evaluator might return finite-but-negative priors (e.g.
+    raw logits instead of softmax outputs). NeuralMCTS must reject and use
+    uniform fallback rather than producing negative PUCT terms.
+    (External review pass 2, 2026-04-28.)"""
+    g = Game(enable_legal_moves_cache=True)
+    board = g.get_init_board()
+    A = action_size(g.window_size)
+
+    def negative_evaluator(_board) -> tuple[np.ndarray, float]:
+        priors = np.full(A, -0.5, dtype=np.float32)
+        priors[0] = 1.0  # one positive among negatives
+        return priors, 0.0
+
+    mcts = NeuralMCTS(game=g, evaluator=negative_evaluator, simulations=8, seed=0)
+    visits = mcts.search(board)
+    # Search must complete; with uniform fallback all legal actions can
+    # accumulate visits — not just action 0.
+    legal = set(np.flatnonzero(g.get_valid_moves(board)).tolist())
+    assert set(visits.keys()).issubset(legal)
+    assert sum(visits.values()) == 8
+    # Verify no PUCT corruption: all root child priors are finite and >= 0.
+    root_key = g.string_representation(board)
+    for child_action, prior in mcts._nodes[root_key].priors.items():
+        assert math.isfinite(prior) and prior >= 0

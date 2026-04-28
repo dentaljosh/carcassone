@@ -391,11 +391,14 @@ class NeuralMCTS:
             node.expanded = True
             return
 
-        # Sanitize priors: shape, finiteness, sum.
+        # Sanitize priors: shape, finiteness, non-negativity, sum.
+        # Negative finite priors would also pass NaN/inf checks but produce
+        # weird negative PUCT exploration terms — treat them as malformed.
         priors_ok = (
             isinstance(priors, np.ndarray)
             and priors.shape == mask.shape
             and np.isfinite(priors).all()
+            and (priors[legal] >= 0).all()
         )
         if priors_ok:
             legal_priors = priors[legal]

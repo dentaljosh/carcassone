@@ -24,3 +24,6 @@ runs/
 
 # Claude Code session metadata
 .claude/
+
+# Codex scratch state (review agent uses this)
+.codex
