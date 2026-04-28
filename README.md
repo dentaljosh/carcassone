@@ -43,6 +43,9 @@ python -u scripts/generate_warmstart_smoke.py --label-strategy heuristic --n 500
 python -u scripts/train_warmstart_smoke.py --strategy heuristic --epochs 20 --output checkpoints/warmstart_heuristic_smoke.pt
 python -u scripts/eval_warmstart_smoke.py --checkpoint checkpoints/warmstart_heuristic_smoke.best.pt --n 50
 
+# Phase 3 acceptance Tournament 2 (NeuralMCTS s=50 vs vanilla MCTS s=100)
+python -u scripts/eval_neural_mcts_vs_vanilla.py --checkpoint checkpoints/warmstart_heuristic_smoke.best.pt --n 100 --neural-sims 50 --vanilla-sims 100
+
 # Profiling
 python scripts/bench_quick.py            # per-call cost map + GPU sanity
 python scripts/bench_workers.py 64       # parallel-worker speedup

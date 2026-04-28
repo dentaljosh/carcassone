@@ -26,6 +26,25 @@
    - Output dir: `data/warmstart/mcts/seed_*.npz`
    - Script: `scripts/generate_warmstart_smoke.py --label-strategy mcts --n 5000`
    - Resumable: skips cached seeds. To wipe: `--reset`.
+   - Job died once at 125/500 (cause unknown — possibly SSH disconnect propagating SIGHUP). Resumed cleanly at 148/500. Currently 250-260/500 done (~50% through). ETA ~30 min from now.
+
+### NeuralMCTS + Tournament 2 script (added during the gen wait)
+
+- `src/carcassonne_ai/mcts.py` now has `NeuralMCTS` (PUCT selection, network leaf evaluator). 5 tests pass.
+- `scripts/eval_neural_mcts_vs_vanilla.py` runs Phase 3 acceptance Tournament 2 (NeuralMCTS(s=50) vs vanilla MCTS(s=100)). Pattern matches `play_mcts_vs_random.py` checkpointing.
+
+### External review 2026-04-28
+
+Two bugs found and fixed:
+- `Game.get_canonical_form` was double-swapping mine/opp when player != current_player. Fixed; new regression test in `tests/test_invariants.py`.
+- `warmstart.generate_one_game_dataset` didn't seed the global `random` module before `get_init_board()`. Engine deck shuffle uses global random, so seeds weren't reproducible. Fixed.
+
+Three production-prerequisites flagged for BACKLOG (must land before scaling smoke up):
+- Board encoding richness (meeple side/corner; tile internal topology)
+- Scalar feature normalization
+- Streaming/IterableDataset trainer
+
+Smoke comparison is unaffected — both label strategies share these limitations.
 
 ### When both background tasks finish
 

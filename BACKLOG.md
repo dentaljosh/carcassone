@@ -36,6 +36,23 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ---
 
+## 2026-04-28 — Phase 3 production-prerequisites (must land before scaling smoke up)
+**Context:** External review (2026-04-28) flagged three issues that don't break the in-flight 5K-each smoke comparison but would degrade any production warm-start training. See DECISIONS.md "External review findings + bug fixes".
+**Items:**
+1. **Board encoding richness** — add channels for meeple side/corner and tile internal topology. Two tiles with identical outer-edge categories but different internal connectivity (e.g., a road-corner vs a road-T-junction) currently look identical. ~25 new channels, ~half-day fix.
+2. **Scalar feature normalization** — divide raw scores by 100, tiles by 85, meeples by 7. ~30 min.
+3. **Streaming/IterableDataset training** — current trainer loads all positions to RAM. 50K ≈ 6 GB, 500K ≈ 60 GB. Need lazy `.npz` loading. Few hours.
+**Why deferred (until smoke completes):** the smoke comparison's verdict isn't affected — both strategies share these limitations. Address before committing to the full production generation.
+
+## 2026-04-28 — 2-ply heuristic-policy labels (sees both phases of one turn)
+**Context:** External review (2026-04-28). Current `_heuristic_policy` evaluates `virtual_score(after applying TILE-action)` — it doesn't see the meeple follow-up. Many strong tile placements depend on the meeple choice, so the policy target may be miscalibrated for tile-phase positions.
+**Idea:** for tile-phase labels, look 2 ply ahead: try each tile placement, then for each, find the best meeple decision (or "skip"), score the resulting state. Use that 2-ply best-score as the tile's heuristic value.
+**Why deferred:** real quality improvement for Strategy D (heuristic-only). If the smoke comparison says D wins despite 1-ply, this could be a free further gain. Defer until the smoke decides.
+
+## 2026-04-28 — Phase 5 deck determinization for analyzer
+**Context:** External review (2026-04-28). Current MCTS uses the engine's pre-shuffled future deck (deterministic). For Phase 5 analyzer (where we DON'T know the future tile order from a real family game), we'd need POMDP-style determinization: sample N possible orderings of the remaining bag and average MCTS results. Already noted in `mcts.py` docstring.
+**Why deferred:** Phase 5 problem, not Phase 3/4. Standard determinization pattern when we get there.
+
 ## 2026-04-27 — Rent Threadripper / EPYC for Phase 4 long runs
 **Context:** Phase 1 quick-bench showed Phase 4 is CPU-bound (game simulation dominates, GPU is not the bottleneck). On the 5800X, 50 iterations = 25-50 hours; 200 iterations = 1-2 weeks.
 **Idea:** Smoke-test Phase 4 locally for the first 5-10 iterations to confirm the training loop is healthy (ELO monotonically increasing, no policy collapse, etc.), then rent a Threadripper Pro 7965WX (24C/48T, ~5x our 5800X) or 64-core EPYC on RunPod or Vast.ai for the long run. Estimated cost: $30-50 for a 50-iteration run, $100-200 for 200 iterations. GPU-only rentals (A100/H100) aren't useful here — our bottleneck is CPU game-sim, not GPU network forward passes.

@@ -237,10 +237,14 @@ class Game:
 
         Window coordinates are NOT mirrored — only the mine/opp channels
         and player-relative scalar features are perspective-flipped.
+
+        encode_board already reads `player` and writes mine/opp accordingly,
+        so no extra canonical_swap is needed here. (A prior version
+        double-swapped when player != current_player, silently reversing the
+        intended perspective for the one caller that requested non-current
+        player. Caught by external review 2026-04-28.)
         """
         arr = encode_board(board.state, player, board.offset)
-        if player != board.state.current_player:
-            arr = canonical_swap(arr)
         scalars = encode_scalars(board.state, player, board.total_tiles)
         return arr, scalars
 

@@ -137,7 +137,12 @@ def generate_one_game_dataset(
     if label_strategy not in ("mcts", "heuristic"):
         raise ValueError(f"label_strategy must be 'mcts' or 'heuristic', got {label_strategy!r}")
 
-    rng = random.Random(seed)
+    # Seed the GLOBAL random module — the engine shuffles its deck via
+    # random.shuffle(global), so without this, runs are not seed-reproducible.
+    # (Caught by external review 2026-04-28.) The local rng below is for our
+    # own action choices.
+    random.seed(seed)
+    rng = random.Random(seed + 1)
     game = Game(enable_legal_moves_cache=True)
     board = game.get_init_board()
 

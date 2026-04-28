@@ -259,3 +259,195 @@ def virtual_score_estimate(board: Board, player: int) -> float:
     """
     from .virtual_score import virtual_score
     return virtual_score(board.state, player)
+
+
+# ---------------------------------------------------------------------------
+# NeuralMCTS — Phase 3 acceptance Tournament 2 (net+MCTS vs vanilla MCTS).
+# ---------------------------------------------------------------------------
+
+DEFAULT_PUCT_C = 1.5  # AlphaZero-typical PUCT exploration constant
+
+
+@dataclass
+class _NeuralNode:
+    """An MCTS tree node with cached network priors for PUCT selection."""
+    state_key: str
+    player_to_move: int
+    is_terminal: bool = False
+    terminal_value: float = 0.0
+    children: dict[int, "_NeuralNode"] = field(default_factory=dict)
+    valid_actions: list[int] = field(default_factory=list)
+    priors: dict[int, float] = field(default_factory=dict)
+    leaf_value: float = 0.0  # network's value at this node (from leaf-player perspective)
+    expanded: bool = False
+    N: int = 0
+    W: float = 0.0  # total value from player_to_move's perspective
+
+    @property
+    def Q(self) -> float:
+        return self.W / self.N if self.N > 0 else 0.0
+
+
+class NeuralMCTS:
+    """MCTS with PUCT selection and network-driven leaf evaluation.
+
+    Each simulation:
+      1. Selection: walk down using PUCT = Q + c * P * sqrt(N_parent) / (1 + N_child).
+      2. Expansion: when reaching an unexpanded leaf, query the network for
+         (priors, value). Store priors on the node, do NOT random-rollout.
+      3. Backprop: propagate the network's value back up the path.
+
+    The network evaluator must be Callable[[Board], tuple[np.ndarray, float]]
+    where the array is a length-action_size policy distribution (probabilities,
+    only normalized over valid actions) and the float is in [-1, +1] from
+    board.state.current_player's perspective.
+
+    Used for Phase 3 acceptance Tournament 2: NeuralMCTS(s=50) vs vanilla
+    MCTS(s=100). Network adds the prior + leaf value; vanilla random-rollouts.
+    """
+
+    def __init__(
+        self,
+        game: Game,
+        evaluator,  # Callable[[Board], tuple[np.ndarray, float]]
+        simulations: int = 50,
+        c_puct: float = DEFAULT_PUCT_C,
+        seed: int | None = None,
+    ):
+        if game._legal_cache is None:
+            game._legal_cache = {}
+        self.game = game
+        self.evaluator = evaluator
+        self.simulations = simulations
+        self.c_puct = c_puct
+        self.rng = random.Random(seed)
+        self._nodes: dict[str, _NeuralNode] = {}
+
+    def search(self, root_board: Board) -> dict[int, int]:
+        """Run `simulations` PUCT iterations from `root_board`. Returns a
+        {action_idx: visit_count} dict for the root's children."""
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None:
+            root = self._create_node(root_board)
+            self._nodes[root_key] = root
+        if not root.expanded and not root.is_terminal:
+            self._expand(root, root_board)
+        for _ in range(self.simulations):
+            self._simulate(root_board, root)
+        return {a: child.N for a, child in root.children.items()}
+
+    def best_action(self, root_board: Board) -> int:
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None or root.N == 0:
+            self.search(root_board)
+            root = self._nodes[root_key]
+        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        if not visited:
+            return next(iter(root.children))
+
+        def score(item):
+            action, child = item
+            q = child.Q if child.player_to_move == root.player_to_move else -child.Q
+            return (q, child.N)
+        return max(visited, key=score)[0]
+
+    def clear(self) -> None:
+        self._nodes.clear()
+        self.game.clear_caches()
+
+    # --- Internals ---------------------------------------------------------
+
+    def _create_node(self, board: Board) -> _NeuralNode:
+        key = self.game.string_representation(board)
+        terminal_value = self.game.get_game_ended(board, board.state.current_player)
+        return _NeuralNode(
+            state_key=key,
+            player_to_move=board.state.current_player,
+            is_terminal=(terminal_value != 0.0),
+            terminal_value=terminal_value,
+        )
+
+    def _expand(self, node: _NeuralNode, board: Board) -> None:
+        """Query the network at this state; populate node.priors, node.leaf_value,
+        node.valid_actions. Idempotent — safe to call multiple times."""
+        if node.expanded:
+            return
+        if node.is_terminal:
+            node.leaf_value = node.terminal_value
+            node.expanded = True
+            return
+        priors, value = self.evaluator(board)
+        mask = self.game.get_valid_moves(board)
+        legal = np.flatnonzero(mask)
+        if legal.size == 0:
+            node.leaf_value = 0.0
+            node.expanded = True
+            return
+        # Re-normalize priors over valid actions only.
+        legal_priors = priors[legal]
+        s = float(legal_priors.sum())
+        if s <= 0:
+            # Network gave zero prob to all valid moves — fall back to uniform.
+            legal_priors = np.full(legal.size, 1.0 / legal.size, dtype=np.float32)
+        else:
+            legal_priors = legal_priors / s
+        node.valid_actions = [int(a) for a in legal]
+        node.priors = {int(a): float(p) for a, p in zip(legal, legal_priors)}
+        node.leaf_value = float(value)
+        node.expanded = True
+
+    def _select_child_puct(self, node: _NeuralNode) -> int:
+        """PUCT: argmax over valid actions of Q + c * P * sqrt(N_parent) / (1 + N_child)."""
+        sqrt_parent_N = math.sqrt(max(node.N, 1))
+        best_action = node.valid_actions[0]
+        best_score = -math.inf
+        for action in node.valid_actions:
+            child = node.children.get(action)
+            if child is None:
+                q = 0.0
+                n = 0
+            else:
+                q = child.Q if child.player_to_move == node.player_to_move else -child.Q
+                n = child.N
+            u = self.c_puct * node.priors[action] * sqrt_parent_N / (1 + n)
+            score = q + u
+            if score > best_score:
+                best_score = score
+                best_action = action
+        return best_action
+
+    def _simulate(self, root_board: Board, root: _NeuralNode) -> None:
+        """One PUCT iteration: select → (expand) → backprop with leaf_value."""
+        path: list[_NeuralNode] = [root]
+        board = root_board
+        node = root
+
+        # Selection: walk down using PUCT, treating expanded nodes as internal.
+        while node.expanded and not node.is_terminal:
+            action = self._select_child_puct(node)
+            board, _ = self.game.get_next_state(board, action)
+            child = node.children.get(action)
+            if child is None:
+                # First visit to this child — create + expand.
+                child = self._create_node(board)
+                self._nodes.setdefault(child.state_key, child)
+                node.children[action] = child
+                self._expand(child, board)
+                path.append(child)
+                node = child
+                break
+            else:
+                path.append(child)
+                node = child
+
+        # If we exited because we hit a terminal node, leaf_value is already set
+        # by _create_node / terminal_value. Otherwise it's set by _expand above.
+        leaf_value = node.leaf_value
+        leaf_player = node.player_to_move
+
+        # Backprop.
+        for n in path:
+            n.N += 1
+            n.W += leaf_value if n.player_to_move == leaf_player else -leaf_value

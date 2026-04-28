@@ -101,3 +101,32 @@ def test_unsupported_player_count_raises() -> None:
     import pytest
     with pytest.raises(NotImplementedError):
         Game(players=4)
+
+
+def test_canonical_form_for_opponent_actually_flips_perspective() -> None:
+    """Regression: get_canonical_form(board, player=opponent) must return the
+    opponent's perspective — meeples in CH_MEEPLE_OPP for the player whose
+    turn it is. Previously double-swapped, silently returning current-player
+    perspective. (External review 2026-04-28.)"""
+    from carcassonne_ai.board_repr import CH_MEEPLE_MINE, CH_MEEPLE_OPP
+
+    g = Game()
+    random.seed(31)
+    board = g.get_init_board()
+    # Step a few times to populate meeples on the board.
+    for _ in range(40):
+        if g.get_game_ended(board, 0) != 0.0:
+            break
+        legal = np.flatnonzero(g.get_valid_moves(board))
+        board, _ = g.get_next_state(board, int(random.choice(legal)))
+
+    # Skip if no meeples placed yet (rare with seed 31).
+    cur_player = board.state.current_player
+    opp = 1 - cur_player
+
+    arr_cur, _ = g.get_canonical_form(board, cur_player)
+    arr_opp, _ = g.get_canonical_form(board, opp)
+
+    # The two perspectives must have mine/opp meeple channels swapped.
+    np.testing.assert_array_equal(arr_cur[CH_MEEPLE_MINE], arr_opp[CH_MEEPLE_OPP])
+    np.testing.assert_array_equal(arr_cur[CH_MEEPLE_OPP], arr_opp[CH_MEEPLE_MINE])
