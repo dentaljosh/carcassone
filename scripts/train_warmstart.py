@@ -149,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         train_pol_loss = 0.0
         train_val_loss = 0.0
         n_batches = 0
+        nan_skipped = 0
         for board_b, scalar_b, policy_b, value_b, mask_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
@@ -160,12 +161,17 @@ def main(argv: list[str] | None = None) -> int:
             pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
             val_loss = F.mse_loss(value_pred, value_b)
             loss = pol_loss + val_loss
+            if not torch.isfinite(loss):
+                nan_skipped += 1
+                continue  # skip the step; weights stay clean
             loss.backward()
             opt.step()
             scheduler.step()
             train_pol_loss += pol_loss.item()
             train_val_loss += val_loss.item()
             n_batches += 1
+        if nan_skipped:
+            print(f"  [warn] skipped {nan_skipped} NaN-loss batch(es) this epoch")
         train_pol_loss /= max(n_batches, 1)
         train_val_loss /= max(n_batches, 1)
 
