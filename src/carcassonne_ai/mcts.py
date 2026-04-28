@@ -371,7 +371,12 @@ class NeuralMCTS:
 
     def _expand(self, node: _NeuralNode, board: Board) -> None:
         """Query the network at this state; populate node.priors, node.leaf_value,
-        node.valid_actions. Idempotent — safe to call multiple times."""
+        node.valid_actions. Idempotent — safe to call multiple times.
+
+        Defensive: a bad checkpoint can return NaN/inf priors or wrong shape;
+        falls back to uniform-over-legal in any of those cases. Likewise an
+        all-zero or negative-sum prior distribution → uniform.
+        """
         if node.expanded:
             return
         if node.is_terminal:
@@ -385,17 +390,35 @@ class NeuralMCTS:
             node.leaf_value = 0.0
             node.expanded = True
             return
-        # Re-normalize priors over valid actions only.
-        legal_priors = priors[legal]
-        s = float(legal_priors.sum())
-        if s <= 0:
-            # Network gave zero prob to all valid moves — fall back to uniform.
+
+        # Sanitize priors: shape, finiteness, sum.
+        priors_ok = (
+            isinstance(priors, np.ndarray)
+            and priors.shape == mask.shape
+            and np.isfinite(priors).all()
+        )
+        if priors_ok:
+            legal_priors = priors[legal]
+            s = float(legal_priors.sum())
+            if s <= 0 or not math.isfinite(s):
+                priors_ok = False
+        if not priors_ok:
             legal_priors = np.full(legal.size, 1.0 / legal.size, dtype=np.float32)
         else:
             legal_priors = legal_priors / s
+
+        # Sanitize value: finite scalar in [-1, 1].
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            v = 0.0
+        if not math.isfinite(v):
+            v = 0.0
+        v = max(-1.0, min(1.0, v))
+
         node.valid_actions = [int(a) for a in legal]
         node.priors = {int(a): float(p) for a, p in zip(legal, legal_priors)}
-        node.leaf_value = float(value)
+        node.leaf_value = v
         node.expanded = True
 
     def _select_child_puct(self, node: _NeuralNode) -> int:
@@ -430,11 +453,15 @@ class NeuralMCTS:
             board, _ = self.game.get_next_state(board, action)
             child = node.children.get(action)
             if child is None:
-                # First visit to this child — create + expand.
-                child = self._create_node(board)
-                self._nodes.setdefault(child.state_key, child)
+                # First time this parent reaches this state via this action.
+                # Check the transposition table — another path may have already
+                # created a node for the same state. If so, share it (counts
+                # combine across paths). Otherwise register a new one.
+                fresh = self._create_node(board)
+                child = self._nodes.setdefault(fresh.state_key, fresh)
+                if child is fresh and not child.expanded:
+                    self._expand(child, board)
                 node.children[action] = child
-                self._expand(child, board)
                 path.append(child)
                 node = child
                 break

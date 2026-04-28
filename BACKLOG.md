@@ -49,6 +49,11 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Idea:** for tile-phase labels, look 2 ply ahead: try each tile placement, then for each, find the best meeple decision (or "skip"), score the resulting state. Use that 2-ply best-score as the tile's heuristic value.
 **Why deferred:** real quality improvement for Strategy D (heuristic-only). If the smoke comparison says D wins despite 1-ply, this could be a free further gain. Defer until the smoke decides.
 
+## 2026-04-28 — Phase 4: don't reuse NeuralMCTS.best_action for self-play target generation
+**Context:** External review (2026-04-28). Tournament/inference selection picks the highest-Q (with N tiebreak) child. AlphaZero self-play training-target generation samples from the visit-count distribution with temperature (τ=1 first ~15 moves, τ=0 after). Reusing best_action for self-play would give degenerate, deterministic policy targets and kill exploration.
+**Action:** Phase 4 plan-mode session must call out a separate `select_for_training(temperature)` API on NeuralMCTS that samples from `visits ** (1/τ)`.
+**Why deferred:** not relevant for Phase 3 acceptance (tournament-style play), only for Phase 4 self-play.
+
 ## 2026-04-28 — Phase 5 deck determinization for analyzer
 **Context:** External review (2026-04-28). Current MCTS uses the engine's pre-shuffled future deck (deterministic). For Phase 5 analyzer (where we DON'T know the future tile order from a real family game), we'd need POMDP-style determinization: sample N possible orderings of the remaining bag and average MCTS results. Already noted in `mcts.py` docstring.
 **Why deferred:** Phase 5 problem, not Phase 3/4. Standard determinization pattern when we get there.

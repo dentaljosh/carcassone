@@ -222,7 +222,19 @@ def main(argv: list[str] | None = None) -> int:
 
     already = sum(1 for a in pool_args if _result_path(a[2], a[3], a[0], a[1]).exists())
     n_remaining = args.n - already
-    n_workers = args.workers or min(os.cpu_count() or 1, max(n_remaining, 1))
+
+    # GPU-aware default: each worker holds its own CUDA context (~500MB
+    # baseline overhead) and concurrent tiny inferences thrash. Cap at 2 by
+    # default when CUDA is available — the network call is fast enough that
+    # NeuralMCTS-side throughput isn't the bottleneck (vanilla MCTS rollout
+    # cost is). If the user wants more parallelism, --workers overrides.
+    if args.workers is not None:
+        n_workers = args.workers
+    elif torch.cuda.is_available():
+        n_workers = min(2, max(n_remaining, 1))
+        print(f"  CUDA detected — defaulting to {n_workers} workers to avoid GPU thrash. Use --workers N to override.")
+    else:
+        n_workers = min(os.cpu_count() or 1, max(n_remaining, 1))
     print(
         f"Tournament 2: NeuralMCTS(s={args.neural_sims}) vs vanilla MCTS(s={args.vanilla_sims}), "
         f"{args.n} games, {n_workers} workers"
