@@ -21,6 +21,31 @@ Full project spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase str
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |
 
+## Pause / resume long-running parallel jobs
+
+For embarrassingly-parallel jobs (tournaments, measurement sweeps, self-play), use **per-game checkpoint files** so we can pause or apply optimizations without losing work.
+
+`scripts/play_mcts_vs_random.py` is the reference implementation. Each completed game writes to `data/tournament/s<sims>_seed<seed>_p<player>.json`. Reruns with the same `(--n, --sims, --seed-start)` skip cached seeds and resume from where they stopped.
+
+Workflow when you want to test an optimization mid-run:
+
+```bash
+# 1. Kill the running tournament (Ctrl-C or SIGTERM)
+pkill -f play_mcts_vs_random
+# 2. Apply your optimization, run any quick benches on idle CPU
+python scripts/bench_quick.py
+# 3. Resume — only remaining games are played
+python -u scripts/play_mcts_vs_random.py --n 100 --sims 50
+# Or restart from scratch if the optimization invalidates earlier results
+python -u scripts/play_mcts_vs_random.py --reset --n 100 --sims 50
+# Just read what's already on disk
+python scripts/play_mcts_vs_random.py --summary-only --n 100 --sims 50
+```
+
+For **brief pauses** (free up CPU for a quick bench, then resume with the same code), `kill -STOP <pid>` / `kill -CONT <pid>` on the worker PIDs is sufficient and instant — no checkpoint needed since you're not changing code.
+
+When writing new parallel scripts: always launch with `python -u` for unbuffered stdout (otherwise progress prints don't flush until script exit), and adopt the same per-item checkpoint pattern if the job runs more than a few minutes.
+
 ## Operating norms (learned the hard way — don't violate)
 
 - **Test as you go.** Don't ship code without pytest coverage of the contract.
