@@ -23,6 +23,53 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-04-28 — Phase 3 v1 acceptance result + v2 retry plan (sharper tau)
+
+**Setting:** 100K heuristic-labeled positions at tau=10.0, trained 6×96 ResNet 20 epochs.
+
+**Training metrics:**
+- Train value MSE: 0.165 → 0.030 (5.5× reduction — strong learning)
+- Val value MSE: 0.137 → 0.081, best at epoch 14
+- Train policy CE: 1.860 → 1.855 (essentially flat)
+- Val policy CE: 1.879 → 1.879 (flat)
+- Diagnosis: value head learned the position-value map well; policy head barely fit because tau=10.0 produced near-uniform targets (top-1 mass ~45%, top-1/uniform ratio ~1.17×).
+
+**Tournament 1 (network argmax vs random, 100 games):**
+- Result: **84/100 wins (84.0%)** — below the ≥90% acceptance threshold
+- avg score diff: +19.0 (net comfortably ahead, just not crushingly)
+- 105s wallclock total
+
+**Tournament 2 smoke (NeuralMCTS s=20 vs vanilla MCTS s=20, 2 games):**
+- Result: **0/2 wins, avg diff -6.5** — strong signal that the full T2 at s=50/s=100 will also fail
+- Per-game wallclock: 6.2 min at s=20/s=20; full s=50/s=100 extrapolates to ~28 min/game × 100 games / 2 spawn workers = ~24h. Decided not to burn that compute on a likely-failing run.
+
+**Decision:** instead of running the 24h T2, regen with sharper tau (=0.5) and retry. Rationale:
+- T1 result + flat policy training loss + soft heuristic targets all point at the same root cause: the policy head is barely getting trained because the labels don't favor any one action much.
+- Tau=0.5 sharpens top-1 mass from ~45% to ~64% (5.5× over uniform vs 1.17× before) — measured empirically on the new data.
+- Cost: ~58 min regen + ~17 min train + ~2 min T1 = ~80 min round-trip vs 24h for the unmodified T2.
+- The 100K data at tau=10 stays as a control; v2 goes to `data/warmstart/heuristic_tau05/` so the comparison is reproducible.
+
+**Reversal cost:** none — both datasets coexist; v2 is a separate experiment.
+**Phase:** Phase 3
+
+---
+
+## 2026-04-28 — Engine bug fix: city_diagonal_top_left_road shared description with shielded variant
+
+**Context:** External reviewer flagged that the wingedsheep tile dict at `engine/wingedsheep/carcassonne/tile_sets/base_deck.py` had `"city_diagonal_top_left_road"` with a description literal of `"city_diagonal_top_left_shield_road"` — same string as the shielded variant 30 lines above. Our `string_representation` keys placed tiles by `(description, outer_edges)`; both tiles have the same outer edges and (after the bug) the same description. MCTS transposition tables would merge two scoring-distinct states (shielded city tile scores +1 per tile in completed city; unshielded does not).
+
+**Fix:**
+- Patched the engine description literal to match its dict key.
+- Defense-in-depth: extended `_tile_rotation_signature` in `game_wrapper.py` to include `(shield, chapel, flowers)` booleans, so a future upstream description collision still produces distinct state keys.
+- Regression test in `tests/test_string_representation.py::test_shielded_and_unshielded_tile_produce_distinct_signatures`.
+
+**Impact on Phase 3 work:** none. Heuristic gen never invokes string_representation (it labels via virtual_score, which reads tile.shield directly). The bug would have bitten an MCTS-labeled gen or any future MCTS use; it didn't corrupt the 100K dataset.
+
+**Reversal cost:** none — strict bug fix.
+**Phase:** Phase 3 (engine patch)
+
+---
+
 ## 2026-04-28 — Phase 3 production gen sized to 100K, not 500K
 
 **Context:** Original plan (Option D from smoke comparison) committed to 500K heuristic-labeled positions. With the old 40-channel encoding, that was ~3.3 hours of generation. With the new 78-channel encoding (from the prereq fix), per-position generation cost rose ~3× to ~0.35s wallclock per game with 16 workers. 500K = 50K games would now take ~5 hours of pure CPU. 100K (10K games) takes ~50-60 min.
