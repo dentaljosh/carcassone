@@ -103,7 +103,17 @@ class StateUpdater:
 
     @classmethod
     def _apply_action_to(cls, target: CarcassonneGameState, original_phase, action: Action) -> None:
-        """Shared body of apply_action / apply_action_inplace. Mutates `target`."""
+        """Shared body of apply_action / apply_action_inplace. Mutates `target`.
+
+        Patched (vendored fork, 2026-04-28): a tile-phase PassAction (no legal
+        placement for the current tile) used to fall through to MEEPLES with a
+        STALE last_tile_action, so the next decision could place a meeple on a
+        previous turn's tile. Now: tile-phase pass discards the unplaceable
+        tile, draws the next one, clears last_tile_action, and hands off to the
+        next player. There is no meeple decision because no tile was played.
+        Caught by external review 2026-04-28; regression test in
+        tests/test_engine_adjacency.py::test_tile_phase_pass_does_not_leak_meeples.
+        """
         if isinstance(action, TileAction):
             cls.play_tile(game_state=target, tile_action=action)
             target.phase = GamePhase.MEEPLES
@@ -111,8 +121,18 @@ class StateUpdater:
             cls.play_meeple(game_state=target, meeple_action=action)
         elif isinstance(action, PassAction):
             if original_phase == GamePhase.TILES:
+                # Tile-phase pass: no placement happened, no meeple to choose.
+                # Discard the unplaceable tile, clear last_tile_action so the
+                # next player's meeple-time inspection (if they place) can't
+                # leak through to a previous turn's tile, draw a new
+                # next_tile, and hand off directly to the next player. Phase
+                # stays at TILES — the new player owes a tile decision next.
+                target.last_tile_action = None
                 cls.draw_tile(game_state=target)
-                target.phase = GamePhase.MEEPLES
+                cls.next_player(game_state=target)
+                if target.is_terminated():
+                    PointsCollector.count_final_scores(game_state=target)
+                return
             elif original_phase == GamePhase.MEEPLES:
                 pass
 

@@ -63,6 +63,59 @@ def test_open_positions_stays_consistent_through_a_random_game() -> None:
         steps += 1
 
 
+def test_tile_phase_pass_does_not_leak_meeples() -> None:
+    """Regression for the engine bug found in external review pass 4 (2026-04-28):
+    if the current tile is unplaceable, the engine emits a TILES-phase
+    PassAction. Pre-fix, that switched phase to MEEPLES with a stale
+    last_tile_action — letting the agent place a meeple on the PREVIOUS
+    turn's tile.
+
+    Post-fix: tile-phase pass should clear last_tile_action, draw a new
+    next_tile, and hand off directly to the next player (no MEEPLES decision).
+    """
+    from wingedsheep.carcassonne.objects.actions.pass_action import PassAction
+    from wingedsheep.carcassonne.objects.coordinate import Coordinate
+    from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+    from wingedsheep.carcassonne.utils.state_updater import StateUpdater
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+
+    g = Game()
+    board = g.get_init_board()
+
+    # Step into a state where last_tile_action is set (after the first
+    # placement). Use the first legal action.
+    legal = np.flatnonzero(g.get_valid_moves(board))
+    board, _ = g.get_next_state(board, int(legal[0]))
+    # We're now in MEEPLES phase with last_tile_action set to the river_start
+    # placement. Skip the meeple decision so we get to the next TILES phase.
+    legal = np.flatnonzero(g.get_valid_moves(board))
+    # Find the meeple-pass index (last index in our action space).
+    pass_idx = g.get_action_size() - 1
+    assert pass_idx in legal
+    board, _ = g.get_next_state(board, pass_idx)
+    # Now in TILES phase, but last_tile_action still references the river_start.
+    assert board.state.phase == GamePhase.TILES
+    prior_last_tile_action = board.state.last_tile_action
+    assert prior_last_tile_action is not None
+
+    # Construct a TILES-phase PassAction directly and apply it. The engine
+    # should: draw a new next_tile, advance to next player, clear or skip
+    # last_tile_action handling, and STAY in TILES phase (no meeple decision).
+    new_state = StateUpdater.apply_action(
+        game_state=board.state, action=PassAction()
+    )
+    # last_tile_action must be cleared (or otherwise unusable) so that
+    # the next decision can't claim a feature on the previous tile.
+    assert new_state.last_tile_action is None, (
+        "tile-phase pass left last_tile_action stale — meeple-leak bug"
+    )
+    # Phase should be TILES: no meeple decision is owed for a pass.
+    assert new_state.phase == GamePhase.TILES
+    # The current player should have advanced.
+    assert new_state.current_player != board.state.current_player
+
+
 def test_open_positions_survives_deepcopy() -> None:
     """Game.get_next_state internally deepcopies state via the engine's
     apply_action. The open_positions set must round-trip cleanly."""

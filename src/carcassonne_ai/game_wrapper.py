@@ -84,6 +84,20 @@ class Game:
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
+        # Reject out-of-scope configurations at construction time so the
+        # action-space encoder doesn't surprise the caller mid-game with a
+        # ValueError on an ABBOT/BIG MeepleAction. (External review pass 4,
+        # 2026-04-28.)
+        if TileSet.INNS_AND_CATHEDRALS in tile_sets:
+            raise NotImplementedError(
+                "INNS_AND_CATHEDRALS is out of scope for Phase 1-5; "
+                "the action-space encoder doesn't handle BIG/BIG_FARMER meeples."
+            )
+        if SupplementaryRule.ABBOTS in supplementary_rules:
+            raise NotImplementedError(
+                "ABBOTS supplementary rule is out of scope for Phase 1-5; "
+                "the action-space encoder doesn't handle ABBOT meeples."
+            )
         self.players = players
         self.tile_sets = tuple(tile_sets)
         self.supplementary_rules = tuple(supplementary_rules)
@@ -185,12 +199,16 @@ class Game:
         and flip the corresponding bit. Off-phase indices are guaranteed
         zero because our `encode()` only ever produces same-phase indices.
 
+        If the engine has legal placements but ALL of them fall outside the
+        centered window (window-overflow), this method raises
+        WindowOverflowError so the caller can drop the game from training
+        rather than silently see "no legal moves" (the engine's natural
+        no-legal-moves signal is a single PassAction, which the mask still
+        accepts). (External review pass 4, 2026-04-28.)
+
         If the legal-moves cache is enabled (constructor flag), checks for
-        and writes to it. Cache key is `string_representation(board)`, which
-        is a strict superset of the legality-determining state (it also
-        includes scores and deck size, which don't affect legal moves but
-        cost ~0 to include in the key). Returns the cached mask directly
-        without copying — callers must NOT mutate the result.
+        and writes to it. Returns the cached mask directly without copying
+        — callers must NOT mutate the result.
         """
         if self._legal_cache is not None:
             key = self.string_representation(board)
@@ -201,12 +219,27 @@ class Game:
             self._legal_cache_misses += 1
 
         mask = np.zeros(self.get_action_size(), dtype=bool)
+        n_total = 0
+        n_overflow = 0
         for action in ActionUtil.get_possible_actions(board.state):
+            n_total += 1
             try:
                 idx = encode(action, board.offset, board.state.phase.value)
             except WindowOverflowError:
+                n_overflow += 1
                 continue
             mask[idx] = True
+
+        # If every legal action is outside the window, surface a clear signal
+        # so the caller can drop the game (rather than seeing an empty mask
+        # and confusing it with a genuine no-legal-moves terminal).
+        if n_total > 0 and n_overflow == n_total:
+            raise WindowOverflowError(
+                f"All {n_total} legal actions fall outside the {board.offset.size}x"
+                f"{board.offset.size} window centered at "
+                f"({board.offset.origin_row}, {board.offset.origin_col}). "
+                f"Caller should drop this game from training."
+            )
 
         if self._legal_cache is not None:
             mask.flags.writeable = False  # protect cached masks from mutation
@@ -258,17 +291,21 @@ class Game:
         Two distinct game positions yield distinct strings; identical
         positions yield identical strings. Returned as a string (not int)
         so it serializes consistently across processes.
+
+        Implementation note: SPARSE — only emits entries for placed tiles
+        (~80 mid/late-game) instead of walking the full 35x35 board (1225
+        cells, mostly None) and `repr()`ing the dense nested tuple. The
+        dense version was ~166ms in late game, dominating get_valid_moves
+        and making the legal-moves cache net-negative. Sparse should be
+        ~5-10x faster.
         """
         s = board.state
-        tile_grid = tuple(
-            tuple(
-                None
-                if t is None
-                else (t.description, _tile_rotation_signature(t))
-                for t in row
-            )
-            for row in s.board
-        )
+        placed = []
+        for r, row in enumerate(s.board):
+            for c, t in enumerate(row):
+                if t is None:
+                    continue
+                placed.append((r, c, t.description, _tile_rotation_signature(t)))
         meeples = tuple(
             tuple(
                 (mp.meeple_type.value, mp.coordinate_with_side.coordinate.row,
@@ -284,7 +321,7 @@ class Game:
         )
         return repr(
             (
-                tile_grid,
+                tuple(placed),
                 meeples,
                 tuple(s.scores),
                 tuple(s.meeples),

@@ -8,17 +8,26 @@
 
 **Phase 3 status:** post-plan-mode, smoke comparison in flight to settle warmstart label strategy (Option C MCTS s=50 vs Option D heuristic-only) per the protocol in `~/.claude/plans/new-project-in-this-spicy-finch.md`.
 
-### Smoke comparison progress so far
+### Smoke comparison — COMPLETE (2026-04-28)
 
 | Step | Status | Result |
 |---|---|---|
-| Heuristic gen (5K positions) | DONE | 1.5 min wallclock |
-| Heuristic train (4×64, 20 ep) | DONE | val MSE 0.21→0.10; pol CE flat at 1.93 (diffuse target) |
-| Heuristic tournament (50 games vs random) | DONE | **36/50 (72%)** wins, +4.6 avg diff |
-| MCTS s=50 gen (5K positions) | **in flight, ~55 min ETA** | 16-worker Pool active |
-| MCTS train | pending after gen | |
-| MCTS tournament | pending after train | |
-| `compare_warmstart_smoke.py` decision | pending | written and ready |
+| Heuristic gen (5K positions) | DONE | ~2 min wallclock |
+| Heuristic train (4×64, 20 ep) | DONE | val MSE 0.21→0.10; pol CE flat at 1.93 |
+| Heuristic tournament (50 games vs random) | DONE | **35/50 (70%)** wins, +3.0 avg diff |
+| MCTS s=50 gen (5K positions) | DONE | ~55 min wallclock (Pool x16) |
+| MCTS train (4×64, 20 ep) | DONE | val MSE 0.21→0.21; pol CE 1.85→1.90 |
+| MCTS tournament (50 games vs random) | DONE | **39/50 (78%)** wins, +7.6 avg diff |
+| `compare_warmstart_smoke.py` decision | DONE | **HEURISTIC wins by 24.7x in wins-per-hour-of-gen** |
+
+**DECISION:** Production warm-start uses Option D (heuristic-only, scale to 500K). Logged in DECISIONS.md.
+
+**GATED on 3 prerequisite fixes** before kicking off the 500K production gen:
+1. Board encoding richness (meeple side/corner + tile internal topology)
+2. Scalar feature normalization
+3. Streaming/IterableDataset trainer
+
+These are in BACKLOG and must land before the production warmstart commits compute.
 
 ### Active background tasks
 

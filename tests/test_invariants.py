@@ -103,6 +103,26 @@ def test_unsupported_player_count_raises() -> None:
         Game(players=4)
 
 
+def test_constructor_rejects_inns_and_cathedrals() -> None:
+    """ABBOT/BIG meeples have no encoder slot. Reject at construction so the
+    caller doesn't surprise themselves mid-game with a ValueError on a
+    MeepleAction. (External review pass 4, 2026-04-28.)"""
+    import pytest
+    from wingedsheep.carcassonne.tile_sets.tile_sets import TileSet
+
+    with pytest.raises(NotImplementedError, match="INNS_AND_CATHEDRALS"):
+        Game(tile_sets=(TileSet.BASE, TileSet.THE_RIVER, TileSet.INNS_AND_CATHEDRALS))
+
+
+def test_constructor_rejects_abbots() -> None:
+    """Same rationale as INNS_AND_CATHEDRALS: ABBOT meeples have no encoder slot."""
+    import pytest
+    from wingedsheep.carcassonne.tile_sets.supplementary_rules import SupplementaryRule
+
+    with pytest.raises(NotImplementedError, match="ABBOTS"):
+        Game(supplementary_rules=(SupplementaryRule.FARMERS, SupplementaryRule.ABBOTS))
+
+
 def test_canonical_form_for_opponent_actually_flips_perspective() -> None:
     """Regression: get_canonical_form(board, player=opponent) must return the
     opponent's perspective — meeples in CH_MEEPLE_OPP for the player whose

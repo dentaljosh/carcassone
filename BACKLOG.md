@@ -54,6 +54,21 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Action:** Phase 4 plan-mode session must call out a separate `select_for_training(temperature)` API on NeuralMCTS that samples from `visits ** (1/τ)`.
 **Why deferred:** not relevant for Phase 3 acceptance (tournament-style play), only for Phase 4 self-play.
 
+## 2026-04-28 — Split string_representation into legal-move key vs MCTS state key
+**Context:** External review pass 4 (2026-04-28). `string_representation` omits full deck order, last_river_rotation, and abbots/big-meeple pools. For our in-scope deterministic games, collision risk is low in practice, and the engine doesn't use those out-of-scope pools at all. But for general-purpose MCTS state-keying (especially Phase 4+), it's incomplete.
+**Idea:** split into two keys:
+- `legal_moves_key(board)` — visible legality state only (what the cache needs)
+- `mcts_state_key(board)` — full deck signature, last_river_rotation, all pools, full placed-tile orientations
+**Why deferred:** correctness for Phase 3 unaffected. For Phase 4 self-play and Phase 5 analyzer, this should land along with the chance-node / determinization work.
+
+## 2026-04-28 — River edge-case regression tests
+**Context:** External review pass 4 (2026-04-28). `RiverRotationUtil.get_river_rotation` can implicitly return None around river start/straight cases. Coverage is thin. Specific cases to test:
+- River start tile placed at starting_position
+- River end tile placed (last river segment)
+- Disallowed repeated bend sequence (engine should refuse)
+- last_river_rotation correctly tracked across multiple river placements
+**Why deferred:** these are correctness concerns rare in random play but may bite during the production warm-start gen. Targeted tests, ~1 hour.
+
 ## 2026-04-28 — Phase 5 deck determinization for analyzer
 **Context:** External review (2026-04-28). Current MCTS uses the engine's pre-shuffled future deck (deterministic). For Phase 5 analyzer (where we DON'T know the future tile order from a real family game), we'd need POMDP-style determinization: sample N possible orderings of the remaining bag and average MCTS results. Already noted in `mcts.py` docstring.
 **Why deferred:** Phase 5 problem, not Phase 3/4. Standard determinization pattern when we get there.

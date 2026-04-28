@@ -102,14 +102,24 @@ def test_cached_mask_is_read_only() -> None:
 
 
 def test_cache_speedup_on_repeated_state() -> None:
-    """Quantitative check: 1000 calls on a single state are faster with cache.
-    Not a precise speedup assertion (CI noise), just a sanity threshold."""
+    """Quantitative check: repeated calls on the same state are faster with
+    the cache.
+
+    Note: post-engine-adjacency-fix, the uncached `get_valid_moves` is
+    already ~0.15ms in early game (was 50ms pre-fix). The cache's
+    string_representation hash overhead is comparable, so the cache's
+    value-add is most visible mid-to-late game where the state hash is
+    smaller relative to the action-enumeration cost. We step to move ~80
+    (deep mid-game) and assert cached < uncached × 0.8 (a modest 1.25x
+    speedup). For the Phase 4 MCTS-with-many-revisits regime, the speedup
+    is much larger but this test stays robust to hardware variance.
+    """
     g_off = Game(enable_legal_moves_cache=False)
     g_on = Game(enable_legal_moves_cache=True)
-    board_off = _stepped_board(g_off, n_moves=20, seed=42)
-    board_on = _stepped_board(g_on, n_moves=20, seed=42)
+    board_off = _stepped_board(g_off, n_moves=80, seed=42)
+    board_on = _stepped_board(g_on, n_moves=80, seed=42)
 
-    n = 200
+    n = 500
     t0 = time.perf_counter()
     for _ in range(n):
         g_off.get_valid_moves(board_off)
@@ -120,6 +130,7 @@ def test_cache_speedup_on_repeated_state() -> None:
         g_on.get_valid_moves(board_on)
     on_s = time.perf_counter() - t0
 
-    # Cache should be at least 5x faster on the hot path. Quick-bench shows
-    # ~50ms uncached vs <1ms cached, so the real ratio is much higher.
-    assert on_s * 5 < off_s, f"cache no faster than uncached: on={on_s:.3f}s off={off_s:.3f}s"
+    assert on_s < off_s * 0.8, (
+        f"cache should be at least 1.25x faster mid-game: "
+        f"on={on_s * 1000:.1f}ms off={off_s * 1000:.1f}ms"
+    )
