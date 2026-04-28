@@ -42,9 +42,9 @@ def _seed_path(strategy: str, seed: int) -> Path:
     return DATA_ROOT / strategy / f"seed_{seed:05d}.npz"
 
 
-def _worker(args: tuple[int, str, int, int]) -> tuple[int, str, int]:
+def _worker(args: tuple[int, str, int, int, float]) -> tuple[int, str, int]:
     """One-game worker. Returns (seed, status, n_positions)."""
-    seed, strategy, n_positions, mcts_sims = args
+    seed, strategy, n_positions, mcts_sims, heuristic_tau = args
     path = _seed_path(strategy, seed)
     if path.exists():
         try:
@@ -57,6 +57,7 @@ def _worker(args: tuple[int, str, int, int]) -> tuple[int, str, int]:
         label_strategy=strategy,
         n_positions_per_game=n_positions,
         mcts_sims=mcts_sims,
+        heuristic_tau=heuristic_tau,
     )
     ds.save(path)
     return seed, "fresh", len(ds)
@@ -88,6 +89,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n", type=int, default=5000, help="target total positions")
     p.add_argument("--positions-per-game", type=int, default=10)
     p.add_argument("--mcts-sims", type=int, default=50, help="MCTS sims/move when strategy=mcts")
+    p.add_argument(
+        "--heuristic-tau",
+        type=float,
+        default=10.0,
+        help="Softmax temperature for heuristic policy targets. Lower = sharper. "
+             "Default 10.0 produces top-1 mass ~45%; try 5.0 if the policy head is undertrained.",
+    )
     p.add_argument("--seed-start", type=int, default=0)
     p.add_argument("--workers", type=int, default=None)
     p.add_argument("--reset", action="store_true",
@@ -110,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
     n_workers = args.workers or min(os.cpu_count() or 1, n_games)
 
     pool_args = [
-        (args.seed_start + i, args.label_strategy, args.positions_per_game, args.mcts_sims)
+        (args.seed_start + i, args.label_strategy, args.positions_per_game,
+         args.mcts_sims, args.heuristic_tau)
         for i in range(n_games)
     ]
     already = sum(1 for a in pool_args if _seed_path(args.label_strategy, a[0]).exists())

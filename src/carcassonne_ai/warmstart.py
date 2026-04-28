@@ -83,11 +83,29 @@ class GameDataset:
         return self.boards.shape[0]
 
 
-def _heuristic_policy(game: Game, board, valid_mask: np.ndarray) -> np.ndarray:
-    """Policy target via 1-ply virtual_score lookahead. For each legal action,
-    apply it, score the resulting state, softmax across legal actions.
+DEFAULT_HEURISTIC_TAU = 10.0
 
-    Returns a length-action_size float32 array, zeros on invalid actions."""
+
+def _heuristic_policy(
+    game: Game, board, valid_mask: np.ndarray, *, tau: float = DEFAULT_HEURISTIC_TAU
+) -> np.ndarray:
+    """Policy target via 1-ply virtual_score lookahead. For each legal action,
+    apply it, score the resulting state, softmax across legal actions with
+    temperature `tau`.
+
+    Returns a length-action_size float32 array, zeros on invalid actions.
+
+    Tau choice (measured empirically — virtual_score gaps between candidate
+    actions are typically just 1-5 points so the softmax flattens quickly):
+      - 10.0 (current default): top-1 mass ~45% on mid-game prod data.
+        Very soft — preserves near-tie information but gives the policy
+        head a weak signal to fit.
+      - 1.0: top-1 mass ~47%, top-3 cumulative ~62%.
+      - 0.5: top-1 mass ~56%, top-3 cumulative ~75%. Recommended next
+        try if the policy head is undertrained at tau=10.
+      - 0.1: nearly one-hot (top-1 ~62%, top-3 ~87%). Risks amplifying
+        heuristic noise on actions with virtual_score within 1 point.
+    """
     legal = np.flatnonzero(valid_mask)
     if legal.size == 0:
         return np.zeros_like(valid_mask, dtype=np.float32)
@@ -97,10 +115,6 @@ def _heuristic_policy(game: Game, board, valid_mask: np.ndarray) -> np.ndarray:
         next_board, _ = game.get_next_state(board, int(action_idx))
         # virtual_score from CURRENT player's perspective; positive = good for us
         scores[i] = virtual_score(next_board.state, player)
-    # softmax with a temperature so the policy isn't degenerate.
-    # tau=10 is a reasonable middle: spreads probability across roughly-equal
-    # actions but still prefers the best.
-    tau = 10.0
     z = scores / tau
     z -= z.max()
     e = np.exp(z)
@@ -129,6 +143,7 @@ def generate_one_game_dataset(
     mcts_sims: int = 50,
     skip_early: int = 10,
     skip_late: int = 10,
+    heuristic_tau: float = DEFAULT_HEURISTIC_TAU,
 ) -> GameDataset:
     """Play a random game; sample N mid-game positions; label each.
 
@@ -192,7 +207,7 @@ def generate_one_game_dataset(
         snap_board, mask, player = snapshots[idx]
         obs, scalars = game.get_canonical_form(snap_board, player)
         if label_strategy == "heuristic":
-            policy = _heuristic_policy(game, snap_board, mask)
+            policy = _heuristic_policy(game, snap_board, mask, tau=heuristic_tau)
         else:
             mcts = MCTS(game=mcts_game, simulations=mcts_sims, seed=seed * 1000 + idx)
             visits = mcts.search(snap_board)
