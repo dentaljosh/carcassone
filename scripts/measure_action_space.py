@@ -68,6 +68,15 @@ def main() -> int:
     # enough that SMT siblings don't contend much on the shared ALU/cache).
     n_workers = min(os.cpu_count() or 1, n_games)
     print(f"  using {n_workers} worker processes")
+
+    import time as _time
+    _t0 = _time.perf_counter()
+    _play_one(0)
+    _per_game = _time.perf_counter() - _t0
+    _eta = (n_games * _per_game) / n_workers
+    _m, _s = divmod(_eta, 60)
+    print(f"  [ETA] {n_games} games × {_per_game * 1000:.0f}ms ≈ {int(_m)}m{int(_s):02d}s on {n_workers} workers")
+
     with Pool(processes=n_workers) as pool:
         per_game_rows = pool.map(_play_one, range(n_games))
 

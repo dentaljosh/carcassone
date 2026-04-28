@@ -53,9 +53,15 @@ def bench(n_workers: int, n_games: int, seed_base: int = 0) -> float:
 def main() -> int:
     n_games = int(sys.argv[1]) if len(sys.argv) > 1 else 64
     cpu = os.cpu_count() or 8
-    # Ladder hits 1, half-physical, physical, 2x physical (full SMT).
-    candidates = sorted({1, 2, 4, max(1, cpu // 2), max(1, cpu // 2) - 1, max(1, cpu // 2) + 1, cpu, cpu // 2 * 3, max(1, cpu - 2)})
-    candidates = [c for c in candidates if 1 <= c <= cpu]
+    # Ladder includes physical (cpu//2), full SMT (cpu), and oversubscription
+    # points beyond cpu_count to settle whether more processes than threads helps.
+    candidates = sorted({
+        1, 2, 4,
+        max(1, cpu // 2), max(1, cpu // 2) - 1, max(1, cpu // 2) + 1,
+        cpu - 2, cpu - 1, cpu,
+        cpu + 1, cpu + 2, cpu + 4, cpu + 8, cpu * 2,
+    })
+    candidates = [c for c in candidates if c >= 1]
 
     print(f"Worker-count benchmark: {n_games} random games per run, cpu_count={cpu}")
     print("(first run is a warmup and is discarded)")

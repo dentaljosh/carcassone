@@ -77,8 +77,19 @@ def main() -> int:
     # 16 SMT threads beats 8 physical (~6.9x vs ~5.4x speedup) on this workload —
     # the engine spends enough time in pure-Python overhead that SMT siblings
     # don't bottleneck on shared ALU/cache.
+    # See scripts/bench_workers.py — full SMT fan-out wins on this workload.
     n_workers = min(os.cpu_count() or 1, n_games)
     print(f"  using {n_workers} worker processes")
+
+    # Sample a single run to print an ETA before fanning out.
+    import time as _time
+    _t0 = _time.perf_counter()
+    play_one(0)
+    _per_game = _time.perf_counter() - _t0
+    _eta = (n_games * _per_game) / n_workers
+    _m, _s = divmod(_eta, 60)
+    print(f"  [ETA] {n_games} games × {_per_game * 1000:.0f}ms ≈ {int(_m)}m{int(_s):02d}s on {n_workers} workers")
+
     with Pool(processes=n_workers) as pool:
         rows = pool.map(play_one, range(n_games))
 
