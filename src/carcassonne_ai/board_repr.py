@@ -295,12 +295,28 @@ def encode_board(
                 continue
             if mp.meeple_type == MeepleType.FARMER:
                 offset = _FARMER_CORNER_TO_OFFSET.get(cws.side)
-                if offset is not None:
-                    arr[farmer_base + offset, wr, wc] = 1.0
+                if offset is None:
+                    raise ValueError(
+                        f"FARMER meeple on non-corner side {cws.side!r} at "
+                        f"({cws.coordinate.row},{cws.coordinate.column}) — "
+                        "engine should never place a farmer outside the 4 corners."
+                    )
+                arr[farmer_base + offset, wr, wc] = 1.0
             elif mp.meeple_type == MeepleType.NORMAL:
                 offset = _NORMAL_SIDE_TO_OFFSET.get(cws.side)
-                if offset is not None:
-                    arr[normal_base + offset, wr, wc] = 1.0
+                if offset is None:
+                    raise ValueError(
+                        f"NORMAL meeple on unexpected side {cws.side!r} at "
+                        f"({cws.coordinate.row},{cws.coordinate.column}) — "
+                        "engine should only emit T/R/B/L/CENTER."
+                    )
+                arr[normal_base + offset, wr, wc] = 1.0
+            else:
+                raise ValueError(
+                    f"Unsupported meeple type {mp.meeple_type!r} — locked scope is "
+                    "NORMAL + FARMER (no Abbots, no Big meeples). Did the engine "
+                    "config drift?"
+                )
 
     ref_tile: "Tile | None"
     if state.phase.value == "tiles":

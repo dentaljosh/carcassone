@@ -556,7 +556,7 @@ base_tiles = {
         image=os.path.join("base_game", "Base_Game_C2_Tile_O.png")
     ),
     "city_diagonal_top_left_road": Tile(
-        description="city_diagonal_top_left_shield_road",
+        description="city_diagonal_top_left_road",
         road=[Connection(Side.BOTTOM, Side.RIGHT)],
         city=[[Side.TOP, Side.LEFT]],
         farms=[

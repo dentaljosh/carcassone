@@ -243,14 +243,32 @@ def split_files_train_val(
     """Deterministically partition a file list into train/val by FILE
     (= by GAME, since one .npz = one game). Each file goes to exactly one
     side; positions never leak across the split.
+
+    Edge cases:
+      - val_fraction == 0.0: no val files; all go to train.
+      - val_fraction == 1.0: rejected — production training requires a
+        non-empty train split. Use a small positive fraction or split
+        externally if you really want pure-val.
+      - val_fraction outside [0, 1): rejected.
+      - n == 0: returns ([], []).
+      - n == 1 with 0 < val_fraction < 1: file goes to train; rounding
+        a single file to a val split silently empties train.
     """
+    if not (0.0 <= val_fraction < 1.0):
+        raise ValueError(
+            f"val_fraction must satisfy 0 <= val_fraction < 1, got {val_fraction!r}"
+        )
     n = len(files)
     if n == 0:
         return [], []
     rng = random.Random(seed)
     perm = list(range(n))
     rng.shuffle(perm)
-    n_val = max(1, int(round(n * val_fraction))) if n >= 2 else 0
+    if val_fraction == 0.0 or n < 2:
+        n_val = 0
+    else:
+        n_val = max(1, int(round(n * val_fraction)))
+        n_val = min(n_val, n - 1)  # never empty the train split
     val_idx = set(perm[:n_val])
     train = [f for i, f in enumerate(files) if i not in val_idx]
     val = [f for i, f in enumerate(files) if i in val_idx]
@@ -301,7 +319,12 @@ def make_streaming_dataset(
             worker_id = wi.id if wi is not None else 0
             local_files = list(self.files)
             if shuffle_files_each_epoch:
-                rng = random.Random(hash((self.seed, self.epoch)) & 0xFFFFFFFF)
+                # zlib.crc32 is process-stable; Python's hash() is salted by
+                # PYTHONHASHSEED so reusing it gives different orderings across
+                # runs with the same seed. Reproducibility matters for ablations.
+                import zlib
+                key = f"{self.seed}|{self.epoch}".encode()
+                rng = random.Random(zlib.crc32(key))
                 rng.shuffle(local_files)
             # Shard across workers AFTER the shuffle so each worker still
             # gets a representative slice.
@@ -312,9 +335,9 @@ def make_streaming_dataset(
                     continue
                 idx_order = list(range(len(ds)))
                 if shuffle_within_file:
-                    rng2 = random.Random(
-                        hash((self.seed, self.epoch, str(path))) & 0xFFFFFFFF
-                    )
+                    import zlib
+                    key2 = f"{self.seed}|{self.epoch}|{path!s}".encode()
+                    rng2 = random.Random(zlib.crc32(key2))
                     rng2.shuffle(idx_order)
                 for i in idx_order:
                     yield (

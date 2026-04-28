@@ -334,19 +334,27 @@ class Game:
         )
 
 
-def _tile_rotation_signature(tile) -> tuple[str, ...]:
-    """Capture tile orientation as 4 outer-edge terrain types.
+def _tile_rotation_signature(tile) -> tuple:
+    """Capture tile orientation + scoring-relevant properties.
 
     `description` alone is rotation-blind — two `tile.turn(...)` results
     with the same description but different orientations would otherwise
     collide. The 4 outer edges uniquely encode rotation.
+
+    Defense-in-depth: also pin shield/chapel/flowers. The vendored engine
+    has had at least one description-collision bug (city_diagonal_top_left_road
+    vs city_diagonal_top_left_shield_road shared the same description string;
+    fixed in our fork). Shields change scoring (+1 per city tile), so a state
+    key that doesn't distinguish them would cause MCTS transpositions to
+    merge positions with different value functions.
     """
     from wingedsheep.carcassonne.objects.side import Side
 
-    return tuple(
+    edges = tuple(
         tile.get_type(side).value
         for side in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
     )
+    return (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
 
 
 # --- CLI entry point ---------------------------------------------------------

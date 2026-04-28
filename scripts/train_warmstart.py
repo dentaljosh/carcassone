@@ -47,8 +47,32 @@ def policy_cross_entropy(
     Mask invalid logits to -inf before log_softmax. Rows that are all-invalid
     have nan log_probs but zero target rows, so we replace nans with zero to
     keep the per-row sum well-defined.
+
+    Validates inputs to fail loud on malformed data: target mass on invalid
+    actions, target rows that don't sum to ~1 on legal positions, or
+    all-invalid rows (which silently contribute zero loss). Reviewer flagged
+    that the previous version silently absorbed garbage.
     """
-    masked = logits.masked_fill(~mask.bool(), float("-inf"))
+    mask_b = mask.bool()
+    if (target * (~mask_b)).abs().sum() > 1e-5:
+        raise ValueError(
+            "policy target has mass on invalid (masked-off) actions"
+        )
+    has_legal = mask_b.any(dim=-1)
+    if not has_legal.all():
+        # All-invalid rows would silently contribute zero loss. The data
+        # generator should never produce these; if it does, surface it.
+        raise ValueError(
+            f"{(~has_legal).sum().item()}/{has_legal.numel()} target rows "
+            "have no legal action — bad sample slipped through generation"
+        )
+    legal_sums = target.sum(dim=-1)
+    if not torch.allclose(legal_sums, torch.ones_like(legal_sums), atol=1e-3):
+        raise ValueError(
+            f"policy target rows must sum to ~1 over legal actions, got "
+            f"min={legal_sums.min().item():.4f} max={legal_sums.max().item():.4f}"
+        )
+    masked = logits.masked_fill(~mask_b, float("-inf"))
     log_probs = F.log_softmax(masked, dim=-1)
     log_probs = torch.where(torch.isfinite(log_probs), log_probs, torch.zeros_like(log_probs))
     return -(target * log_probs).sum(dim=-1).mean()
@@ -115,12 +139,19 @@ def main(argv: list[str] | None = None) -> int:
         shuffle_within_file=False,
         seed=args.seed,
     )
+    # persistent_workers=False on train_loader: workers cache the dataset
+    # snapshot at construction, so train_ds.set_epoch(...) on the main thread
+    # never reaches them and per-epoch file shuffling silently sticks at
+    # epoch 0. Recreating workers per epoch costs ~Pool-startup-time which
+    # is negligible vs. one full pass through the data.
+    # val_loader can use persistent_workers — set_epoch is not relevant
+    # there (val files have a fixed deterministic order).
     train_loader = DataLoader(
         train_ds,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=(device.type == "cuda"),
-        persistent_workers=(args.num_workers > 0),
+        persistent_workers=False,
     )
     val_loader = DataLoader(
         val_ds,
@@ -134,7 +165,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  net params: {net.param_count():,}  (filters={args.filters}, blocks={args.blocks})")
 
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    steps_per_epoch = max(1, n_train // args.batch_size)
+    # ceil so we don't underestimate batch count and let the cosine schedule
+    # finish ahead of the actual training tail. With multi-worker streaming
+    # there can also be one partial batch per worker, so add a small fudge.
+    steps_per_epoch = max(1, -(-n_train // args.batch_size) + max(1, args.num_workers))
     total_steps = steps_per_epoch * args.epochs
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=total_steps)
 

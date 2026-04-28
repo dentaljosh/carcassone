@@ -122,3 +122,51 @@ def test_set_epoch_changes_file_order(synthetic_files: list[Path]) -> None:
 def test_split_handles_empty_list() -> None:
     train, val = split_files_train_val([], val_fraction=0.1, seed=0)
     assert train == [] and val == []
+
+
+def test_split_zero_val_fraction(synthetic_files: list[Path]) -> None:
+    """val_fraction=0.0 must produce an empty val and not silently force
+    one val file (reviewer flagged the previous max(1, ...) behavior)."""
+    train, val = split_files_train_val(synthetic_files, val_fraction=0.0, seed=0)
+    assert val == []
+    assert set(train) == set(synthetic_files)
+
+
+def test_split_rejects_one(synthetic_files: list[Path]) -> None:
+    """val_fraction=1.0 would empty the train split; reject it loudly."""
+    with pytest.raises(ValueError):
+        split_files_train_val(synthetic_files, val_fraction=1.0, seed=0)
+
+
+def test_split_rejects_out_of_range(synthetic_files: list[Path]) -> None:
+    with pytest.raises(ValueError):
+        split_files_train_val(synthetic_files, val_fraction=-0.1, seed=0)
+    with pytest.raises(ValueError):
+        split_files_train_val(synthetic_files, val_fraction=1.5, seed=0)
+
+
+def test_split_never_empties_train(tmp_path: Path) -> None:
+    """With n=2 and val_fraction=0.5, n_val rounds to 1, leaving 1 train.
+    With n=2 and val_fraction=0.99, n_val should still be capped to n-1=1."""
+    files: list[Path] = []
+    for i in range(2):
+        p = tmp_path / f"seed_{i:05d}.npz"
+        _write_synthetic(p, n_positions=4, seed=i)
+        files.append(p)
+    train, val = split_files_train_val(files, val_fraction=0.99, seed=0)
+    assert len(train) >= 1, "split must never empty the train set"
+    assert len(val) >= 1
+
+
+def test_streaming_shuffle_reproducible_across_runs(synthetic_files: list[Path]) -> None:
+    """The within-file shuffle must be reproducible: same seed/epoch/path
+    must yield the same order even across processes (zlib.crc32 not Python's
+    salted hash). Reviewer flagged the original hash() usage.
+    """
+    ds_a = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
+    ds_a.set_epoch(0)
+    order_a = [v.item() for _, _, _, v, _ in ds_a]
+    ds_b = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
+    ds_b.set_epoch(0)
+    order_b = [v.item() for _, _, _, v, _ in ds_b]
+    assert order_a == order_b

@@ -45,6 +45,24 @@ def test_no_collisions_within_a_single_game_progression() -> None:
         assert len(seen) == moves
 
 
+def test_shielded_and_unshielded_tile_produce_distinct_signatures() -> None:
+    """The vendored engine has had at least one description-collision bug:
+    `city_diagonal_top_left_road` and `city_diagonal_top_left_shield_road`
+    shared the same description string. We patched the engine, but the
+    rotation signature also pins shield/chapel/flowers as defense in depth.
+    This test asserts that signature distinction directly so any future
+    upstream collision is caught loudly.
+    """
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+    from carcassonne_ai.game_wrapper import _tile_rotation_signature
+
+    shielded = base_tiles["city_diagonal_top_left_shield_road"]
+    plain = base_tiles["city_diagonal_top_left_road"]
+    assert shielded.shield is True
+    assert plain.shield is False
+    assert _tile_rotation_signature(shielded) != _tile_rotation_signature(plain)
+
+
 def test_repr_is_deterministic_for_the_same_state() -> None:
     g = Game()
     board = g.get_init_board()
