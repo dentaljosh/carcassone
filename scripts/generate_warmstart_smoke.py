@@ -38,14 +38,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = REPO_ROOT / "data" / "warmstart"
 
 
-def _seed_path(strategy: str, seed: int) -> Path:
-    return DATA_ROOT / strategy / f"seed_{seed:05d}.npz"
+def _seed_path(subdir: str, seed: int) -> Path:
+    return DATA_ROOT / subdir / f"seed_{seed:05d}.npz"
 
 
-def _worker(args: tuple[int, str, int, int, float]) -> tuple[int, str, int]:
+def _worker(args: tuple[int, str, str, int, int, float]) -> tuple[int, str, int]:
     """One-game worker. Returns (seed, status, n_positions)."""
-    seed, strategy, n_positions, mcts_sims, heuristic_tau = args
-    path = _seed_path(strategy, seed)
+    seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau = args
+    path = _seed_path(subdir, seed)
     if path.exists():
         try:
             ds = GameDataset.load(path)
@@ -63,8 +63,8 @@ def _worker(args: tuple[int, str, int, int, float]) -> tuple[int, str, int]:
     return seed, "fresh", len(ds)
 
 
-def _summarize(strategy: str) -> int:
-    root = DATA_ROOT / strategy
+def _summarize(subdir: str) -> int:
+    root = DATA_ROOT / subdir
     if not root.exists():
         print(f"No data at {root}")
         return 0
@@ -79,7 +79,7 @@ def _summarize(strategy: str) -> int:
             total_positions += len(ds)
         except Exception as exc:
             print(f"  {f.name}: load failed: {exc}")
-    print(f"strategy={strategy}: {len(files)} games, {total_positions} positions in {root}")
+    print(f"subdir={subdir}: {len(files)} games, {total_positions} positions in {root}")
     return total_positions
 
 
@@ -99,17 +99,26 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed-start", type=int, default=0)
     p.add_argument("--workers", type=int, default=None)
     p.add_argument("--reset", action="store_true",
-                   help="Wipe data/warmstart/<strategy>/ before starting")
+                   help="Wipe the output subdir before starting")
     p.add_argument("--summary-only", action="store_true",
                    help="Just report what's on disk")
+    p.add_argument(
+        "--output-subdir",
+        type=str,
+        default=None,
+        help="Subdir under data/warmstart/ to write to. Default = label-strategy name. "
+             "Use to keep ablation runs (e.g. heuristic_tau05) separate from the main run.",
+    )
     args = p.parse_args(argv)
 
+    subdir = args.output_subdir or args.label_strategy
+
     if args.summary_only:
-        _summarize(args.label_strategy)
+        _summarize(subdir)
         return 0
 
     if args.reset:
-        target = DATA_ROOT / args.label_strategy
+        target = DATA_ROOT / subdir
         if target.exists():
             shutil.rmtree(target)
             print(f"Wiped {target}")
@@ -118,15 +127,16 @@ def main(argv: list[str] | None = None) -> int:
     n_workers = args.workers or min(os.cpu_count() or 1, n_games)
 
     pool_args = [
-        (args.seed_start + i, args.label_strategy, args.positions_per_game,
-         args.mcts_sims, args.heuristic_tau)
+        (args.seed_start + i, args.label_strategy, subdir,
+         args.positions_per_game, args.mcts_sims, args.heuristic_tau)
         for i in range(n_games)
     ]
-    already = sum(1 for a in pool_args if _seed_path(args.label_strategy, a[0]).exists())
+    already = sum(1 for a in pool_args if _seed_path(subdir, a[0]).exists())
     remaining = n_games - already
     print(
-        f"warmstart/{args.label_strategy}: {n_games} games "
+        f"warmstart/{subdir}: {n_games} games "
         f"({args.positions_per_game} pos/game = {n_games * args.positions_per_game} positions), "
+        f"strategy={args.label_strategy}, tau={args.heuristic_tau}, "
         f"{n_workers} workers, {already} cached, {remaining} to play"
     )
 
@@ -153,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  ... {completed}/{n_games} games done (fresh={fresh}, cached={cached})")
                 sys.stdout.flush()
 
-    total_positions = _summarize(args.label_strategy)
+    total_positions = _summarize(subdir)
     print(f"\nDone. {completed} games processed, {total_positions} total positions on disk.")
     return 0
 
