@@ -21,3 +21,6 @@ runs/
 .idea/
 .DS_Store
 *.swp
+
+# Claude Code session metadata
+.claude/

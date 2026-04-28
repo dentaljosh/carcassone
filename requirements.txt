@@ -1,0 +1,25 @@
+# Phase 0/1 dependencies. We do NOT use az/requirements.txt directly — that file
+# pins TensorFlow/Keras and old torch (1.11). We use only Game.py / MCTS.py /
+# Coach.py / Arena.py from the alpha-zero-general source as references and write
+# our own PyTorch network.
+
+# Core numerics
+numpy>=1.26
+pillow>=10.0
+
+# PyTorch with CUDA support for RTX 5060 Ti (Blackwell sm_120, needs >=2.7)
+# Install via:  pip install torch --index-url https://download.pytorch.org/whl/cu128
+torch>=2.7
+
+# Training infra
+tensorboard>=2.16
+tqdm>=4.66
+
+# Plotting / measurement
+matplotlib>=3.8
+
+# Testing
+pytest>=8.0
+
+# Vendored engine (installed via pip install -e engine/)
+# wingedsheep-carcassonne is the package name
