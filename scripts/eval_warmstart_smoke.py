@@ -22,7 +22,7 @@ import os
 import sys
 import time
 from dataclasses import asdict, dataclass
-from multiprocessing import Pool
+import multiprocessing as mp
 from pathlib import Path
 
 import numpy as np
@@ -163,7 +163,9 @@ def _run_pool(checkpoint: Path, n: int, seed_start: int, n_workers: int) -> list
     pool_args = [(seed_start + i, i % 2) for i in range(n)]
     print(f"Pool ({n_workers} workers), {n} games, checkpoints in {T1_DIR}")
     results: list[GameResult] = []
-    with Pool(processes=n_workers, initializer=_worker_init, initargs=(str(checkpoint),)) as pool:
+    # 'spawn' start method: CUDA cannot reinit in forked subprocesses.
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(processes=n_workers, initializer=_worker_init, initargs=(str(checkpoint),)) as pool:
         for done, result in enumerate(pool.imap_unordered(_play_one_pool, pool_args, chunksize=1), 1):
             results.append(result)
             wins = sum(1 for r in results if r.won)

@@ -23,7 +23,7 @@ import shutil
 import sys
 import time
 from dataclasses import asdict, dataclass
-from multiprocessing import Pool
+import multiprocessing as mp
 from pathlib import Path
 
 import numpy as np
@@ -246,7 +246,12 @@ def main(argv: list[str] | None = None) -> int:
     results: list[GameResult] = []
     first_done_t: float | None = None
     if n_remaining > 0:
-        with Pool(
+        # CUDA can't be re-initialized in forked subprocesses (raises in
+        # _worker_init when the worker tries to torch.load(map_location=cuda)).
+        # Use 'spawn' so each worker starts a fresh interpreter without
+        # inheriting the parent's CUDA context.
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(
             processes=n_workers,
             initializer=_worker_init,
             initargs=(str(args.checkpoint.resolve()),),
