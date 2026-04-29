@@ -51,10 +51,20 @@ class GameResult:
     drew: bool
     elapsed_s: float
     moves: int
+    c_puct: float = 1.5  # default for backwards-compat with files that lack the field
 
 
-def _result_path(neural_sims: int, vanilla_sims: int, seed: int, neural_player: int) -> Path:
-    return EVAL_DIR / f"n{neural_sims:04d}_v{vanilla_sims:04d}_seed{seed:06d}_p{neural_player}.json"
+def _c_puct_tag(c_puct: float) -> str:
+    """Filename-safe tag for c_puct (e.g. 1.5 -> 'cp1p5'). Included in
+    per-game checkpoint filenames so a sweep over c_puct values doesn't
+    cache-collide across runs."""
+    s = f"{c_puct:.2f}".replace(".", "p").rstrip("0").rstrip("p")
+    return f"cp{s}"
+
+
+def _result_path(neural_sims: int, vanilla_sims: int, seed: int, neural_player: int, c_puct: float = 1.5) -> Path:
+    tag = _c_puct_tag(c_puct)
+    return EVAL_DIR / f"n{neural_sims:04d}_v{vanilla_sims:04d}_{tag}_seed{seed:06d}_p{neural_player}.json"
 
 
 def _try_load(path: Path) -> GameResult | None:
@@ -70,7 +80,7 @@ def _try_load(path: Path) -> GameResult | None:
 
 def _save(result: GameResult) -> None:
     path = _result_path(
-        result.neural_sims, result.vanilla_sims, result.seed, result.neural_player
+        result.neural_sims, result.vanilla_sims, result.seed, result.neural_player, result.c_puct
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.stem + ".partial.json")
@@ -110,9 +120,9 @@ def _network_evaluator(game: Game):
     return evaluator
 
 
-def _play_one(args: tuple[int, int, int, int]) -> GameResult:
-    seed, neural_player, neural_sims, vanilla_sims = args
-    cached = _try_load(_result_path(neural_sims, vanilla_sims, seed, neural_player))
+def _play_one(args: tuple[int, int, int, int, float]) -> GameResult:
+    seed, neural_player, neural_sims, vanilla_sims, c_puct = args
+    cached = _try_load(_result_path(neural_sims, vanilla_sims, seed, neural_player, c_puct))
     if cached is not None:
         return cached
 
@@ -122,7 +132,7 @@ def _play_one(args: tuple[int, int, int, int]) -> GameResult:
     game = Game(enable_legal_moves_cache=True)
     board = game.get_init_board()
     evaluator = _network_evaluator(game)
-    neural = NeuralMCTS(game=game, evaluator=evaluator, simulations=neural_sims, seed=seed)
+    neural = NeuralMCTS(game=game, evaluator=evaluator, simulations=neural_sims, seed=seed, c_puct=c_puct)
     # Vanilla MCTS uses its OWN game so its cache doesn't poison the neural side.
     vanilla_game = Game(enable_legal_moves_cache=True)
     vanilla = MCTS(game=vanilla_game, simulations=vanilla_sims, seed=seed + 1)
@@ -158,6 +168,7 @@ def _play_one(args: tuple[int, int, int, int]) -> GameResult:
         drew=(diff == 0),
         elapsed_s=elapsed,
         moves=moves,
+        c_puct=c_puct,
     )
     _save(result)
     return result
@@ -196,6 +207,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--vanilla-sims", type=int, default=100)
     p.add_argument("--seed-start", type=int, default=20000)
     p.add_argument("--workers", type=int, default=None)
+    p.add_argument("--neural-c-puct", type=float, default=1.5,
+                   help="PUCT exploration constant for NeuralMCTS (default 1.5)")
     p.add_argument("--reset", action="store_true",
                    help="Wipe matching result files before starting")
     p.add_argument("--summary-only", action="store_true",
@@ -203,24 +216,24 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     pool_args = [
-        (args.seed_start + i, i % 2, args.neural_sims, args.vanilla_sims)
+        (args.seed_start + i, i % 2, args.neural_sims, args.vanilla_sims, args.neural_c_puct)
         for i in range(args.n)
     ]
 
     if args.reset:
         for a in pool_args:
-            path = _result_path(a[2], a[3], a[0], a[1])
+            path = _result_path(a[2], a[3], a[0], a[1], a[4])
             path.unlink(missing_ok=True)
-        print(f"Wiped result files for n={args.neural_sims}, v={args.vanilla_sims}")
+        print(f"Wiped result files for n={args.neural_sims}, v={args.vanilla_sims}, c_puct={args.neural_c_puct}")
 
     if args.summary_only:
-        results = [r for r in (_try_load(_result_path(a[2], a[3], a[0], a[1])) for a in pool_args) if r is not None]
+        results = [r for r in (_try_load(_result_path(a[2], a[3], a[0], a[1], a[4])) for a in pool_args) if r is not None]
         if not results:
             print("No saved games for these parameters.")
             return 0
         return _summary(results, args.neural_sims, args.vanilla_sims)
 
-    already = sum(1 for a in pool_args if _result_path(a[2], a[3], a[0], a[1]).exists())
+    already = sum(1 for a in pool_args if _result_path(a[2], a[3], a[0], a[1], a[4]).exists())
     n_remaining = args.n - already
 
     # GPU-aware default: each worker holds its own CUDA context (~500MB
@@ -236,8 +249,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         n_workers = min(os.cpu_count() or 1, max(n_remaining, 1))
     print(
-        f"Tournament 2: NeuralMCTS(s={args.neural_sims}) vs vanilla MCTS(s={args.vanilla_sims}), "
-        f"{args.n} games, {n_workers} workers"
+        f"Tournament 2: NeuralMCTS(s={args.neural_sims}, c_puct={args.neural_c_puct}) "
+        f"vs vanilla MCTS(s={args.vanilla_sims}), {args.n} games, {n_workers} workers"
     )
     if already:
         print(f"  Resuming: {already}/{args.n} cached, {n_remaining} to play")
@@ -272,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  ... {n}/{args.n} done, neural {wins}/{n} so far")
                     sys.stdout.flush()
     else:
-        results = [_try_load(_result_path(a[2], a[3], a[0], a[1])) for a in pool_args]
+        results = [_try_load(_result_path(a[2], a[3], a[0], a[1], a[4])) for a in pool_args]
         results = [r for r in results if r is not None]
 
     return _summary(results, args.neural_sims, args.vanilla_sims)

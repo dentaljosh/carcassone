@@ -21,6 +21,22 @@ Full project spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase str
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |
 
+## SSH-disconnect resilience (Mac→Windows→WSL setup)
+
+Joshua connects via SSH from a Mac to Windows, then to WSL2. **When the Mac sleeps, SSH disconnects and SIGHUP propagates to any tty-attached process** — this killed two long runs on 2026-04-28 (warmstart gen at 125/500, T2 at 16/100). Per-game checkpoints saved the work but compute was lost.
+
+**Rule: any script expected to run more than ~1 minute must launch detached.** Use this pattern:
+
+```bash
+nohup python -u scripts/<thing>.py [args] > /tmp/<name>.log 2>&1 &
+disown
+PID=$!
+# To get a completion notification, follow up with run_in_background=true:
+tail --pid=$PID -f /dev/null
+```
+
+`nohup` makes the process ignore SIGHUP. `disown` removes it from the bash job table so a bash exit (also caused by SSH death) doesn't kill it. `setsid` is an equivalent alternative. The harness's `run_in_background=true` parameter alone is NOT sufficient — that tracks the bash invocation, which still gets SIGHUP'd when SSH dies; the python child must be explicitly detached.
+
 ## Pause / resume long-running parallel jobs
 
 For embarrassingly-parallel jobs (tournaments, measurement sweeps, self-play), use **per-game checkpoint files** so we can pause or apply optimizations without losing work.
