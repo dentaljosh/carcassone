@@ -313,6 +313,8 @@ class NeuralMCTS:
         simulations: int = 50,
         c_puct: float = DEFAULT_PUCT_C,
         seed: int | None = None,
+        dirichlet_alpha: float = 0.0,
+        dirichlet_eps: float = 0.0,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -321,7 +323,15 @@ class NeuralMCTS:
         self.simulations = simulations
         self.c_puct = c_puct
         self.rng = random.Random(seed)
+        self._np_rng = np.random.default_rng(seed)
+        self.dirichlet_alpha = float(dirichlet_alpha)
+        self.dirichlet_eps = float(dirichlet_eps)
         self._nodes: dict[str, _NeuralNode] = {}
+        # Roots that have already had Dirichlet noise mixed into their priors.
+        # Per AlphaZero, noise is applied once per new root (= per move), not
+        # every search call. clear() resets this so a fresh tree starts noisy
+        # again at its root.
+        self._noisy_roots: set[str] = set()
 
     def search(self, root_board: Board) -> dict[int, int]:
         """Run `simulations` PUCT iterations from `root_board`. Returns a
@@ -333,9 +343,75 @@ class NeuralMCTS:
             self._nodes[root_key] = root
         if not root.expanded and not root.is_terminal:
             self._expand(root, root_board)
+        # AlphaZero-style root-only Dirichlet noise: applied once per fresh
+        # root to encourage exploration in self-play. No-op if either alpha
+        # or eps is 0 (the default — keeps tournament/eval code paths
+        # unchanged).
+        if (
+            self.dirichlet_alpha > 0.0
+            and self.dirichlet_eps > 0.0
+            and root.expanded
+            and not root.is_terminal
+            and root_key not in self._noisy_roots
+        ):
+            self._mix_dirichlet_noise(root)
+            self._noisy_roots.add(root_key)
         for _ in range(self.simulations):
             self._simulate(root_board, root)
         return {a: child.N for a, child in root.children.items()}
+
+    def select_for_training(
+        self, root_board: Board, temperature: float
+    ) -> int:
+        """Sample an action proportional to root visit counts ** (1/τ).
+
+        AlphaZero self-play uses τ=1 for the first ~15 plies (exploration),
+        then τ→0 (greedy). At τ=0 we fall back to argmax visits — note this
+        differs from `best_action` which picks by Q + N tiebreak. Following
+        the AlphaZero spec for training-target generation here, since we want
+        the visit distribution, not a Q estimate, to drive policy learning.
+
+        Always runs `search` first if the root has zero visits — same UX as
+        `best_action`.
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None or root.N == 0:
+            self.search(root_board)
+            root = self._nodes[root_key]
+        visited = [(a, c.N) for a, c in root.children.items() if c.N > 0]
+        if not visited:
+            return next(iter(root.children))
+        actions, visits = zip(*visited)
+        v = np.asarray(visits, dtype=np.float64)
+        if temperature <= 1e-6:
+            return int(actions[int(v.argmax())])
+        # weights = v ** (1/τ); normalize and sample
+        logw = np.log(v) / float(temperature)
+        logw -= logw.max()  # stabilize against overflow
+        w = np.exp(logw)
+        w /= w.sum()
+        return int(actions[int(self._np_rng.choice(len(actions), p=w))])
+
+    def root_visit_distribution(
+        self, root_board: Board
+    ) -> tuple[np.ndarray, list[int]]:
+        """Return (counts, action_indices) for the root's children.
+
+        Used by self-play to build a policy training target: normalize
+        counts, then scatter into a length-action_size vector. Reuses the
+        already-computed root from the most recent search.
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None:
+            self.search(root_board)
+            root = self._nodes[root_key]
+        actions = list(root.children.keys())
+        counts = np.array(
+            [root.children[a].N for a in actions], dtype=np.float64
+        )
+        return counts, actions
 
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
@@ -355,7 +431,26 @@ class NeuralMCTS:
 
     def clear(self) -> None:
         self._nodes.clear()
+        self._noisy_roots.clear()
         self.game.clear_caches()
+
+    def _mix_dirichlet_noise(self, root: "_NeuralNode") -> None:
+        """Mix Dirichlet(α) noise into root.priors per AlphaZero spec.
+
+        new_p[a] = (1 - ε) * priors[a] + ε * dir[a]   for a ∈ valid_actions
+
+        α is typically chosen ≈ 10 / mean_legal_moves; for our action space
+        the BACKLOG measurement gave ~0.53. Default at the constructor is 0
+        (noise disabled) so non-self-play call sites are unaffected.
+        """
+        if not root.valid_actions:
+            return
+        n = len(root.valid_actions)
+        noise = self._np_rng.dirichlet([self.dirichlet_alpha] * n)
+        eps = self.dirichlet_eps
+        for i, action in enumerate(root.valid_actions):
+            p = root.priors.get(action, 0.0)
+            root.priors[action] = (1.0 - eps) * p + eps * float(noise[i])
 
     # --- Internals ---------------------------------------------------------
 
