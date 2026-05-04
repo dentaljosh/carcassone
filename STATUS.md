@@ -2,31 +2,47 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-04-28, Phase 3 v2 regen running after v1 acceptance miss)
+## Right now (2026-04-29) — Phase 3 CLOSED, Phase 4 is next
 
-**Branch:** `phase-2-mcts`. Latest non-WIP commit `8833259` (v1 results + v2 plan logged). Main still at root. ~10 commits stacked since prereqs.
+**Branch:** `phase-2-mcts`. Latest commit `872183b` (still on the eval-plumbing commit; Phase 3 closure work uncommitted as of this update).
 
-**Active job:** v2 100K-position regen at tau=0.5 (16-worker Pool). Started ~18:07 EDT. Output to `data/warmstart/heuristic_tau05/`. ETA ~17 min remaining as of 18:48 EDT. Resumable.
+**Status:** Phase 3 closed. v2 declared the canonical warmstart at `checkpoints/warmstart_canonical.pt`. Phase 4 (self-play) is the next major chunk.
 
-**Why v2:** v1 (tau=10.0) failed acceptance — see "v1 acceptance — Phase 3 misses" below. The policy head couldn't fit the near-uniform heuristic targets. Empirically, tau=0.5 sharpens top-1 mass from ~45% to ~64% (top-1/uniform ratio 1.17× → 5.5×). v2 keeps everything else identical so we can isolate the tau effect.
+**Phase 3 final outcome:**
+- v2 (heuristic, tau=0.5, snapshot virtual_score value target): T1 88% (target ≥90%), T2 31% (target >55%). Both miss the original prompt's bars.
+- v3 (heuristic, tau=0.5, final-score value target — single-variable test): T1 84% (Δ=−4pp vs v2). Falsified the "snapshot is too short-horizon" hypothesis cleanly. Random-self-play final scores carry too much downstream noise for the value head to disentangle.
+- Decision (logged in DECISIONS.md, 2026-04-29): declare v2 the warmstart, skip remaining Phase 3 acceptance iteration, proceed to Phase 4. Reasoning: continuing label engineering substitutes for the self-play loop, and v3's failure is evidence we've hit the ceiling on that substitution.
 
-**Pipeline for after v2 gen finishes:**
-```bash
-# v2 train (~17 min on 5060 Ti)
-python -u scripts/train_warmstart.py \
-  --data-root data/warmstart/heuristic_tau05 \
-  --epochs 20 --filters 96 --blocks 6 \
-  --batch-size 256 --num-workers 4 \
-  --output checkpoints/warmstart_heuristic_tau05_prod.pt
-# T1 v2 (~2 min with --workers 4)
-python -u scripts/eval_warmstart_smoke.py \
-  --checkpoint checkpoints/warmstart_heuristic_tau05_prod.best.pt --n 100 --workers 4
-# If T1 passes ≥90%, T2 small smoke FIRST (s=50/s=50, n=20, ~12 min)
-python -u scripts/eval_neural_mcts_vs_vanilla.py \
-  --checkpoint checkpoints/warmstart_heuristic_tau05_prod.best.pt \
-  --n 20 --neural-sims 50 --vanilla-sims 50
-# Only commit to full T2 (s=50/s=100, n=100, ~24h) if the small smoke shows neural ≥ vanilla
-```
+**Diagnostic artifacts:**
+- `data/phase3_diagnostic/v2_loss_split.md` — realized vs endgame breakdown of v2 T2 losses
+- `data/phase3_diagnostic/farmer_audit.md` — farmer-term calibration check (heuristic = engine, by construction)
+- `data/phase3_diagnostic/v3_vs_v2_t1.md` — v3 head-to-head with full per-epoch training metrics
+
+**Next plan-mode session:** Phase 4 plan. Needs to think about self-play scheduling, ELO tracking, virtual-loss MCTS for batched GPU inference (still in BACKLOG), checkpoint cadence for the McGrath-style emergence analysis (Phase 6), Dirichlet noise + temperature for exploration, and how to detect/recover from policy collapse if v2's biases lead self-play astray. **Do not start Phase 4 work autonomously** — Joshua launches the plan-mode session.
+
+## Phase 3 archive (2026-04-28 → 2026-04-29)
+
+## Phase 3 attempt history
+
+### v1 (tau=10.0) — 2026-04-28 evening
+
+| Test | Result | Threshold | Pass? |
+|---|---|---|---|
+| T1 net argmax vs random, n=100 | 84/100 (+19.0) | ≥90% | NO |
+| T2 smoke n=2 at s=20/s=20 | 0/2 (-6.5) | smoke | NO |
+
+Diagnosis: policy head couldn't fit near-uniform heuristic targets at tau=10. Train pol CE 1.86 → 1.86 (flat).
+
+### v2 (tau=0.5) — 2026-04-28 night
+
+| Test | Result | Threshold | Pass? |
+|---|---|---|---|
+| T1 net argmax vs random, n=100 | 88/100 (+32.1) | ≥90% | NO (within statistical noise) |
+| T2 partial n=16 at s=50/s=100 | 5/16 (31%, -18.2) | >55% | NO (~97% confidence per Bayesian P(true≥55%)=3.0%) |
+
+Diagnosis: policy now learning (train pol CE 1.79 → 1.26, val 1.79 → 1.66) but the policy is the wrong policy — losing decisively on low-roll-rule games. Either c_puct miscalibration (Plan B step 1) or labels still too noisy (Plan B step 2 = 2-ply).
+
+T2 was killed twice by Mac sleep before nohup workflow rule landed. Per-game checkpoints saved 16/100 for v2 partial — not resumed because n=16 already gives >97% confidence T2 fails.
 
 ## v1 acceptance — Phase 3 misses (2026-04-28)
 

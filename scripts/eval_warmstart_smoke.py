@@ -36,6 +36,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 T1_DIR = REPO_ROOT / "data" / "tournament" / "eval_phase3_t1"
 
 
+def _set_t1_dir(subdir: str) -> None:
+    """Override the per-game checkpoint directory at runtime so two
+    head-to-head evaluations don't overwrite each other's results."""
+    global T1_DIR
+    T1_DIR = REPO_ROOT / "data" / "tournament" / subdir
+
+
 @dataclass
 class GameResult:
     seed: int
@@ -75,9 +82,14 @@ _worker_net: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
 
 
-def _worker_init(checkpoint_path: str) -> None:
-    """Initialize the network in each worker process exactly once."""
+def _worker_init(checkpoint_path: str, results_subdir: str) -> None:
+    """Initialize the network in each worker process exactly once.
+
+    `results_subdir` is propagated from the parent because `spawn` workers
+    re-import this module fresh and would otherwise see the default T1_DIR.
+    """
     global _worker_net, _worker_device
+    _set_t1_dir(results_subdir)
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(checkpoint_path, map_location=_worker_device, weights_only=False)
     net = CarcassonneNet(n_filters=ckpt["n_filters"], n_blocks=ckpt["n_blocks"]).to(_worker_device)
@@ -159,13 +171,13 @@ def _run_serial(checkpoint: Path, n: int, seed_start: int) -> list[GameResult]:
     return results
 
 
-def _run_pool(checkpoint: Path, n: int, seed_start: int, n_workers: int) -> list[GameResult]:
+def _run_pool(checkpoint: Path, n: int, seed_start: int, n_workers: int, results_subdir: str) -> list[GameResult]:
     pool_args = [(seed_start + i, i % 2) for i in range(n)]
     print(f"Pool ({n_workers} workers), {n} games, checkpoints in {T1_DIR}")
     results: list[GameResult] = []
     # 'spawn' start method: CUDA cannot reinit in forked subprocesses.
     ctx = mp.get_context("spawn")
-    with ctx.Pool(processes=n_workers, initializer=_worker_init, initargs=(str(checkpoint),)) as pool:
+    with ctx.Pool(processes=n_workers, initializer=_worker_init, initargs=(str(checkpoint), results_subdir)) as pool:
         for done, result in enumerate(pool.imap_unordered(_play_one_pool, pool_args, chunksize=1), 1):
             results.append(result)
             wins = sum(1 for r in results if r.won)
@@ -181,6 +193,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n", type=int, default=50)
     p.add_argument("--seed-start", type=int, default=10000)
     p.add_argument(
+        "--results-subdir",
+        type=str,
+        default="eval_phase3_t1",
+        help="Subdir under data/tournament/ for per-game checkpoint JSONs. "
+             "Use a unique name when running head-to-head evaluations to "
+             "avoid overwriting prior results.",
+    )
+    p.add_argument(
         "--workers",
         type=int,
         default=1,
@@ -188,6 +208,8 @@ def main(argv: list[str] | None = None) -> int:
              "On CUDA, capped to 4 to avoid GPU thrash.",
     )
     args = p.parse_args(argv)
+
+    _set_t1_dir(args.results_subdir)
 
     n_workers = args.workers
     if torch.cuda.is_available() and n_workers > 4:
@@ -200,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
     if n_workers <= 1:
         results = _run_serial(args.checkpoint, args.n, args.seed_start)
     else:
-        results = _run_pool(args.checkpoint, args.n, args.seed_start, n_workers)
+        results = _run_pool(args.checkpoint, args.n, args.seed_start, n_workers, args.results_subdir)
     elapsed = time.perf_counter() - t0
 
     wins = sum(1 for r in results if r.won)

@@ -42,9 +42,9 @@ def _seed_path(subdir: str, seed: int) -> Path:
     return DATA_ROOT / subdir / f"seed_{seed:05d}.npz"
 
 
-def _worker(args: tuple[int, str, str, int, int, float]) -> tuple[int, str, int]:
+def _worker(args: tuple[int, str, str, int, int, float, str]) -> tuple[int, str, int]:
     """One-game worker. Returns (seed, status, n_positions)."""
-    seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau = args
+    seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau, heuristic_lookahead = args
     path = _seed_path(subdir, seed)
     if path.exists():
         try:
@@ -58,6 +58,7 @@ def _worker(args: tuple[int, str, str, int, int, float]) -> tuple[int, str, int]
         n_positions_per_game=n_positions,
         mcts_sims=mcts_sims,
         heuristic_tau=heuristic_tau,
+        heuristic_lookahead=heuristic_lookahead,
     )
     ds.save(path)
     return seed, "fresh", len(ds)
@@ -96,6 +97,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Softmax temperature for heuristic policy targets. Lower = sharper. "
              "Default 10.0 produces top-1 mass ~45%; try 5.0 if the policy head is undertrained.",
     )
+    p.add_argument(
+        "--heuristic-lookahead",
+        choices=("1ply", "2ply"),
+        default="1ply",
+        help="Lookahead depth for heuristic policy. 1ply (default) scores each "
+             "tile-phase action by virtual_score after applying just the tile. "
+             "2ply applies the tile, enumerates meeple/skip follow-ups, and "
+             "uses the BEST follow-up score — captures joint tile+meeple "
+             "value. ~3-4x slower gen.",
+    )
     p.add_argument("--seed-start", type=int, default=0)
     p.add_argument("--workers", type=int, default=None)
     p.add_argument("--reset", action="store_true",
@@ -128,7 +139,8 @@ def main(argv: list[str] | None = None) -> int:
 
     pool_args = [
         (args.seed_start + i, args.label_strategy, subdir,
-         args.positions_per_game, args.mcts_sims, args.heuristic_tau)
+         args.positions_per_game, args.mcts_sims, args.heuristic_tau,
+         args.heuristic_lookahead)
         for i in range(n_games)
     ]
     already = sum(1 for a in pool_args if _seed_path(subdir, a[0]).exists())
@@ -137,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         f"warmstart/{subdir}: {n_games} games "
         f"({args.positions_per_game} pos/game = {n_games * args.positions_per_game} positions), "
         f"strategy={args.label_strategy}, tau={args.heuristic_tau}, "
+        f"lookahead={args.heuristic_lookahead}, "
         f"{n_workers} workers, {already} cached, {remaining} to play"
     )
 

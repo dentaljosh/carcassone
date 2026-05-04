@@ -53,11 +53,6 @@ All three items landed in this session:
 **Idea:** after train/val split, optionally pack many game files into split-preserving shards (e.g. 100 games per shard → 100 shard files instead of 10K).
 **Why deferred:** premature for current scale. If we do scale to 500K and observe DataLoader stalling, this is the fix.
 
-## 2026-04-28 — 2-ply heuristic-policy labels (sees both phases of one turn)
-**Context:** External review (2026-04-28). Current `_heuristic_policy` evaluates `virtual_score(after applying TILE-action)` — it doesn't see the meeple follow-up. Many strong tile placements depend on the meeple choice, so the policy target may be miscalibrated for tile-phase positions.
-**Idea:** for tile-phase labels, look 2 ply ahead: try each tile placement, then for each, find the best meeple decision (or "skip"), score the resulting state. Use that 2-ply best-score as the tile's heuristic value.
-**Why deferred:** real quality improvement for Strategy D (heuristic-only). If the smoke comparison says D wins despite 1-ply, this could be a free further gain. Defer until the smoke decides.
-
 ## 2026-04-28 — Phase 4: don't reuse NeuralMCTS.best_action for self-play target generation
 **Context:** External review (2026-04-28). Tournament/inference selection picks the highest-Q (with N tiebreak) child. AlphaZero self-play training-target generation samples from the visit-count distribution with temperature (τ=1 first ~15 moves, τ=0 after). Reusing best_action for self-play would give degenerate, deterministic policy targets and kill exploration.
 **Action:** Phase 4 plan-mode session must call out a separate `select_for_training(temperature)` API on NeuralMCTS that samples from `visits ** (1/τ)`.
@@ -86,6 +81,28 @@ All three items landed in this session:
 **Context:** Phase 1 quick-bench showed Phase 4 is CPU-bound (game simulation dominates, GPU is not the bottleneck). On the 5800X, 50 iterations = 25-50 hours; 200 iterations = 1-2 weeks.
 **Idea:** Smoke-test Phase 4 locally for the first 5-10 iterations to confirm the training loop is healthy (ELO monotonically increasing, no policy collapse, etc.), then rent a Threadripper Pro 7965WX (24C/48T, ~5x our 5800X) or 64-core EPYC on RunPod or Vast.ai for the long run. Estimated cost: $30-50 for a 50-iteration run, $100-200 for 200 iterations. GPU-only rentals (A100/H100) aren't useful here — our bottleneck is CPU game-sim, not GPU network forward passes.
 **Why deferred:** premature until Phase 2 + 3 are done and the local smoke-test has validated the loop. Want to be sure we're renting compute to do the right work before paying for it.
+
+## Deferred — may revisit if Phase 4 stalls
+
+These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-04-29 with v2 declared the canonical warmstart (see DECISIONS.md "Phase 3 closure"). All three are kept here in case Phase 4 reveals that the warmstart is materially holding the self-play loop back; in that case any of these could become a fast retry without re-deriving the rationale.
+
+### 2026-04-28 — 2-ply heuristic-policy labels (sees both phases of one turn)
+**Context:** External review (2026-04-28). Current `_heuristic_policy` evaluates `virtual_score(after applying TILE-action)` — it doesn't see the meeple follow-up. Many strong tile placements depend on the meeple choice, so the policy target may be miscalibrated for tile-phase positions.
+**Idea:** for tile-phase labels, look 2 ply ahead: try each tile placement, then for each, find the best meeple decision (or "skip"), score the resulting state. Use that 2-ply best-score as the tile's heuristic value.
+**Status (2026-04-29):** Already plumbed via `--heuristic-lookahead 2ply` in `warmstart.py` and `scripts/generate_warmstart_smoke.py`. Untested at scale. Smoke at low position count produced near-identical policies to 1-ply (not yet diagnosed). To revisit: regen 100K with `--heuristic-lookahead 2ply`, retrain with same hyperparameters, run T1 head-to-head against v2.
+**Cost if revisited:** ~3-4× generation slowdown (so ~6-12h for 100K depending on perf), then ~30 min train + ~80 sec T1.
+
+### 2026-04-29 — MCTS-label fallback (Option C from the original Phase 3 plan)
+**Context:** Phase 3 smoke comparison (2026-04-28) showed Option D (heuristic-only at 100K) won 24.7× over Option C (MCTS-labeled at smaller scale) on a wins-per-hour-of-gen basis, so Option D was promoted to production. Option C was never run at production scale.
+**Idea:** generate ~50K positions via MCTS s=50 visit distributions for policy targets (still using virtual_score for value targets). MCTS-derived policy targets capture multi-ply lookahead structure that 1-ply heuristic targets miss; the trade-off is ~25× more compute per position.
+**Status (2026-04-29):** estimated ~26 hours for 50K positions on 16-worker Pool. Skipped during Phase 3 closure on the rationale that label-engineering substitutes for the self-play loop and v3's failure suggests we've hit a substitution ceiling. May revisit if Phase 4 self-play converges below v2 strength (i.e., the warmstart is confirmed too weak even for self-play to escape).
+**Cost if revisited:** ~26h gen + ~30 min train + T1 + T2. Whole experiment ~2 days end-to-end.
+
+### 2026-04-29 — c_puct sweep continuation
+**Context:** Phase 3 Plan B started a c_puct sweep over {0.5, 1.5, 3.0, 5.0} but only the c_puct=0.5 group ran (12 games at s=50/s=50, neural 6/12 = 50%). Other three groups never ran (sweep script exited after first group).
+**Idea:** finish the sweep — run c_puct ∈ {1.5, 3.0, 5.0} at the same 12 games each. If any variant lands ≥58% (7/12), re-run T2 at production sims (s=50/s=100) with that c_puct.
+**Why deferred:** the c_puct sweep was a tuning knob, not a label-quality fix. Phase 3 closure decision is that label engineering is hitting diminishing returns; tuning NeuralMCTS hyperparameters around v2's policy probably can't lift T2 from 31% past 55%. May revisit if Phase 4 self-play needs an explicit NeuralMCTS hyperparameter search at the start of the loop.
+**Cost if revisited:** ~1.5h for the remaining three groups. Diagnostic only; no model changes.
 
 ## Promoted to project
 

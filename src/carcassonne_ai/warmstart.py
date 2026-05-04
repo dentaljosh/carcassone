@@ -145,6 +145,81 @@ def _heuristic_policy(
     return out
 
 
+def _heuristic_policy_2ply(
+    game: Game, board, valid_mask: np.ndarray, *, tau: float = DEFAULT_HEURISTIC_TAU
+) -> np.ndarray:
+    """Policy target via 2-ply lookahead for tile-phase actions.
+
+    For each legal tile-phase action: apply the tile, enumerate the meeple/
+    pass follow-ups, score each via virtual_score, take the BEST follow-up
+    score as this tile action's value. Captures the joint 'tile + best
+    meeple' decision that the 1-ply variant misses. (Reviewer pass-2,
+    BACKLOG, 2026-04-28.)
+
+    For MEEPLES-phase positions falls through to 1-ply: after a meeple
+    decision the turn is over and the next ply is the opponent's, which
+    we don't score from our perspective.
+
+    Cost: ~7x deepcopy work vs 1-ply for tile-phase positions (1 outer +
+    ~6 meeple candidates per tile action). Halved for the project's
+    half-tile/half-meeple position split: ~3-4x slower overall than 1-ply
+    for the same dataset size.
+    """
+    is_tile_phase = board.state.phase.value == "tiles"
+    if not is_tile_phase:
+        return _heuristic_policy(game, board, valid_mask, tau=tau)
+
+    legal = np.flatnonzero(valid_mask)
+    if legal.size == 0:
+        return np.zeros_like(valid_mask, dtype=np.float32)
+
+    import copy as _copy
+    from .action_space import decode
+    from wingedsheep.carcassonne.utils.state_updater import StateUpdater
+    from wingedsheep.carcassonne.utils.action_util import ActionUtil
+
+    scores = np.empty(legal.size, dtype=np.float32)
+    player = board.state.current_player
+
+    for i, action_idx in enumerate(legal):
+        tile_action = decode(
+            int(action_idx),
+            off=board.offset,
+            phase="tiles",
+            next_tile=board.state.next_tile,
+        )
+        post_tile = _copy.deepcopy(board.state)
+        StateUpdater.apply_action_inplace(game_state=post_tile, action=tile_action)
+
+        # If applying terminated the game or didn't transition to MEEPLES
+        # (e.g., tile-phase pass), score directly.
+        if post_tile.is_terminated() or post_tile.phase.value != "meeples":
+            scores[i] = virtual_score_inplace(post_tile, player)
+            continue
+
+        followups = ActionUtil.get_possible_actions(post_tile)
+        if not followups:
+            scores[i] = virtual_score_inplace(post_tile, player)
+            continue
+
+        best = -float("inf")
+        for follow in followups:
+            scratch = _copy.deepcopy(post_tile)
+            StateUpdater.apply_action_inplace(game_state=scratch, action=follow)
+            s = virtual_score_inplace(scratch, player)
+            if s > best:
+                best = s
+        scores[i] = best
+
+    z = scores / tau
+    z -= z.max()
+    e = np.exp(z)
+    p = e / e.sum()
+    out = np.zeros(valid_mask.shape[0], dtype=np.float32)
+    out[legal] = p
+    return out
+
+
 def _mcts_policy(mcts_visits: dict, action_size_: int) -> np.ndarray:
     """Policy target = MCTS visit count distribution, normalized."""
     out = np.zeros(action_size_, dtype=np.float32)
@@ -165,13 +240,19 @@ def generate_one_game_dataset(
     skip_early: int = 10,
     skip_late: int = 10,
     heuristic_tau: float = DEFAULT_HEURISTIC_TAU,
+    heuristic_lookahead: str = "1ply",
 ) -> GameDataset:
     """Play a random game; sample N mid-game positions; label each.
 
     label_strategy: "mcts" or "heuristic".
+    heuristic_lookahead: "1ply" (default; tile-phase scored at tile-only) or
+                        "2ply" (tile-phase scored as tile + best meeple
+                        follow-up; ~3-4x slower gen).
     """
     if label_strategy not in ("mcts", "heuristic"):
         raise ValueError(f"label_strategy must be 'mcts' or 'heuristic', got {label_strategy!r}")
+    if heuristic_lookahead not in ("1ply", "2ply"):
+        raise ValueError(f"heuristic_lookahead must be '1ply' or '2ply', got {heuristic_lookahead!r}")
 
     # Seed the GLOBAL random module — the engine shuffles its deck via
     # random.shuffle(global), so without this, runs are not seed-reproducible.
@@ -228,7 +309,10 @@ def generate_one_game_dataset(
         snap_board, mask, player = snapshots[idx]
         obs, scalars = game.get_canonical_form(snap_board, player)
         if label_strategy == "heuristic":
-            policy = _heuristic_policy(game, snap_board, mask, tau=heuristic_tau)
+            if heuristic_lookahead == "2ply":
+                policy = _heuristic_policy_2ply(game, snap_board, mask, tau=heuristic_tau)
+            else:
+                policy = _heuristic_policy(game, snap_board, mask, tau=heuristic_tau)
         else:
             mcts = MCTS(game=mcts_game, simulations=mcts_sims, seed=seed * 1000 + idx)
             visits = mcts.search(snap_board)
