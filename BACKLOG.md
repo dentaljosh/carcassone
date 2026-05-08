@@ -29,10 +29,10 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ---
 
-## 2026-04-27 — Batched GPU inference for Phase 4 MCTS
-**Context:** Phase 4 self-play does ~200 sims × ~70 moves × N games = millions of network forward passes. Naive per-position calls would tank GPU utilization (the 5060 Ti hits 49 TFLOPS fp16 only when batched).
-**Idea:** virtual-loss MCTS or leaf-collecting batch evaluation — when a leaf is selected, apply a small virtual loss so other simulations explore elsewhere; collect leaves into a batch; run a single GPU forward pass; backprop in parallel. Standard AlphaZero pattern.
-**Why deferred:** Phase 4 design work. Architecture choice will fall out of measuring batch-utilization once Phase 3 has a working network.
+## 2026-04-27 — Batched GPU inference for Phase 4 MCTS — LANDED 2026-05-08
+**Context:** Phase 4 self-play does ~200 sims × ~70 moves × N games = millions of network forward passes. Naive per-position calls tank GPU utilization (5060 Ti hits 49 TFLOPS fp16 only when batched).
+**Implementation:** Virtual-loss / leaf-collecting batch evaluation in `NeuralMCTS`. New `batch_size`, `batch_evaluator`, `virtual_loss` constructor params; default `batch_size=1` preserves the existing serial path. Vloss is applied in **parent's perspective** (not the textbook "node's own perspective") so PUCT actually drops in alternating-player trees. Plumbed through `selfplay.play_one_selfplay_game` → `run_selfplay_iter.py --batch-size N` → `run_phase4_smoke.py`. Tests in `test_neural_mcts_virtual_loss.py` (visit-count totals, eval-call accounting, vloss-undo invariants, diversification).
+**Measured:** 1.44× single-process speedup at `batch_size=8` against the warmstart canonical checkpoint (48.9s → 34.0s for one 166-position self-play game on RTX 5060 Ti). Multi-worker speedup needs a free PC to measure.
 
 ---
 

@@ -34,6 +34,9 @@ def play_one_selfplay_game(
     temp_threshold: int,
     seed: int,
     max_plies: int = 400,
+    batch_size: int = 1,
+    batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
+    virtual_loss: float = 1.0,
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -60,6 +63,18 @@ def play_one_selfplay_game(
       seed: RNG seed for the engine + MCTS sampler. Same seed → same game.
       max_plies: hard upper bound to defend against any infinite-loop bug.
                  Carcassonne games are at most ~200 plies in our scope.
+      batch_size: NeuralMCTS batch size for virtual-loss / batched-eval
+                  mode. 1 = serial (default; matches earlier behavior).
+                  >1 = collect K leaves per sim batch and evaluate them in
+                  one network call (~2-4× per-game speedup when GPU is
+                  the bottleneck).
+      batch_evaluator: GPU-batched evaluator. Required for batched mode to
+                       actually save GPU time; if None and batch_size>1,
+                       falls back to per-board calls of `evaluator` (still
+                       gets vloss diversification but no GPU batching).
+      virtual_loss: PUCT W-penalty applied to in-flight nodes during batch
+                    selection. Default 1.0 (works for unit-clamped values
+                    in [-1, +1]).
 
     Returns:
       GameDataset with N rows where N = number of plies in the game.
@@ -84,6 +99,9 @@ def play_one_selfplay_game(
         seed=seed,
         dirichlet_alpha=dirichlet_alpha,
         dirichlet_eps=dirichlet_eps,
+        batch_size=batch_size,
+        batch_evaluator=batch_evaluator,
+        virtual_loss=virtual_loss,
     )
 
     boards_arr: list[np.ndarray] = []

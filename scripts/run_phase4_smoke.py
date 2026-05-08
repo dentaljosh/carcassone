@@ -89,6 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
+    p.add_argument(
+        "--batch-size", type=int, default=1,
+        help="NeuralMCTS batch size during self-play. 1 (default) = serial; "
+             ">1 enables virtual-loss / batched-eval (~2-4× speedup when "
+             "GPU is bottleneck).",
+    )
+    p.add_argument(
+        "--virtual-loss", type=float, default=1.0,
+        help="W-penalty for in-flight nodes during batched selection. "
+             "Only matters when --batch-size > 1.",
+    )
     p.add_argument("--window", type=int, default=10,
                    help="Replay-buffer window: last K iters' games.")
     p.add_argument(
@@ -157,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
                     "--dirichlet-alpha", str(args.dirichlet_alpha),
                     "--dirichlet-eps", str(args.dirichlet_eps),
                     "--temp-threshold", str(args.temp_threshold),
+                    "--batch-size", str(args.batch_size),
+                    "--virtual-loss", str(args.virtual_loss),
                     "--workers", str(args.workers),
                     *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],

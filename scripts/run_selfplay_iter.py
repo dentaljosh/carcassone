@@ -79,6 +79,32 @@ def _make_evaluator(net: CarcassonneNet, device: torch.device, game: Game):
     return evaluator
 
 
+def _make_batch_evaluator(net: CarcassonneNet, device: torch.device, game: Game):
+    """Stack K board encodings into a single forward pass. Returns
+    (priors_batch, values_batch) where priors_batch has shape (K, A) and
+    values_batch has shape (K,). Each board is canonicalized from its own
+    current_player's perspective (same as the single-board evaluator)."""
+    def batch_evaluator(boards):
+        if not boards:
+            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
+        obs_list = []
+        scalars_list = []
+        masks_list = []
+        for b in boards:
+            obs, scalars = game.get_canonical_form(b, b.state.current_player)
+            obs_list.append(obs)
+            scalars_list.append(scalars)
+            masks_list.append(game.get_valid_moves(b))
+        obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
+        scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
+        masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
+        with torch.no_grad():
+            logits, values = net(obs_t, scalars_t)
+            probs = net.policy_softmax_with_mask(logits, masks_t)
+        return probs.cpu().numpy(), values.cpu().numpy()
+    return batch_evaluator
+
+
 def _seed_for(iter_idx: int, game_idx: int) -> int:
     # Reproducible seeds; iter_idx * 10_000 leaves room for 10K games/iter.
     return iter_idx * 10_000 + game_idx
@@ -105,6 +131,11 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
 
     game = Game(enable_legal_moves_cache=True)
     evaluator = _make_evaluator(_worker_net, _worker_device, game)
+    batch_evaluator = None
+    if cfg["batch_size"] > 1:
+        batch_evaluator = _make_batch_evaluator(
+            _worker_net, _worker_device, game
+        )
     ds = play_one_selfplay_game(
         game=game,
         evaluator=evaluator,
@@ -114,6 +145,9 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         dirichlet_eps=cfg["dirichlet_eps"],
         temp_threshold=cfg["temp_threshold"],
         seed=seed,
+        batch_size=cfg["batch_size"],
+        batch_evaluator=batch_evaluator,
+        virtual_loss=cfg["virtual_loss"],
     )
     ds.save(path)
     return seed, "fresh", len(ds)
@@ -135,6 +169,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
+    p.add_argument(
+        "--batch-size", type=int, default=1,
+        help="NeuralMCTS batch size for virtual-loss / batched-eval mode. "
+             "1 (default) = serial. >1 = collect K leaves per batch and "
+             "evaluate them in a single GPU forward pass. Typical: 8.",
+    )
+    p.add_argument(
+        "--virtual-loss", type=float, default=1.0,
+        help="PUCT W-penalty applied to in-flight nodes during batched "
+             "selection. Only matters when --batch-size > 1.",
+    )
     p.add_argument(
         "--workers", type=int, default=7,
         help="Pool workers (default 7 — leaves SMT headroom on the 5800X). "
@@ -194,12 +239,15 @@ def main(argv: list[str] | None = None) -> int:
         "dirichlet_alpha": args.dirichlet_alpha,
         "dirichlet_eps": args.dirichlet_eps,
         "temp_threshold": args.temp_threshold,
+        "batch_size": args.batch_size,
+        "virtual_loss": args.virtual_loss,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
         f"(sims={args.sims}, c_puct={args.c_puct}, "
         f"alpha={args.dirichlet_alpha}, eps={args.dirichlet_eps}, "
-        f"temp_thresh={args.temp_threshold}), "
+        f"temp_thresh={args.temp_threshold}, "
+        f"batch_size={args.batch_size}, vloss={args.virtual_loss}), "
         f"{n_workers} workers, {already} cached, {remaining} to play, "
         f"out={iter_dir}"
     )

@@ -315,6 +315,9 @@ class NeuralMCTS:
         seed: int | None = None,
         dirichlet_alpha: float = 0.0,
         dirichlet_eps: float = 0.0,
+        batch_size: int = 1,
+        batch_evaluator=None,  # Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]
+        virtual_loss: float = 1.0,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -326,6 +329,15 @@ class NeuralMCTS:
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
         self.dirichlet_eps = float(dirichlet_eps)
+        # Virtual-loss-MCTS knobs. batch_size=1 → existing serial path; >1 →
+        # collect K leaf paths with vloss applied, batch-eval, backup with
+        # vloss undo. batch_evaluator is the GPU-batched (priors, value)
+        # function; if None, falls back to per-board calls of `evaluator`
+        # (still gets vloss diversification but no GPU batching speedup —
+        # useful for tests).
+        self.batch_size = max(1, int(batch_size))
+        self.batch_evaluator = batch_evaluator
+        self.virtual_loss = float(virtual_loss)
         self._nodes: dict[str, _NeuralNode] = {}
         # Roots that have already had Dirichlet noise mixed into their priors.
         # Per AlphaZero, noise is applied once per new root (= per move), not
@@ -342,7 +354,12 @@ class NeuralMCTS:
             root = self._create_node(root_board)
             self._nodes[root_key] = root
         if not root.expanded and not root.is_terminal:
-            self._expand(root, root_board)
+            # Use _eval_boards so the root expansion goes through the
+            # batched path when one is wired (single-call boards=[root]).
+            priors_b, values_b = self._eval_boards([root_board])
+            self._expand_with_priors(
+                root, root_board, priors_b[0], float(values_b[0])
+            )
         # AlphaZero-style root-only Dirichlet noise: applied once per fresh
         # root to encourage exploration in self-play. No-op if either alpha
         # or eps is 0 (the default — keeps tournament/eval code paths
@@ -356,8 +373,15 @@ class NeuralMCTS:
         ):
             self._mix_dirichlet_noise(root)
             self._noisy_roots.add(root_key)
-        for _ in range(self.simulations):
-            self._simulate(root_board, root)
+        if self.batch_size > 1:
+            sims_done = 0
+            while sims_done < self.simulations:
+                this_batch = min(self.batch_size, self.simulations - sims_done)
+                self._run_batch(root_board, root, this_batch)
+                sims_done += this_batch
+        else:
+            for _ in range(self.simulations):
+                self._simulate(root_board, root)
         return {a: child.N for a, child in root.children.items()}
 
     def select_for_training(
@@ -479,6 +503,25 @@ class NeuralMCTS:
             node.expanded = True
             return
         priors, value = self.evaluator(board)
+        self._expand_with_priors(node, board, priors, value)
+
+    def _expand_with_priors(
+        self,
+        node: _NeuralNode,
+        board: Board,
+        priors: np.ndarray,
+        value: float,
+    ) -> None:
+        """Same as _expand but uses pre-computed priors/value (from a
+        batched evaluator). Same sanitization as _expand: malformed priors
+        fall back to uniform-over-legal; non-finite values clamp to 0;
+        finite values clamp to [-1, 1]."""
+        if node.expanded:
+            return
+        if node.is_terminal:
+            node.leaf_value = node.terminal_value
+            node.expanded = True
+            return
         mask = self.game.get_valid_moves(board)
         legal = np.flatnonzero(mask)
         if legal.size == 0:
@@ -519,6 +562,30 @@ class NeuralMCTS:
         node.leaf_value = v
         node.expanded = True
 
+    def _eval_boards(
+        self, boards: list[Board]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Evaluate a list of boards. Returns (priors_array, values_array)
+        where priors has shape (B, A) and values has shape (B,).
+
+        Uses self.batch_evaluator if set; otherwise falls back to per-board
+        self.evaluator calls (so this works in tests where no batched
+        evaluator is wired)."""
+        if not boards:
+            return np.empty((0,)), np.empty((0,))
+        # Only use the batched evaluator when batched mode is actually
+        # active — keeps serial-mode (`batch_size=1`) call sites unchanged
+        # even when both evaluators are wired.
+        if self.batch_size > 1 and self.batch_evaluator is not None:
+            return self.batch_evaluator(boards)
+        priors_list = []
+        values_list = []
+        for b in boards:
+            p, v = self.evaluator(b)
+            priors_list.append(p)
+            values_list.append(float(v))
+        return np.stack(priors_list), np.array(values_list, dtype=np.float32)
+
     def _select_child_puct(self, node: _NeuralNode) -> int:
         """PUCT: argmax over valid actions of Q + c * P * sqrt(N_parent) / (1 + N_child)."""
         sqrt_parent_N = math.sqrt(max(node.N, 1))
@@ -538,6 +605,131 @@ class NeuralMCTS:
                 best_score = score
                 best_action = action
         return best_action
+
+    # --- Virtual-loss / batched-evaluation path ---------------------------
+    #
+    # Virtual loss makes a node-in-flight look temporarily WORSE to its
+    # parent's PUCT, so subsequent sims in the same batch pick a different
+    # branch and diversify. Net per node: N += 1, W += signed_real_value —
+    # identical to the serial backup.
+    #
+    # Subtlety: in negamax-style trees, child.Q is viewed by parent as
+    # `child.Q if same_player else -child.Q`. To make Q_parent_view DROP by
+    # `virtual_loss / N`, we need:
+    #   - same player: child.W -= virtual_loss
+    #   - different player: child.W += virtual_loss
+    # i.e., apply the penalty in the PARENT'S perspective, then store it
+    # in child's own-perspective W via the appropriate sign flip.
+    #
+    # Root has no parent, so we only bump root.N (root.W doesn't affect
+    # PUCT for selecting any child).
+
+    def _apply_vloss_at_child(
+        self, parent: _NeuralNode, child: _NeuralNode
+    ) -> None:
+        child.N += 1
+        if parent.player_to_move == child.player_to_move:
+            child.W -= self.virtual_loss
+        else:
+            child.W += self.virtual_loss
+
+    def _undo_vloss_at_child(
+        self, parent: _NeuralNode, child: _NeuralNode
+    ) -> None:
+        # N stays (now a real visit count); undo only the W penalty.
+        if parent.player_to_move == child.player_to_move:
+            child.W += self.virtual_loss
+        else:
+            child.W -= self.virtual_loss
+
+    def _select_leaf_with_vloss(
+        self, root_board: Board, root: _NeuralNode
+    ) -> tuple[list[_NeuralNode], _NeuralNode, Board, bool]:
+        """Walk root → leaf using PUCT, applying vloss to each non-root
+        node on the path (in parent's perspective). Stops at the first
+        terminal or unexpanded node.
+
+        Returns (path, leaf, leaf_board, needs_eval) where needs_eval is
+        True iff the leaf is non-terminal AND not yet expanded.
+        """
+        path: list[_NeuralNode] = [root]
+        board = root_board
+        node = root
+        node.N += 1  # root vloss: just bump the visit count
+        if node.is_terminal:
+            return path, node, board, False
+        if not node.expanded:
+            return path, node, board, True
+        while True:
+            action = self._select_child_puct(node)
+            board, _ = self.game.get_next_state(board, action)
+            parent = node
+            child = parent.children.get(action)
+            if child is None:
+                fresh = self._create_node(board)
+                child = self._nodes.setdefault(fresh.state_key, fresh)
+                parent.children[action] = child
+                self._apply_vloss_at_child(parent, child)
+                path.append(child)
+                needs_eval = (not child.is_terminal) and (not child.expanded)
+                return path, child, board, needs_eval
+            self._apply_vloss_at_child(parent, child)
+            path.append(child)
+            if child.is_terminal:
+                return path, child, board, False
+            if not child.expanded:
+                # Transposition: this node was created earlier on a sibling
+                # path but never expanded. Send it through batch eval.
+                return path, child, board, True
+            node = child
+
+    def _run_batch(
+        self, root_board: Board, root: _NeuralNode, batch_size: int
+    ) -> None:
+        """Collect `batch_size` leaf paths with vloss, batch-evaluate the
+        unexpanded leaves in one call, then backup all paths."""
+        # Phase 1: select K leaves with vloss applied along each path.
+        selections: list[tuple[list[_NeuralNode], _NeuralNode, Board]] = []
+        boards_to_eval: list[Board] = []
+        eval_target_indices: list[int] = []  # index into selections
+        seen_leaf_id: dict[int, int] = {}  # id(leaf) -> index in boards_to_eval
+        for _ in range(batch_size):
+            path, leaf, leaf_board, needs_eval = self._select_leaf_with_vloss(
+                root_board, root
+            )
+            selections.append((path, leaf, leaf_board))
+            if needs_eval and id(leaf) not in seen_leaf_id:
+                seen_leaf_id[id(leaf)] = len(boards_to_eval)
+                boards_to_eval.append(leaf_board)
+                eval_target_indices.append(len(selections) - 1)
+
+        # Phase 2: batch-evaluate the unexpanded leaves (deduped across the
+        # batch — multiple paths converging on the same node only get
+        # evaluated once).
+        if boards_to_eval:
+            priors_b, values_b = self._eval_boards(boards_to_eval)
+            for j, sel_idx in enumerate(eval_target_indices):
+                _, leaf, leaf_board = selections[sel_idx]
+                self._expand_with_priors(
+                    leaf, leaf_board, priors_b[j], float(values_b[j])
+                )
+
+        # Phase 3: backup each path. For each child node on the path, undo
+        # the vloss W penalty (in its parent's perspective) then add the
+        # signed real value (in its own perspective). Root has no vloss W
+        # to undo — just add the signed real value.
+        for path, leaf, _ in selections:
+            leaf_value = (
+                leaf.leaf_value if leaf.expanded else leaf.terminal_value
+            )
+            leaf_player = leaf.player_to_move
+            for i, n in enumerate(path):
+                if i > 0:
+                    self._undo_vloss_at_child(path[i - 1], n)
+                if n.player_to_move == leaf_player:
+                    n.W += leaf_value
+                else:
+                    n.W -= leaf_value
 
     def _simulate(self, root_board: Board, root: _NeuralNode) -> None:
         """One PUCT iteration: select → (expand) → backprop with leaf_value."""
