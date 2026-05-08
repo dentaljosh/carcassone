@@ -106,7 +106,13 @@ def main(argv: list[str] | None = None) -> int:
                         "headroom for other workloads on the 5800X). "
                         "Eval/head-to-head uses --eval-workers.")
     p.add_argument("--eval-workers", type=int, default=4,
-                   help="Pool workers for head-to-head (CUDA caps to 4).")
+                   help="Pool workers for head-to-head (CUDA caps to 4 "
+                        "unless --no-cuda-cap is set).")
+    p.add_argument(
+        "--no-cuda-cap", action="store_true",
+        help="Lift the 4-worker CUDA cap on both self-play and head-to-head. "
+             "Pass through to the underlying scripts.",
+    )
     p.add_argument("--output-root", type=Path, required=True,
                    help="Root for self-play data + ELO log.")
     args = p.parse_args(argv)
@@ -152,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
                     "--dirichlet-eps", str(args.dirichlet_eps),
                     "--temp-threshold", str(args.temp_threshold),
                     "--workers", str(args.workers),
+                    *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],
             )
 
@@ -195,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
                     "--sims", str(args.eval_sims),
                     "--c-puct", str(args.c_puct),
                     "--workers", str(args.eval_workers),
+                    *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],
             )
 

@@ -138,7 +138,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--workers", type=int, default=7,
         help="Pool workers (default 7 — leaves SMT headroom on the 5800X). "
-             "CUDA caps to 4 internally.",
+             "CUDA caps to 4 internally unless --no-cuda-cap is set.",
+    )
+    p.add_argument(
+        "--no-cuda-cap", action="store_true",
+        help="Skip the 4-worker CUDA cap. Useful when you've measured "
+             "that the GPU has memory + compute headroom for more "
+             "concurrent CUDA contexts.",
     )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
@@ -174,10 +180,10 @@ def main(argv: list[str] | None = None) -> int:
     remaining = args.games - already
 
     n_workers = args.workers
-    if torch.cuda.is_available() and n_workers > 4:
+    if torch.cuda.is_available() and n_workers > 4 and not args.no_cuda_cap:
         print(
             f"  CUDA detected — capping workers from {n_workers} to 4 "
-            "to avoid GPU thrash"
+            "to avoid GPU thrash (use --no-cuda-cap to lift)"
         )
         n_workers = 4
     n_workers = min(n_workers, remaining or 1)

@@ -66,8 +66,13 @@ def test_value_signs_alternate_with_player() -> None:
 
 
 def test_policy_targets_are_distributions_over_legal_actions() -> None:
-    """Each policy row sums to ~1.0 and has zero mass on invalid actions."""
-    ds = _play(seed=3, sims=3, temp_threshold=3)
+    """Each policy row sums to ~1.0 and has zero mass on invalid actions.
+
+    Uses production-like sims=25 to exercise the full PUCT tree expansion
+    path. At sims=3 the tree is too shallow to trigger the
+    snapshot-mask-vs-MCTS-mask divergence the smoke run hit.
+    """
+    ds = _play(seed=3, sims=25, temp_threshold=5)
     for i in range(len(ds)):
         p = ds.policies[i]
         m = ds.valid_masks[i]

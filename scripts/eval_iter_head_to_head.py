@@ -218,7 +218,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--sims", type=int, default=50)
     p.add_argument("--c-puct", type=float, default=1.5)
     p.add_argument("--workers", type=int, default=4,
-                   help="Pool workers (CUDA caps to 4 internally).")
+                   help="Pool workers (CUDA caps to 4 internally unless "
+                        "--no-cuda-cap is set).")
+    p.add_argument(
+        "--no-cuda-cap", action="store_true",
+        help="Skip the 4-worker CUDA cap for head-to-head. Each game runs "
+             "two networks per worker (2× the per-worker GPU memory), so "
+             "be a bit more careful here than in self-play.",
+    )
     p.add_argument("--seed-start", type=int, default=900_000,
                    help="Eval seed base (kept high so it doesn't collide with "
                         "self-play seeds, which use iter * 10_000 + game_idx).")
@@ -231,8 +238,9 @@ def main(argv: list[str] | None = None) -> int:
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     n_workers = args.workers
-    if torch.cuda.is_available() and n_workers > 4:
-        print(f"  CUDA detected — capping workers from {n_workers} to 4")
+    if torch.cuda.is_available() and n_workers > 4 and not args.no_cuda_cap:
+        print(f"  CUDA detected — capping workers from {n_workers} to 4 "
+              "(use --no-cuda-cap to lift)")
         n_workers = 4
     n_workers = min(n_workers, args.games)
 

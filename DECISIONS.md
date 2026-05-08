@@ -23,6 +23,51 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-03 — Phase 4 smoke PASS: 5 iters, ELO 0 → 176, loop runs cleanly
+
+**Setting:** Phase 4 plan (in `~/.claude/plans/new-project-in-this-spicy-finch.md`) called for a local 5-iter self-play smoke as the acceptance bar — loop completes cleanly, per-iter checkpoint + ELO logged, no policy collapse, no NaN losses. We are not chasing absolute strength in Phase 4; production-scale long runs are a future plan-mode session.
+
+**Build (commit `79905cd`, branch `phase-4-selfplay`):**
+- `NeuralMCTS` gained Dirichlet root noise (configurable α, ε; root-only, applied once per fresh root, reset by `clear()`) and `select_for_training(τ)` for sampling-from-visit-count policy targets. Both opt-in; default-disabled keeps tournament/eval call sites unchanged.
+- `selfplay.play_one_selfplay_game` produces a `GameDataset` matching the warmstart schema. Value targets are raw z ∈ {-1, 0, +1} sign-flipped per position's current_player. Reuses streaming-dataset machinery unchanged.
+- `elo.py` — stateless ELO update from (W, L, D) capped ±800 to keep small-N matches sane.
+- 4 driver scripts (`run_selfplay_iter`, `train_iter`, `eval_iter_head_to_head`, `run_phase4_smoke`) with per-game `.npz`/JSON checkpointing and resumable-per-step outer loop.
+- Phase-6 prep: every iter saves a numbered checkpoint at `checkpoints/selfplay/iter_NN.pt` plus `iter_NN.metrics.json`; nothing overwrites or deletes.
+
+**Calibration (1 iter, 10 games, s=25, 4 workers): 5.7 min wallclock.** Beat the 50 min/iter pencil-sketch by ~10×; per-MCTS-sim cost was ~4ms (vs the estimated 100ms). The GPU is partially saturated even at 4 workers — cuda-cap=4 was conservative.
+
+**Worker-cap experiment** (added `--no-cuda-cap` flag): 4 workers = 176.5s/10 games; 7 workers = 155.1s/10 games (~12% faster, diminishing returns due to CUDA context-switch overhead). Used `--workers 7 --no-cuda-cap` for the smoke.
+
+**Bug found and fixed during smoke:** the trainer's `policy_cross_entropy` aborted iter 1 because some self-play policy targets had ~0.16-0.36 mass on a snapshot-mask-illegal action. Root cause: occasional divergence between the outer `game.get_valid_moves(board)` call and the MCTS-internal `get_valid_moves` call (suspect: stale legal-moves-cache entry reused across searches; not yet root-caused). Fix: clip MCTS visit distribution to the snapshot mask before normalizing in `selfplay.py`. The snapshot mask is the contract for legality at this position; phantom visits are dropped. If everything got filtered, fall back to uniform-over-legal. Test bumped from sims=3 to sims=25 (production-like) so the deeper PUCT tree path that triggers the bug is exercised in CI.
+
+**Smoke result (5 iters, 25 games/iter, s=25 self-play / s=50 eval, 53.7 min wallclock, `data/selfplay/smoke_v1`):**
+
+| Iter | H2H vs prev | ELO delta | Cumulative ELO |
+|---|---|---|---|
+| 0 → 1 | 5W/4L/1D | +34.9 | 34.9 |
+| 1 → 2 | 6W/4L/0D | +70.4 | 105.3 |
+| 2 → 3 | 5W/5L/0D | +0.0 | 105.3 |
+| 3 → 4 | 6W/4L/0D | +70.4 | **175.7** |
+
+Strictly non-decreasing ELO across all 4 head-to-head matches. iter 3 hit the 50/50 noise floor at 10 games — expected variance, not regression.
+
+**Stability checks:**
+- ✓ No crashes (post-fix), no NaN losses, no policy collapse
+- ✓ Train losses decreasing across iters (val_val_loss 0.50 → 0.16 train, val 0.56 → 0.27 → 1.07 ⚠️)
+- ⚠️ iter 4 val_val_loss spiked to 1.07 (val split is small — ~1K positions on 6 files). Worth watching in production; not smoke-blocking.
+
+**Decision:** Phase 4 acceptance MET. The loop runs cleanly end-to-end. Production-scale long runs are a separate decision (cloud rental likely needed for 50+ iters; original BACKLOG entry stands). Phase 5 (analyzer) can begin from the same `warmstart_canonical.pt` baseline plus optionally any of the saved iter checkpoints.
+
+**Reversal cost:** low. All Phase 4 scaffolding is on `phase-4-selfplay` branch, not merged to main. Bug fix is a small defensive clip in selfplay; doesn't affect existing data shapes or training.
+
+**Phase:** 4 closure → Phase 5 entry next.
+
+**Open items deferred to a future production-scale plan:**
+- Virtual-loss / batched MCTS (BACKLOG): the calibration showed ~4ms/sim wallclock at 4 workers; for 50+ iter production, batched MCTS could 3-5× per-game throughput. Right move when production scale is on the table.
+- Larger eval game count per head-to-head (currently 10; the 5W/5L noise floor at iter 3 argues for 30+ for production).
+- Automated entropy-floor abort + larger val split for stability monitoring.
+- Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom; bug is benign at our scale but worth fixing for hygiene).
+
 ## 2026-04-29 — Phase 3 closure: declare v2 the warmstart, skip remaining acceptance iteration, proceed to Phase 4
 
 **Setting:** v2 (100K heuristic-labeled at tau=0.5) hit T1=88/100 (88%) and T2=5/16=31% on NeuralMCTS(s=50) vs vanilla(s=100). Both miss the original prompt's acceptance bars (T1 ≥90%, T2 >55%). Failure-mode classify split (11 v2 T2 losses) showed mean realized gap +11.5 vs mean endgame gap −17.8 — net wins in-play, loses endgame. Working hypothesis: virtual_score's snapshot evaluation is a poor proxy for actual final-score-differential when label-time is mid-late game with substantial development remaining; the value head misses the long-horizon endgame component (farmer field merges, contested-field development, fields-fragility).

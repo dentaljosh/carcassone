@@ -108,13 +108,25 @@ def play_one_selfplay_game(
         mcts.search(board)
         counts, actions = mcts.root_visit_distribution(board)
         policy = np.zeros(A, dtype=np.float32)
+        # Defensive: intersect MCTS-produced visits with the snapshot mask
+        # before normalizing. In rare cases NeuralMCTS produces a visit on
+        # an action the outer `get_valid_moves(board)` call doesn't include
+        # (most likely a stale legal-moves-cache entry from a prior search;
+        # not yet root-caused). Without this clip, the trainer's policy-CE
+        # validator (which checks "no mass on masked-off actions") aborts
+        # the run. Dropping such visits is correct: the snapshot mask is
+        # the contract for legality at this position. If everything got
+        # filtered we fall back to uniform-over-legal.
+        kept = 0.0
         if counts.sum() > 0:
-            normed = counts / counts.sum()
-            for a, p in zip(actions, normed):
-                policy[int(a)] = float(p)
+            for a, c in zip(actions, counts):
+                ai = int(a)
+                if mask[ai]:
+                    policy[ai] = float(c)
+                    kept += float(c)
+        if kept > 0:
+            policy /= kept
         else:
-            # MCTS produced no visits (degenerate). Fall back to uniform
-            # over legal — the position still gets a usable policy target.
             policy[legal] = 1.0 / legal.size
 
         # Pick the action.

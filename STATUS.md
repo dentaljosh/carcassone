@@ -2,23 +2,41 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-04-29) — Phase 3 CLOSED, Phase 4 is next
+## Right now (2026-05-03) — Phase 4 smoke PASS, Phase 5 is next
 
-**Branch:** `phase-2-mcts`. Latest commit `872183b` (still on the eval-plumbing commit; Phase 3 closure work uncommitted as of this update).
+**Branch:** `phase-4-selfplay` (off `phase-2-mcts`). Latest commit `79905cd` (scaffolding) + uncommitted: snapshot-mask fix in selfplay, smoke results, this status update, DECISIONS Phase 4 closure entry.
 
-**Status:** Phase 3 closed. v2 declared the canonical warmstart at `checkpoints/warmstart_canonical.pt`. Phase 4 (self-play) is the next major chunk.
+**Status:** Phase 4 self-play loop built, calibrated, and smoked end-to-end. Acceptance bar met cleanly.
 
-**Phase 3 final outcome:**
-- v2 (heuristic, tau=0.5, snapshot virtual_score value target): T1 88% (target ≥90%), T2 31% (target >55%). Both miss the original prompt's bars.
-- v3 (heuristic, tau=0.5, final-score value target — single-variable test): T1 84% (Δ=−4pp vs v2). Falsified the "snapshot is too short-horizon" hypothesis cleanly. Random-self-play final scores carry too much downstream noise for the value head to disentangle.
-- Decision (logged in DECISIONS.md, 2026-04-29): declare v2 the warmstart, skip remaining Phase 3 acceptance iteration, proceed to Phase 4. Reasoning: continuing label engineering substitutes for the self-play loop, and v3's failure is evidence we've hit the ceiling on that substitution.
+**Phase 4 outcome (5-iter smoke, 53.7 min wallclock, ELO 0 → 175.7):**
 
-**Diagnostic artifacts:**
-- `data/phase3_diagnostic/v2_loss_split.md` — realized vs endgame breakdown of v2 T2 losses
-- `data/phase3_diagnostic/farmer_audit.md` — farmer-term calibration check (heuristic = engine, by construction)
-- `data/phase3_diagnostic/v3_vs_v2_t1.md` — v3 head-to-head with full per-epoch training metrics
+| Iter | H2H vs prev | ELO delta | Cumulative ELO |
+|---|---|---|---|
+| 0 → 1 | 5W/4L/1D | +34.9 | 34.9 |
+| 1 → 2 | 6W/4L/0D | +70.4 | 105.3 |
+| 2 → 3 | 5W/5L/0D | +0.0 | 105.3 |
+| 3 → 4 | 6W/4L/0D | +70.4 | 175.7 |
 
-**Next plan-mode session:** Phase 4 plan. Needs to think about self-play scheduling, ELO tracking, virtual-loss MCTS for batched GPU inference (still in BACKLOG), checkpoint cadence for the McGrath-style emergence analysis (Phase 6), Dirichlet noise + temperature for exploration, and how to detect/recover from policy collapse if v2's biases lead self-play astray. **Do not start Phase 4 work autonomously** — Joshua launches the plan-mode session.
+Strictly non-decreasing. iter 3 hit a noise floor at 10-game eval; iter 4 recovered. No crashes, no NaN losses, no policy collapse.
+
+**Bug caught during smoke:** trainer aborted at iter 1 because some self-play policy targets had ~0.16-0.36 mass on a snapshot-mask-illegal action. Defensive fix in `selfplay.play_one_selfplay_game`: intersect MCTS visit distribution with the snapshot mask before normalizing. Test bumped to sims=25 to catch this in CI. Not root-caused (suspect stale legal-moves-cache); benign at our scale.
+
+**Phase 4 artifacts on disk:**
+- `data/selfplay/smoke_v1/iter_0[0-4]/seed_*.npz` — self-play games (~20 K positions total)
+- `data/selfplay/smoke_v1/eval/iter_NN_vs_MM/*.json` — per-game head-to-head results
+- `data/selfplay/smoke_v1/elo_log.json` — full ELO trajectory
+- `checkpoints/selfplay/iter_0[0-4].pt` + `.metrics.json` — every iter's checkpoint kept (Phase 6 prep)
+
+**Next plan-mode session:** Phase 5 (position analyzer / coach for family games — the project's actual goal). Or: production-scale Phase 4 long run if Joshua wants to validate the loop at 50+ iters before Phase 5 work. Cloud-rental decision required for the long run (BACKLOG 2026-04-27).
+
+**Open items deferred:**
+- Virtual-loss / batched MCTS (BACKLOG): worth implementing if production-scale Phase 4 happens.
+- Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom).
+- Larger eval game count per head-to-head (10 → 30+ for production).
+
+## Phase 4 archive (2026-04-29 → 2026-05-03)
+
+(See DECISIONS.md "2026-05-03 — Phase 4 smoke PASS" for the full closure entry.)
 
 ## Phase 3 archive (2026-04-28 → 2026-04-29)
 
