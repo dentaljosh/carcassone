@@ -29,6 +29,10 @@ import numpy as np
 import torch
 
 from carcassonne_ai.elo import update_pair
+from carcassonne_ai.evaluators import (
+    make_batch_evaluator,
+    make_single_evaluator,
+)
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
@@ -113,42 +117,6 @@ def _worker_init(
     _worker_virtual_loss = virtual_loss
 
 
-def _make_evaluator(net: CarcassonneNet, game: Game, device: torch.device):
-    def evaluator(board):
-        obs, scalars = game.get_canonical_form(board, board.state.current_player)
-        obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(device)
-        scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(device)
-        with torch.no_grad():
-            logits, value = net(obs_t, scalars_t)
-            mask = game.get_valid_moves(board)
-            mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
-            probs = net.policy_softmax_with_mask(logits, mask_t)
-        return probs[0].cpu().numpy(), float(value.item())
-    return evaluator
-
-
-def _make_batch_evaluator(net: CarcassonneNet, game: Game, device: torch.device):
-    def batch_evaluator(boards):
-        if not boards:
-            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
-        obs_list = []
-        scalars_list = []
-        masks_list = []
-        for b in boards:
-            obs, scalars = game.get_canonical_form(b, b.state.current_player)
-            obs_list.append(obs)
-            scalars_list.append(scalars)
-            masks_list.append(game.get_valid_moves(b))
-        obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
-        scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
-        masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
-        with torch.no_grad():
-            logits, values = net(obs_t, scalars_t)
-            probs = net.policy_softmax_with_mask(logits, masks_t)
-        return probs.cpu().numpy(), values.cpu().numpy()
-    return batch_evaluator
-
-
 def _play_one(args: tuple[int, int]) -> GameResult:
     seed, new_player = args
     cached = _try_load(_result_path(_worker_eval_dir, _worker_sims, seed, new_player))
@@ -160,16 +128,16 @@ def _play_one(args: tuple[int, int]) -> GameResult:
 
     game_new = Game(enable_legal_moves_cache=True)
     game_old = Game(enable_legal_moves_cache=True)
-    new_eval = _make_evaluator(_worker_new, game_new, _worker_device)
-    old_eval = _make_evaluator(_worker_old, game_old, _worker_device)
+    new_eval = make_single_evaluator(_worker_new, _worker_device, game_new)
+    old_eval = make_single_evaluator(_worker_old, _worker_device, game_old)
     new_batch_eval = None
     old_batch_eval = None
     if _worker_batch_size > 1:
-        new_batch_eval = _make_batch_evaluator(
-            _worker_new, game_new, _worker_device
+        new_batch_eval = make_batch_evaluator(
+            _worker_new, _worker_device, game_new
         )
-        old_batch_eval = _make_batch_evaluator(
-            _worker_old, game_old, _worker_device
+        old_batch_eval = make_batch_evaluator(
+            _worker_old, _worker_device, game_old
         )
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
@@ -258,15 +226,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--games", type=int, default=10)
     p.add_argument("--sims", type=int, default=50)
     p.add_argument("--c-puct", type=float, default=1.5)
-    p.add_argument("--workers", type=int, default=4,
-                   help="Pool workers (CUDA caps to 4 internally unless "
-                        "--no-cuda-cap is set).")
-    p.add_argument(
-        "--no-cuda-cap", action="store_true",
-        help="Skip the 4-worker CUDA cap for head-to-head. Each game runs "
-             "two networks per worker (2× the per-worker GPU memory), so "
-             "be a bit more careful here than in self-play.",
-    )
+    p.add_argument("--workers", type=int, default=8,
+                   help="Pool workers. Default 8 leaves SMT headroom for "
+                        "other workloads on a 5800X. For dedicated runs, "
+                        "W=16 is the empirical local optimum (measured "
+                        "2026-05-09 on RTX 5060 Ti).")
     p.add_argument("--seed-start", type=int, default=900_000,
                    help="Eval seed base (kept high so it doesn't collide with "
                         "self-play seeds, which use iter * 10_000 + game_idx).")
@@ -287,12 +251,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     eval_dir.mkdir(parents=True, exist_ok=True)
 
-    n_workers = args.workers
-    if torch.cuda.is_available() and n_workers > 4 and not args.no_cuda_cap:
-        print(f"  CUDA detected — capping workers from {n_workers} to 4 "
-              "(use --no-cuda-cap to lift)")
-        n_workers = 4
-    n_workers = min(n_workers, args.games)
+    # Auto-cap removed 2026-05-09 (see run_selfplay_iter.py for rationale).
+    # Note: head-to-head loads TWO networks per worker (2× GPU memory vs
+    # self-play). Should still be fine on 16GB cards at W=16 (~200MB ×
+    # 16 × 2 = 6.4GB), but watch nvidia-smi if you scale up.
+    n_workers = min(args.workers, args.games)
 
     pool_args = [
         (args.seed_start + i, i % 2) for i in range(args.games)

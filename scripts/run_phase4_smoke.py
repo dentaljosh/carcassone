@@ -112,18 +112,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--epochs", type=int, default=3,
                    help="Training epochs per iter.")
-    p.add_argument("--workers", type=int, default=7,
-                   help="Pool workers for self-play (default 7 — leaves SMT "
-                        "headroom for other workloads on the 5800X). "
-                        "Eval/head-to-head uses --eval-workers.")
-    p.add_argument("--eval-workers", type=int, default=4,
-                   help="Pool workers for head-to-head (CUDA caps to 4 "
-                        "unless --no-cuda-cap is set).")
-    p.add_argument(
-        "--no-cuda-cap", action="store_true",
-        help="Lift the 4-worker CUDA cap on both self-play and head-to-head. "
-             "Pass through to the underlying scripts.",
-    )
+    p.add_argument("--workers", type=int, default=8,
+                   help="Pool workers for self-play. Default 8 leaves SMT "
+                        "headroom for other workloads on a 5800X; for "
+                        "dedicated runs use --workers 16 (empirical optimum, "
+                        "measured 2026-05-09).")
+    p.add_argument("--eval-workers", type=int, default=8,
+                   help="Pool workers for head-to-head. Same guidance as "
+                        "--workers; head-to-head loads 2 networks/worker "
+                        "(2× GPU memory).")
     p.add_argument("--output-root", type=Path, required=True,
                    help="Root for self-play data + ELO log.")
     args = p.parse_args(argv)
@@ -171,7 +168,6 @@ def main(argv: list[str] | None = None) -> int:
                     "--batch-size", str(args.batch_size),
                     "--virtual-loss", str(args.virtual_loss),
                     "--workers", str(args.workers),
-                    *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],
             )
 
@@ -217,7 +213,6 @@ def main(argv: list[str] | None = None) -> int:
                     "--workers", str(args.eval_workers),
                     "--batch-size", str(args.batch_size),
                     "--virtual-loss", str(args.virtual_loss),
-                    *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],
             )
 

@@ -14,6 +14,14 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-08 — fp16 / autocast inference for NeuralMCTS evaluator
+**Context:** vloss/batched-eval landed (1.44× single-process at sims=25). The 5060 Ti hits 49 TFLOPS only on fp16 ops; we currently run fp32 throughout the inference path (`make_single_evaluator`/`make_batch_evaluator` in `evaluators.py` use bare `torch.no_grad()` with no autocast). The Phase 3 plan called for "fp16 autocast for forward, fp32 master weights" but the autocast was never wired.
+**Idea:** wrap the forward in `torch.autocast(device_type='cuda', dtype=torch.float16)` (or `bfloat16` on Ada/Blackwell). Master weights stay fp32; only the forward activations go to fp16. This compounds with vloss — bigger batches benefit even more from fp16 because GPU throughput is the bottleneck once the batch is full.
+**Why deferred:** worker-count sweep is in flight; fp16 is the next-most-promising lever after we know the multi-worker baseline. ~1 hour of work + a short bench to verify it doesn't regress eval ELO (fp16 quantization could shift policy tail).
+**Expected speedup:** 1.5-2× on the GPU portion. Harder to predict net wallclock impact because CPU work is non-trivial.
+
+---
+
 ## 2026-04-27 — In-place state mutation for MCTS rollouts (CONFIRMED bottleneck)
 **Context:** Game.get_next_state calls StateUpdater.apply_action which deepcopies the entire CarcassonneGameState every step. Phase 2 measurement (post-adjacency-fix): each MCTS sim's rollout (~165 random moves) takes ~600ms total, of which ~70% is in the deepcopy. With s=50 sims/move and ~165 game moves, that's ~80 min/game in pure copy cost.
 **Idea:** add `Game.apply_action_inplace(board, action_idx)` that bypasses the engine's internal deepcopy (we already deep-cloned the engine to do this). Use only for rollouts where the state is discarded; tree expansion keeps the safe copy path. Patch StateUpdater to expose an inplace variant.

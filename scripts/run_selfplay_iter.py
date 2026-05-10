@@ -32,6 +32,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from carcassonne_ai.evaluators import (
+    make_batch_evaluator,
+    make_single_evaluator,
+)
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.selfplay import play_one_selfplay_game
@@ -65,46 +69,6 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     _worker_cfg = cfg
 
 
-def _make_evaluator(net: CarcassonneNet, device: torch.device, game: Game):
-    def evaluator(board):
-        obs, scalars = game.get_canonical_form(board, board.state.current_player)
-        obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(device)
-        scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(device)
-        with torch.no_grad():
-            logits, value = net(obs_t, scalars_t)
-            mask = game.get_valid_moves(board)
-            mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
-            probs = net.policy_softmax_with_mask(logits, mask_t)
-        return probs[0].cpu().numpy(), float(value.item())
-    return evaluator
-
-
-def _make_batch_evaluator(net: CarcassonneNet, device: torch.device, game: Game):
-    """Stack K board encodings into a single forward pass. Returns
-    (priors_batch, values_batch) where priors_batch has shape (K, A) and
-    values_batch has shape (K,). Each board is canonicalized from its own
-    current_player's perspective (same as the single-board evaluator)."""
-    def batch_evaluator(boards):
-        if not boards:
-            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
-        obs_list = []
-        scalars_list = []
-        masks_list = []
-        for b in boards:
-            obs, scalars = game.get_canonical_form(b, b.state.current_player)
-            obs_list.append(obs)
-            scalars_list.append(scalars)
-            masks_list.append(game.get_valid_moves(b))
-        obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
-        scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
-        masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
-        with torch.no_grad():
-            logits, values = net(obs_t, scalars_t)
-            probs = net.policy_softmax_with_mask(logits, masks_t)
-        return probs.cpu().numpy(), values.cpu().numpy()
-    return batch_evaluator
-
-
 def _seed_for(iter_idx: int, game_idx: int) -> int:
     # Reproducible seeds; iter_idx * 10_000 leaves room for 10K games/iter.
     return iter_idx * 10_000 + game_idx
@@ -130,10 +94,10 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     assert cfg is not None and _worker_net is not None and _worker_device is not None
 
     game = Game(enable_legal_moves_cache=True)
-    evaluator = _make_evaluator(_worker_net, _worker_device, game)
+    evaluator = make_single_evaluator(_worker_net, _worker_device, game)
     batch_evaluator = None
     if cfg["batch_size"] > 1:
-        batch_evaluator = _make_batch_evaluator(
+        batch_evaluator = make_batch_evaluator(
             _worker_net, _worker_device, game
         )
     ds = play_one_selfplay_game(
@@ -181,15 +145,12 @@ def main(argv: list[str] | None = None) -> int:
              "selection. Only matters when --batch-size > 1.",
     )
     p.add_argument(
-        "--workers", type=int, default=7,
-        help="Pool workers (default 7 — leaves SMT headroom on the 5800X). "
-             "CUDA caps to 4 internally unless --no-cuda-cap is set.",
-    )
-    p.add_argument(
-        "--no-cuda-cap", action="store_true",
-        help="Skip the 4-worker CUDA cap. Useful when you've measured "
-             "that the GPU has memory + compute headroom for more "
-             "concurrent CUDA contexts.",
+        "--workers", type=int, default=8,
+        help="Pool workers. Default 8 leaves SMT headroom for other "
+             "workloads on a 5800X. For dedicated runs, W=16 is the "
+             "empirical local optimum (1 worker per SMT thread; saturates "
+             "GPU queue without CPU-side preemption — measured 2026-05-09 "
+             "on RTX 5060 Ti, ~20%% faster than W=8).",
     )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
@@ -224,14 +185,13 @@ def main(argv: list[str] | None = None) -> int:
     already = sum(1 for s in seeds if _result_path(iter_dir, s).exists())
     remaining = args.games - already
 
-    n_workers = args.workers
-    if torch.cuda.is_available() and n_workers > 4 and not args.no_cuda_cap:
-        print(
-            f"  CUDA detected — capping workers from {n_workers} to 4 "
-            "to avoid GPU thrash (use --no-cuda-cap to lift)"
-        )
-        n_workers = 4
-    n_workers = min(n_workers, remaining or 1)
+    # Auto-cap removed 2026-05-09: empirical bench (W={4,8,12,16,20}) on
+    # RTX 5060 Ti showed W=16 actually beats W=4 by ~2× (vs. the old cap
+    # logic which forced W≤4 for "GPU thrash safety"). The driver-level
+    # GPU queue self-regulates — more workers fill the queue more cleanly,
+    # they don't thrash. Cap your workers explicitly via --workers if you
+    # need to leave CPU/GPU headroom for other workloads.
+    n_workers = min(args.workers, remaining or 1)
 
     cfg = {
         "sims": args.sims,
