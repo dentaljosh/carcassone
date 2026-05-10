@@ -27,25 +27,44 @@ from .game_wrapper import Board, Game
 from .network import CarcassonneNet
 
 
+def _autocast_ctx(device: torch.device, use_fp16: bool):
+    """Return an autocast context manager that's a no-op on CPU or when
+    fp16 is disabled. fp16 cuts forward latency ~1.5-2× on RTX 30/40/Blackwell
+    by routing the matmuls through Tensor Cores. Master weights stay fp32
+    (we only autocast at inference; no training implications)."""
+    if not use_fp16 or device.type != "cuda":
+        return torch.amp.autocast(device_type="cpu", enabled=False)
+    return torch.amp.autocast(device_type="cuda", dtype=torch.float16)
+
+
 def make_single_evaluator(
-    net: CarcassonneNet, device: torch.device, game: Game
+    net: CarcassonneNet,
+    device: torch.device,
+    game: Game,
+    use_fp16: bool = False,
 ) -> Callable[[Board], tuple[np.ndarray, float]]:
     """Single-board GPU evaluator. Returns (priors[A], value)."""
     def evaluator(board: Board) -> tuple[np.ndarray, float]:
         obs, scalars = game.get_canonical_form(board, board.state.current_player)
         obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(device)
         scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(device)
-        with torch.no_grad():
+        with torch.no_grad(), _autocast_ctx(device, use_fp16):
             logits, value = net(obs_t, scalars_t)
             mask = game.get_valid_moves(board)
             mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
             probs = net.policy_softmax_with_mask(logits, mask_t)
-        return probs[0].cpu().numpy(), float(value.item())
+        # Cast back to fp32 before crossing the GPU→CPU boundary so downstream
+        # NumPy code doesn't get fp16 surprises (some ops, e.g. masking, behave
+        # differently on fp16 arrays).
+        return probs[0].float().cpu().numpy(), float(value.item())
     return evaluator
 
 
 def make_batch_evaluator(
-    net: CarcassonneNet, device: torch.device, game: Game
+    net: CarcassonneNet,
+    device: torch.device,
+    game: Game,
+    use_fp16: bool = False,
 ) -> Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]:
     """K-board batched GPU evaluator. Stacks K canonical encodings into one
     forward pass; returns (priors[B,A], values[B])."""
@@ -68,8 +87,8 @@ def make_batch_evaluator(
         obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
         scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
         masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
-        with torch.no_grad():
+        with torch.no_grad(), _autocast_ctx(device, use_fp16):
             logits, values = net(obs_t, scalars_t)
             probs = net.policy_softmax_with_mask(logits, masks_t)
-        return probs.cpu().numpy(), values.cpu().numpy()
+        return probs.float().cpu().numpy(), values.float().cpu().numpy()
     return batch_evaluator
