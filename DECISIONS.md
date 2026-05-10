@@ -23,6 +23,37 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-08 — Virtual-loss + batched-eval MCTS landed; vloss applied in parent's perspective
+
+**Setting:** Phase 4 smoke ran the serial NeuralMCTS path (one GPU forward per sim per worker). At sims=25 / 7 workers we measured ~4 ms/sim, but at production sims=100-200 the GPU forward is a larger fraction of per-sim cost. Standard AlphaZero remedy: virtual-loss MCTS — collect K leaf-evaluation requests from parallel descents and serve them with one batched GPU call.
+
+**Implementation (commit `f9d805e` + the eval-side wiring in this session):**
+- New `NeuralMCTS` constructor params: `batch_size` (default 1 = serial), `batch_evaluator` (`Callable[[list[Board]], (priors[B,A], values[B])]`), `virtual_loss` (default 1.0).
+- New methods: `_select_leaf_with_vloss`, `_run_batch`, `_eval_boards`, `_expand_with_priors`, `_apply_vloss_at_child`, `_undo_vloss_at_child`.
+- Plumbed through `selfplay.play_one_selfplay_game`, `run_selfplay_iter.py --batch-size N --virtual-loss V`, `eval_iter_head_to_head.py --batch-size N`, and `run_phase4_smoke.py`.
+
+**Vloss formulation — sign in parent's perspective, NOT node's own:**
+
+The textbook formulation ("subtract `vloss` from W in node's own perspective") is wrong for negamax-style perspective-flipping trees with player alternation. With own-perspective vloss, the parent's view of an in-flight child becomes BETTER, not worse — because `Q_parent_view = -child.Q` for different-player parent-child pairs. Net result: subsequent sims in the same batch happily revisit the same leaf instead of diversifying.
+
+The fix: apply vloss in the PARENT'S perspective. At each step of selection:
+- if `parent.player == child.player` (rare TILE→MEEPLE phase transition): `child.W -= virtual_loss`
+- else (typical alternation): `child.W += virtual_loss`
+
+Either way, `Q_parent_view` of child drops by `virtual_loss / N`. Backup undoes this by inverting the same sign rule, then adds the real value in node's own perspective. Net per node: `N += 1`, `W += signed_real_value` — identical to serial backup.
+
+Root has no parent, so root only gets `N += 1` (root.W doesn't enter PUCT for any child).
+
+**Testing:** 9 new tests in `test_neural_mcts_virtual_loss.py` cover total visit count correctness, batch-call accounting (≤ `ceil(sims / B) + 1` calls), vloss-undo invariants (`|W| ≤ N`), diversification (≥2 root actions visited at branching positions), and the serial-mode bypass (when `batch_size=1`, `batch_evaluator` is never called even if wired). Full suite: 145 pass.
+
+**Measured speedup:** Single-process at sims=25, batch_size=8: 48.9 s → 34.0 s (1.44×) for one 166-position self-play game on RTX 5060 Ti. Multi-worker / production-sims speedup is being calibrated as of this entry; expected to compound at higher sims because the GPU per-call overhead amortizes better when batches fill.
+
+**Reversal cost:** Low — `batch_size=1` (default) preserves the existing serial code path bit-for-bit. To revert: don't pass `--batch-size N > 1` on any CLI.
+
+**Phase:** Phase 4 optimization (post-smoke, pre-production-scale).
+
+---
+
 ## 2026-05-03 — Phase 4 smoke PASS: 5 iters, ELO 0 → 176, loop runs cleanly
 
 **Setting:** Phase 4 plan (in `~/.claude/plans/new-project-in-this-spicy-finch.md`) called for a local 5-iter self-play smoke as the acceptance bar — loop completes cleanly, per-iter checkpoint + ELO logged, no policy collapse, no NaN losses. We are not chasing absolute strength in Phase 4; production-scale long runs are a future plan-mode session.

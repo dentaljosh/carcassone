@@ -2,36 +2,34 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-03) — Phase 4 smoke PASS, Phase 5 is next
+## Right now (2026-05-08) — vloss MCTS landed; mid-prod calibration running
 
-**Branch:** `phase-4-selfplay` (off `phase-2-mcts`). Latest commit `79905cd` (scaffolding) + uncommitted: snapshot-mask fix in selfplay, smoke results, this status update, DECISIONS Phase 4 closure entry.
+**Branch:** `phase-4-selfplay`. Latest commit `f9d805e` (virtual-loss + batched-eval). One uncommitted change: vloss wired into `eval_iter_head_to_head.py` + plumbed through `run_phase4_smoke.py`.
 
-**Status:** Phase 4 self-play loop built, calibrated, and smoked end-to-end. Acceptance bar met cleanly.
+**Active background task (launched 2026-05-08):**
+- `nohup python -u scripts/run_phase4_smoke.py --iters 2 --games 10 --sims 100 --eval-sims 100 --eval-games 10 --workers 7 --eval-workers 4 --batch-size 8 --output-root data/selfplay/midprod_calibration > /tmp/phase4_midprod_calibration.log 2>&1 &`
+- Purpose: measure per-iter wallclock at mid-prod sims (sims=100, eval-sims=100) with vloss=8 on multi-worker pool. The 1.44× single-process measurement is a floor; multi-worker GPU contention dynamics could shift it either way.
+- Detached so it survives any SSH disconnect. Resumable via per-game .npz / per-game .json caches.
 
-**Phase 4 outcome (5-iter smoke, 53.7 min wallclock, ELO 0 → 175.7):**
+**vloss MCTS landed (commit `f9d805e`):**
+- `NeuralMCTS` constructor gained `batch_size`, `batch_evaluator`, `virtual_loss`. Default `batch_size=1` preserves serial behavior.
+- Vloss applied in PARENT's perspective (sign depends on parent-child same/different player), so PUCT actually drops in alternating-player trees. 9 new tests in `test_neural_mcts_virtual_loss.py`.
+- `run_selfplay_iter.py` and `run_phase4_smoke.py` accept `--batch-size N` and `--virtual-loss V`. Eval (`eval_iter_head_to_head.py`) wired up the same way as part of the calibration prep.
+- Single-process bench at sims=25, batch_size=8: 48.9s → 34.0s (1.44×) for one self-play game.
 
-| Iter | H2H vs prev | ELO delta | Cumulative ELO |
-|---|---|---|---|
-| 0 → 1 | 5W/4L/1D | +34.9 | 34.9 |
-| 1 → 2 | 6W/4L/0D | +70.4 | 105.3 |
-| 2 → 3 | 5W/5L/0D | +0.0 | 105.3 |
-| 3 → 4 | 6W/4L/0D | +70.4 | 175.7 |
-
-Strictly non-decreasing. iter 3 hit a noise floor at 10-game eval; iter 4 recovered. No crashes, no NaN losses, no policy collapse.
-
-**Bug caught during smoke:** trainer aborted at iter 1 because some self-play policy targets had ~0.16-0.36 mass on a snapshot-mask-illegal action. Defensive fix in `selfplay.play_one_selfplay_game`: intersect MCTS visit distribution with the snapshot mask before normalizing. Test bumped to sims=25 to catch this in CI. Not root-caused (suspect stale legal-moves-cache); benign at our scale.
+**Phase 4 smoke (closed 2026-05-03) — see DECISIONS.md "2026-05-03 — Phase 4 smoke PASS":** 5 iters, 53.7 min wallclock, ELO 0→175.7. Strictly non-decreasing. No crashes, no NaN losses, no policy collapse. Acceptance bar met.
 
 **Phase 4 artifacts on disk:**
-- `data/selfplay/smoke_v1/iter_0[0-4]/seed_*.npz` — self-play games (~20 K positions total)
-- `data/selfplay/smoke_v1/eval/iter_NN_vs_MM/*.json` — per-game head-to-head results
-- `data/selfplay/smoke_v1/elo_log.json` — full ELO trajectory
-- `checkpoints/selfplay/iter_0[0-4].pt` + `.metrics.json` — every iter's checkpoint kept (Phase 6 prep)
+- `data/selfplay/smoke_v1/iter_0[0-4]/seed_*.npz` + `eval/iter_NN_vs_MM/*.json` + `elo_log.json`
+- `checkpoints/selfplay/iter_0[0-4].pt` + `.metrics.json`
 
-**Next plan-mode session:** Phase 5 (position analyzer / coach for family games — the project's actual goal). Or: production-scale Phase 4 long run if Joshua wants to validate the loop at 50+ iters before Phase 5 work. Cloud-rental decision required for the long run (BACKLOG 2026-04-27).
+**Next decisions when calibration completes:**
+- If wallclock extrapolates to a reasonable mid-prod budget (~1 weekend for 50 iters), launch the full mid-prod run.
+- Otherwise tune sims/games or accept the smoke endpoint and start Phase 5.
+- Phase 5 (position analyzer / coach) is the project's actual goal; production-scale Phase 4 is optional polish.
 
 **Open items deferred:**
-- Virtual-loss / batched MCTS (BACKLOG): worth implementing if production-scale Phase 4 happens.
-- Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom).
+- Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom; benign at our scale).
 - Larger eval game count per head-to-head (10 → 30+ for production).
 
 ## Phase 4 archive (2026-04-29 → 2026-05-03)

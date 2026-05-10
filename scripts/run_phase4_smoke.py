@@ -215,6 +215,8 @@ def main(argv: list[str] | None = None) -> int:
                     "--sims", str(args.eval_sims),
                     "--c-puct", str(args.c_puct),
                     "--workers", str(args.eval_workers),
+                    "--batch-size", str(args.batch_size),
+                    "--virtual-loss", str(args.virtual_loss),
                     *(["--no-cuda-cap"] if args.no_cuda_cap else []),
                 ],
             )

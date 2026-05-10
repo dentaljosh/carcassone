@@ -58,6 +58,8 @@ _worker_device: torch.device | None = None
 _worker_sims: int = 0
 _worker_c_puct: float = 1.5
 _worker_eval_dir: str = ""
+_worker_batch_size: int = 1
+_worker_virtual_loss: float = 1.0
 
 
 def _result_path(eval_dir: str, sims: int, seed: int, new_player: int) -> Path:
@@ -94,9 +96,11 @@ def _load_net(path: str, device: torch.device) -> CarcassonneNet:
 
 
 def _worker_init(
-    new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str
+    new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
+    batch_size: int, virtual_loss: float,
 ) -> None:
     global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
+    global _worker_batch_size, _worker_virtual_loss
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -105,6 +109,8 @@ def _worker_init(
     _worker_sims = sims
     _worker_c_puct = c_puct
     _worker_eval_dir = eval_dir
+    _worker_batch_size = batch_size
+    _worker_virtual_loss = virtual_loss
 
 
 def _make_evaluator(net: CarcassonneNet, game: Game, device: torch.device):
@@ -121,6 +127,28 @@ def _make_evaluator(net: CarcassonneNet, game: Game, device: torch.device):
     return evaluator
 
 
+def _make_batch_evaluator(net: CarcassonneNet, game: Game, device: torch.device):
+    def batch_evaluator(boards):
+        if not boards:
+            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
+        obs_list = []
+        scalars_list = []
+        masks_list = []
+        for b in boards:
+            obs, scalars = game.get_canonical_form(b, b.state.current_player)
+            obs_list.append(obs)
+            scalars_list.append(scalars)
+            masks_list.append(game.get_valid_moves(b))
+        obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
+        scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
+        masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
+        with torch.no_grad():
+            logits, values = net(obs_t, scalars_t)
+            probs = net.policy_softmax_with_mask(logits, masks_t)
+        return probs.cpu().numpy(), values.cpu().numpy()
+    return batch_evaluator
+
+
 def _play_one(args: tuple[int, int]) -> GameResult:
     seed, new_player = args
     cached = _try_load(_result_path(_worker_eval_dir, _worker_sims, seed, new_player))
@@ -134,13 +162,26 @@ def _play_one(args: tuple[int, int]) -> GameResult:
     game_old = Game(enable_legal_moves_cache=True)
     new_eval = _make_evaluator(_worker_new, game_new, _worker_device)
     old_eval = _make_evaluator(_worker_old, game_old, _worker_device)
+    new_batch_eval = None
+    old_batch_eval = None
+    if _worker_batch_size > 1:
+        new_batch_eval = _make_batch_evaluator(
+            _worker_new, game_new, _worker_device
+        )
+        old_batch_eval = _make_batch_evaluator(
+            _worker_old, game_old, _worker_device
+        )
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
         seed=seed, c_puct=_worker_c_puct,
+        batch_size=_worker_batch_size, batch_evaluator=new_batch_eval,
+        virtual_loss=_worker_virtual_loss,
     )
     old_mcts = NeuralMCTS(
         game=game_old, evaluator=old_eval, simulations=_worker_sims,
         seed=seed + 1, c_puct=_worker_c_puct,
+        batch_size=_worker_batch_size, batch_evaluator=old_batch_eval,
+        virtual_loss=_worker_virtual_loss,
     )
 
     board = game_new.get_init_board()
@@ -229,6 +270,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed-start", type=int, default=900_000,
                    help="Eval seed base (kept high so it doesn't collide with "
                         "self-play seeds, which use iter * 10_000 + game_idx).")
+    p.add_argument(
+        "--batch-size", type=int, default=1,
+        help="NeuralMCTS batch size for virtual-loss / batched-eval mode "
+             "during head-to-head. 1 (default) = serial.",
+    )
+    p.add_argument(
+        "--virtual-loss", type=float, default=1.0,
+        help="W-penalty for in-flight nodes; only matters when --batch-size > 1.",
+    )
     args = p.parse_args(argv)
 
     eval_dir = (
@@ -263,6 +313,7 @@ def main(argv: list[str] | None = None) -> int:
         initargs=(
             str(args.new_checkpoint), str(args.old_checkpoint),
             args.sims, args.c_puct, str(eval_dir),
+            args.batch_size, args.virtual_loss,
         ),
     ) as pool:
         for done, r in enumerate(
