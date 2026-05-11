@@ -21,22 +21,26 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SELFPLAY_CKPT_ROOT = REPO_ROOT / "checkpoints" / "selfplay"
 WARMSTART_CANONICAL = REPO_ROOT / "checkpoints" / "warmstart_canonical.pt"
 WARMSTART_DATA = REPO_ROOT / "data" / "warmstart" / "heuristic_tau05"
 SCRIPTS = REPO_ROOT / "scripts"
 
+# Anchor-gate eval uses --vs-iter 9999 as a sentinel (real iters never
+# reach 4 digits in our scope) so the eval_dir naming
+# `eval/iter_NN_vs_9999/` doesn't collide with chain head-to-heads.
+ANCHOR_VS_ITER_SENTINEL = 9999
 
-def _checkpoint_path(iter_idx: int) -> Path:
-    return SELFPLAY_CKPT_ROOT / f"iter_{iter_idx:02d}.pt"
+
+def _checkpoint_path(checkpoint_root: Path, iter_idx: int) -> Path:
+    return checkpoint_root / f"iter_{iter_idx:02d}.pt"
 
 
-def _warm_from_for(iter_idx: int) -> Path:
+def _warm_from_for(checkpoint_root: Path, iter_idx: int) -> Path:
     """At iter 0 the warm-start is the canonical Phase-3 checkpoint;
     afterwards it's the previous iteration's saved checkpoint."""
     if iter_idx == 0:
         return WARMSTART_CANONICAL
-    return _checkpoint_path(iter_idx - 1)
+    return _checkpoint_path(checkpoint_root, iter_idx - 1)
 
 
 def _mix_fraction_for(iter_idx: int, schedule: list[float]) -> float:
@@ -73,6 +77,69 @@ def _selfplay_iter_complete(output_root: Path, iter_idx: int, target_games: int)
     return len(list(iter_dir.glob("seed_*.npz"))) >= target_games
 
 
+def _tally_anchor_eval_dir(
+    eval_dir: Path, sims: int, n_games: int
+) -> tuple[int, int, int] | None:
+    """Tally W/D/L from the per-game JSONs eval_iter_head_to_head.py wrote.
+    Returns (wins, draws, losses) for the new checkpoint; None if fewer than
+    n_games results have landed."""
+    pattern = f"s{sims:04d}_seed*_p*.json"
+    files = sorted(eval_dir.glob(pattern))
+    if len(files) < n_games:
+        return None
+    wins = draws = losses = 0
+    for f in files[:n_games]:
+        with f.open() as fh:
+            r = json.load(fh)
+        if r.get("won_by_new"):
+            wins += 1
+        elif r.get("drew"):
+            draws += 1
+        else:
+            losses += 1
+    return wins, draws, losses
+
+
+def _append_anchor_gate_log(
+    output_root: Path, iter_idx: int, anchor_path: Path,
+    wins: int, draws: int, losses: int, threshold: float,
+) -> dict:
+    log_path = output_root / "anchor_gate_log.json"
+    entries: list[dict] = []
+    if log_path.exists():
+        with log_path.open() as fh:
+            entries = json.load(fh)
+    n_games = wins + draws + losses
+    wr = wins / n_games if n_games else 0.0
+    entry = {
+        "iter": iter_idx,
+        "anchor": str(anchor_path),
+        "wins": wins, "draws": draws, "losses": losses,
+        "winrate": round(wr, 4),
+        "threshold": threshold,
+        "passed": wr >= threshold,
+    }
+    # Replace any stale entry for this iter (e.g. from a prior partial run).
+    entries = [e for e in entries if e.get("iter") != iter_idx]
+    entries.append(entry)
+    entries.sort(key=lambda e: e["iter"])
+    with log_path.open("w") as fh:
+        json.dump(entries, fh, indent=2)
+    return entry
+
+
+def _anchor_gate_log_has_iter(output_root: Path, iter_idx: int) -> dict | None:
+    log_path = output_root / "anchor_gate_log.json"
+    if not log_path.exists():
+        return None
+    with log_path.open() as fh:
+        entries = json.load(fh)
+    for e in entries:
+        if e.get("iter") == iter_idx:
+            return e
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="run_phase4_smoke")
     p.add_argument("--iters", type=int, required=True,
@@ -83,8 +150,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="NeuralMCTS sims per move during self-play.")
     p.add_argument("--eval-sims", type=int, default=50,
                    help="NeuralMCTS sims per move during head-to-head.")
-    p.add_argument("--eval-games", type=int, default=10,
-                   help="Games per head-to-head match.")
+    p.add_argument("--eval-games", type=int, default=50,
+                   help="Games per head-to-head match. Default raised from "
+                        "10/20 to 50 (2026-05-10 v2 recipe): single-game "
+                        "swings at n=20 are ±35 ELO, at n=50 are ±~22 ELO.")
     p.add_argument("--c-puct", type=float, default=1.5)
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
@@ -100,15 +169,20 @@ def main(argv: list[str] | None = None) -> int:
         help="W-penalty for in-flight nodes during batched selection. "
              "Only matters when --batch-size > 1.",
     )
-    p.add_argument("--window", type=int, default=10,
-                   help="Replay-buffer window: last K iters' games.")
+    p.add_argument("--window", type=int, default=30,
+                   help="Replay-buffer window: last K iters' games. Default "
+                        "raised from 10 to 30 (2026-05-10 v2 recipe): more "
+                        "history regularizes against the closed-loop drift "
+                        "that crashed the v1 30-iter run.")
     p.add_argument(
         "--warmstart-mix-schedule",
         type=str,
-        default="1.0,0.7,0.4,0.0",
+        default="1.0,0.7,0.4,0.3",
         help="Comma-separated list. Element i is the warmstart-mix fraction "
-             "at iter i. Clamps to the last value at higher iters. "
-             "Default: 1.0 → 0.7 → 0.4 → 0.0...",
+             "at iter i. Clamps to the last value at higher iters. Default "
+             "(2026-05-10 v2 recipe): 1.0 → 0.7 → 0.4 → 0.3 floor — never "
+             "drop to 0; the v1 default of 1.0 → 0.7 → 0.4 → 0.0 caused -330 "
+             "ELO regression vs warmstart_canonical by iter 24.",
     )
     p.add_argument("--epochs", type=int, default=3,
                    help="Training epochs per iter.")
@@ -129,26 +203,74 @@ def main(argv: list[str] | None = None) -> int:
                         "(2× GPU memory).")
     p.add_argument("--output-root", type=Path, required=True,
                    help="Root for self-play data + ELO log.")
+    p.add_argument(
+        "--checkpoint-root", type=Path,
+        default=REPO_ROOT / "checkpoints" / "selfplay",
+        help="Root for per-iter checkpoints. Default 'checkpoints/selfplay'; "
+             "use a different path (e.g. 'checkpoints/selfplay_v2') to keep "
+             "v1 and v2 outputs separate.",
+    )
+    p.add_argument(
+        "--anchor-gate", action="store_true",
+        help="After each iter's training, run a fixed-anchor eval. If "
+             "winrate < --anchor-min-winrate, count a failure; halt the "
+             "loop after --anchor-max-fails consecutive failures. Off by "
+             "default for backward compat. Cost: ~3 min/iter.",
+    )
+    p.add_argument(
+        "--anchor-checkpoint", type=Path, default=WARMSTART_CANONICAL,
+        help="Reference checkpoint for the anchor gate. Default: "
+             "warmstart_canonical.pt — the Phase 3 baseline.",
+    )
+    p.add_argument(
+        "--anchor-games", type=int, default=10,
+        help="Games per anchor-gate eval (default 10).",
+    )
+    p.add_argument(
+        "--anchor-sims", type=int, default=50,
+        help="NeuralMCTS sims per move during anchor-gate eval. Lower than "
+             "head-to-head's --eval-sims to keep cost down (default 50).",
+    )
+    p.add_argument(
+        "--anchor-min-winrate", type=float, default=0.4,
+        help="Pass threshold (default 0.4 = 40%% wr). Below this counts as "
+             "a failure for the consecutive-fails counter.",
+    )
+    p.add_argument(
+        "--anchor-max-fails", type=int, default=3,
+        help="Halt the outer loop after this many consecutive anchor-gate "
+             "failures (default 3).",
+    )
     args = p.parse_args(argv)
 
     args.output_root.mkdir(parents=True, exist_ok=True)
-    SELFPLAY_CKPT_ROOT.mkdir(parents=True, exist_ok=True)
+    args.checkpoint_root.mkdir(parents=True, exist_ok=True)
 
     schedule = [float(x) for x in args.warmstart_mix_schedule.split(",")]
     print(
         f"Phase 4 smoke: iters={args.iters}, games/iter={args.games}, "
         f"sims={args.sims}, eval_sims={args.eval_sims}, "
         f"eval_games={args.eval_games}, workers={args.workers}, "
-        f"output_root={args.output_root}"
+        f"output_root={args.output_root}, checkpoint_root={args.checkpoint_root}"
     )
     print(f"  warmstart-mix schedule: {schedule}")
     print(f"  warm-from at iter 0: {WARMSTART_CANONICAL}")
+    if args.anchor_gate:
+        print(
+            f"  anchor-gate: ON ({args.anchor_games} games at sims={args.anchor_sims} "
+            f"vs {args.anchor_checkpoint.name}, "
+            f"min_wr={args.anchor_min_winrate:.2f}, "
+            f"halt after {args.anchor_max_fails} consecutive fails)"
+        )
+    else:
+        print("  anchor-gate: OFF")
     sys.stdout.flush()
 
+    consecutive_anchor_fails = 0
     overall_t0 = time.perf_counter()
     for iter_idx in range(args.iters):
         iter_t0 = time.perf_counter()
-        warm_from = _warm_from_for(iter_idx)
+        warm_from = _warm_from_for(args.checkpoint_root, iter_idx)
         if not warm_from.exists():
             print(f"\nERROR: warm-from checkpoint missing: {warm_from}",
                   file=sys.stderr)
@@ -178,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
             _run_subcommand(f"iter {iter_idx}: self-play", cmd)
 
         # Step 2: train
-        ckpt_out = _checkpoint_path(iter_idx)
+        ckpt_out = _checkpoint_path(args.checkpoint_root, iter_idx)
         if ckpt_out.exists():
             print(f"\n[iter {iter_idx}] checkpoint exists — skipping training: {ckpt_out}")
         else:
@@ -198,6 +320,79 @@ def main(argv: list[str] | None = None) -> int:
                 ],
             )
 
+        # Step 2b: anchor gate (opt-in). Run BEFORE the chain head-to-head so
+        # we can halt cleanly without paying the head-to-head cost on a
+        # known-bad iter.
+        if args.anchor_gate:
+            cached_gate = _anchor_gate_log_has_iter(args.output_root, iter_idx)
+            if cached_gate is not None:
+                gate_entry = cached_gate
+                print(
+                    f"\n[iter {iter_idx}] anchor-gate cached: "
+                    f"{gate_entry['wins']}W/{gate_entry['draws']}D/{gate_entry['losses']}L "
+                    f"wr={gate_entry['winrate']:.2f} passed={gate_entry['passed']}"
+                )
+            else:
+                anchor_eval_dir = (
+                    args.output_root / "eval"
+                    / f"iter_{iter_idx:02d}_vs_{ANCHOR_VS_ITER_SENTINEL:04d}"
+                )
+                cmd = [
+                    sys.executable, "-u", str(SCRIPTS / "eval_iter_head_to_head.py"),
+                    "--new-checkpoint", str(ckpt_out),
+                    "--old-checkpoint", str(args.anchor_checkpoint),
+                    "--output-root", str(args.output_root),
+                    "--iter", str(iter_idx),
+                    "--vs-iter", str(ANCHOR_VS_ITER_SENTINEL),
+                    "--games", str(args.anchor_games),
+                    "--sims", str(args.anchor_sims),
+                    "--c-puct", str(args.c_puct),
+                    "--workers", str(args.eval_workers),
+                    "--batch-size", str(args.batch_size),
+                    "--virtual-loss", str(args.virtual_loss),
+                    "--no-elo-log",
+                ]
+                if args.fp16:
+                    cmd.append("--fp16")
+                _run_subcommand(
+                    f"iter {iter_idx}: anchor-gate vs {args.anchor_checkpoint.name}",
+                    cmd,
+                )
+                tally = _tally_anchor_eval_dir(
+                    anchor_eval_dir, args.anchor_sims, args.anchor_games
+                )
+                if tally is None:
+                    print(
+                        f"\nERROR: anchor-gate eval dir incomplete: {anchor_eval_dir}",
+                        file=sys.stderr,
+                    )
+                    return 1
+                wins, draws, losses = tally
+                gate_entry = _append_anchor_gate_log(
+                    args.output_root, iter_idx, args.anchor_checkpoint,
+                    wins, draws, losses, args.anchor_min_winrate,
+                )
+                print(
+                    f"\n[iter {iter_idx}] anchor-gate: "
+                    f"{wins}W/{draws}D/{losses}L  wr={gate_entry['winrate']:.2f}  "
+                    f"threshold={args.anchor_min_winrate:.2f}  "
+                    f"{'PASS' if gate_entry['passed'] else 'FAIL'}"
+                )
+            if gate_entry["passed"]:
+                consecutive_anchor_fails = 0
+            else:
+                consecutive_anchor_fails += 1
+                if consecutive_anchor_fails >= args.anchor_max_fails:
+                    print(
+                        f"\nABORT: {consecutive_anchor_fails} consecutive "
+                        f"anchor-gate failures (limit {args.anchor_max_fails}). "
+                        f"Halting at iter {iter_idx}. Inspect "
+                        f"{args.output_root / 'anchor_gate_log.json'} and "
+                        "DECISIONS.md before re-launching.",
+                        file=sys.stderr,
+                    )
+                    return 2
+
         # Step 3: head-to-head vs prev iter (skip iter 0; nothing to compare to)
         if iter_idx == 0:
             print(f"\n[iter {iter_idx}] no prior iter — skipping head-to-head")
@@ -207,7 +402,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd = [
                 sys.executable, "-u", str(SCRIPTS / "eval_iter_head_to_head.py"),
                 "--new-checkpoint", str(ckpt_out),
-                "--old-checkpoint", str(_checkpoint_path(iter_idx - 1)),
+                "--old-checkpoint", str(_checkpoint_path(args.checkpoint_root, iter_idx - 1)),
                 "--output-root", str(args.output_root),
                 "--iter", str(iter_idx),
                 "--vs-iter", str(iter_idx - 1),
