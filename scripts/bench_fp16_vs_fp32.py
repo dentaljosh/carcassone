@@ -134,6 +134,56 @@ def main(argv=None):
     t_fp16 = time_fn(fn_fp16, "fp16")
     speedup = t_fp32 / t_fp16
     print(f"  speedup: {speedup:.2f}× (fp32 / fp16)")
+
+    # Batch evaluator bench — the actual self-play workload uses batch_size=8.
+    # If fp16 is a wash or worse on single-board, it might still win on batch
+    # because the autocast overhead is fixed per call but compute grows with B.
+    print("\n=== batch evaluator (B=8, the self-play hot path) ===")
+    from carcassonne_ai.evaluators import make_batch_evaluator
+    bfn_fp32 = make_batch_evaluator(net, device, g, use_fp16=False)
+    bfn_fp16 = make_batch_evaluator(net, device, g, use_fp16=True)
+    # group boards into batches of 8 to mirror NeuralMCTS at batch_size=8
+    B = 8
+    batches = [boards[i:i+B] for i in range(0, len(boards), B) if len(boards[i:i+B]) == B]
+    for _ in range(3):
+        bfn_fp32(batches[0])
+        bfn_fp16(batches[0])
+    # numerical agreement on a batch
+    max_l1_b = 0.0
+    max_val_diff_b = 0.0
+    for batch in batches:
+        p32, v32 = bfn_fp32(batch)
+        p16, v16 = bfn_fp16(batch)
+        l1 = float(np.abs(p32 - p16).sum())
+        vd = float(np.abs(v32 - v16).max())
+        max_l1_b = max(max_l1_b, l1)
+        max_val_diff_b = max(max_val_diff_b, vd)
+    print(f"  numerics: max prior L1={max_l1_b:.5f}  max value diff={max_val_diff_b:.5f}")
+    def time_batch(fn, label):
+        best = float("inf")
+        for r in range(args.repeats):
+            torch.cuda.synchronize() if device.type == "cuda" else None
+            t0 = time.perf_counter()
+            for batch in batches:
+                fn(batch)
+            torch.cuda.synchronize() if device.type == "cuda" else None
+            elapsed = time.perf_counter() - t0
+            best = min(best, elapsed)
+        per_batch_ms = best / len(batches) * 1000
+        per_call_us = best / (len(batches) * B) * 1e6
+        print(f"  {label}: {best*1000:.1f} ms total "
+              f"({per_batch_ms:.2f} ms/batch, {per_call_us:.1f} µs/board)")
+        return best
+    tb_fp32 = time_batch(bfn_fp32, "fp32")
+    tb_fp16 = time_batch(bfn_fp16, "fp16")
+    batch_speedup = tb_fp32 / tb_fp16
+    print(f"  speedup: {batch_speedup:.2f}× (fp32 / fp16)")
+    if batch_speedup >= 1.10:
+        print(f"\n  → fp16 batch is a WIN ({batch_speedup:.2f}×) — turn it on for self-play.")
+    elif batch_speedup >= 0.95:
+        print(f"\n  → fp16 batch is a wash ({batch_speedup:.2f}×) — keep fp32 for simplicity.")
+    else:
+        print(f"\n  → fp16 batch is SLOWER ({batch_speedup:.2f}×) — definitely keep fp32.")
     return 0
 
 
