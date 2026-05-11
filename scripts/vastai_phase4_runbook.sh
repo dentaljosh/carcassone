@@ -13,24 +13,32 @@ set -euo pipefail
 # STEP 1 — Verify CLI + balance
 # ────────────────────────────────────────────────────────────────────────
 # vastai show user --raw | jq '{credit, username}'
-# Expect: credit > $0.83 for a 30-iter sanity run (~12hr at $0.069/hr).
-# Expect: credit > $20  for a 200-iter prod run  (~30hr at $0.482/hr).
+#
+# Budget guidance (refreshed 2026-05-10):
+#   - 30-iter sanity:  ~24hr local on RTX 5060 Ti => ~10-15hr on 5090 box
+#                      at $0.30/hr ≈ $3-5
+#   - 200-iter prod:   ~6 days local => ~50-70hr on 5090 box
+#                      at $0.30/hr ≈ $15-25
+# Cheapest 5090 verified ~$0.295/hr (24 vCPUs, 64GB RAM, 32GB VRAM).
+# Cheaper 5060Ti boxes exist (~$0.10-0.15/hr) but only have 8-12 vCPUs —
+# would actually be SLOWER than running locally at W=16. Don't bother.
+# As of 2026-05-10 our balance is $2.07 — top up before launching prod.
 
 # ────────────────────────────────────────────────────────────────────────
 # STEP 2 — Search offers. Filter on EFFECTIVE cores, not total cores —
 #         multi-tenant boxes will list 64+ cores but only give us a slice.
 # ────────────────────────────────────────────────────────────────────────
-# For 30-iter sanity (cheap):
+# Recommended (5090 + good CPU):
 #   vastai search offers \
-#     'cpu_cores_effective>=16 dph_total<0.10 reliability>0.97 verified=True \
+#     'gpu_name=RTX_5090 cpu_cores_effective>=12 dph<=0.40 reliability>0.95 \
 #      rentable=True inet_down>=100 cuda_max_good>=12.0' \
-#     --order 'dph_total asc' --raw
+#     -o 'dph' --raw
 #
-# For 200-iter prod (max throughput):
+# 5060Ti fallback (cheaper but only worth it if 5090 unavailable):
 #   vastai search offers \
-#     'cpu_cores_effective>=32 dph_total<0.50 reliability>0.97 verified=True \
+#     'gpu_name=RTX_5060_Ti cpu_cores_effective>=12 dph<=0.20 reliability>0.95 \
 #      rentable=True inet_down>=100 cuda_max_good>=12.0' \
-#     --order 'dph_total asc' --raw
+#     -o 'dph' --raw
 #
 # Pipe through this to print a readable table:
 #   ... --raw | python3 -c "
@@ -120,7 +128,7 @@ set -euo pipefail
 #   --checkpoint checkpoints/warmstart_canonical.pt \
 #   --output-root data/selfplay/vastai_calibration \
 #   --iter 0 --games 16 --sims 100 \
-#   --batch-size 8 --workers 16 --no-cuda-cap \
+#   --batch-size 8 --workers 16 --fp16 \
 #   > /tmp/calib.log 2>&1 & disown
 #
 # Watch:
@@ -149,7 +157,7 @@ set -euo pipefail
 #     --checkpoint checkpoints/warmstart_canonical.pt \
 #     --output-root "data/selfplay/bench_w${W}" \
 #     --iter 0 --games 16 --sims 100 \
-#     --batch-size 8 --workers "$W" --no-cuda-cap \
+#     --batch-size 8 --workers "$W" --fp16 \
 #     > "/tmp/bench_w${W}.log" 2>&1
 #   elapsed=$(python3 -c "print(f'{$(date +%s.%N) - $start:.1f}')")
 #   echo "$W,16,100,8,$elapsed" >> $RESULTS
@@ -170,13 +178,27 @@ set -euo pipefail
 #   --iters 30 --games 50 --sims 100 \
 #   --eval-sims 100 --eval-games 20 \
 #   --workers 16 --eval-workers 16 \
-#   --batch-size 8 --virtual-loss 1.0 --no-cuda-cap \
+#   --batch-size 8 --virtual-loss 1.0 --fp16 \
 #   --output-root data/selfplay/sanity_30iter \
 #   > /tmp/phase4_30iter.log 2>&1 & disown
 #
-# 200-iter prod (only if 30-iter passes):
-#   --iters 200 --games 100 --sims 200 --eval-sims 200 --eval-games 30
-#   (and bump --workers to whatever the rented box has)
+# 200-iter prod (only if 30-iter sanity passed, which it has 2026-05-10):
+# nohup python -u scripts/run_phase4_smoke.py \
+#   --iters 200 --games 50 --sims 100 \
+#   --eval-sims 100 --eval-games 20 \
+#   --workers $W_OPTIMAL --eval-workers $W_OPTIMAL \
+#   --batch-size 8 --virtual-loss 1.0 --fp16 \
+#   --output-root data/selfplay/prod_200iter \
+#   > /tmp/phase4_prod.log 2>&1 & disown
+#
+# Note: keeping same sims=100 / eval-sims=100 / games=50 / eval-games=20 as
+# 30-iter sanity (they cleared the bar; no reason to perturb a working recipe).
+# 200 iters at ~37 min/iter local => ~123hr local. Target rented-box wallclock
+# 50-70hr at $0.30/hr = ~$15-25 with --fp16 + W=24.
+#
+# Also recommended: add periodic anchor evals every 10 iters vs warmstart
+# canonical (true absolute-strength signal vs the chained-prev ELO drift).
+# Doable as a post-run analysis script (no need to wire into the live loop).
 
 # ────────────────────────────────────────────────────────────────────────
 # STEP 10 — Monitor (you'll be on local box; SSH back periodically)

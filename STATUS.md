@@ -2,35 +2,41 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-08) — vloss MCTS landed; mid-prod calibration running
+## Right now (2026-05-10) — 30-iter sanity finishing; cloud rental gated
 
-**Branch:** `phase-4-selfplay`. Latest commit `f9d805e` (virtual-loss + batched-eval). One uncommitted change: vloss wired into `eval_iter_head_to_head.py` + plumbed through `run_phase4_smoke.py`.
+**Branch:** `phase-4-selfplay`. Latest commit `fe8ede3` (production-readiness — skip-on-error, --fp16 CLI, --no-elo-log).
 
-**Active background task (launched 2026-05-08):**
-- `nohup python -u scripts/run_phase4_smoke.py --iters 2 --games 10 --sims 100 --eval-sims 100 --eval-games 10 --workers 7 --eval-workers 4 --batch-size 8 --output-root data/selfplay/midprod_calibration > /tmp/phase4_midprod_calibration.log 2>&1 &`
-- Purpose: measure per-iter wallclock at mid-prod sims (sims=100, eval-sims=100) with vloss=8 on multi-worker pool. The 1.44× single-process measurement is a floor; multi-worker GPU contention dynamics could shift it either way.
-- Detached so it survives any SSH disconnect. Resumable via per-game .npz / per-game .json caches.
+**Active background task (relaunched 2026-05-10 21:02):**
+- `nohup python -u scripts/run_phase4_smoke.py --iters 30 --games 50 --sims 100 --eval-sims 100 --eval-games 20 --workers 16 --eval-workers 16 --batch-size 8 --virtual-loss 1.0 --output-root data/selfplay/sanity_30iter > /tmp/phase4_30iter_resume2.log 2>&1 &`
+- 24 of 30 iters logged before pause; resume picks up from iter 20 backfilling 1-game skip-and-log gaps, then iter 25 has 46/50 cached, then iters 26-29 are fresh. ETA ~3h to completion.
+- Detached. Resumable across kills via per-game .npz / per-game .json caches.
 
-**vloss MCTS landed (commit `f9d805e`):**
-- `NeuralMCTS` constructor gained `batch_size`, `batch_evaluator`, `virtual_loss`. Default `batch_size=1` preserves serial behavior.
-- Vloss applied in PARENT's perspective (sign depends on parent-child same/different player), so PUCT actually drops in alternating-player trees. 9 new tests in `test_neural_mcts_virtual_loss.py`.
-- `run_selfplay_iter.py` and `run_phase4_smoke.py` accept `--batch-size N` and `--virtual-loss V`. Eval (`eval_iter_head_to_head.py`) wired up the same way as part of the calibration prep.
-- Single-process bench at sims=25, batch_size=8: 48.9s → 34.0s (1.44×) for one self-play game.
+**30-iter sanity result so far (24 of 30 iters):**
+- ELO chain: 0 → +612 (vs prev iter, 20-game samples, choppy)
+- Loss curves healthy: pol_val 1.65→1.46, val_val 0.08→0.08, no NaN, no entropy collapse
+- One engine bug (farm_util IndexError) hit iter 18; skip-and-log harness handled it
+- Phase 4 acceptance bar (loop runs, ELO trend up, no NaN, no collapse) — **MET**
 
-**Phase 4 smoke (closed 2026-05-03) — see DECISIONS.md "2026-05-03 — Phase 4 smoke PASS":** 5 iters, 53.7 min wallclock, ELO 0→175.7. Strictly non-decreasing. No crashes, no NaN losses, no policy collapse. Acceptance bar met.
+**Production-readiness landed (commit `fe8ede3`):**
+- skip-on-error in `run_selfplay_iter._play_one_pool`: failed games log+drop, no whole-iter abort
+- `--fp16` plumbed through `run_selfplay_iter.py`, `eval_iter_head_to_head.py`, `run_phase4_smoke.py` (default off; expects 1.5-2× forward speedup on Blackwell)
+- `--no-elo-log` flag for ad-hoc anchor evals (e.g. iter_29 vs warmstart_canonical)
 
-**Phase 4 artifacts on disk:**
-- `data/selfplay/smoke_v1/iter_0[0-4]/seed_*.npz` + `eval/iter_NN_vs_MM/*.json` + `elo_log.json`
-- `checkpoints/selfplay/iter_0[0-4].pt` + `.metrics.json`
+**Vast.ai pricing snapshot (2026-05-10):**
+- Cheapest 5090: $0.295/hr (24 vCPUs, 64GB RAM). 200-iter prod ≈ 50-70hr ≈ $15-25
+- 5060Ti boxes ≤$0.20 exist but only 8-12 vCPU — slower than local W=16
+- **Balance: $2.07** — needs top-up before launching 200-iter
+- Updated runbook: `scripts/vastai_phase4_runbook.sh`
 
-**Next decisions when calibration completes:**
-- If wallclock extrapolates to a reasonable mid-prod budget (~1 weekend for 50 iters), launch the full mid-prod run.
-- Otherwise tune sims/games or accept the smoke endpoint and start Phase 5.
-- Phase 5 (position analyzer / coach) is the project's actual goal; production-scale Phase 4 is optional polish.
+**Next decisions (after 30-iter finishes):**
+1. 50-game anchor eval `iter_29 vs warmstart_canonical` (use `--no-elo-log`) → true absolute strength signal vs the chained-prev ELO drift. ~25 min wallclock.
+2. Quick fp16 vs fp32 bench locally (3-5 games each, time delta + identical priors check) → confirm fp16 doesn't degrade play before committing to it on the rented box.
+3. Decide: top up vast.ai + launch 200-iter prod, or call Phase 4 done and start Phase 5.
 
 **Open items deferred:**
 - Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom; benign at our scale).
-- Larger eval game count per head-to-head (10 → 30+ for production).
+- Larger eval game count per head-to-head (20 → 50+ for production).
+- Scheduled anchor evals every 10 iters during prod (post-run analysis script is fine).
 
 ## Phase 4 archive (2026-04-29 → 2026-05-03)
 
