@@ -64,6 +64,7 @@ _worker_c_puct: float = 1.5
 _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
+_worker_use_fp16: bool = False
 
 
 def _result_path(eval_dir: str, sims: int, seed: int, new_player: int) -> Path:
@@ -101,10 +102,10 @@ def _load_net(path: str, device: torch.device) -> CarcassonneNet:
 
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
-    batch_size: int, virtual_loss: float,
+    batch_size: int, virtual_loss: float, use_fp16: bool = False,
 ) -> None:
     global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
-    global _worker_batch_size, _worker_virtual_loss
+    global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -115,6 +116,7 @@ def _worker_init(
     _worker_eval_dir = eval_dir
     _worker_batch_size = batch_size
     _worker_virtual_loss = virtual_loss
+    _worker_use_fp16 = use_fp16
 
 
 def _play_one(args: tuple[int, int]) -> GameResult:
@@ -128,16 +130,20 @@ def _play_one(args: tuple[int, int]) -> GameResult:
 
     game_new = Game(enable_legal_moves_cache=True)
     game_old = Game(enable_legal_moves_cache=True)
-    new_eval = make_single_evaluator(_worker_new, _worker_device, game_new)
-    old_eval = make_single_evaluator(_worker_old, _worker_device, game_old)
+    new_eval = make_single_evaluator(
+        _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
+    )
+    old_eval = make_single_evaluator(
+        _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
+    )
     new_batch_eval = None
     old_batch_eval = None
     if _worker_batch_size > 1:
         new_batch_eval = make_batch_evaluator(
-            _worker_new, _worker_device, game_new
+            _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
         )
         old_batch_eval = make_batch_evaluator(
-            _worker_old, _worker_device, game_old
+            _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
         )
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
@@ -243,6 +249,17 @@ def main(argv: list[str] | None = None) -> int:
         "--virtual-loss", type=float, default=1.0,
         help="W-penalty for in-flight nodes; only matters when --batch-size > 1.",
     )
+    p.add_argument(
+        "--fp16", action="store_true",
+        help="Run network forward passes under torch.amp.autocast(fp16) on "
+             "CUDA. Default off.",
+    )
+    p.add_argument(
+        "--no-elo-log", action="store_true",
+        help="Skip writing to elo_log.json. Use for ad-hoc anchor evals "
+             "(e.g. iter_29 vs warmstart_canonical) that shouldn't pollute "
+             "the chained ELO record.",
+    )
     args = p.parse_args(argv)
 
     eval_dir = (
@@ -276,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         initargs=(
             str(args.new_checkpoint), str(args.old_checkpoint),
             args.sims, args.c_puct, str(eval_dir),
-            args.batch_size, args.virtual_loss,
+            args.batch_size, args.virtual_loss, args.fp16,
         ),
     ) as pool:
         for done, r in enumerate(
@@ -294,15 +311,30 @@ def main(argv: list[str] | None = None) -> int:
     losses = args.games - wins - draws
     avg_diff = sum(r.diff for r in results) / args.games
 
-    entry = _append_elo_log(
-        args.output_root, args.iter_idx, args.vs_iter, wins, losses, draws
-    )
-    print(
-        f"\niter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}: "
-        f"{wins}W/{draws}D/{losses}L, avg diff {avg_diff:+.1f}, "
-        f"elo_delta {entry['elo_delta']:+.1f} → elo_estimate {entry['elo_estimate']:+.1f}, "
-        f"wallclock {elapsed:.1f}s"
-    )
+    if args.no_elo_log:
+        # Compute the standalone delta (anchor at 0) for reporting only;
+        # don't touch the chain log.
+        from carcassonne_ai.elo import update_pair
+        _new_elo, delta = update_pair(
+            iter_n_elo_estimate=0.0, iter_prev_elo=0.0,
+            wins=wins, losses=losses, draws=draws,
+        )
+        print(
+            f"\nANCHOR EVAL ({args.new_checkpoint.name} vs {args.old_checkpoint.name}): "
+            f"{wins}W/{draws}D/{losses}L, avg diff {avg_diff:+.1f}, "
+            f"elo_delta {delta:+.1f} (no log entry written), "
+            f"wallclock {elapsed:.1f}s"
+        )
+    else:
+        entry = _append_elo_log(
+            args.output_root, args.iter_idx, args.vs_iter, wins, losses, draws
+        )
+        print(
+            f"\niter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}: "
+            f"{wins}W/{draws}D/{losses}L, avg diff {avg_diff:+.1f}, "
+            f"elo_delta {entry['elo_delta']:+.1f} → elo_estimate {entry['elo_estimate']:+.1f}, "
+            f"wallclock {elapsed:.1f}s"
+        )
     return 0
 
 

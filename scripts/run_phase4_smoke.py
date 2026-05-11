@@ -112,6 +112,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--epochs", type=int, default=3,
                    help="Training epochs per iter.")
+    p.add_argument(
+        "--fp16", action="store_true",
+        help="Pass --fp16 to selfplay + head-to-head subprocesses. fp16 "
+             "autocast at inference (master weights stay fp32). ~1.5-2× "
+             "forward speedup on Blackwell/Ada Tensor Cores. No-op on CPU.",
+    )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers for self-play. Default 8 leaves SMT "
                         "headroom for other workloads on a 5800X; for "
@@ -152,24 +158,24 @@ def main(argv: list[str] | None = None) -> int:
         if _selfplay_iter_complete(args.output_root, iter_idx, args.games):
             print(f"\n[iter {iter_idx}] self-play already complete — skipping")
         else:
-            _run_subcommand(
-                f"iter {iter_idx}: self-play",
-                [
-                    sys.executable, "-u", str(SCRIPTS / "run_selfplay_iter.py"),
-                    "--checkpoint", str(warm_from),
-                    "--output-root", str(args.output_root),
-                    "--iter", str(iter_idx),
-                    "--games", str(args.games),
-                    "--sims", str(args.sims),
-                    "--c-puct", str(args.c_puct),
-                    "--dirichlet-alpha", str(args.dirichlet_alpha),
-                    "--dirichlet-eps", str(args.dirichlet_eps),
-                    "--temp-threshold", str(args.temp_threshold),
-                    "--batch-size", str(args.batch_size),
-                    "--virtual-loss", str(args.virtual_loss),
-                    "--workers", str(args.workers),
-                ],
-            )
+            cmd = [
+                sys.executable, "-u", str(SCRIPTS / "run_selfplay_iter.py"),
+                "--checkpoint", str(warm_from),
+                "--output-root", str(args.output_root),
+                "--iter", str(iter_idx),
+                "--games", str(args.games),
+                "--sims", str(args.sims),
+                "--c-puct", str(args.c_puct),
+                "--dirichlet-alpha", str(args.dirichlet_alpha),
+                "--dirichlet-eps", str(args.dirichlet_eps),
+                "--temp-threshold", str(args.temp_threshold),
+                "--batch-size", str(args.batch_size),
+                "--virtual-loss", str(args.virtual_loss),
+                "--workers", str(args.workers),
+            ]
+            if args.fp16:
+                cmd.append("--fp16")
+            _run_subcommand(f"iter {iter_idx}: self-play", cmd)
 
         # Step 2: train
         ckpt_out = _checkpoint_path(iter_idx)
@@ -198,22 +204,24 @@ def main(argv: list[str] | None = None) -> int:
         elif _elo_log_has_iter(args.output_root, iter_idx):
             print(f"\n[iter {iter_idx}] ELO log entry exists — skipping head-to-head")
         else:
+            cmd = [
+                sys.executable, "-u", str(SCRIPTS / "eval_iter_head_to_head.py"),
+                "--new-checkpoint", str(ckpt_out),
+                "--old-checkpoint", str(_checkpoint_path(iter_idx - 1)),
+                "--output-root", str(args.output_root),
+                "--iter", str(iter_idx),
+                "--vs-iter", str(iter_idx - 1),
+                "--games", str(args.eval_games),
+                "--sims", str(args.eval_sims),
+                "--c-puct", str(args.c_puct),
+                "--workers", str(args.eval_workers),
+                "--batch-size", str(args.batch_size),
+                "--virtual-loss", str(args.virtual_loss),
+            ]
+            if args.fp16:
+                cmd.append("--fp16")
             _run_subcommand(
-                f"iter {iter_idx}: head-to-head vs iter {iter_idx - 1}",
-                [
-                    sys.executable, "-u", str(SCRIPTS / "eval_iter_head_to_head.py"),
-                    "--new-checkpoint", str(ckpt_out),
-                    "--old-checkpoint", str(_checkpoint_path(iter_idx - 1)),
-                    "--output-root", str(args.output_root),
-                    "--iter", str(iter_idx),
-                    "--vs-iter", str(iter_idx - 1),
-                    "--games", str(args.eval_games),
-                    "--sims", str(args.eval_sims),
-                    "--c-puct", str(args.c_puct),
-                    "--workers", str(args.eval_workers),
-                    "--batch-size", str(args.batch_size),
-                    "--virtual-loss", str(args.virtual_loss),
-                ],
+                f"iter {iter_idx}: head-to-head vs iter {iter_idx - 1}", cmd
             )
 
         iter_elapsed = time.perf_counter() - iter_t0

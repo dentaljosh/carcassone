@@ -94,25 +94,40 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     assert cfg is not None and _worker_net is not None and _worker_device is not None
 
     game = Game(enable_legal_moves_cache=True)
-    evaluator = make_single_evaluator(_worker_net, _worker_device, game)
+    use_fp16 = cfg.get("use_fp16", False)
+    evaluator = make_single_evaluator(
+        _worker_net, _worker_device, game, use_fp16=use_fp16
+    )
     batch_evaluator = None
     if cfg["batch_size"] > 1:
         batch_evaluator = make_batch_evaluator(
-            _worker_net, _worker_device, game
+            _worker_net, _worker_device, game, use_fp16=use_fp16
         )
-    ds = play_one_selfplay_game(
-        game=game,
-        evaluator=evaluator,
-        sims=cfg["sims"],
-        c_puct=cfg["c_puct"],
-        dirichlet_alpha=cfg["dirichlet_alpha"],
-        dirichlet_eps=cfg["dirichlet_eps"],
-        temp_threshold=cfg["temp_threshold"],
-        seed=seed,
-        batch_size=cfg["batch_size"],
-        batch_evaluator=batch_evaluator,
-        virtual_loss=cfg["virtual_loss"],
-    )
+    try:
+        ds = play_one_selfplay_game(
+            game=game,
+            evaluator=evaluator,
+            sims=cfg["sims"],
+            c_puct=cfg["c_puct"],
+            dirichlet_alpha=cfg["dirichlet_alpha"],
+            dirichlet_eps=cfg["dirichlet_eps"],
+            temp_threshold=cfg["temp_threshold"],
+            seed=seed,
+            batch_size=cfg["batch_size"],
+            batch_evaluator=batch_evaluator,
+            virtual_loss=cfg["virtual_loss"],
+        )
+    except Exception as e:
+        # Engine edge cases (e.g. farm_util IndexError seen 2026-05-10) shouldn't
+        # nuke the whole iter. Log + skip; a missing seed file just means less
+        # training data for this iter, not a corrupt buffer.
+        import traceback
+        sys.stderr.write(
+            f"\n[seed {seed}] selfplay FAILED: {type(e).__name__}: {e}\n"
+            f"{traceback.format_exc()}\n"
+        )
+        sys.stderr.flush()
+        return seed, "failed", 0
     ds.save(path)
     return seed, "fresh", len(ds)
 
@@ -151,6 +166,13 @@ def main(argv: list[str] | None = None) -> int:
              "empirical local optimum (1 worker per SMT thread; saturates "
              "GPU queue without CPU-side preemption — measured 2026-05-09 "
              "on RTX 5060 Ti, ~20%% faster than W=8).",
+    )
+    p.add_argument(
+        "--fp16", action="store_true",
+        help="Run network forward passes under torch.amp.autocast(fp16) on "
+             "CUDA. Master weights stay fp32 (inference-only autocast). "
+             "Typical 1.5-2× speedup on Blackwell/Ada Tensor Cores. "
+             "No-op on CPU. Default off for backward compat.",
     )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
@@ -201,6 +223,7 @@ def main(argv: list[str] | None = None) -> int:
         "temp_threshold": args.temp_threshold,
         "batch_size": args.batch_size,
         "virtual_loss": args.virtual_loss,
+        "use_fp16": args.fp16,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -220,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.perf_counter()
     fresh = 0
     cached = 0
+    failed = 0
     n_pos_total = 0
     first_fresh_t: float | None = None
     ctx = mp.get_context("spawn")
@@ -243,18 +267,21 @@ def main(argv: list[str] | None = None) -> int:
                         f"~{eta_min:.1f} min for {remaining} fresh"
                     )
                     sys.stdout.flush()
+            elif status == "failed":
+                failed += 1
             else:
                 cached += 1
             if done % max(1, args.games // 10) == 0 or done == args.games:
                 print(
                     f"  ... {done}/{args.games} done "
-                    f"(fresh={fresh}, cached={cached})"
+                    f"(fresh={fresh}, cached={cached}, failed={failed})"
                 )
                 sys.stdout.flush()
     elapsed = time.perf_counter() - t0
     print(
-        f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached = "
-        f"{fresh + cached} games, {n_pos_total} positions, {elapsed:.1f}s wallclock"
+        f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached + "
+        f"{failed} failed = {fresh + cached + failed} games attempted, "
+        f"{n_pos_total} positions, {elapsed:.1f}s wallclock"
     )
     return 0
 
