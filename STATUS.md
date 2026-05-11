@@ -2,41 +2,46 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-10) — 30-iter sanity finishing; cloud rental gated
+## Right now (2026-05-10) — Phase 4 RE-OPENED; 30-iter recipe regressed; cloud rental aborted
 
-**Branch:** `phase-4-selfplay`. Latest commit `fe8ede3` (production-readiness — skip-on-error, --fp16 CLI, --no-elo-log).
+**Branch:** `phase-4-selfplay`. Latest commit `2af55be`.
 
-**Active background task (relaunched 2026-05-10 21:02):**
-- `nohup python -u scripts/run_phase4_smoke.py --iters 30 --games 50 --sims 100 --eval-sims 100 --eval-games 20 --workers 16 --eval-workers 16 --batch-size 8 --virtual-loss 1.0 --output-root data/selfplay/sanity_30iter > /tmp/phase4_30iter_resume2.log 2>&1 &`
-- 24 of 30 iters logged before pause; resume picks up from iter 20 backfilling 1-game skip-and-log gaps, then iter 25 has 46/50 cached, then iters 26-29 are fresh. ETA ~3h to completion.
-- Detached. Resumable across kills via per-game .npz / per-game .json caches.
+**Headline:** chain-vs-prev ELO climbed +612 over 24 iters, but anchor eval (`iter_24 vs warmstart_canonical`) showed iter_24 = **6W/1D/43L = -330 ELO** in absolute terms. The recipe drove an absolute-strength regression while the chained metric reported steady improvement. Full write-up in DECISIONS.md "2026-05-10 — Chain-vs-prev ELO discredited as standalone metric". 30-iter run was killed at iter 26; cloud rental aborted.
 
-**30-iter sanity result so far (24 of 30 iters):**
-- ELO chain: 0 → +612 (vs prev iter, 20-game samples, choppy)
-- Loss curves healthy: pol_val 1.65→1.46, val_val 0.08→0.08, no NaN, no entropy collapse
-- One engine bug (farm_util IndexError) hit iter 18; skip-and-log harness handled it
-- Phase 4 acceptance bar (loop runs, ELO trend up, no NaN, no collapse) — **MET**
+**Active background task (launched 2026-05-10 21:57):**
+- Diagnostic anchors: `iter_5/10/15/20 vs warmstart_canonical`, 30 games each at sims=100, 16 workers. Serial loop in `/tmp/diag_anchor_loop.sh`, output `/tmp/diag_anchors.log`.
+- iter_5 done: **9W/1D/20L vs warmstart, ELO -134** (regression already in place by iter 5). iter_10/15/20 still running (~45 min remaining).
+- Confirms the recipe broke very early (likely as soon as warmstart-mix dropped to 0 at iter 3), not as a late-stage drift.
 
-**Production-readiness landed (commit `fe8ede3`):**
-- skip-on-error in `run_selfplay_iter._play_one_pool`: failed games log+drop, no whole-iter abort
-- `--fp16` plumbed through `run_selfplay_iter.py`, `eval_iter_head_to_head.py`, `run_phase4_smoke.py` (default off; expects 1.5-2× forward speedup on Blackwell)
-- `--no-elo-log` flag for ad-hoc anchor evals (e.g. iter_29 vs warmstart_canonical)
+**Quarantined artifacts (do NOT use as warmstart for any subsequent run):**
+- `checkpoints/selfplay/iter_*.pt` (iters 0-25, plus partial iter_26 self-play data)
+- `data/selfplay/sanity_30iter/`
+- Kept on disk only for the Phase 6 emergence-analysis archive. The 2026-05-03 "Phase 4 PASS" smoke artifacts (`data/selfplay/smoke_v1/`) are similarly quarantined.
 
-**Vast.ai pricing snapshot (2026-05-10):**
-- Cheapest 5090: $0.295/hr (24 vCPUs, 64GB RAM). 200-iter prod ≈ 50-70hr ≈ $15-25
-- 5060Ti boxes ≤$0.20 exist but only 8-12 vCPU — slower than local W=16
-- **Balance: $2.07** — needs top-up before launching 200-iter
-- Updated runbook: `scripts/vastai_phase4_runbook.sh`
+**Recipe-fix shortlist (will be sequenced in a future plan-mode session before re-launching Phase 4):**
+- Floor warmstart-mix at ≥0.3 throughout (do NOT drop to 0)
+- K=10 → K=30 replay-buffer window
+- Anchor-gate accept/reject for each iter's checkpoint vs warmstart_canonical (~3 min cost per iter)
+- Bump eval games per chained head-to-head 20 → 50
 
-**Next decisions (after 30-iter finishes):**
-1. 50-game anchor eval `iter_29 vs warmstart_canonical` (use `--no-elo-log`) → true absolute strength signal vs the chained-prev ELO drift. ~25 min wallclock.
-2. Quick fp16 vs fp32 bench locally (3-5 games each, time delta + identical priors check) → confirm fp16 doesn't degrade play before committing to it on the rented box.
-3. Decide: top up vast.ai + launch 200-iter prod, or call Phase 4 done and start Phase 5.
+**Production-readiness landed in this session (commits `fe8ede3` + `2af55be`):**
+- skip-on-error in `run_selfplay_iter._play_one_pool`: failed games log+drop, no whole-iter abort (engine `farm_util.IndexError` rate ~1/1500 games)
+- `--fp16` plumbed through `run_selfplay_iter.py`, `eval_iter_head_to_head.py`, `run_phase4_smoke.py` (default off; expects 1.5-2× forward speedup on Blackwell — fp16 is the right precision; fp4/fp8 require calibration not worth it for our 7M-param net)
+- `--no-elo-log` flag for ad-hoc anchor evals (the lifesaver — caught the regression at $0)
+- New `scripts/bench_fp16_vs_fp32.py` (numerical agreement + wallclock delta on N mid-game positions; not yet run)
+- Updated `scripts/vastai_phase4_runbook.sh` with current 5090 pricing ($0.295/hr min) — held in reserve until Phase 4 recipe fixes land
+- **Vast.ai balance: $2.07** — no top-up needed yet; cloud rental gated on Phase 4 v2 sanity passing
+
+**Next steps (after diagnostic completes):**
+1. Read iter_10/15/20 anchor curve, confirm regression slope
+2. Plan-mode session for Phase 4 v2 recipe (the four fixes above; sequence + verification plan)
+3. Re-run 5-iter smoke v2 with fixed recipe, anchor-eval gating from iter 0
+4. If smoke v2 anchors POSITIVE vs warmstart, only then consider 200-iter cloud
 
 **Open items deferred:**
 - Root-cause the snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom; benign at our scale).
-- Larger eval game count per head-to-head (20 → 50+ for production).
-- Scheduled anchor evals every 10 iters during prod (post-run analysis script is fine).
+- Larger eval game count per head-to-head (20 → 50+ — folded into recipe-fix shortlist).
+- fp16 numerical+wallclock bench (`scripts/bench_fp16_vs_fp32.py`) — run once Phase 4 v2 has a meaningful checkpoint to bench against; meaningless on the quarantined ones.
 
 ## Phase 4 archive (2026-04-29 → 2026-05-03)
 

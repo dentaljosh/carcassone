@@ -23,6 +23,47 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-10 — Chain-vs-prev ELO discredited as standalone metric; 30-iter "PASS" was a regression in absolute strength
+
+**Setting:** Phase 4 30-iter sanity run (`data/selfplay/sanity_30iter`, recipe per the 2026-05-08 vloss-landed entry: sims=100, eval-sims=100, eval-games=20, K=10 buffer, warmstart-mix schedule [1.0, 0.7, 0.4, 0.0], 50 self-play games/iter). Chained head-to-head (each iter vs the previous) showed **ELO 0 → +612 over 24 iters** — every Phase 4 acceptance check from the 2026-05-03 entry was passing (loop runs, ELO trend up, no NaN losses, no entropy collapse). About to top up vast.ai and launch a 200-iter production run on rented hardware (~$15-25).
+
+**Anchor eval before rental as a $0 sanity check:** added `--no-elo-log` flag to `eval_iter_head_to_head.py`, ran `iter_24.pt vs warmstart_canonical.pt` at 50 games / sims=100 / 16 workers / batch=8.
+
+**Result:** iter_24 = **6W/1D/43L** vs warmstart_canonical, avg score diff -32.7, ELO delta **-330**. The network drifted ~942 ELO worse in absolute terms while the chain ELO marched +612 better.
+
+**Diagnostic anchors at iter_5 (so far; iter_10/15/20 in flight):** iter_5 already at **9W/1D/20L vs warmstart, ELO -134**. Confirms regression started in the first ~5 iters — likely as soon as the warmstart-mix schedule hit 0 at iter 3.
+
+**Why this happened (root cause — recipe, not infrastructure):**
+
+The chain ELO measures *relative* strength: "did iter N learn to beat iter N-1?" Both networks can drift toward worse-but-mutually-defeating play, and the chain still climbs. Two compounding ingredients:
+
+1. **Warmstart-mix dropped to 0 at iter 3.** The heuristic-labeled distribution was the only anchor to "actually-good play." Once dropped, training is a closed loop on self-play data — no signal pulling the policy toward objectively reasonable moves.
+2. **Replay-buffer K=10.** At iter 11+, no warmstart games appear in training data at all. The echo chamber becomes hermetic.
+3. **Sims=100 (vs AlphaZero's 800)** produces noisy policy targets. Noise compounds when the only correction signal is more samples from the same distribution.
+
+The 2026-05-03 "Phase 4 smoke PASS" entry is **superseded** by this finding. That smoke ran 5 iters on the same defective recipe. The +175 ELO it reported was the same chain-ELO illusion at smaller scale; an anchor eval would almost certainly have shown the same regression already underway.
+
+**Decision:** Two parts.
+
+1. **Chain ELO is now insufficient as the sole acceptance signal.** Future Phase 4 runs (and Phase 5/6 work that depends on Phase 4 outputs) require an anchor eval against a fixed reference (`warmstart_canonical.pt` is the canonical anchor) at the start, end, and at least every 10 iters. Anchor wins-vs-warmstart is the primary metric; chain ELO is supplementary.
+
+2. **The current `phase-4-selfplay` outputs (`checkpoints/selfplay/iter_*.pt`, `data/selfplay/sanity_30iter/`) are quarantined.** They will not be used as warmstart for any subsequent run, will not be merged to main, and are kept only for the Phase 6 emergence-analysis archive. The next Phase 4 attempt warm-starts from `warmstart_canonical.pt`.
+
+**Recipe fixes for the next Phase 4 attempt** (going to BACKLOG; details for a future plan-mode session):
+
+- **Floor warmstart-mix at 0.3** throughout (don't drop to 0). Cheap, principled.
+- **K=10 → K=30** replay-buffer window. More history, more stability, mostly free in disk cost (~1 GB extra at 200 iters).
+- **Anchor-gate**: only accept new iter as warmstart for next iter if it beats `warmstart_canonical` at ≥40% in a quick check (10 games at sims=50 = ~3 min). Effectively a regression-stop. Reject-and-retrain-from-prev on failure.
+- **Larger eval games** (20 → 50) for the chained head-to-heads to reduce per-iter ELO variance (a single-game swing at N=20 = ±35 ELO).
+
+**What we got right (so we don't change it):** the methodology of "anchor eval before cloud rental" caught this for $0. Without that gate we'd have spent ~$20-25 + 2-3 days of cloud time to learn the same thing. Future production-scale plans must keep this gate.
+
+**Reversal cost:** low. The 24 trained checkpoints are quarantined, not deleted. The recipe fixes are 4 small CLI flag additions. Branch is intact for re-launching a clean run.
+
+**Phase:** 4 (re-opened). The 2026-05-03 closure was premature.
+
+---
+
 ## 2026-05-08 — Virtual-loss + batched-eval MCTS landed; vloss applied in parent's perspective
 
 **Setting:** Phase 4 smoke ran the serial NeuralMCTS path (one GPU forward per sim per worker). At sims=25 / 7 workers we measured ~4 ms/sim, but at production sims=100-200 the GPU forward is a larger fraction of per-sim cost. Standard AlphaZero remedy: virtual-loss MCTS — collect K leaf-evaluation requests from parallel descents and serve them with one batched GPU call.
@@ -55,6 +96,8 @@ Root has no parent, so root only gets `N += 1` (root.W doesn't enter PUCT for an
 ---
 
 ## 2026-05-03 — Phase 4 smoke PASS: 5 iters, ELO 0 → 176, loop runs cleanly
+
+> **Superseded by the 2026-05-10 entry above.** The +176 ELO reported here was a chained-head-to-head measurement only; anchor evals on the 30-iter follow-up showed the same recipe drives an absolute-strength regression vs `warmstart_canonical`. Treat this entry as historical: the loop did run cleanly (which was the literal acceptance bar), but the recipe is broken and the closure was premature.
 
 **Setting:** Phase 4 plan (in `~/.claude/plans/new-project-in-this-spicy-finch.md`) called for a local 5-iter self-play smoke as the acceptance bar — loop completes cleanly, per-iter checkpoint + ELO logged, no policy collapse, no NaN losses. We are not chasing absolute strength in Phase 4; production-scale long runs are a future plan-mode session.
 

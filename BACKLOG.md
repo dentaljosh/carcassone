@@ -14,11 +14,26 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
-## 2026-05-08 — fp16 / autocast inference for NeuralMCTS evaluator
-**Context:** vloss/batched-eval landed (1.44× single-process at sims=25). The 5060 Ti hits 49 TFLOPS only on fp16 ops; we currently run fp32 throughout the inference path (`make_single_evaluator`/`make_batch_evaluator` in `evaluators.py` use bare `torch.no_grad()` with no autocast). The Phase 3 plan called for "fp16 autocast for forward, fp32 master weights" but the autocast was never wired.
-**Idea:** wrap the forward in `torch.autocast(device_type='cuda', dtype=torch.float16)` (or `bfloat16` on Ada/Blackwell). Master weights stay fp32; only the forward activations go to fp16. This compounds with vloss — bigger batches benefit even more from fp16 because GPU throughput is the bottleneck once the batch is full.
-**Why deferred:** worker-count sweep is in flight; fp16 is the next-most-promising lever after we know the multi-worker baseline. ~1 hour of work + a short bench to verify it doesn't regress eval ELO (fp16 quantization could shift policy tail).
-**Expected speedup:** 1.5-2× on the GPU portion. Harder to predict net wallclock impact because CPU work is non-trivial.
+## 2026-05-10 — Phase 4 v2 recipe fixes (after the chain-ELO-vs-anchor regression finding)
+
+**Context:** The 30-iter sanity run on `phase-4-selfplay` regressed -330 ELO vs `warmstart_canonical` while chain ELO climbed +612. See DECISIONS.md "2026-05-10 — Chain-vs-prev ELO discredited as standalone metric". Quarantined those checkpoints; Phase 4 is re-opened.
+
+**Recipe-fix shortlist (needs a plan-mode session before implementing — don't action piecemeal):**
+
+1. **Floor warmstart-mix at ≥0.3 throughout.** Right now `run_phase4_smoke.py --warmstart-mix-schedule "1.0,0.7,0.4,0.0"` drops to 0 at iter 3. Change default to `"1.0,0.7,0.4,0.3"` so the heuristic-labeled distribution stays as a 30% anchor in every iter's training mix.
+2. **K=10 → K=30 replay-buffer window** (`run_phase4_smoke.py --window`). More history dilutes noise; ~1 GB extra disk at 200 iters (trivial).
+3. **Anchor-gate per iter.** After training iter N, run a 10-game match vs `warmstart_canonical.pt` at sims=50 (~3 min). If win-rate ≥ 40%, accept the new checkpoint as warmstart for iter N+1; else reject and restart iter N+1 from iter N-1's checkpoint. Effectively a regression-stop. Needs a new `--anchor-gate` mode in `run_phase4_smoke.py` plus an "anchor_gate_log.json" alongside `elo_log.json`.
+4. **Bump eval games per chained head-to-head from 20 → 50** so single-game swings don't show as ±35 ELO. Independently useful even if the chain stays as a supplementary metric.
+
+**Verification before re-launching:** rerun the 5-iter smoke (same params as 2026-05-03 but with the four fixes). Acceptance is now: anchor wins-vs-warmstart at iter 0 ≥ 30%, monotonically non-decreasing through iter 4, NOT chain ELO trend.
+
+**Why deferred:** needs a plan-mode session to sequence the four fixes (some are CLI defaults, some are real code in `train_iter.py` / `run_phase4_smoke.py`), and to define the new acceptance bar precisely. Don't piecemeal.
+
+---
+
+## 2026-05-08 — fp16 / autocast inference for NeuralMCTS evaluator — LANDED 2026-05-10
+
+`use_fp16` flag added to `evaluators.make_{single,batch}_evaluator` (commit `cc9cc90`); CLI plumbed through `run_selfplay_iter.py`/`eval_iter_head_to_head.py`/`run_phase4_smoke.py` (commit `fe8ede3`); `scripts/bench_fp16_vs_fp32.py` added for numerical-agreement + wallclock check. Default off until benched on a meaningful (non-quarantined) checkpoint.
 
 ---
 
