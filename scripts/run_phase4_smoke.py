@@ -140,6 +140,27 @@ def _anchor_gate_log_has_iter(output_root: Path, iter_idx: int) -> dict | None:
     return None
 
 
+def _best_so_far_iter(output_root: Path, before_iter: int) -> int | None:
+    """Return the iter index with the highest anchor-gate winrate among
+    PASSED entries strictly before `before_iter`. Ties broken in favor of
+    the later iter (more training data baked in). None if no prior iter
+    has passed yet."""
+    log_path = output_root / "anchor_gate_log.json"
+    if not log_path.exists():
+        return None
+    with log_path.open() as fh:
+        entries = json.load(fh)
+    candidates = [
+        e for e in entries
+        if e.get("iter", 1_000_000) < before_iter and e.get("passed")
+    ]
+    if not candidates:
+        return None
+    # Sort by (winrate desc, iter desc) so the first element is best.
+    candidates.sort(key=lambda e: (-e["winrate"], -e["iter"]))
+    return candidates[0]["iter"]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="run_phase4_smoke")
     p.add_argument("--iters", type=int, required=True,
@@ -177,12 +198,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--warmstart-mix-schedule",
         type=str,
-        default="1.0,0.7,0.4,0.3",
+        default="1.0,0.7,0.5,0.5",
         help="Comma-separated list. Element i is the warmstart-mix fraction "
              "at iter i. Clamps to the last value at higher iters. Default "
-             "(2026-05-10 v2 recipe): 1.0 → 0.7 → 0.4 → 0.3 floor — never "
-             "drop to 0; the v1 default of 1.0 → 0.7 → 0.4 → 0.0 caused -330 "
-             "ELO regression vs warmstart_canonical by iter 24.",
+             "(2026-05-11 v3 recipe): 1.0 → 0.7 → 0.5 → 0.5 floor. v2's "
+             "0.3 floor (default 1.0,0.7,0.4,0.3) still regressed -200 ELO "
+             "vs warmstart by iter 4; v3 doubles the floor anchor strength.",
     )
     p.add_argument("--epochs", type=int, default=3,
                    help="Training epochs per iter.")
@@ -241,7 +262,23 @@ def main(argv: list[str] | None = None) -> int:
         help="Halt the outer loop after this many consecutive anchor-gate "
              "failures (default 3).",
     )
+    p.add_argument(
+        "--best-so-far-warmstart", action="store_true",
+        help="At each iter N>0, use the highest-anchor-winrate PASSED iter "
+             "as warm_from instead of iter N-1. Acts as a regression-stop "
+             "ratchet: if iter N's anchor wr is below best-so-far, the next "
+             "iter restarts from best-so-far's checkpoint with a fresh RNG. "
+             "Requires --anchor-gate (else nothing to track). Default OFF "
+             "for backward compat with v1/v2 behavior.",
+    )
     args = p.parse_args(argv)
+    if args.best_so_far_warmstart and not args.anchor_gate:
+        print(
+            "ERROR: --best-so-far-warmstart requires --anchor-gate "
+            "(no anchor-gate log → no best-so-far to track).",
+            file=sys.stderr,
+        )
+        return 1
 
     args.output_root.mkdir(parents=True, exist_ok=True)
     args.checkpoint_root.mkdir(parents=True, exist_ok=True)
@@ -264,13 +301,36 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         print("  anchor-gate: OFF")
+    print(
+        f"  best-so-far warmstart: {'ON' if args.best_so_far_warmstart else 'OFF'}"
+    )
     sys.stdout.flush()
 
     consecutive_anchor_fails = 0
     overall_t0 = time.perf_counter()
     for iter_idx in range(args.iters):
         iter_t0 = time.perf_counter()
-        warm_from = _warm_from_for(args.checkpoint_root, iter_idx)
+        if args.best_so_far_warmstart and iter_idx > 0:
+            best_iter = _best_so_far_iter(args.output_root, iter_idx)
+            if best_iter is None:
+                # No prior iter has PASSED yet — fall back to canonical
+                # warmstart. (Iter 0 always uses warmstart; this branch
+                # triggers when every prior anchor-gate FAILed.)
+                warm_from = WARMSTART_CANONICAL
+                print(
+                    f"\n[iter {iter_idx}] best-so-far: no prior PASS — "
+                    f"warm-from {warm_from.name}"
+                )
+            else:
+                warm_from = _checkpoint_path(args.checkpoint_root, best_iter)
+                if best_iter != iter_idx - 1:
+                    print(
+                        f"\n[iter {iter_idx}] best-so-far: rolling back to "
+                        f"iter_{best_iter:02d} (highest anchor wr) instead "
+                        f"of latest iter_{iter_idx - 1:02d}"
+                    )
+        else:
+            warm_from = _warm_from_for(args.checkpoint_root, iter_idx)
         if not warm_from.exists():
             print(f"\nERROR: warm-from checkpoint missing: {warm_from}",
                   file=sys.stderr)
