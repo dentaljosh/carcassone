@@ -15,30 +15,39 @@ set -euo pipefail
 # vastai show user --raw | jq '{credit, username}'
 #
 # Budget guidance (refreshed 2026-05-10):
-#   - 30-iter sanity:  ~24hr local on RTX 5060 Ti => ~10-15hr on 5090 box
-#                      at $0.30/hr ≈ $3-5
-#   - 200-iter prod:   ~6 days local => ~50-70hr on 5090 box
-#                      at $0.30/hr ≈ $15-25
-# Cheapest 5090 verified ~$0.295/hr (24 vCPUs, 64GB RAM, 32GB VRAM).
-# Cheaper 5060Ti boxes exist (~$0.10-0.15/hr) but only have 8-12 vCPUs —
-# would actually be SLOWER than running locally at W=16. Don't bother.
-# As of 2026-05-10 our balance is $2.07 — top up before launching prod.
+#   - 30-iter sanity:  ~24hr local on RTX 5060 Ti => ~15-20hr on 3090 box
+#                      at $0.12/hr ≈ $2-3
+#   - 200-iter prod:   ~6 days local => ~60-90hr on 3090 box
+#                      at $0.12/hr ≈ $7-12
+# Cheapest 3090 verified $0.108/hr (12 vCPUs Threadripper, 31GB RAM, 24GB VRAM).
+# 4090/5090 are 2-3× more expensive per hour and only 1.3-1.5× faster for
+# our workload (we're CPU/Python-overhead bound, not flop bound on a 7M param
+# ResNet) — net per-iter cost is ~2× higher. 5060Ti boxes (~$0.10-0.15/hr)
+# typically only have 8-12 vCPUs — could be slower than running locally at
+# W=16. The 3090 is the value pick.
+# As of 2026-05-10 our balance is $2.07 — enough for a 30-iter sanity on a
+# 3090; top up before launching the 200-iter prod.
 
 # ────────────────────────────────────────────────────────────────────────
 # STEP 2 — Search offers. Filter on EFFECTIVE cores, not total cores —
 #         multi-tenant boxes will list 64+ cores but only give us a slice.
 # ────────────────────────────────────────────────────────────────────────
-# Recommended (5090 + good CPU):
+# Recommended (RTX 3090 — cheapest acceptable Tensor-Core fp16):
 #   vastai search offers \
-#     'gpu_name=RTX_5090 cpu_cores_effective>=12 dph<=0.40 reliability>0.95 \
+#     'gpu_name=RTX_3090 cpu_cores_effective>=12 dph<=0.20 reliability>0.95 \
 #      rentable=True inet_down>=100 cuda_max_good>=12.0' \
 #     -o 'dph' --raw
 #
-# 5060Ti fallback (cheaper but only worth it if 5090 unavailable):
+# 4090 / 5090 alternative (faster but 2-3× the price, not worth it for our
+# small ~7M param ResNet — we're CPU/Python-overhead bound, not flop bound):
 #   vastai search offers \
-#     'gpu_name=RTX_5060_Ti cpu_cores_effective>=12 dph<=0.20 reliability>0.95 \
-#      rentable=True inet_down>=100 cuda_max_good>=12.0' \
+#     'gpu_name in [RTX_4090,RTX_5090] cpu_cores_effective>=12 dph<=0.40 \
+#      reliability>0.95 rentable=True inet_down>=100 cuda_max_good>=12.0' \
 #     -o 'dph' --raw
+#
+# fp16 hardware support is ANY card from Volta (V100, 2017) onward —
+# Ampere/Ada/Blackwell all hit equivalent fp16 throughput per dollar for
+# our workload. Don't pay the Blackwell premium just for fp16.
 #
 # Pipe through this to print a readable table:
 #   ... --raw | python3 -c "
