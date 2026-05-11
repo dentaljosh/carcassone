@@ -23,6 +23,62 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-11 — Phase 4 v2 recipe FAILED acceptance: mix=0.3 floor not enough
+
+**Setting:** Phase 4 v2 (post-2026-05-10 plan-mode session), four recipe fixes from BACKLOG: warmstart-mix floor at 0.3 (vs v1's 0.0), K=10 → K=30, anchor-gate per iter (10 games at sims=50 vs warmstart_canonical), eval games 20 → 50. New CLI plumbed in commit `a1f29ec`. Outputs at `data/selfplay/v2_sanity/` and `checkpoints/selfplay_v2/iter_*.pt` (kept separate from quarantined v1).
+
+**5-iter sanity result (4 hours wallclock):**
+
+Per-iter anchor gate (n=10 each):
+
+| Iter | Mix | Anchor wr | Gate |
+|---|---|---|---|
+| 0 | 1.0 | 60% | PASS |
+| 1 | 0.7 | 40% | PASS (borderline) |
+| 2 | 0.4 | 60% | PASS |
+| 3 | 0.3 | 40% | PASS (borderline) |
+| 4 | 0.3 | 20% | **FAIL** (1 strike, no halt) |
+
+Chain head-to-head (50 games each):
+
+| Match | W/D/L | ELO Δ |
+|---|---|---|
+| 1 vs 0 | 21/1/28 | -49 |
+| 2 vs 1 | 25/0/25 | 0 |
+| 3 vs 2 | 23/1/26 | -21 |
+| 4 vs 3 | 23/0/27 | -28 |
+
+Total chain ELO drift: **-98 over 4 iters** vs v1's misleading +612 over the same span. Chain ELO is now consistent with absolute strength (per the 2026-05-10 methodology fix).
+
+**Definitive iter_4 vs warmstart_canonical at n=50:** 12W/0D/38L = **24% wr, ELO -200**. 95% CI is [13%, 37%] — upper bound below the 40% acceptance threshold. This is a real regression, not noise.
+
+**v1 vs v2 comparison at same iter count (5):**
+- v1 iter_5 (mix dropped to 0 at iter 3): 30% wr at n=30 → ~-134 ELO
+- v2 iter_4 (mix held at 0.3 floor): 24% wr at n=50 → -200 ELO
+
+v2 doesn't fall as far per iter as v1 (the chain-ELO drift slope is -25 ELO/iter for v2 vs ~-50 ELO/iter for v1), but the floor mix=0.3 still permits drift. The recipe fixes weren't sufficient.
+
+**Decision:** Phase 4 v2 acceptance FAILED. Quarantine `checkpoints/selfplay_v2/iter_*.pt` and `data/selfplay/v2_sanity/` alongside the v1 artifacts (don't delete; useful for Phase 6 emergence analysis comparing v1's chain-ELO illusion to v2's slowed-but-real regression).
+
+**v3 recipe candidates (need plan-mode session before implementing):**
+
+1. **Higher warmstart-mix floor (0.5 or 0.7).** v2 at 0.3 was insufficient; doubling/tripling the anchor weight in training mix is the most direct fix. Cost: less pure self-play signal per iter (network may have a harder time exceeding warmstart in absolute terms). Trade-off worth measuring.
+2. **Best-so-far reference instead of warmstart_canonical.** Track "best iter that passed anchor gate"; on FAIL, restart next iter's warm-from from best-so-far instead of latest. Existing infrastructure (anchor_gate_log.json) makes this easy to implement.
+3. **Higher sims for self-play (200 vs 100).** AlphaZero used 800. Noisier policy targets compound; doubling sims doubles per-iter cost (~7h for 5-iter sanity) but might cleanly fix the noise floor. Worth a controlled test.
+4. **Reject-iter on anchor FAIL.** Currently FAIL just logs and increments fail counter. Could instead delete the failing iter's checkpoint and re-train iter N from the previous (best/warmstart) starting point with a new RNG seed. Preserves the "checkpoint chain advances only on improvement" property.
+
+**Combinations matter.** A future plan-mode session should select 1-2 of these for v3 (probably higher mix-floor + best-so-far reference) rather than all four — each adds confounders to the diagnosis if v3 also fails.
+
+**What v2 confirmed (so we keep this in v3):**
+- The anchor-gate methodology is the right gate; it caught the borderline-passes (iter 1, 3) and the clear FAIL (iter 4) that chain ELO would have hidden.
+- The skip-on-error harness, the fp16/CLI plumbing, the per-iter checkpoint cadence, and the v1/v2 separation in `checkpoint-root` all worked as designed.
+
+**Reversal cost:** low. Recipe fixes are CLI defaults and ~80 lines of anchor-gate code, none of which is wrong — just insufficient at this floor value. Branch is intact for v3.
+
+**Phase:** 4 (still re-opened). v3 plan-mode session is the next step.
+
+---
+
 ## 2026-05-10 — Chain-vs-prev ELO discredited as standalone metric; 30-iter "PASS" was a regression in absolute strength
 
 **Setting:** Phase 4 30-iter sanity run (`data/selfplay/sanity_30iter`, recipe per the 2026-05-08 vloss-landed entry: sims=100, eval-sims=100, eval-games=20, K=10 buffer, warmstart-mix schedule [1.0, 0.7, 0.4, 0.0], 50 self-play games/iter). Chained head-to-head (each iter vs the previous) showed **ELO 0 → +612 over 24 iters** — every Phase 4 acceptance check from the 2026-05-03 entry was passing (loop runs, ELO trend up, no NaN losses, no entropy collapse). About to top up vast.ai and launch a 200-iter production run on rented hardware (~$15-25).

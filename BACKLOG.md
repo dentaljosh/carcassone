@@ -14,20 +14,41 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
-## 2026-05-10 — Phase 4 v2 recipe fixes (after the chain-ELO-vs-anchor regression finding)
+## 2026-05-10 — Phase 4 v2 recipe fixes — LANDED 2026-05-10 (commit `a1f29ec`); FAILED 2026-05-11
 
-**Context:** The 30-iter sanity run on `phase-4-selfplay` regressed -330 ELO vs `warmstart_canonical` while chain ELO climbed +612. See DECISIONS.md "2026-05-10 — Chain-vs-prev ELO discredited as standalone metric". Quarantined those checkpoints; Phase 4 is re-opened.
+The four fixes (warmstart-mix floor 0.3, K=30, anchor-gate, eval-games 50) all landed cleanly. 5-iter sanity ran 4h. Chain ELO drift -98 (vs v1's misleading +612 — chain-vs-anchor agreement confirms the methodology fix). Definitive iter_4 anchor at n=50: **24% wr, ELO -200**. Below the 40% acceptance threshold. v2 quarantined; v3 recipe TBD. See DECISIONS.md "2026-05-11 — Phase 4 v2 recipe FAILED acceptance".
 
-**Recipe-fix shortlist (needs a plan-mode session before implementing — don't action piecemeal):**
+---
 
-1. **Floor warmstart-mix at ≥0.3 throughout.** Right now `run_phase4_smoke.py --warmstart-mix-schedule "1.0,0.7,0.4,0.0"` drops to 0 at iter 3. Change default to `"1.0,0.7,0.4,0.3"` so the heuristic-labeled distribution stays as a 30% anchor in every iter's training mix.
-2. **K=10 → K=30 replay-buffer window** (`run_phase4_smoke.py --window`). More history dilutes noise; ~1 GB extra disk at 200 iters (trivial).
-3. **Anchor-gate per iter.** After training iter N, run a 10-game match vs `warmstart_canonical.pt` at sims=50 (~3 min). If win-rate ≥ 40%, accept the new checkpoint as warmstart for iter N+1; else reject and restart iter N+1 from iter N-1's checkpoint. Effectively a regression-stop. Needs a new `--anchor-gate` mode in `run_phase4_smoke.py` plus an "anchor_gate_log.json" alongside `elo_log.json`.
-4. **Bump eval games per chained head-to-head from 20 → 50** so single-game swings don't show as ±35 ELO. Independently useful even if the chain stays as a supplementary metric.
+## 2026-05-11 — Phase 4 v3 recipe candidates (after v2 mix=0.3 floor regressed -200 ELO)
 
-**Verification before re-launching:** rerun the 5-iter smoke (same params as 2026-05-03 but with the four fixes). Acceptance is now: anchor wins-vs-warmstart at iter 0 ≥ 30%, monotonically non-decreasing through iter 4, NOT chain ELO trend.
+**Context:** v2 (mix=0.3 floor) slowed but didn't stop the regression. Drift was ~25 ELO/iter vs v1's ~50 ELO/iter. Recipe needs more anchoring.
 
-**Why deferred:** needs a plan-mode session to sequence the four fixes (some are CLI defaults, some are real code in `train_iter.py` / `run_phase4_smoke.py`), and to define the new acceptance bar precisely. Don't piecemeal.
+**Candidates (select 1-2 per v3 attempt — don't try all four; confounds the diagnosis):**
+
+1. **Higher warmstart-mix floor (0.5 or 0.7).** Most direct extension of v2. Tradeoff: less pure self-play signal per iter.
+2. **Best-so-far reference instead of warmstart_canonical.** Track best-passing iter; on FAIL, restart next iter's warm-from from best-so-far instead of latest. Existing `anchor_gate_log.json` infrastructure makes this easy.
+3. **Higher sims for self-play (200 vs 100).** AlphaZero used 800. Doubles per-iter cost (~7h for 5-iter sanity) but might cleanly fix the noise floor in policy targets.
+4. **Reject-iter on anchor FAIL.** Currently FAIL just logs. Could delete the failing checkpoint and re-train from the previous good starting point with new RNG seed. Preserves "checkpoint chain advances only on improvement".
+
+**Most likely combo for v3**: (1) + (2) — higher floor as the anchor strength bump, plus best-so-far reference as the ratchet. Both implementable in <2h without changing the inner training loop.
+
+**Why deferred:** needs a plan-mode session to pick the candidate combo + define a sharper acceptance bar (e.g., monotonic non-regression across 5 iters, not just ≥40% at iter_4).
+
+---
+
+## 2026-05-10 — Phase 4 v2 recipe fixes (HISTORICAL — landed/failed; see entries above)
+
+This entry is preserved for reference to what was attempted in v2.
+
+**Recipe-fix shortlist (4 fixes implemented in commit `a1f29ec`):**
+
+1. **Floor warmstart-mix at ≥0.3 throughout.** Changed `--warmstart-mix-schedule` default from `"1.0,0.7,0.4,0.0"` to `"1.0,0.7,0.4,0.3"`.
+2. **K=10 → K=30 replay-buffer window.**
+3. **Anchor-gate per iter** (10 games at sims=50 vs warmstart_canonical, ≥40% wr to PASS, halt after 3 consecutive FAILs).
+4. **Bump eval games per chained head-to-head from 20 → 50.**
+
+Result: insufficient. See FAILED entry above.
 
 ---
 

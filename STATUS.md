@@ -2,7 +2,34 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-10) — Phase 4 RE-OPENED; 30-iter recipe regressed; cloud rental aborted
+## Right now (2026-05-11) — Phase 4 v2 also regressed (-200 ELO); v3 recipe TBD
+
+**Branch:** `phase-4-selfplay`. Latest commit `a1f29ec` (v2 recipe fixes).
+
+**Headline:** v2 recipe (mix-floor 0.3, K=30, anchor-gate, eval-games 50) ran 5 iters in 4h. Chain ELO drift -98 (vs v1's misleading +612). Definitive iter_4 vs warmstart_canonical at n=50: **24% wr, ELO -200** (95% CI [13%, 37%], upper bound below the 40% acceptance threshold). Real regression, not noise. Recipe fix wasn't strong enough at this floor value. See DECISIONS.md "2026-05-11 — Phase 4 v2 recipe FAILED acceptance".
+
+**Quarantined v2 artifacts (alongside v1; do NOT use as warmstart):**
+- `checkpoints/selfplay_v2/iter_*.pt` (iters 0-4)
+- `data/selfplay/v2_sanity/`
+- Both kept on disk for Phase 6 emergence analysis.
+
+**v3 recipe candidates (needs plan-mode session before implementing — don't piecemeal):**
+1. Higher warmstart-mix floor (0.5 or 0.7) — most direct fix
+2. Best-so-far reference instead of warmstart_canonical
+3. Higher sims for self-play (200 vs 100) — addresses noisy policy targets
+4. Reject-iter on anchor FAIL — restart from prev good iter instead of advancing
+
+Select 1-2 for v3 (don't try all four — confounds the diagnosis if v3 also fails).
+
+**Vast.ai rental still gated.** Balance unchanged at $2.07. Don't rent until v3 passes the anchor-bar acceptance.
+
+**Open items deferred:**
+- Bench fp16 with the BATCH evaluator on a meaningful checkpoint (single-evaluator was 0.83× = SLOWER on local 5060Ti). Wait until v3+ produces a non-quarantined checkpoint.
+- Root-cause snapshot-mask vs MCTS-mask divergence (defensive clip handles symptom).
+
+---
+
+## (Archive) 2026-05-10 — Phase 4 RE-OPENED; 30-iter v1 recipe regressed; cloud rental aborted
 
 **Branch:** `phase-4-selfplay`. Latest commit `2af55be`.
 
