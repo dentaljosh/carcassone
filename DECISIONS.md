@@ -23,6 +23,49 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-12 — Cloud bench landed: W=48 + fp32 is the optimum on RTX 5090 + 48-core EPYC
+
+**Setting:** Phase 4 v2/v3/v4 all regressed locally (recipe ceilings around -100 to -200 ELO vs warmstart). Decision: rent vast.ai 5090 + 48-core EPYC 9J14 for ~$0.50 to benchmark worker scaling and fp16 on real production-class hardware before committing to a $10 prod run.
+
+**Box**: vast.ai instance 36592587, RTX 5090 + AMD EPYC 9J14 (Bergamo, Zen 4c, 48 effective cores of 384 host cores), 504 GB RAM, 32 GB VRAM, PCIe 5.0 x54, 903 Mbps inet, $0.387/hr, Japan.
+
+**Worker scaling bench (sims=100, games=64, batch_size=8, no MPS):**
+
+| W | wallclock | speedup vs W=8 | games/worker |
+|---|---|---|---|
+| 8 | 1533 s | 1.00× | 8.00 |
+| 16 | 781 s | 1.96× | 4.00 |
+| 32 | 420 s | 3.65× | 2.00 |
+| 48 | 217 s | 7.05× | 1.33 |
+| 64 | OOM (32 GB VRAM exhausted; each spawn worker ≈ 500 MB GPU context overhead × 64 = 32 GB) |
+| 96 | not tested (would also OOM) |
+
+**Verdict (worker count):** **W=48 is the safe max** on a 32 GB GPU without CUDA MPS. Scaling is roughly linear up to 48 workers. The OOM is governed by per-worker CUDA context allocations, not by our small (7M param) network weights.
+
+**fp16 bench on Blackwell 5090** (warmstart_canonical, n=48 mid-game boards):
+- Numerical agreement: PASS (max prior L1 = 0.004, max value diff = 0.0003, 0 argmax disagreements)
+- Single-board (B=1) wallclock: **0.82×** (slower vs fp32)
+- Batch (B=8) wallclock: **0.92×** (slower vs fp32)
+
+**Verdict (fp16):** Even on the 5090's bigger Tensor Cores, fp16 is slower for our workload. The autocast context + .float() cast-back overhead exceeds the GPU compute savings on small networks at small batch. This is the *same finding* as the local 5060 Ti bench from 2026-05-10. fp16 is officially dead for self-play inference at our scale; revisit only if (a) network grows past 30M params or (b) batch grows past 32.
+
+**Per-core CPU comparison** (5800X local vs EPYC 9J14 remote):
+- EPYC 9J14 is Zen 4c (Bergamo), better IPC than Zen 3 5800X but cloud variants run lower clocks
+- Net per-core single-thread: roughly equivalent or modestly worse on the cloud box
+- The cloud advantage is **density**: 48 effective cores vs the 5800X's 16 SMT threads → ~3× more workers in parallel, ~7× total throughput at W=48 vs local W=16
+
+**Cost projection for the 30-iter prod run** (sims=200, games=80, W=48, fp32, same v3/v4 recipe):
+- ~50 min per iter (~12 min self-play + 5 min train + 25 min head-to-head + 5 min anchor gate)
+- 30 iters × 50 min = 25 h × $0.387/hr ≈ **$10**
+
+**Decision:** Prod run plan locked at **W=48, fp32, on a 5090 + 48-core EPYC class box** (~$10). MPS test deferred (one MPS attempt failed mid-bench from a botched `uv pip install`; box destroyed; ~$0.40 wasted on failed attempts). If MPS works it could squeeze W=72-96 and cut cost to ~$5, but the existing W=48 plan is fine to launch as-is.
+
+**Reversal cost:** low. All bench data + box destruction logs in chat history. Total cloud spend so far: ~$0.40.
+
+**Phase:** 4 prod planning.
+
+---
+
 ## 2026-05-11 — Phase 4 v2 recipe FAILED acceptance: mix=0.3 floor not enough
 
 **Setting:** Phase 4 v2 (post-2026-05-10 plan-mode session), four recipe fixes from BACKLOG: warmstart-mix floor at 0.3 (vs v1's 0.0), K=10 → K=30, anchor-gate per iter (10 games at sims=50 vs warmstart_canonical), eval games 20 → 50. New CLI plumbed in commit `a1f29ec`. Outputs at `data/selfplay/v2_sanity/` and `checkpoints/selfplay_v2/iter_*.pt` (kept separate from quarantined v1).

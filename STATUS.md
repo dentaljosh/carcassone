@@ -2,7 +2,42 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-11) — Phase 4 v2 also regressed (-200 ELO); v3 recipe TBD
+## Right now (2026-05-12) — v3 (mix=0.5 + best-so-far) and v4 (n=20 gate) both regressed; cloud bench validated W=48 + fp32
+
+**Branch:** `phase-4-selfplay`. Latest commits `20aa166` (v3 recipe), `de8abd4` (fp16 batch bench), `503d004` (v2 fail docs).
+
+**v3 result (2026-05-11)**: 5-iter sanity with mix=0.5 floor + best-so-far rachet + anchor-gate ran 4h on local 5800X+5060Ti. Anchor curve oscillated 40-60% (n=10 noisy); definitive 50-game anchors revealed **iter_3 at 34% wr, iter_4 at 32% wr → ELO -107 to -123 vs warmstart_canonical**. Improvement over v2's -200 ELO but still failed the ≥40% acceptance bar. Rachet kept rolling back to iter_0 (best at 55-80% n=10, true ~50%); chain never advanced. Quarantined.
+
+**v4 attempt (2026-05-11 → -12)**: Same v3 recipe but **n=20 anchor gate** (tighter signal). Ran 5 iters on local W=16: iter 0=55%, iter 1=40%, iter 2=20% FAIL, iter 3=40%, iter 4=40%, iter 5=35% FAIL. Killed after 5 iters — pattern crystal clear: **iter_0 (55%) remains best-so-far indefinitely, rachet keeps rolling back, no iter ever exceeds warmstart**. Local recipe ceiling confirmed at ~50% wr vs warmstart.
+
+**Cloud bench (2026-05-12 05:00-07:00 UTC, ~$0.40 spent)**:
+- Rented RTX 5090 + 48-core EPYC 9J14 at $0.387/hr (Japan)
+- Worker scaling sweep at sims=100/games=64: W=8→W=48 near-linear (~7× speedup), W=64 OOM at 32 GB VRAM
+- **W=48 is the safe max** without MPS
+- fp16 bench on Blackwell: single 0.82×, batch=8 0.92× (SLOWER both ways) — autocast overhead exceeds GPU compute savings for our 7M-param net + small batch
+- Conclusion: **stay fp32, use W=48 for prod**
+
+**MPS attempt #1 (2026-05-12, ~$0.40 wasted)**: Second 5090 rental had flaky network; rsync deadlocked twice for 30+ min. Destroyed without bench.
+
+**MPS attempt #2 (2026-05-12, ~$0.40 wasted)**: Killed `uv pip install` mid-way to save time after it took 6+ min on torch>=2.7 upgrade. Bench ran but VRAM samples showed 0 processes — selfplay python failed silently at runtime (likely missing dep). Auto-destroy fired before I could cancel. No usable data.
+
+**Open: MPS test still needed.** Could squeeze W=72-96 vs current W=48 cap, halving prod-run cost from $10 → $5. Plan: rent fresh box, **let uv pip install finish completely** (no shortcuts), then run the W=48 VRAM measurement + MPS comparison.
+
+**Prod run plan (waiting on MPS data):**
+- Recipe: same v3/v4 (mix=0.5, best-so-far, anchor-gate n=20) at sims=200, games=80
+- Box: 5090 + 48-core EPYC, host 384353 has been reliable
+- Workers: W=48 (or higher if MPS validates)
+- 30 iters ≈ 25h × $0.387 ≈ $10 ($5 if MPS works)
+
+**Vast.ai balance**: $2.07 → top up to ~$15 before prod.
+
+**Open items deferred:**
+- Bigger network (10×128 or 14×192) for if even cloud sims=200 plateaus
+- Inference-server pattern (single network on GPU, workers query via queue) — addresses VRAM bottleneck structurally vs MPS
+
+---
+
+## (Archive) 2026-05-11 — Phase 4 v2 also regressed (-200 ELO); v3 recipe TBD
 
 **Branch:** `phase-4-selfplay`. Latest commit `a1f29ec` (v2 recipe fixes).
 
