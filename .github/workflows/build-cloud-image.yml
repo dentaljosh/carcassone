@@ -1,0 +1,55 @@
+name: build-cloud-image
+
+# Builds dentaljosh/carcassone-cloud:tag and pushes to Docker Hub.
+# Used as the --image for vast.ai cloud rentals; bakes torch + deps so
+# fresh boxes do not have to redownload 5 GB of PyTorch wheels.
+#
+# Triggers:
+# - Manual via workflow_dispatch
+# - Push to gpu-orchestrator branch
+#
+# Secrets required (set in repo settings -> Secrets and variables -> Actions):
+# - DOCKERHUB_USERNAME (e.g. dentaljosh)
+# - DOCKERHUB_TOKEN (a Docker Hub access token with write scope)
+#
+# This workflow does not consume any user-controlled inputs (issue titles,
+# PR bodies, etc) and only uses secrets/github.sha, which are safe contexts.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - gpu-orchestrator
+    paths:
+      - Dockerfile
+      - requirements.txt
+      - .github/workflows/build-cloud-image.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        env:
+          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          SHA: ${{ github.sha }}
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DH_USER }}/carcassone-cloud:latest
+            ${{ env.DH_USER }}/carcassone-cloud:sha-${{ env.SHA }}
+          cache-from: type=registry,ref=${{ env.DH_USER }}/carcassone-cloud:buildcache
+          cache-to: type=registry,ref=${{ env.DH_USER }}/carcassone-cloud:buildcache,mode=max
