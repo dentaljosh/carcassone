@@ -35,11 +35,15 @@ def _checkpoint_path(checkpoint_root: Path, iter_idx: int) -> Path:
     return checkpoint_root / f"iter_{iter_idx:02d}.pt"
 
 
-def _warm_from_for(checkpoint_root: Path, iter_idx: int) -> Path:
-    """At iter 0 the warm-start is the canonical Phase-3 checkpoint;
-    afterwards it's the previous iteration's saved checkpoint."""
+def _warm_from_for(
+    checkpoint_root: Path, iter_idx: int, initial_checkpoint: Path
+) -> Path:
+    """At iter 0 the warm-start is `initial_checkpoint` (defaults to
+    warmstart_canonical.pt for the original Phase-4 recipe; v6+ recipes
+    override this to bootstrap from a prior trained checkpoint).
+    Afterwards it's the previous iteration's saved checkpoint."""
     if iter_idx == 0:
-        return WARMSTART_CANONICAL
+        return initial_checkpoint
     return _checkpoint_path(checkpoint_root, iter_idx - 1)
 
 
@@ -271,6 +275,16 @@ def main(argv: list[str] | None = None) -> int:
              "Requires --anchor-gate (else nothing to track). Default OFF "
              "for backward compat with v1/v2 behavior.",
     )
+    p.add_argument(
+        "--initial-checkpoint", type=Path, default=WARMSTART_CANONICAL,
+        help="Initial weights for iter 0 (and the fallback for best-so-far "
+             "when no prior anchor-gate has PASSED yet). Default: "
+             "warmstart_canonical.pt — the heuristic-warmstart baseline. "
+             "For v6+ recipes that bootstrap from a previously-trained "
+             "checkpoint (e.g. selfplay_v5/iter_06.pt), override this. "
+             "Independent of --anchor-checkpoint, which always measures "
+             "absolute progress against a fixed reference.",
+    )
     args = p.parse_args(argv)
     if args.best_so_far_warmstart and not args.anchor_gate:
         print(
@@ -291,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
         f"output_root={args.output_root}, checkpoint_root={args.checkpoint_root}"
     )
     print(f"  warmstart-mix schedule: {schedule}")
-    print(f"  warm-from at iter 0: {WARMSTART_CANONICAL}")
+    print(f"  warm-from at iter 0 (initial-checkpoint): {args.initial_checkpoint}")
     if args.anchor_gate:
         print(
             f"  anchor-gate: ON ({args.anchor_games} games at sims={args.anchor_sims} "
@@ -313,10 +327,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.best_so_far_warmstart and iter_idx > 0:
             best_iter = _best_so_far_iter(args.output_root, iter_idx)
             if best_iter is None:
-                # No prior iter has PASSED yet — fall back to canonical
-                # warmstart. (Iter 0 always uses warmstart; this branch
-                # triggers when every prior anchor-gate FAILed.)
-                warm_from = WARMSTART_CANONICAL
+                # No prior iter has PASSED yet — fall back to the configured
+                # initial checkpoint (default warmstart_canonical.pt; v6+
+                # recipes override via --initial-checkpoint). Iter 0 uses
+                # the same; this branch triggers when every prior anchor-gate
+                # FAILed.
+                warm_from = args.initial_checkpoint
                 print(
                     f"\n[iter {iter_idx}] best-so-far: no prior PASS — "
                     f"warm-from {warm_from.name}"
@@ -330,7 +346,9 @@ def main(argv: list[str] | None = None) -> int:
                         f"of latest iter_{iter_idx - 1:02d}"
                     )
         else:
-            warm_from = _warm_from_for(args.checkpoint_root, iter_idx)
+            warm_from = _warm_from_for(
+                args.checkpoint_root, iter_idx, args.initial_checkpoint
+            )
         if not warm_from.exists():
             print(f"\nERROR: warm-from checkpoint missing: {warm_from}",
                   file=sys.stderr)
