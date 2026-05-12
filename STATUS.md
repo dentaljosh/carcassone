@@ -2,7 +2,41 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-12) — v3 (mix=0.5 + best-so-far) and v4 (n=20 gate) both regressed; cloud bench validated W=48 + fp32
+## Right now (2026-05-12 evening) — v5 cloud peaked above warmstart (iter_06 = 65% wr!) but halted at iter 9; GPU orchestrator landed on `gpu-orchestrator` branch
+
+**Branch:** `gpu-orchestrator` (off `phase-4-selfplay`), pushed to `https://github.com/dentaljosh/carcassone` — public GH repo created today; cloud bootstrap can now `git clone` instead of rsync-over-proxy.
+
+**v5 cloud result (~$5 total spend):**
+- Recipe: mix-floor 0.5 + K=30 + best-so-far rachet + anchor-gate n=20 + sims=200 on rented 5090 + 48-core EPYC.
+- Harness halted at iter 9 (3 consecutive FAILs, max-fails=3).
+- Anchor trajectory: 40 PASS → 20 FAIL → 50 PASS → **60 PASS** → 30 FAIL → 50 PASS → **65 PASS** → 35 FAIL → 35 FAIL → 25 FAIL.
+- **iter 3 and iter 6 are the first checkpoints that beat warmstart_canonical by a meaningful margin** (+20-25 pp). Recipe peaks above baseline but drifts back down. Rachet couldn't recover after iter 6.
+
+**v5 artifacts pulled** (379 MB in `/tmp/cloud_v5_results/`, NOT in repo since checkpoints/+data/ are gitignored — needs `cp -r` into `checkpoints/selfplay_v5/` + `data/selfplay/v5_cloud/` for reboot persistence). Cloud box destroyed.
+
+**GPU orchestrator landed today (commit `2191a61` on `gpu-orchestrator`):**
+- `src/carcassonne_ai/eval_server.py` + `remote_evaluators.py` + `tests/test_eval_server.py` (4/4 pass in 24 s).
+- `--orchestrator` flag on `run_selfplay_iter.py` (1 server) + `eval_iter_head_to_head.py` (2 servers).
+- Numerical agreement < 1e-5 vs `make_batch_evaluator`. Local 5060 Ti bench: 0.91× (selfplay) / 0.88× (eval) — IPC overhead dominates on small GPU. Cloud W=48 vs current OOM-cap-W=20 is the actual proof-point.
+
+**Recipe ceiling chronology:**
+- v1: -330 ELO at iter 24 (chain-ELO discredited)
+- v2: -200 ELO at iter 4
+- v3: -107 to -123 ELO at iter 3/4
+- v4: ceiling at ~50% wr, no above-baseline iter
+- v5: **peaked at +25 pp (iter 6, 65%)** but couldn't sustain — first real partial-success
+
+**Next-decision (plan-mode session needed):** "Phase 4 v6 + orchestrator-on" cloud run. Forks worth considering:
+1. Use v5 `iter_06.pt` (the +25 pp peak) as the new warmstart and re-run v5 recipe
+2. Bigger net (10×128 or 14×192) — orchestrator unlocks the VRAM headroom
+3. Async training (train continuously while self-play runs)
+4. Cheapest single experiment first: orchestrator cloud bench at W=48 chain h2h (~$1-2, ~1 h, proves the OOM fix)
+
+**Vast.ai balance**: check before next launch.
+
+---
+
+## (Archive) 2026-05-12 morning — v3/v4 recipe both regressed; cloud bench validated W=48 + fp32
 
 **Branch:** `phase-4-selfplay`. Latest commits `20aa166` (v3 recipe), `de8abd4` (fp16 batch bench), `503d004` (v2 fail docs).
 
