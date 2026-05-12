@@ -23,6 +23,80 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-12 — Phase 4 v5 cloud HALTED at iter 9 (3 consecutive anchor FAILs); peak iter 6 = 65% wr vs warmstart
+
+**Context:** v5 cloud recipe = mix-floor 0.5 floor + window K=30 + best-so-far rachet + anchor-gate (n=20, threshold 40%, max-fails 3) + sims=200. Ran on rented 5090 + 48-core EPYC ($0.443/hr) starting 2026-05-12. Final result: harness halted on its own per anchor-max-fails=3 rule.
+
+**Anchor-gate trajectory:**
+
+| Iter | wr | passed | notes |
+|---|---|---|---|
+| 0 | 40% | ✅ | baseline (warmstart_canonical reference) |
+| 1 | 20% | ❌ | rollback to iter_00 |
+| 2 | 50% | ✅ | recovery |
+| 3 | 60% | ✅ | first time ever above baseline |
+| 4 | 30% | ❌ | rollback to iter_03 |
+| 5 | 50% | ✅ | recovery |
+| 6 | **65%** | ✅ | **peak** — new best ever, +25 pp above baseline |
+| 7 | 35% | ❌ | fail #1 |
+| 8 | 35% | ❌ | fail #2 |
+| 9 | 25% | ❌ | fail #3 — halt |
+
+**What's new this round:**
+1. **First time we produced a meaningfully-above-baseline checkpoint.** iter_03 hit 60% and iter_06 hit 65%, vs the +0 pp ceiling on every prior recipe (v1-v4 all regressed to 12-30%).
+2. **Best-so-far rachet engaged correctly** — recovered from iter_01 (FAIL) and iter_04 (FAIL) by rolling back to the prior peak's base.
+3. **But the recipe still drifts.** After peak iter_06, three consecutive iters regressed and the rachet couldn't recover. Suggests the closed-loop drift mode is still present, just slower than v1-v4. mix-floor 0.5 is not enough on its own.
+
+**Cost:** ~$3 cloud spend for the actual v5 run (6.5h wallclock × $0.443/hr) + ~$2 across multiple bootstrap attempts (rsync proxy throttling, wrong PyTorch wheel on Blackwell, OOM at W=48 chain h2h before --eval-workers cap was added). Total today ~$5.
+
+**Decision:** Pull data + checkpoints (96 MB) + log. Destroy box. Quarantine v5 checkpoints (`checkpoints/selfplay_v5/iter_NN.pt`) for Phase 6 emergence analysis — they're the first set we have that includes any genuinely-above-baseline weights.
+
+**Acceptance status:** v5 PARTIAL — recipe peaks above baseline (proves the AlphaZero loop CAN improve our warmstart) but is not stable enough to compound. Need another recipe iteration OR more compute per iter OR a structural change (the GPU orchestrator, see entry below).
+
+**Phase:** 4 (self-play loop sanity)
+
+---
+
+## 2026-05-12 — GPU orchestrator (inference-server pattern) — landed + numerically validated, 10-14% slower on local 5060 Ti (expected); cloud bench pending
+
+**Context:** Each self-play / eval worker currently loads its own copy of the net (~600 MB allocator pool per worker). At W=48 chain h2h that's 58 GB > 32 GB → OOM. The fix in production was capping `--eval-workers 20`, leaving cores idle. The GPU orchestrator addresses this structurally: one server process owns the net + CUDA context; N CPU-only workers send (obs, scalars, mask) over IPC; server batches across workers.
+
+**What landed (branch `gpu-orchestrator` off `phase-4-selfplay`):**
+- `src/carcassonne_ai/eval_server.py` (210 LoC) — `_server_loop` + `start_server` + `shutdown_server` + `ServerHandles` dataclass. Adaptive batching with `max_batch=256`, `batch_timeout_ms=2.0`. Uses `mp.Queue` for IPC (no extra deps).
+- `src/carcassonne_ai/remote_evaluators.py` (115 LoC) — drop-in `make_remote_single_evaluator` / `make_remote_batch_evaluator` matching the existing factory contract.
+- `tests/test_eval_server.py` (175 LoC) — numerical agreement (single + batch), concurrent 4-worker no-hang, shutdown propagation (BrokenServerError within timeout, not infinite block). **All 4 pass in 24 s.**
+- `scripts/run_selfplay_iter.py` — `--orchestrator` flag. 1 server process for the lone net.
+- `scripts/eval_iter_head_to_head.py` — `--orchestrator` flag. 2 server processes (one per net).
+
+**Local bench, RTX 5060 Ti, W=8, sims=50, batch_size=8, 10 games:**
+
+| Mode | Wallclock | Positions | Note |
+|---|---|---|---|
+| Baseline (per-worker net) | 204.5 s | 1658 | reference |
+| Orchestrator (1 server) | 224.7 s | 1657 | **0.91× (10% slower)** — IPC overhead wins over batch-coalescing gain at small W |
+
+Eval bench (W=4, sims=25, 6 games, 2 nets):
+
+| Mode | Wallclock | W/L | avg diff |
+|---|---|---|---|
+| Baseline (2 nets/worker) | 74.3 s | 6/0/0 | +42.3 |
+| Orchestrator (2 servers) | 84.5 s | 6/0/0 | +40.0 |
+
+Same W/L tally — fp32-reorder argmax ties cause minor MCTS-tree shifts (the documented ±1-game noise floor). 14% wallclock slowdown.
+
+**Acceptance:** plan called for ≥0.95× baseline wallclock at W=16; we got 0.91× at W=8. Below bar **on the small GPU as expected** — overhead dominates when the per-worker pattern already fits VRAM and only 8 concurrent workers can't generate enough request density to amortize IPC.
+
+**Why this still matters for cloud:** on the 5090 + 48-core box:
+- Baseline OOMs at W=48 chain h2h (58 GB > 32 GB). Production has to cap W=20.
+- Orchestrator holds 1 GB server + 0 per-worker VRAM → unlocks W=48 chain h2h (and W=96+ on bigger CPU boxes).
+- Cross-worker batching: 48 workers × 8 boards = up to 384 boards/forward (vs current 8 boards/forward × 48 separate forwards) — 4-8× higher per-forward efficiency.
+
+**Decision:** Land on `gpu-orchestrator` branch behind `--orchestrator` flag (default off). Validated locally; cloud bench is the actual proof-point. Bench during the next cloud run before turning it on for prod.
+
+**Phase:** 4 (perf / infra), gated on v6 plan-mode decision
+
+---
+
 ## 2026-05-12 — MPS test confirms W=48 + fp32 + no-MPS is optimal; ~$1.50 spent across 4 rentals
 
 **Setting:** Yesterday's cloud bench (entry below) established W=48 + fp32 as the optimum, but left open whether CUDA MPS could squeeze more workers in by sharing CUDA contexts across processes. Three rentals were tried today to validate.

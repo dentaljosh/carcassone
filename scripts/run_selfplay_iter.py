@@ -32,12 +32,21 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from carcassonne_ai.eval_server import (
+    ServerHandles,
+    shutdown_server,
+    start_server,
+)
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
 )
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.remote_evaluators import (
+    make_remote_batch_evaluator,
+    make_remote_single_evaluator,
+)
 from carcassonne_ai.selfplay import play_one_selfplay_game
 from carcassonne_ai.warmstart import GameDataset
 
@@ -47,13 +56,36 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Per-worker globals. CUDA can't survive forks, so the Pool uses 'spawn'
 # context and each worker re-loads the checkpoint exactly once on init.
+# In orchestrator mode `_worker_net` stays None and `_worker_handles` holds
+# the IPC bundle pointing at the shared server process.
 _worker_net: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
 _worker_cfg: dict | None = None
+_worker_handles: ServerHandles | None = None
 
 
 def _worker_init(checkpoint_path: str, cfg: dict) -> None:
-    global _worker_net, _worker_device, _worker_cfg
+    """Pool initializer. In orchestrator mode the worker skips the net load
+    entirely; the server process owns the only copy of the weights and
+    workers talk to it via IPC handles passed through `cfg`.
+
+    Each worker claims a unique worker_id by popping from cfg["orch_id_q"]
+    (an mp.Queue pre-seeded with 0..N-1). This is the standard way to give
+    each Pool worker a stable index, since Pool itself doesn't expose one.
+    """
+    global _worker_net, _worker_device, _worker_cfg, _worker_handles
+    _worker_cfg = cfg
+    if cfg.get("orchestrator"):
+        # CPU-only worker. No torch.cuda, no checkpoint load.
+        _worker_device = torch.device("cpu")
+        _worker_net = None
+        worker_id = cfg["orch_id_q"].get()  # blocks until an id is available
+        _worker_handles = ServerHandles(
+            request_q=cfg["orch_request_q"],
+            response_q=cfg["orch_response_qs"][worker_id],
+            worker_id=worker_id,
+        )
+        return
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -66,7 +98,6 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
     _worker_net = net
-    _worker_cfg = cfg
 
 
 def _seed_for(iter_idx: int, game_idx: int) -> int:
@@ -91,18 +122,25 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             path.unlink(missing_ok=True)
 
     cfg = _worker_cfg
-    assert cfg is not None and _worker_net is not None and _worker_device is not None
-
+    assert cfg is not None
     game = Game(enable_legal_moves_cache=True)
     use_fp16 = cfg.get("use_fp16", False)
-    evaluator = make_single_evaluator(
-        _worker_net, _worker_device, game, use_fp16=use_fp16
-    )
-    batch_evaluator = None
-    if cfg["batch_size"] > 1:
-        batch_evaluator = make_batch_evaluator(
+    if cfg.get("orchestrator"):
+        assert _worker_handles is not None
+        evaluator = make_remote_single_evaluator(_worker_handles, game)
+        batch_evaluator = None
+        if cfg["batch_size"] > 1:
+            batch_evaluator = make_remote_batch_evaluator(_worker_handles, game)
+    else:
+        assert _worker_net is not None and _worker_device is not None
+        evaluator = make_single_evaluator(
             _worker_net, _worker_device, game, use_fp16=use_fp16
         )
+        batch_evaluator = None
+        if cfg["batch_size"] > 1:
+            batch_evaluator = make_batch_evaluator(
+                _worker_net, _worker_device, game, use_fp16=use_fp16
+            )
     try:
         ds = play_one_selfplay_game(
             game=game,
@@ -174,6 +212,25 @@ def main(argv: list[str] | None = None) -> int:
              "Typical 1.5-2× speedup on Blackwell/Ada Tensor Cores. "
              "No-op on CPU. Default off for backward compat.",
     )
+    p.add_argument(
+        "--orchestrator", action="store_true",
+        help="GPU inference-server mode. One dedicated server process owns "
+             "the net and CUDA context; workers are CPU-only and send "
+             "(board, scalars, mask) over IPC. Lets the GPU batch across "
+             "workers (higher utilization) and slashes per-worker VRAM "
+             "(unlocks W=96+ on big-CPU boxes). Default off; numerically "
+             "identical to the per-worker path within float32 noise.",
+    )
+    p.add_argument(
+        "--orch-max-batch", type=int, default=256,
+        help="Max batch the orchestrator stacks per forward pass. "
+             "Only used with --orchestrator.",
+    )
+    p.add_argument(
+        "--orch-batch-timeout-ms", type=float, default=2.0,
+        help="Max time orchestrator waits to accumulate more requests "
+             "before forwarding a partial batch. Only used with --orchestrator.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
@@ -224,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
         "batch_size": args.batch_size,
         "virtual_loss": args.virtual_loss,
         "use_fp16": args.fp16,
+        "orchestrator": args.orchestrator,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -232,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         f"temp_thresh={args.temp_threshold}, "
         f"batch_size={args.batch_size}, vloss={args.virtual_loss}), "
         f"{n_workers} workers, {already} cached, {remaining} to play, "
-        f"out={iter_dir}"
+        f"out={iter_dir}, orchestrator={args.orchestrator}"
     )
     sys.stdout.flush()
 
@@ -247,36 +305,69 @@ def main(argv: list[str] | None = None) -> int:
     n_pos_total = 0
     first_fresh_t: float | None = None
     ctx = mp.get_context("spawn")
-    with ctx.Pool(
-        processes=n_workers,
-        initializer=_worker_init,
-        initargs=(str(args.checkpoint), cfg),
-    ) as pool:
-        for done, (seed, status, n_positions) in enumerate(
-            pool.imap_unordered(_play_one_pool, pool_args, chunksize=1), 1
-        ):
-            n_pos_total += n_positions
-            if status == "fresh":
-                fresh += 1
-                if first_fresh_t is None:
-                    first_fresh_t = time.perf_counter()
-                    elapsed = first_fresh_t - t0
-                    eta_min = (remaining * elapsed / n_workers) / 60.0
+
+    # Orchestrator: start server before pool spawn. Server runs on GPU,
+    # workers stay CPU-only and receive their per-worker queue handle via cfg.
+    server_proc = None
+    server_request_q = None
+    if args.orchestrator:
+        print(
+            f"  starting eval-server "
+            f"(max_batch={args.orch_max_batch}, "
+            f"timeout={args.orch_batch_timeout_ms}ms, "
+            f"fp16={args.fp16})…"
+        )
+        sys.stdout.flush()
+        server_proc, server_request_q, response_qs = start_server(
+            checkpoint_path=str(args.checkpoint),
+            n_workers=n_workers,
+            max_batch=args.orch_max_batch,
+            batch_timeout_ms=args.orch_batch_timeout_ms,
+            use_fp16=args.fp16,
+        )
+        id_q = ctx.Queue()
+        for w in range(n_workers):
+            id_q.put(w)
+        cfg["orch_request_q"] = server_request_q
+        cfg["orch_response_qs"] = response_qs
+        cfg["orch_id_q"] = id_q
+        print(f"  eval-server ready (pid={server_proc.pid})")
+        sys.stdout.flush()
+
+    try:
+        with ctx.Pool(
+            processes=n_workers,
+            initializer=_worker_init,
+            initargs=(str(args.checkpoint), cfg),
+        ) as pool:
+            for done, (seed, status, n_positions) in enumerate(
+                pool.imap_unordered(_play_one_pool, pool_args, chunksize=1), 1
+            ):
+                n_pos_total += n_positions
+                if status == "fresh":
+                    fresh += 1
+                    if first_fresh_t is None:
+                        first_fresh_t = time.perf_counter()
+                        elapsed = first_fresh_t - t0
+                        eta_min = (remaining * elapsed / n_workers) / 60.0
+                        print(
+                            f"  [ETA] first fresh game took {elapsed:.0f}s; "
+                            f"~{eta_min:.1f} min for {remaining} fresh"
+                        )
+                        sys.stdout.flush()
+                elif status == "failed":
+                    failed += 1
+                else:
+                    cached += 1
+                if done % max(1, args.games // 10) == 0 or done == args.games:
                     print(
-                        f"  [ETA] first fresh game took {elapsed:.0f}s; "
-                        f"~{eta_min:.1f} min for {remaining} fresh"
+                        f"  ... {done}/{args.games} done "
+                        f"(fresh={fresh}, cached={cached}, failed={failed})"
                     )
                     sys.stdout.flush()
-            elif status == "failed":
-                failed += 1
-            else:
-                cached += 1
-            if done % max(1, args.games // 10) == 0 or done == args.games:
-                print(
-                    f"  ... {done}/{args.games} done "
-                    f"(fresh={fresh}, cached={cached}, failed={failed})"
-                )
-                sys.stdout.flush()
+    finally:
+        if server_proc is not None and server_request_q is not None:
+            shutdown_server(server_proc, server_request_q)
     elapsed = time.perf_counter() - t0
     print(
         f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached + "

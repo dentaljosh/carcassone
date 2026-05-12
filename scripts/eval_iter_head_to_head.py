@@ -29,6 +29,11 @@ import numpy as np
 import torch
 
 from carcassonne_ai.elo import update_pair
+from carcassonne_ai.eval_server import (
+    ServerHandles,
+    shutdown_server,
+    start_server,
+)
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
@@ -36,6 +41,10 @@ from carcassonne_ai.evaluators import (
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.remote_evaluators import (
+    make_remote_batch_evaluator,
+    make_remote_single_evaluator,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -55,7 +64,10 @@ class GameResult:
     moves: int
 
 
-# Per-worker globals — both checkpoints loaded once per process.
+# Per-worker globals — both checkpoints loaded once per process in the
+# default (no-orchestrator) path. In orchestrator mode `_worker_new` and
+# `_worker_old` stay None and the corresponding `_worker_*_handles` point
+# at the two server processes (one per net).
 _worker_new: CarcassonneNet | None = None
 _worker_old: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
@@ -65,6 +77,8 @@ _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
 _worker_use_fp16: bool = False
+_worker_new_handles: ServerHandles | None = None
+_worker_old_handles: ServerHandles | None = None
 
 
 def _result_path(eval_dir: str, sims: int, seed: int, new_player: int) -> Path:
@@ -103,20 +117,50 @@ def _load_net(path: str, device: torch.device) -> CarcassonneNet:
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
+    orch_cfg: dict | None = None,
 ) -> None:
+    """Pool initializer.
+
+    Default (no-orchestrator) mode: load both checkpoints into per-worker
+    VRAM and store on globals.
+
+    Orchestrator mode (orch_cfg is not None): skip both checkpoint loads;
+    pop a worker_id from the shared id_q and build two ServerHandles
+    (one per server process) pointing at the per-worker response queues.
+    """
     global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
     global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16
-    _worker_device = torch.device(
-        "cuda" if torch.cuda.is_available() else "cpu"
-    )
-    _worker_new = _load_net(new_path, _worker_device)
-    _worker_old = _load_net(old_path, _worker_device)
+    global _worker_new_handles, _worker_old_handles
+
     _worker_sims = sims
     _worker_c_puct = c_puct
     _worker_eval_dir = eval_dir
     _worker_batch_size = batch_size
     _worker_virtual_loss = virtual_loss
     _worker_use_fp16 = use_fp16
+
+    if orch_cfg is not None:
+        _worker_device = torch.device("cpu")
+        _worker_new = None
+        _worker_old = None
+        worker_id = orch_cfg["id_q"].get()
+        _worker_new_handles = ServerHandles(
+            request_q=orch_cfg["new_request_q"],
+            response_q=orch_cfg["new_response_qs"][worker_id],
+            worker_id=worker_id,
+        )
+        _worker_old_handles = ServerHandles(
+            request_q=orch_cfg["old_request_q"],
+            response_q=orch_cfg["old_response_qs"][worker_id],
+            worker_id=worker_id,
+        )
+        return
+
+    _worker_device = torch.device(
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
+    _worker_new = _load_net(new_path, _worker_device)
+    _worker_old = _load_net(old_path, _worker_device)
 
 
 def _play_one(args: tuple[int, int]) -> GameResult:
@@ -130,21 +174,37 @@ def _play_one(args: tuple[int, int]) -> GameResult:
 
     game_new = Game(enable_legal_moves_cache=True)
     game_old = Game(enable_legal_moves_cache=True)
-    new_eval = make_single_evaluator(
-        _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
-    )
-    old_eval = make_single_evaluator(
-        _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
-    )
-    new_batch_eval = None
-    old_batch_eval = None
-    if _worker_batch_size > 1:
-        new_batch_eval = make_batch_evaluator(
+    if _worker_new_handles is not None:
+        # Orchestrator mode: two remote evaluators talking to two servers.
+        assert _worker_old_handles is not None
+        new_eval = make_remote_single_evaluator(_worker_new_handles, game_new)
+        old_eval = make_remote_single_evaluator(_worker_old_handles, game_old)
+        new_batch_eval = None
+        old_batch_eval = None
+        if _worker_batch_size > 1:
+            new_batch_eval = make_remote_batch_evaluator(
+                _worker_new_handles, game_new
+            )
+            old_batch_eval = make_remote_batch_evaluator(
+                _worker_old_handles, game_old
+            )
+    else:
+        assert _worker_new is not None and _worker_old is not None
+        new_eval = make_single_evaluator(
             _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
         )
-        old_batch_eval = make_batch_evaluator(
+        old_eval = make_single_evaluator(
             _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
         )
+        new_batch_eval = None
+        old_batch_eval = None
+        if _worker_batch_size > 1:
+            new_batch_eval = make_batch_evaluator(
+                _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
+            )
+            old_batch_eval = make_batch_evaluator(
+                _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
+            )
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
         seed=seed, c_puct=_worker_c_puct,
@@ -260,6 +320,14 @@ def main(argv: list[str] | None = None) -> int:
              "(e.g. iter_29 vs warmstart_canonical) that shouldn't pollute "
              "the chained ELO record.",
     )
+    p.add_argument(
+        "--orchestrator", action="store_true",
+        help="GPU inference-server mode (2 servers, one per net). Workers "
+             "are CPU-only and send requests over IPC. Default off; "
+             "numerically identical to per-worker path within float32 noise.",
+    )
+    p.add_argument("--orch-max-batch", type=int, default=256)
+    p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     args = p.parse_args(argv)
 
     eval_dir = (
@@ -280,30 +348,81 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"head-to-head: iter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}, "
         f"{args.games} games at sims={args.sims}, c_puct={args.c_puct}, "
-        f"{n_workers} workers, eval_dir={eval_dir}"
+        f"{n_workers} workers, eval_dir={eval_dir}, "
+        f"orchestrator={args.orchestrator}"
     )
     sys.stdout.flush()
 
     t0 = time.perf_counter()
     ctx = mp.get_context("spawn")
     results: list[GameResult] = []
-    with ctx.Pool(
-        processes=n_workers,
-        initializer=_worker_init,
-        initargs=(
-            str(args.new_checkpoint), str(args.old_checkpoint),
-            args.sims, args.c_puct, str(eval_dir),
-            args.batch_size, args.virtual_loss, args.fp16,
-        ),
-    ) as pool:
-        for done, r in enumerate(
-            pool.imap_unordered(_play_one, pool_args, chunksize=1), 1
-        ):
-            results.append(r)
-            wins_so_far = sum(1 for x in results if x.won_by_new)
-            if done % max(1, args.games // 5) == 0 or done == args.games:
-                print(f"  ... {done}/{args.games}, new wins {wins_so_far}/{done}")
-                sys.stdout.flush()
+
+    # Orchestrator: two server processes (one per net). Workers stay CPU-only
+    # and receive both sets of IPC handles via orch_cfg.
+    new_proc = old_proc = None
+    new_request_q = old_request_q = None
+    orch_cfg: dict | None = None
+    if args.orchestrator:
+        print(
+            f"  starting eval-servers "
+            f"(max_batch={args.orch_max_batch}, "
+            f"timeout={args.orch_batch_timeout_ms}ms, fp16={args.fp16})…"
+        )
+        sys.stdout.flush()
+        new_proc, new_request_q, new_response_qs = start_server(
+            checkpoint_path=str(args.new_checkpoint),
+            n_workers=n_workers,
+            max_batch=args.orch_max_batch,
+            batch_timeout_ms=args.orch_batch_timeout_ms,
+            use_fp16=args.fp16,
+        )
+        old_proc, old_request_q, old_response_qs = start_server(
+            checkpoint_path=str(args.old_checkpoint),
+            n_workers=n_workers,
+            max_batch=args.orch_max_batch,
+            batch_timeout_ms=args.orch_batch_timeout_ms,
+            use_fp16=args.fp16,
+        )
+        id_q = ctx.Queue()
+        for w in range(n_workers):
+            id_q.put(w)
+        orch_cfg = {
+            "new_request_q": new_request_q,
+            "new_response_qs": new_response_qs,
+            "old_request_q": old_request_q,
+            "old_response_qs": old_response_qs,
+            "id_q": id_q,
+        }
+        print(
+            f"  eval-servers ready "
+            f"(new pid={new_proc.pid}, old pid={old_proc.pid})"
+        )
+        sys.stdout.flush()
+
+    try:
+        with ctx.Pool(
+            processes=n_workers,
+            initializer=_worker_init,
+            initargs=(
+                str(args.new_checkpoint), str(args.old_checkpoint),
+                args.sims, args.c_puct, str(eval_dir),
+                args.batch_size, args.virtual_loss, args.fp16,
+                orch_cfg,
+            ),
+        ) as pool:
+            for done, r in enumerate(
+                pool.imap_unordered(_play_one, pool_args, chunksize=1), 1
+            ):
+                results.append(r)
+                wins_so_far = sum(1 for x in results if x.won_by_new)
+                if done % max(1, args.games // 5) == 0 or done == args.games:
+                    print(f"  ... {done}/{args.games}, new wins {wins_so_far}/{done}")
+                    sys.stdout.flush()
+    finally:
+        if new_proc is not None and new_request_q is not None:
+            shutdown_server(new_proc, new_request_q)
+        if old_proc is not None and old_request_q is not None:
+            shutdown_server(old_proc, old_request_q)
     elapsed = time.perf_counter() - t0
 
     wins = sum(1 for r in results if r.won_by_new)

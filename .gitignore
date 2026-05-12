@@ -16,6 +16,10 @@ data/
 checkpoints/
 runs/
 
+# Vendored reference (alpha-zero-general) — kept locally for reference but
+# not tracked. Recover via `git clone https://github.com/suragnair/alpha-zero-general az/`
+az/
+
 # Editor / OS
 .vscode/
 .idea/
