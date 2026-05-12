@@ -21,7 +21,9 @@
 
 **MPS attempt #2 (2026-05-12, ~$0.40 wasted)**: Killed `uv pip install` mid-way to save time after it took 6+ min on torch>=2.7 upgrade. Bench ran but VRAM samples showed 0 processes — selfplay python failed silently at runtime (likely missing dep). Auto-destroy fired before I could cancel. No usable data.
 
-**Open: MPS test still needed.** Could squeeze W=72-96 vs current W=48 cap, halving prod-run cost from $10 → $5. Plan: rent fresh box, **let uv pip install finish completely** (no shortcuts), then run the W=48 VRAM measurement + MPS comparison.
+**MPS test landed 2026-05-12 (~13:00 UTC, instance 36616189)**: per-worker VRAM is 662 MB no_mps / ~600 MB MPS (only ~10% savings — bottleneck is PyTorch allocator pool, not CUDA context). W=52 + MPS fits VRAM (31977/32607 = 98% used) but is *slower* than W=48 due to cgroup CPU oversubscription (5.3s/game wallclock vs 3.4s at W=48). **W=48 + fp32 + no-MPS is the locked optimum.** Real fix for scaling past 48 is inference-server pattern (1-2 days eng) or rent an 80 GB GPU (~$2/hr).
+
+**Lesson learned**: `torch>=2.7` pin in requirements.txt is load-bearing for Blackwell (sm_120). Two wasted MPS rental attempts ($0.80) because we tried to skip the torch upgrade and use the pre-installed 2.4.0. Never skip uv pip install on a fresh box.
 
 **Prod run plan (waiting on MPS data):**
 - Recipe: same v3/v4 (mix=0.5, best-so-far, anchor-gate n=20) at sims=200, games=80

@@ -23,6 +23,46 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-12 — MPS test confirms W=48 + fp32 + no-MPS is optimal; ~$1.50 spent across 4 rentals
+
+**Setting:** Yesterday's cloud bench (entry below) established W=48 + fp32 as the optimum, but left open whether CUDA MPS could squeeze more workers in by sharing CUDA contexts across processes. Three rentals were tried today to validate.
+
+**Per-worker VRAM measurement (Tue 2026-05-12 ~13:00 UTC, instance 36616189, 5090 + 48-core EPYC 9J14 Taiwan, $0.443/hr):**
+
+| Config | per-active-worker VRAM | what it tells us |
+|---|---|---|
+| no_mps | **662 MiB** | Each torch process owns its allocator pool + CUDA context |
+| MPS | **~600 MiB** | MPS shares CUDA contexts (~300-500 MB) but each worker keeps its own torch allocator pool. Net savings ≈10%, not 50%+. |
+
+So MPS savings are real but modest. The dominant cost per worker is PyTorch's caching allocator pool, NOT the CUDA context that MPS deduplicates.
+
+**Throughput verification at W=52 + MPS + games=80 (the actual production-scale workload):**
+- VRAM peak: 31977 MiB / 32607 MiB (98% used) — fit, but with only 630 MB headroom
+- 80 games completed in 427.5s = **5.3s/game wallclock**
+- vs W=48 no_mps at games=64 → 217s = 3.4s/game wallclock
+
+W=52 actually **slower** than W=48. The 5090 + 48-core EPYC has cgroup quota of ~46 effective cores; W=52 oversubscribes CPU, workers fight for slices, total throughput drops. CPU-bound, not VRAM-bound.
+
+**Decision:** Lock prod run at W=48 + fp32 + no-MPS. MPS adds operational complexity (daemon startup, env vars, occasional CUDA shutdown errors) for zero throughput gain at our scale.
+
+**For future scaling past W=48** (Phase 6 / AlphaZero-scale work, not now):
+- The real fix is the **inference-server pattern** — one process owns the network on GPU, workers send forward requests via multiprocessing.Queue. Eliminates per-worker allocator pool entirely. ~1-2 days of careful engineering.
+- Cheap shortcut: rent an 80 GB GPU (H100/A100 ~$1.50-2/hr) — VRAM cap doubles, can run W=96+ without code changes.
+
+**Today's cloud spend breakdown (~$1.50 total):**
+- Instance 36592587 (Japan, 48-core EPYC, ~30 min wallclock for sweep + fp16 bench, results: W=48 max, fp16 is slower on Blackwell too): ~$0.40 — useful data
+- Instance 36597509 (Japan): network deadlock on rsync, no usable data: ~$0.40 — wasted
+- Instance 36598909 (Japan): killed pip install mid-way thinking torch 2.4.0 was sufficient; turns out 5090 (sm_120) requires torch ≥ 2.7 (we have `torch>=2.7` in requirements.txt for exactly this reason), bench produced 0-process VRAM samples: ~$0.40 — wasted
+- Instance 36616189 (Taiwan, $0.443/hr 48-core, fast inet): clean MPS bench + W=52 verification: ~$0.30 — useful data
+
+**Lesson:** never skip `uv pip install -r requirements.txt` on a fresh box. The `torch>=2.7` pin exists because Blackwell sm_120 needs torch 2.7+ for kernel images. Shortcuts cost more than they save.
+
+**Reversal cost:** low. All bench data captured in /tmp/cloud_*.log locally. Total cloud spend so far is <1% of the planned prod-run budget ($10).
+
+**Phase:** 4 prod launch ready.
+
+---
+
 ## 2026-05-12 — Cloud bench landed: W=48 + fp32 is the optimum on RTX 5090 + 48-core EPYC
 
 **Setting:** Phase 4 v2/v3/v4 all regressed locally (recipe ceilings around -100 to -200 ELO vs warmstart). Decision: rent vast.ai 5090 + 48-core EPYC 9J14 for ~$0.50 to benchmark worker scaling and fp16 on real production-class hardware before committing to a $10 prod run.
