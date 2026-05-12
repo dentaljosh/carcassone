@@ -1,19 +1,22 @@
 name: build-cloud-image
 
-# Builds dentaljosh/carcassone-cloud:tag and pushes to Docker Hub.
-# Used as the --image for vast.ai cloud rentals; bakes torch + deps so
-# fresh boxes do not have to redownload 5 GB of PyTorch wheels.
+# Builds ghcr.io/dentaljosh/carcassone-cloud:tag and pushes to GitHub
+# Container Registry. Used as --image for vast.ai cloud rentals so fresh
+# boxes do not have to redownload 5 GB of PyTorch wheels.
 #
 # Triggers:
 # - Manual via workflow_dispatch
-# - Push to gpu-orchestrator branch
+# - Push to gpu-orchestrator branch (Dockerfile/requirements/workflow changes only)
 #
-# Secrets required (set in repo settings -> Secrets and variables -> Actions):
-# - DOCKERHUB_USERNAME (e.g. dentaljosh)
-# - DOCKERHUB_TOKEN (a Docker Hub access token with write scope)
+# Setup: ZERO manual config required. Auth uses the GITHUB_TOKEN that GH
+# Actions auto-provides. The first push will publish a PRIVATE image; make
+# it public via the package page (repo -> Packages -> carcassone-cloud ->
+# Package settings -> Change visibility -> Public) so vast.ai can pull it
+# without credentials.
 #
-# This workflow does not consume any user-controlled inputs (issue titles,
-# PR bodies, etc) and only uses secrets/github.sha, which are safe contexts.
+# This workflow does not consume any user-controlled inputs and only uses
+# the safe github.repository_owner / github.sha / secrets.GITHUB_TOKEN
+# contexts, so injection is not a concern.
 
 on:
   workflow_dispatch:
@@ -25,6 +28,10 @@ on:
       - requirements.txt
       - .github/workflows/build-cloud-image.yml
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,22 +41,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute lowercase image name
+        id: img
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "name=ghcr.io/${OWNER,,}/carcassone-cloud" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
         env:
-          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMG: ${{ steps.img.outputs.name }}
           SHA: ${{ github.sha }}
         with:
           context: .
           push: true
           tags: |
-            ${{ env.DH_USER }}/carcassone-cloud:latest
-            ${{ env.DH_USER }}/carcassone-cloud:sha-${{ env.SHA }}
-          cache-from: type=registry,ref=${{ env.DH_USER }}/carcassone-cloud:buildcache
-          cache-to: type=registry,ref=${{ env.DH_USER }}/carcassone-cloud:buildcache,mode=max
+            ${{ env.IMG }}:latest
+            ${{ env.IMG }}:sha-${{ env.SHA }}
+          cache-from: type=registry,ref=${{ env.IMG }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMG }}:buildcache,mode=max
