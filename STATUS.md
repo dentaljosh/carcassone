@@ -12,7 +12,7 @@
 - Anchor trajectory: 40 PASS → 20 FAIL → 50 PASS → **60 PASS** → 30 FAIL → 50 PASS → **65 PASS** → 35 FAIL → 35 FAIL → 25 FAIL.
 - **iter 3 and iter 6 are the first checkpoints that beat warmstart_canonical by a meaningful margin** (+20-25 pp). Recipe peaks above baseline but drifts back down. Rachet couldn't recover after iter 6.
 
-**v5 artifacts pulled** (379 MB in `/tmp/cloud_v5_results/`, NOT in repo since checkpoints/+data/ are gitignored — needs `cp -r` into `checkpoints/selfplay_v5/` + `data/selfplay/v5_cloud/` for reboot persistence). Cloud box destroyed.
+**v5 artifacts persisted** to `checkpoints/selfplay_v5/iter_00..09.pt` + `data/selfplay/v5_cloud/` (gitignored, total 380 MB). Cloud box destroyed. `iter_06.pt` is the local peak (65% wr vs warmstart_canonical).
 
 **GPU orchestrator landed today (commit `2191a61` on `gpu-orchestrator`):**
 - `src/carcassonne_ai/eval_server.py` + `remote_evaluators.py` + `tests/test_eval_server.py` (4/4 pass in 24 s).
