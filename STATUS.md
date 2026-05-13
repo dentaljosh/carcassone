@@ -2,7 +2,21 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-12 evening) — v5 cloud peaked above warmstart (iter_06 = 65% wr!) but halted at iter 9; GPU orchestrator landed on `gpu-orchestrator` branch
+## Right now (2026-05-12 night) — Phase A bench DONE: orchestrator validated on cloud + W=96 emerges as new throughput optimum (15% faster). Phase B (v6 cloud) next.
+
+**Phase A results (~$1.40 spend):**
+- Orchestrator W=48 chain h2h: 2 MiB final VRAM (vs baseline 58 GB → OOM). Smoking-gun pass.
+- Baseline self-play at W=48 OOM'd 36/80 games on torch 2.11 (larger allocator pool than torch 2.7).
+- Worker sweep (W=44, 48, 52, 64, 80, 96): non-monotonic, **W=96 best at 992.9s/80 games** (15% faster than W=48). W=64 is the perf VALLEY (light oversubscription is worst regime).
+- Decision: v6 launches at W=96 (15% throughput win over v5's W=48).
+
+**Cloud image** (`ghcr.io/dentaljosh/carcassone-cloud:latest`) built via GH Action. Public after manual visibility flip. Future rentals skip the 5 GB torch download (~5 min → ~30 sec bootstrap).
+
+**Phase B (v6 cloud) ready to launch:** iter_06.pt as `--initial-checkpoint`, `--orchestrator`, `--workers 96`, same recipe as v5 otherwise. ETA ~10 h (15% faster than v5's 12 h) × $0.375/hr ≈ $3.75.
+
+---
+
+## (Archive) 2026-05-12 evening — v5 cloud peaked above warmstart (iter_06 = 65% wr!) but halted at iter 9; GPU orchestrator landed on `gpu-orchestrator` branch
 
 **Branch:** `gpu-orchestrator` (off `phase-4-selfplay`), pushed to `https://github.com/dentaljosh/carcassone` — public GH repo created today; cloud bootstrap can now `git clone` instead of rsync-over-proxy.
 

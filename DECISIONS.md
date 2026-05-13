@@ -57,6 +57,44 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ---
 
+## 2026-05-12 — Phase A cloud bench: orchestrator validated, W=96 emerges as new optimum (15% faster than W=48)
+
+**Context:** Phase A of the v6 plan — rent a 5090 + 48-core EPYC box, prove the orchestrator survives W=48 chain h2h (where baseline OOMs on torch 2.11), and sweep W to find the v6 production setting. Ran on instance 36645490 (machine 79615 / host 384353 Japan, $0.3747/hr). Total Phase A spend ~$1.40 across one wedged box + the real one.
+
+**A1 — OOM-relief test: orchestrator W=48 chain h2h:**
+- 50 self-vs-self games at sims=100. **30W/0D/20L, avg diff +0.4** (≈50/50 as expected by symmetry).
+- **Final VRAM: 2 MiB** (vs baseline's projected 58 GB OOM at W=48). Smoking-gun pass.
+- Wallclock: 464.8 s.
+
+**A3a vs A3b — orchestrator vs baseline self-play at W=48 sims=200:**
+- A3a (orchestrator): 80/80 games, 1168.1 s, 13246 positions, 2 MiB peak VRAM.
+- A3b (baseline): **36 of 80 games OOM'd** with `CUBLAS_STATUS_ALLOC_FAILED` + `CUDA out of memory`. Only 44 completed.
+- **The baseline pattern is BROKEN at W=48 on torch 2.11.** v5 ran fine at W=48 on torch 2.7; the difference is torch 2.11's larger per-worker allocator pool (~700 MB) × 48 > 32 GB. The orchestrator isn't just nice-to-have; it's structurally required for W=48 with current torch.
+
+**Worker sweep (orchestrator on, sims=200, 80 games, same hardware):**
+
+| W | Wallclock | s/game | Δ vs W=48 |
+|---|---|---|---|
+| 44 | 1173.6 s | 14.7 | +0.5% (tie) |
+| 48 | 1168.1 s | 14.6 | baseline |
+| 52 | 1191.3 s | 14.9 | +2% |
+| 64 | 1326.1 s | 16.6 | **+14% (local worst)** |
+| 80 | 1006.4 s | 12.6 | −14% |
+| **96** | **992.9 s** | **12.4** | **−15% (best)** |
+
+**Non-monotonic curve.** Light oversubscription (W=52, W=64) is the WORST regime: workers thrash CPU but don't queue-block enough to free slots. Heavy oversubscription (W=80, W=96) flips into a regime where workers spend so much time waiting on the orchestrator's request queue that other workers run on freed CPU. Net: **W=96 is 15% faster than W=48 on this hardware**.
+
+**Implications for v6:**
+- Use `--workers 96` (not 48). Saves ~110 min over a 12 h run = ~$0.75.
+- Confounds the v5→v6 clean A/B (v5 was W=48), but the throughput win is large enough that we accept the confound. v6 vs v5 comparison stays valid for the "recipe + warmstart" question; W is independently the new optimum.
+- Could try W=128 in a follow-up bench — curve hadn't turned back upward yet at W=96. Deferred.
+
+**Decision:** v6 launches at W=96 with orchestrator on, iter_06.pt as initial weights, otherwise identical to v5 recipe.
+
+**Phase:** 4 (perf / infra → recipe)
+
+---
+
 ## 2026-05-12 — GPU orchestrator (inference-server pattern) — landed + numerically validated, 10-14% slower on local 5060 Ti (expected); cloud bench pending
 
 **Context:** Each self-play / eval worker currently loads its own copy of the net (~600 MB allocator pool per worker). At W=48 chain h2h that's 58 GB > 32 GB → OOM. The fix in production was capping `--eval-workers 20`, leaving cores idle. The GPU orchestrator addresses this structurally: one server process owns the net + CUDA context; N CPU-only workers send (obs, scalars, mask) over IPC; server batches across workers.
