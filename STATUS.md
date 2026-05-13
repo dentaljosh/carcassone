@@ -2,9 +2,26 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. **MCTS deepcopy fix: 3.3× game-wallclock speedup.**
+## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. **MCTS perf: 5 patches → ~7.6× game-wallclock speedup at production sims=200.**
 
-**Engine `__deepcopy__` patch landed (vendored fork).** cProfile of one self-play game showed `copy.deepcopy` ate 75% of wallclock (per-tree-step state copy was the dominant cost, not the PUCT loop and not GPU forward as expected). Custom `__deepcopy__` shares immutable refs (Tile, TileAction, MeeplePosition, Coordinate) and shallow-copies the mutable containers. Per-copy: **503×** faster (2.2ms → 4μs at mid-game). End-to-end A/B at sims=50 batch=8 on local 5060 Ti: **84.7s → 25.5s per game (3.3×)**. 166/166 tests pass; new equivalence tests in `tests/test_state_deepcopy.py`. See DECISIONS.md 2026-05-13 "MCTS perf: engine state `__deepcopy__` cut game wallclock 3.3×".
+**Five engine + wrapper patches landed on `gpu-orchestrator` (commits `5afb6b5`, `b9431de`).** Started by cProfile-ing one self-play game; the actual hot path was `copy.deepcopy` (75% of wallclock for per-tree-step state copy), not the PUCT loop or GPU forward as predicted. Iterated four more times, profile-driven:
+
+| Loop | Patch | s/game @ sims=50 | Cumulative |
+|---|---|---|---|
+| 0 | baseline (default deepcopy) | 84.7 | 1.00× |
+| 1 | engine state `__deepcopy__` (shares immutable Tile/TileAction/Coord refs) | 25.5 | 3.32× |
+| 2 | tile `_type_cache` (precompute `(side → TerrainType)` once per Tile) | 16.9 | 5.01× |
+| 3 | rot_sig + str_repr caches on Tile / Board | ~15.7 | ~5.4× |
+| 4 | `placed_coords: set[Coordinate]` on engine state (replaces 1225-cell board walk) | 14.5 | 5.84× |
+| 5 | `tile.turn(N)` cache per Tile | _(sims=200: 80→44.5, 1.79×)_ | **~7.6× at sims=200** |
+
+At production sims=200 batch=8 (the v6 config), local wallclock dropped from ~80s/game (post-loop-4) to **44.5s/game** post-loop-5. Estimated pre-patch baseline at sims=200 was ~339s/game (4× the sims=50 baseline of 84.7s), so cumulative speedup at production scale is **~7.6×**.
+
+**169/169 tests pass.** 5 new regression tests added (`tests/test_state_deepcopy.py` for equivalence + cache-invalidation, `tests/test_engine_adjacency.py` for placed_coords).
+
+**Cloud-iter implication (corrected):** v6 was ~9h / $3.40 for 20 iters. Self-play phase was ~13 min of ~26 min/iter; post-patch ~1.7 min/iter on self-play. Train is unchanged at ~5 min/iter and is now the next bottleneck. **Total iter ~26 min → ~10 min ≈ 2.6× per-iter speedup**; 20 iters ~9h → ~3.4h / $1.30. Not the 5-6× the bare self-play speedup might suggest — train + h2h + anchor are all in the path.
+
+**Next concrete action — Phase A cloud bench (~$0.15, ~20 min):** rent a 5090 + 48-core EPYC, run iter-0 self-play twice (orchestrator off vs on) at production knobs, compare wallclock + GPU util. Validates the patches survive at scale, confirms orchestrator still cracks W=48 OOM, and produces a real prod-hardware bottleneck breakdown.
 
 
 
