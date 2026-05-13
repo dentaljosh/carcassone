@@ -85,7 +85,7 @@ grep -v "^torch" requirements.txt | pip install --timeout 300 -r /dev/stdin 2>&1
 
 # Step 4: Pull bootstrap checkpoints from the GH release. Direct HTTP to github.com,
 # NOT via vast.ai SSH proxy — full bandwidth.
-echo "=== Step 4/4: Pull checkpoints from GH release $RELEASE_TAG ==="
+echo "=== Step 4/5: Pull checkpoints from GH release $RELEASE_TAG ==="
 mkdir -p checkpoints
 cd checkpoints
 for asset in warmstart_canonical.pt iter_06.pt; do
@@ -98,6 +98,27 @@ for asset in warmstart_canonical.pt iter_06.pt; do
     fi
 done
 ls -la *.pt
+cd "$REPO_ROOT"
+
+# Step 5: Pull the heuristic warmstart training dataset. Required at iter 0 of
+# any phase-4 recipe with --warmstart-mix-fraction > 0 (which is every recipe
+# we've shipped). Without this, train_iter.py crashes with "no training files
+# found (buffer empty + no warmstart mix)" — discovered the hard way on the v6
+# launch 2026-05-13 after 16 min of wasted self-play.
+echo "=== Step 5/5: Pull warmstart training dataset from GH release ==="
+mkdir -p data/warmstart
+cd data/warmstart
+if [ -d heuristic_tau05 ] && [ "$(ls heuristic_tau05 2>/dev/null | wc -l)" -ge 10000 ]; then
+    echo "  heuristic_tau05/ already present ($(ls heuristic_tau05 | wc -l) files) — skipping"
+else
+    echo "  downloading heuristic_tau05.tar (~92 MB)…"
+    curl -sSL --retry 3 --retry-delay 5 -o heuristic_tau05.tar \
+        "https://github.com/$GH_REPO/releases/download/$RELEASE_TAG/heuristic_tau05.tar"
+    echo "  extracting…"
+    tar -xf heuristic_tau05.tar
+    rm heuristic_tau05.tar
+    echo "  done: $(ls heuristic_tau05 | wc -l) files"
+fi
 cd "$REPO_ROOT"
 
 # Final sanity: load a checkpoint via the project code path.
