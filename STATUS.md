@@ -2,17 +2,39 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-12 night) — Phase A bench DONE: orchestrator validated on cloud + W=96 emerges as new throughput optimum (15% faster). Phase B (v6 cloud) next.
+## Right now (2026-05-13 early morning) — Phase B v6 cloud LIVE. iter_06 + v5 recipe + orchestrator, 20 iters.
+
+**Instance:** 36659390 (Japan 9J14, $0.375/hr). Branch `gpu-orchestrator` @ `7a6f535`. ETA ~8 h total (~24 min/iter × 20).
+
+**Launch nicks (all fixed, on `gpu-orchestrator`):**
+- Custom ghcr image lacked `openssh-server` → vast.ai SSH proxy rejected all keys. Fixed in Dockerfile (commit `62d5283`). Lost ~$0.06 on first box (36658420, destroyed).
+- `bootstrap_cloud.sh` pulled checkpoints but NOT `data/warmstart/heuristic_tau05/` → iter 0 train crashed after 16 min of self-play. Tarballed (92 MB), uploaded to bootstrap-v1 GH release, fixed bootstrap (commit `7a6f535`). Cached self-play replayed at zero cost.
+- `run_phase4_smoke.py` didn't pass `--orchestrator` through to subprocesses (commit `19d8fe8`).
+
+**Live anchor-gate trajectory (vs warmstart_canonical, n=20):**
+- iter 0: 13W/0D/7L = **65% wr PASS**
+- iter 1: 13W/0D/7L = **65% wr PASS** (identical W/D/L — coincidence in n=20 binomial variance, not deterministic eval; iter 2 will disambiguate)
+
+**Recipe-faithful to v5.** Only changes vs v5: `--initial-checkpoint = iter_06.pt`, `--orchestrator` on, W=96 box (workers capped to 80 by games=80).
+
+**Acceptance bars:**
+1. by iter 5: anchor PASS ≥40% wr — recipe alive on new starting point
+2. by iter 10: best anchor ≥55% — matches v5's iter_06 from a new path
+3. by iter 15: 3 consecutive PASS ≥55% — recipe stable, not just a peak
+4. by iter 20: best anchor ≥70% — actually compounding past v5
+
+**On completion (or halt):** rsync artifacts, destroy box, update DECISIONS.md, decide v7 direction (bigger net / specialist league / KataGo aux heads / Phase 5 pivot).
+
+---
+
+## (Archive) 2026-05-12 night — Phase A bench: orchestrator validated, W=96 throughput optimum
 
 **Phase A results (~$1.40 spend):**
 - Orchestrator W=48 chain h2h: 2 MiB final VRAM (vs baseline 58 GB → OOM). Smoking-gun pass.
 - Baseline self-play at W=48 OOM'd 36/80 games on torch 2.11 (larger allocator pool than torch 2.7).
-- Worker sweep (W=44, 48, 52, 64, 80, 96): non-monotonic, **W=96 best at 992.9s/80 games** (15% faster than W=48). W=64 is the perf VALLEY (light oversubscription is worst regime).
-- Decision: v6 launches at W=96 (15% throughput win over v5's W=48).
+- Worker sweep (W=44-96): non-monotonic, **W=96 best at 992.9s/80 games** (15% faster than W=48). W=64 is the perf VALLEY.
 
-**Cloud image** (`ghcr.io/dentaljosh/carcassone-cloud:latest`) built via GH Action. Public after manual visibility flip. Future rentals skip the 5 GB torch download (~5 min → ~30 sec bootstrap).
-
-**Phase B (v6 cloud) ready to launch:** iter_06.pt as `--initial-checkpoint`, `--orchestrator`, `--workers 96`, same recipe as v5 otherwise. ETA ~10 h (15% faster than v5's 12 h) × $0.375/hr ≈ $3.75.
+**Cloud image** (`ghcr.io/dentaljosh/carcassone-cloud:latest`) built via GH Action. Public.
 
 ---
 
