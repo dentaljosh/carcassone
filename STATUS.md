@@ -2,36 +2,31 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-13 early morning) — Phase B v6 cloud LIVE. iter_06 + v5 recipe + orchestrator, 20 iters.
+## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. Multi-process orchestrator pool landed for v7.
 
-**Instance:** 36659390 (Japan 9J14, $0.375/hr). Branch `gpu-orchestrator` @ `7a6f535`. ETA ~8 h total (~24 min/iter × 20).
+**v6 cloud result** (20 iters, 490 min wallclock, ~$3.40 cloud + $0.06 sunk on a destroyed pre-launch box):
+- **Best: iter_12 at 70% wr** — first checkpoint ever to beat warmstart_canonical at ≥70% wr (+5pp over v5's 65% peak).
+- **Pass rate: 15/20 (75%)** vs v5's 5/10 (50%). v6 strictly Pareto-dominates v5 on every metric.
+- Trajectory shape: 65 65 35F 60 50 40 50 35F 50 60 35F 45 **70** 65 45 55 30F 45 25F 65.
+- All 4 launch-time bugs fixed on `gpu-orchestrator` (Dockerfile sshd, bootstrap warmstart data, orchestrator-flag passthrough, see DECISIONS.md). Artifacts at `checkpoints/selfplay_v6/iter_00..19.pt` + `data/selfplay/v6_cloud/`. Cloud box destroyed.
 
-**Launch nicks (all fixed, on `gpu-orchestrator`):**
-- Custom ghcr image lacked `openssh-server` → vast.ai SSH proxy rejected all keys. Fixed in Dockerfile (commit `62d5283`). Lost ~$0.06 on first box (36658420, destroyed).
-- `bootstrap_cloud.sh` pulled checkpoints but NOT `data/warmstart/heuristic_tau05/` → iter 0 train crashed after 16 min of self-play. Tarballed (92 MB), uploaded to bootstrap-v1 GH release, fixed bootstrap (commit `7a6f535`). Cached self-play replayed at zero cost.
-- `run_phase4_smoke.py` didn't pass `--orchestrator` through to subprocesses (commit `19d8fe8`).
+**Two null results that shape v7:**
+- 192×14 warmstart locally trained — 2.1× the params, ~zero val-loss improvement. **Capacity is not the bottleneck at our 10k data scale.**
+- RuleBasedPlayer (meeple-only rules) vs random: 44% wr. **Tile-placement dominates the value question;** meeple-side rules can't compete.
 
-**Live anchor-gate trajectory (vs warmstart_canonical, n=20):**
-- iter 0: 13W/0D/7L = **65% wr PASS**
-- iter 1: 13W/0D/7L = **65% wr PASS** (identical W/D/L — variance, not deterministic eval)
-- iter 2: 7W/1D/12L = **35% wr FAIL** (first FAIL, fail counter 1/3)
-- iter 3: in progress (rachet kicks in: warm from iter_01 with fresh RNG, since iter_02 FAIL'd)
+**Multi-process orchestrator pool landed (`gpu-orchestrator`):**
+- New `eval_server_pool.py` + tests (4/4 pass). Spawns N parallel eval-server processes, static sharding by `worker_id % N`. Each shard owns its own ~2 GB VRAM net copy.
+- `--orch-shards N` plumbed through `run_selfplay_iter.py` + `eval_iter_head_to_head.py`. Default 1 = back-compat single server.
+- Per-stage timers (dequeue / forward / dispatch) added to `eval_server.py` to quantify the GIL bottleneck.
+- N=4 sweep on cloud is the next step before any v7 launch.
 
-**Recipe-faithful to v5.** Only changes vs v5: `--initial-checkpoint = iter_06.pt`, `--orchestrator` on, W=96 box (workers capped to 80 by games=80).
+**v7 direction (next plan-mode session):** the data-scarcity hypothesis. Recipe ceiling at ~70% + capacity null → bottleneck is "not enough diverse training data". Cheap leverage:
+1. Symmetry rotation augmentation (free 4× data)
+2. Start from `iter_12.pt` (70% wr — new global best)
+3. Apply v6's recipe with the orchestrator pool at N=4 (faster cycles, more iters per $)
+4. If symmetry alone doesn't break ceiling, layer in KataGo-style aux loss heads next.
 
-**Pattern so far**: matches v5's failure mode exactly. v5's first FAIL was iter 1 (20% wr); v6's is iter 2 (35% wr) — slightly milder, one iter later, but the same recipe-family drift signal when mix-floor hits 0.5 and self-play dominates. The "iter_06 warmstart compounds" hypothesis is taking damage; the "recipe ceiling regardless of starting point" hypothesis is being strengthened.
-
-**Acceptance bars:**
-1. by iter 5: anchor PASS ≥40% wr — recipe alive on new starting point
-2. by iter 10: best anchor ≥55% — matches v5's iter_06 from a new path
-3. by iter 15: 3 consecutive PASS ≥55% — recipe stable, not just a peak
-4. by iter 20: best anchor ≥70% — actually compounding past v5
-
-**Parallel local work (started while v6 runs):**
-- 192×14 warmstart training on local 5060 Ti (~3 h, $0 compute). Pre-stages a real bigger-net checkpoint for v7 if v6 plateaus. Started 02:50 UTC, expect completion ~05:50.
-- RuleBasedPlayer scaffold + harness committed. Smoke at n=50 vs random: 44% wr (ELO -42). Confirms tile-placement dominates the value question; meeple-only rules can't compete. Real Tier-1 baseline needs tile heuristics, which is v7 work.
-
-**On completion (or halt):** rsync artifacts via `scripts/pull_v6_artifacts.sh 36659390`, destroy box, update DECISIONS.md, decide v7 direction (bigger-net retry / specialist league / KataGo aux heads / Phase 5 pivot).
+**Next concrete action:** profile-and-tune the orchestrator pool — rent a $0.40/hr box for ~1 hour, run iter-0 self-play smoke at N ∈ {1, 2, 4, 8}, pick empirical winner. Then v7 launches with that N + `--fp16` + games=96 + eval-sims=50.
 
 ---
 
