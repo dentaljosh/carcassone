@@ -33,6 +33,16 @@ RUN grep -v "^torch" /tmp/requirements.txt > /tmp/reqs.txt \
     && pip install --timeout 300 -r /tmp/reqs.txt \
     && rm /tmp/requirements.txt /tmp/reqs.txt
 
+# vast.ai's ssh proxy connects to port 22 INSIDE the container — but the
+# pytorch base image has no sshd. Without openssh-server, every connection
+# fails "Permission denied (publickey)" because no sshd answers. Install it
+# here so vast.ai's onstart can write authorized_keys + start sshd and we
+# can SSH in. (Discovered 2026-05-12 the hard way.)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-server \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/run/sshd
+
 # Convenience: pre-create workspace dir so the bootstrap script's git clone
 # target exists without a mkdir step.
 RUN mkdir -p /workspace
