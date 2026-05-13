@@ -37,6 +37,10 @@ from carcassonne_ai.eval_server import (
     shutdown_server,
     start_server,
 )
+from carcassonne_ai.eval_server_pool import (
+    shutdown_server_pool,
+    start_server_pool,
+)
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
@@ -79,12 +83,13 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         # CPU-only worker. No torch.cuda, no checkpoint load.
         _worker_device = torch.device("cpu")
         _worker_net = None
-        worker_id = cfg["orch_id_q"].get()  # blocks until an id is available
-        _worker_handles = ServerHandles(
-            request_q=cfg["orch_request_q"],
-            response_q=cfg["orch_response_qs"][worker_id],
-            worker_id=worker_id,
-        )
+        # Each pool worker picks a unique global worker_id off the id_q
+        # (mp.Queue seeded with 0..N-1). It then looks up its routing-bundle
+        # in cfg["orch_handles_by_worker"][worker_id] — which already encodes
+        # which shard's request_q/response_q to talk to. The pool layer
+        # decides routing; the worker is shard-agnostic.
+        global_worker_id = cfg["orch_id_q"].get()
+        _worker_handles = cfg["orch_handles_by_worker"][global_worker_id]
         return
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
@@ -231,6 +236,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Max time orchestrator waits to accumulate more requests "
              "before forwarding a partial batch. Only used with --orchestrator.",
     )
+    p.add_argument(
+        "--orch-shards", type=int, default=1,
+        help="Number of parallel eval-server processes (sharded by "
+             "worker_id %% N). Default 1 = single server (back-compat). "
+             ">1 cracks the GIL bottleneck of the single-server Python "
+             "dispatch loop; each shard owns its own net copy on the GPU "
+             "(~2 GB per shard for 96x6 net). Only used with --orchestrator. "
+             "Per-shard sweep (2026-05-13) finds the empirical optimum; "
+             "see DECISIONS.md.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
@@ -306,21 +321,24 @@ def main(argv: list[str] | None = None) -> int:
     first_fresh_t: float | None = None
     ctx = mp.get_context("spawn")
 
-    # Orchestrator: start server before pool spawn. Server runs on GPU,
-    # workers stay CPU-only and receive their per-worker queue handle via cfg.
-    server_proc = None
-    server_request_q = None
+    # Orchestrator: start the server pool before pool spawn. Servers run
+    # on GPU; workers stay CPU-only and receive their routing bundle via
+    # cfg. n_shards=1 is single-server (back-compat); n_shards>1 cracks
+    # the GIL bottleneck (DECISIONS.md 2026-05-13).
+    server_pool = None
     if args.orchestrator:
         print(
-            f"  starting eval-server "
-            f"(max_batch={args.orch_max_batch}, "
+            f"  starting eval-server pool "
+            f"(shards={args.orch_shards}, "
+            f"max_batch={args.orch_max_batch}, "
             f"timeout={args.orch_batch_timeout_ms}ms, "
             f"fp16={args.fp16})…"
         )
         sys.stdout.flush()
-        server_proc, server_request_q, response_qs = start_server(
+        server_pool = start_server_pool(
             checkpoint_path=str(args.checkpoint),
             n_workers=n_workers,
+            n_shards=args.orch_shards,
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
@@ -328,10 +346,10 @@ def main(argv: list[str] | None = None) -> int:
         id_q = ctx.Queue()
         for w in range(n_workers):
             id_q.put(w)
-        cfg["orch_request_q"] = server_request_q
-        cfg["orch_response_qs"] = response_qs
+        cfg["orch_handles_by_worker"] = server_pool.handles_by_worker
         cfg["orch_id_q"] = id_q
-        print(f"  eval-server ready (pid={server_proc.pid})")
+        shard_pids = [p.pid for p in server_pool.procs if p is not None]
+        print(f"  eval-server pool ready (shard pids={shard_pids})")
         sys.stdout.flush()
 
     try:
@@ -366,8 +384,8 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     sys.stdout.flush()
     finally:
-        if server_proc is not None and server_request_q is not None:
-            shutdown_server(server_proc, server_request_q)
+        if server_pool is not None:
+            shutdown_server_pool(server_pool)
     elapsed = time.perf_counter() - t0
     print(
         f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached + "

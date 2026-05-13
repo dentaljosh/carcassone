@@ -34,6 +34,10 @@ from carcassonne_ai.eval_server import (
     shutdown_server,
     start_server,
 )
+from carcassonne_ai.eval_server_pool import (
+    shutdown_server_pool,
+    start_server_pool,
+)
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
@@ -143,17 +147,12 @@ def _worker_init(
         _worker_device = torch.device("cpu")
         _worker_new = None
         _worker_old = None
+        # Pull global worker_id, then look up the per-pool routing bundle.
+        # Pool layer (eval_server_pool.start_server_pool) has already done
+        # the worker_id % n_shards math; we just dereference.
         worker_id = orch_cfg["id_q"].get()
-        _worker_new_handles = ServerHandles(
-            request_q=orch_cfg["new_request_q"],
-            response_q=orch_cfg["new_response_qs"][worker_id],
-            worker_id=worker_id,
-        )
-        _worker_old_handles = ServerHandles(
-            request_q=orch_cfg["old_request_q"],
-            response_q=orch_cfg["old_response_qs"][worker_id],
-            worker_id=worker_id,
-        )
+        _worker_new_handles = orch_cfg["new_handles_by_worker"][worker_id]
+        _worker_old_handles = orch_cfg["old_handles_by_worker"][worker_id]
         return
 
     _worker_device = torch.device(
@@ -328,6 +327,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
+    p.add_argument(
+        "--orch-shards", type=int, default=1,
+        help="Number of parallel eval-server processes per net (new+old "
+             "each get their own pool of N shards). Default 1 = single "
+             "server per net (back-compat). VRAM cost ~2 GB × N × 2 nets; "
+             "watch the VRAM budget at high shard counts.",
+    )
     args = p.parse_args(argv)
 
     eval_dir = (
@@ -357,28 +363,31 @@ def main(argv: list[str] | None = None) -> int:
     ctx = mp.get_context("spawn")
     results: list[GameResult] = []
 
-    # Orchestrator: two server processes (one per net). Workers stay CPU-only
-    # and receive both sets of IPC handles via orch_cfg.
-    new_proc = old_proc = None
-    new_request_q = old_request_q = None
+    # Orchestrator: two server pools (one per net). Each pool can be sharded
+    # for GIL bypass; routing is by worker_id % n_shards within each pool.
+    new_pool = None
+    old_pool = None
     orch_cfg: dict | None = None
     if args.orchestrator:
         print(
-            f"  starting eval-servers "
-            f"(max_batch={args.orch_max_batch}, "
+            f"  starting eval-server pools "
+            f"(shards={args.orch_shards}, "
+            f"max_batch={args.orch_max_batch}, "
             f"timeout={args.orch_batch_timeout_ms}ms, fp16={args.fp16})…"
         )
         sys.stdout.flush()
-        new_proc, new_request_q, new_response_qs = start_server(
+        new_pool = start_server_pool(
             checkpoint_path=str(args.new_checkpoint),
             n_workers=n_workers,
+            n_shards=args.orch_shards,
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
         )
-        old_proc, old_request_q, old_response_qs = start_server(
+        old_pool = start_server_pool(
             checkpoint_path=str(args.old_checkpoint),
             n_workers=n_workers,
+            n_shards=args.orch_shards,
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
@@ -387,15 +396,15 @@ def main(argv: list[str] | None = None) -> int:
         for w in range(n_workers):
             id_q.put(w)
         orch_cfg = {
-            "new_request_q": new_request_q,
-            "new_response_qs": new_response_qs,
-            "old_request_q": old_request_q,
-            "old_response_qs": old_response_qs,
+            "new_handles_by_worker": new_pool.handles_by_worker,
+            "old_handles_by_worker": old_pool.handles_by_worker,
             "id_q": id_q,
         }
+        new_pids = [p.pid for p in new_pool.procs if p is not None]
+        old_pids = [p.pid for p in old_pool.procs if p is not None]
         print(
-            f"  eval-servers ready "
-            f"(new pid={new_proc.pid}, old pid={old_proc.pid})"
+            f"  eval-server pools ready "
+            f"(new pids={new_pids}, old pids={old_pids})"
         )
         sys.stdout.flush()
 
@@ -419,10 +428,10 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  ... {done}/{args.games}, new wins {wins_so_far}/{done}")
                     sys.stdout.flush()
     finally:
-        if new_proc is not None and new_request_q is not None:
-            shutdown_server(new_proc, new_request_q)
-        if old_proc is not None and old_request_q is not None:
-            shutdown_server(old_proc, old_request_q)
+        if new_pool is not None:
+            shutdown_server_pool(new_pool)
+        if old_pool is not None:
+            shutdown_server_pool(old_pool)
     elapsed = time.perf_counter() - t0
 
     wins = sum(1 for r in results if r.won_by_new)

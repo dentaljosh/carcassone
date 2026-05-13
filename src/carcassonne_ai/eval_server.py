@@ -108,13 +108,23 @@ def _server_loop(
         return
 
     timeout_s = batch_timeout_ms / 1000.0
+    # Stage timers (server-internal only — logged at shutdown). Per-stage
+    # cumulative wallclock; the ratio of forward / batching / dispatch tells
+    # us where the GIL-bottlenecked Python loop is actually spending its
+    # time, which informs whether multi-process sharding is the right fix.
+    stage_t = {"dequeue": 0.0, "forward": 0.0, "dispatch": 0.0}
+    n_batches = 0
+    total_requests = 0
+    total_examples = 0
+
     while True:
+        t_dq0 = time.perf_counter()
         try:
             first = request_q.get()
         except (KeyboardInterrupt, SystemExit):
             return
         if first == _SHUTDOWN:
-            return
+            break
 
         batch: list[EvalRequest] = [first]
         total_k = first.obs.shape[0]
@@ -131,9 +141,15 @@ def _server_loop(
                 break
             batch.append(r)
             total_k += r.obs.shape[0]
+        stage_t["dequeue"] += time.perf_counter() - t_dq0
 
         try:
-            _process_batch(batch, net, device, response_qs, use_fp16)
+            t_fw0 = time.perf_counter()
+            _process_batch(batch, net, device, response_qs, use_fp16, stage_t)
+            stage_t["forward"] += time.perf_counter() - t_fw0
+            n_batches += 1
+            total_requests += len(batch)
+            total_examples += total_k
         except Exception as e:
             sys.stderr.write(
                 f"[eval_server] forward FAILED: {type(e).__name__}: {e}\n"
@@ -155,7 +171,26 @@ def _server_loop(
             return
 
         if saw_shutdown:
-            return
+            break
+
+    # Log stage timings on graceful shutdown. Helps assess whether the
+    # dispatcher Python loop is the bottleneck (forward << dequeue+dispatch
+    # → yes; otherwise the GPU forward dominates and multi-process won't
+    # help much).
+    if n_batches > 0:
+        avg_batch = total_examples / n_batches
+        total = sum(stage_t.values())
+        pct = {k: 100 * v / total if total > 0 else 0 for k, v in stage_t.items()}
+        sys.stderr.write(
+            f"[eval_server] timing: {n_batches} batches, "
+            f"{total_requests} requests, {total_examples} examples, "
+            f"avg_batch={avg_batch:.1f}\n"
+            f"[eval_server] stages: "
+            f"dequeue={stage_t['dequeue']:.1f}s ({pct['dequeue']:.0f}%), "
+            f"forward={stage_t['forward']:.1f}s ({pct['forward']:.0f}%), "
+            f"dispatch={stage_t['dispatch']:.1f}s ({pct['dispatch']:.0f}%)\n"
+        )
+        sys.stderr.flush()
 
 
 def _process_batch(
@@ -164,6 +199,7 @@ def _process_batch(
     device: torch.device,
     response_qs: list[Any],
     use_fp16: bool,
+    stage_t: dict | None = None,
 ) -> None:
     if not batch:
         return
@@ -186,6 +222,7 @@ def _process_batch(
     priors_np = priors.float().cpu().numpy()
     values_np = values.float().cpu().numpy()
 
+    t_dp0 = time.perf_counter() if stage_t is not None else 0.0
     offset = 0
     for r in batch:
         k = r.obs.shape[0]
@@ -197,6 +234,12 @@ def _process_batch(
             )
         )
         offset += k
+    if stage_t is not None:
+        dispatch_t = time.perf_counter() - t_dp0
+        stage_t["dispatch"] += dispatch_t
+        # Subtract dispatch from the "forward" bucket we started outside this
+        # function; counted twice otherwise.
+        stage_t["forward"] -= dispatch_t
 
 
 def start_server(
