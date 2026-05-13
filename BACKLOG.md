@@ -36,9 +36,67 @@ Realistic gain ceiling on current 48-core box: ~1.5-2× (workers still hit CPU c
 **Idea:** v1-v6 are all synchronous — generate iter N data, train iter N, eval. GPU sits idle during self-play (well, it does until orchestrator is fixed). Run training continuously in a separate process consuming replay buffer; check in on convergence at iter boundaries.
 **Why deferred:** Big architectural change. Only sensible after orchestrator GIL fix lifts GPU util enough that async training has compute headroom.
 
-### Bigger net (10×128 or 14×192)
-**Idea:** Current net is 96×6 channels/blocks (~30 MB). The 32 GB VRAM ceiling forced us small; orchestrator lifts that, we have ~30 GB headroom. Bigger net = more capacity to actually exceed warmstart strength, which is the v1-v5 ceiling hypothesis.
-**Why deferred:** Burning compute on a bigger net only makes sense if recipe is stable. v6 result tells us whether the ceiling is recipe (v5 family) or capacity (model size).
+### Bigger net — but actually understand what "bigger" means here
+**Idea:** Current net is 96×6 → 7.4M params. The structural truth (discovered 2026-05-13 by counting params): trunk is only ~1M; the **policy head's `Linear(2500, 2511)` dominates at ~6M**. So scaling filters/blocks gives modest growth:
+- 128×10 → 9.4M (1.3×)
+- 192×14 → 15.8M (2.1×)
+- 256×10 → 18.3M (2.5×)
+To get into KataGo-class param counts (50M+), the lever is **widening `policy_project_channels`** (currently 4) — bumping to 32 makes flatten go from 2500 → 20000 and the policy_fc Linear from 6M → 50M. That requires a fresh warmstart and re-arch.
+**Why deferred:** capacity question only matters if recipe is the bottleneck. v6 outcome arbitrates. If v6 plateaus, the cheapest experiment is 192×14 (2.1× params, only an arch-arg change, retrain warmstart). The big-headroom experiment is wider policy_project, which is more invasive.
+
+### Hand-curated tactical probe set — measure WHAT the network learned
+**Idea:** 30-50 hand-labeled positions where the right move is a known tactical play: city stealing (meeple flip via tile placement), city blocking (deny opponent's completion), cloister flooding (deny 8-neighbor close), meeple-economy endgame, farm sniping, etc. Run every checkpoint (warmstart_canonical, iter_06, v6's best) through the probe set; record `top1` and `top5` agreement with the labeled move.
+**Why this matters:** anchor-wr at n=20 can't distinguish "learned to time meeples better" from "learned city stealing". Probe set can. Also: this IS Phase 5's training material — the analyzer needs a "good move bank" to explain "where you lost points". Building it isn't a v6/v7 sidequest; it de-risks Phase 5.
+**Cost:** 4-6 hours of human labeling work + ~100 LoC python eval harness. Zero compute.
+**Why deferred:** worth doing as soon as v6 hits its result; gates v7 decisions.
+
+### Rule-based player — Tier 1 baseline
+**Idea:** Encode the ~8-12 "fast rules" we've discussed (city quick-close, farm-threshold-with-context, endgame-meeple-deployment, cloister-EV, etc.) as a fixed-policy player. Benchmark head-to-head vs random / warmstart_canonical / iter_06 at n=50 games.
+**Why this matters:** if rule-based beats warmstart_canonical ≥45% wr, the network hasn't learned anything beyond what explicit rules already capture — strong evidence the ceiling is recipe-bound, not capacity-bound. Decisive signal at ~$0.50 of compute.
+**Why deferred:** orthogonal to v6 outcome but always-useful baseline. Worth running locally when there's idle time.
+
+### KataGo-style domain features as input channels (HIGH LEVERAGE)
+**Idea:** Add input planes the network would otherwise have to *learn* from sparse self-play signal:
+- `tiles_remaining` (broadcast scalar plane — turns deck-counting from "hard-to-learn" into "trivial-read")
+- `my_meeples_in_hand`, `opponent_meeples_in_hand`
+- `is_river_phase`, `is_endgame`
+- `my_dominant_farms_count`, `contested_features_count`
+These would let the net learn the user's "endgame: place a meeple every move" rule in 1-2 iters instead of 50+. Closest published parallel: KataGo's territory + ladder features.
+**Cost:** ~50 LoC in `board_repr.py` + retrain warmstart from scratch on bigger input dim (~3 hours local).
+**Why deferred:** changes net input shape → breaks weight compatibility with all existing checkpoints. Only worth doing if we're committed to a fresh warmstart anyway (probably yes if v6 plateaus).
+
+### KataGo-style auxiliary loss heads
+**Idea:** Add prediction heads with auxiliary losses (KataGo's biggest single ablation win):
+- Predict who controls each feature at game-end (territory-equivalent)
+- Predict final score-delta (richer than W/L; aligns with how Carcassonne actually plays — often 1-5 point games)
+- Predict tile-count-remaining when each open feature closes
+- Predict meeple-deployment-rate over remaining tiles
+**Cost:** ~150 LoC architecture change + retrain warmstart. The losses are auxiliary (small weight); main training objective unchanged.
+**Why deferred:** invasive change. Save for after v6 outcome.
+
+### MCTS-side domain tweaks
+**Idea:** Three cheap MCTS-only changes (no network change required):
+- **Endgame depth boost**: last 10 tiles use sims=400 instead of 200. ~12% more total compute, concentrates depth where mistakes are decisive.
+- **Heuristic prior blending**: at PUCT root, blend `0.1 × heuristic_policy + 0.9 × neural_prior`. Cheap regularizer; prevents confident pursuit of obviously-bad late-game lines.
+- **Forced-move shortcut**: tiles with only one legal placement skip the search entirely.
+**Why deferred:** small changes; defer until we have a stable recipe to test them against.
+
+### Symmetry exploitation
+**Idea:** Carcassonne board has rotational + reflection symmetries (4× the effective training data if we augment correctly). Need to verify whether we're already doing this in `train_iter.py`'s data loader.
+**Cost:** Free if not currently used; check + measure first.
+
+### Probing classifiers — interpretability for the black box
+**Idea:** Train small linear probes on hidden-layer activations of a trained net to predict: "how many city tiles remain in deck?", "who controls farm X?", "is this an endgame position?" If probes are accurate, the net has implicitly learned the concept. If not, it hasn't. Tells us *what* the network learned without forcing us to guess.
+**Cost:** ~1 day of work, mostly tooling. Compute negligible.
+**Why deferred:** doesn't fix anything, just measures. Useful diagnostic when v6 lands and we're deciding v7 direction.
+
+### Defensive assert against accidental abbots/big-meeples
+**Context:** wingedsheep engine defaults to `(FARMERS, ABBOTS)` for supplementary rules. Our `game_wrapper.py` short-circuits this, but if anyone instantiates `CarcassonneGame()` directly without going through our wrapper (e.g. in a new analysis script), they'd silently get abbots — out of scope for Phase 1-5.
+**Idea:** Add a module-level assert in `game_wrapper.py` that fails loudly if `ABBOTS` ever appears in any `Game` instance passed to it.
+**Cost:** 5 LoC.
+**Why deferred:** no current bug; only a footgun for future tooling.
+
+### Multi-box self-play sharding
 
 ### Specialist warmstarts + league play (DOMAIN-SPECIFIC — high priority if v6 plateaus)
 **Idea:** Bias the existing heuristic labeler 3 ways (roads-weight=2/cities-weight=2/farms-weight=2), train 3 warmstart nets (~30 min × 3 = ~$1.50). Run a 3-way round-robin (n=30 games, sims=50, ~2 hr) to see if specialists dominate the generalist. Two consume options:
