@@ -56,6 +56,13 @@ class Tile:
         # string_representation calls this ~880K times per game; caching
         # turns that into ~80 cache misses (once per unique rotated tile).
         self._rot_sig_cache: tuple | None = None
+        # Patched (vendored fork, 2026-05-13): cache turn(N) results per
+        # base tile. Production sims=200 profile showed tile.turn called
+        # 1.08M times/game (~22s cumtime); the result is a pure function
+        # of (self, times) and Tiles are immutable, so the rotated Tile
+        # can be cached and shared. Key is `times` (not `times % 4`) to
+        # preserve the literal `tile.turns` attribute.
+        self._turn_cache: dict | None = None
 
     def get_road_ends(self) -> Set[Side]:
         sides: Set[Side] = set([])
@@ -142,7 +149,12 @@ class Tile:
         return json.dumps(self.to_json(), indent=2)
 
     def turn(self, times: int):
-        return Tile(
+        if self._turn_cache is None:
+            self._turn_cache = {}
+        cached = self._turn_cache.get(times)
+        if cached is not None:
+            return cached
+        rotated = Tile(
             description=self.description,
             turns=times,
             road=list(map(lambda x: SideModificationUtil.turn_connection(x, times), self.road)),
@@ -157,3 +169,5 @@ class Tile:
             unplayable_sides=list(map(lambda x: SideModificationUtil.turn_side(x, times), self.unplayable_sides)),
             image=self.image
         )
+        self._turn_cache[times] = rotated
+        return rotated
