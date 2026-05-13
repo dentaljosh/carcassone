@@ -13,9 +13,13 @@
 
 **Live anchor-gate trajectory (vs warmstart_canonical, n=20):**
 - iter 0: 13W/0D/7L = **65% wr PASS**
-- iter 1: 13W/0D/7L = **65% wr PASS** (identical W/D/L — coincidence in n=20 binomial variance, not deterministic eval; iter 2 will disambiguate)
+- iter 1: 13W/0D/7L = **65% wr PASS** (identical W/D/L — variance, not deterministic eval)
+- iter 2: 7W/1D/12L = **35% wr FAIL** (first FAIL, fail counter 1/3)
+- iter 3: in progress (rachet kicks in: warm from iter_01 with fresh RNG, since iter_02 FAIL'd)
 
 **Recipe-faithful to v5.** Only changes vs v5: `--initial-checkpoint = iter_06.pt`, `--orchestrator` on, W=96 box (workers capped to 80 by games=80).
+
+**Pattern so far**: matches v5's failure mode exactly. v5's first FAIL was iter 1 (20% wr); v6's is iter 2 (35% wr) — slightly milder, one iter later, but the same recipe-family drift signal when mix-floor hits 0.5 and self-play dominates. The "iter_06 warmstart compounds" hypothesis is taking damage; the "recipe ceiling regardless of starting point" hypothesis is being strengthened.
 
 **Acceptance bars:**
 1. by iter 5: anchor PASS ≥40% wr — recipe alive on new starting point
@@ -23,7 +27,11 @@
 3. by iter 15: 3 consecutive PASS ≥55% — recipe stable, not just a peak
 4. by iter 20: best anchor ≥70% — actually compounding past v5
 
-**On completion (or halt):** rsync artifacts, destroy box, update DECISIONS.md, decide v7 direction (bigger net / specialist league / KataGo aux heads / Phase 5 pivot).
+**Parallel local work (started while v6 runs):**
+- 192×14 warmstart training on local 5060 Ti (~3 h, $0 compute). Pre-stages a real bigger-net checkpoint for v7 if v6 plateaus. Started 02:50 UTC, expect completion ~05:50.
+- RuleBasedPlayer scaffold + harness committed. Smoke at n=50 vs random: 44% wr (ELO -42). Confirms tile-placement dominates the value question; meeple-only rules can't compete. Real Tier-1 baseline needs tile heuristics, which is v7 work.
+
+**On completion (or halt):** rsync artifacts via `scripts/pull_v6_artifacts.sh 36659390`, destroy box, update DECISIONS.md, decide v7 direction (bigger-net retry / specialist league / KataGo aux heads / Phase 5 pivot).
 
 ---
 
