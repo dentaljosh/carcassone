@@ -37,6 +37,39 @@ tail --pid=$PID -f /dev/null
 
 `nohup` makes the process ignore SIGHUP. `disown` removes it from the bash job table so a bash exit (also caused by SSH death) doesn't kill it. `setsid` is an equivalent alternative. The harness's `run_in_background=true` parameter alone is NOT sufficient — that tracks the bash invocation, which still gets SIGHUP'd when SSH dies; the python child must be explicitly detached.
 
+## Vast.ai box bootstrap is fragile — babysit it actively
+
+Renting a box and waiting for it to boot is **not reliable**. We've seen two failure modes that don't surface until you actively check:
+
+1. **Docker pull stalls indefinitely.** Vast.ai's docker daemon gets stuck "Verifying Checksum / Download complete" on a layer and never recovers. Status stays "loading" forever. Sunk $1.13 on 2026-05-13 across two boxes before catching it.
+2. **SSH-ready ≠ usable.** The status flips to "running" but the actual sshd / image config can still fail (e.g. the 2026-05-12 openssh-server missing-from-image bug).
+
+**Rule: when waiting for a cloud box to bootstrap, use ACTIVE polling, not passive "wait for status=running".** A naive `until [status == running]; do sleep 25; done` will sit forever on a stalled pull.
+
+Pattern (use a Monitor):
+
+```bash
+# In the Monitor command — polls every 5 min, emits the current status_msg,
+# flags "stuck" if the same message persists 3 polls (~15 min).
+prev=""
+stuck=0
+while true; do
+  msg=$(vastai show instance <id> --raw | python3 -c "import json,sys; d=json.load(sys.stdin); print((d.get('status_msg','') or '').split(chr(10))[0])")
+  if [ "$(vastai show instance <id> --raw | python3 -c "import json,sys; print(json.load(sys.stdin).get('actual_status','?'))")" = "running" ]; then
+    echo "READY"; break
+  fi
+  [ "$msg" = "$prev" ] && stuck=$((stuck+1)) || stuck=0
+  echo "poll: msg=$msg stuck=$stuck"
+  [ "$stuck" -ge 3 ] && echo "STUCK: destroy + retry recommended"
+  prev=$msg
+  sleep 300
+done
+```
+
+**Idle-hook firings during a cloud box wait are SIGNAL, not noise.** If the harness says "background task running 10+ minutes", that's the prompt to actively inspect the box's status_msg, not to silence the alert. Two consecutive failures with identical status_msg → destroy + retry on a different physical machine.
+
+Budget: each stuck-box costs ~$0.40-0.70 before you notice. With active polling you catch it inside 15 min ≈ $0.10. Cheap savings; do it every time.
+
 ## Pause / resume long-running parallel jobs
 
 For embarrassingly-parallel jobs (tournaments, measurement sweeps, self-play), use **per-game checkpoint files** so we can pause or apply optimizations without losing work.
