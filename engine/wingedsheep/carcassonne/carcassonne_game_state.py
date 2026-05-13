@@ -44,6 +44,52 @@ class CarcassonneGameState:
         # every legal-move query. Maintained by StateUpdater.play_tile.
         # Set of Coordinate objects.
         self.open_positions: set = set()
+        # Patched (vendored fork, 2026-05-13): track placed-tile coordinates
+        # so string_representation can iterate ~80 coords instead of walking
+        # the full 1225-cell board. Maintained by StateUpdater.play_tile.
+        self.placed_coords: set = set()
+
+    def __deepcopy__(self, memo):
+        # Patched (vendored fork, 2026-05-13): bypass the default recursive
+        # deepcopy. cProfile of one self-play game at sims=50 batch=8 showed
+        # `copy.deepcopy` accounted for 75% of wallclock (200/267s) — every
+        # MCTS get_next_state step deepcopies the full state, which by default
+        # recursively walks every Tile (with FarmerConnections), every
+        # MeeplePosition, every Coordinate, etc.
+        #
+        # State analysis (see DECISIONS.md): everything reachable from state
+        # is either (a) mutated by reassignment, (b) a list/set we copy
+        # one level deep, or (c) an immutable value object (Tile, TileAction,
+        # Coordinate, MeeplePosition, enum members) safe to share by reference.
+        # In particular Tile.turn() returns a NEW Tile and no codepath
+        # mutates Tile / TileAction / MeeplePosition fields after construction.
+        new = CarcassonneGameState.__new__(CarcassonneGameState)
+        memo[id(self)] = new
+
+        # Immutable refs — share.
+        new.supplementary_rules = self.supplementary_rules
+        new.starting_position = self.starting_position
+        new.players = self.players
+        new.phase = self.phase
+        new.last_river_rotation = self.last_river_rotation
+        new.current_player = self.current_player
+        new.last_tile_action = self.last_tile_action
+        new.next_tile = self.next_tile
+
+        # Lists/sets of immutable refs — shallow copy the container only.
+        new.deck = self.deck[:]
+        new.scores = self.scores[:]
+        new.meeples = self.meeples[:]
+        new.abbots = self.abbots[:]
+        new.big_meeples = self.big_meeples[:]
+        new.placed_meeples = [pl[:] for pl in self.placed_meeples]
+        new.open_positions = set(self.open_positions)
+        new.placed_coords = set(self.placed_coords)
+
+        # 2D board: refs are immutable Tile / None; shallow per row.
+        new.board = [row[:] for row in self.board]
+
+        return new
 
     def get_tile(self, row: int, column: int):
         if row < 0 or column < 0:

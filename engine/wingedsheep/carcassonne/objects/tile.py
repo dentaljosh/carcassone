@@ -42,6 +42,20 @@ class Tile:
         self.cathedral = cathedral
         self.unplayable_sides = unplayable_sides
         self.image = image
+        # Patched (vendored fork, 2026-05-13): lazy-built per-side TerrainType
+        # cache. The original get_type re-derives road/river/city sets from
+        # scratch on every call (called ~5M times per self-play game from
+        # TilePositionFinder + farmer-position lookups). After the deepcopy
+        # patch, tile.get_type became the #1 self-time hotspot.
+        self._type_cache: dict | None = None
+        # Patched (vendored fork, 2026-05-13): cache the wrapper's rotation
+        # signature (4-edge tuple + shield/chapel/flowers booleans) on the
+        # Tile itself. Tiles are immutable and shared via canonical refs
+        # (base_tiles dict + Tile.turn() returns a fresh Tile per rotation),
+        # so the signature for any given Tile reference never changes.
+        # string_representation calls this ~880K times per game; caching
+        # turns that into ~80 cache misses (once per unique rotated tile).
+        self._rot_sig_cache: tuple | None = None
 
     def get_road_ends(self) -> Set[Side]:
         sides: Set[Side] = set([])
@@ -68,26 +82,46 @@ class Tile:
         return len(self.river) > 0
 
     def get_type(self, side: Side):
-        if self.unplayable_sides.__contains__(side):
-            return TerrainType.UNPLAYABLE
+        cache = self._type_cache
+        if cache is None:
+            cache = self._build_type_cache()
+            self._type_cache = cache
+        return cache.get(side)
 
-        if side == Side.CENTER and self.chapel:
-            return TerrainType.CHAPEL
-
-        if side == Side.CENTER and self.flowers:
-            return TerrainType.FLOWERS
-
-        if self.get_river_ends().__contains__(side):
-            return TerrainType.UNPLAYABLE
-
-        if self.get_road_ends().__contains__(side):
-            return TerrainType.ROAD
-
-        if self.get_city_sides().__contains__(side):
-            return TerrainType.CITY
-
-        if self.grass.__contains__(side):
-            return TerrainType.GRASS
+    def _build_type_cache(self) -> dict:
+        """Precompute (side -> TerrainType) for all 9 sides once. Patched
+        (vendored fork, 2026-05-13). Replaces ~5M repeated set-derivations
+        per self-play game with one dict lookup per get_type call."""
+        unplayable = set(self.unplayable_sides)
+        river_ends = self.get_river_ends()
+        road_ends = self.get_road_ends()
+        city_sides = self.get_city_sides()
+        grass_set = set(self.grass)
+        cache: dict = {}
+        for side in Side:
+            if side in unplayable:
+                cache[side] = TerrainType.UNPLAYABLE
+                continue
+            if side == Side.CENTER and self.chapel:
+                cache[side] = TerrainType.CHAPEL
+                continue
+            if side == Side.CENTER and self.flowers:
+                cache[side] = TerrainType.FLOWERS
+                continue
+            if side in river_ends:
+                cache[side] = TerrainType.UNPLAYABLE
+                continue
+            if side in road_ends:
+                cache[side] = TerrainType.ROAD
+                continue
+            if side in city_sides:
+                cache[side] = TerrainType.CITY
+                continue
+            if side in grass_set:
+                cache[side] = TerrainType.GRASS
+                continue
+            cache[side] = None  # falls through (matches original behavior)
+        return cache
 
     def to_json(self):
         return {

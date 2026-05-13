@@ -10,9 +10,10 @@ AlphaZero-style Carcassonne agent + position analyzer for family games.
 ## Status
 
 - **Phase 0** ✅ scaffolding, sanity checks, measurements, vendoring + engine patches
-- **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache (39 tests pass)
-- **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random.
-- **Phase 3** in progress — `virtual_score` + `network` (6×96 ResNet) + `warmstart` pipeline + `NeuralMCTS` all implemented. Smoke comparison **complete**: heuristic-only labels won by 24.7× in wins-per-hour-of-generation. Three production prereqs landed (encoding richness 40→78 ch, scalar normalization, streaming/IterableDataset trainer). **v1 100K production attempt missed acceptance** (T1 net-vs-random 84/100; needed ≥90); diagnosis: heuristic policy targets at tau=10 were too soft (top-1 ~45%) for the policy head to fit. **v2 in flight at tau=0.5** (top-1 ~64% expected). See [STATUS.md](STATUS.md). 115 tests pass.
+- **Phase 1** ✅ AlphaZero-style game wrapper + opt-in legal-moves cache
+- **Phase 2** ✅ vanilla MCTS (UCT C=3, in-place rollouts, Q-tiebreak best_action). Acceptance: MCTS(s=20) won 96/100 vs random
+- **Phase 3** ✅ 6×96 ResNet (~7M params) + heuristic warmstart at 100K positions, tau=0.5. `checkpoints/warmstart_canonical.pt` is the canonical baseline. Closure: skip remaining warmstart iteration, advance to self-play (see DECISIONS.md "2026-04-29 — Phase 3 closure")
+- **Phase 4** in progress — Self-play loop with virtual-loss / batched-eval MCTS, anchor-gate methodology, best-so-far ratchet, and a GPU inference-server orchestrator (`gpu-orchestrator` branch). Six recipe iterations attempted (v1-v6). **v6 cloud run** (20 iters, ~$3.40) produced `checkpoints/selfplay_v6/iter_12.pt` at 70% wr vs warmstart_canonical — the current global-best checkpoint, the first ever to break above v5's 65% ceiling. v7 (data-scarcity hypothesis: symmetry augmentation + iter_12 warmstart) is the next plan-mode session.
 
 See [STATUS.md](STATUS.md) for live state and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) for the project spec.
 
@@ -55,9 +56,9 @@ python scripts/bench_workers.py 64       # parallel-worker speedup
 
 - `engine/` — vendored copy of [wingedsheep/carcassonne](https://github.com/wingedsheep/carcassonne) (MIT, last upstream release Oct 2021), patched (see `DECISIONS.md`)
 - `az/` — vendored copy of [suragnair/alpha-zero-general](https://github.com/suragnair/alpha-zero-general) (MIT, used as a reference, not imported)
-- `src/carcassonne_ai/` — our code (game wrapper, board representation, action space, scalar features, ETA helpers, MCTS placeholder)
-- `scripts/` — runnable entry points (smoke tests, measurements, benches)
-- `tests/` — pytest (33 tests covering action space, board encoding, game wrapper, invariants, legal-moves cache, string repr, window overflow)
+- `src/carcassonne_ai/` — our code (game wrapper, board representation, action space, scalar features, MCTS, NeuralMCTS, network, warmstart, selfplay, evaluators, eval_server / eval_server_pool for the GPU orchestrator)
+- `scripts/` — runnable entry points (smoke tests, measurements, benches, self-play + train + eval drivers, Phase 4 outer loop)
+- `tests/` — pytest suite (covers action space, board encoding, game wrapper, MCTS, NeuralMCTS virtual-loss, eval-server orchestrator, etc.)
 - `data/`, `checkpoints/`, `runs/` — gitignored artifacts
 
 ## Tracking docs

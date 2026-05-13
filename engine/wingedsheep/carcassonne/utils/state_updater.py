@@ -41,6 +41,9 @@ class StateUpdater:
         for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
             if 0 <= nr < n_rows and 0 <= nc < n_cols and game_state.board[nr][nc] is None:
                 game_state.open_positions.add(Coordinate(row=nr, column=nc))
+        # Patched (vendored fork, 2026-05-13): track placed coords for fast
+        # string_representation iteration. Tiles never get unplaced; pure add.
+        game_state.placed_coords.add(tile_action.coordinate)
         return game_state
 
     @staticmethod

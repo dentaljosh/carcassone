@@ -17,7 +17,7 @@ import math
 import os
 import random
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from multiprocessing import Pool
 
 import numpy as np
@@ -61,6 +61,13 @@ class Board:
     state: CarcassonneGameState
     total_tiles: int
     offset: WindowOffset
+    # Memoized string_representation result. None = not yet computed.
+    # Boards are created fresh per Game.get_next_state (apply_action returns
+    # a NEW Board around a deepcopied state), so this cache is auto-invalidated
+    # by replacement — no manual invalidation needed. apply_action_inplace
+    # mutates state but does NOT create a new Board; callers MUST not call
+    # string_representation on an inplace-mutated Board (rollout-only contract).
+    _str_repr_cache: str | None = field(default=None, repr=False, compare=False)
 
     @classmethod
     def from_state(cls, state: CarcassonneGameState, total_tiles: int, window_size: int) -> "Board":
@@ -179,6 +186,10 @@ class Game:
         StateUpdater.apply_action_inplace(game_state=state, action=action)
         # offset depends on placed tiles; recompute since state mutated.
         board.offset = compute_window_offset(state, self.window_size)
+        # Invalidate the memoized string_representation since state changed.
+        # Required for rollouts and warmstart 2-ply lookahead that mutate a
+        # Board in place and then re-query get_valid_moves / string_representation.
+        board._str_repr_cache = None
         return board, state.current_player
 
     def _decode_for(self, state, offset, action_idx: int):
@@ -298,14 +309,25 @@ class Game:
         dense version was ~166ms in late game, dominating get_valid_moves
         and making the legal-moves cache net-negative. Sparse should be
         ~5-10x faster.
+
+        Memoized on the Board (see Board._str_repr_cache). NeuralMCTS keys
+        nodes by this string and calls it many times against the same
+        root Board within one search; the cache turns ~22K calls/game
+        into ~150 cache misses (one per unique state visited).
         """
+        cached = board._str_repr_cache
+        if cached is not None:
+            return cached
         s = board.state
+        # Iterate placed_coords (~80 cells) instead of walking the full 35x35
+        # grid (1225 cells, mostly None). Sort for determinism — placed_coords
+        # is a set. Patched 2026-05-13.
         placed = []
-        for r, row in enumerate(s.board):
-            for c, t in enumerate(row):
-                if t is None:
-                    continue
-                placed.append((r, c, t.description, _tile_rotation_signature(t)))
+        for coord in sorted(s.placed_coords, key=lambda c: (c.row, c.column)):
+            t = s.board[coord.row][coord.column]
+            if t is None:
+                continue  # defensive; shouldn't happen since the set tracks placements
+            placed.append((coord.row, coord.column, t.description, _tile_rotation_signature(t)))
         meeples = tuple(
             tuple(
                 (mp.meeple_type.value, mp.coordinate_with_side.coordinate.row,
@@ -319,7 +341,7 @@ class Game:
             if s.last_tile_action is not None
             else None
         )
-        return repr(
+        result = repr(
             (
                 tuple(placed),
                 meeples,
@@ -332,6 +354,8 @@ class Game:
                 last_tile_coord,
             )
         )
+        board._str_repr_cache = result
+        return result
 
 
 def _tile_rotation_signature(tile) -> tuple:
@@ -347,14 +371,25 @@ def _tile_rotation_signature(tile) -> tuple:
     fixed in our fork). Shields change scoring (+1 per city tile), so a state
     key that doesn't distinguish them would cause MCTS transpositions to
     merge positions with different value functions.
-    """
-    from wingedsheep.carcassonne.objects.side import Side
 
-    edges = tuple(
-        tile.get_type(side).value
-        for side in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
+    Cached on the Tile instance: Tiles are canonically-shared immutable refs
+    (base_tiles dict + Tile.turn() builds a fresh Tile per rotation), so the
+    signature for any given Tile reference is stable for the lifetime of the
+    process.
+    """
+    cached = tile._rot_sig_cache
+    if cached is not None:
+        return cached
+    from wingedsheep.carcassonne.objects.side import Side
+    edges = (
+        tile.get_type(Side.TOP).value,
+        tile.get_type(Side.RIGHT).value,
+        tile.get_type(Side.BOTTOM).value,
+        tile.get_type(Side.LEFT).value,
     )
-    return (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
+    sig = (edges, bool(tile.shield), bool(tile.chapel), bool(tile.flowers))
+    tile._rot_sig_cache = sig
+    return sig
 
 
 # --- CLI entry point ---------------------------------------------------------

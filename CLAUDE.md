@@ -102,6 +102,7 @@ When writing new parallel scripts: always launch with `python -u` for unbuffered
 - **Parallelize CPU-bound jobs by default.** 5800X has 16 SMT threads; full fan-out wins by ~7x on engine simulations. Bench: `scripts/bench_workers.py`.
 - **State ETA before launching anything ≥30s.** Use `scripts/bench_quick.py` data to estimate. Verify parallelism with `ps -o %cpu` immediately after launch.
 - **Profile components when a hot path is slow.** If a workflow benchmark is >2x slower than its components imply, find the gap before launching long jobs (this saved ~3 hours in Phase 2).
+- **Bench, then extrapolate, then commit — don't skip the bench step.** When scaling worker counts or memory caps on a new box: measure real VRAM/CPU load at one known-safe config, subtract a margin (1 worker / 10% mem), then commit to that for the long run. Don't jump from "ran fine at N" to "let's try 2N" without an explicit measurement. The 2026-05-12 carcassone OOM came from extrapolating from prior calculations instead of measuring.
 - **Fail loudly.** If a result doesn't match the spec, surface it.
 
 ## Engine notes
@@ -120,6 +121,8 @@ Don't `git pull` upstream into `engine/` — we vendored specifically to keep th
 
 - **Phase 0 ✅** scaffolding, sanity checks, measurements, vendor + patches. On `phase-0-setup`.
 - **Phase 1 ✅** AlphaZero-style game wrapper (Game, Board, action_space, board_repr, features, eta, legal-moves cache). On `phase-1-engine-wrapper`. 39 tests pass. 1000-game fuzz clean.
-- **Phase 2 (in progress)** Vanilla MCTS + state-mutation rollout optimization committed to `phase-2-mcts`. Acceptance tournament (MCTS s=10 vs random) in progress.
+- **Phase 2 ✅** Vanilla MCTS + state-mutation rollout optimization. MCTS(s=20) won 96/100 vs random. On `phase-2-mcts`.
+- **Phase 3 ✅** Network (6×96 ResNet, 7M params) + heuristic warmstart at 100K positions, tau=0.5. `checkpoints/warmstart_canonical.pt` is the canonical baseline. Closure decision: skip remaining warmstart iteration, proceed to Phase 4. See DECISIONS.md "2026-04-29 — Phase 3 closure".
+- **Phase 4 (active)** Self-play loop on `phase-4-selfplay` (and `gpu-orchestrator` for the inference-server work). Six recipes attempted (v1-v6); v6 ran 20 iters on cloud and produced `checkpoints/selfplay_v6/iter_12.pt` at 70% wr vs warmstart_canonical — the current global-best checkpoint. v7 (data-scarcity hypothesis: symmetry augmentation + iter_12 warmstart) is the next plan-mode session.
 
 For real-time status see [STATUS.md](STATUS.md).

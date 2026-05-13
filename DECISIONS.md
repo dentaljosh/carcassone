@@ -23,6 +23,89 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-13 — MCTS perf loop 2/3/4: tile `_type_cache`, rotation-signature cache, str_repr cache, `placed_coords` set
+
+**Context:** After the `__deepcopy__` patch (entry below) cut game wallclock 3.3×, re-profiled and chased the next bottlenecks. Three more patches landed in sequence; numbers from `scripts/profile_mcts.py --no-profile --sims 50 --batch-size 8 --seed 42` on local 5060 Ti:
+
+| Loop | Patch | s/game | Cumulative |
+|---|---|---|---|
+| 0 | baseline (default deepcopy) | 84.7 | 1.00× |
+| 1 | engine state `__deepcopy__` | 25.5 | 3.32× |
+| 2 | tile `_type_cache` (precompute `(side → TerrainType)` dict per Tile, lazily) | 16.9 | 5.01× |
+| 3 | `_rot_sig_cache` on Tile + `_str_repr_cache` on Board (auto-invalidated by Board replacement on `get_next_state`; manual reset on `apply_action_inplace`) | 14.3–17.1 | ~5.4× |
+| 4 | `placed_coords: set[Coordinate]` on engine state, replaces 1225-cell board walk in `string_representation` with ~80-coord iteration | 14.5 | **5.84×** |
+
+**Loop 2 (tile `_type_cache`):** original `Tile.get_type(side)` re-derives `get_road_ends() / get_river_ends() / get_city_sides()` from scratch on every call (~5M calls/game from `TilePositionFinder` + farmer-position lookups). Patched to precompute a `dict[Side, TerrainType]` once per Tile (lazily). Verified by 1584 (tile × rotation × side) checks against the original implementation — zero mismatches.
+
+**Loop 3 (signature + str_repr caches):** Tiles are immutable canonical refs (`base_tiles` dict + `Tile.turn()` returns a fresh Tile per rotation), so `_tile_rotation_signature` can be cached on each Tile. Board is created fresh by every `Game.get_next_state`, so `_str_repr_cache` is auto-invalidated by replacement — *except* `apply_action_inplace` mutates in place without creating a new Board, so the cache must be explicitly reset there. Regression test in `tests/test_state_deepcopy.py::test_string_repr_cache_invalidated_on_apply_action_inplace`. Smaller than predicted — most Boards are queried once, so cache hits are rare; the actual win was the rotation-signature cache.
+
+**Loop 4 (`placed_coords` set):** the remaining cost in `string_representation` after loop 3 was a 35×35 = 1225-cell walk to find ~80 placed tiles. Mirroring the existing `open_positions` patch: added `state.placed_coords: set[Coordinate]`, maintained by `StateUpdater.play_tile` (pure add — tiles never get unplaced). `string_representation` iterates this set (sorted for determinism) instead of the full board. Wrapped in the custom `__deepcopy__` and tested in `tests/test_engine_adjacency.py::test_placed_coords_*`.
+
+**Diminishing returns confirmed.** After loop 1's 3.3×, each subsequent patch returned smaller. The remaining cost is split between GPU forward (now the dominant cumtime) and Python overhead that's hard to crack without architectural changes (bigger batches across more concurrent workers, persistent CUDA streams). Stopping the perf loop here.
+
+**Implications for v7:**
+- A v6-equivalent cloud run (20 iters, sims=200, batch=8, games=80) drops from ~9h / $3.40 to **~1.5h / ~$0.55**, OR ~120 iters in the original 9h / $3.40 budget.
+- Higher sims (e.g. eval at sims=400+) become affordable. Persistent CUDA streams + larger batches are the next architectural lever; not pursued here.
+
+**Reversal cost:** none. All patches are local; tests gate any regression.
+
+**Phase:** 4 (perf)
+
+---
+
+## 2026-05-13 — MCTS perf loop 1: engine state `__deepcopy__` cut game wallclock 3.3×
+
+**Context:** Orchestrator N-sweep (entry below) proved workers, not the dispatcher, are the bottleneck. Local cProfile of one self-play game (sims=50, batch_size=8, warmstart_canonical, seed=42) showed the actual hot path **inside** the worker. Top 7 by cumtime:
+
+| Function | cumtime | % of wallclock |
+|---|---|---|
+| `copy.deepcopy` | 199.9s | **75%** |
+| `state_updater.apply_action` | 204.2s | 77% |
+| `get_next_state` | 205.8s | 77% |
+| `_select_leaf_with_vloss` | 212.2s | 79% |
+| `batch_evaluator` (GPU fwd) | 43.9s | 16% |
+| `get_valid_moves` | 32.0s | 12% |
+| `string_representation` | 21.2s | 8% |
+
+(`_select_child_puct`, the PUCT loop I expected to be hot, didn't appear in the top 40 — it's negligible vs deepcopy.) Per-tree-step `get_next_state` deepcopies the entire `CarcassonneGameState`, which by default recursively walks every `Tile` (with `FarmerConnection`s), every `MeeplePosition`, every `Coordinate` in the 35×35 board. ~19,500 deepcopies per game × ~2.2ms each = 200s — way more than the GPU.
+
+**Fix:** custom `__deepcopy__` on `CarcassonneGameState` (vendored engine; ~50 LoC). All immutable refs (`Tile`, `TileAction`, `MeeplePosition`, `Coordinate`, enums) are shared; mutable containers (`board`, `deck`, `scores`, `meeples`, `placed_meeples`, `open_positions`) are shallow-copied at one level. Verified by reading every mutation site in `state_updater.py` and `points_collector.py`: nothing ever mutates Tile/TileAction/MeeplePosition fields after construction — `Tile.turn()` returns a NEW Tile (immutable pattern).
+
+**Microbench** (mid-game state, 80 placed tiles, N=200 copies):
+
+| | per-copy |
+|---|---|
+| default recursive deepcopy | 2.216 ms |
+| custom `__deepcopy__` | 0.004 ms |
+| **per-copy speedup** | **503×** |
+
+**End-to-end A/B** (one game, sims=50 batch=8, --no-profile):
+
+| | plies | wallclock | s/ply |
+|---|---|---|---|
+| default deepcopy | 166 | 84.7 s | 0.510 |
+| custom `__deepcopy__` | 165 | **25.5 s** | **0.154** |
+| **game speedup** | — | **3.3×** | 3.3× |
+
+**Correctness:** `tests/test_state_deepcopy.py` (4 tests, all pass) verifies: (a) signature equality of fresh state, (b) signature equality after 60 random actions applied to a custom-copy vs a default-copy, (c) no shared mutable substructure (mutating the copy leaves original unchanged), (d) signature equality at mid-game (~60 moves placed). Full suite: **166/166 tests pass** post-patch.
+
+**Other beneficiaries** (any codepath that does `copy.deepcopy(state)`):
+- `virtual_score.py` (heuristic labeler used by warmstart gen)
+- `warmstart.py` 2-ply heuristic lookahead
+- vanilla MCTS rollouts (`mcts.py`, partially mitigated by `apply_action_inplace`)
+- analysis scripts (`classify_v2_losses.py`, `audit_virtual_score_farmers.py`)
+
+**Implications for v7:**
+- At production sims=200, deepcopy load scales with sims × avg-tree-depth → the 3.3× should hold or widen.
+- v6 cloud run was 9h / $3.40 for 20 iters → v7 with this fix runs the same in ~3h / ~$1.10, or ~60 iters in the original 9h budget.
+- This eliminates the need to chase fp16 (already proved slower) or Cython-rewrite the PUCT loop (which the profile says was never hot).
+
+**Reversal cost:** none. Engine patch is local to one method; old behavior preserved by deleting the method. Tests gate any future regression.
+
+**Phase:** 4 (perf)
+
+---
+
 ## 2026-05-13 — Orchestrator multi-process pool: NULL RESULT, workers are the bottleneck, not the GIL
 
 **Context:** v6 cloud showed GPU at 5-20% utilization with the single-server orchestrator, suggesting the Python dispatch loop was GIL-bound and starving the GPU. Built multi-process pool (`src/carcassonne_ai/eval_server_pool.py`) to shard workers across N parallel server processes (commit `c34ecf9`). Hypothesis: more dispatchers → faster request servicing → 1.5-2× wallclock speedup.

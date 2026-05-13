@@ -63,6 +63,37 @@ def test_open_positions_stays_consistent_through_a_random_game() -> None:
         steps += 1
 
 
+def test_placed_coords_starts_empty() -> None:
+    g = Game()
+    board = g.get_init_board()
+    assert board.state.placed_coords == set()
+
+
+def test_placed_coords_stays_consistent_through_a_random_game() -> None:
+    """Mirror of test_open_positions_*: placed_coords must always equal the
+    set of (row, col) cells with a non-None tile. Required for
+    string_representation to iterate placed tiles fast (loop-4 patch,
+    2026-05-13)."""
+    g = Game()
+    random.seed(42)
+    board = g.get_init_board()
+    steps = 0
+    while g.get_game_ended(board, 0) == 0.0 and steps < 60:
+        actual = board.state.placed_coords
+        expected = set()
+        for r, row in enumerate(board.state.board):
+            for c, t in enumerate(row):
+                if t is not None:
+                    expected.add(Coordinate(row=r, column=c))
+        assert actual == expected, (
+            f"step {steps}: placed_coords out of sync. "
+            f"actual={len(actual)} expected={len(expected)}"
+        )
+        legal = np.flatnonzero(g.get_valid_moves(board))
+        board, _ = g.get_next_state(board, int(random.choice(legal)))
+        steps += 1
+
+
 def test_tile_phase_pass_does_not_leak_meeples() -> None:
     """Regression for the engine bug found in external review pass 4 (2026-04-28):
     if the current tile is unplaceable, the engine emits a TILES-phase

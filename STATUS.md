@@ -2,7 +2,11 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. Multi-process orchestrator pool landed for v7.
+## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. **MCTS deepcopy fix: 3.3× game-wallclock speedup.**
+
+**Engine `__deepcopy__` patch landed (vendored fork).** cProfile of one self-play game showed `copy.deepcopy` ate 75% of wallclock (per-tree-step state copy was the dominant cost, not the PUCT loop and not GPU forward as expected). Custom `__deepcopy__` shares immutable refs (Tile, TileAction, MeeplePosition, Coordinate) and shallow-copies the mutable containers. Per-copy: **503×** faster (2.2ms → 4μs at mid-game). End-to-end A/B at sims=50 batch=8 on local 5060 Ti: **84.7s → 25.5s per game (3.3×)**. 166/166 tests pass; new equivalence tests in `tests/test_state_deepcopy.py`. See DECISIONS.md 2026-05-13 "MCTS perf: engine state `__deepcopy__` cut game wallclock 3.3×".
+
+
 
 **v6 cloud result** (20 iters, 490 min wallclock, ~$3.40 cloud + $0.06 sunk on a destroyed pre-launch box):
 - **Best: iter_12 at 70% wr** — first checkpoint ever to beat warmstart_canonical at ≥70% wr (+5pp over v5's 65% peak).
@@ -10,29 +14,25 @@
 - Trajectory shape: 65 65 35F 60 50 40 50 35F 50 60 35F 45 **70** 65 45 55 30F 45 25F 65.
 - All 4 launch-time bugs fixed on `gpu-orchestrator` (Dockerfile sshd, bootstrap warmstart data, orchestrator-flag passthrough, see DECISIONS.md). Artifacts at `checkpoints/selfplay_v6/iter_00..19.pt` + `data/selfplay/v6_cloud/`. Cloud box destroyed.
 
-**Two null results that shape v7:**
+**Three null results that shape v7:**
 - 192×14 warmstart locally trained — 2.1× the params, ~zero val-loss improvement. **Capacity is not the bottleneck at our 10k data scale.**
 - RuleBasedPlayer (meeple-only rules) vs random: 44% wr. **Tile-placement dominates the value question;** meeple-side rules can't compete.
+- Multi-process orchestrator pool (built + cloud-swept 2026-05-13, ~$0.56): N=1 optimal; N=2/4/8 strictly slower (+4/+7/+7%). The orchestrator GIL was never the bottleneck — workers (CPU-bound MCTS tree work) are. Code stays in repo (correct + back-compat at n_shards=1); v7 launches `--orch-shards 1`. See DECISIONS.md "2026-05-13 — Orchestrator multi-process pool: NULL RESULT".
 
-**Multi-process orchestrator pool landed AND tested — NULL RESULT (`gpu-orchestrator`):**
-- Built `eval_server_pool.py` + tests (4/4 pass), plumbed `--orch-shards N` CLI through both subprocess scripts.
-- Cloud sweep on EPYC 9J14 (2026-05-13, ~$0.56): **N=1 is optimal.** N=2 +4% slower, N=4 +7%, N=8 +7%. Dequeue % climbs 64→84 as shards increase.
-- Diagnosis: the orchestrator GIL was NEVER the bottleneck. Workers (CPU-bound MCTS tree work) are. The dispatcher had spare capacity; more shards just made each idle more.
-- Code stays in repo (correct + back-compat at n_shards=1). v7 launches with `--orch-shards 1`.
-- See DECISIONS.md "2026-05-13 — Orchestrator multi-process pool: NULL RESULT" for full detail.
+**fp16 is DEAD for our workload** (DECISIONS.md, two independent benches): local 5060 Ti 0.82× single / 0.92× batch=8; cloud 5090 same shape. Autocast + cast-back overhead exceeds compute savings on 7M-param net + small batch. Revisit only if (a) net >30M params or (b) batch >32. Not a v7 perf lever.
 
-**Revised v7 perf levers (in order):**
-1. **fp16 inference** (already supported, never enabled in prod). Cuts eval latency 1.5-2× → reduces worker block time.
-2. **MCTS Python hot-path optimization** (Cython rewrite or numpy vectorization). The 50% of worker time spent on tree work is now the binding constraint.
-3. v7 recipe test (symmetry augmentation + iter_12 warmstart) — independent of perf, addresses the data-scarcity ceiling.
+**Real v7 perf levers (in order, after eliminating fp16):**
+1. **MCTS Python hot-path optimization.** ~50% of worker time is pure-Python MCTS tree work (selection, expansion, backup). Profile first to find the actual hotspot, then numpy-vectorize or Cython-rewrite the inner loop. This is the binding constraint now that orchestrator is ruled out.
+2. **Symmetry rotation augmentation** (recipe-side, not perf): free ~4× training data — addresses the data-scarcity ceiling independently.
+3. Right-size box: at games=80 we cap workers at 80 regardless of cores; a 32-core box at $0.30/hr would be a better $/throughput than the 48-core EPYC.
 
 **v7 direction (next plan-mode session):** the data-scarcity hypothesis. Recipe ceiling at ~70% + capacity null → bottleneck is "not enough diverse training data". Cheap leverage:
 1. Symmetry rotation augmentation (free 4× data)
 2. Start from `iter_12.pt` (70% wr — new global best)
-3. Apply v6's recipe with the orchestrator pool at N=4 (faster cycles, more iters per $)
+3. Apply v6's recipe with orchestrator pool at N=1 (the swept optimum)
 4. If symmetry alone doesn't break ceiling, layer in KataGo-style aux loss heads next.
 
-**Next concrete action:** profile-and-tune the orchestrator pool — rent a $0.40/hr box for ~1 hour, run iter-0 self-play smoke at N ∈ {1, 2, 4, 8}, pick empirical winner. Then v7 launches with that N + `--fp16` + games=96 + eval-sims=50.
+**Next concrete action:** profile MCTS locally (cProfile a 200-sim self-play game on the current warmstart_canonical or iter_12, ~30 min) to find the actual hot lines before deciding optimization scope.
 
 ---
 

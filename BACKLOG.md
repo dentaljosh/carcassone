@@ -22,7 +22,7 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Tested:** built `eval_server_pool.py` (commit `c34ecf9`), cloud-swept N ∈ {1, 2, 4, 8}. N=1 is optimal; N=2/4/8 strictly slower (+4% / +7% / +7%). Dequeue % climbs 64→84 as shards increase — the dispatcher was already idle waiting for requests.
 **Conclusion:** workers (CPU-bound MCTS) are the bottleneck, not the orchestrator. Multi-dispatch makes it worse, not better. See DECISIONS.md "2026-05-13 — Orchestrator multi-process pool: NULL RESULT".
 **What still applies:** the code is correct + back-compat; n_shards=1 is the production setting. v7 will run with `--orch-shards 1`.
-**Real perf levers now:** (1) fp16 inference (cut eval latency 1.5-2× → reduce worker block time), (2) MCTS hot-path optimization (the 50% of worker time spent on Python tree work). Both addressed below.
+**Real perf levers now:** MCTS hot-path optimization (the 50% of worker time spent on Python tree work). fp16 is NOT a lever — benched as slower (0.82× single / 0.92× batch=8) on both local 5060 Ti and cloud 5090. See DECISIONS.md 2026-05-12 "Cloud bench landed". Addressed below.
 
 ### Right-size box for games-per-iter
 **Idea:** games=80 caps worker count to 80 regardless of box CPU. Current setup (48-core box, 80 workers = 1.67× oversubscription) sits in yesterday's perf valley. Two clean fixes for next run:
@@ -84,7 +84,7 @@ These would let the net learn the user's "endgame: place a meeple every move" ru
 **Idea:** profile `src/carcassonne_ai/mcts.py` against a 200-sim self-play game; identify the hot lines (likely PUCT selection or virtual-loss accounting); rewrite in Cython or as a single numpy vectorized pass. KataGo and Leela Chess Zero both have C++ MCTS for the same reason.
 **Cost:** ~1-2 days of profiling + rewrite + tests. Compute cost negligible.
 **Why deferred:** v7 will validate the data-scarcity hypothesis first (symmetry augmentation + iter_12 warmstart). MCTS perf only matters if the recipe is the right shape.
-**Note:** fp16 inference (free, already flag-supported) should land first since it reduces the OTHER 50% of worker time (waiting on eval). Order: fp16 → v7 recipe → MCTS hot path.
+**Note:** fp16 was already benched twice and is SLOWER for our workload (autocast overhead exceeds compute savings on 7M-param net + small batch). Not a perf lever. Order: profile MCTS → v7 recipe → MCTS hot-path rewrite.
 
 ### Symmetry exploitation — CONFIRMED not used (free ~4× data on the table)
 **Status:** Verified 2026-05-13: grep for `rot90|symmetr|augment` in `src/`, `train_iter.py`, `train_warmstart.py` finds zero matches (only `flip` for player-perspective handling, semantically different).
@@ -103,8 +103,6 @@ These would let the net learn the user's "endgame: place a meeple every move" ru
 **Idea:** Add a module-level assert in `game_wrapper.py` that fails loudly if `ABBOTS` ever appears in any `Game` instance passed to it.
 **Cost:** 5 LoC.
 **Why deferred:** no current bug; only a footgun for future tooling.
-
-### Multi-box self-play sharding
 
 ### Specialist warmstarts + league play (DOMAIN-SPECIFIC — high priority if v6 plateaus)
 **Idea:** Bias the existing heuristic labeler 3 ways (roads-weight=2/cities-weight=2/farms-weight=2), train 3 warmstart nets (~30 min × 3 = ~$1.50). Run a 3-way round-robin (n=30 games, sims=50, ~2 hr) to see if specialists dominate the generalist. Two consume options:
