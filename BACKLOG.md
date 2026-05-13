@@ -81,9 +81,12 @@ These would let the net learn the user's "endgame: place a meeple every move" ru
 - **Forced-move shortcut**: tiles with only one legal placement skip the search entirely.
 **Why deferred:** small changes; defer until we have a stable recipe to test them against.
 
-### Symmetry exploitation
-**Idea:** Carcassonne board has rotational + reflection symmetries (4× the effective training data if we augment correctly). Need to verify whether we're already doing this in `train_iter.py`'s data loader.
-**Cost:** Free if not currently used; check + measure first.
+### Symmetry exploitation — CONFIRMED not used (free ~4× data on the table)
+**Status:** Verified 2026-05-13: grep for `rot90|symmetr|augment` in `src/`, `train_iter.py`, `train_warmstart.py` finds zero matches (only `flip` for player-perspective handling, semantically different).
+**Idea:** Carcassonne is symmetric under 90/180/270° board rotation IF you simultaneously rotate every tile's representation (the matching-edge structure is preserved). That's ~4× effective training data for free. Reflection (mirror) augmentation is trickier because some tiles aren't reflection-symmetric (curved road), requires a tile-mirror lookup — defer.
+**Cost:** Moderate. Need to: (a) implement `rotate_board_repr_90()` that re-encodes the 78-channel tensor under rotation, (b) implement `rotate_action(action, k)` to remap policy targets, (c) hook into the data loader. ~200 LoC. No retrain needed — works on any existing checkpoint's training data.
+**Expected payoff:** unclear. If we're data-limited (we are: 80 games × ~150 positions = 12k positions per iter), 4× augmentation could be meaningful. KataGo uses 8× (rotation + reflection) and credits it as load-bearing.
+**Why deferred:** non-trivial implementation, but **cheap experiment if done right** — apply augmentation to a re-train of warmstart_canonical at 96×6 and measure anchor wr vs current warmstart_canonical. If +5pp or more, this is a high-leverage v7 ingredient.
 
 ### Probing classifiers — interpretability for the black box
 **Idea:** Train small linear probes on hidden-layer activations of a trained net to predict: "how many city tiles remain in deck?", "who controls farm X?", "is this an endgame position?" If probes are accurate, the net has implicitly learned the concept. If not, it hasn't. Tells us *what* the network learned without forcing us to guess.
