@@ -14,11 +14,17 @@
 - 192×14 warmstart locally trained — 2.1× the params, ~zero val-loss improvement. **Capacity is not the bottleneck at our 10k data scale.**
 - RuleBasedPlayer (meeple-only rules) vs random: 44% wr. **Tile-placement dominates the value question;** meeple-side rules can't compete.
 
-**Multi-process orchestrator pool landed (`gpu-orchestrator`):**
-- New `eval_server_pool.py` + tests (4/4 pass). Spawns N parallel eval-server processes, static sharding by `worker_id % N`. Each shard owns its own ~2 GB VRAM net copy.
-- `--orch-shards N` plumbed through `run_selfplay_iter.py` + `eval_iter_head_to_head.py`. Default 1 = back-compat single server.
-- Per-stage timers (dequeue / forward / dispatch) added to `eval_server.py` to quantify the GIL bottleneck.
-- N=4 sweep on cloud is the next step before any v7 launch.
+**Multi-process orchestrator pool landed AND tested — NULL RESULT (`gpu-orchestrator`):**
+- Built `eval_server_pool.py` + tests (4/4 pass), plumbed `--orch-shards N` CLI through both subprocess scripts.
+- Cloud sweep on EPYC 9J14 (2026-05-13, ~$0.56): **N=1 is optimal.** N=2 +4% slower, N=4 +7%, N=8 +7%. Dequeue % climbs 64→84 as shards increase.
+- Diagnosis: the orchestrator GIL was NEVER the bottleneck. Workers (CPU-bound MCTS tree work) are. The dispatcher had spare capacity; more shards just made each idle more.
+- Code stays in repo (correct + back-compat at n_shards=1). v7 launches with `--orch-shards 1`.
+- See DECISIONS.md "2026-05-13 — Orchestrator multi-process pool: NULL RESULT" for full detail.
+
+**Revised v7 perf levers (in order):**
+1. **fp16 inference** (already supported, never enabled in prod). Cuts eval latency 1.5-2× → reduces worker block time.
+2. **MCTS Python hot-path optimization** (Cython rewrite or numpy vectorization). The 50% of worker time spent on tree work is now the binding constraint.
+3. v7 recipe test (symmetry augmentation + iter_12 warmstart) — independent of perf, addresses the data-scarcity ceiling.
 
 **v7 direction (next plan-mode session):** the data-scarcity hypothesis. Recipe ceiling at ~70% + capacity null → bottleneck is "not enough diverse training data". Cheap leverage:
 1. Symmetry rotation augmentation (free 4× data)

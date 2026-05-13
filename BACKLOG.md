@@ -18,13 +18,11 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 **Context:** v6 cloud launched 2026-05-13 with iter_06.pt as warmstart + orchestrator + W=96 box at W=80 (games-capped). Workers stable at ~50% CPU each; GPU at 4-11% util. Bottleneck shifted from VRAM OOM (pre-orchestrator) to **single-process orchestrator GIL** (Python dispatcher pegged at 95% of 1 core feeding the GPU). Decisions on v7 deferred to v6's outcome (compounds vs ceiling).
 
-### Orchestrator GIL bottleneck — highest-leverage perf change
-**Idea:** Replace the single-Python-process eval server with a non-GIL-bound dispatcher. Three sketched options, increasing effort:
-1. Multi-process dispatcher: shard workers across N orchestrators, each pinned to a GPU stream. Cheap, retains Python.
-2. C++ inference server (libtorch + zmq/grpc), workers shell out via Unix socket. Bigger lift, but kills the GIL outright.
-3. Rust-based dispatcher with zero-copy IPC. Most effort, biggest theoretical headroom.
-Realistic gain ceiling on current 48-core box: ~1.5-2× (workers still hit CPU cap next), not 5× — GPU has 5× headroom but workers don't.
-**Why deferred:** v6 is the recipe test, not a perf test. Only worth investing if v6 passes acceptance (recipe compounds) and we want to push further.
+### Orchestrator GIL bottleneck — RESOLVED 2026-05-13: NULL RESULT (workers are the bottleneck, not the dispatcher)
+**Tested:** built `eval_server_pool.py` (commit `c34ecf9`), cloud-swept N ∈ {1, 2, 4, 8}. N=1 is optimal; N=2/4/8 strictly slower (+4% / +7% / +7%). Dequeue % climbs 64→84 as shards increase — the dispatcher was already idle waiting for requests.
+**Conclusion:** workers (CPU-bound MCTS) are the bottleneck, not the orchestrator. Multi-dispatch makes it worse, not better. See DECISIONS.md "2026-05-13 — Orchestrator multi-process pool: NULL RESULT".
+**What still applies:** the code is correct + back-compat; n_shards=1 is the production setting. v7 will run with `--orch-shards 1`.
+**Real perf levers now:** (1) fp16 inference (cut eval latency 1.5-2× → reduce worker block time), (2) MCTS hot-path optimization (the 50% of worker time spent on Python tree work). Both addressed below.
 
 ### Right-size box for games-per-iter
 **Idea:** games=80 caps worker count to 80 regardless of box CPU. Current setup (48-core box, 80 workers = 1.67× oversubscription) sits in yesterday's perf valley. Two clean fixes for next run:
@@ -80,6 +78,13 @@ These would let the net learn the user's "endgame: place a meeple every move" ru
 - **Heuristic prior blending**: at PUCT root, blend `0.1 × heuristic_policy + 0.9 × neural_prior`. Cheap regularizer; prevents confident pursuit of obviously-bad late-game lines.
 - **Forced-move shortcut**: tiles with only one legal placement skip the search entirely.
 **Why deferred:** small changes; defer until we have a stable recipe to test them against.
+
+### MCTS Python hot-path optimization (PROMOTED priority 2026-05-13 after orchestrator null result)
+**Context:** the orchestrator N-sweep proved workers (not dispatcher) are the bottleneck. Workers spend ~50% of their time on Python MCTS tree work — selection, expansion, backup, all in pure Python with numpy. This is now the highest-leverage perf change.
+**Idea:** profile `src/carcassonne_ai/mcts.py` against a 200-sim self-play game; identify the hot lines (likely PUCT selection or virtual-loss accounting); rewrite in Cython or as a single numpy vectorized pass. KataGo and Leela Chess Zero both have C++ MCTS for the same reason.
+**Cost:** ~1-2 days of profiling + rewrite + tests. Compute cost negligible.
+**Why deferred:** v7 will validate the data-scarcity hypothesis first (symmetry augmentation + iter_12 warmstart). MCTS perf only matters if the recipe is the right shape.
+**Note:** fp16 inference (free, already flag-supported) should land first since it reduces the OTHER 50% of worker time (waiting on eval). Order: fp16 → v7 recipe → MCTS hot path.
 
 ### Symmetry exploitation — CONFIRMED not used (free ~4× data on the table)
 **Status:** Verified 2026-05-13: grep for `rot90|symmetr|augment` in `src/`, `train_iter.py`, `train_warmstart.py` finds zero matches (only `flip` for player-perspective handling, semantically different).
