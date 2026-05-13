@@ -40,6 +40,17 @@ Realistic gain ceiling on current 48-core box: ~1.5-2× (workers still hit CPU c
 **Idea:** Current net is 96×6 channels/blocks (~30 MB). The 32 GB VRAM ceiling forced us small; orchestrator lifts that, we have ~30 GB headroom. Bigger net = more capacity to actually exceed warmstart strength, which is the v1-v5 ceiling hypothesis.
 **Why deferred:** Burning compute on a bigger net only makes sense if recipe is stable. v6 result tells us whether the ceiling is recipe (v5 family) or capacity (model size).
 
+### Specialist warmstarts + league play (DOMAIN-SPECIFIC — high priority if v6 plateaus)
+**Idea:** Bias the existing heuristic labeler 3 ways (roads-weight=2/cities-weight=2/farms-weight=2), train 3 warmstart nets (~30 min × 3 = ~$1.50). Run a 3-way round-robin (n=30 games, sims=50, ~2 hr) to see if specialists dominate the generalist. Two consume options:
+- **Distill**: train a single new warmstart net targeting a weighted mix of the 3 specialists' outputs. New v7 starting point.
+- **League**: in v7 self-play, opponents come 25% from each specialist + 25% from the generalist (vs current 100%-self play). Stops mode collapse — the loop has to play against diverse strategies, not just its own most recent self.
+**Why this is different from v1-v6:** all prior recipe twiddles were generic AlphaZero knobs. This one exploits Carcassonne-specific structure (our heuristic labeler). Closest published parallel: AlphaStar's main-exploiters league. No Carcassonne-specific AlphaZero league work in the literature → genuinely novel territory.
+**Why deferred:** v6 must arbitrate first. If v6 plateaus at ~65% wr, this jumps the queue.
+
+### S-curve framing — diagnose whether v6 plateau is "same curve, further along" or "different curve, higher ceiling"
+**Idea:** Jones 2021 ("Scaling Scaling Laws with Board Games") shows AlphaZero ELO-vs-compute follows clean sigmoids. The asymptote is set by model capacity, search depth, buffer diversity, and starting conditions. v1-v5 hit one plateau; v6 starts further along the same curve but recipe is identical so the curve shape is identical. If v6 peak ≈ v5 peak → same curve, recipe family ceiling confirmed; only structural changes (bigger net, specialist league, longer search) lift the ceiling. If v6 peak > v5 peak → iter_06 was below the curve's plateau and there's more headroom on this recipe.
+**Why deferred:** purely an analysis lens, not an experiment. Apply this framework when interpreting v6 results in DECISIONS.md.
+
 ### Multi-box self-play sharding
 **Idea:** Rent 4× boxes, each generating 25% of iter's games, all writing to a shared S3/GCS replay buffer. Centralized trainer consumes the buffer. Cuts wall-clock per iter by ~4×.
 **Why deferred:** Coordinating multi-box runs is fiddly (sync, dropout, retries). Only worth it for a 50+ iter run where the per-iter wallclock savings amortize the setup cost.
