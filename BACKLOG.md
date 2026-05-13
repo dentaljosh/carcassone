@@ -14,6 +14,36 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-13 — Phase 4 v7 candidates (after v6 launch with orchestrator on)
+
+**Context:** v6 cloud launched 2026-05-13 with iter_06.pt as warmstart + orchestrator + W=96 box at W=80 (games-capped). Workers stable at ~50% CPU each; GPU at 4-11% util. Bottleneck shifted from VRAM OOM (pre-orchestrator) to **single-process orchestrator GIL** (Python dispatcher pegged at 95% of 1 core feeding the GPU). Decisions on v7 deferred to v6's outcome (compounds vs ceiling).
+
+### Orchestrator GIL bottleneck — highest-leverage perf change
+**Idea:** Replace the single-Python-process eval server with a non-GIL-bound dispatcher. Three sketched options, increasing effort:
+1. Multi-process dispatcher: shard workers across N orchestrators, each pinned to a GPU stream. Cheap, retains Python.
+2. C++ inference server (libtorch + zmq/grpc), workers shell out via Unix socket. Bigger lift, but kills the GIL outright.
+3. Rust-based dispatcher with zero-copy IPC. Most effort, biggest theoretical headroom.
+Realistic gain ceiling on current 48-core box: ~1.5-2× (workers still hit CPU cap next), not 5× — GPU has 5× headroom but workers don't.
+**Why deferred:** v6 is the recipe test, not a perf test. Only worth investing if v6 passes acceptance (recipe compounds) and we want to push further.
+
+### Right-size box for games-per-iter
+**Idea:** games=80 caps worker count to 80 regardless of box CPU. Current setup (48-core box, 80 workers = 1.67× oversubscription) sits in yesterday's perf valley. Two clean fixes for next run:
+- **Stay at games=80**: rent 32-core boxes at 3.7 GHz (~$0.30/hr instead of $0.375/hr; 2.5× oversubscription matches yesterday's W=96 optimum on the smaller box class).
+- **Stay on 48-core box**: bump games to 96 or 120, use the full headroom. Breaks the v5↔v6 recipe A/B though, so only valid for v7+ where we're free to change knobs.
+**Why deferred:** v6 must hold games=80 for clean recipe comparison with v5. Right-sizing kicks in for v7.
+
+### Train alongside self-play (async)
+**Idea:** v1-v6 are all synchronous — generate iter N data, train iter N, eval. GPU sits idle during self-play (well, it does until orchestrator is fixed). Run training continuously in a separate process consuming replay buffer; check in on convergence at iter boundaries.
+**Why deferred:** Big architectural change. Only sensible after orchestrator GIL fix lifts GPU util enough that async training has compute headroom.
+
+### Bigger net (10×128 or 14×192)
+**Idea:** Current net is 96×6 channels/blocks (~30 MB). The 32 GB VRAM ceiling forced us small; orchestrator lifts that, we have ~30 GB headroom. Bigger net = more capacity to actually exceed warmstart strength, which is the v1-v5 ceiling hypothesis.
+**Why deferred:** Burning compute on a bigger net only makes sense if recipe is stable. v6 result tells us whether the ceiling is recipe (v5 family) or capacity (model size).
+
+### Multi-box self-play sharding
+**Idea:** Rent 4× boxes, each generating 25% of iter's games, all writing to a shared S3/GCS replay buffer. Centralized trainer consumes the buffer. Cuts wall-clock per iter by ~4×.
+**Why deferred:** Coordinating multi-box runs is fiddly (sync, dropout, retries). Only worth it for a 50+ iter run where the per-iter wallclock savings amortize the setup cost.
+
 ## 2026-05-10 — Phase 4 v2 recipe fixes — LANDED 2026-05-10 (commit `a1f29ec`); FAILED 2026-05-11
 
 The four fixes (warmstart-mix floor 0.3, K=30, anchor-gate, eval-games 50) all landed cleanly. 5-iter sanity ran 4h. Chain ELO drift -98 (vs v1's misleading +612 — chain-vs-anchor agreement confirms the methodology fix). Definitive iter_4 anchor at n=50: **24% wr, ELO -200**. Below the 40% acceptance threshold. v2 quarantined; v3 recipe TBD. See DECISIONS.md "2026-05-11 — Phase 4 v2 recipe FAILED acceptance".
