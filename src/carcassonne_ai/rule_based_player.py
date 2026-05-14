@@ -6,22 +6,23 @@ If `RuleBasedPlayer` beats `warmstart_canonical` at ≥45% wr, the network
 hasn't moved much past rule-following — strong evidence the v6 ceiling is
 recipe-bound, not capacity-bound.
 
-Current implementation is INTENTIONALLY PARTIAL. Rules in this revision:
+Rules in this revision:
 
   1. Forced-move shortcut — single legal action, take it.
   2. Endgame meeple deployment — in MEEPLES phase, if tiles-left ≤ meeples
-     in hand, prefer placing a meeple over passing. Avoids wasting the
-     economy.
+     in hand, never PASS. Every unplaced meeple is wasted points.
   3. Avoid early farmers — in MEEPLES phase, when tiles-left > 60% of
      original deck, never claim a FARMER. Farmers lock a meeple for the
      rest of the game; too early is usually wasted commitment.
-
-Future rules (see BACKLOG.md "Rule-based player"):
-  - Road quick-close, city quick-close
-  - Cloister-EV (>=6 adjacent placements + >=4 tiles left → claim)
-  - Empty-farm-with-N-cities late-game threshold
-  - Contested-city abandon
-  - Don't-extend-dominant-farm
+  4. Tile placement — pick the legal placement that maximizes 1-ply
+     virtual_score (my final-score-diff if game ended after the placement).
+     Random tiebreak. This is the same heuristic used by warmstart's
+     `_heuristic_policy`, without the softmax temperature.
+  5. Meeple placement — among remaining MEEPLE options after rules 2/3
+     prune, pick the one with the best 1-ply virtual_score. Random
+     tiebreak. Subsumes both NORMAL placement scoring and FARMER scoring
+     (the engine's end-of-game farmer-counting logic is folded into
+     virtual_score, so we don't need a separate adjacent-cities heuristic).
 
 A `choose_action(game, board, valid_mask) -> int` is the interface.
 Compatible with the existing game loop (see scripts/eval_warmstart_smoke.py
@@ -29,16 +30,20 @@ for the reference pattern).
 """
 from __future__ import annotations
 
+import copy
 import random
 
 import numpy as np
 
+from wingedsheep.carcassonne.utils.state_updater import StateUpdater
+
 from .action_space import (
+    decode,
     meeple_farmer_base,
-    meeple_normal_base,
     meeple_pass_index,
 )
 from .game_wrapper import Board, Game
+from .virtual_score import virtual_score_inplace
 
 
 class RuleBasedPlayer:
@@ -70,57 +75,91 @@ class RuleBasedPlayer:
     # --- meeple phase ----------------------------------------------------
 
     def _choose_meeple(self, game: Game, board: Board, legal: np.ndarray) -> int:
-        """In MEEPLES phase the choices are: pass, NORMAL on a side, FARMER on a corner."""
+        """In MEEPLES phase the choices are: pass, NORMAL on a side, FARMER on a corner.
+
+        Apply Rules 2 (force-place near endgame) and 3 (no early farmers) as
+        hard filters, then Rule 5 (best 1-ply virtual_score) over what's left.
+        """
         W = game.window_size
-        normal_base = meeple_normal_base(W)
         farmer_base = meeple_farmer_base(W)
         pass_idx = meeple_pass_index(W)
-
-        # Classify legal options.
-        normal_options = [a for a in legal if normal_base <= a < farmer_base]
-        farmer_options = [a for a in legal if farmer_base <= a < pass_idx]
-        can_pass = pass_idx in legal
 
         cur = board.state.current_player
         meeples_in_hand = self._meeples_in_hand(board, cur)
         tiles_left = self._tiles_remaining(board)
 
+        candidates = list(int(a) for a in legal)
+
         # Rule 3: avoid early farmers. ~60% of original deck remaining → no farms.
         early_phase = tiles_left > 0.6 * board.total_tiles
         if early_phase:
-            farmer_options = []
+            non_farmer = [a for a in candidates if not (farmer_base <= a < pass_idx)]
+            if non_farmer:
+                candidates = non_farmer
 
         # Rule 2: endgame meeple deployment. If tiles_left ≤ meeples in hand,
         # do NOT pass — every unplaced meeple is wasted points.
         force_place = tiles_left <= meeples_in_hand
+        if force_place:
+            non_pass = [a for a in candidates if a != pass_idx]
+            if non_pass:
+                candidates = non_pass
 
-        # Priority order: NORMAL placement > FARMER (when allowed) > pass.
-        # Within each tier, random tiebreak. (Future: rank by feature EV.)
-        if force_place and normal_options:
-            return int(self._rng.choice(normal_options))
-        if normal_options:
-            # Default behavior: take NORMAL meeple when it's an option.
-            # Conservative but reasonable; future rule: score by feature-EV.
-            return int(self._rng.choice(normal_options))
-        if farmer_options:
-            return int(self._rng.choice(farmer_options))
-        if can_pass:
-            return pass_idx
-        # Shouldn't reach: every meeple-phase legal must be in one of the buckets.
-        return int(self._rng.choice(legal))
+        if not candidates:
+            candidates = [int(a) for a in legal]
+
+        return self._best_by_virtual_score(board, np.array(candidates, dtype=np.int64))
 
     # --- tile phase ------------------------------------------------------
 
     def _choose_tile(self, game: Game, board: Board, legal: np.ndarray) -> int:
-        """In TILES phase the choice is WHERE + WHAT ORIENTATION to place the next tile.
+        """Rule 4: pick the tile placement that maximizes my 1-ply virtual_score.
 
-        Current implementation: random among legal placements. Future rules:
-            - Prefer placements that complete a city / road we own this turn
-            - Prefer placements that DENY opponent completion
-            - Prefer placements that connect to existing meeple regions
-            - Cloister placements only when EV ≥ threshold
+        Random tiebreak across actions tied for the best score. This is
+        equivalent to warmstart's `_heuristic_policy` collapsed to argmax
+        (no softmax temperature).
         """
-        return int(self._rng.choice(legal))
+        return self._best_by_virtual_score(board, legal)
+
+    # --- shared helper ---------------------------------------------------
+
+    def _best_by_virtual_score(self, board: Board, legal: np.ndarray) -> int:
+        """Score each legal action via 1-ply virtual_score from the current
+        player's perspective. Return the action with the highest score; ties
+        broken uniformly at random.
+
+        Mutates nothing — each candidate is evaluated on a deepcopy of the
+        engine state, then discarded (cf. `_heuristic_policy` in warmstart).
+        """
+        if len(legal) == 1:
+            return int(legal[0])
+
+        player = board.state.current_player
+        phase = board.state.phase.value
+        next_tile = board.state.next_tile
+        last_tile_coord = (
+            board.state.last_tile_action.coordinate
+            if board.state.last_tile_action is not None
+            else None
+        )
+
+        scores = np.empty(len(legal), dtype=np.int64)
+        for i, action_idx in enumerate(legal):
+            action = decode(
+                int(action_idx),
+                off=board.offset,
+                phase=phase,
+                next_tile=next_tile,
+                last_tile_coord=last_tile_coord,
+            )
+            scratch = copy.deepcopy(board.state)
+            StateUpdater.apply_action_inplace(game_state=scratch, action=action)
+            scores[i] = virtual_score_inplace(scratch, player)
+
+        best = scores.max()
+        best_local = np.flatnonzero(scores == best)
+        choice = int(self._rng.choice(best_local.tolist()))
+        return int(legal[choice])
 
     # --- state queries ---------------------------------------------------
 
