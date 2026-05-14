@@ -43,10 +43,11 @@ def _walk_random(g: Game, b, n_moves: int, seed: int):
 
 
 def test_close_prob_schedule() -> None:
-    """The hand-picked probability schedule from the docstring."""
-    assert _close_prob(1) == 1.0
-    assert _close_prob(2) == 0.5
-    assert _close_prob(3) == 0.25
+    """The v2.5 probability schedule (halved from v2 after the diagnostic
+    showed v2's bonus saturated tanh)."""
+    assert _close_prob(1) == 0.5
+    assert _close_prob(2) == 0.2
+    assert _close_prob(3) == 0.05
     assert _close_prob(4) == 0.0
     assert _close_prob(10) == 0.0
 
@@ -125,6 +126,18 @@ def test_v2_differs_from_v1_when_meeples_placed_mid_game() -> None:
         "v2 never differed from v1 across 10 mid-game seeds — bonuses "
         "may be miswired (or _close_prob never returns >0)"
     )
+
+
+def test_v2_bonus_is_capped() -> None:
+    """v2.5 caps the per-player bonus at _BONUS_CAP. Verify the cap holds
+    across many random states (no state should produce bonus > cap)."""
+    from carcassonne_ai.virtual_score_v2 import _BONUS_CAP
+
+    g = Game(enable_legal_moves_cache=True)
+    for seed in range(5):
+        b = _walk_random(g, g.get_init_board(), 100, seed=seed)
+        for player in (0, 1):
+            assert _closure_anticipation_bonus(b.state, player) <= _BONUS_CAP
 
 
 def test_v2_bonus_is_nonnegative_for_player_with_meeples() -> None:

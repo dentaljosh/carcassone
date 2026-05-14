@@ -45,7 +45,9 @@ from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.rule_based_player import RuleBasedPlayer
 from carcassonne_ai.virtual_score import virtual_score
 from carcassonne_ai.virtual_score_v2 import (
+    _BONUS_CAP,
     _close_prob,
+    _closure_anticipation_bonus,
     _open_city_positions,
     _surrounding_count,
     virtual_score_v2,
@@ -243,9 +245,14 @@ def play_one(seed: int, hybrid_idx: int, sims: int) -> dict:
         board, _ = game.get_next_state(board, action)
 
         # Post-state diagnostics: v1 base + v2 breakdown from hybrid's view.
+        # `_closure_anticipation_bonus_debug` returns the RAW uncapped sum
+        # plus the per-meeple rows. The production capped value is what
+        # actually feeds the search.
         base = virtual_score(board.state, hybrid_idx)
-        bonus_self, rows_self = _closure_anticipation_bonus_debug(board.state, hybrid_idx)
-        bonus_opp, rows_opp = _closure_anticipation_bonus_debug(board.state, 1 - hybrid_idx)
+        raw_self, rows_self = _closure_anticipation_bonus_debug(board.state, hybrid_idx)
+        raw_opp, rows_opp = _closure_anticipation_bonus_debug(board.state, 1 - hybrid_idx)
+        bonus_self = _closure_anticipation_bonus(board.state, hybrid_idx)
+        bonus_opp = _closure_anticipation_bonus(board.state, 1 - hybrid_idx)
         v2_total = int(round(base + bonus_self - bonus_opp))
 
         s0, s1 = board.state.scores
@@ -257,8 +264,10 @@ def play_one(seed: int, hybrid_idx: int, sims: int) -> dict:
                 "score_p0": int(s0),
                 "score_p1": int(s1),
                 "base": int(base),
-                "bonus_self": float(bonus_self),
+                "bonus_self": float(bonus_self),  # capped, fed to search
                 "bonus_opp": float(bonus_opp),
+                "raw_self": float(raw_self),  # uncapped, shows what WOULD fire
+                "raw_opp": float(raw_opp),
                 "v2": v2_total,
                 "rows_self": rows_self,
                 "rows_opp": rows_opp,
@@ -291,12 +300,14 @@ def report(result: dict) -> None:
 
     # Aggregate signals.
     cathedral_fires = 0
-    sign_flips = 0  # |bonus_self - bonus_opp| > |base|
-    bonus_magnitude_excess = 0  # bonus_self + bonus_opp > base (separate signal)
+    sign_flips = 0  # |net_bonus_capped| > |base|
+    bonus_magnitude_excess = 0  # capped sum > |base|
+    cap_hit_self = 0  # raw_self exceeded cap
+    cap_hit_opp = 0  # raw_opp exceeded cap
     terrain_contrib_self: dict[str, float] = defaultdict(float)
     terrain_contrib_opp: dict[str, float] = defaultdict(float)
-    max_bonus_self = 0.0
-    max_bonus_opp = 0.0
+    max_raw_self = 0.0
+    max_raw_opp = 0.0
 
     for m in moves:
         for r in m["rows_self"]:
@@ -312,17 +323,24 @@ def report(result: dict) -> None:
             sign_flips += 1
         if (m["bonus_self"] + m["bonus_opp"]) > abs(m["base"]):
             bonus_magnitude_excess += 1
-        max_bonus_self = max(max_bonus_self, m["bonus_self"])
-        max_bonus_opp = max(max_bonus_opp, m["bonus_opp"])
+        if m["raw_self"] > _BONUS_CAP:
+            cap_hit_self += 1
+        if m["raw_opp"] > _BONUS_CAP:
+            cap_hit_opp += 1
+        max_raw_self = max(max_raw_self, m["raw_self"])
+        max_raw_opp = max(max_raw_opp, m["raw_opp"])
 
     print()
     print("--- aggregate signals ---")
     print(f"  total moves                 : {len(moves)}")
     print(f"  cathedral branch firings    : {cathedral_fires}  {'<-- BUG: cathedrals not in scope' if cathedral_fires else ''}")
-    print(f"  |net_bonus| > |base| moves  : {sign_flips}/{len(moves)} ({100*sign_flips/len(moves):.0f}%)")
-    print(f"  bonus_sum > |base| moves    : {bonus_magnitude_excess}/{len(moves)} ({100*bonus_magnitude_excess/len(moves):.0f}%)")
-    print(f"  max bonus_self in game      : {max_bonus_self:.1f}")
-    print(f"  max bonus_opp in game       : {max_bonus_opp:.1f}")
+    print(f"  bonus cap (production)      : ±{_BONUS_CAP}")
+    print(f"  cap hits (self)             : {cap_hit_self}/{len(moves)} ({100*cap_hit_self/len(moves):.0f}%) — moves where raw exceeded cap")
+    print(f"  cap hits (opp)              : {cap_hit_opp}/{len(moves)} ({100*cap_hit_opp/len(moves):.0f}%)")
+    print(f"  |net_bonus(capped)| > |base|: {sign_flips}/{len(moves)} ({100*sign_flips/len(moves):.0f}%)")
+    print(f"  capped_sum > |base| moves   : {bonus_magnitude_excess}/{len(moves)} ({100*bonus_magnitude_excess/len(moves):.0f}%)")
+    print(f"  max RAW bonus_self          : {max_raw_self:.1f}")
+    print(f"  max RAW bonus_opp           : {max_raw_opp:.1f}")
     print()
     print("  contribution by terrain (self):")
     for t, c in sorted(terrain_contrib_self.items(), key=lambda x: -x[1]):
@@ -335,11 +353,11 @@ def report(result: dict) -> None:
     print()
     print("--- per-move trace (sampled) ---")
     print(f"  {'mv':>3} {'actor':<10} {'action':<26} {'p0':>3} {'p1':>3} "
-          f"{'base':>5} {'b_s':>5} {'b_o':>5} {'v2':>5}")
+          f"{'base':>5} {'b_s':>5} {'b_o':>5} {'raw_s':>6} {'raw_o':>6} {'v2':>5}")
     last_n = 10
     cutoff = max(0, len(moves) - last_n)
     for m in moves:
-        big_event = (m["bonus_self"] >= 5 or m["bonus_opp"] >= 5)
+        big_event = (m["raw_self"] >= 2 * _BONUS_CAP or m["raw_opp"] >= 2 * _BONUS_CAP)
         if (m["move"] % 5 == 0) or (m["move"] >= cutoff) or big_event:
             flag = ""
             if big_event:
@@ -349,6 +367,7 @@ def report(result: dict) -> None:
             print(f"  {m['move']:>3} {m['actor']:<10} {m['action']:<26} "
                   f"{m['score_p0']:>3} {m['score_p1']:>3} "
                   f"{m['base']:>+5d} {m['bonus_self']:>5.1f} {m['bonus_opp']:>5.1f} "
+                  f"{m['raw_self']:>6.1f} {m['raw_opp']:>6.1f} "
                   f"{m['v2']:>+5d}{flag}")
 
     # Print first 3 moves where a cathedral branch fired, if any.

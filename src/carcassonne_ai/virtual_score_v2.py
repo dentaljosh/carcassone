@@ -51,7 +51,19 @@ if TYPE_CHECKING:
 
 # Closure probability as a function of number of open adjacent positions.
 # Hand-picked initial heuristic, see module docstring.
-_CLOSURE_P: dict[int, float] = {1: 1.0, 2: 0.5, 3: 0.25}
+#
+# v2.5 (2026-05-14): halved from v2's {1: 1.0, 2: 0.5, 3: 0.25}. v2-diagnostic
+# showed v2's bonus magnitude was 4-7x the v1 base, saturating tanh and killing
+# the search gradient. v2.5 brings the bonus into the same scale as the base.
+_CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
+
+# v2.5 hard cap on the per-player bonus. The bonus is non-negative by
+# construction; clamping to [0, BONUS_CAP] prevents chained closure waves
+# (multiple farmers + multiple near-complete cities) from saturating the leaf
+# value through tanh. Net bonus = bonus_self - bonus_opp is then in
+# [-BONUS_CAP, +BONUS_CAP]. With a typical base of ±15-30, leaf value stays
+# in tanh's responsive region.
+_BONUS_CAP: float = 5.0
 
 
 def _close_prob(open_positions: int) -> float:
@@ -198,6 +210,8 @@ def _closure_anticipation_bonus(state, player: int) -> int:
         # Inn-roads ARE a closure-blind spot but rare in 2p River+Farmers.
         # Skip for v2; add in v3 if road denial shows up in failure modes.
 
+    if bonus > _BONUS_CAP:
+        return _BONUS_CAP
     return bonus
 
 
