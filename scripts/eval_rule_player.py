@@ -45,13 +45,32 @@ from carcassonne_ai.rule_based_player import RuleBasedPlayer
 # Worker-side state for checkpoint mode — initialized once per process.
 _worker_net = None
 _worker_device = None
+# Orchestrator mode: per-worker handles to the eval-server pool. When set
+# (non-None), the worker skips its per-process net load and routes NN forward
+# passes through these handles via remote_evaluators. The local
+# virtual_score / virtual_score_v2 leaf eval still runs in the worker.
+_worker_handles = None
 
 
-def _worker_init(checkpoint_path: str) -> None:
-    """Initialize the network in each worker process exactly once."""
-    global _worker_net, _worker_device
+def _worker_init(checkpoint_path: str, orch_cfg: dict | None = None) -> None:
+    """Initialize the network in each worker process exactly once.
+
+    Default mode: load the checkpoint into per-worker CUDA memory.
+    Orchestrator mode (orch_cfg is not None): skip the checkpoint load; pop
+    a worker_id from the shared id_q and store the matching ServerHandles
+    on `_worker_handles`. NN forward passes will be sent over IPC to the
+    server pool.
+    """
+    global _worker_net, _worker_device, _worker_handles
     import torch
     from carcassonne_ai.network import CarcassonneNet
+
+    if orch_cfg is not None:
+        _worker_device = torch.device("cpu")
+        _worker_net = None
+        worker_id = orch_cfg["id_q"].get()
+        _worker_handles = orch_cfg["handles_by_worker"][worker_id]
+        return
 
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(checkpoint_path, map_location=_worker_device, weights_only=False)
@@ -140,11 +159,30 @@ def _hybrid_v2_evaluator(game: Game):
     """Same as _hybrid_evaluator but uses `virtual_score_v2` for the leaf —
     adds closure-anticipation bonus + farm-growth potential. See
     DECISIONS.md 2026-05-14 for the failure-mode diagnosis that motivated
-    v2."""
+    v2.
+
+    Orchestrator-aware: if `_worker_handles` is set, route NN priors through
+    the remote single-board evaluator (one batched GPU call across workers).
+    Otherwise use the per-worker net directly. virtual_score_v2 is always
+    computed locally — it's CPU-only and not on the PCIe-bound critical path.
+    """
     import math
-    import torch
 
     from carcassonne_ai.virtual_score_v2 import virtual_score_v2
+
+    if _worker_handles is not None:
+        from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+        remote_fn = make_remote_single_evaluator(_worker_handles, game)
+
+        def evaluator(board):
+            priors, _v = remote_fn(board)  # discard remote value head
+            diff = virtual_score_v2(board.state, board.state.current_player)
+            v = math.tanh(diff / 15.0)
+            return priors, v
+
+        return evaluator
+
+    import torch
 
     def evaluator(board):
         obs, scalars = game.get_canonical_form(board, board.state.current_player)
@@ -295,6 +333,22 @@ def main() -> int:
         default=None,
         help="parallel workers; default 2 if CUDA-checkpoint, else os.cpu_count()",
     )
+    p.add_argument(
+        "--orchestrator", action="store_true",
+        help="GPU inference-server mode. Workers send NN forward requests over "
+             "IPC to a server pool that batches across workers. Cuts PCIe "
+             "traffic when many workers contend for the GPU. Default off; "
+             "numerically equivalent to per-worker path. Only meaningful for "
+             "--opponent in (checkpoint, hybrid, hybrid_v2).",
+    )
+    p.add_argument("--orch-max-batch", type=int, default=256,
+                   help="Max batch the orchestrator stacks per forward pass.")
+    p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0,
+                   help="Max time the orchestrator waits to fill a batch before "
+                        "firing a partial.")
+    p.add_argument("--orch-shards", type=int, default=1,
+                   help="Number of parallel server processes (each holds one "
+                        "copy of the net in VRAM). Default 1.")
     args = p.parse_args()
 
     if args.opponent in ("checkpoint", "hybrid", "hybrid_v2") and args.checkpoint is None:
@@ -328,22 +382,57 @@ def main() -> int:
         else:
             n_workers = min(os.cpu_count() or 1, args.n)
         ctx = mp.get_context("spawn")
-        with ctx.Pool(
-            processes=n_workers,
-            initializer=_worker_init,
-            initargs=(str(args.checkpoint.resolve()),),
-        ) as pool:
-            results = []
-            for r in pool.imap_unordered(play_one, pool_args, chunksize=1):
-                results.append(r)
-                wins = sum(1 for x in results if x["won_by_rule"])
-                drew = sum(1 for x in results if x["drew"])
-                losses = len(results) - wins - drew
-                if len(results) % 5 == 0 or len(results) == args.n:
-                    print(
-                        f"  ... {len(results)}/{args.n}  W={wins} D={drew} L={losses}"
-                    )
-                    sys.stdout.flush()
+        server_pool = None
+        orch_cfg = None
+        if args.orchestrator:
+            from carcassonne_ai.eval_server_pool import (
+                shutdown_server_pool,
+                start_server_pool,
+            )
+            print(
+                f"  starting eval-server pool (shards={args.orch_shards}, "
+                f"max_batch={args.orch_max_batch}, "
+                f"timeout={args.orch_batch_timeout_ms}ms)…"
+            )
+            sys.stdout.flush()
+            server_pool = start_server_pool(
+                checkpoint_path=str(args.checkpoint.resolve()),
+                n_workers=n_workers,
+                n_shards=args.orch_shards,
+                max_batch=args.orch_max_batch,
+                batch_timeout_ms=args.orch_batch_timeout_ms,
+                use_fp16=False,
+            )
+            id_q = ctx.Queue()
+            for w in range(n_workers):
+                id_q.put(w)
+            orch_cfg = {
+                "handles_by_worker": server_pool.handles_by_worker,
+                "id_q": id_q,
+            }
+            server_pids = [pp.pid for pp in server_pool.procs if pp is not None]
+            print(f"  eval-server pool ready (pids={server_pids})")
+            sys.stdout.flush()
+        try:
+            with ctx.Pool(
+                processes=n_workers,
+                initializer=_worker_init,
+                initargs=(str(args.checkpoint.resolve()), orch_cfg),
+            ) as pool:
+                results = []
+                for r in pool.imap_unordered(play_one, pool_args, chunksize=1):
+                    results.append(r)
+                    wins = sum(1 for x in results if x["won_by_rule"])
+                    drew = sum(1 for x in results if x["drew"])
+                    losses = len(results) - wins - drew
+                    if len(results) % 5 == 0 or len(results) == args.n:
+                        print(
+                            f"  ... {len(results)}/{args.n}  W={wins} D={drew} L={losses}"
+                        )
+                        sys.stdout.flush()
+        finally:
+            if server_pool is not None:
+                shutdown_server_pool(server_pool)
     elif args.opponent in ("mcts", "heuristic_mcts", "puct_uniform"):
         # Pure-CPU opponents — fork pool. Default to all cores; user can cap
         # with --workers. Same {progress every 5 games} format as the
