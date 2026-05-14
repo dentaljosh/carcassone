@@ -49,10 +49,9 @@ from wingedsheep.carcassonne.objects.side import Side
 from wingedsheep.carcassonne.objects.terrain_type import TerrainType
 
 
-# Layout. These are derived from `--scale` at startup; the defaults below
-# match the unscaled (1.0) original. _apply_scale() reassigns them.
+# Layout. The board canvas uses TILE_PX/CANVAS_W/CANVAS_H, all rescaled by
+# zoom + --scale. The sidebar canvas is fixed-size and uses SIDEBAR_PAD only.
 TILE_PX = 60                # matches CarcassonneVisualiser.tile_size
-SIDEBAR_X = 1700            # sidebar starts at this canvas x; left of it is board
 SIDEBAR_PAD = 20
 CANVAS_W = 2300
 CANVAS_H = 1300
@@ -193,27 +192,51 @@ class GameGUI:
         self._player_color = {0: "#1976d2", 1: "#c43c3c"}
 
         # Zoom state. base_tile_px is the unscaled tile size; zoom multiplies
-        # it. The wheel zooms the WHOLE canvas (board + sidebar both scale).
+        # it. Only the board canvas is rescaled — sidebar chrome is fixed.
         self.base_tile_px = 60
         self.zoom = 1.0
         self.min_zoom = 0.3
         self.max_zoom = 3.0
 
-        self.canvas.bind("<Button-1>", self._on_click)
+        # Click-vs-pan state for the board canvas (Button-1 acts as both).
+        self._press_xy: tuple[int, int] | None = None
+        self._panning = False
+        self._pan_threshold = 5  # pixels of motion before a press becomes a pan
+
+        # Sidebar canvas — created in _add_scrollbars_and_center. Holds all
+        # chrome (scores, meeple counts, next-tile preview, buttons) at fixed
+        # pixel sizes; never zooms or pans.
+        self.sidebar_canvas = None  # type: ignore[assignment]
+
         self.root.title("Carcassonne — you vs Tier-1")
         self._add_scrollbars_and_center()
 
     def _add_scrollbars_and_center(self) -> None:
-        """Wrap the visualiser's canvas in scrollbars, bind mouse-wheel for
-        zoom, and auto-scroll to the start-tile area."""
+        """Two-canvas layout:
+          - board canvas (left, expands): the visualiser's canvas, wrapped in
+            scrollbars, with wheel-zoom + click-drag pan
+          - sidebar canvas (right, fixed 380 px): all chrome, never moves"""
         import tkinter as tk
 
-        # Repack the visualiser's canvas inside a Frame with scrollbars.
+        SIDEBAR_W = 380
+
         self.canvas.pack_forget()
         container = tk.Frame(self.root)
         container.pack(fill="both", expand=True)
-        v_scroll = tk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
-        h_scroll = tk.Scrollbar(container, orient="horizontal", command=self.canvas.xview)
+
+        # Sidebar (right): fixed-width canvas, owns its own coord system
+        # starting at (0, 0). Click handler routes to button hit-testing.
+        self.sidebar_canvas = tk.Canvas(
+            container, width=SIDEBAR_W, bg="#f6f6f6", highlightthickness=0,
+        )
+        self.sidebar_canvas.pack(side="right", fill="y")
+        self.sidebar_canvas.bind("<Button-1>", self._on_sidebar_click)
+
+        # Board (left): visualiser canvas + scrollbars.
+        board_frame = tk.Frame(container)
+        board_frame.pack(side="left", fill="both", expand=True)
+        v_scroll = tk.Scrollbar(board_frame, orient="vertical", command=self.canvas.yview)
+        h_scroll = tk.Scrollbar(board_frame, orient="horizontal", command=self.canvas.xview)
         self.canvas.configure(
             xscrollcommand=h_scroll.set,
             yscrollcommand=v_scroll.set,
@@ -223,16 +246,19 @@ class GameGUI:
         h_scroll.pack(side="bottom", fill="x")
         self.canvas.pack(side="left", fill="both", expand=True)
 
-        # Wheel zoom. WSL/Linux X11 emit Button-4 (up) / Button-5 (down);
-        # other platforms emit <MouseWheel> with event.delta.
+        # Wheel zoom on board canvas only.
         self.canvas.bind("<MouseWheel>", self._on_mouse_wheel)
         self.canvas.bind("<Button-4>", self._on_mouse_wheel)
         self.canvas.bind("<Button-5>", self._on_mouse_wheel)
 
-        # Make the window large by default; user can resize.
+        # Button-1 does double duty: a small motion = click, larger = pan.
+        # Distinguished in _on_release by the threshold check.
+        self.canvas.bind("<ButtonPress-1>", self._on_press)
+        self.canvas.bind("<B1-Motion>", self._on_motion)
+        self.canvas.bind("<ButtonRelease-1>", self._on_release)
+
         self.root.geometry("1500x900")
 
-        # Auto-scroll so the start-tile area (engine ~15,15) is visible.
         def _center_view():
             self.canvas.update_idletasks()
             start_x = 15 * TILE_PX
@@ -242,6 +268,32 @@ class GameGUI:
             self.canvas.yview_moveto(max(0, start_y - pad) / CANVAS_H)
 
         self.root.after(100, _center_view)
+
+    # -------------------- click-vs-drag pan --------------------
+
+    def _on_press(self, event) -> None:
+        self._press_xy = (event.x, event.y)
+        self._panning = False
+        # Prep tk's built-in scan helper so motion can pan via scan_dragto.
+        self.canvas.scan_mark(event.x, event.y)
+
+    def _on_motion(self, event) -> None:
+        if self._press_xy is None:
+            return
+        dx = event.x - self._press_xy[0]
+        dy = event.y - self._press_xy[1]
+        if not self._panning and (dx * dx + dy * dy) >= self._pan_threshold ** 2:
+            self._panning = True
+        if self._panning:
+            self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def _on_release(self, event) -> None:
+        was_panning = self._panning
+        self._press_xy = None
+        self._panning = False
+        if was_panning:
+            return  # drag finished; don't treat as a click
+        self._on_click(event)
 
     # -------------------- zoom --------------------
 
@@ -271,10 +323,11 @@ class GameGUI:
         self.canvas.yview_moveto((new_anchor_y - event.y) / CANVAS_H)
 
     def _apply_zoom(self, new_zoom: float) -> None:
-        """Rescale tile/meeple rendering by patching the visualiser's class
-        constants, clearing its image cache, updating our own TILE_PX +
-        SIDEBAR_X + canvas extent, then re-rendering."""
-        global TILE_PX, SIDEBAR_X, CANVAS_W, CANVAS_H
+        """Rescale board tile/meeple rendering by patching the visualiser's
+        class constants, clearing its image cache, updating our TILE_PX +
+        board canvas extent. Sidebar is on a separate canvas and never
+        rescales."""
+        global TILE_PX, CANVAS_W, CANVAS_H
         from wingedsheep.carcassonne.carcassonne_visualiser import CarcassonneVisualiser
         from wingedsheep.carcassonne.objects.side import Side
 
@@ -284,10 +337,10 @@ class GameGUI:
         big_meeple_size = max(8, int(round(25 * new_zoom)))
 
         TILE_PX = tile_size
-        # Sidebar starts past where a typical board extends; scale with zoom.
-        SIDEBAR_X = max(400, int(round(1700 * new_zoom)))
-        CANVAS_W = max(800, int(round(2300 * new_zoom)))
-        CANVAS_H = max(500, int(round(1300 * new_zoom)))
+        # Board scrollregion grows/shrinks with zoom (engine board ~35x35
+        # cells; pad to 38x22 for slack). Sidebar is unaffected.
+        CANVAS_W = max(800, tile_size * 38)
+        CANVAS_H = max(500, tile_size * 22)
 
         CarcassonneVisualiser.tile_size = tile_size
         CarcassonneVisualiser.meeple_size = meeple_size
@@ -385,6 +438,8 @@ class GameGUI:
     # -------------------- click handler --------------------
 
     def _on_click(self, event) -> None:
+        """Click on the board canvas. Sidebar clicks come in via
+        _on_sidebar_click on the separate sidebar_canvas."""
         if self.board.state.is_terminated():
             return
         if self.board.state.current_player != self.human:
@@ -392,14 +447,19 @@ class GameGUI:
 
         # Translate window coords -> canvas coords (the canvas is scrolled).
         x, y = int(self.canvas.canvasx(event.x)), int(self.canvas.canvasy(event.y))
-        if x >= SIDEBAR_X:
-            self._handle_sidebar_click(x, y)
-            return
         phase = self.board.state.phase.value
         if phase == "tiles":
             self._handle_tile_click(x, y)
         else:
             self._handle_meeple_click(x, y)
+
+    def _on_sidebar_click(self, event) -> None:
+        """Click on the sidebar canvas. Coords are sidebar-canvas-local."""
+        x, y = int(event.x), int(event.y)
+        for tag, (x0, y0, x1, y1, handler) in self._buttons.items():
+            if x0 <= x <= x1 and y0 <= y <= y1:
+                handler()
+                return
 
     def _handle_tile_click(self, x: int, y: int) -> None:
         row, col = pixel_to_cell(x, y)
@@ -423,12 +483,6 @@ class GameGUI:
             cx, cy = self._meeple_dot_xy(idx, last.coordinate)
             if (x - cx) ** 2 + (y - cy) ** 2 <= 12 ** 2:
                 self._apply_action(idx)
-                return
-
-    def _handle_sidebar_click(self, x: int, y: int) -> None:
-        for tag, (x0, y0, x1, y1, handler) in self._buttons.items():
-            if x0 <= x <= x1 and y0 <= y <= y1:
-                handler()
                 return
 
     # -------------------- rendering --------------------
@@ -572,21 +626,15 @@ class GameGUI:
     # -------------------- sidebar --------------------
 
     def _draw_sidebar(self) -> None:
-        self.canvas.delete("sidebar")
+        # Sidebar lives on its own canvas — wipe and redraw. Canvas's own
+        # bg color (#f6f6f6) shows through, no manual bg rect needed.
+        sb = self.sidebar_canvas
+        sb.delete("all")
         self._buttons: dict[str, tuple[int, int, int, int, Callable[[], None]]] = {}
 
-        x = SIDEBAR_X + SIDEBAR_PAD
+        x = SIDEBAR_PAD
         y = SIDEBAR_PAD
         line_h = 24
-
-        self.canvas.create_rectangle(
-            SIDEBAR_X, 0, CANVAS_W, CANVAS_H,
-            fill="#f6f6f6", outline="", tags="sidebar",
-        )
-        self.canvas.create_line(
-            SIDEBAR_X, 0, SIDEBAR_X, CANVAS_H,
-            fill="#bbb", tags="sidebar",
-        )
 
         s0, s1 = self.board.state.scores
         cur = self.board.state.current_player
@@ -619,10 +667,7 @@ class GameGUI:
             f"{ai_label}: {ai_score}",
             f"  meeples: {ai_in_hand} in hand · {ai_placed} on board",
         ]:
-            self.canvas.create_text(
-                x, y, text=line, anchor="nw",
-                font=("Arial", 14), tags="sidebar",
-            )
+            sb.create_text(x, y, text=line, anchor="nw", font=("Arial", 14))
             y += line_h
         y += 12
 
@@ -656,52 +701,47 @@ class GameGUI:
                 if self.selected_cell is not None and self.rotation_options
                 else 0
             )
-            self.canvas.create_text(
+            sb.create_text(
                 x, y, text=f"Next tile{extra_str}  (preview rot={preview_rot})",
-                anchor="nw", font=("Arial", 12, "bold"), tags="sidebar",
+                anchor="nw", font=("Arial", 12, "bold"),
             )
             y += line_h
-            preview_size = TILE_PX * 2
+            # Preview image is rendered at a fixed sidebar size — independent
+            # of board zoom, so chrome stays stable.
+            preview_size = 120
             preview_img = self._get_tile_preview(tile, preview_rot, preview_size)
             if preview_img is not None:
-                # Draw a border so the tile reads as a tile, not floating art.
-                self.canvas.create_rectangle(
+                sb.create_rectangle(
                     x, y, x + preview_size, y + preview_size,
-                    outline="#444", width=2, tags="sidebar",
+                    outline="#444", width=2,
                 )
-                self.canvas.create_image(
-                    x, y, image=preview_img, anchor="nw", tags="sidebar",
-                )
+                sb.create_image(x, y, image=preview_img, anchor="nw")
                 y += preview_size + 8
 
             for line in [f"  {desc}", f"  {edges}", f"  {edges2}"]:
-                self.canvas.create_text(
-                    x, y, text=line, anchor="nw",
-                    font=("Arial", 11), tags="sidebar",
-                )
+                sb.create_text(x, y, text=line, anchor="nw", font=("Arial", 11))
                 y += line_h
             y += 12
 
         if self.last_ai is not None:
-            self.canvas.create_text(
+            sb.create_text(
                 x, y, text="Tier-1's last move:", anchor="nw",
-                font=("Arial", 13, "bold"), tags="sidebar",
+                font=("Arial", 13, "bold"),
             )
             y += line_h
-            self.canvas.create_text(
+            sb.create_text(
                 x, y, text=f"  {self.last_ai.chosen_str}",
-                anchor="nw", font=("Arial", 12), tags="sidebar",
+                anchor="nw", font=("Arial", 12),
             )
             y += line_h
-            # Score delta this turn (after it played).
             ds0 = s0 - self.last_ai.score_p0_before
             ds1 = s1 - self.last_ai.score_p1_before
             ai_delta = ds1 if self.human == 0 else ds0
             you_delta = ds0 if self.human == 0 else ds1
-            self.canvas.create_text(
+            sb.create_text(
                 x, y,
                 text=f"  scored: Tier-1 +{ai_delta}, you +{you_delta}",
-                anchor="nw", font=("Arial", 11), fill="#666", tags="sidebar",
+                anchor="nw", font=("Arial", 11), fill="#666",
             )
             y += line_h
             y += 12
@@ -722,14 +762,13 @@ class GameGUI:
                 y += 50
 
     def _draw_button(self, label: str, x: int, y: int, color: str, handler: Callable[[], None]) -> None:
+        sb = self.sidebar_canvas
         w, h = 200, 40
         x1, y1 = x + w, y + h
-        self.canvas.create_rectangle(
-            x, y, x1, y1, fill=color, outline="black", width=2, tags="sidebar",
-        )
-        self.canvas.create_text(
+        sb.create_rectangle(x, y, x1, y1, fill=color, outline="black", width=2)
+        sb.create_text(
             x + w // 2, y + h // 2, text=label,
-            fill="white", font=("Arial", 13, "bold"), tags="sidebar",
+            fill="white", font=("Arial", 13, "bold"),
         )
         self._buttons[label] = (x, y, x1, y1, handler)
 
@@ -751,7 +790,8 @@ class GameGUI:
         self._apply_action(meeple_pass_index(self.board.offset.size))
 
     def _draw_final(self) -> None:
-        self.canvas.delete("sidebar")
+        sb = self.sidebar_canvas
+        sb.delete("all")
         s0, s1 = self.board.state.scores
         diff = s0 - s1
         if diff == 0:
@@ -759,11 +799,7 @@ class GameGUI:
         else:
             winner = 0 if diff > 0 else 1
             verdict = "You win!" if winner == self.human else "Tier-1 wins."
-        self.canvas.create_rectangle(
-            SIDEBAR_X, 0, CANVAS_W, CANVAS_H,
-            fill="#f6f6f6", outline="", tags="sidebar",
-        )
-        x = SIDEBAR_X + SIDEBAR_PAD
+        x = SIDEBAR_PAD
         y = 100
         for line in [
             "GAME OVER",
@@ -774,10 +810,7 @@ class GameGUI:
             "",
             verdict,
         ]:
-            self.canvas.create_text(
-                x, y, text=line, anchor="nw",
-                font=("Arial", 18, "bold"), tags="sidebar",
-            )
+            sb.create_text(x, y, text=line, anchor="nw", font=("Arial", 18, "bold"))
             y += 36
         self._buttons = {}
         self._draw_button("Close", x, y + 20, "#555", self.root.destroy)
@@ -803,10 +836,9 @@ def _apply_scale(scale: float) -> None:
     BEFORE instantiating CarcassonneVisualiser, since the offset dicts are
     evaluated at class definition time and tile images are cached after first
     draw."""
-    global TILE_PX, SIDEBAR_X, CANVAS_W, CANVAS_H
+    global TILE_PX, CANVAS_W, CANVAS_H
 
     TILE_PX = max(20, int(round(60 * scale)))
-    SIDEBAR_X = max(400, int(round(1700 * scale)))
     CANVAS_W = max(800, int(round(2300 * scale)))
     CANVAS_H = max(500, int(round(1300 * scale)))
 

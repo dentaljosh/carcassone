@@ -262,6 +262,36 @@ def virtual_score_estimate(board: Board, player: int) -> float:
 
 
 # ---------------------------------------------------------------------------
+# HeuristicMCTS — Tier-1's 1-ply heuristic with UCT search depth on top.
+# ---------------------------------------------------------------------------
+
+HEURISTIC_VALUE_NORM = 15.0  # matches warmstart value-head target normalization
+
+
+class HeuristicMCTS(MCTS):
+    """Vanilla MCTS structure with virtual_score replacing the random rollout.
+
+    Tier-1 (RuleBasedPlayer) picks the action that maximizes virtual_score one
+    ply ahead. HeuristicMCTS uses the same scoring function as the *leaf
+    evaluator* and adds UCT search on top, so a simulation can look multiple
+    plies deep and weigh tradeoffs that 1-ply argmax misses.
+
+    Leaf values are normalized to [-1, +1] via tanh(diff / HEURISTIC_VALUE_NORM)
+    so the UCT exploration term is on a comparable scale to the exploit term —
+    raw integer differentials would dominate Q+UCT and collapse exploration.
+    Terminal leaves return the engine's signed terminal value unchanged.
+    """
+
+    def _rollout(self, board: Board) -> float:
+        leaf_player = board.state.current_player
+        v = self.game.get_game_ended(board, leaf_player)
+        if v != 0.0:
+            return v
+        diff = virtual_score_estimate(board, leaf_player)
+        return math.tanh(diff / HEURISTIC_VALUE_NORM)
+
+
+# ---------------------------------------------------------------------------
 # NeuralMCTS — Phase 3 acceptance Tournament 2 (net+MCTS vs vanilla MCTS).
 # ---------------------------------------------------------------------------
 

@@ -2,7 +2,64 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. **MCTS perf: 5 patches → ~7.6× game-wallclock speedup at production sims=200.**
+## Right now (2026-05-14) — Diagnostic Day 2 done. Production config locked: warmstart_canonical + hybrid eval + sims=400 wins 77% vs Tier-1. NOT superhuman — Joshua still beats Tier-1 2-of-3. Next: virtual_score blind-spot diagnostic.
+
+### Day 2 findings ledger
+
+| Discovery | Source experiment |
+|---|---|
+| NN value head was actively harmful | hybrid (NN policy + virtual_score leaf) at sims=100 → Tier-1 40%; NN-only at same → Tier-1 75% |
+| v1-v6 self-play degraded the policy head | hybrid iter_12 → Tier-1 40%; hybrid warmstart_canonical → Tier-1 23-42% range |
+| NN policy head is worth ~18pp | puct_uniform sims=100 → Tier-1 60%; hybrid_warmstart sims=100 → Tier-1 42% |
+| sims=400 is the scaling ceiling | sims=200 → 70% hybrid; sims=400 → 77% hybrid; sims=800 → 77% hybrid (no gain) |
+
+### Production config
+
+`warmstart_canonical.pt` + `_hybrid_evaluator` (NN policy priors + tanh(virtual_score/15) leaf) + sims=400 + ≥4 workers. Beats Tier-1 76.7% by avg 15 pts/game.
+
+The bench harness is at [scripts/eval_rule_player.py](scripts/eval_rule_player.py) with three new opponent types: `heuristic_mcts` (no NN), `hybrid` (NN priors + virtual_score), `puct_uniform` (uniform priors + virtual_score, diagnostic).
+
+### Open ablation queue
+
+See [EXPERIMENTS.md](EXPERIMENTS.md). Top priority: **diagnose virtual_score's blind spots** from games where hybrid lost (no compute, ~1 day analysis). Output: catalog of failure modes ranked by frequency, ready to inform virtual_score_v2 design.
+
+**Day 1 (2026-05-13, committed `64f7a74`):** Tier-1 rule-based player. 1-ply argmax of virtual_score. Beat warmstart_canonical 77% (n=50 sims=100), beat iter_12 75% (n=50 sims=100). Recipe-ceiling confirmed empirically.
+
+**Day 2 (2026-05-14, in progress):** Diagnosis-by-substitution experiments to isolate which component of NeuralMCTS is broken. Both heads are broken in *different* ways:
+
+| Setup | Tier-1 winrate | Avg score diff |
+|---|---|---|
+| iter_12 NN-only sims=100 (yesterday's bench, n=50) | **75%** (Tier-1 dominant) | — |
+| HeuristicMCTS (no-NN, UCT+virtual_score leaf) sims=200 (n=20) | 60% | -1.1 |
+| Hybrid iter_12 sims=100 (n=20) | 40% | -6.8 |
+| Hybrid iter_12 sims=200 (n=20) | 40% | -5.2 |
+| **Hybrid warmstart_canonical sims=100 (n=20)** | **20%** | **-16.2** |
+| Hybrid warmstart_canonical sims=200 (n=20) | _in flight_ | _in flight_ |
+
+**Two damning conclusions:**
+
+1. **The NN's value head was actively harmful** (proven by hybrid iter_12 sims=100). Same network, same MCTS, same sims — only swapped the value output for `virtual_score(state)`. Win rate vs Tier-1 jumped from 25% to 60% (a 35-pp swing). The value head IS trained on `tanh(virtual_score/15)` targets — it's an *approximation* of what we now just compute exactly, and it's WORSE than the exact answer.
+
+2. **v1-v6 self-play *degraded* the policy head** (proven by hybrid warmstart_canonical vs hybrid iter_12). The day-0 heuristic-warmstart policy is *substantially stronger* than iter_12's policy after 12 iterations of self-play training. Hybrid_warmstart sims=100 wins 80% vs Tier-1 by avg 16 points; hybrid_iter_12 at the same sims wins only 60% by avg 7 points. Doubling sims on iter_12 didn't close the gap.
+
+**Net effect of all of Phase 4 (v1-v6) on the model: NEGATIVE on both heads.** Weeks of cloud compute made the model strictly worse than what we had at end-of-Phase-3.
+
+**Why this matters:** the value head IS trained on `tanh(virtual_score/15)` targets. The network is supposed to *approximate* what we now just compute directly. It's approximating it *worse* than the exact answer. Hypotheses (not yet diagnosed): (a) MCTS-induced distribution shift — training labels from completed-game states, but search evaluates partial-game leaves outside that distribution; (b) capacity starved by the policy head's `Linear(2500, 2511)` ~6M params dominating the trunk; (c) subtle perspective/sign bug.
+
+**Code shipped (uncommitted):**
+- [src/carcassonne_ai/mcts.py](src/carcassonne_ai/mcts.py) — added `HeuristicMCTS` class (vanilla UCT + virtual_score leaf, no NN).
+- [tests/test_mcts.py](tests/test_mcts.py) — 5 new tests (all 11 pass).
+- [scripts/eval_rule_player.py](scripts/eval_rule_player.py) — `--opponent heuristic_mcts` (fork pool) and `--opponent hybrid` (spawn pool, NN priors + virtual_score leaf via `_hybrid_evaluator`).
+
+**Bench chain in flight:** (1) Hybrid `warmstart_canonical` sims=100 n=20 vs Tier-1 — tests whether v1-v6 self-play actually improved the policy head (vs already-strong heuristic-warmstart). (2) Hybrid `iter_12` sims=200 n=20 vs Tier-1 — tests how high hybrid's win rate scales with sims. ETA ~27 min total.
+
+**Path to superhuman is now concrete:** production MCTS with NN policy + virtual_score leaf. No more value-head call at search time. Architectural follow-ups: delete the value head entirely (it's harmful AND it's slow), simplifying the net and freeing trunk capacity for the policy head.
+
+**Backlog item logged 2026-05-14:** action-space dedup for redundant meeple-placement slots (10-25% inflation on meeple-phase actions, wastes policy-head capacity). See [BACKLOG.md](BACKLOG.md).
+
+---
+
+## Previously (2026-05-13) — v6 DONE. iter_12 = 70% wr new global best. **MCTS perf: 5 patches → ~7.6× game-wallclock speedup at production sims=200.**
 
 **Five engine + wrapper patches landed on `gpu-orchestrator` (commits `5afb6b5`, `b9431de`).** Started by cProfile-ing one self-play game; the actual hot path was `copy.deepcopy` (75% of wallclock for per-tree-step state copy), not the PUCT loop or GPU forward as predicted. Iterated four more times, profile-driven:
 

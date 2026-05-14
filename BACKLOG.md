@@ -14,6 +14,20 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-14 — Action-space dedup: redundant meeple-placement slots
+
+**Context:** While playing vs Tier-1 in the GUI, Joshua noticed the engine often offers multiple meeple-placement positions on what is logically the same feature — e.g. "place on this side of the road" and "place on that side of the road" when both sides belong to the same connected road segment on the freshly-placed tile. Same for cities that span multiple tile sides.
+
+**Idea:** dedupe equivalent meeple actions in the action space (or at decode time) so each *feature* has exactly one slot, not one slot per side touching the feature.
+
+**Why this matters (and how much):**
+- Tier-1 tiebreaks randomly across equal-virtual_score actions — duplicates cost nothing here.
+- Vanilla-UCT MCTS at low sims wastes some sim budget visiting equivalent siblings before UCT consolidates — moderate efficiency loss, not a strength loss.
+- For NN training (warmstart + self-play), the policy target either picks one variant arbitrarily or splits mass across them. Either way the model has to learn that equivalent actions are interchangeable, which is real wasted capacity.
+- Estimated action-space inflation: 10-25% on meeple-phase actions (not measured precisely).
+
+**Why deferred:** non-blocking. The current focus is the depth-vs-1ply experiment; deduping now would invalidate every existing checkpoint's policy-head shape. Right time to do this is at the next big retrain (v7 if we go bigger-net, or whenever we redesign the action space). Estimate: ~1 day of work in `action_space.py` + decode + re-issuing the warmstart dataset.
+
 ## 2026-05-13 — Phase 4 v7 candidates (after v6 launch with orchestrator on)
 
 **Context:** v6 cloud launched 2026-05-13 with iter_06.pt as warmstart + orchestrator + W=96 box at W=80 (games-capped). Workers stable at ~50% CPU each; GPU at 4-11% util. Bottleneck shifted from VRAM OOM (pre-orchestrator) to **single-process orchestrator GIL** (Python dispatcher pegged at 95% of 1 core feeding the GPU). Decisions on v7 deferred to v6's outcome (compounds vs ceiling).
