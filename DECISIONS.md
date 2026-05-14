@@ -23,6 +23,70 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-13 — Phase B cloud bench: W-sweep finds W=32 optimum, full iter measured at 5.2 min, h2h OOM hypothesis falsified
+
+**Context:** Phase A (entry below) confirmed 5-loop patches give ~4-5× CPU-side speedup but exposed two gaps: W=48 still OOMs (VRAM-bound, not CPU-bound, so the patches don't help here), and orchestrator-at-N=1 dispatcher saturates with 48 workers. Phase B bundles four experiments on one box to retire all v7 design questions: W-sweep, orchestrator-with-bigger-batch-timeout, full-iter timing, and train cProfile.
+
+**Box:** vast.ai instance 36719047, RTX 5090 + AMD EPYC 9J14 host 384353 mach 79960 Japan ($0.3747/hr). Hardware confirmed via `lscpu`: **192 physical cores / 384 logical via SMT**, cgroup-capped to 48 effective for this rental. torch 2.7.0+cu128, sm_120. Total Phase B spend ~$0.30.
+
+**Phase 1 — W-sweep (no orchestrator), games=64 sims=200 batch=8:**
+
+| W | Wallclock | Success/Failed | Peak VRAM | Mean GPU util |
+|---|---|---|---|---|
+| **32** | **172.8 s** | **64/0** | 22325 MiB / 32 GB | **87.2%** |
+| 40 | 176.4 s | 64/0 | 27906 MiB | 86.8% |
+| 44 | 180.3 s | 64/0 | 30695 MiB | 85.9% |
+
+W=32 wins. Higher W doesn't help because **GPU is already saturated at W=32 (87% util)** — extra workers add CPU contention without throughput gain. W=44 sits ~95% of VRAM cap (no headroom) for ~4% throughput penalty.
+
+**Phase 2 — Orchestrator v2 (W=48, `batch_timeout_ms=16` vs default 2):**
+Dispatcher still saturated. Killed after 3 min with 0/64 games written, GPU at 5% util. **Bumping batch_timeout_ms doesn't help** — the bottleneck is single-process dispatch CPU work, not batch-assembly latency. To use orchestrator at W=48 we'd need either N>1 shards or a different IPC mechanism (pinned-memory / shared tensors); deferred.
+
+**Phase 3 — Full iter at winner W=32:**
+1 iter via `run_phase4_smoke.py` (selfplay + train + anchor; chain h2h auto-skipped because iter 0 has no prior).
+
+| Stage | Wallclock | Notes |
+|---|---|---|
+| Self-play (64 games, sims=200, W=32) | 187.1 s | 64/0, 10599 positions, ~0% slower than Phase 1 standalone |
+| Train (3 epochs, 95K warmstart positions) | ~100 s | Iter 0 has the biggest train cost; later iters ~10-15 s |
+| Anchor (16 games, sims=50) | 19.7 s | 8W/0D/8L vs warmstart_canonical (sanity: 50/50 — correct since iter_00 is warmstart_canonical at iter 0) |
+| **Per-iter total** | **5.2 min** | vs my earlier "~10 min" estimate |
+
+**Phase 3 supplement — h2h-only test at W=32 (closes the OOM-stress gap):**
+Ran `eval_iter_head_to_head.py` with iter_00.pt (the just-trained checkpoint) vs warmstart_canonical at W=32, 32 games, sims=100. **No OOM.** Wallclock 55.2 s. Result: 20W/1D/11L = 63% wr, +12.4 avg diff, ELO Δ +100. **h2h at W=32 works** — the per-worker VRAM for 2-net eval is much smaller than my naive 2×600 MB worst-case math (the eval_iter script must share net allocator pools more efficiently). **No split-W config needed for v7.**
+
+**Phase 4 — Train cProfile (with corrected CLI flags):**
+Train iter 1 at warmstart_mix=0.5, 10.5K positions × 1 epoch = 7.8 s wallclock. Cumtime split:
+
+| Phase | cumtime | % |
+|---|---|---|
+| Process startup (imports, optimizer init) | 2.55 s | 33% |
+| DataLoader queue wait (single-worker `__next__`) | 2.34 s | 30% |
+| Actual forward + backward + optimizer | ~3 s | 37% |
+
+DataLoader queue-wait is the biggest single non-trivial slice and would shrink ~3× with `--num-workers 4`. But train at iter ≥ 1 is already only ~10-15 s; not the next bottleneck.
+
+**v7 cloud-iter math (revised from Phase A's estimate):**
+- Self-play (W=32, games=64, sims=200): ~3 min
+- Train (~10K positions × 3 epochs): ~15 s
+- Chain h2h (32 games, sims=100, W=32): ~1 min
+- Anchor gate (16 games, sims=50, W=32): ~20 s
+- **Per-iter total: ~4.5-5 min** (vs Phase A's ~10 min estimate)
+- 20-iter v7 run: **~1.5-1.7h, ~$0.65 on this hardware class.**
+
+**Phase B findings, summary:**
+1. W=32 is the v7 selfplay+h2h winner. No split config needed.
+2. Orchestrator with batch_timeout knob alone can't fix the N=1 dispatcher saturation. Multi-shard N≥2 might (re-test on this hardware once a real motivating workload exists; currently no need).
+3. Per-iter cost is ~4.5-5 min — half of what I'd estimated post-Phase-A.
+4. **Total budget for v7 = ~$0.65 (down from $3.40 v6 baseline).** 5× cheaper per iter.
+5. Train DataLoader could be faster via `num_workers > 0`, but train is already << selfplay+h2h, so not worth the optimization right now.
+
+**Reversal cost:** none. Box destroyed. v7 plan-mode session can lock W=32 + games=64 + no-orch as the cloud-side defaults.
+
+**Phase:** 4 (perf validation)
+
+---
+
 ## 2026-05-13 — Phase A cloud bench: 5-loop MCTS perf patches validated on production hardware
 
 **Context:** local A/B at sims=200 batch=8 on 5060 Ti showed ~7.6× cumulative game-wallclock speedup vs the pre-patch baseline. The cloud question: does that translate to a real per-iter throughput win on production hardware (5090 + 48-core EPYC), and does orchestrator-on still pull weight when deepcopy is no longer the bottleneck?
