@@ -32,6 +32,7 @@ API mirrors `virtual_score`:
 from __future__ import annotations
 
 import copy
+import os
 from typing import TYPE_CHECKING
 
 from wingedsheep.carcassonne.objects.coordinate import Coordinate
@@ -63,7 +64,10 @@ _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
 # value through tanh. Net bonus = bonus_self - bonus_opp is then in
 # [-BONUS_CAP, +BONUS_CAP]. With a typical base of ±15-30, leaf value stays
 # in tanh's responsive region.
-_BONUS_CAP: float = 5.0
+#
+# Tunable via CARCASSONNE_V25_CAP env var (read once at module import time)
+# for cap-tuning sweeps. Default 5.0 is the validated production value.
+_BONUS_CAP: float = float(os.environ.get("CARCASSONNE_V25_CAP", "5.0"))
 
 
 def _close_prob(open_positions: int) -> float:
