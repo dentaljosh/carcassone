@@ -18,9 +18,20 @@ v2.5 = halved P heuristic ({1: 0.5, 2: 0.2, 3: 0.05}) + hard cap on per-player b
 
 **Module:** `src/carcassonne_ai/virtual_score_v2.py` (kept the v2 name for git continuity; the constants are v2.5).
 
-**Production config (NEW):** `warmstart_canonical.pt` + `_hybrid_v2_evaluator` (which now wraps v2.5 numerics) + sims=400 + ≥4 workers.
+**Production config (NEW):** `warmstart_canonical.pt` + `_hybrid_v2_evaluator` (v2.5 numerics) + **sims=200** (sweet spot per sweep below) + W=12 + `--orchestrator`.
 
-**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next ablations (EXPERIMENTS.md): sims sweep for v2.5, cap tuning, retrain policy head on hybrid_v2.5 self-play data.
+### v2.5 sims sweep result (2026-05-14)
+
+| sims | v2.5 wr | v1 wr (same scale) | v2.5 advantage |
+|---|---|---|---|
+| 50  | 50.0% | 63.3% | -13.3pp |
+| 100 | 71.7% | 58.3% | +13.4pp |
+| **200** | **80.0%** | 70.0% | **+10.0pp** |
+| 400 | 83.3% | 76.7% | +6.6pp |
+
+v2.5 ramps with depth more steeply than v1. Bonuses are noise at sims=50, signal at sims≥100. **sims=200 is the new production sweet spot** (80% wr at half compute of 400). Orchestrator at W=12 saves ~25% local wallclock vs W=6 baseline.
+
+**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next ablations (EXPERIMENTS.md): cap tuning, retrain policy head on hybrid_v2.5 self-play data.
 
 ### Day 2 prior findings ledger (still current)
 
