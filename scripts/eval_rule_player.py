@@ -136,6 +136,32 @@ def _hybrid_evaluator(game: Game):
     return evaluator
 
 
+def _hybrid_v2_evaluator(game: Game):
+    """Same as _hybrid_evaluator but uses `virtual_score_v2` for the leaf —
+    adds closure-anticipation bonus + farm-growth potential. See
+    DECISIONS.md 2026-05-14 for the failure-mode diagnosis that motivated
+    v2."""
+    import math
+    import torch
+
+    from carcassonne_ai.virtual_score_v2 import virtual_score_v2
+
+    def evaluator(board):
+        obs, scalars = game.get_canonical_form(board, board.state.current_player)
+        obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(_worker_device)
+        scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(_worker_device)
+        with torch.no_grad():
+            logits, _ = _worker_net(obs_t, scalars_t)
+            mask = game.get_valid_moves(board)
+            mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(_worker_device)
+            probs = _worker_net.policy_softmax_with_mask(logits, mask_t)
+        diff = virtual_score_v2(board.state, board.state.current_player)
+        v = math.tanh(diff / 15.0)
+        return probs[0].cpu().numpy(), v
+
+    return evaluator
+
+
 def play_one(args: tuple) -> dict:
     seed, rule_player_idx, opponent, sims = args
     rng = random.Random(seed)
@@ -160,6 +186,14 @@ def play_one(args: tuple) -> dict:
         )
     elif opponent == "hybrid":
         evaluator = _hybrid_evaluator(game)
+        opp = NeuralMCTS(
+            game=game,
+            evaluator=evaluator,
+            simulations=sims,
+            seed=seed + 1,
+        )
+    elif opponent == "hybrid_v2":
+        evaluator = _hybrid_v2_evaluator(game)
         opp = NeuralMCTS(
             game=game,
             evaluator=evaluator,
@@ -197,6 +231,9 @@ def play_one(args: tuple) -> dict:
         elif opponent == "hybrid":
             opp.clear()  # type: ignore[union-attr]
             action = opp.best_action(board)  # type: ignore[union-attr]
+        elif opponent == "hybrid_v2":
+            opp.clear()  # type: ignore[union-attr]
+            action = opp.best_action(board)  # type: ignore[union-attr]
         elif opponent == "puct_uniform":
             opp.clear()  # type: ignore[union-attr]
             action = opp.best_action(board)  # type: ignore[union-attr]
@@ -232,7 +269,7 @@ def main() -> int:
     p.add_argument("--n", type=int, default=20)
     p.add_argument(
         "--opponent",
-        choices=["random", "mcts", "heuristic_mcts", "checkpoint", "hybrid", "puct_uniform"],
+        choices=["random", "mcts", "heuristic_mcts", "checkpoint", "hybrid", "hybrid_v2", "puct_uniform"],
         default="random",
     )
     p.add_argument(
@@ -260,7 +297,7 @@ def main() -> int:
     )
     args = p.parse_args()
 
-    if args.opponent in ("checkpoint", "hybrid") and args.checkpoint is None:
+    if args.opponent in ("checkpoint", "hybrid", "hybrid_v2") and args.checkpoint is None:
         p.error(f"--checkpoint required when --opponent={args.opponent}")
 
     pool_args = [
@@ -269,13 +306,13 @@ def main() -> int:
 
     label = (
         f"{args.opponent}={args.checkpoint.name}"
-        if args.opponent in ("checkpoint", "hybrid")
+        if args.opponent in ("checkpoint", "hybrid", "hybrid_v2")
         else args.opponent
     )
     print(f"=== rule-player vs {label} — n={args.n} sims={args.sims} ===")
     t0 = time.perf_counter()
 
-    if args.opponent in ("checkpoint", "hybrid"):
+    if args.opponent in ("checkpoint", "hybrid", "hybrid_v2"):
         try:
             import torch
         except ImportError:

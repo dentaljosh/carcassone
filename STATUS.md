@@ -2,9 +2,20 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-14) — Diagnostic Day 2 done. Production config locked: warmstart_canonical + hybrid eval + sims=400 wins 77% vs Tier-1. NOT superhuman — Joshua still beats Tier-1 2-of-3. Next: virtual_score blind-spot diagnostic.
+## Right now (2026-05-14) — virtual_score_v2 FAILED bench: 30% wr vs Tier-1 at sims=400 (vs v1's 77%, ~47pp regression). v2 infrastructure committed for v2.5 / v3 iteration. Next: v2-diagnostic to identify which bonus type misled the search before tuning blindly.
 
-### Day 2 findings ledger
+### v2 result
+
+| Eval | Tier-1 wr | hybrid wr | avg diff | n |
+|---|---|---|---|---|
+| hybrid_v1 sims=400 | 23.3% | 76.7% | +15.5 (hybrid) | 30 |
+| **hybrid_v2 sims=400** | **70.0%** | **30.0%** | **-10.6 (hybrid)** | 30 |
+
+v2's closure-anticipation + farm-growth bonuses harmed the search by ~47pp. Hypotheses (see DECISIONS.md 2026-05-14): P heuristic too aggressive, `tile.inn` cathedral-detection branch likely a bug, bonus magnitude may overwhelm the base. Halt v2 deployment until diagnostic identifies actual cause.
+
+Production stays at **warmstart_canonical + hybrid_v1 eval + sims=400 = 77% wr vs Tier-1.** Still NOT superhuman. Phase 5 gated on superhuman per Joshua 2026-05-14.
+
+### Day 2 prior findings ledger (still current)
 
 | Discovery | Source experiment |
 |---|---|
