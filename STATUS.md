@@ -31,7 +31,28 @@ v2.5 = halved P heuristic ({1: 0.5, 2: 0.2, 3: 0.05}) + hard cap on per-player b
 
 v2.5 ramps with depth more steeply than v1. Bonuses are noise at sims=50, signal at sims≥100. **sims=200 is the new production sweet spot** (80% wr at half compute of 400). Orchestrator at W=12 saves ~25% local wallclock vs W=6 baseline.
 
-**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next ablations (EXPERIMENTS.md): cap tuning, retrain policy head on hybrid_v2.5 self-play data.
+### v2.5 cap sweep result (2026-05-14)
+
+| cap | v2.5 wr | Δ vs cap=5 |
+|---|---|---|
+| 2  | 60.0% | -20.0pp |
+| **5 (production)** | **80.0%** | — |
+| 8  | 73.3% | -6.7pp |
+| 15 | 76.7% | -3.3pp |
+
+Clean inverted-U around cap=5. Hand-picked initial value happens to land on the knee. Plumbed `CARCASSONNE_V25_CAP` env var for future sweeps without source edits.
+
+### Before any cloud retrain — known gaps
+
+The local hybrid_v2.5 production config is locked, but **self-play harness (`run_selfplay_iter.py`) still uses v1 leaf** for game generation. Before the policy-head retrain on v2.5 self-play data, need to:
+
+1. **Plumb v2.5 leaf into `run_selfplay_iter.py`** so generated games reflect v2.5 strategy. Estimated 30-min code change (add `--leaf-eval v2_5` flag + thread through).
+2. **Enable MCTS virtual-loss batching** (`--batch-size 8 --virtual-loss 1.0` in self-play call). Code supports it; calls don't use it. Estimated 2-4× additional speedup on top of orchestrator gain at cloud W=48.
+3. **30-second local smoke** of the full pipeline (per memory `feedback_pre_flight_smoke_test.md`) before any cloud spend.
+
+Estimated cloud cost for policy retrain *after* these fixes: $1-3 for ~10K hybrid_v2.5 self-play games at sims=200 + 1 train iter. Was estimating $5 yesterday; sims=200 + orchestrator + virtual-loss batching cuts it.
+
+**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next: either policy-head retrain (after the gaps above) or human-vs-bot test for cheap signal.
 
 ### Day 2 prior findings ledger (still current)
 
