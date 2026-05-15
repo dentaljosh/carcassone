@@ -23,9 +23,17 @@
 10. Detached watchdog auto-pulled artifacts and destroyed box on completion.
 
 **Production config (NEW):**
-- `warmstart_canonical.pt` was the old baseline; **iter_00.pt is the new global best** (will need a head-to-head vs iter_12.pt for proper ranking).
+- **iter_00.pt is the new global best.** Beats warmstart_canonical 61.7% and iter_12 (prior v6 best) 82.5% at v2.7 leaf, sims=200, both sides.
 - Leaf: `_hybrid_v2_evaluator` with v2.7 numerics (env vars above).
 - Sims=200, W=12 + `--orchestrator` for local; W=48 for cloud.
+
+**Strength ordering at v2.7 leaf (sims=200):**
+1. iter_00 (new) — beats everything tested
+2. warmstart_canonical (yesterday's baseline) — beats iter_12
+3. iter_12 (v6 cloud best) — degraded by NN-value-driven self-play
+4. Tier-1 — saturated reference (iter_00 wins 90% with avg +35 pts/game)
+
+One iteration of v2.7-leaf-driven self-play (1200 games, single train pass) beat 13 iterations of v6-recipe NN-value-driven self-play. The leaf eval matters way more than iteration count.
 
 **Still NOT superhuman.** Joshua still beats Tier-1 2-of-3. But the policy + leaf are both meaningfully stronger than yesterday. Phase 5 still gated. Next ablations:
 - Bench iter_00 + v2.7 vs Tier-1 (in flight at write time, ~9 min local).
