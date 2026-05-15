@@ -209,3 +209,14 @@ def test_shutdown_propagates_to_worker(checkpoint_path: str) -> None:
         remote_short(board)
     elapsed = time.perf_counter() - t0
     assert elapsed < 5.0, f"raise took {elapsed}s — should be ~timeout_s"
+
+    # Cleanup: the killed server didn't consume our queued request. If we let
+    # the queue's background feeder thread try to drain on test teardown, it
+    # blocks forever — pytest hangs. cancel_join_thread() tells the feeder
+    # to give up. This is teardown hygiene for any test that posts to a
+    # mp.Queue whose consumer has died.
+    request_q.close()
+    request_q.cancel_join_thread()
+    for q in response_qs:
+        q.close()
+        q.cancel_join_thread()
