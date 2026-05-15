@@ -55,7 +55,7 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 **Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
 
-## 2026-05-15 — v3 leaf: asymmetric opp cap (denial signal) marginal win; meeple economy null
+## 2026-05-15 — v3 leaf: asymmetric opp cap REGRESSES the NN; meeple economy null
 
 **Context.** Post-iter_00 retrain landed today, the next leaf-eval iteration was v3 — two additions from the 2026-05-14 failure-mode diagnostic that v2.7 didn't address:
 1. **Meeple economy** — `_MEEPLE_K × (meeples_self - meeples_opp)` added after caps (failure-mode 4: over-committed meeples).
@@ -63,31 +63,40 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 Implementation refactor: cap moved from inside `_closure_anticipation_bonus` to `virtual_score_v2` via a `_capped(bonus, cap)` helper. Without this, self and opp couldn't be capped differently. Tests updated to reflect the new location.
 
-**Sweep.** rule_player+v3 vs iter_00+v2.7 at n=20 sims=200 W=12+orch:
+**Key fact about the bench setup.** The bench was rule_player vs iter_00 (opponent=hybrid_v2). `RuleBasedPlayer` uses `virtual_score_inplace` from `virtual_score` (v1, NOT v2) — see `src/carcassonne_ai/rule_based_player.py:46`. So the `CARCASSONNE_V25_*` env vars **only affect the NN's hybrid_v2 leaf, not the rule-player side.** Tier-1's behavior is invariant under v3.
 
-| variant | wr | score diff |
-|---|---|---|
-| v2.7 baseline (cap=12, drop_3_open) | 10% | ~-37 |
-| meeple_K=0.5 | 10% | -31.8 |
-| meeple_K=1.0 | 10% | -31.8 |
-| meeple_K=2.0 | 10% | -42.2 |
-| opp_cap=20 | 20% | -18.4 |
-| opp_cap=30 | 20% | -24.1 |
+This means the sweep is a direct test of "does v3 leaf strengthen iter_00 against Tier-1?"
 
-**Confirmation.** opp_cap=20 at n=50: 10W/40L = 20% wr (matches n=20), score diff -27.3, ELO Δ -241.
+**Sweep.** rule_player (Tier-1) vs iter_00+v3 at n=20 sims=200 W=12+orch. Rule-player WR shown (so iter_00 wr = 100 - rule WR):
+
+| variant | rule_player wr | iter_00 wr | score diff (rule POV) |
+|---|---|---|---|
+| v2.7 baseline (cap=12, drop_3_open) | 10% | **90%** | -37 |
+| meeple_K=0.5 | 10% | 90% | -31.8 |
+| meeple_K=1.0 | 10% | 90% | -31.8 |
+| meeple_K=2.0 | 10% | 90% | -42.2 |
+| opp_cap=20 | 20% | **80%** ← regression | -18.4 |
+| opp_cap=30 | 20% | 80% ← regression | -24.1 |
+
+**Confirmation.** opp_cap=20 at n=50: rule_player 10W/40L = 20% wr → iter_00 = 80% wr, score diff -27.3 (rule POV). 10pp regression vs v2.7 baseline confirmed.
 
 **Interpretation.**
-- **opp_cap=20 is a small, real improvement.** Binary wr 20% vs baseline 10% is +10pp ~1σ at these sample sizes (marginal). Score-diff -27.3 vs -37 is ~10pt better margin — the stronger signal, since iter_00 wins most games regardless.
-- **opp_cap=30 ties wr but worse score diff** — too aggressive, overshoots the optimum.
-- **meeple_K is null at all 3 magnitudes** — all three K values gave IDENTICAL 2W/0D/18L outcomes. Meeple-delta term (range ±~14 at K=2.0) doesn't reorder leaf comparisons that the capped closure bonus already dominates. opp_cap is a re-weighting, so it DOES shift action selection — meeple_K is just additive on top of a hard-ceiling cap.
+- **opp_cap=20 hurts the NN.** Asymmetric denial cap drops iter_00 from 90% → 80% wr vs Tier-1. Score-diff signal aligns: NN wins by smaller margins under v3 (-27.3 vs -37 from rule POV → +27.3 vs +37 from NN POV, ~10pt worse).
+- **opp_cap=30 same regression** — once the asymmetry crosses some threshold, search over-defends and misses scoring opportunities. The wr loss is a binary event signaled at ~1σ; the score-diff loss is more consistent.
+- **meeple_K null at all 3 magnitudes** — all three K values gave IDENTICAL 2W/0D/18L outcomes. Meeple-delta term (range ±~14 at K=2.0) doesn't reorder leaf comparisons that the capped closure bonus already dominates. Additive-on-saturating-cap hits the same dead-zone as v2's tanh: the cap dominates, the additive term is rounding error.
 
-**Decision.** Commit the v3 env-var infra (opp_cap + meeple_K + `_capped()` refactor) but **don't promote opp_cap=20 to default yet.** The rule-player-vs-iter_00 bench is a proxy for "does v3 leaf help search"; the production-relevant question is whether `hybrid_v2(iter_00, v3)` vs Tier-1 beats `hybrid_v2(iter_00, v2.7)`'s 90% wr. That bench is next.
+**Falsified hypothesis.** The 2026-05-14 diagnostic identified "denial invisible" as failure mode 3 (`virtual_score` doesn't penalize states where the opponent has near-complete features). v3 attempted to address this by allowing the opp bonus to grow past the self-bonus cap. **Result falsifies the hypothesis at the chosen magnitudes:** v2.7's symmetric cap=12 is load-bearing — the NN already weighs opp threats correctly *on average*, and over-amplifying the denial signal causes search to over-defend.
 
-**Why hold the default at v2.7.** Until the hybrid_v2 production bench confirms, the +10pt score-diff gain in the proxy bench could be noise specific to the rule-player's MCTS-rollout path. Promote on direct evidence, not transitive evidence.
+**Decision.** Keep v3 env-var infra committed (zero default impact: `_OPP_BONUS_CAP` defaults to `_BONUS_CAP`, `_MEEPLE_K` defaults to 0.0). **Do NOT promote opp_cap or meeple_K to non-default values for production.** Production stays at v2.7 (cap=12, drop_3_open, opp_cap=12 implicit).
 
-**Why keep meeple_K env var infra despite null result.** Zero perf cost (guarded by `if _MEEPLE_K > 0.0`) and the diagnostic identified meeple over-commitment as a real failure mode — future v4 may rework the meeple term as a *cap-shifting* signal (changes the magnitude of acceptable bonuses) rather than additive, which could escape the null.
+**Why keep the env-var infra despite null/negative results.**
+- `_OPP_BONUS_CAP` env-var infra costs nothing at default value; useful for future asymmetric experiments (e.g., LOWER opp_cap to test under-weighted-denial direction).
+- `_MEEPLE_K` infra also no-cost; the failure mode is real, just needs a different *form* (cap-shifting rather than additive).
+- The `_capped()` refactor is independent of v3's success — it's cleaner anyway.
 
-**Lesson.** Additive terms on top of a saturating function (capped bonus) hit the same kind of dead-zone we saw with v2's tanh: the cap dominates, the additive term is rounding error. v3's opp_cap worked because it changed the cap itself, not because it added a new term inside it.
+**Open hypothesis.** v3 tested opp_cap UP. Could try opp_cap DOWN (e.g. 8 or 5) to test if NN is currently over-defending under v2.7's cap=12. Or pivot to a meeple-economy variant that's NOT additive (e.g., scale cap proportional to remaining-meeple count). Both deferred — current priority is the practical bench (iter_00 vs strong human) since Tier-1 is now a saturated reference.
+
+**Lesson learned.** A failure-mode diagnostic identifying "X is invisible to the leaf" doesn't imply "amplifying X helps." It might mean the leaf already learned to compensate, and amplification breaks the compensation. Run the cheap proxy bench first; don't promote a leaf change just because the diagnostic story is plausible.
 
 ## 2026-05-15 — v2.5 dedup bug fix + cap/P re-sweep + cloud retrain: iter_00 +21pp over warmstart_canonical
 
