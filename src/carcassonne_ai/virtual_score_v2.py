@@ -156,8 +156,26 @@ def _surrounding_count(state, coord: Coordinate) -> int:
 def _closure_anticipation_bonus(state, player: int) -> int:
     """Sum of P(closure) × score-delta over all of `player`'s placed meeples
     on incomplete features. Integer-rounded for compatibility with v1's
-    int return type."""
+    int return type.
+
+    Dedupes features (cities and farms) across meeples — multiple meeples
+    on the same farm/city contribute the bonus exactly once. This both
+    fixes a real over-counting bug (the engine itself only scores each
+    farm once per player regardless of how many of that player's farmers
+    are on it) AND cuts CPU work by skipping repeated find_city /
+    find_farm_by_coordinate calls on the same logical feature.
+    Identification is by canonical content (frozenset of city positions /
+    farmer connections) since the engine returns a fresh City/Farm
+    object on each call (no __eq__/__hash__).
+    """
     bonus = 0.0
+    seen_cities: set[frozenset] = set()
+    seen_farms: set[frozenset] = set()
+    # Cities counted via farm-growth bonus stay deduped across all the
+    # player's farms — same incomplete city adjacent to two farms shouldn't
+    # be paid for twice.
+    counted_growth_cities: set[frozenset] = set()
+
     for mp in state.placed_meeples[player]:
         coord_side = mp.coordinate_with_side
         coord = coord_side.coordinate
@@ -168,6 +186,10 @@ def _closure_anticipation_bonus(state, player: int) -> int:
 
         if terrain == TerrainType.CITY:
             city = CityUtil.find_city(game_state=state, city_position=coord_side)
+            city_key = frozenset(city.city_positions)
+            if city_key in seen_cities:
+                continue
+            seen_cities.add(city_key)
             if city.finished:
                 continue
             open_n = _open_city_positions(state, city)
@@ -191,7 +213,10 @@ def _closure_anticipation_bonus(state, player: int) -> int:
             # add 3 × P(closes). Cities that ARE already complete are
             # already counted by v1 — don't double-count.
             farm = FarmUtil.find_farm_by_coordinate(game_state=state, position=coord_side)
-            visited_cities: set[int] = set()
+            farm_key = frozenset(farm.farmer_connections_with_coordinate)
+            if farm_key in seen_farms:
+                continue
+            seen_farms.add(farm_key)
             for fc in farm.farmer_connections_with_coordinate:
                 cities = CityUtil.find_cities(
                     game_state=state,
@@ -199,10 +224,10 @@ def _closure_anticipation_bonus(state, player: int) -> int:
                     sides=fc.farmer_connection.city_sides,
                 )
                 for city in cities:
-                    cid = id(city)
-                    if cid in visited_cities:
+                    city_key = frozenset(city.city_positions)
+                    if city_key in counted_growth_cities:
                         continue
-                    visited_cities.add(cid)
+                    counted_growth_cities.add(city_key)
                     if city.finished:
                         continue  # already in v1 farm score
                     open_n = _open_city_positions(state, city)
