@@ -63,6 +63,10 @@ if TYPE_CHECKING:
 # most likely to close" idea.
 if os.environ.get("CARCASSONNE_V25_ONE_OPEN_ONLY") == "1":
     _CLOSURE_P: dict[int, float] = {1: 1.0}
+elif os.environ.get("CARCASSONNE_V25_DROP_THREE_OPEN") == "1":
+    # Joshua 2026-05-15: maybe 1+2 open is the sweet spot; 3-open lottery
+    # tickets might be pure noise.
+    _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2}
 else:
     _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
 
