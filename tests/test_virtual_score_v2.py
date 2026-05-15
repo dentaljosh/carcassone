@@ -128,6 +128,37 @@ def test_v2_differs_from_v1_when_meeples_placed_mid_game() -> None:
     )
 
 
+def test_v2_bonus_dedupes_duplicate_meeples() -> None:
+    """Regression for the over-counting bug fixed in commit `08dfead`.
+    Adding a duplicate meeple (same coord+side as an existing meeple) must
+    NOT increase the bonus, since the engine itself only scores each
+    farm/city once per player. Pre-fix, this test would fail because
+    every meeple's bonus was added independently.
+
+    Implementation: walk a random game to a state with several meeples,
+    then artificially clone one of them onto `state.placed_meeples`.
+    Bonus must be identical before and after the clone."""
+    g = Game(enable_legal_moves_cache=True)
+    for seed in range(5):
+        b = _walk_random(g, g.get_init_board(), 80, seed=seed)
+        for player in (0, 1):
+            mps = b.state.placed_meeples[player]
+            if not mps:
+                continue
+            base = _closure_anticipation_bonus(b.state, player)
+            # Clone the first meeple into the list. Same coord+side ⇒
+            # falls into the same farm/city when find_farm/find_city runs.
+            b.state.placed_meeples[player] = list(mps) + [mps[0]]
+            try:
+                augmented = _closure_anticipation_bonus(b.state, player)
+            finally:
+                b.state.placed_meeples[player] = mps
+            assert base == augmented, (
+                f"seed={seed} player={player}: dedup broken — adding a "
+                f"duplicate meeple changed the bonus from {base} to {augmented}"
+            )
+
+
 def test_v2_bonus_is_capped() -> None:
     """v2.5 caps the per-player bonus at _BONUS_CAP. Verify the cap holds
     across many random states (no state should produce bonus > cap)."""
