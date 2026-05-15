@@ -2,7 +2,19 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-15) — v2.5 policy retrain in flight on cloud (vast.ai instance 36800338, 5090, Japan, $0.37/hr).
+## Right now (2026-05-15) — v2.5 retrain on cloud killed mid-run after finding farm/city over-counting bug (commit `08dfead`). Re-benching FIXED v2.5 on cloud before re-launching retrain.
+
+**Sequence today:**
+1. Rented vast.ai 36800338 (5090, Japan, $0.37/hr). First instance (36799296) had broken vast reverse-tunnel — destroyed + retried per CLAUDE.md.
+2. Bootstrapped (clone + `pip install -e .` + `pip install -e engine/`), smoke-tested, launched 2K-game retrain at sims=200 W=48 batch=8 v2_5+orchestrator.
+3. ETA realized as 5.8h instead of expected 1.6h — 6× off because my pre-launch local smoke was sims=50 (1/4 the CPU work) and v2.5 leaf eval is intrinsically expensive (engine farm/city utils per leaf).
+4. Investigated: found a real over-counting bug in `_closure_anticipation_bonus` — multiple meeples on the same farm/city each got the bonus added separately, but the engine itself only scores each farm/city once per player. Fixed via dedup keyed on `frozenset(farm.farmer_connections_with_coordinate)` and `frozenset(city.city_positions)`. Commit `08dfead`.
+5. Killed cloud retrain (~$0.30 sunk on 192 generated games — discarded; they used the buggy bonus magnitudes). Pushed fix to GitHub.
+6. **Now:** running n=20 sims=200 bench on cloud with FIXED v2.5 to confirm wr ≥ 70% before re-launching retrain.
+
+**Pending decision:** if fixed v2.5 wr ≥ 70%, re-launch the cloud retrain with `08dfead`. If wr < 70%, the cap=5 was load-bearing on the buggy bonus magnitudes — would need to retune cap (probably cap=8 or cap=12) and re-bench.
+
+
 
 **Cloud command launched:**
 ```
