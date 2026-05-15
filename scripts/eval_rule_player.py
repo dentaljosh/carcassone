@@ -201,11 +201,13 @@ def _hybrid_v2_evaluator(game: Game):
 
 
 def play_one(args: tuple) -> dict:
-    seed, rule_player_idx, opponent, sims = args
+    seed, rule_player_idx, opponent, sims, c_puct = args
     rng = random.Random(seed)
     rule = RuleBasedPlayer(seed=seed)
     game = Game(enable_legal_moves_cache=True)
     board = game.get_init_board()
+    # NeuralMCTS pulls its DEFAULT_PUCT_C if c_puct is None — pass through.
+    nn_kwargs = {} if c_puct is None else {"c_puct": c_puct}
 
     opp = None
     if opponent == "mcts":
@@ -221,6 +223,7 @@ def play_one(args: tuple) -> dict:
             evaluator=evaluator,
             simulations=sims,
             seed=seed + 1,
+            **nn_kwargs,
         )
     elif opponent == "hybrid":
         evaluator = _hybrid_evaluator(game)
@@ -229,6 +232,7 @@ def play_one(args: tuple) -> dict:
             evaluator=evaluator,
             simulations=sims,
             seed=seed + 1,
+            **nn_kwargs,
         )
     elif opponent == "hybrid_v2":
         evaluator = _hybrid_v2_evaluator(game)
@@ -237,6 +241,7 @@ def play_one(args: tuple) -> dict:
             evaluator=evaluator,
             simulations=sims,
             seed=seed + 1,
+            **nn_kwargs,
         )
     elif opponent == "puct_uniform":
         evaluator = _uniform_evaluator(game)
@@ -245,6 +250,7 @@ def play_one(args: tuple) -> dict:
             evaluator=evaluator,
             simulations=sims,
             seed=seed + 1,
+            **nn_kwargs,
         )
 
     moves = 0
@@ -349,13 +355,18 @@ def main() -> int:
     p.add_argument("--orch-shards", type=int, default=1,
                    help="Number of parallel server processes (each holds one "
                         "copy of the net in VRAM). Default 1.")
+    p.add_argument("--c-puct", type=float, default=None,
+                   help="PUCT exploration constant for NN-opponent MCTS. "
+                        "Defaults to mcts.DEFAULT_PUCT_C (1.5). Only used for "
+                        "--opponent in (checkpoint, hybrid, hybrid_v2, puct_uniform).")
     args = p.parse_args()
 
     if args.opponent in ("checkpoint", "hybrid", "hybrid_v2") and args.checkpoint is None:
         p.error(f"--checkpoint required when --opponent={args.opponent}")
 
     pool_args = [
-        (args.seed_start + i, i % 2, args.opponent, args.sims) for i in range(args.n)
+        (args.seed_start + i, i % 2, args.opponent, args.sims, args.c_puct)
+        for i in range(args.n)
     ]
 
     label = (
