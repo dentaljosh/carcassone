@@ -56,7 +56,15 @@ if TYPE_CHECKING:
 # v2.5 (2026-05-14): halved from v2's {1: 1.0, 2: 0.5, 3: 0.25}. v2-diagnostic
 # showed v2's bonus magnitude was 4-7x the v1 base, saturating tanh and killing
 # the search gradient. v2.5 brings the bonus into the same scale as the base.
-_CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
+#
+# v2.6 (2026-05-15): if CARCASSONNE_V25_ONE_OPEN_ONLY=1, restrict to features
+# with exactly 1 open adjacent position (most-likely-to-close). Drops the
+# noisier 2-open and 3-open lottery tickets. Joshua's "only look at those
+# most likely to close" idea.
+if os.environ.get("CARCASSONNE_V25_ONE_OPEN_ONLY") == "1":
+    _CLOSURE_P: dict[int, float] = {1: 1.0}
+else:
+    _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
 
 # v2.5 hard cap on the per-player bonus. The bonus is non-negative by
 # construction; clamping to [0, BONUS_CAP] prevents chained closure waves
