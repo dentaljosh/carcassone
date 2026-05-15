@@ -2,7 +2,40 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-14) — v2.5 PASSES bench: 83.3% wr vs Tier-1 (+6.6pp over v1, +53pp over v2). Production candidate. Still not superhuman.
+## Right now (2026-05-15) — v2.5 policy retrain in flight on cloud (vast.ai instance 36800338, 5090, Japan, $0.37/hr).
+
+**Cloud command launched:**
+```
+nohup python -u scripts/run_phase4_smoke.py \
+  --iters 1 --games 2000 --sims 200 \
+  --eval-sims 200 --eval-games 50 \
+  --workers 48 --eval-workers 48 \
+  --batch-size 8 --virtual-loss 1.0 \
+  --window 30 \
+  --warmstart-mix-schedule "0.0,0.0,0.0,0.0" \
+  --anchor-gate \
+  --anchor-checkpoint /workspace/carcassone/checkpoints/warmstart_canonical.pt \
+  --anchor-games 30 --anchor-sims 200 \
+  --anchor-min-winrate 0.5 --anchor-max-fails 1 \
+  --initial-checkpoint /workspace/carcassone/checkpoints/warmstart_canonical.pt \
+  --orchestrator --leaf-eval v2_5 \
+  --checkpoint-root /workspace/carcassone/checkpoints/v25_retrain \
+  --output-root /workspace/carcassone/data/selfplay/v25_retrain \
+  > /tmp/v25_retrain.log 2>&1 & disown
+```
+
+Self-play 2K games at sims=200 with v2.5 leaf + W=48 workers + batching + orchestrator. ETA ~90 min self-play + 5 min train + 3 min anchor = ~100 min. Cost ~$0.65.
+
+**Cloud-prep recipe captured** in `scripts/cloud_bootstrap.sh` (commit pending) — clones gpu-orchestrator branch, installs both `carcassonne-ai` and vendored `wingedsheep` packages editable. The first cloud attempt today hit `ModuleNotFoundError` twice because the `ghcr.io/dentaljosh/carcassone-cloud:latest` image has torch+cuda but neither project package preinstalled.
+
+**Lessons from today's bootstrap:**
+1. First instance (id 36799296, mach 79955) failed with vast-side broken reverse-tunnel ("Error: remote port forwarding failed for listen port 39296"). Status flipped to `running` but SSH was unreachable. Destroyed + retried per CLAUDE.md rule.
+2. Active polling Monitor now also includes an SSH probe gate: only emits `READY` when `actual_status=running` AND `ssh root@... 'echo OK'` succeeds. Avoids the "running-but-unreachable" failure mode.
+3. The cloud image needs `pip install -e .` and `pip install -e engine/` before running anything — captured in `scripts/cloud_bootstrap.sh`.
+
+**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Cloud retrain is the test of whether v2.5-driven self-play data improves the policy head enough to get us closer.
+
+
 
 ### v2 → v2.5 progression
 
