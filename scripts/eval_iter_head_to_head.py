@@ -41,6 +41,8 @@ from carcassonne_ai.eval_server_pool import (
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
+    make_v25_batch_value_wrapper,
+    make_v25_value_wrapper,
 )
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
@@ -81,6 +83,7 @@ _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
 _worker_use_fp16: bool = False
+_worker_leaf_eval: str = "nn"  # "nn" or "v2_5" — see DECISIONS.md 2026-05-14
 _worker_new_handles: ServerHandles | None = None
 _worker_old_handles: ServerHandles | None = None
 
@@ -121,7 +124,7 @@ def _load_net(path: str, device: torch.device) -> CarcassonneNet:
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
-    orch_cfg: dict | None = None,
+    orch_cfg: dict | None = None, leaf_eval: str = "nn",
 ) -> None:
     """Pool initializer.
 
@@ -133,7 +136,7 @@ def _worker_init(
     (one per server process) pointing at the per-worker response queues.
     """
     global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
-    global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16
+    global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16, _worker_leaf_eval
     global _worker_new_handles, _worker_old_handles
 
     _worker_sims = sims
@@ -142,6 +145,7 @@ def _worker_init(
     _worker_batch_size = batch_size
     _worker_virtual_loss = virtual_loss
     _worker_use_fp16 = use_fp16
+    _worker_leaf_eval = leaf_eval
 
     if orch_cfg is not None:
         _worker_device = torch.device("cpu")
@@ -204,6 +208,18 @@ def _play_one(args: tuple[int, int]) -> GameResult:
             old_batch_eval = make_batch_evaluator(
                 _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
             )
+
+    # v2.5 leaf-eval swap: replace each side's NN value with virtual_score_v2.
+    # Keeps evaluation apples-to-apples — both sides get the same leaf eval
+    # treatment. See DECISIONS.md 2026-05-14 for the rationale.
+    if _worker_leaf_eval == "v2_5":
+        new_eval = make_v25_value_wrapper(new_eval)
+        old_eval = make_v25_value_wrapper(old_eval)
+        if new_batch_eval is not None:
+            new_batch_eval = make_v25_batch_value_wrapper(new_batch_eval)
+        if old_batch_eval is not None:
+            old_batch_eval = make_v25_batch_value_wrapper(old_batch_eval)
+
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
         seed=seed, c_puct=_worker_c_puct,
@@ -325,6 +341,15 @@ def main(argv: list[str] | None = None) -> int:
              "are CPU-only and send requests over IPC. Default off; "
              "numerically identical to per-worker path within float32 noise.",
     )
+    p.add_argument(
+        "--leaf-eval", choices=["nn", "v2_5"], default="nn",
+        help="Source of the leaf VALUE during MCTS (applied to BOTH sides "
+             "for apples-to-apples comparison). 'nn' (default) uses each "
+             "net's value head. 'v2_5' uses tanh(virtual_score_v2/15) for "
+             "both sides, matching local production (DECISIONS.md 2026-05-14). "
+             "Priors always come from the network — only the leaf value "
+             "source changes.",
+    )
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     p.add_argument(
@@ -355,7 +380,7 @@ def main(argv: list[str] | None = None) -> int:
         f"head-to-head: iter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}, "
         f"{args.games} games at sims={args.sims}, c_puct={args.c_puct}, "
         f"{n_workers} workers, eval_dir={eval_dir}, "
-        f"orchestrator={args.orchestrator}"
+        f"orchestrator={args.orchestrator}, leaf_eval={args.leaf_eval}"
     )
     sys.stdout.flush()
 
@@ -416,7 +441,7 @@ def main(argv: list[str] | None = None) -> int:
                 str(args.new_checkpoint), str(args.old_checkpoint),
                 args.sims, args.c_puct, str(eval_dir),
                 args.batch_size, args.virtual_loss, args.fp16,
-                orch_cfg,
+                orch_cfg, args.leaf_eval,
             ),
         ) as pool:
             for done, r in enumerate(

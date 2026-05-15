@@ -44,6 +44,8 @@ from carcassonne_ai.eval_server_pool import (
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
     make_single_evaluator,
+    make_v25_batch_value_wrapper,
+    make_v25_value_wrapper,
 )
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
@@ -146,6 +148,16 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             batch_evaluator = make_batch_evaluator(
                 _worker_net, _worker_device, game, use_fp16=use_fp16
             )
+
+    # Optional leaf-eval swap: replace NN value head with virtual_score_v2
+    # (DECISIONS.md 2026-05-14). Priors still come from the network;
+    # only the leaf VALUE crossing into MCTS changes. Compatible with both
+    # local and orchestrator paths since both expose the same (priors, value)
+    # interface.
+    if cfg.get("leaf_eval") == "v2_5":
+        evaluator = make_v25_value_wrapper(evaluator)
+        if batch_evaluator is not None:
+            batch_evaluator = make_v25_batch_value_wrapper(batch_evaluator)
     try:
         ds = play_one_selfplay_game(
             game=game,
@@ -246,6 +258,15 @@ def main(argv: list[str] | None = None) -> int:
              "Per-shard sweep (2026-05-13) finds the empirical optimum; "
              "see DECISIONS.md.",
     )
+    p.add_argument(
+        "--leaf-eval", choices=["nn", "v2_5"], default="nn",
+        help="Source of the leaf VALUE during self-play MCTS. "
+             "'nn' (default, back-compat with v1-v6) uses the network's "
+             "value head. 'v2_5' uses tanh(virtual_score_v2/15), which beat "
+             "v1 by 6.6pp at sims=400 (DECISIONS.md 2026-05-14). Priors "
+             "always come from the network — only the leaf value source "
+             "changes.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
@@ -297,13 +318,15 @@ def main(argv: list[str] | None = None) -> int:
         "virtual_loss": args.virtual_loss,
         "use_fp16": args.fp16,
         "orchestrator": args.orchestrator,
+        "leaf_eval": args.leaf_eval,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
         f"(sims={args.sims}, c_puct={args.c_puct}, "
         f"alpha={args.dirichlet_alpha}, eps={args.dirichlet_eps}, "
         f"temp_thresh={args.temp_threshold}, "
-        f"batch_size={args.batch_size}, vloss={args.virtual_loss}), "
+        f"batch_size={args.batch_size}, vloss={args.virtual_loss}, "
+        f"leaf_eval={args.leaf_eval}), "
         f"{n_workers} workers, {already} cached, {remaining} to play, "
         f"out={iter_dir}, orchestrator={args.orchestrator}"
     )

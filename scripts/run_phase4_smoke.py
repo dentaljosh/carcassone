@@ -224,6 +224,14 @@ def main(argv: list[str] | None = None) -> int:
              "at W>=48 — at that fan-out the per-worker torch allocator pool "
              "(~600 MB) blows past 32 GB VRAM. Validated 2026-05-12.",
     )
+    p.add_argument(
+        "--leaf-eval", choices=["nn", "v2_5"], default="nn",
+        help="Leaf-value source for self-play, h2h, AND anchor eval. 'nn' "
+             "(default, back-compat) uses each net's value head; 'v2_5' uses "
+             "tanh(virtual_score_v2/15) — production at +6.6pp wr vs Tier-1 "
+             "(DECISIONS.md 2026-05-14). Applied uniformly to all three "
+             "sub-stages so eval comparisons stay apples-to-apples.",
+    )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers for self-play. Default 8 leaves SMT "
                         "headroom for other workloads on a 5800X; for "
@@ -384,6 +392,8 @@ def main(argv: list[str] | None = None) -> int:
                 cmd.append("--fp16")
             if args.orchestrator:
                 cmd.append("--orchestrator")
+            if args.leaf_eval != "nn":
+                cmd.extend(["--leaf-eval", args.leaf_eval])
             _run_subcommand(f"iter {iter_idx}: self-play", cmd)
 
         # Step 2: train
@@ -443,6 +453,8 @@ def main(argv: list[str] | None = None) -> int:
                     cmd.append("--fp16")
                 if args.orchestrator:
                     cmd.append("--orchestrator")
+                if args.leaf_eval != "nn":
+                    cmd.extend(["--leaf-eval", args.leaf_eval])
                 _run_subcommand(
                     f"iter {iter_idx}: anchor-gate vs {args.anchor_checkpoint.name}",
                     cmd,
@@ -506,6 +518,8 @@ def main(argv: list[str] | None = None) -> int:
                 cmd.append("--fp16")
             if args.orchestrator:
                 cmd.append("--orchestrator")
+            if args.leaf_eval != "nn":
+                cmd.extend(["--leaf-eval", args.leaf_eval])
             _run_subcommand(
                 f"iter {iter_idx}: head-to-head vs iter {iter_idx - 1}", cmd
             )
