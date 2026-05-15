@@ -14,6 +14,23 @@
 
 **Pending decision:** if fixed v2.5 wr ≥ 70%, re-launch the cloud retrain with `08dfead`. If wr < 70%, the cap=5 was load-bearing on the buggy bonus magnitudes — would need to retune cap (probably cap=8 or cap=12) and re-bench.
 
+**(Update 06:00 UTC):** fixed v2.5 + cap=5 = 70% (matched threshold but suspected weaker than buggy 80%). Ran cap re-sweep:
+
+| config (n=20 sims=200 each) | wr | avg diff |
+|---|---|---|
+| fixed + cap=5 | 70% | n/a |
+| fixed + cap=8 | 60% | -17.8 |
+| fixed + cap=12 (3-tier P) | 85% | -22.4 |
+| fixed + cap=20 (3-tier P) | 85% | -34.7 |
+| fixed + cap=12 + 1-open-only (v2.6) | 77.5% | -18.4 |
+| **fixed + cap=12 + drop-3-open (v2.7)** | **90%** | **-30.6** |
+
+v2.7 winning config: `_CLOSURE_P = {1: 0.5, 2: 0.2}` + cap=12 (env vars `CARCASSONNE_V25_DROP_THREE_OPEN=1` + `CARCASSONNE_V25_CAP=12`). +10pp over the buggy v2.5. Joshua's intuition that 3-open was just lottery-ticket noise was right.
+
+**Cloud retrain v2 launched** (commit `f89b5f3`, 1200 games, sims=200, batch=8 vloss=1.0 orchestrator + v2_5 leaf + v2.7 P + cap=12). ETA ~5h, finishes ~10:55 UTC. Watchdog running detached on local WSL (PID 54199), will auto-pull artifacts + `vastai destroy 36800338` when retrain completes. Watchdog log at `/tmp/retrain_watchdog.log`.
+
+
+
 
 
 **Cloud command launched:**
