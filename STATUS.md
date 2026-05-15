@@ -2,7 +2,46 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-15 morning) — v2.5 retrain DONE: iter_00 +21pp over warmstart at v2.7 leaf. Total cost ~$2.40, box destroyed. Local artifacts pulled.
+## Right now (2026-05-15 ~13:05 EDT) — v3 sweep INCONCLUSIVE: opp_cap tuning in {5..30} is within n=20 noise. Cap re-tuning is fitting noise; pivot.
+
+**Full sweep (rule_player+v1 vs iter_00+v3 leaf, env vars affect NN side only):**
+
+| opp_cap | n=20 iter_00 wr | n=50 iter_00 wr | n=50 score diff (rule POV) |
+|---|---|---|---|
+| 5 | 95% ← lucky | **80%** | -26.3 |
+| 8 | 75% ← unlucky | — | — |
+| 12 (v2.7 implicit) | 90% | — | -37 (n=20) |
+| 20 | 80% | 80% | -27.3 |
+| 30 | 80% | — | — |
+
+**Conclusion.** All opp_cap values land at 80% ± 5pp at n=50. The "90% baseline" anchor for v2.7 was n=20 too, so its true mean is likely also ~80%. **opp_cap in {5..30} doesn't materially change iter_00's strength vs Tier-1.** Score-diff signals likewise converged within ~1pt at n=50.
+
+The v3 cap-tuning direction is exhausted. v2.7 cap=12 is the local optimum (or indistinguishable from one). The score-diff "regression" framing in commit `862ec37` was also over-reading n=20 noise — needs correction.
+
+**What's next (real options, in priority order):**
+1. **iter_01 retrain on v2.7** (~$2.40 cloud, ~6h). Tests whether more training data at the working leaf produces a stronger NN. Data scarcity is the most plausible remaining ceiling.
+2. **Human-play vs iter_00.** Tier-1 is saturated as a reference — same 80% wr regardless of leaf cap. Need direct evidence vs a strong human.
+3. **Different leaf STRUCTURE** (not cap tuning). E.g., learned leaf eval (small MLP trained on game outcomes), or hand-designed terms beyond closure anticipation (territory control, road completion forecasting, etc.).
+4. **PUCT c sweep** (~30 min local, cheap). Hyperparameter on the search side, not the leaf.
+
+Recommendation: #4 first (cheap closure on the search-side knob), then #1 if it shows headroom, #2 always.
+
+**v3 result (commits `e55f622` infra + `862ec37` doc correction):**
+- Tested two leaf additions: meeple_K × Δmeeples (failure-mode 4) and asymmetric `_OPP_BONUS_CAP` (failure-mode 3 — denial)
+- meeple_K ∈ {0.5, 1.0, 2.0}: all null at n=20 (90% iter_00 wr unchanged)
+- opp_cap ∈ {20, 30}: **regression** — iter_00 wr drops to 80% (n=50 confirms 80%, score-diff regresses from -37 → -27.3 from Tier-1 POV)
+- Hypothesis "denial invisible" falsified at high opp_cap. v2.7's symmetric cap=12 is load-bearing
+- Now testing opposite direction: opp_cap ∈ {5, 8} → does the NN currently over-defend at cap=12?
+
+**Production unchanged (pre-v3):**
+- v2.7 leaf: `_BONUS_CAP=12` + `_CLOSURE_P={1:0.5, 2:0.2}` (env vars: `CARCASSONNE_V25_CAP=12 CARCASSONNE_V25_DROP_THREE_OPEN=1`)
+- iter_00 checkpoint at `checkpoints/v25_retrain/iter_00.pt` is global best. Beats warmstart_canonical 61.7%, iter_12 82.5%, Tier-1 90%.
+
+**Next decision (gated on v3-down sweep result):**
+- If opp_cap=5/8 also regresses: v2.7 cap=12 is the optimum. Pivot to: (a) iter_01 retrain on v2.7 (more data), or (b) human-play test, or (c) different leaf structure entirely (not just cap tuning).
+- If opp_cap=5 or 8 *improves*: NN was over-defending. Re-sweep at fine grain, then promote.
+
+## Earlier (2026-05-15 morning) — v2.5 retrain DONE: iter_00 +21pp over warmstart at v2.7 leaf. Total cost ~$2.40, box destroyed. Local artifacts pulled.
 
 **Headline:**
 - Production v2.5 leaf eval is now `_BONUS_CAP=12` + `_CLOSURE_P={1:0.5, 2:0.2}` (env vars: `CARCASSONNE_V25_CAP=12 CARCASSONNE_V25_DROP_THREE_OPEN=1`).
