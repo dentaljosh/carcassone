@@ -234,9 +234,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers for self-play. Default 8 leaves SMT "
-                        "headroom for other workloads on a 5800X; for "
-                        "dedicated runs use --workers 16 (empirical optimum, "
-                        "measured 2026-05-09).")
+                        "headroom for other workloads on a 5800X. Dedicated-run "
+                        "optimum is recipe-dependent: W=16 for the old NN-value "
+                        "leaf (measured 2026-05-09), W=14 for the v2.7 "
+                        "virtual_score leaf (measured 2026-05-15) — the heavier "
+                        "CPU leaf needs 2 threads of headroom for the "
+                        "orchestrator server + main process.")
     p.add_argument("--eval-workers", type=int, default=8,
                    help="Pool workers for head-to-head. Same guidance as "
                         "--workers; head-to-head loads 2 networks/worker "
