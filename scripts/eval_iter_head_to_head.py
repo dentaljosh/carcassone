@@ -40,7 +40,9 @@ from carcassonne_ai.eval_server_pool import (
 )
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
+    make_batch_evaluator_policy_only,
     make_single_evaluator,
+    make_single_evaluator_policy_only,
     make_v25_batch_value_wrapper,
     make_v25_value_wrapper,
 )
@@ -193,19 +195,28 @@ def _play_one(args: tuple[int, int]) -> GameResult:
             )
     else:
         assert _worker_new is not None and _worker_old is not None
-        new_eval = make_single_evaluator(
+        use_policy_only = _worker_leaf_eval != "nn"
+        single_factory = (
+            make_single_evaluator_policy_only if use_policy_only
+            else make_single_evaluator
+        )
+        new_eval = single_factory(
             _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
         )
-        old_eval = make_single_evaluator(
+        old_eval = single_factory(
             _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
         )
         new_batch_eval = None
         old_batch_eval = None
         if _worker_batch_size > 1:
-            new_batch_eval = make_batch_evaluator(
+            batch_factory = (
+                make_batch_evaluator_policy_only if use_policy_only
+                else make_batch_evaluator
+            )
+            new_batch_eval = batch_factory(
                 _worker_new, _worker_device, game_new, use_fp16=_worker_use_fp16
             )
-            old_batch_eval = make_batch_evaluator(
+            old_batch_eval = batch_factory(
                 _worker_old, _worker_device, game_old, use_fp16=_worker_use_fp16
             )
 
@@ -401,6 +412,7 @@ def main(argv: list[str] | None = None) -> int:
             f"timeout={args.orch_batch_timeout_ms}ms, fp16={args.fp16})…"
         )
         sys.stdout.flush()
+        policy_only = (args.leaf_eval != "nn")
         new_pool = start_server_pool(
             checkpoint_path=str(args.new_checkpoint),
             n_workers=n_workers,
@@ -408,6 +420,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
+            policy_only=policy_only,
         )
         old_pool = start_server_pool(
             checkpoint_path=str(args.old_checkpoint),
@@ -416,6 +429,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
+            policy_only=policy_only,
         )
         id_q = ctx.Queue()
         for w in range(n_workers):

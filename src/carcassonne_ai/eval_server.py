@@ -77,6 +77,7 @@ def _server_loop(
     max_batch: int,
     batch_timeout_ms: float,
     use_fp16: bool,
+    policy_only: bool = False,
 ) -> None:
     try:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -145,7 +146,7 @@ def _server_loop(
 
         try:
             t_fw0 = time.perf_counter()
-            _process_batch(batch, net, device, response_qs, use_fp16, stage_t)
+            _process_batch(batch, net, device, response_qs, use_fp16, stage_t, policy_only)
             stage_t["forward"] += time.perf_counter() - t_fw0
             n_batches += 1
             total_requests += len(batch)
@@ -200,6 +201,7 @@ def _process_batch(
     response_qs: list[Any],
     use_fp16: bool,
     stage_t: dict | None = None,
+    policy_only: bool = False,
 ) -> None:
     if not batch:
         return
@@ -217,10 +219,16 @@ def _process_batch(
         autocast_ctx = torch.amp.autocast(device_type="cpu", enabled=False)
 
     with torch.no_grad(), autocast_ctx:
-        logits, values = net(obs_t, scalars_t)
-        priors = net.policy_softmax_with_mask(logits, mask_t)
+        if policy_only:
+            logits = net.forward_policy_only(obs_t, scalars_t)
+            priors = net.policy_softmax_with_mask(logits, mask_t)
+            # Stub values; caller must override (e.g. v2.5 leaf wrapper).
+            values_np = np.zeros((obs_t.shape[0],), dtype=np.float32)
+        else:
+            logits, values = net(obs_t, scalars_t)
+            priors = net.policy_softmax_with_mask(logits, mask_t)
+            values_np = values.float().cpu().numpy()
     priors_np = priors.float().cpu().numpy()
-    values_np = values.float().cpu().numpy()
 
     t_dp0 = time.perf_counter() if stage_t is not None else 0.0
     offset = 0
@@ -249,6 +257,7 @@ def start_server(
     batch_timeout_ms: float = 2.0,
     use_fp16: bool = False,
     ready_timeout_s: float = 60.0,
+    policy_only: bool = False,
 ) -> tuple[Any, Any, list[Any]]:
     """Spawn the server process and return (proc, request_q, response_qs).
 
@@ -273,6 +282,7 @@ def start_server(
             max_batch,
             batch_timeout_ms,
             use_fp16,
+            policy_only,
         ),
         daemon=False,
     )

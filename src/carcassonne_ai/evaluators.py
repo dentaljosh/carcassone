@@ -60,6 +60,70 @@ def make_single_evaluator(
     return evaluator
 
 
+def make_single_evaluator_policy_only(
+    net: CarcassonneNet,
+    device: torch.device,
+    game: Game,
+    use_fp16: bool = False,
+) -> Callable[[Board], tuple[np.ndarray, float]]:
+    """Single-board evaluator that skips the network's value head — returns
+    (priors[A], 0.0). Use when the caller will override the value (e.g.
+    composed with the v2.5 leaf wrapper, or any leaf eval that doesn't
+    trust the NN value head). Saves ~5-10% of forward-pass time.
+
+    Interface matches `make_single_evaluator` so this is a drop-in for any
+    place that expects a (priors, value) callable. The returned value is
+    a constant 0.0 sentinel — downstream code that uses it without
+    overriding will get a degenerate eval, which is the correct surfacing
+    of "you asked for policy-only; the value is not real."""
+    def evaluator(board: Board) -> tuple[np.ndarray, float]:
+        obs, scalars = game.get_canonical_form(board, board.state.current_player)
+        obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(device)
+        scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(device)
+        with torch.no_grad(), _autocast_ctx(device, use_fp16):
+            logits = net.forward_policy_only(obs_t, scalars_t)
+            mask = game.get_valid_moves(board)
+            mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
+            probs = net.policy_softmax_with_mask(logits, mask_t)
+        return probs[0].float().cpu().numpy(), 0.0
+    return evaluator
+
+
+def make_batch_evaluator_policy_only(
+    net: CarcassonneNet,
+    device: torch.device,
+    game: Game,
+    use_fp16: bool = False,
+) -> Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]:
+    """Batched evaluator that skips the network's value head. Returns
+    (priors[B,A], zeros[B]). See `make_single_evaluator_policy_only`."""
+    def batch_evaluator(
+        boards: list[Board],
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if not boards:
+            return (
+                np.empty((0,), dtype=np.float32),
+                np.empty((0,), dtype=np.float32),
+            )
+        obs_list = []
+        scalars_list = []
+        masks_list = []
+        for b in boards:
+            obs, scalars = game.get_canonical_form(b, b.state.current_player)
+            obs_list.append(obs)
+            scalars_list.append(scalars)
+            masks_list.append(game.get_valid_moves(b))
+        obs_t = torch.from_numpy(np.stack(obs_list)).float().to(device)
+        scalars_t = torch.from_numpy(np.stack(scalars_list)).float().to(device)
+        masks_t = torch.from_numpy(np.stack(masks_list).copy()).bool().to(device)
+        with torch.no_grad(), _autocast_ctx(device, use_fp16):
+            logits = net.forward_policy_only(obs_t, scalars_t)
+            probs = net.policy_softmax_with_mask(logits, masks_t)
+        values = np.zeros(len(boards), dtype=np.float32)
+        return probs.float().cpu().numpy(), values
+    return batch_evaluator
+
+
 def make_v25_value_wrapper(
     base_evaluator: Callable[[Board], tuple[np.ndarray, float]],
 ) -> Callable[[Board], tuple[np.ndarray, float]]:

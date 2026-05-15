@@ -43,7 +43,9 @@ from carcassonne_ai.eval_server_pool import (
 )
 from carcassonne_ai.evaluators import (
     make_batch_evaluator,
+    make_batch_evaluator_policy_only,
     make_single_evaluator,
+    make_single_evaluator_policy_only,
     make_v25_batch_value_wrapper,
     make_v25_value_wrapper,
 )
@@ -132,6 +134,12 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     assert cfg is not None
     game = Game(enable_legal_moves_cache=True)
     use_fp16 = cfg.get("use_fp16", False)
+    # If the v2.5 leaf is going to override the value anyway, we can skip the
+    # value-head forward in both the per-worker and orchestrator paths.
+    # Orchestrator's policy_only flag was set at server startup (cfg.get
+    # ("policy_only")); per-worker path uses the policy-only factory here.
+    use_policy_only = cfg.get("leaf_eval", "nn") != "nn"
+
     if cfg.get("orchestrator"):
         assert _worker_handles is not None
         evaluator = make_remote_single_evaluator(_worker_handles, game)
@@ -140,14 +148,24 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             batch_evaluator = make_remote_batch_evaluator(_worker_handles, game)
     else:
         assert _worker_net is not None and _worker_device is not None
-        evaluator = make_single_evaluator(
-            _worker_net, _worker_device, game, use_fp16=use_fp16
-        )
-        batch_evaluator = None
-        if cfg["batch_size"] > 1:
-            batch_evaluator = make_batch_evaluator(
+        if use_policy_only:
+            evaluator = make_single_evaluator_policy_only(
                 _worker_net, _worker_device, game, use_fp16=use_fp16
             )
+        else:
+            evaluator = make_single_evaluator(
+                _worker_net, _worker_device, game, use_fp16=use_fp16
+            )
+        batch_evaluator = None
+        if cfg["batch_size"] > 1:
+            if use_policy_only:
+                batch_evaluator = make_batch_evaluator_policy_only(
+                    _worker_net, _worker_device, game, use_fp16=use_fp16
+                )
+            else:
+                batch_evaluator = make_batch_evaluator(
+                    _worker_net, _worker_device, game, use_fp16=use_fp16
+                )
 
     # Optional leaf-eval swap: replace NN value head with virtual_score_v2
     # (DECISIONS.md 2026-05-14). Priors still come from the network;
@@ -365,6 +383,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
+            policy_only=(args.leaf_eval != "nn"),
         )
         id_q = ctx.Queue()
         for w in range(n_workers):

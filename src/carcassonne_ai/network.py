@@ -125,6 +125,26 @@ class CarcassonneNet(nn.Module):
 
         return policy_logits, value
 
+    def forward_policy_only(
+        self, board: torch.Tensor, scalars: torch.Tensor
+    ) -> torch.Tensor:
+        """Compute policy logits only — skip the value head's conv +
+        flatten + 2× linear + relu/tanh.
+
+        Use when the caller will override the value (e.g. v2.5 leaf eval).
+        On the 5060 Ti the value head takes ~5% of the forward-pass cost;
+        on Blackwell tensor cores it's closer to ~10%. Bigger trunks
+        amortize less of the savings, smaller ones more.
+
+        Returns policy_logits only — caller must compute (or stub) the
+        value separately.
+        """
+        x = self.stem(board)
+        x = self.trunk(x)
+        p = self.policy_project(x).flatten(start_dim=1)
+        p = torch.cat([p, scalars], dim=1)
+        return self.policy_fc(p)
+
     def policy_softmax_with_mask(
         self, policy_logits: torch.Tensor, valid_mask: torch.Tensor
     ) -> torch.Tensor:

@@ -144,7 +144,7 @@ def _hybrid_evaluator(game: Game):
         obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(_worker_device)
         scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(_worker_device)
         with torch.no_grad():
-            logits, _ = _worker_net(obs_t, scalars_t)  # value head ignored
+            logits = _worker_net.forward_policy_only(obs_t, scalars_t)
             mask = game.get_valid_moves(board)
             mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(_worker_device)
             probs = _worker_net.policy_softmax_with_mask(logits, mask_t)
@@ -189,7 +189,7 @@ def _hybrid_v2_evaluator(game: Game):
         obs_t = torch.from_numpy(obs).unsqueeze(0).float().to(_worker_device)
         scalars_t = torch.from_numpy(scalars).unsqueeze(0).float().to(_worker_device)
         with torch.no_grad():
-            logits, _ = _worker_net(obs_t, scalars_t)
+            logits = _worker_net.forward_policy_only(obs_t, scalars_t)
             mask = game.get_valid_moves(board)
             mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(_worker_device)
             probs = _worker_net.policy_softmax_with_mask(logits, mask_t)
@@ -395,6 +395,10 @@ def main() -> int:
                 f"timeout={args.orch_batch_timeout_ms}ms)…"
             )
             sys.stdout.flush()
+            # hybrid / hybrid_v2 override the NN value with virtual_score(_v2),
+            # so the server can skip the value-head forward entirely. Plain
+            # checkpoint mode uses the NN value, so policy_only stays off.
+            policy_only = args.opponent in ("hybrid", "hybrid_v2")
             server_pool = start_server_pool(
                 checkpoint_path=str(args.checkpoint.resolve()),
                 n_workers=n_workers,
@@ -402,6 +406,7 @@ def main() -> int:
                 max_batch=args.orch_max_batch,
                 batch_timeout_ms=args.orch_batch_timeout_ms,
                 use_fp16=False,
+                policy_only=policy_only,
             )
             id_q = ctx.Queue()
             for w in range(n_workers):

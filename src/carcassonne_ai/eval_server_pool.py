@@ -65,6 +65,7 @@ def start_server_pool(
     batch_timeout_ms: float = 2.0,
     use_fp16: bool = False,
     ready_timeout_s: float = 60.0,
+    policy_only: bool = False,
 ) -> ServerPool:
     """Spawn n_shards server processes and return a routing pool.
 
@@ -106,6 +107,7 @@ def start_server_pool(
             batch_timeout_ms=batch_timeout_ms,
             use_fp16=use_fp16,
             ready_timeout_s=ready_timeout_s,
+            policy_only=policy_only,
         )
         procs.append(proc)
         request_qs.append(request_q)
