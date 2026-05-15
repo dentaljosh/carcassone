@@ -55,6 +55,37 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 **Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
 
+## 2026-05-15 — PUCT c sweep: low c (≤1.0) catastrophic; default c=1.5 is well-chosen; don't promote c=2.0
+
+**Context.** After v3 cap tuning closed as inconclusive, ran the PUCT c sweep from EXPERIMENTS.md as the next ablation. The 2026-05-14 diagnostic identified "low c → search over-explores into virtual_score's blind spots" as a hypothesis. PUCT formula: `U(a) = Q(a) + c · P(a) · sqrt(N_parent)/(1+N_child)`. Low c down-weights the NN policy prior P(a), so search explores more uniformly.
+
+**Sweep.** iter_00 + v2.7 leaf vs Tier-1 at sims=200, n=20:
+
+| c_puct | iter_00 wr | score diff (NN POV) |
+|---|---|---|
+| 0.5 | 67.5% | +4.2 |
+| 1.0 | **52.5%** ← barely beats Tier-1 | +7.2 |
+| 1.5 (current default) | 80% | +27.4 |
+| 2.0 | 85% | +40.3 |
+| 3.0 | 75% | +37.0 |
+
+**Confirmation runs (n=50, per the n=50-for-comparison memory rule):**
+- c=2.0: iter_00 88% wr, score diff -38.5 (rule POV)
+- c=1.5: iter_00 84% wr, score diff -38.0 (rule POV)
+
+**Result.** c=2.0 vs c=1.5 at n=50: indistinguishable. WR gap 4pp ≈ 0.6σ (SE ~7pp combined). Score-diff gap 0.5pt = effectively zero. The n=20 spread between c=1.5/2.0/3.0 was within noise; only c=2.0's *winner-at-n=20* status was noise.
+
+**Real finding: catastrophic low-c boundary.** c=1.0 → iter_00 52.5% (nearly ties Tier-1, who is supposed to lose 80%+ of the time). c=0.5 → 67.5%. Both well outside n=20 noise; score-diff signal confirms (+4 to +7 vs default's +27). The 2026-05-14 hypothesis "low c over-explores into virtual_score's blind spots" is CONFIRMED. The NN policy prior is load-bearing — search has to trust it heavily, not explore around it.
+
+**Decision.** Default c=1.5 stays. Don't promote c=2.0. Add a note to mcts.py's `DEFAULT_PUCT_C` constant explaining the lower bound is enforced by empirical data (c≤1.0 catastrophic).
+
+**Why this matters for future work.**
+1. If anyone (or future-me) tries to lower c "for more exploration," they'll break iter_00's strength. The constant comment should warn.
+2. iter_01 retrain doesn't need a c_puct hyperparameter sweep — c=1.5 is in the flat region, not on a knife-edge.
+3. The result indirectly confirms iter_00's policy prior is **well-trained enough that search wants to trust it.** This is a positive signal for the training pipeline.
+
+**Today's second case of n=20-noise-evaporating-at-n=50.** v3 cap tuning (morning) and PUCT high-c promotion (afternoon) both looked like winners at n=20 and collapsed at n=50. The n=50 memory rule has earned its keep twice today. See [[feedback-n50-min-for-variant-comparison]].
+
 ## 2026-05-15 — v3 leaf: cap tuning is fitting n=20 noise; v2.7 cap=12 is at the local optimum (or indistinguishable from one)
 
 **Context.** Post-iter_00 retrain landed today, the next leaf-eval iteration was v3 — two additions from the 2026-05-14 failure-mode diagnostic that v2.7 didn't address:

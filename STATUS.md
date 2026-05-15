@@ -2,7 +2,25 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-15 ~13:05 EDT) — v3 sweep INCONCLUSIVE: opp_cap tuning in {5..30} is within n=20 noise. Cap re-tuning is fitting noise; pivot.
+## Right now (2026-05-15 ~15:25 EDT) — PUCT c sweep done: default c=1.5 holds; low c (≤1.0) catastrophic. Memory rule "n=50 confirm" saved us twice today.
+
+**PUCT findings:**
+- c=0.5 / 1.0: iter_00 wr 67.5% / **52.5%** vs Tier-1 — catastrophic. Low c over-explores into virtual_score's blind spots (2026-05-14 hypothesis confirmed).
+- c=1.5 / 2.0 / 3.0: 80 / 85 / 75% at n=20; c=1.5 vs c=2.0 at n=50 = 84 vs 88% (indistinguishable at 0.6σ).
+- **Default c=1.5 stays.** c=2.0's n=20 win evaporated at n=50, same as v3 cap variants this morning.
+- Added warning comment at `src/carcassonne_ai/mcts.py:298` — "Don't lower this without re-benching at n=50 minimum."
+
+**Day-long summary (closed):**
+1. Hygiene cleanup (commits earlier today): NN value-head drop, eval_server hang fix, policy_only tests
+2. v3 leaf cap tuning: 5-variant sweep + n=50 confirm — **fitting noise**, v2.7 cap=12 holds
+3. PUCT c sweep: low-c boundary found (real, strong signal); high-c promotion doesn't survive n=50
+
+**iter_00 (`checkpoints/v25_retrain/iter_00.pt`) is unchanged as global best.** Production: v2.7 leaf + c_puct=1.5 + sims=200.
+
+**What's left (none in flight; pick one when ready):**
+1. **iter_01 cloud retrain** on v2.7 (~$2.40, ~6h) — tests data-scarcity ceiling
+2. **Human play vs iter_00** — Tier-1 saturated as reference, only way to measure superhuman progress
+3. **Bigger net** (10×128 or wider trunk) — orchestrator unlocks VRAM for it
 
 **Full sweep (rule_player+v1 vs iter_00+v3 leaf, env vars affect NN side only):**
 

@@ -295,7 +295,12 @@ class HeuristicMCTS(MCTS):
 # NeuralMCTS — Phase 3 acceptance Tournament 2 (net+MCTS vs vanilla MCTS).
 # ---------------------------------------------------------------------------
 
-DEFAULT_PUCT_C = 1.5  # AlphaZero-typical PUCT exploration constant
+DEFAULT_PUCT_C = 1.5
+# AlphaZero-typical PUCT exploration constant. Empirically validated 2026-05-15
+# (iter_00 + v2.7 leaf vs Tier-1, n=20 sims=200): c=1.5 = 80% wr, c=2.0 = 85%
+# (tied at 84/88% n=50, indistinguishable), c=1.0 = 52.5%, c=0.5 = 67.5%.
+# Low c is CATASTROPHIC — search over-explores into virtual_score's blind spots.
+# Don't lower this without re-benching at n=50 minimum.
 
 
 @dataclass
