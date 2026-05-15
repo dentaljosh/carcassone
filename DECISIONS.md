@@ -55,6 +55,40 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 **Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
 
+## 2026-05-15 — v3 leaf: asymmetric opp cap (denial signal) marginal win; meeple economy null
+
+**Context.** Post-iter_00 retrain landed today, the next leaf-eval iteration was v3 — two additions from the 2026-05-14 failure-mode diagnostic that v2.7 didn't address:
+1. **Meeple economy** — `_MEEPLE_K × (meeples_self - meeples_opp)` added after caps (failure-mode 4: over-committed meeples).
+2. **Asymmetric opp cap** — `_OPP_BONUS_CAP` separate from `_BONUS_CAP`, raising it amplifies the negative contribution of opponent's near-closures to search value (failure-mode 3: denial invisible).
+
+Implementation refactor: cap moved from inside `_closure_anticipation_bonus` to `virtual_score_v2` via a `_capped(bonus, cap)` helper. Without this, self and opp couldn't be capped differently. Tests updated to reflect the new location.
+
+**Sweep.** rule_player+v3 vs iter_00+v2.7 at n=20 sims=200 W=12+orch:
+
+| variant | wr | score diff |
+|---|---|---|
+| v2.7 baseline (cap=12, drop_3_open) | 10% | ~-37 |
+| meeple_K=0.5 | 10% | -31.8 |
+| meeple_K=1.0 | 10% | -31.8 |
+| meeple_K=2.0 | 10% | -42.2 |
+| opp_cap=20 | 20% | -18.4 |
+| opp_cap=30 | 20% | -24.1 |
+
+**Confirmation.** opp_cap=20 at n=50: 10W/40L = 20% wr (matches n=20), score diff -27.3, ELO Δ -241.
+
+**Interpretation.**
+- **opp_cap=20 is a small, real improvement.** Binary wr 20% vs baseline 10% is +10pp ~1σ at these sample sizes (marginal). Score-diff -27.3 vs -37 is ~10pt better margin — the stronger signal, since iter_00 wins most games regardless.
+- **opp_cap=30 ties wr but worse score diff** — too aggressive, overshoots the optimum.
+- **meeple_K is null at all 3 magnitudes** — all three K values gave IDENTICAL 2W/0D/18L outcomes. Meeple-delta term (range ±~14 at K=2.0) doesn't reorder leaf comparisons that the capped closure bonus already dominates. opp_cap is a re-weighting, so it DOES shift action selection — meeple_K is just additive on top of a hard-ceiling cap.
+
+**Decision.** Commit the v3 env-var infra (opp_cap + meeple_K + `_capped()` refactor) but **don't promote opp_cap=20 to default yet.** The rule-player-vs-iter_00 bench is a proxy for "does v3 leaf help search"; the production-relevant question is whether `hybrid_v2(iter_00, v3)` vs Tier-1 beats `hybrid_v2(iter_00, v2.7)`'s 90% wr. That bench is next.
+
+**Why hold the default at v2.7.** Until the hybrid_v2 production bench confirms, the +10pt score-diff gain in the proxy bench could be noise specific to the rule-player's MCTS-rollout path. Promote on direct evidence, not transitive evidence.
+
+**Why keep meeple_K env var infra despite null result.** Zero perf cost (guarded by `if _MEEPLE_K > 0.0`) and the diagnostic identified meeple over-commitment as a real failure mode — future v4 may rework the meeple term as a *cap-shifting* signal (changes the magnitude of acceptable bonuses) rather than additive, which could escape the null.
+
+**Lesson.** Additive terms on top of a saturating function (capped bonus) hit the same kind of dead-zone we saw with v2's tanh: the cap dominates, the additive term is rounding error. v3's opp_cap worked because it changed the cap itself, not because it added a new term inside it.
+
 ## 2026-05-15 — v2.5 dedup bug fix + cap/P re-sweep + cloud retrain: iter_00 +21pp over warmstart_canonical
 
 **Context:** Pre-launch we held v2.5 at 80% wr vs Tier-1 (sims=200, cap=5, P={1:0.5, 2:0.2, 3:0.05}). Cloud retrain at sims=200 on a vast.ai 5090 box hit 6× the predicted wallclock (5.8h vs 1.6h estimate). Investigated v2.5 leaf-eval cost; found a real over-counting bug: multiple meeples on the same farm/city each got `_closure_anticipation_bonus` added separately, but the engine itself only scores each farm/city once per player. Bonus inflated for multi-meeple farms.

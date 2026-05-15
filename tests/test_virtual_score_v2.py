@@ -159,16 +159,38 @@ def test_v2_bonus_dedupes_duplicate_meeples() -> None:
             )
 
 
-def test_v2_bonus_is_capped() -> None:
-    """v2.5 caps the per-player bonus at _BONUS_CAP. Verify the cap holds
-    across many random states (no state should produce bonus > cap)."""
-    from carcassonne_ai.virtual_score_v2 import _BONUS_CAP
+def test_v2_score_respects_caps() -> None:
+    """v2.5+ applies caps inside virtual_score_v2 (not inside the bonus fn).
+    The returned score must stay in [base - _OPP_BONUS_CAP, base + _BONUS_CAP]
+    (modulo rounding + meeple-economy term)."""
+    from carcassonne_ai.virtual_score_v2 import (
+        _BONUS_CAP,
+        _MEEPLE_K,
+        _OPP_BONUS_CAP,
+        virtual_score_v2,
+    )
+    from carcassonne_ai.virtual_score import virtual_score
 
     g = Game(enable_legal_moves_cache=True)
     for seed in range(5):
         b = _walk_random(g, g.get_init_board(), 100, seed=seed)
         for player in (0, 1):
-            assert _closure_anticipation_bonus(b.state, player) <= _BONUS_CAP
+            base = virtual_score(b.state, player)
+            v2 = virtual_score_v2(b.state, player)
+            opp = 1 - player
+            meeple_term = _MEEPLE_K * (
+                b.state.meeples[player] - b.state.meeples[opp]
+            )
+            # Allow ±1 slack for int rounding. Bonus_self ∈ [0, _BONUS_CAP],
+            # bonus_opp ∈ [0, _OPP_BONUS_CAP] so net ∈ [-_OPP_CAP, +_BONUS_CAP].
+            assert v2 <= base + _BONUS_CAP + meeple_term + 1, (
+                f"v2={v2} exceeds upper bound (base={base}, cap={_BONUS_CAP}, "
+                f"meeple={meeple_term}, seed={seed} player={player})"
+            )
+            assert v2 >= base - _OPP_BONUS_CAP + meeple_term - 1, (
+                f"v2={v2} below lower bound (base={base}, opp_cap={_OPP_BONUS_CAP}, "
+                f"meeple={meeple_term}, seed={seed} player={player})"
+            )
 
 
 def test_v2_bonus_is_nonnegative_for_player_with_meeples() -> None:

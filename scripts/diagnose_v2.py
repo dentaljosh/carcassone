@@ -46,6 +46,8 @@ from carcassonne_ai.rule_based_player import RuleBasedPlayer
 from carcassonne_ai.virtual_score import virtual_score
 from carcassonne_ai.virtual_score_v2 import (
     _BONUS_CAP,
+    _OPP_BONUS_CAP,
+    _capped,
     _close_prob,
     _closure_anticipation_bonus,
     _open_city_positions,
@@ -251,8 +253,13 @@ def play_one(seed: int, hybrid_idx: int, sims: int) -> dict:
         base = virtual_score(board.state, hybrid_idx)
         raw_self, rows_self = _closure_anticipation_bonus_debug(board.state, hybrid_idx)
         raw_opp, rows_opp = _closure_anticipation_bonus_debug(board.state, 1 - hybrid_idx)
-        bonus_self = _closure_anticipation_bonus(board.state, hybrid_idx)
-        bonus_opp = _closure_anticipation_bonus(board.state, 1 - hybrid_idx)
+        bonus_self = _capped(
+            _closure_anticipation_bonus(board.state, hybrid_idx), _BONUS_CAP
+        )
+        bonus_opp = _capped(
+            _closure_anticipation_bonus(board.state, 1 - hybrid_idx),
+            _OPP_BONUS_CAP,
+        )
         v2_total = int(round(base + bonus_self - bonus_opp))
 
         s0, s1 = board.state.scores

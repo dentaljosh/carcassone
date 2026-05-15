@@ -81,6 +81,22 @@ else:
 # for cap-tuning sweeps. Default 5.0 is the validated production value.
 _BONUS_CAP: float = float(os.environ.get("CARCASSONNE_V25_CAP", "5.0"))
 
+# v3 (2026-05-15): optional asymmetric cap for opponent's anticipation bonus.
+# Defaults to the self cap. If raised, denial signal gets stronger (opp's
+# near-closures contribute more to OUR negative value), so search prefers
+# defensive plays. Failure mode 3 ("denial invisible") was identified in the
+# 2026-05-14 diagnostic.
+_OPP_BONUS_CAP: float = float(
+    os.environ.get("CARCASSONNE_V25_OPP_CAP", str(_BONUS_CAP))
+)
+
+# v3 (2026-05-15): meeple-economy term. Adds K × (meeples_self - meeples_opp)
+# to the final score (after caps), where meeples_X is X's unplaced-meeple
+# count. Encourages saving meeples for high-value plays; penalizes
+# over-commitment (failure mode 4 "over-committed meeples" in the diagnostic).
+# Default 0.0 = off (back-compat with v2.7 production).
+_MEEPLE_K: float = float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0"))
+
 
 def _close_prob(open_positions: int) -> float:
     """Probability that an incomplete feature closes by game-end given how
@@ -251,15 +267,27 @@ def _closure_anticipation_bonus(state, player: int) -> int:
         # Inn-roads ARE a closure-blind spot but rare in 2p River+Farmers.
         # Skip for v2; add in v3 if road denial shows up in failure modes.
 
-    if bonus > _BONUS_CAP:
-        return _BONUS_CAP
+    return bonus  # uncapped — caller decides which cap to apply (self vs opp)
+
+
+def _capped(bonus: float, cap: float) -> float:
+    if bonus > cap:
+        return cap
     return bonus
 
 
 def virtual_score_v2(state: "CarcassonneGameState", player: int) -> int:
     """v1 base + closure-anticipation bonus (self) - closure-anticipation
-    bonus (opponent). See module docstring for the failure modes this
-    addresses and the closure-probability heuristic."""
+    bonus (opponent), with optional v3 meeple-economy term.
+
+    Caps: self bonus capped at `_BONUS_CAP`, opp bonus capped at
+    `_OPP_BONUS_CAP` (defaults to same; raise opp cap to strengthen the
+    denial signal in search).
+
+    v3 (optional, off by default): adds `_MEEPLE_K × (meeples_self -
+    meeples_opp)` AFTER caps. `state.meeples[i]` is i's unplaced-meeple
+    count (start 7, decrements on placement, returns on closure).
+    """
     if state.players != 2:
         raise ValueError(
             f"virtual_score_v2 is implemented for 2-player only; got {state.players}"
@@ -268,6 +296,9 @@ def virtual_score_v2(state: "CarcassonneGameState", player: int) -> int:
     opp = 1 - player
     # Compute bonuses on the live (non-mutated) state. virtual_score deepcopies
     # internally so it does not mutate `state`.
-    bonus_self = _closure_anticipation_bonus(state, player)
-    bonus_opp = _closure_anticipation_bonus(state, opp)
-    return int(round(base + bonus_self - bonus_opp))
+    bonus_self = _capped(_closure_anticipation_bonus(state, player), _BONUS_CAP)
+    bonus_opp = _capped(_closure_anticipation_bonus(state, opp), _OPP_BONUS_CAP)
+    score = base + bonus_self - bonus_opp
+    if _MEEPLE_K > 0.0:
+        score += _MEEPLE_K * (state.meeples[player] - state.meeples[opp])
+    return int(round(score))
