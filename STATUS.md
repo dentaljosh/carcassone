@@ -42,17 +42,37 @@ v2.5 ramps with depth more steeply than v1. Bonuses are noise at sims=50, signal
 
 Clean inverted-U around cap=5. Hand-picked initial value happens to land on the knee. Plumbed `CARCASSONNE_V25_CAP` env var for future sweeps without source edits.
 
-### Before any cloud retrain — known gaps
+### Cloud-prep complete (2026-05-14 evening)
 
-The local hybrid_v2.5 production config is locked, but **self-play harness (`run_selfplay_iter.py`) still uses v1 leaf** for game generation. Before the policy-head retrain on v2.5 self-play data, need to:
+Plumbed `--leaf-eval {nn, v2_5}` through the full self-play stack so a future cloud retrain can use v2.5 leaf-eval for game generation (commit `1d3a0cb`):
 
-1. **Plumb v2.5 leaf into `run_selfplay_iter.py`** so generated games reflect v2.5 strategy. Estimated 30-min code change (add `--leaf-eval v2_5` flag + thread through).
-2. **Enable MCTS virtual-loss batching** (`--batch-size 8 --virtual-loss 1.0` in self-play call). Code supports it; calls don't use it. Estimated 2-4× additional speedup on top of orchestrator gain at cloud W=48.
-3. **30-second local smoke** of the full pipeline (per memory `feedback_pre_flight_smoke_test.md`) before any cloud spend.
+- `src/carcassonne_ai/evaluators.py` — new `make_v25_value_wrapper` / `make_v25_batch_value_wrapper` helpers that take any (priors, value) evaluator and replace the value with `tanh(virtual_score_v2/15)`.
+- `scripts/run_selfplay_iter.py` — `--leaf-eval` flag, applied after evaluator construction.
+- `scripts/eval_iter_head_to_head.py` — `--leaf-eval` flag, applied to BOTH sides for apples-to-apples eval.
+- `scripts/run_phase4_smoke.py` — propagates `--leaf-eval` to all 3 substages (self-play, anchor-gate, chain h2h).
 
-Estimated cloud cost for policy retrain *after* these fixes: $1-3 for ~10K hybrid_v2.5 self-play games at sims=200 + 1 train iter. Was estimating $5 yesterday; sims=200 + orchestrator + virtual-loss batching cuts it.
+Defaults stay `nn` for back-compat. Cloud command would be: add `--leaf-eval v2_5 --batch-size 8 --virtual-loss 1.0 --orchestrator` to the v6 recipe baseline.
 
-**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next: either policy-head retrain (after the gaps above) or human-vs-bot test for cheap signal.
+`train_iter.py` is **unaffected** by leaf-eval choice — it loads stored datasets where the value labels are game outcomes (z = W/D/L), not leaf evaluations.
+
+**End-to-end smoke** (W=4 sims=50 batch_size=8 vloss=1.0 orch v2_5, 4 games):
+- avg_batch=7.2 (vs 2.4 we measured at W=6 without batching today — ~3× batch fill from MCTS virtual-loss alone)
+- Stage breakdown 74% dequeue / 26% forward — GPU is now waiting for workers (the inverse of yesterday's bottleneck). At cloud W=48 this will scale beautifully.
+- 4 self-play games in 78s, 663 positions. Smoke-passed.
+
+Caveat to watch on the actual cloud run: at h2h sims=50 n=4 self-vs-self, smoke gave 4W/0D/0L (instead of expected 50/50). Probably MCTS-seed asymmetry magnified by tiny N — verify with n=20+ games on the actual cloud before trusting results.
+
+### Cloud cost estimate (revised)
+
+For a policy-head retrain on v2.5 self-play data:
+- Self-play 10K games at sims=200, W=48, orchestrator+v2.5: ~30 min total → ~$0.20
+- Training pass (1 iter ~ 5 min): ~$0.04
+- Anchor eval: ~$0.10
+- Box bootstrap + slack: $0.50
+
+**Total ~$1, not yesterday's $5 estimate.** Most of the savings come from sims=400→200 (per the sims sweep) and the orchestrator+batching plumbing landed today.
+
+**Still NOT superhuman** — Joshua still beats Tier-1 2-of-3. Phase 5 still gated. Next: either trigger the policy-head retrain (cloud) or human-vs-bot test (cheap, no compute).
 
 ### Day 2 prior findings ledger (still current)
 

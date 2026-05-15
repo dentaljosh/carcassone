@@ -55,6 +55,27 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 **Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
 
+## 2026-05-14 — Cloud-prep: --leaf-eval v2_5 plumbed through self-play harness; MCTS virtual-loss batching validates 3× batch-fill improvement
+
+**Context:** Before any cloud retrain on v2.5 self-play data, the harness needs three things consistent: (1) self-play uses v2.5 leaf during MCTS so generated games reflect the v2.5 strategy, (2) MCTS virtual-loss batching is enabled so the orchestrator gets full benefit, (3) anchor-gate / h2h evals use the same leaf eval for apples-to-apples comparison.
+
+**Implemented (commit `1d3a0cb`):**
+- `evaluators.py`: new `make_v25_value_wrapper` / `make_v25_batch_value_wrapper`. Wrap any (priors, value) evaluator: keep its priors, replace its value with `tanh(virtual_score_v2(state, current_player) / 15)`. Compatible with both local and remote (orchestrator) evaluators since it only consumes the (priors, value) shape.
+- `run_selfplay_iter.py`: added `--leaf-eval {nn, v2_5}` flag. Defaults to `nn` for v1-v6 back-compat.
+- `eval_iter_head_to_head.py`: same flag, applied to BOTH sides simultaneously so an anchor-gate eval comparing iter_X to warmstart_canonical compares them at the same leaf eval.
+- `run_phase4_smoke.py`: propagates `--leaf-eval` to all 3 substages.
+- `train_iter.py`: NOT TOUCHED. Training labels (`z`) come from game outcomes, not leaf evals. Independent of this change.
+
+**Smoke-validated:** End-to-end smoke at W=4 sims=50 batch_size=8 vloss=1.0 orchestrator v2_5 (4 self-play games):
+- 78s wallclock, 663 positions saved.
+- `avg_batch=7.2` — up from 2.4 measured at W=6 without batching earlier today (~3× batch-fill improvement).
+- Stage breakdown 74% dequeue / 26% forward — GPU is now waiting for workers, the inversion we wanted. Earlier bottleneck (PCIe-bound serial inference) is fixed by batching.
+- h2h smoke at same config: 89% dequeue / 10% forward (two server pools split traffic). At cloud W=48 the orchestrator should approach saturation.
+
+**Caveat to watch on real cloud run:** smoke h2h with same checkpoint both sides (n=4 only) gave 4-0 instead of expected 50/50. Almost certainly MCTS-seed asymmetry × low N noise, but verify with n≥20 on the actual cloud before trusting any v2.5-vs-v1-warmstart anchor-gate signal.
+
+**Decision:** cloud-ready. Recipe for the policy-retrain run = v6 baseline + `--leaf-eval v2_5 --batch-size 8 --virtual-loss 1.0 --orchestrator`. Estimated cost $1 (vs yesterday's $5 estimate; sims=400→200 + batching + orchestrator each cut a chunk).
+
 ## 2026-05-14 — orchestrator at W=6 hurts, at W=12 helps — IPC overhead vs batching tradeoff
 
 **Context:** GPU-Z showed 35% GPU / 76% PCIe load during v2.5 bench at W=6 — looked like PCIe-bound. Plumbed `--orchestrator` into `eval_rule_player.py` (mirroring `eval_iter_head_to_head.py`).
