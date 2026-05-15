@@ -2,7 +2,37 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-15) — v2.5 retrain on cloud killed mid-run after finding farm/city over-counting bug (commit `08dfead`). Re-benching FIXED v2.5 on cloud before re-launching retrain.
+## Right now (2026-05-15 morning) — v2.5 retrain DONE: iter_00 +21pp over warmstart at v2.7 leaf. Total cost ~$2.40, box destroyed. Local artifacts pulled.
+
+**Headline:**
+- Production v2.5 leaf eval is now `_BONUS_CAP=12` + `_CLOSURE_P={1:0.5, 2:0.2}` (env vars: `CARCASSONNE_V25_CAP=12 CARCASSONNE_V25_DROP_THREE_OPEN=1`).
+- New iter_00 checkpoint at `checkpoints/v25_retrain/iter_00.pt` (30 MB, ungitted).
+- Anchor: iter_00 vs warmstart_canonical (both at v2.7 leaf, sims=200) = 18W/1D/11L = 61.7% wr, avg +14.3 pts/game.
+- See DECISIONS.md 2026-05-15 for the full bug-find-and-fix narrative + cap/P sweep results.
+
+**Day's narrative (chronological):**
+1. Rented vast.ai 5090 + 48-core EPYC (instance 36800338, Japan, $0.37/hr).
+2. First instance 36799296 had vast-side broken reverse-tunnel. Destroyed + retried per CLAUDE.md.
+3. Bootstrapped (clone gpu-orchestrator + `pip install -e .` + `pip install -e engine/`) — captured in `scripts/cloud_bootstrap.sh`.
+4. Launched 2K-game retrain with buggy v2.5; ETA was 6× pre-launch estimate.
+5. Investigated v2.5 leaf cost; found over-counting bug (multiple meeples on same farm/city each got the bonus). Fixed via canonical-content dedup.
+6. Killed cloud retrain (~$0.30 sunk on 192 contaminated games), pushed fix.
+7. Re-bench: fixed v2.5 + cap=5 was 70% (down from buggy 80%) — cap was load-bearing on the buggy bonus magnitudes.
+8. Cap re-sweep: cap=12 + 3-tier P = 85%. Then v2.7 (drop 3-open) + cap=12 = 90%. **Joshua's intuition** that 3-open features were lottery-ticket noise was right.
+9. Launched 1200-game retrain with v2.7 + cap=12. ~6h10min wallclock.
+10. Detached watchdog auto-pulled artifacts and destroyed box on completion.
+
+**Production config (NEW):**
+- `warmstart_canonical.pt` was the old baseline; **iter_00.pt is the new global best** (will need a head-to-head vs iter_12.pt for proper ranking).
+- Leaf: `_hybrid_v2_evaluator` with v2.7 numerics (env vars above).
+- Sims=200, W=12 + `--orchestrator` for local; W=48 for cloud.
+
+**Still NOT superhuman.** Joshua still beats Tier-1 2-of-3. But the policy + leaf are both meaningfully stronger than yesterday. Phase 5 still gated. Next ablations:
+- Bench iter_00 + v2.7 vs Tier-1 (in flight at write time, ~9 min local).
+- iter_00 vs iter_12 head-to-head (which is the real "best so far"?).
+- Another retrain iter from iter_00 (would be iter_01, recipe v2 = v2.7 leaf throughout).
+
+
 
 **Sequence today:**
 1. Rented vast.ai 36800338 (5090, Japan, $0.37/hr). First instance (36799296) had broken vast reverse-tunnel — destroyed + retried per CLAUDE.md.
