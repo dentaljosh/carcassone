@@ -55,6 +55,22 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 **Lesson:** when a hand-picked initial value happens to be optimal, the clean inverted-U around it is reassuring — confirms it's not a knife-edge dependent on noise. If cap=5 had been on a slope, we'd worry the next change downstream might shift the optimum.
 
+## 2026-05-16 — iter_01 retrain confirms data-scarcity hypothesis: more v2.7 self-play → stronger model
+
+**Context.** iter_00 (1200-game v2.7 self-play retrain) beat warmstart_canonical +21pp on 2026-05-15. Open question: was that a one-shot warmstart→trained jump, or does the recipe keep compounding with more self-play? iter_01 tests it — another 1200 games, same recipe, initialized from iter_00.
+
+**Run.** Launched locally (vast.ai's docker-pull infra was down — 7 boxes stalled; see [[feedback-vastai-success-false-still-creates]]). 1200-game v2.7 self-play, W=14 (the v2.7-recipe worker optimum, freshly benched — not the old W=16 NN-value optimum), sims=200, c_puct=1.5, initialized from iter_00. **Pure self-play training** (`--warmstart-mix-schedule 0,0,0,0`) to replicate iter_00's exact recipe — iter_00 trained with `warmstart_in_list=0` because the cloud box never had the warmstart .npz, so for a clean "more data, same recipe" A/B iter_01 matched that. 10.6h wallclock, $0.
+
+**Result.** Anchor-gate vs iter_00 n=20: 12W/0D/8L = 60% wr, +11.8 avg diff. **n=100 confirmation: 59W/1D/40L = 59.5% wr, +13.3 avg score diff, +66.8 elo.**
+
+**Why the n=100 confirmation.** 60% at n=20 is only ~0.9σ above 50% — the same noise band that produced false winners in the v3 cap sweep and PUCT c-sweep this week (both evaporated at larger n; see [[feedback-n50-min-for-variant-comparison]]). iter_01's 60% was NOT allowed to stand on n=20. At n=100 it held at 59.5% (~1.9σ above 50%) with the score-diff signal *strengthening* (+11.8 → +13.3). First n=20 result of the week to survive — because this one was real.
+
+**Decision. iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) is the new global best.** Supersedes iter_00 and the v6 `iter_12.pt`.
+
+**What this establishes.** The +13.3 score-diff over iter_00 is a similar magnitude to iter_00's +14.3 over warmstart_canonical. Two consecutive ~+14-point jumps from the same recipe → **the ceiling is data quantity, not recipe or architecture.** The v1-v6 plateau was a leaf-eval problem (NN value head), not a fundamental one. With the v2.7 leaf, each 1200-game retrain compounds.
+
+**Open question for iter_02.** Does a third iteration keep the ~+13 cadence, or do returns diminish? If iter_02 also lands ~+13, a longer multi-iter run is clearly worth the compute. If iter_02 flattens, we've found the data-per-iteration knee and should either grow games/iter or accept the current level and pivot to human-play evaluation. iter_02 not launched autonomously — pending Joshua's go.
+
 ## 2026-05-15 — PUCT c sweep: low c (≤1.0) catastrophic; default c=1.5 is well-chosen; don't promote c=2.0
 
 **Context.** After v3 cap tuning closed as inconclusive, ran the PUCT c sweep from EXPERIMENTS.md as the next ablation. The 2026-05-14 diagnostic identified "low c → search over-explores into virtual_score's blind spots" as a hypothesis. PUCT formula: `U(a) = Q(a) + c · P(a) · sqrt(N_parent)/(1+N_child)`. Low c down-weights the NN policy prior P(a), so search explores more uniformly.

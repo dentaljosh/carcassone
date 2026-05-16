@@ -2,30 +2,25 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-15 ~18:05 EDT) — iter_01 retrain RUNNING LOCALLY. ETA ~Sat 06:20 EDT. Joshua away until Sun 11am.
+## Right now (2026-05-16 ~05:40 EDT) — iter_01 DONE + CONFIRMED: new global best. Nothing in flight. Joshua back Sun 11am.
 
-**iter_01 retrain (in flight):**
-- Launched 2026-05-15 18:04 EDT, detached (`nohup`, PID 46248). Log: `/tmp/iter01_local.log`.
-- 1200-game v2.7 self-play, W=14, sims=200, initialized from iter_00, anchor-gate vs iter_00 (20 games sims=200, pass ≥50%).
-- **Pure self-play training** (`--warmstart-mix-schedule 0,0,0,0`) — replicates iter_00's exact recipe (iter_00 trained with `warmstart_in_list=0` because the cloud box never had the warmstart .npz; for a clean "more data" A/B, iter_01 matches).
-- Output: `checkpoints/v25_retrain_iter01/`, `data/selfplay/v25_retrain_iter01/`.
-- **Why local, not cloud:** vast.ai's docker-pull infra was broken 2026-05-15 PM — 7 boxes across CA/JP/MY, 2 registries (ghcr.io + Docker Hub), all stalled at "Verifying Checksum". Abandoned cloud; ~$0.66 sunk (incl. one orphaned box — see memory `vastai-success-false-still-creates`). Local machine is free (Joshua away) so $0 cost + no unattended-spend risk.
-- **Acceptance:** iter_01 wins ≥50% (≥10/20) of anchor-gate vs iter_00 → iter_01 is the new global best, data-scarcity hypothesis holds. If <50% → recipe ceiling, not data scarcity.
+**iter_01 result:**
+- 1200-game v2.7 self-play retrain from iter_00, local, W=14, 10.6h, $0.
+- Anchor-gate vs iter_00 n=20: 12W/0D/8L = 60% wr, +11.8 avg diff → PASS.
+- **n=100 confirmation: 59W/1D/40L = 59.5% wr, +13.3 avg score diff, +66.8 elo.** Held — ~1.9σ above 50%.
+- **`checkpoints/v25_retrain_iter01/iter_00.pt` is the new global best.** Supersedes iter_00 and v6 `iter_12.pt`.
+- **Data-scarcity hypothesis confirmed.** +13.3 over iter_00 ≈ iter_00's +14.3 over warmstart → two consecutive ~+14pt jumps from the same recipe. The ceiling is data quantity, not recipe/architecture.
 
-**W-bench (2026-05-15):** for the v2.7 self-play recipe, W=14 is the throughput optimum (1.66 games/min vs 1.47 at W=12, 1.58 at W=16). Old W=16 optimum was for the NN-value recipe; the heavier v2.7 leaf needs 2 threads of headroom for the orchestrator server + main.
+**Production:** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + c_puct=1.5 + sims=200. Self-play worker optimum W=14 (5800X).
 
-**PUCT c sweep (earlier today, closed):**
-- c≤1.0 catastrophic (iter_00 52.5% vs Tier-1 at c=1.0). c=1.5/2.0/3.0 within noise; c=1.5 stays default.
-- Warning comment at `src/carcassonne_ai/mcts.py:298`.
+**Next decision (NOT auto-launched — pending Joshua):**
+1. **iter_02** — another 1200-game retrain from iter_01. Tests whether the ~+13/iter cadence holds or diminishes. ~10.6h local, $0. If it keeps compounding, a longer multi-iter run is justified.
+2. **Human play vs iter_01** — Tier-1 is saturated; only real measure of superhuman progress.
+3. **Bigger net** — only if iter_02 shows diminishing returns (would mean data-per-iter knee, capacity may help).
 
-**Day summary (closed):** hygiene cleanup; v3 leaf cap tuning (fitting noise, v2.7 holds); PUCT sweep (low-c boundary found).
+**Cloud note:** vast.ai's docker-pull infra failed across 7 boxes on 2026-05-15 (all images, all regions, "Verifying Checksum" stalls). Abandoned cloud, ran local. If cloud is needed again, evaluate RunPod Secure Cloud (pre-cached templates sidestep cold-pull stalls) — see DECISIONS / chat 2026-05-15.
 
-**iter_00 (`checkpoints/v25_retrain/iter_00.pt`) is the global best until iter_01 lands.** Production: v2.7 leaf + c_puct=1.5 + sims=200.
-
-**After iter_01 (pick when ready):**
-1. If iter_01 PASSES: consider iter_02 (does it keep compounding?) or human-play test.
-2. If iter_01 FAILS: recipe ceiling confirmed → bigger net (10×128) or human-play test.
-3. **Human play vs iter_00/iter_01** — Tier-1 is saturated as a reference; only real measure of superhuman progress.
+**Earlier 2026-05-15 (closed):** hygiene cleanup; v3 leaf cap tuning (n=20 noise, v2.7 holds); PUCT c sweep (low-c catastrophic, c=1.5 default holds); W-bench (W=14 optimum for v2.7 recipe).
 
 **Full sweep (rule_player+v1 vs iter_00+v3 leaf, env vars affect NN side only):**
 
