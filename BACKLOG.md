@@ -16,6 +16,18 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-17 — Search self-consistency check: sims=200 vs sims=1000
+
+**Context:** Reviewing a second agent's idea list against the iter_02 saturation diagnosis. The whole Option-2 plan rests on the premise that the policy has saturated against the fixed v2.7 leaf. Most of that agent's ideas were already captured below or already in the active plan (tactical probe set, aux heads, domain planes, league play, determinization, action-space dedup all already in this file; richer score-diff value targets already landed; value-head blending IS Option 2). This self-consistency check was the one genuinely new item.
+
+**Idea:** run MCTS at sims=200 and sims=1000 on the same set of positions; measure how often the chosen move disagrees. Strong disagreement ⇒ the policy prior is misleading the search and there is headroom (more search finds moves the policy doesn't propose). Agreement ⇒ the policy has internalized what extra search would find — saturation confirmed at the *search* level, not just the recipe level.
+
+**Why this matters:** a direct, cheap test of the saturation premise the Option-2 plan depends on. Diagnostic only — it doesn't fix anything.
+
+**Cost:** ~5× per-position MCTS cost for the 1000-sim arm; a few hundred positions suffices. No training; ~100 LoC eval harness.
+
+**Why deferred:** the iter_02 +0.2 flatline already evidences saturation — not worth blocking Option 2 now. Worth running if iter_B1/iter_B2's result is ambiguous and we need to know whether the ceiling is the leaf or the search.
+
 ## 2026-05-16 — Leaf-eval refinements from competitive-strategy lit review
 
 **Context:** While iter_02 was retraining, ran a strategy lit review (general-purpose research agent, `agentId: a8b5319eb8e50bf52`) across BGG forums + Carcassonne strategy blogs, looking for concrete priorities the `virtual_score_v2` leaf eval might be missing. **Key caveat:** competitive Carcassonne tournaments are base-game-oriented; there is *no* high-credibility pro corpus for our exact 2p Base+River+Farmers scope. Findings are directional (strategy blogs, moderate credibility), not authoritative. Most encoded principles were *confirmed* — the gaps are formulation/weighting, not missing categories.
