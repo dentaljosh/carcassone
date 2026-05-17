@@ -254,3 +254,58 @@ def test_leaf_config_is_actually_threaded() -> None:
             ):
                 any_diff = True
     assert any_diff, "cfg override never changed the score — cfg not threaded"
+
+
+# ---------------------------------------------------------------------------
+# Tile-counting closure gate (2026-05-17 Option-1 Step 2)
+# ---------------------------------------------------------------------------
+
+
+def _v27_and_tilecount_cfgs():
+    """(v2.7 cfg, tile-counting cfg) — identical except the closure gate."""
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return DEFAULT_CONFIG, replace(DEFAULT_CONFIG, tile_counting_closure=True)
+
+
+def test_tile_counting_gate_only_reduces_bonus() -> None:
+    """The completability gate can only zero a feature's P(closure) — it
+    never raises it. So the tile-counting closure-anticipation bonus must
+    be <= the v2.7 bonus for every (state, player). This invariant holds
+    whether or not the gate actually fires."""
+    from carcassonne_ai.virtual_score_v2 import _closure_anticipation_bonus
+
+    v27, tc = _v27_and_tilecount_cfgs()
+    g = Game(enable_legal_moves_cache=True)
+    for seed in range(6):
+        for n in (40, 90, 140):
+            b = _walk_random(g, g.get_init_board(), n, seed=seed)
+            for player in (0, 1):
+                assert _closure_anticipation_bonus(b.state, player, tc) <= (
+                    _closure_anticipation_bonus(b.state, player, v27)
+                ), f"tile-counting bonus exceeded v2.7 (seed={seed} n={n})"
+
+
+def test_tile_counting_gate_fires_in_late_game() -> None:
+    """Walk deep into the endgame (deck nearly exhausted) across many seeds;
+    the gate must zero at least one feature's bonus somewhere — otherwise it
+    is a pure no-op and Step 3's A/B would be meaningless. Aggregated across
+    seeds since the gate only fires in a specific late-game window (placed
+    meeple on an incomplete feature + depleted deck)."""
+    from carcassonne_ai.virtual_score_v2 import _closure_anticipation_bonus
+
+    v27, tc = _v27_and_tilecount_cfgs()
+    g = Game(enable_legal_moves_cache=True)
+    fired = False
+    for seed in range(15):
+        for n in (120, 140, 160):
+            b = _walk_random(g, g.get_init_board(), n, seed=seed)
+            for player in (0, 1):
+                if _closure_anticipation_bonus(b.state, player, tc) != (
+                    _closure_anticipation_bonus(b.state, player, v27)
+                ):
+                    fired = True
+    assert fired, (
+        "tile-counting gate never fired across 15 deep-endgame seeds — it is "
+        "a no-op; Step 3's A/B would not test anything"
+    )

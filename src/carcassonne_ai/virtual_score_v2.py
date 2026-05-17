@@ -122,6 +122,25 @@ def _close_prob(open_positions: int, closure_p: dict[int, float] | None = None) 
     return closure_p.get(open_positions, 0.0)
 
 
+_CARDINAL_SIDES = (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
+
+
+def _deck_city_supply(state) -> int:
+    """Number of tiles still in the deck that carry at least one city edge.
+
+    A tile is rotated freely on placement, so any cardinal city edge means
+    the tile *could* be used to extend a city — a deliberately permissive
+    (over-counting) proxy for true placeability (true placeability needs an
+    adjacency search, too expensive for the leaf eval hot path). Used by the
+    Option-1 tile-counting closure gate: a city needing N more tiles cannot
+    close if fewer than N city-bearing tiles remain in the deck."""
+    n = 0
+    for tile in state.deck:
+        if any(tile.get_type(s) == TerrainType.CITY for s in _CARDINAL_SIDES):
+            n += 1
+    return n
+
+
 def _neighbor_coord(coord: Coordinate, side: Side) -> Coordinate | None:
     """Coordinate of the tile adjacent to `coord` across `side`. Returns
     None for non-cardinal sides (e.g. farmer corners), which are handled
@@ -217,6 +236,13 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
     if cfg is None:
         cfg = DEFAULT_CONFIG
     closure_p = cfg.closure_p
+    # Tile-counting closure gate (Option-1 step 2): a feature whose open
+    # positions outnumber what the remaining deck can supply cannot close by
+    # game-end, so its anticipation bonus is gated to 0. When the gate is off
+    # (v2.7 default) the supply scan is skipped entirely — zero overhead.
+    gate = cfg.tile_counting_closure
+    deck_size = len(state.deck) if gate else 0
+    city_supply = _deck_city_supply(state) if gate else 0
     bonus = 0.0
     seen_cities: set[frozenset] = set()
     seen_farms: set[frozenset] = set()
@@ -243,6 +269,8 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                 continue
             open_n = _open_city_positions(state, city)
             p = _close_prob(open_n, closure_p)
+            if gate and (deck_size < open_n or city_supply < open_n):
+                p = 0.0  # deck can no longer complete this city
             if p > 0:
                 delta = _city_closure_delta(state, city)
                 bonus += p * delta
@@ -252,6 +280,8 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
             needed = 8 - n_surround
             if needed > 0:
                 p = _close_prob(needed, closure_p)
+                if gate and deck_size < needed:
+                    p = 0.0  # not enough tiles left to surround the cloister
                 if p > 0:
                     # Cloister already scores 1 + n_surround in v1's partial.
                     # If closed, scores 9. Delta = 8 - n_surround.
@@ -281,6 +311,8 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                         continue  # already in v1 farm score
                     open_n = _open_city_positions(state, city)
                     p = _close_prob(open_n, closure_p)
+                    if gate and (deck_size < open_n or city_supply < open_n):
+                        p = 0.0  # deck can no longer complete this city
                     if p > 0:
                         bonus += p * 3
         # ROAD: no closure delta (complete and incomplete both score 1pt/tile
