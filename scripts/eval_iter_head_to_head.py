@@ -132,7 +132,9 @@ def _leaf_config_for(variant: str):
     """Map a --{new,old}-leaf-variant name to a LeafConfig (or None).
 
     'v2_7' → None (the worker falls back to the env-built DEFAULT_CONFIG).
-    'tile_counting' → DEFAULT_CONFIG with the deck-aware closure gate on.
+    'tile_counting' → DEFAULT_CONFIG with the hard deck-aware closure gate on.
+    'tile_counting_cont' → DEFAULT_CONFIG with the continuous deck-aware
+        closure ramp on (slack=3.0).
     """
     if variant == "v2_7":
         return None
@@ -140,6 +142,8 @@ def _leaf_config_for(variant: str):
     from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
     if variant == "tile_counting":
         return replace(DEFAULT_CONFIG, tile_counting_closure=True)
+    if variant == "tile_counting_cont":
+        return replace(DEFAULT_CONFIG, closure_continuous_slack=3.0)
     raise ValueError(f"unknown leaf variant: {variant}")
 
 
@@ -390,14 +394,18 @@ def main(argv: list[str] | None = None) -> int:
              "source changes.",
     )
     p.add_argument(
-        "--new-leaf-variant", choices=["v2_7", "tile_counting"], default="v2_7",
+        "--new-leaf-variant",
+        choices=["v2_7", "tile_counting", "tile_counting_cont"], default="v2_7",
         help="LeafConfig variant for the NEW side (only under --leaf-eval v2_5). "
-             "'v2_7' = the env-built default. 'tile_counting' = v2.7 + the "
-             "deck-aware closure gate (Option-1 plan, 2026-05-17). Set this "
-             "different from --old-leaf-variant to A/B two leaves in one run.",
+             "'v2_7' = the env-built default. 'tile_counting' = v2.7 + the hard "
+             "deck-aware closure gate. 'tile_counting_cont' = v2.7 + the "
+             "continuous deck-aware closure ramp (Option-1 plan, 2026-05-17). "
+             "Set this different from --old-leaf-variant to A/B two leaves "
+             "in one run.",
     )
     p.add_argument(
-        "--old-leaf-variant", choices=["v2_7", "tile_counting"], default="v2_7",
+        "--old-leaf-variant",
+        choices=["v2_7", "tile_counting", "tile_counting_cont"], default="v2_7",
         help="LeafConfig variant for the OLD side. See --new-leaf-variant.",
     )
     p.add_argument("--orch-max-batch", type=int, default=256)

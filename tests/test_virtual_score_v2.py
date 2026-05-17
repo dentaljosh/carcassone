@@ -21,6 +21,7 @@ from carcassonne_ai.virtual_score import virtual_score
 from carcassonne_ai.virtual_score_v2 import (
     _close_prob,
     _closure_anticipation_bonus,
+    _supply_factor,
     virtual_score_v2,
 )
 
@@ -308,4 +309,94 @@ def test_tile_counting_gate_fires_in_late_game() -> None:
     assert fired, (
         "tile-counting gate never fired across 15 deep-endgame seeds — it is "
         "a no-op; Step 3's A/B would not test anything"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Continuous deck-aware closure ramp (2026-05-17 Option-1 Step 5)
+# ---------------------------------------------------------------------------
+
+
+def _cont_cfg(slack: float = 3.0):
+    """DEFAULT_CONFIG with the continuous deck-aware closure ramp on."""
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return replace(DEFAULT_CONFIG, closure_continuous_slack=slack)
+
+
+def test_supply_factor_ramp() -> None:
+    """`_supply_factor` is a clamped linear ramp: 0 at supply=0, 1 once supply
+    reaches need*slack, linear between, monotonic non-decreasing in supply,
+    and a no-op (1.0) for a degenerate need or slack."""
+    assert _supply_factor(99, 2, 3.0) == 1.0      # abundant supply → no discount
+    assert _supply_factor(6, 2, 3.0) == 1.0       # exactly need*slack
+    assert _supply_factor(0, 2, 3.0) == 0.0       # no supply → full discount
+    assert _supply_factor(3, 2, 3.0) == pytest.approx(0.5)  # linear: 3/(2*3)
+    vals = [_supply_factor(s, 2, 3.0) for s in range(0, 8)]
+    assert vals == sorted(vals), "supply factor must be monotonic in supply"
+    # degenerate inputs never discount
+    assert _supply_factor(0, 0, 3.0) == 1.0
+    assert _supply_factor(0, 2, 0.0) == 1.0
+
+
+def test_continuous_ramp_only_reduces_bonus() -> None:
+    """The continuous ramp scales each feature's P(closure) by a factor in
+    [0, 1], so the continuous bonus must be <= the v2.7 bonus for every
+    (state, player) — the same one-sided invariant as the hard gate."""
+    from carcassonne_ai.virtual_score_v2 import (
+        DEFAULT_CONFIG,
+        _closure_anticipation_bonus,
+    )
+
+    cont = _cont_cfg()
+    g = Game(enable_legal_moves_cache=True)
+    for seed in range(6):
+        for n in (40, 90, 140):
+            b = _walk_random(g, g.get_init_board(), n, seed=seed)
+            for player in (0, 1):
+                assert _closure_anticipation_bonus(b.state, player, cont) <= (
+                    _closure_anticipation_bonus(b.state, player, DEFAULT_CONFIG)
+                ), f"continuous bonus exceeded v2.7 (seed={seed} n={n})"
+
+
+def test_continuous_ramp_fires_more_than_hard_gate() -> None:
+    """The continuous ramp must (a) change the bonus on strictly more
+    (state, player) pairs than the hard gate — that is the point of Step 5,
+    it fires in the mid-game where the cliff never does — and (b) produce at
+    least one value distinct from BOTH v2.7 and the hard gate, proving it is
+    a genuine ramp and not a relabelled cliff."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import (
+        DEFAULT_CONFIG,
+        _closure_anticipation_bonus,
+    )
+
+    v27 = DEFAULT_CONFIG
+    gate = replace(DEFAULT_CONFIG, tile_counting_closure=True)
+    cont = _cont_cfg()
+    g = Game(enable_legal_moves_cache=True)
+    gate_fires = 0
+    cont_fires = 0
+    ramp_distinct = False
+    for seed in range(15):
+        for n in (70, 100, 130, 160):
+            b = _walk_random(g, g.get_init_board(), n, seed=seed)
+            for player in (0, 1):
+                v = _closure_anticipation_bonus(b.state, player, v27)
+                gt = _closure_anticipation_bonus(b.state, player, gate)
+                ct = _closure_anticipation_bonus(b.state, player, cont)
+                if gt != v:
+                    gate_fires += 1
+                if ct != v:
+                    cont_fires += 1
+                if ct != v and ct != gt:
+                    ramp_distinct = True
+    assert cont_fires > gate_fires, (
+        f"continuous ramp fired on {cont_fires} pairs, hard gate on "
+        f"{gate_fires} — ramp is not firing more, Step 5 tests nothing new"
+    )
+    assert ramp_distinct, (
+        "continuous ramp never produced a value distinct from both v2.7 and "
+        "the hard gate — it is behaving as a cliff, not a ramp"
     )

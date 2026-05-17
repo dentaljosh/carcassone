@@ -68,12 +68,18 @@ class LeafConfig:
       tile_counting_closure: if True, `_close_prob` consults the remaining
         deck — P=0 for features the deck can no longer complete (Step 2 of
         the 2026-05-17 Option-1 plan). Default False = v2.7 behavior.
+      closure_continuous_slack: if > 0, the hard tile-counting gate is
+        replaced by a continuous deck-aware ramp — P(closure) is scaled by
+        `_supply_factor(supply, need, slack)` instead of cliffed to 0 (Step 5
+        of the Option-1 plan). Overrides `tile_counting_closure` when set.
+        Default 0.0 = off.
     """
     closure_p: dict[int, float]
     bonus_cap: float
     opp_bonus_cap: float
     meeple_k: float = 0.0
     tile_counting_closure: bool = False
+    closure_continuous_slack: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -139,6 +145,24 @@ def _deck_city_supply(state) -> int:
         if any(tile.get_type(s) == TerrainType.CITY for s in _CARDINAL_SIDES):
             n += 1
     return n
+
+
+def _supply_factor(supply: int, need: int, slack: float) -> float:
+    """Continuous deck-aware closure discount (Option-1 step 5, 2026-05-17).
+
+    Where the tile-counting gate is a hard cliff (P→0 only when the deck
+    *literally cannot* finish a feature), this scales P(closure) smoothly by
+    how plentiful the usable deck supply is. factor=1.0 once supply reaches
+    `need * slack` (closure unconstrained by the deck), ramping linearly to
+    0.0 as supply→0. `slack` > 1 reflects that not every usable drawn tile
+    lands on this feature, so supply must exceed bare `need` severalfold
+    before closure is treated as supply-unconstrained."""
+    if need <= 0 or slack <= 0.0:
+        return 1.0
+    f = supply / (need * slack)
+    if f >= 1.0:
+        return 1.0
+    return f if f > 0.0 else 0.0
 
 
 def _neighbor_coord(coord: Coordinate, side: Side) -> Coordinate | None:
@@ -236,13 +260,18 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
     if cfg is None:
         cfg = DEFAULT_CONFIG
     closure_p = cfg.closure_p
-    # Tile-counting closure gate (Option-1 step 2): a feature whose open
-    # positions outnumber what the remaining deck can supply cannot close by
-    # game-end, so its anticipation bonus is gated to 0. When the gate is off
-    # (v2.7 default) the supply scan is skipped entirely — zero overhead.
+    # Deck-aware closure (Option-1 steps 2 & 5): a feature whose open
+    # positions outnumber what the remaining deck can supply is unlikely (or
+    # unable) to close by game-end. `gate` = the step-2 hard cliff (P→0 when
+    # the deck literally can't finish it); `continuous` = the step-5 smooth
+    # ramp, which overrides the gate when on. When both are off (v2.7
+    # default) the supply scan is skipped entirely — zero overhead.
     gate = cfg.tile_counting_closure
-    deck_size = len(state.deck) if gate else 0
-    city_supply = _deck_city_supply(state) if gate else 0
+    slack = cfg.closure_continuous_slack
+    continuous = slack > 0.0
+    _need_supply = gate or continuous
+    deck_size = len(state.deck) if _need_supply else 0
+    city_supply = _deck_city_supply(state) if _need_supply else 0
     bonus = 0.0
     seen_cities: set[frozenset] = set()
     seen_farms: set[frozenset] = set()
@@ -269,7 +298,9 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                 continue
             open_n = _open_city_positions(state, city)
             p = _close_prob(open_n, closure_p)
-            if gate and (deck_size < open_n or city_supply < open_n):
+            if continuous:
+                p *= _supply_factor(city_supply, open_n, slack)
+            elif gate and (deck_size < open_n or city_supply < open_n):
                 p = 0.0  # deck can no longer complete this city
             if p > 0:
                 delta = _city_closure_delta(state, city)
@@ -280,7 +311,9 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
             needed = 8 - n_surround
             if needed > 0:
                 p = _close_prob(needed, closure_p)
-                if gate and deck_size < needed:
+                if continuous:
+                    p *= _supply_factor(deck_size, needed, slack)
+                elif gate and deck_size < needed:
                     p = 0.0  # not enough tiles left to surround the cloister
                 if p > 0:
                     # Cloister already scores 1 + n_surround in v1's partial.
@@ -311,7 +344,9 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                         continue  # already in v1 farm score
                     open_n = _open_city_positions(state, city)
                     p = _close_prob(open_n, closure_p)
-                    if gate and (deck_size < open_n or city_supply < open_n):
+                    if continuous:
+                        p *= _supply_factor(city_supply, open_n, slack)
+                    elif gate and (deck_size < open_n or city_supply < open_n):
                         p = 0.0  # deck can no longer complete this city
                     if p > 0:
                         bonus += p * 3
