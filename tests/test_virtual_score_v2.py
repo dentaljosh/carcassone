@@ -38,6 +38,31 @@ def _walk_random(g: Game, b, n_moves: int, seed: int):
     return b
 
 
+@pytest.fixture(autouse=True)
+def _deterministic_global_rng():
+    """The engine's deck shuffle (CarcassonneGameState init) draws from the
+    global `random` module, so the board `get_init_board()` produces depends
+    on whatever consumed the RNG earlier. Pin it so this module's tests are
+    order-independent — a prior test file shifting the global RNG used to flip
+    the deck and surface otherwise-unreached board shapes."""
+    random.seed(20260517)
+    yield
+
+
+def _is_city_or_farm_meeple(state, mp) -> bool:
+    """True if `mp` sits on a city or farm — features that merge and so can
+    legitimately hold several of a player's meeples, which is what the closure
+    bonus must dedupe. Cloister (chapel/flowers) meeples are single-tile by
+    construction and never merge; road meeples carry no closure bonus."""
+    from wingedsheep.carcassonne.objects.meeple_type import MeepleType
+    from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+    if mp.meeple_type in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+        return True
+    cs = mp.coordinate_with_side
+    tile = state.board[cs.coordinate.row][cs.coordinate.column]
+    return tile is not None and tile.get_type(cs.side) == TerrainType.CITY
+
+
 # ---------------------------------------------------------------------------
 # Boundary / structural invariants
 # ---------------------------------------------------------------------------
@@ -137,19 +162,26 @@ def test_v2_bonus_dedupes_duplicate_meeples() -> None:
     every meeple's bonus was added independently.
 
     Implementation: walk a random game to a state with several meeples,
-    then artificially clone one of them onto `state.placed_meeples`.
-    Bonus must be identical before and after the clone."""
+    then artificially clone a city/farm meeple onto `state.placed_meeples`.
+    Bonus must be identical before and after the clone. Cloister meeples are
+    excluded — a cloister is a single tile that never merges, so two of a
+    player's meeples on one cloister is an impossible state, not a dedup case."""
     g = Game(enable_legal_moves_cache=True)
+    tested = False
     for seed in range(5):
         b = _walk_random(g, g.get_init_board(), 80, seed=seed)
         for player in (0, 1):
             mps = b.state.placed_meeples[player]
-            if not mps:
+            # Clone a city/farm meeple — same coord+side ⇒ falls into the
+            # same farm/city when find_farm/find_city runs.
+            clone = next(
+                (m for m in mps if _is_city_or_farm_meeple(b.state, m)), None
+            )
+            if clone is None:
                 continue
+            tested = True
             base = _closure_anticipation_bonus(b.state, player)
-            # Clone the first meeple into the list. Same coord+side ⇒
-            # falls into the same farm/city when find_farm/find_city runs.
-            b.state.placed_meeples[player] = list(mps) + [mps[0]]
+            b.state.placed_meeples[player] = list(mps) + [clone]
             try:
                 augmented = _closure_anticipation_bonus(b.state, player)
             finally:
@@ -158,6 +190,7 @@ def test_v2_bonus_dedupes_duplicate_meeples() -> None:
                 f"seed={seed} player={player}: dedup broken — adding a "
                 f"duplicate meeple changed the bonus from {base} to {augmented}"
             )
+    assert tested, "no city/farm meeple found across the walk — test was vacuous"
 
 
 def test_v2_score_respects_caps() -> None:
