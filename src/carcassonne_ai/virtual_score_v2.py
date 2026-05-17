@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import copy
 import os
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from wingedsheep.carcassonne.objects.coordinate import Coordinate
@@ -50,60 +51,75 @@ if TYPE_CHECKING:
     from wingedsheep.carcassonne.objects.city import City
 
 
-# Closure probability as a function of number of open adjacent positions.
-# Hand-picked initial heuristic, see module docstring.
-#
-# v2.5 (2026-05-14): halved from v2's {1: 1.0, 2: 0.5, 3: 0.25}. v2-diagnostic
-# showed v2's bonus magnitude was 4-7x the v1 base, saturating tanh and killing
-# the search gradient. v2.5 brings the bonus into the same scale as the base.
-#
-# v2.6 (2026-05-15): if CARCASSONNE_V25_ONE_OPEN_ONLY=1, restrict to features
-# with exactly 1 open adjacent position (most-likely-to-close). Drops the
-# noisier 2-open and 3-open lottery tickets. Joshua's "only look at those
-# most likely to close" idea.
-if os.environ.get("CARCASSONNE_V25_ONE_OPEN_ONLY") == "1":
-    _CLOSURE_P: dict[int, float] = {1: 1.0}
-elif os.environ.get("CARCASSONNE_V25_DROP_THREE_OPEN") == "1":
-    # Joshua 2026-05-15: maybe 1+2 open is the sweet spot; 3-open lottery
-    # tickets might be pure noise.
-    _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2}
-else:
-    _CLOSURE_P: dict[int, float] = {1: 0.5, 2: 0.2, 3: 0.05}
+@dataclass
+class LeafConfig:
+    """Tunable knobs for the virtual_score_v2 leaf evaluator.
 
-# v2.5 hard cap on the per-player bonus. The bonus is non-negative by
-# construction; clamping to [0, BONUS_CAP] prevents chained closure waves
-# (multiple farmers + multiple near-complete cities) from saturating the leaf
-# value through tanh. Net bonus = bonus_self - bonus_opp is then in
-# [-BONUS_CAP, +BONUS_CAP]. With a typical base of ±15-30, leaf value stays
-# in tanh's responsive region.
-#
-# Tunable via CARCASSONNE_V25_CAP env var (read once at module import time)
-# for cap-tuning sweeps. Default 5.0 is the validated production value.
-_BONUS_CAP: float = float(os.environ.get("CARCASSONNE_V25_CAP", "5.0"))
+    Passing an explicit LeafConfig to `virtual_score_v2` lets two leaf
+    variants coexist in one process — required for a clean same-checkpoint
+    leaf-vs-leaf A/B head-to-head (the env-var globals below cannot do this,
+    since they are read once at import). When no config is passed,
+    `DEFAULT_CONFIG` (built from the CARCASSONNE_V25_* env vars) is used.
 
-# v3 (2026-05-15): optional asymmetric cap for opponent's anticipation bonus.
-# Defaults to the self cap. If raised, denial signal gets stronger (opp's
-# near-closures contribute more to OUR negative value), so search prefers
-# defensive plays. Failure mode 3 ("denial invisible") was identified in the
-# 2026-05-14 diagnostic.
-_OPP_BONUS_CAP: float = float(
-    os.environ.get("CARCASSONNE_V25_OPP_CAP", str(_BONUS_CAP))
-)
-
-# v3 (2026-05-15): meeple-economy term. Adds K × (meeples_self - meeples_opp)
-# to the final score (after caps), where meeples_X is X's unplaced-meeple
-# count. Encourages saving meeples for high-value plays; penalizes
-# over-commitment (failure mode 4 "over-committed meeples" in the diagnostic).
-# Default 0.0 = off (back-compat with v2.7 production).
-_MEEPLE_K: float = float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0"))
+    Fields:
+      closure_p: {open_positions: P(closure)} schedule for `_close_prob`.
+      bonus_cap / opp_bonus_cap: per-player clamp on the anticipation bonus.
+      meeple_k: weight on the (meeples_self - meeples_opp) economy term.
+      tile_counting_closure: if True, `_close_prob` consults the remaining
+        deck — P=0 for features the deck can no longer complete (Step 2 of
+        the 2026-05-17 Option-1 plan). Default False = v2.7 behavior.
+    """
+    closure_p: dict[int, float]
+    bonus_cap: float
+    opp_bonus_cap: float
+    meeple_k: float = 0.0
+    tile_counting_closure: bool = False
 
 
-def _close_prob(open_positions: int) -> float:
+def _config_from_env() -> LeafConfig:
+    """Build the default LeafConfig from the CARCASSONNE_V25_* env vars.
+
+    Schedule history: v2.5 halved v2's {1:1.0, 2:0.5, 3:0.25} (the v2
+    diagnostic showed the bonus was 4-7x the v1 base, saturating tanh).
+    v2.6 (ONE_OPEN_ONLY) restricts to 1-open features. v2.7 (DROP_THREE_OPEN,
+    the production default) keeps {1, 2} — the 3-open lottery tickets were
+    noise. `CARCASSONNE_V25_CAP` default 5.0 is the pre-v2.7 value; the v2.7
+    production runs set CAP=12 explicitly.
+    """
+    if os.environ.get("CARCASSONNE_V25_ONE_OPEN_ONLY") == "1":
+        closure_p: dict[int, float] = {1: 1.0}
+    elif os.environ.get("CARCASSONNE_V25_DROP_THREE_OPEN") == "1":
+        closure_p = {1: 0.5, 2: 0.2}
+    else:
+        closure_p = {1: 0.5, 2: 0.2, 3: 0.05}
+    bonus_cap = float(os.environ.get("CARCASSONNE_V25_CAP", "5.0"))
+    return LeafConfig(
+        closure_p=closure_p,
+        bonus_cap=bonus_cap,
+        opp_bonus_cap=float(os.environ.get("CARCASSONNE_V25_OPP_CAP", str(bonus_cap))),
+        meeple_k=float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0")),
+    )
+
+
+DEFAULT_CONFIG: LeafConfig = _config_from_env()
+
+# Back-compat module constants — some tests + diagnose_v2.py import these
+# directly. They mirror DEFAULT_CONFIG; new code should pass a LeafConfig.
+_CLOSURE_P: dict[int, float] = DEFAULT_CONFIG.closure_p
+_BONUS_CAP: float = DEFAULT_CONFIG.bonus_cap
+_OPP_BONUS_CAP: float = DEFAULT_CONFIG.opp_bonus_cap
+_MEEPLE_K: float = DEFAULT_CONFIG.meeple_k
+
+
+def _close_prob(open_positions: int, closure_p: dict[int, float] | None = None) -> float:
     """Probability that an incomplete feature closes by game-end given how
-    many adjacent positions still need tiles."""
+    many adjacent positions still need tiles. `closure_p` defaults to the
+    env-built DEFAULT_CONFIG schedule."""
     if open_positions <= 0:
         return 1.0  # already closed (defensive — shouldn't be called)
-    return _CLOSURE_P.get(open_positions, 0.0)
+    if closure_p is None:
+        closure_p = DEFAULT_CONFIG.closure_p
+    return closure_p.get(open_positions, 0.0)
 
 
 def _neighbor_coord(coord: Coordinate, side: Side) -> Coordinate | None:
@@ -181,10 +197,12 @@ def _surrounding_count(state, coord: Coordinate) -> int:
     return n
 
 
-def _closure_anticipation_bonus(state, player: int) -> int:
+def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = None) -> float:
     """Sum of P(closure) × score-delta over all of `player`'s placed meeples
-    on incomplete features. Integer-rounded for compatibility with v1's
-    int return type.
+    on incomplete features.
+
+    `cfg` selects the closure-probability schedule (and, for Step 2, the
+    tile-counting gate); defaults to DEFAULT_CONFIG.
 
     Dedupes features (cities and farms) across meeples — multiple meeples
     on the same farm/city contribute the bonus exactly once. This both
@@ -196,6 +214,9 @@ def _closure_anticipation_bonus(state, player: int) -> int:
     farmer connections) since the engine returns a fresh City/Farm
     object on each call (no __eq__/__hash__).
     """
+    if cfg is None:
+        cfg = DEFAULT_CONFIG
+    closure_p = cfg.closure_p
     bonus = 0.0
     seen_cities: set[frozenset] = set()
     seen_farms: set[frozenset] = set()
@@ -221,7 +242,7 @@ def _closure_anticipation_bonus(state, player: int) -> int:
             if city.finished:
                 continue
             open_n = _open_city_positions(state, city)
-            p = _close_prob(open_n)
+            p = _close_prob(open_n, closure_p)
             if p > 0:
                 delta = _city_closure_delta(state, city)
                 bonus += p * delta
@@ -230,7 +251,7 @@ def _closure_anticipation_bonus(state, player: int) -> int:
             n_surround = _surrounding_count(state, coord)
             needed = 8 - n_surround
             if needed > 0:
-                p = _close_prob(needed)
+                p = _close_prob(needed, closure_p)
                 if p > 0:
                     # Cloister already scores 1 + n_surround in v1's partial.
                     # If closed, scores 9. Delta = 8 - n_surround.
@@ -259,7 +280,7 @@ def _closure_anticipation_bonus(state, player: int) -> int:
                     if city.finished:
                         continue  # already in v1 farm score
                     open_n = _open_city_positions(state, city)
-                    p = _close_prob(open_n)
+                    p = _close_prob(open_n, closure_p)
                     if p > 0:
                         bonus += p * 3
         # ROAD: no closure delta (complete and incomplete both score 1pt/tile
@@ -276,29 +297,38 @@ def _capped(bonus: float, cap: float) -> float:
     return bonus
 
 
-def virtual_score_v2(state: "CarcassonneGameState", player: int) -> int:
+def virtual_score_v2(
+    state: "CarcassonneGameState", player: int, cfg: "LeafConfig | None" = None
+) -> int:
     """v1 base + closure-anticipation bonus (self) - closure-anticipation
     bonus (opponent), with optional v3 meeple-economy term.
 
-    Caps: self bonus capped at `_BONUS_CAP`, opp bonus capped at
-    `_OPP_BONUS_CAP` (defaults to same; raise opp cap to strengthen the
+    `cfg` selects the leaf-eval knobs (closure schedule, caps, meeple_k,
+    tile-counting). When None, DEFAULT_CONFIG (env-var-built) is used —
+    back-compat. Pass an explicit LeafConfig to A/B two leaf variants in
+    one process.
+
+    Caps: self bonus capped at `cfg.bonus_cap`, opp bonus at
+    `cfg.opp_bonus_cap` (defaults to same; raise opp cap to strengthen the
     denial signal in search).
 
-    v3 (optional, off by default): adds `_MEEPLE_K × (meeples_self -
-    meeples_opp)` AFTER caps. `state.meeples[i]` is i's unplaced-meeple
+    v3 meeple term (off when meeple_k=0.0): adds `cfg.meeple_k × (meeples_self
+    - meeples_opp)` AFTER caps. `state.meeples[i]` is i's unplaced-meeple
     count (start 7, decrements on placement, returns on closure).
     """
     if state.players != 2:
         raise ValueError(
             f"virtual_score_v2 is implemented for 2-player only; got {state.players}"
         )
+    if cfg is None:
+        cfg = DEFAULT_CONFIG
     base = virtual_score(state, player)
     opp = 1 - player
     # Compute bonuses on the live (non-mutated) state. virtual_score deepcopies
     # internally so it does not mutate `state`.
-    bonus_self = _capped(_closure_anticipation_bonus(state, player), _BONUS_CAP)
-    bonus_opp = _capped(_closure_anticipation_bonus(state, opp), _OPP_BONUS_CAP)
+    bonus_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
+    bonus_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
     score = base + bonus_self - bonus_opp
-    if _MEEPLE_K > 0.0:
-        score += _MEEPLE_K * (state.meeples[player] - state.meeples[opp])
+    if cfg.meeple_k > 0.0:
+        score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     return int(round(score))

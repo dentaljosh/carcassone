@@ -126,10 +126,15 @@ def make_batch_evaluator_policy_only(
 
 def make_v25_value_wrapper(
     base_evaluator: Callable[[Board], tuple[np.ndarray, float]],
+    cfg=None,
 ) -> Callable[[Board], tuple[np.ndarray, float]]:
     """Wrap a single-board evaluator: keep its priors, replace its value with
     `tanh(virtual_score_v2(state, current_player) / 15)`. The wrapped evaluator
     has the same NeuralMCTS interface; the only change is the leaf value source.
+
+    `cfg` is an optional `virtual_score_v2.LeafConfig` — when None, the
+    env-var-built DEFAULT_CONFIG is used. Pass an explicit config to A/B two
+    leaf variants in one process.
 
     Use to drive self-play / eval through the v2.5 leaf eval that beat the v1
     base by 6.6pp at sims=400 (DECISIONS.md 2026-05-14). Compatible with both
@@ -140,7 +145,7 @@ def make_v25_value_wrapper(
 
     def wrapped(board: Board) -> tuple[np.ndarray, float]:
         priors, _v_nn = base_evaluator(board)
-        diff = virtual_score_v2(board.state, board.state.current_player)
+        diff = virtual_score_v2(board.state, board.state.current_player, cfg)
         return priors, math.tanh(diff / 15.0)
 
     return wrapped
@@ -148,10 +153,11 @@ def make_v25_value_wrapper(
 
 def make_v25_batch_value_wrapper(
     base_batch_evaluator: Callable[[list[Board]], tuple[np.ndarray, np.ndarray]],
+    cfg=None,
 ) -> Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]:
     """Same as `make_v25_value_wrapper` but for the K-board batched evaluator.
     Priors come from the batched NN call; values are recomputed per-board from
-    `virtual_score_v2`."""
+    `virtual_score_v2`. `cfg` is an optional `LeafConfig` (None → DEFAULT_CONFIG)."""
     import math
     from .virtual_score_v2 import virtual_score_v2
 
@@ -161,7 +167,7 @@ def make_v25_batch_value_wrapper(
             return priors, _values_nn
         values = np.array(
             [
-                math.tanh(virtual_score_v2(b.state, b.state.current_player) / 15.0)
+                math.tanh(virtual_score_v2(b.state, b.state.current_player, cfg) / 15.0)
                 for b in boards
             ],
             dtype=np.float32,

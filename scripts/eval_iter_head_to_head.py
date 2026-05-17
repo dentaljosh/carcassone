@@ -86,6 +86,11 @@ _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
 _worker_use_fp16: bool = False
 _worker_leaf_eval: str = "nn"  # "nn" or "v2_5" — see DECISIONS.md 2026-05-14
+# Per-side LeafConfig (used only when leaf_eval == "v2_5"). None → the
+# env-built DEFAULT_CONFIG (v2.7). Distinct new/old configs let a single
+# head-to-head A/B two leaf variants — e.g. tile-counting vs v2.7.
+_worker_new_leaf_cfg = None
+_worker_old_leaf_cfg = None
 _worker_new_handles: ServerHandles | None = None
 _worker_old_handles: ServerHandles | None = None
 
@@ -123,10 +128,26 @@ def _load_net(path: str, device: torch.device) -> CarcassonneNet:
     return net
 
 
+def _leaf_config_for(variant: str):
+    """Map a --{new,old}-leaf-variant name to a LeafConfig (or None).
+
+    'v2_7' → None (the worker falls back to the env-built DEFAULT_CONFIG).
+    'tile_counting' → DEFAULT_CONFIG with the deck-aware closure gate on.
+    """
+    if variant == "v2_7":
+        return None
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    if variant == "tile_counting":
+        return replace(DEFAULT_CONFIG, tile_counting_closure=True)
+    raise ValueError(f"unknown leaf variant: {variant}")
+
+
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
     orch_cfg: dict | None = None, leaf_eval: str = "nn",
+    new_leaf_cfg=None, old_leaf_cfg=None,
 ) -> None:
     """Pool initializer.
 
@@ -136,9 +157,13 @@ def _worker_init(
     Orchestrator mode (orch_cfg is not None): skip both checkpoint loads;
     pop a worker_id from the shared id_q and build two ServerHandles
     (one per server process) pointing at the per-worker response queues.
+
+    `new_leaf_cfg` / `old_leaf_cfg` are optional `virtual_score_v2.LeafConfig`
+    objects (used only under leaf_eval="v2_5"); None → DEFAULT_CONFIG.
     """
     global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
     global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16, _worker_leaf_eval
+    global _worker_new_leaf_cfg, _worker_old_leaf_cfg
     global _worker_new_handles, _worker_old_handles
 
     _worker_sims = sims
@@ -148,6 +173,8 @@ def _worker_init(
     _worker_virtual_loss = virtual_loss
     _worker_use_fp16 = use_fp16
     _worker_leaf_eval = leaf_eval
+    _worker_new_leaf_cfg = new_leaf_cfg
+    _worker_old_leaf_cfg = old_leaf_cfg
 
     if orch_cfg is not None:
         _worker_device = torch.device("cpu")
@@ -221,15 +248,16 @@ def _play_one(args: tuple[int, int]) -> GameResult:
             )
 
     # v2.5 leaf-eval swap: replace each side's NN value with virtual_score_v2.
-    # Keeps evaluation apples-to-apples — both sides get the same leaf eval
-    # treatment. See DECISIONS.md 2026-05-14 for the rationale.
+    # Each side carries its own LeafConfig — normally identical (apples-to-
+    # apples), but a leaf A/B run gives them different configs. See
+    # DECISIONS.md 2026-05-14 + the 2026-05-17 Option-1 plan.
     if _worker_leaf_eval == "v2_5":
-        new_eval = make_v25_value_wrapper(new_eval)
-        old_eval = make_v25_value_wrapper(old_eval)
+        new_eval = make_v25_value_wrapper(new_eval, _worker_new_leaf_cfg)
+        old_eval = make_v25_value_wrapper(old_eval, _worker_old_leaf_cfg)
         if new_batch_eval is not None:
-            new_batch_eval = make_v25_batch_value_wrapper(new_batch_eval)
+            new_batch_eval = make_v25_batch_value_wrapper(new_batch_eval, _worker_new_leaf_cfg)
         if old_batch_eval is not None:
-            old_batch_eval = make_v25_batch_value_wrapper(old_batch_eval)
+            old_batch_eval = make_v25_batch_value_wrapper(old_batch_eval, _worker_old_leaf_cfg)
 
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
@@ -361,6 +389,17 @@ def main(argv: list[str] | None = None) -> int:
              "Priors always come from the network — only the leaf value "
              "source changes.",
     )
+    p.add_argument(
+        "--new-leaf-variant", choices=["v2_7", "tile_counting"], default="v2_7",
+        help="LeafConfig variant for the NEW side (only under --leaf-eval v2_5). "
+             "'v2_7' = the env-built default. 'tile_counting' = v2.7 + the "
+             "deck-aware closure gate (Option-1 plan, 2026-05-17). Set this "
+             "different from --old-leaf-variant to A/B two leaves in one run.",
+    )
+    p.add_argument(
+        "--old-leaf-variant", choices=["v2_7", "tile_counting"], default="v2_7",
+        help="LeafConfig variant for the OLD side. See --new-leaf-variant.",
+    )
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     p.add_argument(
@@ -447,6 +486,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         sys.stdout.flush()
 
+    new_leaf_cfg = _leaf_config_for(args.new_leaf_variant)
+    old_leaf_cfg = _leaf_config_for(args.old_leaf_variant)
     try:
         with ctx.Pool(
             processes=n_workers,
@@ -456,6 +497,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.sims, args.c_puct, str(eval_dir),
                 args.batch_size, args.virtual_loss, args.fp16,
                 orch_cfg, args.leaf_eval,
+                new_leaf_cfg, old_leaf_cfg,
             ),
         ) as pool:
             for done, r in enumerate(

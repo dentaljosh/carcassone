@@ -206,3 +206,51 @@ def test_v2_bonus_is_nonnegative_for_player_with_meeples() -> None:
         # Bonuses are non-negative by construction (P >= 0, delta >= 0).
         assert _closure_anticipation_bonus(b.state, 0) >= 0
         assert _closure_anticipation_bonus(b.state, 1) >= 0
+
+
+# ---------------------------------------------------------------------------
+# LeafConfig refactor (2026-05-17 Option-1 Step 1)
+# ---------------------------------------------------------------------------
+
+
+def test_explicit_default_config_matches_no_config() -> None:
+    """Regression guard for the LeafConfig refactor: passing DEFAULT_CONFIG
+    explicitly must be bit-identical to passing no config. If this drifts,
+    the env-var → LeafConfig plumbing changed the default code path."""
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+
+    g = Game(enable_legal_moves_cache=True)
+    for seed in range(6):
+        for n in (30, 70, 110):
+            b = _walk_random(g, g.get_init_board(), n, seed=seed)
+            for player in (0, 1):
+                assert virtual_score_v2(b.state, player) == virtual_score_v2(
+                    b.state, player, DEFAULT_CONFIG
+                )
+
+
+def test_leaf_config_is_actually_threaded() -> None:
+    """A non-default LeafConfig must be able to change the output — proves
+    `cfg` is genuinely plumbed through, not silently ignored. A cap of 0
+    zeroes the anticipation bonus, so for any state where the default cap
+    leaves a non-zero bonus, cap=0 yields a different (lower-magnitude) score
+    for at least one player across a spread of seeds."""
+    from carcassonne_ai.virtual_score_v2 import (
+        DEFAULT_CONFIG,
+        virtual_score_v2,
+    )
+    from dataclasses import replace
+
+    zero_cap = replace(DEFAULT_CONFIG, bonus_cap=0.0, opp_bonus_cap=0.0)
+    g = Game(enable_legal_moves_cache=True)
+    any_diff = False
+    for seed in range(10):
+        b = _walk_random(g, g.get_init_board(), 70, seed=seed)
+        if g.get_game_ended(b, 0) != 0.0:
+            continue
+        for player in (0, 1):
+            if virtual_score_v2(b.state, player) != virtual_score_v2(
+                b.state, player, zero_cap
+            ):
+                any_diff = True
+    assert any_diff, "cfg override never changed the score — cfg not threaded"
