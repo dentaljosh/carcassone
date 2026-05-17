@@ -23,6 +23,38 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-17 — iter_02 flattens: policy saturated against the fixed v2.7 leaf; the compounding ceiling is found
+
+**Context.** iter_00 beat warmstart_canonical by +14.3 (2026-05-15); iter_01 beat iter_00 by +13.3 (2026-05-16). Two consecutive ~+14pt jumps from the same recipe (v2.7 leaf, 1200-game self-play, retrain from prev) raised the question: does it keep compounding? iter_02 — a third iteration, same recipe, from iter_01 — tests it.
+
+**Run.** 1200-game v2.7 self-play from iter_01, local, W=14, 11.3h, $0. Pure self-play training (warmstart-mix 0.0), same recipe as iter_01.
+
+**Result.** Anchor-gate vs iter_01 n=20: 11W/0D/9L = 55%. n=100 confirmation: **51W/5D/44L = 53.5% wr, +0.2 avg score diff, +24.4 elo.**
+
+**Verdict — the compounding flattened.**
+
+| step | avg score diff | n=100 wr |
+|---|---|---|
+| warmstart → iter_00 | +14.3 | (61.7% anchor n=30) |
+| iter_00 → iter_01 | +13.3 | 59.5% |
+| iter_01 → iter_02 | **+0.2** | **53.5%** |
+
+53.5% is only 0.7σ above 50% (n=100 SE ~5pp) — within noise. The score-diff signal, the reliable one all week, says **+0.2 = zero gain**. iter_02 ≈ iter_01.
+
+**Decision. iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) remains the global best. iter_02 is NOT promoted.** Promoting on 0.7σ would be the exact n=20-noise mistake the v3 cap sweep and PUCT c=2.0 sweep both made this week — at n=100 the discipline is the same: a sub-1σ wr gain with a zero score-diff is not a confident improvement. iter_02 is *equivalent* to iter_01, not better. (iter_02's checkpoint is kept; future work can warm-start from either — they're interchangeable.)
+
+**What this establishes — the data-scarcity hypothesis was right but bounded.** More v2.7-recipe self-play helped for *exactly two iterations* (+14.3, +13.3), then hit a wall. This is **policy saturation against the fixed leaf**: `virtual_score_v2` is a fixed hand-crafted heuristic that never improves, so it defines a ceiling — "the best policy prior achievable given this leaf." iter_01 reached that ceiling; iter_02 can't exceed it. The sharp drop (+13.3 → +0.2, not a gradual taper) is the signature of a hard ceiling, not gradually-diminishing data returns.
+
+**What this rules out.**
+- *More iterations of the same recipe* — iter_03+ would also land ~+0. Dead direction.
+- *Bigger policy net* — a higher-capacity policy head would saturate against the *same* leaf. Capacity is not the bottleneck. Bigger-net is de-prioritized by this result.
+
+**What this points to — the next lever is leaf-eval quality.** Two candidate structural changes (both gated on a plan-mode session, neither auto-started):
+1. **Improve the heuristic leaf** — the competitive-strategy lit-review refinements parked in BACKLOG 2026-05-16 (tile-counting closure probability, large-open-city penalty, targeted denial, stranding-risk meeple weighting). Lower-risk, incremental.
+2. **NN value head as a correction term** — train a value head on the now-good iter_01/iter_02 self-play outcomes and use it to correct virtual_score's known blind spots (farm-composition path-dependence especially). Higher-ceiling, more invasive. The value head failed in v1-v6 because it trained on degrading self-play; it now has strong games to learn from.
+
+**Also still open: no human benchmark.** iter_01 has never played a human. Before committing to a structural leaf change, knowing where iter_01 actually stands vs a strong human would size the remaining gap to "superhuman" — worth doing first or in parallel.
+
 ## 2026-05-14 — v2.5 hyperparameter sweep: sims=200 is the sweet spot, cap=5 is the inverted-U optimum
 
 **Context:** After v2.5 cleared the v1 baseline at sims=400 (83.3%), two open tuning questions: (1) does sims<400 still match? (2) is cap=5 actually right, or did we get lucky?

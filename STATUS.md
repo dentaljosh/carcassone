@@ -2,25 +2,21 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-17 ~00:10 EDT) — iter_02 retrain RUNNING. iter_01 confirmed global best. Joshua back Sun 11am.
+## Right now (2026-05-17 ~10:20 EDT) — iter_02 DONE: compounding flattened. iter_01 stays global best. Nothing in flight.
 
-**iter_02 retrain (in flight):**
-- Launched 2026-05-16 22:01 EDT, detached (`nohup`, PID 93897). Log: `/tmp/iter02_local.log`.
-- 1200-game v2.7 self-play from iter_01, W=14, sims=200, pure self-play training (`--warmstart-mix-schedule 0,0,0,0`), anchor-gate vs iter_01.
-- Output: `checkpoints/v25_retrain_iter02/`, `data/selfplay/v25_retrain_iter02/`.
-- ETA: retrain + n=20 anchor ~Sun 09:15 EDT; then auto-runs n=100 confirmation vs iter_01 (`/tmp/iter02_confirm.sh`) → final ~10:15.
-- **Tests:** does the ~+13/iter compounding cadence hold, or has the policy saturated against the fixed leaf?
-
-**iter_01 (confirmed global best):**
-- `checkpoints/v25_retrain_iter01/iter_00.pt`. Beats iter_00 at n=100: 59.5% wr, +13.3 avg score diff, +66.8 elo.
-- Data-scarcity hypothesis confirmed — iter_00 was +14.3 over warmstart, iter_01 is +13.3 over iter_00: two consecutive ~+14pt jumps from the same recipe. Ceiling is data quantity, not recipe/architecture.
+**iter_02 result — the compounding ceiling is found:**
+- 1200-game v2.7 self-play from iter_01, local, W=14, 11.3h, $0.
+- n=100 vs iter_01: 51W/5D/44L = **53.5% wr, +0.2 avg score diff, +24.4 elo** — 0.7σ above 50%, within noise.
+- iter_00→01 was +13.3; iter_01→02 is **+0.2**. The policy has **saturated against the fixed v2.7 leaf**. Data-scarcity helped for exactly 2 iterations then hit the leaf-defined ceiling.
+- **iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) remains the global best.** iter_02 NOT promoted — 0.7σ is not a confident gain (same discipline as the v3/PUCT n=20 false winners). iter_02's checkpoint is kept; it's interchangeable with iter_01.
 
 **Production config:** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + c_puct=1.5 + sims=200. Self-play worker optimum W=14 on the 5800X.
 
-**After iter_02 (pending Joshua — not auto-launched):**
-1. If iter_02 keeps compounding (~+13): a longer multi-iter run is justified.
-2. If iter_02 flattens: policy-saturation knee — leaf redesign (BACKLOG 2026-05-16, lit-review refinements) and/or NN value-head-as-correction-term.
-3. **Human play vs the best checkpoint** — Tier-1 is saturated (~80-90% wr regardless), so it no longer measures progress. Direct human evidence is the only real superhuman test. Worth doing regardless.
+**Next — the lever is leaf-eval quality (plan-mode decision, nothing auto-started):**
+1. **Improve the heuristic leaf** — lit-review refinements in BACKLOG 2026-05-16 (tile-counting closure prob, large-open-city penalty, targeted denial, stranding-risk meeple weighting). Lower-risk.
+2. **NN value head as a correction term** — train a value head on iter_01/iter_02 self-play outcomes, use it to correct virtual_score's blind spots (farms especially). Higher-ceiling, more invasive.
+3. **Human benchmark** — iter_01 has never played a human; Tier-1 is saturated. Sizes the real gap to superhuman. Worth doing first or in parallel.
+- **Ruled out by the iter_02 result:** more iterations of this recipe (iter_03+ would land ~+0), and bigger policy net (saturates against the same leaf — capacity isn't the bottleneck).
 
 ## Active branch
 
