@@ -23,6 +23,28 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-17 — closure-probability accuracy is not the leaf-eval lever; Option-1 (heuristic-leaf refinement) yields two null results → pivot to Option-2
+
+**Context.** The iter_02 entry below established the next lever is leaf-eval quality, and named two candidates: (1) improve the heuristic leaf, (2) NN value head as a correction term. Option 1 was tried first — lower risk, incremental. The most lit-review-backed leaf refinement was tile-counting closure probability: `virtual_score_v2`'s closure-anticipation bonus uses a fixed P(closure) schedule `{1:0.5, 2:0.2}` keyed only on a feature's open-position count; it never consults the remaining deck. A city needing 3 more city-tiles when only 1 city-tile remains in the deck *cannot* close — yet the fixed schedule still pays the bonus. Making P(closure) deck-aware should be strictly more accurate.
+
+**Infra built (committed, kept regardless of outcome).** `LeafConfig` dataclass — per-evaluator config, replacing the process-global `CARCASSONNE_V25_*` env vars — plus `--{new,old}-leaf-variant` on `eval_iter_head_to_head.py`. Two leaf variants can now run in one process for a clean same-checkpoint leaf-vs-leaf A/B. Reusable for Option-2 tuning. Commits f83ce34, 89f82e3, 1f1c01f.
+
+**Test design.** Both A/Bs: iter_01 checkpoint on *both* sides, only the leaf differs — isolates the leaf change with zero confound from network strength. n=100, sims=200, v2.7 production knobs (cap=12, drop-3-open).
+
+**Two variants tried.**
+- *Step 3b — hard tile-counting gate.* P(closure)→0 only when the deck literally cannot finish the feature. **45W/1D/54L = 45% wr, −4.8 avg score diff.** Within noise of 50%, point estimate negative.
+- *Step 5 — continuous deck-aware ramp.* P(closure) scaled smoothly by `_supply_factor(supply, need, slack=3)` — discounts in the mid-game, not just the impossible endgame. Unit tests confirm it fires on far more positions than the cliff. **50W/1D/49L = 50% wr, −1.4 avg score diff.** A flat wash.
+
+**Verdict — closure-probability accuracy is not the lever.** The hard gate's 45% could be dismissed as "the cliff fires too rarely." The continuous ramp was built precisely to kill that objection: it fires constantly in the mid-game and still nets *exactly zero*. Pooled across both benches the deck-aware-closure direction is 95/200 = 47.5% — a tight null. MCTS does not need a calibrated P(closure); the rough fixed schedule is already sufficient.
+
+**Decision — Option 1 is closed for the closure-probability angle; pivot to Option 2 (NN value-head correction term).** Reasoning: iter_02 established that the policy saturates against a *fixed* leaf. Hand-tuning the leaf only nudges a fixed ceiling — and two n=100 benches now show how little it nudges. Option 2 makes the leaf value carry a *learnable* component (the value head, trained on iter_01/iter_02's now-good self-play outcomes), so the leaf co-improves with self-play and the ceiling is no longer fixed. That attacks the saturation diagnosis structurally, where leaf hand-tuning cannot.
+
+**Caveat — not every leaf refinement is dead.** Closure-P was one of ~4 lit-review refinements (large-open-city penalty, targeted denial, stranding-risk meeple weighting remain, parked in BACKLOG 2026-05-16). A null on closure-P does not prove a null on those — they are different *features*, not recalibrations of an existing term. But chasing them one-at-a-time is diminishing returns against the structural fix; Option 2 takes priority. The remaining refinements stay parked.
+
+**Reversal cost:** low. The closure-continuous code is committed and off by default (`LeafConfig.closure_continuous_slack=0.0`); production behavior is unchanged. If Option 2 stalls, the parked refinements are still available.
+
+**Phase:** 4 (self-play / leaf-eval).
+
 ## 2026-05-17 — iter_02 flattens: policy saturated against the fixed v2.7 leaf; the compounding ceiling is found
 
 **Context.** iter_00 beat warmstart_canonical by +14.3 (2026-05-15); iter_01 beat iter_00 by +13.3 (2026-05-16). Two consecutive ~+14pt jumps from the same recipe (v2.7 leaf, 1200-game self-play, retrain from prev) raised the question: does it keep compounding? iter_02 — a third iteration, same recipe, from iter_01 — tests it.
