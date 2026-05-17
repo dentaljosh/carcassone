@@ -8,8 +8,10 @@ each move.
 Returns a GameDataset (same schema as warmstart) so the existing IO and
 streaming-dataset machinery can be reused unchanged.
 
-Value targets are the actual game outcome z ∈ {-1, 0, +1}, sign-flipped
-per position by which player was to move at that position.
+Value targets encode the game outcome from each position's current-player
+POV. Two modes (see `value_target`): "score_diff" (default) = tanh(margin/15),
+the same graded currency as the v2.7 heuristic leaf tanh(vs2/15); "wl" = ±1/0,
+the AlphaZero-canonical win/loss target.
 """
 from __future__ import annotations
 
@@ -37,6 +39,7 @@ def play_one_selfplay_game(
     batch_size: int = 1,
     batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     virtual_loss: float = 1.0,
+    value_target: str = "score_diff",
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -75,6 +78,12 @@ def play_one_selfplay_game(
       virtual_loss: PUCT W-penalty applied to in-flight nodes during batch
                     selection. Default 1.0 (works for unit-clamped values
                     in [-1, +1]).
+      value_target: how to encode the per-position outcome target.
+                    "score_diff" (default) → tanh((p0-p1)/15), the graded
+                    margin in the same currency as the v2.7 heuristic leaf
+                    (Option 2, DECISIONS 2026-05-17 — lets a value head
+                    blended into the leaf predict the same quantity).
+                    "wl" → ±1/0, the AlphaZero-canonical win/loss target.
 
     Returns:
       GameDataset with N rows where N = number of plies in the game.
@@ -160,18 +169,24 @@ def play_one_selfplay_game(
         board, _ = game.get_next_state(board, action)
         ply += 1
 
-    # Backfill value targets from the final outcome.
-    # game.get_game_ended returns tanh((scores[player] - scores[opp]) / 15).
-    # For self-play training we want raw z ∈ {-1, 0, +1}: sign of the score
-    # diff at game end.
+    # Backfill value targets from the final outcome, sign-flipped per ply so
+    # each position sees its own current-player's result. `z_p0` is player 0's
+    # target:
+    #   "score_diff" → tanh((p0 - p1) / 15): the graded margin, same scale and
+    #                  currency as the v2.7 heuristic leaf tanh(vs2/15). A value
+    #                  head trained on this predicts a *margin*, so blending it
+    #                  into the leaf (Option 2) interpolates like-for-like.
+    #   "wl"         → sign(p0 - p1) ∈ {-1, 0, +1}: AlphaZero-canonical W/L.
     p0_score = int(board.state.scores[0])
     p1_score = int(board.state.scores[1])
-    if p0_score > p1_score:
-        z_p0 = 1.0
-    elif p0_score < p1_score:
-        z_p0 = -1.0
+    if value_target == "score_diff":
+        z_p0 = float(np.tanh((p0_score - p1_score) / 15.0))
+    elif value_target == "wl":
+        z_p0 = float(np.sign(p0_score - p1_score))
     else:
-        z_p0 = 0.0
+        raise ValueError(
+            f"value_target must be 'score_diff' or 'wl', got {value_target!r}"
+        )
     values_arr = np.array(
         [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
     )

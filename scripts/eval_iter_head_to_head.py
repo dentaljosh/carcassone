@@ -147,6 +147,29 @@ def _leaf_config_for(variant: str):
     raise ValueError(f"unknown leaf variant: {variant}")
 
 
+def _apply_value_blend(cfg, blend: float):
+    """Set `LeafConfig.value_blend` on `cfg` for Option-2 leaf-value blending.
+    `cfg` may be None (the 'v2_7' variant) — then build from DEFAULT_CONFIG.
+    blend <= 0 is a no-op (returns `cfg` unchanged, possibly None)."""
+    if blend <= 0.0:
+        return cfg
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return replace(cfg if cfg is not None else DEFAULT_CONFIG, value_blend=blend)
+
+
+def _effective_blend(leaf_cfg) -> float:
+    """The value-head blend λ in force for a side: the LeafConfig's own
+    `value_blend` if it has one, else DEFAULT_CONFIG's (env-built) value —
+    so a blend set via the CARCASSONNE_V25_VALUE_BLEND env var is honored
+    even when no `--leaf-value-blend` flag was passed (e.g. an anchor-gate
+    h2h launched by run_phase4_smoke). This must agree with what
+    `make_v25_value_wrapper` actually uses, so the server's policy_only
+    decision matches whether the value head is needed."""
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return leaf_cfg.value_blend if leaf_cfg is not None else DEFAULT_CONFIG.value_blend
+
+
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
@@ -226,7 +249,12 @@ def _play_one(args: tuple[int, int]) -> GameResult:
             )
     else:
         assert _worker_new is not None and _worker_old is not None
-        use_policy_only = _worker_leaf_eval != "nn"
+        # value_blend > 0 on either side needs the NN value head computed.
+        use_policy_only = (
+            _worker_leaf_eval != "nn"
+            and _effective_blend(_worker_new_leaf_cfg) == 0.0
+            and _effective_blend(_worker_old_leaf_cfg) == 0.0
+        )
         single_factory = (
             make_single_evaluator_policy_only if use_policy_only
             else make_single_evaluator
@@ -408,6 +436,17 @@ def main(argv: list[str] | None = None) -> int:
         choices=["v2_7", "tile_counting", "tile_counting_cont"], default="v2_7",
         help="LeafConfig variant for the OLD side. See --new-leaf-variant.",
     )
+    p.add_argument(
+        "--new-leaf-value-blend", type=float, default=0.0,
+        help="Option 2 (2026-05-17): blend the NN value head into the NEW "
+             "side's v2.5 leaf — leaf = (1-λ)·tanh(vs2/15) + λ·v_nn. "
+             "0.0 = pure heuristic leaf. λ>0 forces the NEW server pool to "
+             "compute the value head (no policy-only fast path).",
+    )
+    p.add_argument(
+        "--old-leaf-value-blend", type=float, default=0.0,
+        help="Value-head blend λ for the OLD side. See --new-leaf-value-blend.",
+    )
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     p.add_argument(
@@ -439,8 +478,20 @@ def main(argv: list[str] | None = None) -> int:
         f"{args.games} games at sims={args.sims}, c_puct={args.c_puct}, "
         f"{n_workers} workers, eval_dir={eval_dir}, "
         f"orchestrator={args.orchestrator}, leaf_eval={args.leaf_eval}"
+        + (
+            f", value_blend new/old="
+            f"{args.new_leaf_value_blend}/{args.old_leaf_value_blend}"
+            if (args.new_leaf_value_blend or args.old_leaf_value_blend) else ""
+        )
     )
     sys.stdout.flush()
+
+    new_leaf_cfg = _apply_value_blend(
+        _leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend
+    )
+    old_leaf_cfg = _apply_value_blend(
+        _leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend
+    )
 
     t0 = time.perf_counter()
     ctx = mp.get_context("spawn")
@@ -459,7 +510,8 @@ def main(argv: list[str] | None = None) -> int:
             f"timeout={args.orch_batch_timeout_ms}ms, fp16={args.fp16})…"
         )
         sys.stdout.flush()
-        policy_only = (args.leaf_eval != "nn")
+        # Per-side policy_only: a side that blends the NN value head into its
+        # leaf (value_blend > 0) needs the server to compute the value head.
         new_pool = start_server_pool(
             checkpoint_path=str(args.new_checkpoint),
             n_workers=n_workers,
@@ -467,7 +519,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
-            policy_only=policy_only,
+            policy_only=(args.leaf_eval != "nn" and _effective_blend(new_leaf_cfg) == 0.0),
         )
         old_pool = start_server_pool(
             checkpoint_path=str(args.old_checkpoint),
@@ -476,7 +528,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
-            policy_only=policy_only,
+            policy_only=(args.leaf_eval != "nn" and _effective_blend(old_leaf_cfg) == 0.0),
         )
         id_q = ctx.Queue()
         for w in range(n_workers):
@@ -494,8 +546,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         sys.stdout.flush()
 
-    new_leaf_cfg = _leaf_config_for(args.new_leaf_variant)
-    old_leaf_cfg = _leaf_config_for(args.old_leaf_variant)
     try:
         with ctx.Pool(
             processes=n_workers,

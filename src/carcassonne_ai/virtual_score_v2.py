@@ -73,6 +73,10 @@ class LeafConfig:
         `_supply_factor(supply, need, slack)` instead of cliffed to 0 (Step 5
         of the Option-1 plan). Overrides `tile_counting_closure` when set.
         Default 0.0 = off.
+      value_blend: if > 0, the leaf wrapper blends the network value head
+        into the leaf value — `leaf = (1-λ)·tanh(vs2/15) + λ·v_nn` (Option 2,
+        2026-05-17). 0.0 = pure heuristic leaf (v2.7 production). Read by
+        `evaluators.make_v25_value_wrapper`, not by `virtual_score_v2` itself.
     """
     closure_p: dict[int, float]
     bonus_cap: float
@@ -80,6 +84,7 @@ class LeafConfig:
     meeple_k: float = 0.0
     tile_counting_closure: bool = False
     closure_continuous_slack: float = 0.0
+    value_blend: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -104,6 +109,7 @@ def _config_from_env() -> LeafConfig:
         bonus_cap=bonus_cap,
         opp_bonus_cap=float(os.environ.get("CARCASSONNE_V25_OPP_CAP", str(bonus_cap))),
         meeple_k=float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0")),
+        value_blend=float(os.environ.get("CARCASSONNE_V25_VALUE_BLEND", "0.0")),
     )
 
 

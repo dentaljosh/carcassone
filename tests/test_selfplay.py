@@ -3,7 +3,6 @@ primitive."""
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from carcassonne_ai.action_space import action_size
 from carcassonne_ai.game_wrapper import Game
@@ -15,7 +14,8 @@ def _uniform_evaluator(board) -> tuple[np.ndarray, float]:
     return np.full(a, 1.0 / a, dtype=np.float32), 0.0
 
 
-def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5):
+def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5,
+          value_target: str = "score_diff"):
     g = Game(enable_legal_moves_cache=True)
     return play_one_selfplay_game(
         game=g,
@@ -27,6 +27,7 @@ def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5):
         temp_threshold=temp_threshold,
         seed=seed,
         max_plies=400,
+        value_target=value_target,
     )
 
 
@@ -38,31 +39,35 @@ def test_play_one_game_produces_nonempty_dataset() -> None:
     assert A == action_size(g.window_size)
 
 
-def test_value_targets_in_canonical_set() -> None:
-    """All value targets must be in {-1, 0, +1} — Phase 4 uses raw z."""
-    ds = _play(seed=1, sims=2, temp_threshold=3)
+def test_value_targets_wl_mode() -> None:
+    """value_target='wl' → raw z ∈ {-1, 0, +1} (AlphaZero-canonical)."""
+    ds = _play(seed=1, sims=2, temp_threshold=3, value_target="wl")
     unique = set(ds.values.tolist())
     assert unique.issubset({-1.0, 0.0, 1.0}), f"unexpected values: {unique}"
 
 
-def test_value_signs_alternate_with_player() -> None:
-    """Two consecutive positions usually have opposite players-to-move
-    (turn alternation), so consecutive value targets should usually flip
-    sign — unless the game was a draw (z=0). Smoke-check the relationship
-    by replaying with the same seed and checking against the policy
-    snapshot's player one-hot in scalars.
+def test_value_targets_score_diff_mode() -> None:
+    """value_target='score_diff' (the default) → tanh(margin/15): a graded
+    value strictly inside (-1, 1). A non-draw game yields a non-integer
+    magnitude — exactly what distinguishes it from the 'wl' encoding and
+    makes it blendable with the tanh(vs2/15) heuristic leaf (Option 2)."""
+    ds = _play(seed=1, sims=2, temp_threshold=3)  # default = score_diff
+    vals = ds.values.tolist()
+    assert all(-1.0 < v < 1.0 for v in vals), f"out of (-1,1): {set(vals)}"
+    if any(abs(v) > 1e-9 for v in vals):  # not a draw
+        assert any(v not in (-1.0, 0.0, 1.0) for v in vals), (
+            "score_diff produced only integer values — not graded"
+        )
 
-    (current_player one-hot is at scalars index 6, see features.py.)
-    """
-    ds = _play(seed=2, sims=2, temp_threshold=3)
-    if abs(ds.values[0]) < 1e-9:
-        pytest.skip("draw — value sign relationship is trivial")
-    # With canonical form, scalars[6] == 1.0 means "this row's perspective
-    # is the position's current_player" — which is always the case here
-    # since play_one_selfplay_game encodes from current_player's view.
-    # So scalars[6] is always 1.0; we instead verify the values stay
-    # in {-1, +1, 0}.
-    assert all(v in (-1.0, 0.0, 1.0) for v in ds.values.tolist())
+
+def test_value_targets_share_one_magnitude() -> None:
+    """Every position's target is ±z_p0 (sign-flipped by player-to-move), so
+    across one game the targets take at most one distinct magnitude. Holds
+    for both encodings — it is the 'sign flips with the player' invariant."""
+    for vt in ("score_diff", "wl"):
+        ds = _play(seed=2, sims=2, temp_threshold=3, value_target=vt)
+        mags = {round(abs(v), 6) for v in ds.values.tolist()}
+        assert len(mags) == 1, f"{vt}: >1 distinct magnitude: {mags}"
 
 
 def test_policy_targets_are_distributions_over_legal_actions() -> None:

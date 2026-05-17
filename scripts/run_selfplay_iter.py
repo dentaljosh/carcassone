@@ -56,6 +56,7 @@ from carcassonne_ai.remote_evaluators import (
     make_remote_single_evaluator,
 )
 from carcassonne_ai.selfplay import play_one_selfplay_game
+from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 from carcassonne_ai.warmstart import GameDataset
 
 
@@ -138,7 +139,11 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     # value-head forward in both the per-worker and orchestrator paths.
     # Orchestrator's policy_only flag was set at server startup (cfg.get
     # ("policy_only")); per-worker path uses the policy-only factory here.
-    use_policy_only = cfg.get("leaf_eval", "nn") != "nn"
+    # Exception (Option 2): value_blend > 0 blends the NN value head into the
+    # leaf, so the value head must be computed — no policy-only fast path.
+    use_policy_only = (
+        cfg.get("leaf_eval", "nn") != "nn" and DEFAULT_CONFIG.value_blend == 0.0
+    )
 
     if cfg.get("orchestrator"):
         assert _worker_handles is not None
@@ -189,6 +194,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             batch_size=cfg["batch_size"],
             batch_evaluator=batch_evaluator,
             virtual_loss=cfg["virtual_loss"],
+            value_target=cfg["value_target"],
         )
     except Exception as e:
         # Engine edge cases (e.g. farm_util IndexError seen 2026-05-10) shouldn't
@@ -221,6 +227,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
+    p.add_argument(
+        "--value-target", choices=["score_diff", "wl"], default="score_diff",
+        help="Per-position value target encoding. 'score_diff' (default) = "
+             "tanh((p0-p1)/15), the graded margin in the same currency as the "
+             "v2.7 heuristic leaf (Option 2, 2026-05-17 — so a value head "
+             "blended into the leaf predicts a like-for-like quantity). "
+             "'wl' = ±1/0, the AlphaZero-canonical win/loss target.",
+    )
     p.add_argument(
         "--batch-size", type=int, default=1,
         help="NeuralMCTS batch size for virtual-loss / batched-eval mode. "
@@ -337,6 +351,7 @@ def main(argv: list[str] | None = None) -> int:
         "use_fp16": args.fp16,
         "orchestrator": args.orchestrator,
         "leaf_eval": args.leaf_eval,
+        "value_target": args.value_target,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -344,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         f"alpha={args.dirichlet_alpha}, eps={args.dirichlet_eps}, "
         f"temp_thresh={args.temp_threshold}, "
         f"batch_size={args.batch_size}, vloss={args.virtual_loss}, "
-        f"leaf_eval={args.leaf_eval}), "
+        f"leaf_eval={args.leaf_eval}, value_target={args.value_target}), "
         f"{n_workers} workers, {already} cached, {remaining} to play, "
         f"out={iter_dir}, orchestrator={args.orchestrator}"
     )
@@ -383,7 +398,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
-            policy_only=(args.leaf_eval != "nn"),
+            policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
         )
         id_q = ctx.Queue()
         for w in range(n_workers):

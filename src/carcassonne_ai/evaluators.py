@@ -129,24 +129,36 @@ def make_v25_value_wrapper(
     cfg=None,
 ) -> Callable[[Board], tuple[np.ndarray, float]]:
     """Wrap a single-board evaluator: keep its priors, replace its value with
-    `tanh(virtual_score_v2(state, current_player) / 15)`. The wrapped evaluator
-    has the same NeuralMCTS interface; the only change is the leaf value source.
+    the v2.5 leaf. The wrapped evaluator has the same NeuralMCTS interface;
+    the only change is the leaf value source.
 
     `cfg` is an optional `virtual_score_v2.LeafConfig` — when None, the
     env-var-built DEFAULT_CONFIG is used. Pass an explicit config to A/B two
     leaf variants in one process.
 
-    Use to drive self-play / eval through the v2.5 leaf eval that beat the v1
-    base by 6.6pp at sims=400 (DECISIONS.md 2026-05-14). Compatible with both
-    local and remote evaluators since it only consumes the (priors, value)
-    output shape."""
+    Leaf value: `tanh(virtual_score_v2(state, current_player) / 15)`. When
+    `cfg.value_blend` (λ) > 0, the network value head is blended in (Option 2,
+    2026-05-17): `leaf = (1-λ)·tanh(vs2/15) + λ·v_nn`. Both terms are
+    tanh-bounded [-1,1], same current-player POV. λ>0 requires the base
+    evaluator to return a real value head output — see the orchestrator's
+    policy_only flag.
+
+    Compatible with both local and remote evaluators since it only consumes
+    the (priors, value) output shape."""
     import math
-    from .virtual_score_v2 import virtual_score_v2
+    from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+
+    eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
+    blend = eff_cfg.value_blend
 
     def wrapped(board: Board) -> tuple[np.ndarray, float]:
-        priors, _v_nn = base_evaluator(board)
-        diff = virtual_score_v2(board.state, board.state.current_player, cfg)
-        return priors, math.tanh(diff / 15.0)
+        priors, v_nn = base_evaluator(board)
+        h = math.tanh(
+            virtual_score_v2(board.state, board.state.current_player, eff_cfg) / 15.0
+        )
+        if blend > 0.0:
+            return priors, (1.0 - blend) * h + blend * float(v_nn)
+        return priors, h
 
     return wrapped
 
@@ -157,22 +169,28 @@ def make_v25_batch_value_wrapper(
 ) -> Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]:
     """Same as `make_v25_value_wrapper` but for the K-board batched evaluator.
     Priors come from the batched NN call; values are recomputed per-board from
-    `virtual_score_v2`. `cfg` is an optional `LeafConfig` (None → DEFAULT_CONFIG)."""
+    `virtual_score_v2`, optionally blended with the network value head when
+    `cfg.value_blend` > 0. `cfg` is an optional `LeafConfig` (None → DEFAULT_CONFIG)."""
     import math
-    from .virtual_score_v2 import virtual_score_v2
+    from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+
+    eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
+    blend = eff_cfg.value_blend
 
     def wrapped_batch(boards: list[Board]) -> tuple[np.ndarray, np.ndarray]:
-        priors, _values_nn = base_batch_evaluator(boards)
+        priors, values_nn = base_batch_evaluator(boards)
         if not boards:
-            return priors, _values_nn
-        values = np.array(
+            return priors, values_nn
+        h = np.array(
             [
-                math.tanh(virtual_score_v2(b.state, b.state.current_player, cfg) / 15.0)
+                math.tanh(virtual_score_v2(b.state, b.state.current_player, eff_cfg) / 15.0)
                 for b in boards
             ],
             dtype=np.float32,
         )
-        return priors, values
+        if blend > 0.0:
+            return priors, (1.0 - blend) * h + blend * values_nn.astype(np.float32)
+        return priors, h
 
     return wrapped_batch
 
