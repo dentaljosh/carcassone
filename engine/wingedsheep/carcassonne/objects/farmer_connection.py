@@ -9,6 +9,9 @@ class FarmerConnection:
         self.farmer_positions: [Side] = farmer_positions
         self.tile_connections: [FarmerSide] = tile_connections
         self.city_sides: [Side] = city_sides
+        # Patch: tile-definition value object, never mutated post-construction
+        # — cache the hash (see coordinate.py).
+        self._hash = hash((tuple(farmer_positions), tuple(tile_connections), tuple(city_sides)))
 
     def to_json(self):
         return {
@@ -26,4 +29,4 @@ class FarmerConnection:
                and self.city_sides == other.city_sides
 
     def __hash__(self):
-        return hash((tuple(self.farmer_positions), tuple(self.tile_connections), tuple(self.city_sides)))
+        return self._hash

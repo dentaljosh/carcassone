@@ -35,6 +35,8 @@ import torch  # noqa: E402
 from carcassonne_ai.evaluators import (  # noqa: E402
     make_batch_evaluator,
     make_single_evaluator,
+    make_v25_batch_value_wrapper,
+    make_v25_value_wrapper,
 )
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.network import CarcassonneNet  # noqa: E402
@@ -54,6 +56,12 @@ def main() -> int:
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
+    p.add_argument(
+        "--leaf-eval", choices=["nn", "v2_5"], default="nn",
+        help="Leaf value source. 'nn' = network value head. 'v2_5' = the "
+             "virtual_score_v2 heuristic leaf (production self-play) — wraps "
+             "the evaluator so the profile includes virtual_score_v2 cost.",
+    )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--out", type=Path, default=Path("/tmp/mcts_profile.prof"))
     p.add_argument("--top", type=Path, default=Path("/tmp/mcts_profile_top.txt"))
@@ -77,9 +85,17 @@ def main() -> int:
     evaluator = make_single_evaluator(net, device, game)
     batch_evaluator = make_batch_evaluator(net, device, game) if args.batch_size > 1 else None
 
+    # v2.5 leaf: replace the NN value with virtual_score_v2 so the profile
+    # reflects production self-play (matches run_selfplay_iter --leaf-eval v2_5).
+    if args.leaf_eval == "v2_5":
+        evaluator = make_v25_value_wrapper(evaluator)
+        if batch_evaluator is not None:
+            batch_evaluator = make_v25_batch_value_wrapper(batch_evaluator)
+
     print(
         f"sims={args.sims} batch_size={args.batch_size} "
-        f"virtual_loss={args.virtual_loss} seed={args.seed}",
+        f"virtual_loss={args.virtual_loss} leaf_eval={args.leaf_eval} "
+        f"seed={args.seed}",
         flush=True,
     )
 
