@@ -2,21 +2,27 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat.
 
-## Right now (2026-05-16 ~05:40 EDT) — iter_01 DONE + CONFIRMED: new global best. Nothing in flight. Joshua back Sun 11am.
+## Right now (2026-05-16 ~07:25 EDT) — iter_02 retrain RUNNING (detached). iter_01 confirmed as global best. Joshua back Sun 11am.
 
-**iter_01 result:**
+**iter_02 retrain (in flight):**
+- Launched 2026-05-16 22:01 EDT, detached (`nohup`, PID 93897). Log: `/tmp/iter02_local.log`.
+- 1200-game v2.7 self-play from iter_01, W=14, sims=200, anchor-gate vs iter_01. Same recipe as iter_01 (pure self-play, `--warmstart-mix-schedule 0,0,0,0`).
+- Output: `checkpoints/v25_retrain_iter02/`, `data/selfplay/v25_retrain_iter02/`.
+- ETA: retrain + n=20 anchor ~Sun 09:45 EDT; auto-runs n=100 confirmation vs iter_01 (`/tmp/iter02_confirm.sh`) → final ~10:45.
+- **Tests:** does the ~+13/iter compounding cadence hold, or has the policy saturated against the fixed leaf?
+
+**iter_01 result (confirmed, global best):**
 - 1200-game v2.7 self-play retrain from iter_00, local, W=14, 10.6h, $0.
-- Anchor-gate vs iter_00 n=20: 12W/0D/8L = 60% wr, +11.8 avg diff → PASS.
-- **n=100 confirmation: 59W/1D/40L = 59.5% wr, +13.3 avg score diff, +66.8 elo.** Held — ~1.9σ above 50%.
-- **`checkpoints/v25_retrain_iter01/iter_00.pt` is the new global best.** Supersedes iter_00 and v6 `iter_12.pt`.
-- **Data-scarcity hypothesis confirmed.** +13.3 over iter_00 ≈ iter_00's +14.3 over warmstart → two consecutive ~+14pt jumps from the same recipe. The ceiling is data quantity, not recipe/architecture.
+- n=100 confirmation vs iter_00: 59W/1D/40L = 59.5% wr, +13.3 avg score diff, +66.8 elo (~1.9σ above 50%).
+- **`checkpoints/v25_retrain_iter01/iter_00.pt` is the current global best.** Supersedes iter_00 and v6 `iter_12.pt`.
+- **Data-scarcity hypothesis confirmed.** +13.3 over iter_00 ≈ iter_00's +14.3 over warmstart → two consecutive ~+14pt jumps from the same recipe. Ceiling is data quantity, not recipe/architecture.
 
 **Production:** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + c_puct=1.5 + sims=200. Self-play worker optimum W=14 (5800X).
 
-**Next decision (NOT auto-launched — pending Joshua):**
-1. **iter_02** — another 1200-game retrain from iter_01. Tests whether the ~+13/iter cadence holds or diminishes. ~10.6h local, $0. If it keeps compounding, a longer multi-iter run is justified.
-2. **Human play vs iter_01** — Tier-1 is saturated; only real measure of superhuman progress.
-3. **Bigger net** — only if iter_02 shows diminishing returns (would mean data-per-iter knee, capacity may help).
+**After iter_02 (pending Joshua):**
+1. If iter_02 keeps compounding (~+13): a longer multi-iter run is justified.
+2. If iter_02 flattens: policy-saturation knee found → leaf redesign (see BACKLOG 2026-05-16, lit-review refinements) and/or NN value-head-as-correction-term.
+3. **Human play vs the best checkpoint** — Tier-1 is saturated; only real measure of superhuman progress. Worth doing regardless.
 
 **Cloud note:** vast.ai's docker-pull infra failed across 7 boxes on 2026-05-15 (all images, all regions, "Verifying Checksum" stalls). Abandoned cloud, ran local. If cloud is needed again, evaluate RunPod Secure Cloud (pre-cached templates sidestep cold-pull stalls) — see DECISIONS / chat 2026-05-15.
 

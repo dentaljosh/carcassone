@@ -2,7 +2,7 @@
 
 A living priority queue of ablations toward superhuman play. **Not exhaustive** — meant to prevent drift, not to predict everything. Each row is one knob, not a recipe combo. Rewrite priorities when a finding invalidates a downstream question.
 
-**Goal:** superhuman play. Concretely: hybrid_warmstart at sims=100 currently wins 80% vs Tier-1 (n=20, sims=100); a thinking human beat Tier-1 2-of-3 games in casual play. So 80% vs Tier-1 is *not yet* superhuman. We need a winrate well above 80% vs Tier-1 *or* direct evidence of beating a strong human player.
+**Goal:** superhuman play. Concretely: the best checkpoint (iter_01, v2.7 leaf) wins ~80-90% vs Tier-1 — but Tier-1 is a 1-ply heuristic player that a thinking human beats 2-of-3 in casual play, so **Tier-1 is saturated as a reference and beating it is *not* superhuman.** The only meaningful remaining bar is direct evidence of beating a strong human player. No checkpoint has been benchmarked against a human yet — that gap is the real blocker on declaring any progress toward superhuman.
 
 **Phase 5 (analyzer) is gated on superhuman.** Don't drift to Phase 5 work.
 
@@ -16,7 +16,7 @@ A living priority queue of ablations toward superhuman play. **Not exhaustive** 
 
 ## Currently running
 
-(none)
+- **iter_02 retrain** (2026-05-16, local) — 1200-game v2.7 self-play from iter_01, W=14. Tests whether the ~+13/iter compounding cadence holds. ETA ~Sun 09:45 EDT + n=100 confirm.
 
 ## Open — by component, priority order
 
