@@ -16,7 +16,9 @@ A living priority queue of ablations toward superhuman play. **Not exhaustive** 
 
 ## Currently running
 
-(none)
+- **Sims-depth A/B** — iter_01 @ sims=800 vs iter_01 @ sims=200, same checkpoint both sides (only search depth varies), n=50, plain v2.7 leaf. Tests whether the policy is truly saturated or just under-searched. Launched 2026-05-18 ~08:31; eval-server-bound at sims=800 so slower than a sims=200 run. Read: 800 wins clearly ⇒ deeper search helps (→ consider α-β); ~50/50 ⇒ search saturated, the leaf is the hard wall. See STATUS.md.
+
+  Context: Option 2 (NN value-head leaf blend) **closed 2026-05-18** — re-smoke POORLY (−15.5/31%); the plain v2.7 recipe is confirmed plateaued (iter_01→iter_B1 = 49%/+4.6 at n=100). Both the NN-value-leaf lever and more-plain-retrains are exhausted. The sims A/B is the cheap probe before committing to a harder strength lever. See DECISIONS.md 2026-05-18.
 
 ## Open — by component, priority order
 

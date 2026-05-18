@@ -79,7 +79,8 @@ class GameResult:
 _worker_new: CarcassonneNet | None = None
 _worker_old: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
-_worker_sims: int = 0
+_worker_sims: int = 0       # new side
+_worker_old_sims: int = 0   # old side; == _worker_sims unless an asymmetric-sims A/B
 _worker_c_puct: float = 1.5
 _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
@@ -174,7 +175,7 @@ def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
     orch_cfg: dict | None = None, leaf_eval: str = "nn",
-    new_leaf_cfg=None, old_leaf_cfg=None,
+    new_leaf_cfg=None, old_leaf_cfg=None, old_sims: int | None = None,
 ) -> None:
     """Pool initializer.
 
@@ -188,12 +189,13 @@ def _worker_init(
     `new_leaf_cfg` / `old_leaf_cfg` are optional `virtual_score_v2.LeafConfig`
     objects (used only under leaf_eval="v2_5"); None → DEFAULT_CONFIG.
     """
-    global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_c_puct, _worker_eval_dir
+    global _worker_new, _worker_old, _worker_device, _worker_sims, _worker_old_sims, _worker_c_puct, _worker_eval_dir
     global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16, _worker_leaf_eval
     global _worker_new_leaf_cfg, _worker_old_leaf_cfg
     global _worker_new_handles, _worker_old_handles
 
     _worker_sims = sims
+    _worker_old_sims = old_sims if old_sims is not None else sims
     _worker_c_puct = c_puct
     _worker_eval_dir = eval_dir
     _worker_batch_size = batch_size
@@ -298,7 +300,7 @@ def _play_one(args: tuple[int, int]) -> GameResult:
         virtual_loss=_worker_virtual_loss,
     )
     old_mcts = NeuralMCTS(
-        game=game_old, evaluator=old_eval, simulations=_worker_sims,
+        game=game_old, evaluator=old_eval, simulations=_worker_old_sims,
         seed=seed + 1, c_puct=_worker_c_puct,
         batch_size=_worker_batch_size, batch_evaluator=old_batch_eval,
         virtual_loss=_worker_virtual_loss,
@@ -376,7 +378,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--iter", type=int, required=True, dest="iter_idx")
     p.add_argument("--vs-iter", type=int, required=True)
     p.add_argument("--games", type=int, default=10)
-    p.add_argument("--sims", type=int, default=50)
+    p.add_argument("--sims", type=int, default=50,
+                   help="MCTS sims/move for the NEW side (and the OLD side "
+                        "unless --old-sims is set).")
+    p.add_argument("--old-sims", type=int, default=None,
+                   help="MCTS sims/move for the OLD side; default = --sims. "
+                        "Set different to A/B search depth on the SAME "
+                        "checkpoint, e.g. --sims 800 --old-sims 200.")
     p.add_argument("--c-puct", type=float, default=1.5)
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers. Default 8 leaves SMT headroom for "
@@ -475,7 +483,8 @@ def main(argv: list[str] | None = None) -> int:
     ]
     print(
         f"head-to-head: iter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}, "
-        f"{args.games} games at sims={args.sims}, c_puct={args.c_puct}, "
+        f"{args.games} games at sims={args.sims} (old side: {args.old_sims or args.sims}), "
+        f"c_puct={args.c_puct}, "
         f"{n_workers} workers, eval_dir={eval_dir}, "
         f"orchestrator={args.orchestrator}, leaf_eval={args.leaf_eval}"
         + (
@@ -555,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.sims, args.c_puct, str(eval_dir),
                 args.batch_size, args.virtual_loss, args.fp16,
                 orch_cfg, args.leaf_eval,
-                new_leaf_cfg, old_leaf_cfg,
+                new_leaf_cfg, old_leaf_cfg, args.old_sims,
             ),
         ) as pool:
             for done, r in enumerate(

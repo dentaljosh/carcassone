@@ -23,6 +23,46 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-18 — Option 2 (NN value-head leaf blend) closed; plain v2.7 recipe confirmed plateaued
+
+**Context.** iter_02 flatlined (+0.2 over iter_01) → working hypothesis: the policy had saturated against the *fixed* v2.7 heuristic leaf. Option 2's response: blend the network value head into the leaf — `leaf = (1−λ)·tanh(vs2/15) + λ·v_nn` — so the leaf co-improves with the policy. Phase A wired it (eb42c25); the λ=0.5 fixed-checkpoint smoke with iter_01's *W/L* value head gave −11.3 avg / 46% wr, hypothesised as a currency mismatch (W/L head vs score-diff heuristic leaf). Phase B: iter_B1 minted a *score-diff* value head (1200-game retrain from iter_01); the re-smoke tested blending it.
+
+**Result — re-smoke (n=50, iter_B1 blended-λ=0.5 vs plain leaf).** −15.5 avg / 31% wr (15W/1D/34L) — *worse* than Phase A, not better. The currency-mismatch hypothesis is refuted. A residual-structure diagnostic (60 games, 9946 positions) confirmed the mechanism: the NN value head correlates only +0.18 with the true outcome vs the v2.7 heuristic's +0.61, and is beaten by the heuristic in every game-phase quartile; the MSE-optimal static blend cuts prediction error only ~4% (in-sample-optimised, so an overestimate).
+
+**Result — iter_B1 strength.** iter_B1's own anchor-gate (n=20) scored 70%/+12.6 vs iter_01, which looked like a gain. An n=100 confirm corrected it: **49W/0D/51L, +4.6 avg diff, elo −6.9** — iter_B1 ≈ iter_01 (even win rate, a marginal score-diff edge at most). The n=20 was a high-side fluke.
+
+**Decision.** (1) **Option 2 is closed** — value-head injection abandoned, both the convex blend and the residual-head variant. The 7.4M-param value head on ~1200 self-play games is simply a weaker position evaluator than the hand-tuned v2.7 heuristic; no blend repairs that. Triple-confirms the v1–v6 finding. (2) **The plain v2.7 self-play recipe is plateaued** — iter_00→iter_01 gained big (+13.3), iter_01→iter_02 flat (+0.2), iter_01→iter_B1 flat (+4.6 / 49%). More plain retrains will not move the needle.
+
+**Reason.** Both the exotic lever (NN-value-leaf) and the simple lever (more plain self-play) are now empirically exhausted against the v2.7-heuristic-leaf ceiling.
+
+**Next.** Not another training-recipe tweak. The real blocker (per EXPERIMENTS.md) is that no checkpoint has been benchmarked against a strong human — "superhuman" is undefined-by-measurement. Branch decision: benchmark iter_01-level play vs a human / strong reference to learn where we actually stand, then either pivot toward Phase 5 (if it clears the bar) or commit to a harder strength lever (heuristic-leaf redesign, net capacity, or search-side knobs — see EXPERIMENTS.md open list).
+
+**Reversal cost:** low — the Option 2 infra (`LeafConfig.value_blend`, blend wiring, `--value-target score_diff`) stays in the tree dormant; revisiting needs a materially stronger value head.
+**Phase:** 4 (self-play).
+
+## 2026-05-17 — self-play perf optimization: hash-cache + get_side shipped; deeper leaf-eval memoization (Options A & B) parked — find_farm is start-dependent
+
+**Context.** iter_01/iter_02 each took ~11h of local self-play; iter_B1 and any future iterations pay the same. Profiling one production self-play game (sims=200, v2.5 leaf) showed the heuristic leaf eval is ~83% of CPU, with object hashing ~31% of self-time and the set-based connected-component flood-fills (`find_farm` 328s cumulative, `find_city` 96s) dominating. Three optimization tiers were considered, cheapest first.
+
+**Tier 1 — shipped (committed `080fea7`, on `gpu-orchestrator`).** Cache `__hash__` on the immutable engine value objects (`Coordinate` family, `FarmerConnection`) and precompute `FarmerSide.get_side` (it was walking the enum `.value` descriptor up to 4× per call). Both behavior-preserving (bitwise-identical hashes / outputs; full suite green). cProfile re-profile: 651→561s — ~14% from hashing alone, `get_side` projected ~+12%, ~20-24% combined. Live in iter_B1.
+
+**Tier 2 — Option A, memoize the find_* flood-fills — PARKED.** Cache `find_city`/`find_road`/`find_farm` results per board on the game state, invalidated at the single tile-placement site (`StateUpdater.play_tile`). find_city + find_road were memoized and verified bitwise-identical via a differential test (240 states early/mid/late/terminal + the in-place MCTS-rollout path + `count_final_scores`, all memo-on == memo-off). **But `find_farm` — the #1 hot path — is start-dependent**: the engine's farm flood-fill returns *different* farmer-connection sets depending on which connection you start from (verified by the differential test: 11 vs 4 from the "same" farm). Caching a farm under its member positions is therefore unsound — a query would hit a result computed from a different start point. find_farm was reverted; the surviving find_city+road memo is only ~6% (find_city is ~96s of the ~420s of find_* cost). Committed on branch `leaf-memoization` (`3db30f1`), **not merged**.
+
+**Tier 3 — Option B, incremental connected-components (union-find) — PARKED, not started.** A union-find represents *symmetric* connectivity by construction, so it cannot reproduce a start-dependent `find_farm` without adopting the corrected symmetric farm semantics — which would change the leaf's farm bonus and `count_final_scores`' farm points (a behavior change, not a transparent optimization). For cities/roads alone it could beat Option A's 6% modestly (~10-12%) but needs incremental maintenance on every tile placement (touching `apply_action_inplace` + every River/farmer edge case) — worse risk/reward than A.
+
+**Options considered:**
+  - A: Memoize find_* (Tier 2). Found unsound for find_farm; the safe remainder is ~6%.
+  - B: Incremental union-find (Tier 3). Cannot represent the engine's start-dependent farm semantics; cities/roads-only is marginal at higher risk.
+  - C: Ship Tier 1, park A and B.
+
+**Decision:** chose C.
+
+**Reason.** `find_farm` is ~58% of the leaf-eval cost and is structurally resistant to *both* memoization and union-find, because the engine's farm traversal is start-dependent — no caching strategy reaches it. The reachable remainder (find_city+road) is only ~6%, and it is a vendored-engine change on the scoring path (project-wide blast radius — `count_final_scores` feeds real game outcomes and training labels), so a ~6% gain does not justify the merge-risk attention. The only routes to the find_farm win are (a) micro-optimizing its flood-fill internals — grindy, and the easy parts (hashing, get_side) are already done — or (b) deliberately replacing the buggy start-dependent `find_farm` with a correct symmetric one, a behavior change needing a re-validation A/B, not a free optimization. Neither is worth diverting from the iter_02-ceiling work (Option 2 / iter_B1). Local optimization has hit diminishing returns at the ~20-24% already banked.
+
+**Reversal cost:** low. Tier 1 is committed and behavior-preserving. Option A's verified work sits on `leaf-memoization` if the 6% is ever wanted; Option B was never built.
+
+**Phase:** 4 (self-play infrastructure).
+
 ## 2026-05-17 — closure-probability accuracy is not the leaf-eval lever; Option-1 (heuristic-leaf refinement) yields two null results → pivot to Option-2
 
 **Context.** The iter_02 entry below established the next lever is leaf-eval quality, and named two candidates: (1) improve the heuristic leaf, (2) NN value head as a correction term. Option 1 was tried first — lower risk, incremental. The most lit-review-backed leaf refinement was tile-counting closure probability: `virtual_score_v2`'s closure-anticipation bonus uses a fixed P(closure) schedule `{1:0.5, 2:0.2}` keyed only on a feature's open-position count; it never consults the remaining deck. A city needing 3 more city-tiles when only 1 city-tile remains in the deck *cannot* close — yet the fixed schedule still pays the bonus. Making P(closure) deck-aware should be strictly more accurate.

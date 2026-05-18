@@ -2,25 +2,32 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-17 ~10:20 EDT) — iter_02 DONE: compounding flattened. iter_01 stays global best. Nothing in flight.
+## Right now (2026-05-18 ~08:35 EDT) — sims-depth A/B running: iter_01 @800 vs @200, probing whether the policy is truly saturated or just under-searched.
 
-**iter_02 result — the compounding ceiling is found:**
-- 1200-game v2.7 self-play from iter_01, local, W=14, 11.3h, $0.
-- n=100 vs iter_01: 51W/5D/44L = **53.5% wr, +0.2 avg score diff, +24.4 elo** — 0.7σ above 50%, within noise.
-- iter_00→01 was +13.3; iter_01→02 is **+0.2**. The policy has **saturated against the fixed v2.7 leaf**. Data-scarcity helped for exactly 2 iterations then hit the leaf-defined ceiling.
-- **iter_01 (`checkpoints/v25_retrain_iter01/iter_00.pt`) remains the global best.** iter_02 NOT promoted — 0.7σ is not a confident gain (same discipline as the v3/PUCT n=20 false winners). iter_02's checkpoint is kept; it's interchangeable with iter_01.
+**iter_B1 — Option 2 Phase B stage 1 — DONE 2026-05-18 00:29 (533.9 min):**
+- 1200-game v2.7 self-play from iter_01 + train + anchor-gate. Checkpoint: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt`. Self-play value targets are `score_diff` (`tanh(margin/15)`), not W/L — the deliverable for the iter_B2 blend.
+- **Anchor-gate vs iter_01: 14W/0D/6L, wr=0.70, avg diff +12.6 — PASS.** STATUS expected iter_B1 ≈ iter_02 (flat); it *gained* over iter_01 instead. But n=20 is noisy — treat as "promising, wants n=100 to confirm" before calling it a new global best.
+- log `/tmp/optionB_iter1.log`.
 
-**Production config:** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + c_puct=1.5 + sims=200. Self-play worker optimum W=14 on the 5800X.
+**Overnight chain — RESULT (2026-05-18 00:53):** orchestrator ran iter_B1 → n=50 re-smoke → **POORLY**, stopped. **No iter_B2 launched.**
+- Re-smoke (iter_B1 blended-leaf λ=0.5 vs plain leaf, n=50): **−15.5 avg diff, 31% wr (15W/1D/34L)** — worse than Phase A's W/L blend (−11.3/46%). **Option 2 (NN value-head blend) is dead** — the score-diff currency fix did not rescue it; the currency hypothesis is refuted.
+- Residual diagnostic (`/tmp/residual_structure.log`): NN value head corr **+0.18** with the outcome vs the heuristic's **+0.61**, beaten by the heuristic in every game phase; best static blend cuts prediction MSE only 4% (in-sample-optimised → inflated). The script auto-verdict said "headroom" but that threshold is miscalibrated — honest read: **value-head injection (blend AND residual) is exhausted.** Don't spend 10h on residual.
+- **iter_B1 strength — n=20 anchor (70%/+12.6) was a fluke.** n=100 confirm: **49W/0D/51L, +4.6 avg diff, elo −6.9** — iter_B1 ≈ iter_01, no new global best. The plain v2.7 recipe is **plateaued** (iter_00→01 +13.3, 01→02 +0.2, 01→B1 +4.6/49%).
+- **Pivot (Branch B) — in progress.** Both levers exhausted: NN-value-leaf (Option 2) dead, plain retrains plateaued. Human benchmark (the documented blocker) deferred — Joshua can't play right now. Chosen first probe instead: a **sims-depth A/B** — iter_01 @800 vs @200, same checkpoint both sides (only search depth varies), n=50, plain v2.7 leaf, launched ~08:31 → `/tmp/sims_ab_800v200.log`. Read: 800 wins clearly ⇒ policy under-searched, deeper search helps (consider α-β); ~50/50 ⇒ search saturated, the leaf is the hard wall. Code: `eval_iter_head_to_head.py` gained an `--old-sims` flag (per-side sims A/B) — smoke-verified, uncommitted.
+- **After the A/B:** benchmark vs a strong human when available; harder strength levers — α-β search, heuristic-leaf redesign, net capacity — see EXPERIMENTS.md open list.
+- Artefacts (one-off, in `/tmp`): `optionB_overnight.sh`, `optionB_iter1_resmoke*.sh`, `residual_structure.py`, logs. Not committed.
 
-**Next — the lever is leaf-eval quality (plan-mode decision, nothing auto-started):**
-1. **Improve the heuristic leaf** — lit-review refinements in BACKLOG 2026-05-16 (tile-counting closure prob, large-open-city penalty, targeted denial, stranding-risk meeple weighting). Lower-risk.
-2. **NN value head as a correction term** — train a value head on iter_01/iter_02 self-play outcomes, use it to correct virtual_score's blind spots (farms especially). Higher-ceiling, more invasive.
-3. **Human benchmark** — iter_01 has never played a human; Tier-1 is saturated. Sizes the real gap to superhuman. Worth doing first or in parallel.
-- **Ruled out by the iter_02 result:** more iterations of this recipe (iter_03+ would land ~+0), and bigger policy net (saturates against the same leaf — capacity isn't the bottleneck).
+**Option 2 (NN value-head blend) — why a 2-stage Phase B:** Phase A wired the leaf↔value-head blend — `LeafConfig.value_blend`, the evaluators, the eval_server `compute_value` path, `--value-target score_diff` (committed eb42c25). The λ=0.5 fixed-checkpoint smoke blended iter_01's *W/L*-trained value head and was mildly harmful (46% wr, −11.3 avg diff) — a currency mismatch with the graded score-diff leaf. So Phase B splits: iter_B1 mints a score-diff value head; iter_B2 is the real blended co-improvement test.
+
+**Self-play perf optimization — parked (full rationale: DECISIONS.md 2026-05-17):**
+- **Shipped** (`gpu-orchestrator`, 080fea7): hash-cache the engine value objects + precompute `FarmerSide.get_side` → ~20-24% faster leaf eval (cProfile). Live in iter_B1.
+- **Option A** (memoize the find_* flood-fills) and **Option B** (incremental union-find) both **parked**. `find_farm` — the #1 hot path, ~58% of leaf cost — is start-dependent in the vendored engine and can't be safely cached or union-found. The find_city+find_road half (Option A) is verified-correct on branch `leaf-memoization` (3db30f1, unmerged) but only ~6% — not worth merge-risk attention.
+
+**Production config:** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + c_puct=1.5 + sims=200, W=14 on the 5800X.
 
 ## Active branch
 
-`gpu-orchestrator` — ahead of `origin/gpu-orchestrator`. The v2.7-leaf retrain line + GPU orchestrator infra live here. No merge to `phase-4-selfplay`/`main` pending.
+`gpu-orchestrator` — ahead of `origin/gpu-orchestrator`. The v2.7-leaf retrain line + GPU orchestrator + Option-2 blend wiring live here. Side branch `leaf-memoization` (worktree at `../carcassone-leafmemo`) holds the parked find_city/find_road memoization (3db30f1), unmerged. No merge to `phase-4-selfplay`/`main` pending.
 
 ## Cloud note
 
@@ -31,6 +38,7 @@ vast.ai's docker-pull infra failed across 7 boxes on 2026-05-15 (all images, all
 - **2026-05-14** — diagnosed v1-v6 failure: the NN value head was the broken leaf eval. Pivoted to hand-crafted `virtual_score` leaf (v1 → v2 → v2.5).
 - **2026-05-15** — v2.5 dedup bug fix + cap/P re-sweep → v2.7 (`cap=12`, drop-3-open); cloud-retrained iter_00 (+21pp over warmstart). v3 leaf cap tuning = n=20 noise (v2.7 holds). PUCT c sweep: low c catastrophic, c=1.5 default holds. W-bench: W=14 optimum for v2.7 recipe.
 - **2026-05-16** — iter_01 retrain confirmed (+13.3, new global best). Strategy lit-review parked in BACKLOG. Docs hygiene + checkpoint cleanup (v1-v6 checkpoints removed, 2.7G→563M; `iter_12.pt` kept as `checkpoints/v6_iter12.pt`).
+- **2026-05-17** — iter_02 flattened (+0.2 — policy saturated against the fixed leaf). Closure-P leaf refinement = null (pooled 47.5%, n=200) → pivot to Option 2 (NN value-head blend). Phase A wired (eb42c25); W/L-blend smoke mildly harmful → 2-stage Phase B, iter_B1 launched. Self-play hot path profiled + optimized (hash-cache + get_side, ~20-24%, 080fea7); deeper memoization (Options A/B) parked — find_farm is start-dependent.
 
 ## Key contact files for a fresh thread
 
