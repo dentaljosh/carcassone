@@ -16,7 +16,7 @@ A living priority queue of ablations toward superhuman play. **Not exhaustive** 
 
 ## Currently running
 
-- **Sims ladder, rung 2** — iter_01 @ sims=1600 vs iter_01 @ sims=800, same checkpoint both sides, n=50, plain v2.7 leaf. Launched 2026-05-18 ~10:48, ETA ~2.5h, log `/tmp/sims_ab_1600v800.log`. Rung 1 (800 vs 200) = 76% wr. Climb until a rung lands ~50-55%. See STATUS.md.
+(none)
 
 ## Open — by component, priority order
 
@@ -42,7 +42,7 @@ A living priority queue of ablations toward superhuman play. **Not exhaustive** 
 ### Search
 
 - [X] ~~**Sims-depth self-consistency A/B.**~~ DONE 2026-05-18: iter_01 @ sims=800 vs iter_01 @ sims=200, same checkpoint both sides (only search depth varies), n=50, plain v2.7 leaf. **38W/0D/12L = 76% wr, +24.9 avg diff, +200 elo (3.7σ).** The policy is significantly under-searched at production sims=200 — deeper search is a large, under-exploited strength lever. Reframes the iter_01→02→B1 retrain plateau as the *training* recipe saturating, NOT a hard v2.7-leaf ceiling. **Re-prioritization:** search-depth knobs (sims ladder to find saturation, deeper-search self-play, α-β) are now the validated #1 strength lever. See DECISIONS.md / STATUS.md 2026-05-18.
-- [~] **Sims ladder.** A/B each doubling against the previous on the iter_01 checkpoint to find where search-depth gains saturate. Cheap (same `--old-sims` harness). The knee sets the production inference-sims target. rung 1 (800 v 200) = 76% DONE; rung 2 (1600 v 800) RUNNING.
+- [X] ~~**Sims ladder.**~~ DONE 2026-05-18: 3 rungs (n=50, iter_01 both sides). 800 v 200 = **76%**; 800 v 400 = **62%/+85 elo**; 1600 v 800 = **52%** (coin-flip). **Knee at 800, confirmed both sides** — 400 insufficient (800 wins 62%), 1600 buys nothing. 200→800 ≈ +200 elo. Production/play inference-sims target = **800**; deeper-search self-play (if pursued) = sims=800, ~4× compute (no 2× shortcut). See STATUS.md.
 - [ ] **Deeper-search self-play.** Retrain with sims=800 (or the ladder knee) self-play — stronger MCTS visit-count targets may un-stick the policy plateau. ~4× per-iteration compute vs sims=200; cost decision pending.
 - [ ] **Depth-limited search.** Force the search to reach a minimum depth before evaluating leaves. May counteract virtual_score's exploit-at-deeper-depth failure mode. (~2 days code.)
 - [ ] **Alpha-beta variant.** Replace PUCT with classical α-β at depth 4-6. For domains with a strong static eval (which we now have), α-β often beats MCTS. (~3 days code.)
