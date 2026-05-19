@@ -16,6 +16,24 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-19 — Curriculum self-play: Base-game-first, then add farmers/river
+
+**Context:** Reading the Dwarkesh × Eric Jang interview (rebuilding AlphaGo) against our state. Eric's data-efficiency trick: don't train AlphaZero tabula-rasa on 19×19 — bootstrap a value function on 5×5/9×9 self-play, then transfer. Our value head is the documented bottleneck (Option 2 closed 2026-05-18: a 7.4M-param value head on ~1200 games is a weaker evaluator than the hand-tuned v2.7 heuristic) and the plain recipe is plateaued — so the interesting lever is data efficiency, not another recipe knob.
+
+**Idea:** stage self-play by feature complexity instead of training the full game all at once. Base-game-only self-play first (no farmers, no river), then warm-start a farmers stage, then a river stage. Farmers carry the hard long-range credit assignment; grounding the value head on cheaper, shorter base-game games first may give it usable structure before farmers are introduced. Architecture is unchanged (farmer/river channels sit unused in the base stage) so weight transfer between stages is clean. Final model still trained + evaluated on the full locked scope.
+
+**Why deferred:** (1) can't make changes now; (2) the analogy is imperfect — 9×9 Go *is* 19×19 scaled down, but Base Carcassonne vs Carcassonne-with-farmers is closer to a different game (farmers dominate scoring and strategy), so transfer could be weak — pressure-test this before building; (3) it's a new training pipeline (base-only deck/self-play path), not a one-knob ablation, so it does not belong in the EXPERIMENTS.md priority queue (whose validated #1 lever is currently deeper-search self-play); (4) needs Joshua's call on build cost vs. just running deeper-search self-play. If pursued, smoke the base→farmers transfer on a tiny run first.
+
+## 2026-05-19 — Record `value_target` in self-play buffer `.npz` metadata
+
+**Context:** Prompted by the Eric Jang interview's "ground the value or MCTS falls apart" point, audited the replay buffer — it's healthy: v25_retrain* buffers are ~50/50 p0/p1, no resignation (a non-terminating game raises `RuntimeError`), every game an exact terminal value. The audit found all v25 buffers are `wl`-encoded ({-1, 0, +1}), while `run_selfplay_iter.py`'s `--value-target` default is `score_diff` — so the in-flight deepsearch run is producing a `score_diff` buffer. Investigated whether that matters.
+
+**Finding (it does not — do NOT "fix" the default):** `value_target` only changes the value-row *encoding* — `score_diff` = `tanh((p0-p1)/15)`, `wl` = `sign(p0-p1)` — same games, same outcomes. Policy targets (MCTS visit distributions) are byte-identical regardless. The NN value head is **not consulted anywhere in the v2_5 pipeline**: self-play and the anchor-gate eval both run `policy_only` (value_blend=0; Option 2 closed 2026-05-18), so the value head exists only as a `train_iter.py` co-training target. `value_target` therefore affects only the shared trunk via the value-MSE term — a minor auxiliary-signal difference, not a data-integrity issue. And `wl` is losslessly recoverable from a `score_diff` buffer (`sign(tanh(margin/15)) == wl`), so a `score_diff` buffer is a strict *superset*. The deepsearch buffer is fine — train on it as-is and let the anchor gate be the safety net.
+
+**Recommendation:** do **not** flip the default to `wl`. `score_diff` is the better default — a richer, smoother co-training signal for the trunk, and a margin-predicting value head is more useful than a binary one for the eventual Phase 5 analyzer (the win condition). The one real gap is hygiene: the encoding is undeclared — not stored in the `.npz` (the run banner prints it, but an old buffer can only be re-identified by inspecting its values). Action: stamp `value_target` into `GameDataset` / the `.npz` metadata so a buffer is self-describing. The 2026-05-17 note ("richer score-diff value targets landed") is accurate as-is.
+
+**Why deferred:** metadata hygiene only, zero model impact, not urgent — do whenever convenient. (The original "before the next self-play run" urgency was based on a mistaken inconsistency framing and no longer applies.)
+
 ## 2026-05-19 — Code-review loop: deferred bug fixes (REVIEW_LOG.md)
 
 **Context:** A 4-iteration multi-agent code review (full findings + rationale in `REVIEW_LOG.md` at repo root) applied 13 safe fixes and deferred 16. Four deferred items are real fixes with a known trigger point — parked here so they are not forgotten. D6 (warmstart-mix train/val leakage) was reviewed and deliberately **skipped** — warmstart mixing is over (`--warmstart-mix 0.0`).
