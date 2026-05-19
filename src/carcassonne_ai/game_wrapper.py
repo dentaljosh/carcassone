@@ -272,7 +272,13 @@ class Game:
         opp = 1 - player
         diff = board.state.scores[player] - board.state.scores[opp]
         v = math.tanh(diff / SCORE_NORM_SCALE)
-        return v if v != 0.0 else 1e-6
+        # Exact tie: return a tiny epsilon (non-zero so callers can tell
+        # "ended in a draw" from "still going"), but make it player-dependent
+        # so the perspective contract get_game_ended(b,0) == -get_game_ended(b,1)
+        # still holds for draws — MCTS value backup relies on antisymmetry.
+        if v == 0.0:
+            return 1e-6 if player == 0 else -1e-6
+        return v
 
     # --- Canonical form / encoding --------------------------------------
 

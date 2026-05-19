@@ -319,8 +319,13 @@ def test_tile_counting_gate_only_reduces_bonus() -> None:
         for n in (40, 90, 140):
             b = _walk_random(g, g.get_init_board(), n, seed=seed)
             for player in (0, 1):
+                # +1e-9 tolerance: when the gate does not fire the two paths
+                # are mathematically equal, but they sum the per-feature bonus
+                # over a hash-ordered set, so their float results can differ by
+                # a few ULPs run-to-run. A real gate bug shifts the bonus by a
+                # whole feature's worth (>=0.01), far above this tolerance.
                 assert _closure_anticipation_bonus(b.state, player, tc) <= (
-                    _closure_anticipation_bonus(b.state, player, v27)
+                    _closure_anticipation_bonus(b.state, player, v27) + 1e-9
                 ), f"tile-counting bonus exceeded v2.7 (seed={seed} n={n})"
 
 

@@ -121,7 +121,17 @@ def _server_loop(
     while True:
         t_dq0 = time.perf_counter()
         try:
-            first = request_q.get()
+            # Poll with a timeout rather than block forever. A bare get()
+            # parks in a C-level semaphore where Python signal handlers
+            # cannot run, so an unclean parent exit (no _SHUTDOWN sent)
+            # would leave this process — and its CUDA context / VRAM —
+            # hung indefinitely. The 1s wakeup lets a signal land.
+            while True:
+                try:
+                    first = request_q.get(timeout=1.0)
+                    break
+                except _stdlib_queue.Empty:
+                    pass
         except (KeyboardInterrupt, SystemExit):
             return
         if first == _SHUTDOWN:
@@ -294,14 +304,27 @@ def start_server(
         daemon=False,
     )
     proc.start()
-    if not ready_event.wait(timeout=ready_timeout_s):
-        if proc.is_alive():
-            proc.terminate()
-            proc.join(timeout=2.0)
-        raise RuntimeError(
-            f"eval_server({checkpoint_path}) failed to become ready "
-            f"within {ready_timeout_s}s"
-        )
+    # Wait for readiness, polling process liveness too. If init fails the
+    # server logs to stderr and exits without ever setting ready_event; a
+    # plain wait(timeout) would then block the full ready_timeout_s before
+    # we notice. Polling catches a dead server in <1s.
+    deadline = time.monotonic() + ready_timeout_s
+    while not ready_event.is_set():
+        if not proc.is_alive():
+            proc.join()
+            raise RuntimeError(
+                f"eval_server({checkpoint_path}) exited during init "
+                f"(exitcode={proc.exitcode}) — see stderr above"
+            )
+        if time.monotonic() >= deadline:
+            if proc.is_alive():
+                proc.terminate()
+                proc.join(timeout=2.0)
+            raise RuntimeError(
+                f"eval_server({checkpoint_path}) failed to become ready "
+                f"within {ready_timeout_s}s"
+            )
+        ready_event.wait(timeout=0.25)
     return proc, request_q, response_qs
 
 
@@ -322,3 +345,11 @@ def shutdown_server(
         sys.stderr.flush()
         proc.terminate()
         proc.join(timeout=2.0)
+    # Release the queue's feeder thread. If the server died without draining
+    # request_q, the parent's background feeder thread would otherwise block
+    # at interpreter exit trying to flush buffered items — hanging the parent.
+    try:
+        request_q.close()
+        request_q.cancel_join_thread()
+    except Exception:
+        pass

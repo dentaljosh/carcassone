@@ -23,6 +23,23 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-19 — Code-review loop: 14 fixes; work-stealing stale-recovery race accepted, not redesigned
+
+**Context.** A 4-iteration multi-agent review of all living code (24 agent-reviews — 6 subsystems × 4 passes). Applied 14 safe corrections (F1–F14, see REVIEW_LOG.md); deferred 16 findings (D1–D16). Most deferrals are routine (latent / unreachable / retraining-boundary — tracked in REVIEW_LOG.md and BACKLOG.md). One — D15 — is a genuine architecture call worth recording here.
+
+**D15 — the work-stealing stale-claim recovery (`_try_claim`) has a TOCTOU race.** When several workers re-claim the same abandoned (stale) seed, a worker that judged staleness against the *old* claim can `os.rename` aside a *fresh* claim re-created by an earlier winner — so N racers can yield up to N winners, not one. The fast path (the O_EXCL create) is unaffected and correct; this is recovery-only.
+
+**Options considered:**
+  - A: Redesign recovery to be single-winner — a per-seed `.recovering` O_EXCL lock, or capture-`st_ino`-then-re-verify. Correct, but ~half a day, and a botched fix to a *live* primitive could lose a claim (a seed never played → a training game silently missing) — strictly worse than the current behavior.
+  - B: Accept it. The duplication is bounded (≤ N) and fires only on crash-recovery; the atomic `.npz` write (last-writer-wins) means the worst case is a few duplicate games — wasted compute, never corruption. Relax the docstring's "exactly one winner" overpromise and the test (`xfail` → assert `1 ≤ winners ≤ N`).
+
+**Decision:** chose B — accept + document.
+
+**Reason.** The `.claim` is a *best-effort* lock by design; correctness is owned by the atomic `.npz`. The race's worst case is a handful of recomputed games after a box crash. Option A's risk — losing a claim on a live primitive — is not justified by that. Parked in BACKLOG.md if the cost ever proves real.
+
+**Reversal cost:** low — option A stays available; the BACKLOG entry preserves the analysis.
+**Phase:** 4 (self-play).
+
 ## 2026-05-18 — Option 2 (NN value-head leaf blend) closed; plain v2.7 recipe confirmed plateaued
 
 **Context.** iter_02 flatlined (+0.2 over iter_01) → working hypothesis: the policy had saturated against the *fixed* v2.7 heuristic leaf. Option 2's response: blend the network value head into the leaf — `leaf = (1−λ)·tanh(vs2/15) + λ·v_nn` — so the leaf co-improves with the policy. Phase A wired it (eb42c25); the λ=0.5 fixed-checkpoint smoke with iter_01's *W/L* value head gave −11.3 avg / 46% wr, hypothesised as a currency mismatch (W/L head vs score-diff heuristic leaf). Phase B: iter_B1 minted a *score-diff* value head (1200-game retrain from iter_01); the re-smoke tested blending it.

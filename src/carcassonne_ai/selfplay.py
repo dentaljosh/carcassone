@@ -177,6 +177,15 @@ def play_one_selfplay_game(
     #                  head trained on this predicts a *margin*, so blending it
     #                  into the leaf (Option 2) interpolates like-for-like.
     #   "wl"         → sign(p0 - p1) ∈ {-1, 0, +1}: AlphaZero-canonical W/L.
+    # The loop can also exit via the max_plies cap or the no-legal-moves break;
+    # in both cases the game did NOT finish, so board.state.scores is mid-game
+    # and the value targets below would be silently wrong. Fail loudly — a
+    # corrupt game record poisons training worse than a lost game does.
+    if game.get_game_ended(board, 0) == 0.0:
+        raise RuntimeError(
+            f"self-play game did not terminate (ply={ply}, max_plies={max_plies})"
+            f" — refusing to emit a dataset with mid-game value targets"
+        )
     p0_score = int(board.state.scores[0])
     p1_score = int(board.state.scores[1])
     if value_target == "score_diff":

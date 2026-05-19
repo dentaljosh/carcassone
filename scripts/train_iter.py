@@ -138,6 +138,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args(argv)
 
+    # Seed every RNG that affects training so two runs with the same --seed
+    # produce the same checkpoint. (split_files_train_val / _build_mixed_file_list
+    # already take an explicit seed; this covers weight init, AdamW, and loader
+    # worker shuffling.) Mirrors train_warmstart.py.
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
     buffer_files = _select_buffer_files(args.output_root, args.iter_idx, args.window)

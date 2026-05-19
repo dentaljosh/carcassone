@@ -92,26 +92,35 @@ def start_server_pool(
     for w in range(n_workers):
         worker_ids_per_shard[w % n_shards].append(w)
 
-    for shard_id in range(n_shards):
-        shard_worker_count = len(worker_ids_per_shard[shard_id])
-        if shard_worker_count == 0:
-            # Possible if n_shards > n_workers. Skip empty shards.
-            procs.append(None)
-            request_qs.append(None)
-            response_qs_by_shard.append([])
-            continue
-        proc, request_q, response_qs = start_server(
-            checkpoint_path=checkpoint_path,
-            n_workers=shard_worker_count,
-            max_batch=max_batch,
-            batch_timeout_ms=batch_timeout_ms,
-            use_fp16=use_fp16,
-            ready_timeout_s=ready_timeout_s,
-            policy_only=policy_only,
-        )
-        procs.append(proc)
-        request_qs.append(request_q)
-        response_qs_by_shard.append(response_qs)
+    try:
+        for shard_id in range(n_shards):
+            shard_worker_count = len(worker_ids_per_shard[shard_id])
+            if shard_worker_count == 0:
+                # Possible if n_shards > n_workers. Skip empty shards.
+                procs.append(None)
+                request_qs.append(None)
+                response_qs_by_shard.append([])
+                continue
+            proc, request_q, response_qs = start_server(
+                checkpoint_path=checkpoint_path,
+                n_workers=shard_worker_count,
+                max_batch=max_batch,
+                batch_timeout_ms=batch_timeout_ms,
+                use_fp16=use_fp16,
+                ready_timeout_s=ready_timeout_s,
+                policy_only=policy_only,
+            )
+            procs.append(proc)
+            request_qs.append(request_q)
+            response_qs_by_shard.append(response_qs)
+    except Exception:
+        # A shard failed to start (e.g. CUDA OOM loading the Nth net copy).
+        # Tear down the shards that DID start so they don't leak as orphaned
+        # GPU processes holding VRAM until the OS reaps them.
+        for started_proc, started_q in zip(procs, request_qs):
+            if started_proc is not None and started_q is not None:
+                shutdown_server(started_proc, started_q, timeout_s=5.0)
+        raise
 
     # Build the global-worker → ServerHandles map. Each worker's local index
     # within its shard is its position in worker_ids_per_shard[shard_id].

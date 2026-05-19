@@ -81,18 +81,29 @@ def _claim(claim_dir: Path, host: str, n: int, reset: bool,
     return 0
 
 
-def _tally(claim_dir: Path, n: int) -> int:
+def _tally(claim_dir: Path) -> int:
     results = sorted(claim_dir.glob("result_*.json"))
     if len(results) < 2:
         print(f"FAIL: need >=2 result_*.json in {claim_dir}, found {len(results)}")
         return 1
     winners: dict[int, list[str]] = {}
     hosts: list[str] = []
+    race_ns: set[int] = set()
     for rf in results:
         r = json.loads(rf.read_text())
         hosts.append(r["host"])
+        race_ns.add(int(r["n"]))
         for seed in r["won"]:
             winners.setdefault(seed, []).append(r["host"])
+    # The authoritative seed count comes from the race result files, not a
+    # CLI arg: a --tally invoked with a different --n than the race actually
+    # used would otherwise report false "missing" seeds (false FAIL) or skip
+    # checking high seeds (false PASS on a deploy gate). All boxes must agree.
+    if len(race_ns) != 1:
+        print(f"FAIL: result files disagree on the seed count raced: "
+              f"{sorted(race_ns)}")
+        return 1
+    n = race_ns.pop()
     double = {s: h for s, h in winners.items() if len(h) > 1}
     missing = [s for s in range(n) if s not in winners]
     n_claims = len(list(claim_dir.glob("seed_*.claim")))
@@ -129,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="Tally mode: verify every seed was won exactly once.")
     args = p.parse_args(argv)
     if args.tally:
-        return _tally(args.claim_dir, args.n)
+        return _tally(args.claim_dir)
     return _claim(
         args.claim_dir, args.host or socket.gethostname(),
         args.n, args.reset, args.start_at,

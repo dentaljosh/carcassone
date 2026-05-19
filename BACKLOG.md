@@ -16,6 +16,30 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-19 — Code-review loop: deferred bug fixes (REVIEW_LOG.md)
+
+**Context:** A 4-iteration multi-agent code review (full findings + rationale in `REVIEW_LOG.md` at repo root) applied 13 safe fixes and deferred 16. Four deferred items are real fixes with a known trigger point — parked here so they are not forgotten. D6 (warmstart-mix train/val leakage) was reviewed and deliberately **skipped** — warmstart mixing is over (`--warmstart-mix 0.0`).
+
+### D13 — `features.py` `tiles_remaining` off-by-one — fix at the NEXT CLEAN RETRAIN
+**Idea:** `tiles_remaining` counts the just-placed tile on every MEEPLES-phase encode (the engine doesn't clear `state.next_tile` until `draw_tile`). Wrong by ~1.2% for ~50% of evaluations; `progress` jumps by 1/total at each TILES→MEEPLES transition. Fix: `len(deck) + (1 if is_tiles and next_tile else 0)`.
+**Why deferred:** it's a network INPUT feature. Currently benign — training and inference agree (both buggy). Fixing `features.py` alone desyncs inference from the current checkpoint + every existing `.npz` (which store pre-encoded scalars). Only fix as part of a fresh from-scratch baseline (fix feature → regen data → retrain). **Decide together with D1.**
+
+### D1 — `board_repr.py` ref-tile encoded differently in TILES vs MEEPLES phase — decide at the NEXT CLEAN RETRAIN (with D13)
+**Idea:** the reference-tile channels encode the *unrotated* `state.next_tile` during the TILES phase but the *rotated* `last_tile_action.tile` during the MEEPLES phase — two different meanings for the same channel range. May be partly intentional (in the MEEPLES phase the decision genuinely concerns the just-placed tile), but it is an unexamined inconsistency the network has to absorb.
+**Why deferred:** changing it is a network-INPUT encoding change → retraining boundary, exactly like D13. Make it a conscious call (unify the two, or keep + document the rationale) at the next from-scratch baseline.
+
+### D16 — `virtual_score_v2.py` board-edge city 100% closure bonus — fix at the NEXT LEAF-EVAL CAP RE-SWEEP
+**Idea:** `_close_prob(0)` returns 1.0; a city whose only open edge points off the 35×35 board counts 0 in-bounds open positions but is still `finished=False`, so it gets a full closure-anticipation bonus it physically cannot earn. Fix: `continue` (no bonus) when `_open_city_positions==0` on an unfinished city — at both the city-closure and farm-growth loops (~line 351).
+**Why deferred:** it changes the v2.7 leaf eval → per CLAUDE.md "a bug fix in scored heuristics shifts hyperparameter optima," the tuned caps (`CAP=12`, drop-3-open) must be re-swept. Trigger is rare (city at the literal board edge). Fold into the next leaf-eval change / cap re-sweep; never standalone.
+
+### D9 — failed self-play game holds its claim ~90 min — fix BEFORE the next MULTI-ITERATION run
+**Idea:** a game that raises leaves `seed_NNNNNN.claim` undeleted; the seed is blocked until the 90-min stale threshold, and a deterministically-failing seed never completes (iteration count never reaches `args.games`). Fix: a `.failed` sidecar — workers skip it; "iteration done" becomes `npz + failed >= games`.
+**Why deferred:** needs a small policy call (fail after 1 attempt vs a retry budget). Pure orchestration, no model impact — fine to do any time before the next multi-iter self-play run.
+
+### D15 — work-stealing stale-recovery multi-winner race — DECISION: accept + document
+**Idea:** `_try_claim` stale-recovery can yield multiple winners (a stale-info thread renames aside a fresh claim re-created by an earlier winner). Bounded duplicate games on crash-recovery only, never corruption (the atomic `.npz` write is the real correctness layer).
+**Decision (2026-05-19):** do NOT attempt the concurrency redesign — high risk on a live primitive, a botched fix could lose a claim (worse than the duplication). Instead relax the docstring's "exactly one winner" overpromise and change `test_32_threads_race_for_one_stale_claim` from `xfail` to assert `1 <= winners <= N`. Small, safe; do whenever.
+
 ## 2026-05-17 — Search self-consistency check: sims=200 vs sims=1000
 
 **Context:** Reviewing a second agent's idea list against the iter_02 saturation diagnosis. The whole Option-2 plan rests on the premise that the policy has saturated against the fixed v2.7 leaf. Most of that agent's ideas were already captured below or already in the active plan (tactical probe set, aux heads, domain planes, league play, determinization, action-space dedup all already in this file; richer score-diff value targets already landed; value-head blending IS Option 2). This self-consistency check was the one genuinely new item.

@@ -18,6 +18,7 @@ Full project spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase str
 | [DECISIONS.md](DECISIONS.md) | Every non-trivial decision with options-considered + reason. **Refines or overrides the original prompt.** Read before assuming any prompt number is still current. |
 | [BACKLOG.md](BACKLOG.md) | Deferred ideas, optimizations, stretch goals. Don't action without Joshua's approval. |
 | [STATUS.md](STATUS.md) | Current branch, last commit, what's running, immediate next action |
+| [REVIEW_LOG.md](REVIEW_LOG.md) | Multi-agent code-review findings: fixes applied (F-numbers) and deliberately deferred items (D-numbers) with rationale |
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |
 

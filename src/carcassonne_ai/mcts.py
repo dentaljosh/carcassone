@@ -784,7 +784,12 @@ class NeuralMCTS:
                 # combine across paths). Otherwise register a new one.
                 fresh = self._create_node(board)
                 child = self._nodes.setdefault(fresh.state_key, fresh)
-                if child is fresh and not child.expanded:
+                # Expand any unexpanded leaf — whether freshly created here or
+                # a transposition created (but not yet expanded) on another
+                # path. The old `child is fresh` guard skipped the latter,
+                # leaving leaf_value at its 0.0 default and backing up a bogus
+                # zero. (Matches _select_leaf_with_vloss's needs_eval logic.)
+                if not child.expanded:
                     self._expand(child, board)
                 node.children[action] = child
                 path.append(child)
@@ -794,8 +799,10 @@ class NeuralMCTS:
                 path.append(child)
                 node = child
 
-        # If we exited because we hit a terminal node, leaf_value is already set
-        # by _create_node / terminal_value. Otherwise it's set by _expand above.
+        # Every node reaching here has been through _expand — the loop only
+        # descends into expanded nodes, and the break-path expands its leaf.
+        # _expand sets leaf_value: the net's value for a non-terminal node,
+        # or terminal_value for a terminal one.
         leaf_value = node.leaf_value
         leaf_player = node.player_to_move
 

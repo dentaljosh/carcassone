@@ -165,14 +165,14 @@ class RuleBasedPlayer:
 
     @staticmethod
     def _meeples_in_hand(board: Board, player: int) -> int:
-        """How many meeples player still has off the board (NORMAL + FARMER combined).
+        """How many meeples player still has off the board (NORMAL + FARMER share one pool).
 
-        engine's state.meeples[player] is the count of NORMAL meeples available;
-        FARMER meeples come from a separate pool but for Phase 1-5 scope we treat
-        them as the same resource (no big-meeple distinction). See game_wrapper.py
-        for the supplementary-rule guard.
+        The engine draws NORMAL and FARMER meeples from the SAME per-player
+        pool — state.meeples[player] — decrementing it for both types, so this
+        single count already covers both. (ABBOT and BIG meeples would use
+        separate counters, but those are outside the Phase 1-5 scope; see
+        game_wrapper.py's supplementary-rule guard.)
         """
-        # state.meeples is the canonical 'in-hand' count of normal meeples.
         s = board.state
         return int(s.meeples[player])
 

@@ -379,6 +379,12 @@ def _append_elo_log(
         "elo_delta": round(delta, 1),
         "elo_estimate": round(new_elo, 1),
     }
+    # Drop any prior entry for this same (iter, vs_iter) pair so a rerun
+    # replaces rather than duplicates it — mirrors _append_anchor_gate_log.
+    entries = [
+        e for e in entries
+        if not (e.get("iter") == iter_n and e.get("vs_iter") == iter_prev)
+    ]
     entries.append(entry)
     with log_path.open("w") as fh:
         json.dump(entries, fh, indent=2)

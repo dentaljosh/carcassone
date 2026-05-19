@@ -81,14 +81,22 @@ class GameDataset:
 
     @classmethod
     def load(cls, path: Path) -> "GameDataset":
-        with np.load(path) as data:
-            return cls(
-                boards=data["boards"],
-                scalars=data["scalars"],
-                policies=data["policies"],
-                values=data["values"],
-                valid_masks=data["valid_masks"],
-            )
+        # Any failure reading the .npz means the file is unusable; re-raise
+        # with the path so a corrupt/truncated file is identifiable instead
+        # of surfacing as a bare BadZipFile with no filename attached.
+        try:
+            with np.load(path) as data:
+                return cls(
+                    boards=data["boards"],
+                    scalars=data["scalars"],
+                    policies=data["policies"],
+                    values=data["values"],
+                    valid_masks=data["valid_masks"],
+                )
+        except Exception as e:
+            raise RuntimeError(
+                f"failed to load .npz (corrupt or truncated?): {path}"
+            ) from e
 
     def __len__(self) -> int:
         return self.boards.shape[0]
@@ -489,6 +497,11 @@ def count_positions(files: list[Path]) -> int:
     """
     total = 0
     for f in files:
-        with np.load(f) as data:
-            total += int(data["values"].shape[0])
+        try:
+            with np.load(f) as data:
+                total += int(data["values"].shape[0])
+        except Exception as e:
+            raise RuntimeError(
+                f"failed to load .npz (corrupt or truncated?): {f}"
+            ) from e
     return total
