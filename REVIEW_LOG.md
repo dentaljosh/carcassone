@@ -214,3 +214,26 @@ All other tests green. No production code is left in a broken state.
 - D2/D3/D4/D7/D8/D10/D11/D12/D14 and the two phase-3-closed script bugs remain logged above — latent, unreachable, cosmetic, or in closed tooling; no action.
 
 Total: **14 safe fixes applied** (F1–F14); 16 findings deferred (D1–D16).
+
+---
+
+## Follow-up — 2026-05-19 (D15 executed; river-rotation coverage)
+
+**F15 — D15 executed (accept + document, per the disposition above).**
+`_try_claim`'s docstring no longer overpromises "exactly one winner / never an
+unbounded cascade." It now states the contract honestly: the fast-path O_EXCL
+create is exactly-once; stale-recovery yields 1–N bounded winners (harmless —
+crash-recovery only; the atomic `.npz` write is the real correctness layer).
+`test_32_threads_race_for_one_stale_claim` dropped its `xfail` and now asserts
+`1 <= winners <= N`, the real contract. **No `xfail` remains in the suite.**
+
+**River-rotation test coverage** (BACKLOG 2026-04-28 — a thin-coverage item,
+not a D-finding). New `tests/test_river_rotation.py`, 13 tests pinning
+`RiverRotationUtil`: the pure rotation geometry (straight / CW / CCW),
+real-tile checks via `the_river_tiles`, and the two easy-to-miss behaviors —
+`get_river_rotation` *implicitly returns `None`* (not `Rotation.NONE`) at
+river-start and for non-river tiles, and a straight segment carries the
+previous rotation forward.
+
+Running total: **15 safe fixes** (F1–F15). 16 findings logged (D1–D16); D5 and
+D15 since resolved (F14, F15).

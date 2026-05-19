@@ -54,9 +54,10 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Idea:** a game that raises leaves `seed_NNNNNN.claim` undeleted; the seed is blocked until the 90-min stale threshold, and a deterministically-failing seed never completes (iteration count never reaches `args.games`). Fix: a `.failed` sidecar — workers skip it; "iteration done" becomes `npz + failed >= games`.
 **Why deferred:** needs a small policy call (fail after 1 attempt vs a retry budget). Pure orchestration, no model impact — fine to do any time before the next multi-iter self-play run.
 
-### D15 — work-stealing stale-recovery multi-winner race — DECISION: accept + document
+### D15 — work-stealing stale-recovery multi-winner race — DONE 2026-05-19
 **Idea:** `_try_claim` stale-recovery can yield multiple winners (a stale-info thread renames aside a fresh claim re-created by an earlier winner). Bounded duplicate games on crash-recovery only, never corruption (the atomic `.npz` write is the real correctness layer).
-**Decision (2026-05-19):** do NOT attempt the concurrency redesign — high risk on a live primitive, a botched fix could lose a claim (worse than the duplication). Instead relax the docstring's "exactly one winner" overpromise and change `test_32_threads_race_for_one_stale_claim` from `xfail` to assert `1 <= winners <= N`. Small, safe; do whenever.
+**Decision (2026-05-19):** do NOT attempt the concurrency redesign — high risk on a live primitive, a botched fix could lose a claim (worse than the duplication). Instead relax the docstring's "exactly one winner" overpromise and change `test_32_threads_race_for_one_stale_claim` from `xfail` to assert `1 <= winners <= N`.
+**Done (2026-05-19):** `_try_claim` docstring relaxed; `test_32_threads_race_for_one_stale_claim` flipped off `xfail`, asserts `1 <= winners <= N`. No `xfail` remains in the suite. See REVIEW_LOG.md follow-up (F15).
 
 ## 2026-05-17 — Search self-consistency check: sims=200 vs sims=1000
 
@@ -206,13 +207,13 @@ These would let the net learn the "endgame: place a meeple every move" rule in 1
 - `mcts_state_key(board)` — full deck signature, last_river_rotation, all pools, full placed-tile orientations
 **Why deferred:** correctness for Phase 3 unaffected. For Phase 5 analyzer, this should land along with the chance-node / determinization work.
 
-## 2026-04-28 — River edge-case regression tests
+## 2026-04-28 — River edge-case regression tests — DONE 2026-05-19
 **Context:** External review pass 4 (2026-04-28). `RiverRotationUtil.get_river_rotation` can implicitly return None around river start/straight cases. Coverage is thin. Specific cases to test:
 - River start tile placed at starting_position
 - River end tile placed (last river segment)
 - Disallowed repeated bend sequence (engine should refuse)
 - last_river_rotation correctly tracked across multiple river placements
-**Why deferred:** these are correctness concerns rare in random play but may bite during production gen. Targeted tests, ~1 hour.
+**Done (2026-05-19):** `tests/test_river_rotation.py` — 13 unit tests over `RiverRotationUtil`: pure rotation geometry (straight / CW / CCW), real river-tile checks via `the_river_tiles`, the implicit-`None` river-start and non-river-tile branches, and straight-segment carry-forward. The bend-sequence *refusal* case is tile-placement legality (`TileFitter`), not `RiverRotationUtil` — out of scope for this file, not covered.
 
 ## 2026-04-28 — Phase 5 deck determinization for analyzer
 **Context:** External review (2026-04-28). Current MCTS uses the engine's pre-shuffled future deck (deterministic). For Phase 5 analyzer (where we DON'T know the future tile order from a real family game), we'd need POMDP-style determinization: sample N possible orderings of the remaining bag and average MCTS results. Already noted in `mcts.py` docstring.

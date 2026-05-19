@@ -168,20 +168,28 @@ def _claim_fd_write(fd: int, host: str) -> None:
 
 
 def _try_claim(claim_path: Path, host: str, stale_secs: int) -> bool:
-    """Atomically claim a seed for this worker. Returns True iff claimed.
+    """Claim a seed for this worker. Returns True iff claimed.
 
     Fast path: an O_CREAT|O_EXCL create — across processes, and across machines
-    on a shared filesystem, exactly one caller can create the file.
+    on a shared filesystem, exactly one caller can create the file. This path
+    is exactly-once.
 
     Slow path: a claim already exists; recover it only if it is stale (its
-    owner died). Recovery must itself be raceproof. An unconditional
-    unlink+recreate CASCADES — a late worker unlinks an already-recovered fresh
-    claim and wins again, so N racers can yield N winners. Instead, exactly one
-    worker `os.rename`s the stale claim aside (a rename of a given source
-    succeeds for only one caller; the rest get FileNotFoundError); that one
-    worker then re-creates the claim via the same O_EXCL race, so it still
-    competes fairly with any fresh-path claimer. Worst case is one duplicated
-    game — never a corrupt result, never an unbounded cascade."""
+    owner died). The recovering worker `os.rename`s the stale claim aside
+    rather than unlinking it — among workers racing on the *same* claim file
+    only one rename succeeds (the rest get FileNotFoundError) — then re-creates
+    the claim via the same O_EXCL race so it competes fairly with fresh-path
+    claimers.
+
+    Stale-recovery is NOT exactly-once. A worker whose staleness check predates
+    an earlier winner's re-created claim can rename that fresh claim aside and
+    win too, so concurrent recovery yields between 1 and N winners (N = racers)
+    — bounded, never an unbounded cascade. This is accepted, not fixed
+    (REVIEW_LOG.md D15 / DECISIONS.md 2026-05-19): the duplicate is harmless —
+    crash-recovery only, a bounded number of replayed games, and the atomic
+    `.npz` write (temp file then rename) is the real correctness layer so a
+    replay overwrites identically. A concurrency redesign risks losing a
+    claim, which is worse."""
     try:
         fd = os.open(claim_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
     except FileExistsError:
