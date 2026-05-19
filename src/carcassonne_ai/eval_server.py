@@ -157,19 +157,26 @@ def _server_loop(
                 f"{traceback.format_exc()}\n"
             )
             sys.stderr.flush()
-            # Best-effort: tell each waiting worker we failed so they don't hang.
+            # Best-effort: tell each waiting worker in this batch we failed so
+            # it doesn't block on a response that will never arrive. The stub
+            # priors must match the request's mask shape (k, A) — a (k, 1)
+            # stub silently corrupts the caller's policy vector.
             for r in batch:
                 try:
                     response_qs[r.worker_id].put(
                         EvalResponse(
                             request_id=r.request_id,
-                            priors=np.zeros((r.obs.shape[0], 1), dtype=np.float32),
+                            priors=np.zeros(r.mask.shape, dtype=np.float32),
                             values=np.zeros((r.obs.shape[0],), dtype=np.float32),
                         )
                     )
                 except Exception:
                     pass
-            return
+            # Re-raise rather than return: a forward failure is not
+            # recoverable in place (a corrupt CUDA context would just spew
+            # stub batches). Crash the server loudly — workers past this batch
+            # get a clean BrokenServerError instead of an unexplained hang.
+            raise
 
         if saw_shutdown:
             break

@@ -69,13 +69,17 @@ def _is_city_or_farm_meeple(state, mp) -> bool:
 
 
 def test_close_prob_schedule() -> None:
-    """The v2.5 probability schedule (halved from v2 after the diagnostic
-    showed v2's bonus saturated tanh)."""
-    assert _close_prob(1) == 0.5
-    assert _close_prob(2) == 0.2
-    assert _close_prob(3) == 0.05
-    assert _close_prob(4) == 0.0
-    assert _close_prob(10) == 0.0
+    """`_close_prob` looks up the closure-probability schedule and returns 0
+    for any open-position count not in it. The schedule is passed explicitly
+    so the test does not depend on which CARCASSONNE_V25_* env vars are set —
+    those rebuild DEFAULT_CONFIG.closure_p at import time (e.g. the v2.7
+    production default DROP_THREE_OPEN=1 drops the `3` key)."""
+    schedule = {1: 0.5, 2: 0.2, 3: 0.05}
+    assert _close_prob(1, schedule) == 0.5
+    assert _close_prob(2, schedule) == 0.2
+    assert _close_prob(3, schedule) == 0.05
+    assert _close_prob(4, schedule) == 0.0
+    assert _close_prob(10, schedule) == 0.0
 
 
 def test_v2_matches_v1_at_init() -> None:

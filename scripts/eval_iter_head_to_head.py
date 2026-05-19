@@ -96,8 +96,19 @@ _worker_new_handles: ServerHandles | None = None
 _worker_old_handles: ServerHandles | None = None
 
 
-def _result_path(eval_dir: str, sims: int, seed: int, new_player: int) -> Path:
-    return Path(eval_dir) / f"s{sims:04d}_seed{seed:06d}_p{new_player}.json"
+def _result_path(
+    eval_dir: str, sims: int, old_sims: int, seed: int, new_player: int
+) -> Path:
+    # Symmetric runs (old side at the same sims) keep the legacy filename so
+    # their cached results stay valid. An asymmetric --old-sims run gets a
+    # distinct `o<old_sims>` tag — without it an asymmetric and a symmetric run
+    # write the SAME filename, and one would load the other's games as a cache
+    # hit, silently feeding the anchor-gate results played at the wrong depth.
+    if old_sims == sims:
+        return Path(eval_dir) / f"s{sims:04d}_seed{seed:06d}_p{new_player}.json"
+    return Path(eval_dir) / (
+        f"s{sims:04d}o{old_sims:04d}_seed{seed:06d}_p{new_player}.json"
+    )
 
 
 def _try_load(path: Path) -> GameResult | None:
@@ -111,7 +122,9 @@ def _try_load(path: Path) -> GameResult | None:
 
 
 def _save(eval_dir: str, result: GameResult) -> None:
-    path = _result_path(eval_dir, result.sims, result.seed, result.new_player)
+    path = _result_path(
+        eval_dir, result.sims, _worker_old_sims, result.seed, result.new_player
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.stem + ".partial.json")
     with tmp.open("w") as fh:
@@ -226,7 +239,9 @@ def _worker_init(
 
 def _play_one(args: tuple[int, int]) -> GameResult:
     seed, new_player = args
-    cached = _try_load(_result_path(_worker_eval_dir, _worker_sims, seed, new_player))
+    cached = _try_load(_result_path(
+        _worker_eval_dir, _worker_sims, _worker_old_sims, seed, new_player
+    ))
     if cached is not None:
         return cached
 

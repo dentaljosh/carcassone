@@ -244,14 +244,16 @@ def main(argv: list[str] | None = None) -> int:
             policy_b = policy_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
             mask_b = mask_b.to(device, non_blocking=True)
+            optim.zero_grad(set_to_none=True)
             policy_logits, value_pred = net(board_b, scalar_b)
             pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
             val_loss = F.mse_loss(value_pred, value_b)
             loss = pol_loss + val_loss
             if not torch.isfinite(loss):
+                # zero_grad already ran above this batch, so skipping here
+                # leaves no stale gradient to leak into the next batch's step.
                 nan_skipped += 1
                 continue
-            optim.zero_grad(set_to_none=True)
             loss.backward()
             optim.step()
             train_pol_loss += pol_loss.item()

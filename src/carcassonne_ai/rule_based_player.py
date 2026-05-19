@@ -65,9 +65,9 @@ class RuleBasedPlayer:
         if len(legal) == 1:
             return int(legal[0])
 
-        phase = board.state.phase.value  # "TILES" or "MEEPLES"
+        phase = board.state.phase.value  # "tiles" or "meeples"
 
-        if phase == "MEEPLES":
+        if phase == "meeples":
             return self._choose_meeple(game, board, legal)
         else:
             return self._choose_tile(game, board, legal)
