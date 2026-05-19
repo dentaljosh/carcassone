@@ -22,11 +22,15 @@ Detached (recommended for long iters):
 from __future__ import annotations
 
 import argparse
+import errno
 import multiprocessing as mp
 import os
+import random
 import shutil
+import socket
 import sys
 import time
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -119,6 +123,116 @@ def _result_path(out_dir: Path, seed: int) -> Path:
     return out_dir / f"seed_{seed:06d}.npz"
 
 
+# --- Work-stealing claim primitive (only used with --shared-claim) ----------
+# A worker claims a seed by exclusively creating `seed_NNNNNN.claim` before
+# playing it. The O_CREAT|O_EXCL create is the SOLE arbiter — across processes
+# and across machines on a shared filesystem, exactly one caller can create the
+# file. The completed `.npz` (written atomically — temp file then rename) is
+# the permanent "done" marker; the `.claim` is only a best-effort lock.
+
+def _claim_path(out_dir: Path, seed: int) -> Path:
+    return out_dir / f"seed_{seed:06d}.claim"
+
+
+def _claim_body(host: str) -> bytes:
+    # host:pid:unix_ts — informational (identifies the claim's owner for
+    # debugging). Staleness is judged from the file's mtime, not this ts.
+    return f"{host}:{os.getpid()}:{int(time.time())}".encode()
+
+
+def _claim_is_stale(claim_path: Path, stale_secs: int) -> bool:
+    """True if the claim looks abandoned (re-claimable), judged by the claim
+    file's mtime — its creation time, since a claim file is written once and
+    never touched again.
+
+    mtime, not the embedded timestamp, is deliberate: it stays correct across
+    the brief window between the O_EXCL create and the body write. A
+    just-created, not-yet-written claim is young -> NOT stale -> a sibling
+    mid-claim is never stolen from. A vanished claim counts as stale (the seed
+    is free again); a transient stat() error counts as NOT stale, so a healthy
+    claim survives a filesystem hiccup."""
+    try:
+        mtime = claim_path.stat().st_mtime
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+    return (time.time() - mtime) > stale_secs
+
+
+def _claim_fd_write(fd: int, host: str) -> None:
+    try:
+        os.write(fd, _claim_body(host))
+    finally:
+        os.close(fd)
+
+
+def _try_claim(claim_path: Path, host: str, stale_secs: int) -> bool:
+    """Atomically claim a seed for this worker. Returns True iff claimed.
+
+    Fast path: an O_CREAT|O_EXCL create — across processes, and across machines
+    on a shared filesystem, exactly one caller can create the file.
+
+    Slow path: a claim already exists; recover it only if it is stale (its
+    owner died). Recovery must itself be raceproof. An unconditional
+    unlink+recreate CASCADES — a late worker unlinks an already-recovered fresh
+    claim and wins again, so N racers can yield N winners. Instead, exactly one
+    worker `os.rename`s the stale claim aside (a rename of a given source
+    succeeds for only one caller; the rest get FileNotFoundError); that one
+    worker then re-creates the claim via the same O_EXCL race, so it still
+    competes fairly with any fresh-path claimer. Worst case is one duplicated
+    game — never a corrupt result, never an unbounded cascade."""
+    try:
+        fd = os.open(claim_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError:
+        fd = None
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            fd = None
+        else:
+            return False  # transient FS error — skip this seed, try another
+    if fd is not None:
+        try:
+            _claim_fd_write(fd, host)
+        except OSError:
+            # Body write or close failed (e.g. a CIFS flush EIO). The claim
+            # file exists but we don't trust the mount — skip the seed rather
+            # than crash the run; the claim goes stale and is recovered later.
+            return False
+        return True
+
+    # A claim already exists. Re-claim only if it looks abandoned.
+    if not _claim_is_stale(claim_path, stale_secs):
+        return False
+    # Atomically take ownership of the recovery: rename the stale claim aside.
+    # Only one racer can rename a given source file; the rest fail here.
+    staged = claim_path.with_name(
+        f".{claim_path.name}.recovering.{os.getpid()}.{time.monotonic_ns()}"
+    )
+    try:
+        os.rename(claim_path, staged)
+    except OSError:
+        return False  # another worker is already recovering this claim
+    try:
+        os.unlink(staged)  # discard the dead owner's claim
+    except OSError as e:
+        # The staged file is inert — no `seed_*` glob matches `.*.recovering.*`
+        # — so leaving it only wastes an inode. Log it so an operator can sweep
+        # leftovers later rather than swallowing the failure silently.
+        sys.stderr.write(f"[claim] could not unlink staged {staged}: {e}\n")
+    # The seed is free again — re-create via O_EXCL, competing fairly with any
+    # fresh-path claimer (so still exactly one winner).
+    try:
+        fd = os.open(claim_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except OSError:
+        return False  # a fresh-path worker beat us to the re-created claim
+    try:
+        _claim_fd_write(fd, host)
+    except OSError:
+        return False  # body write/close failed (FS hiccup) — skip the seed
+    return True
+
+
 def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     """Worker entry: skip if cached, else play one self-play game and save."""
     seed, out_dir_str = args
@@ -133,6 +247,18 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
 
     cfg = _worker_cfg
     assert cfg is not None
+
+    # Work-stealing: atomically claim this seed before playing it. If another
+    # worker — on this box or the other — already owns it, skip; the pool will
+    # hand us the next task. Legacy (non-shared) runs skip this entirely.
+    if cfg.get("shared_claim"):
+        if not _try_claim(
+            _claim_path(out_dir, seed),
+            cfg["claim_host"],
+            cfg["claim_stale_secs"],
+        ):
+            return seed, "skipped", 0
+
     game = Game(enable_legal_moves_cache=True)
     use_fp16 = cfg.get("use_fp16", False)
     # If the v2.5 leaf is going to override the value anyway, we can skip the
@@ -221,6 +347,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="Iteration index (used in the seed prefix and subdir name).")
     p.add_argument("--games", type=int, default=25,
                    help="Number of self-play games to generate (default 25).")
+    p.add_argument("--seed-start", type=int, default=0,
+                   help="Offset added to the per-game index before computing "
+                        "seeds (default 0). Splits one logical iter across "
+                        "machines with disjoint seed ranges: box A --seed-start "
+                        "0 --games 740, box B --seed-start 740 --games 460 → "
+                        "1200 disjoint seeds under the same --iter. Stay well "
+                        "under the 10_000 per-iter seed stride.")
     p.add_argument("--sims", type=int, default=25,
                    help="NeuralMCTS simulations per move (default 25).")
     p.add_argument("--c-puct", type=float, default=1.5)
@@ -299,11 +432,38 @@ def main(argv: list[str] | None = None) -> int:
              "always come from the network — only the leaf value source "
              "changes.",
     )
+    p.add_argument(
+        "--shared-claim", action="store_true",
+        help="Work-stealing mode. Before playing a seed, atomically claim it "
+             "via an O_EXCL `seed_NNNNNN.claim` sidecar file. Lets multiple "
+             "machines run the SAME --seed-start/--games range against ONE "
+             "shared --output-root and load-balance automatically — each game "
+             "goes to whichever worker claims it first. Default off "
+             "(byte-identical legacy behavior).",
+    )
+    p.add_argument(
+        "--claim-stale-secs", type=int, default=5400,
+        help="Only with --shared-claim. A claim with no resulting .npz whose "
+             "timestamp is older than this is treated as abandoned and may be "
+             "re-claimed (default 5400 = 90 min, well over one game).",
+    )
+    p.add_argument(
+        "--claim-host", type=str, default=socket.gethostname(),
+        help="Only with --shared-claim. Identity recorded in claim files "
+             "(default: this machine's hostname). Override to force distinct "
+             "identities when stress-testing the claim race on one box.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
                    help="Just count what's on disk; do not play.")
     args = p.parse_args(argv)
+
+    if args.reset and args.shared_claim:
+        p.error(
+            "--reset with --shared-claim would wipe a directory other "
+            "machines are writing to. Refusing."
+        )
 
     iter_dir = args.output_root / f"iter_{args.iter_idx:02d}"
 
@@ -327,8 +487,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wiped {iter_dir}")
     iter_dir.mkdir(parents=True, exist_ok=True)
 
-    seeds = [_seed_for(args.iter_idx, i) for i in range(args.games)]
+    seeds = [
+        _seed_for(args.iter_idx, args.seed_start + i)
+        for i in range(args.games)
+    ]
     pool_args = [(s, str(iter_dir)) for s in seeds]
+    if args.shared_claim:
+        # Each box walks the seed list in its own order (keyed by claim-host)
+        # so the two boxes start claiming in different regions — avoids a
+        # brief startup burst of every worker racing for the same low seeds.
+        random.Random(zlib.crc32(args.claim_host.encode())).shuffle(pool_args)
     already = sum(1 for s in seeds if _result_path(iter_dir, s).exists())
     remaining = args.games - already
 
@@ -338,7 +506,14 @@ def main(argv: list[str] | None = None) -> int:
     # GPU queue self-regulates — more workers fill the queue more cleanly,
     # they don't thrash. Cap your workers explicitly via --workers if you
     # need to leave CPU/GPU headroom for other workloads.
-    n_workers = min(args.workers, remaining or 1)
+    #
+    # Shared-claim mode never caps at `remaining`: that count is racy across
+    # boxes (the other box finishes seeds mid-run), and an under-count would
+    # starve this box of workers. Skip-scanning a claimed seed is cheap.
+    n_workers = (
+        args.workers if args.shared_claim
+        else min(args.workers, remaining or 1)
+    )
 
     cfg = {
         "sims": args.sims,
@@ -352,6 +527,9 @@ def main(argv: list[str] | None = None) -> int:
         "orchestrator": args.orchestrator,
         "leaf_eval": args.leaf_eval,
         "value_target": args.value_target,
+        "shared_claim": args.shared_claim,
+        "claim_stale_secs": args.claim_stale_secs,
+        "claim_host": args.claim_host,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -372,6 +550,7 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.perf_counter()
     fresh = 0
     cached = 0
+    skipped = 0
     failed = 0
     n_pos_total = 0
     first_fresh_t: float | None = None
@@ -432,12 +611,15 @@ def main(argv: list[str] | None = None) -> int:
                         sys.stdout.flush()
                 elif status == "failed":
                     failed += 1
+                elif status == "skipped":
+                    skipped += 1
                 else:
                     cached += 1
                 if done % max(1, args.games // 10) == 0 or done == args.games:
                     print(
-                        f"  ... {done}/{args.games} done "
-                        f"(fresh={fresh}, cached={cached}, failed={failed})"
+                        f"  ... {done}/{args.games} examined "
+                        f"(fresh={fresh}, cached={cached}, "
+                        f"skipped={skipped}, failed={failed})"
                     )
                     sys.stdout.flush()
     finally:
@@ -446,7 +628,7 @@ def main(argv: list[str] | None = None) -> int:
     elapsed = time.perf_counter() - t0
     print(
         f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached + "
-        f"{failed} failed = {fresh + cached + failed} games attempted, "
+        f"{skipped} skipped + {failed} failed, "
         f"{n_pos_total} positions, {elapsed:.1f}s wallclock"
     )
     return 0

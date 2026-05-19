@@ -20,7 +20,9 @@ Resume by skipping seeds whose .npz already exists.
 from __future__ import annotations
 
 import math
+import os
 import random
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
@@ -49,15 +51,24 @@ class GameDataset:
     valid_masks: np.ndarray  # (N, A) bool
 
     def save(self, path: Path) -> None:
-        """Save to a sibling .partial.npz then rename to the final path. The
-        rename is atomic on POSIX; readers see only fully-written files. A
-        worker killed mid-write leaves a .partial.npz which the next run
-        overwrites or ignores (the loader skips files matching the partial
-        glob)."""
+        """Save to a private temp file then atomically rename onto `path`.
+        The rename is atomic; readers see only fully-written files.
+
+        The temp name is `.<stem>.<host>.<pid>.partial.npz`:
+        - leading dot — never matched by the `seed_*.npz` globs every consumer
+          uses, so a straggler left by a worker killed in the narrow
+          savez->rename window cannot be picked up as a training file;
+        - `<host>.<pid>` — unique per writer across machines, not just within
+          one box: under work-stealing two workers on different boxes can
+          (re)play the same seed, and bare PIDs collide cross-box. With the
+          host included they write separate temp files; only the final atomic
+          rename contends (last writer wins, both datasets valid)."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        # np.savez_compressed appends .npz if the path doesn't already end in it,
-        # so use an explicit .npz extension on the partial.
-        partial = path.with_name(path.stem + ".partial.npz")
+        # Explicit .npz extension on the temp file: np.savez_compressed would
+        # otherwise append one.
+        partial = path.with_name(
+            f".{path.stem}.{socket.gethostname()}.{os.getpid()}.partial.npz"
+        )
         np.savez_compressed(
             partial,
             boards=self.boards,
