@@ -23,6 +23,31 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-19 — Deeper-search self-play retrain did not advance; v2.7 plateau confirmed across 3 strategies — leaf-eval becomes the next ceiling
+
+**Context.** STATUS 2026-05-18 had two strength levers still on the table: (a) deeper-search self-play — retrain with a sims=800 teacher (might un-stick the plateau); (b) leaf-eval redesign (bigger project). The sims-depth A/B (iter_01 @ sims=800 vs itself @ sims=200, n=50, +200 elo) had proved search itself is a large lever *given the leaf* — the working hypothesis was that compounding stronger teacher search into training would lift the policy at production sims=200.
+
+**The run.** 1200-game sims=800 self-play from iter_01, work-stealing across both boxes (one shared SMB folder, atomic-claim load-balance — commit 1895b02). Dataset finished clean (1200/1200, no failures). `train_iter.py` on the 1200-game buffer (188,736 train positions, warm-from iter_01, 3 epochs, batch 256, value-target score_diff per the running default — harmless here, see 2026-05-19 value_target note in BACKLOG.md) → `checkpoints/v25_retrain_deepsearch/iter_00.pt`. Anchor-gate `eval_iter_head_to_head.py`: new vs iter_01, n=100, sims=200 both sides, v2.7 leaf (`CAP=12`, drop-3-open), orchestrator, batch_size=1.
+
+**Result — 45W / 0D / 55L, avg diff −1.2, elo_delta −34.9.** Within ~1σ of flat (n=100 binomial SE ~5pp), not significantly worse, definitely not better. The running tally trended steadily down through the run (60% after 20 → 53% after 40 → 47% after 60 → 43% after 80 → 45% final) — consistent with early-fluke regression to a true ≈50%.
+
+**Compound with the prior anchor-gates from iter_01:**
+  - iter_02: +0.2 avg diff (flat — DECISIONS 2026-05-17)
+  - iter_B1 (Option-2 value-head blend pipeline, score_diff value head): 49W/0D/51L, +4.6 avg, elo −6.9 (≈ iter_01 — DECISIONS 2026-05-18)
+  - deepsearch (this run, stronger teacher search): 45W/0D/55L, −1.2, elo −34.9 (≈ iter_01, slightly worse end of noise)
+
+Three independent strategies — same recipe more iterations, value-head blend, stronger teacher search — all return flat-to-slightly-worse from iter_01. **The plain v2.7 retrain recipe is now confirmed plateaued at iter_01 across all three lever attempts.**
+
+**Why.** The sims=800-at-PLAY result (+200 elo, 2026-05-18) proved search is a large lever *given the leaf*. But teacher-search quality only flows into training as POLICY targets, and a sims=800 teacher's targets are still bounded by what the v2.7 heuristic scores as good during that search. Stronger search refines the policy toward what THIS leaf considers best; it cannot teach the policy moves the evaluator can't recognize as good. iter_01 has converged to ≈ what the v2.7 leaf can teach; deeper teacher search doesn't widen that ceiling.
+
+**Decision:** close deeper-search self-play as a strength lever *for this leaf*. Global-best remains `checkpoints/v25_retrain_iter01/iter_00.pt`. Next strength lever — Joshua's call (no auto-launch): **leaf-eval redesign** is now the only un-closed strength lever for the v2.7-recipe line (BACKLOG.md 2026-05-16 captures the strategy-lit ideas — tile-counting closure P, large-open-city penalty, targeted denial, meeple economy, farm majority-flip).
+
+**Independent of this verdict:** the sims=800-at-PLAY +200-elo gain (2026-05-18 sims-ladder) is still on the table as a free win for production play — no retrain, ~4× per-move latency (fine for human-paced play). Should land in the production config whenever play-vs-human is wired up.
+
+**Reversal cost:** low — checkpoint kept (`checkpoints/v25_retrain_deepsearch/iter_00.pt`), buffer kept (`/mnt/c/carc-shared/deepsearch/iter_00/`); the conclusion can be revisited if a leaf-eval redesign changes the substrate the policy is training against.
+
+**Phase:** 4 (self-play).
+
 ## 2026-05-19 — Code-review loop: 14 fixes; work-stealing stale-recovery race accepted, not redesigned
 
 **Context.** A 4-iteration multi-agent review of all living code (24 agent-reviews — 6 subsystems × 4 passes). Applied 14 safe corrections (F1–F14, see REVIEW_LOG.md); deferred 16 findings (D1–D16). Most deferrals are routine (latent / unreachable / retraining-boundary — tracked in REVIEW_LOG.md and BACKLOG.md). One — D15 — is a genuine architecture call worth recording here.
