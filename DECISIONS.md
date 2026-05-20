@@ -23,7 +23,79 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-20 — Methodological retroactive-validation pipeline: the project's n=100 matched-strength comparisons have been systematically false-negative-prone; re-running 4 high-leverage past nulls at n=400
+
+**Context.** The sims=800 matched-plane re-bench (entry below) — 52% wr at n=100, point estimate slightly positive — sits squarely in the "ambiguous, would-need-more-data" band, the same band where several earlier "null" calls landed (iter_02 at 53.5% / n=100, iter_B1 at 49% / n=100, PUCT c-sweep at n=50). The question came up: have we been throwing out false negatives across the project?
+
+**The math, briefly.** For wr-based head-to-heads:
+- n=100: SE ±5.0pp; "significant" (α=0.05 one-sided) bar = ≥58.2% wr → detects ≥+58 elo edges confidently
+- n=200: SE ±3.5pp; bar = ≥55.8% → detects ≥+40 elo
+- n=400: SE ±2.5pp; bar = ≥54.1% → detects ≥+30 elo
+- n=600: SE ±2.0pp; bar = ≥53.4% → detects ≥+25 elo
+
+Matched-strength comparisons (iter vs iter at same leaf) are the project's hardest signal-to-noise regime, and we'd been running them at n=100. Most of our "compounding cadence" conclusions therefore had ~50-60% power against +30 elo edges → up to ~45% miss rate at that effect size. The discipline against *false positives* was strong (the n=50-minimum-for-variant-comparison memory rule caught v3/PUCT noise), but the symmetric guard against false negatives was missing.
+
+**False-negative-suspect calls, ranked by impact-if-wrong:**
+
+| call | n | wr | downstream impact | re-run? |
+|---|---|---|---|---|
+| iter_02 "saturated against fixed leaf" | 100 | 53.5%, +24.4 elo | huge — closed plain-recipe compounding lever | **yes** |
+| iter_B1 ≈ iter_01 (Option 2 NN-value blend) | 100 | 49% wr / +4.6 score diff | big — closed value-head blend pipeline | **yes** |
+| deepsearch matched-plane (already in flight) | 100 | 52.5%, +17.4 elo | matched-plane ambiguity, see entry below | **extend to n=400** |
+| PUCT c=2.0 vs c=1.5 | 50 ea | 88/84% | small — one-time +25 elo at best, cheap to test | **yes** (separate per-side c_puct job) |
+| closure-P leaf A/Bs | 100 ea | 45/50% | small — pooled 47.5% over n=200 is mildly negative, not noisy | no |
+| v3 cap sweep | 50 | flat | small — cap=12 production-tested, multiple n=50 readings | no |
+| Option 2 blend smoke | 50 | 31% | confirmed negative (2.7σ) | no |
+
+**Implementation.** Autonomous 4-job pipeline (`/home/doctor/sequencer.sh` + `/home/doctor/puct_followup.sh`), nohup'd on the 5800X, drives both boxes via the work-stealing `--shared-claim` primitive (now wired into `eval_iter_head_to_head.py` too, see infra notes below). Each job's verdict appended to `/tmp/retest_verdicts.txt`; sentinel files at `/tmp/{retest_sequencer,puct_followup}.DONE`. Total cluster wallclock ~12-14h overnight.
+
+**Decision.** (1) Run the 4 high-leverage re-tests at n=400. (2) Skip the low-impact ones (closure-P, v3 cap, Option-2 blend) — those were either decisively negative (Option 2) or repeatedly null (closure-P pooled across two leaf variants at n=200, v3 across multiple cap values at n=50). (3) **Going forward, n=400 minimum for matched-strength comparisons**; n=100 reserved for first-look smokes or for variant tests where the effect-size-of-interest is >+50 elo. Add this to the project's operating norms.
+
+**Expected information value.** P(at least one of the 4 re-tests recovers a real positive) ≈ 40-50% under reasonable Bayesian priors. The expected-value math favors running it: even a single "false-negative recovered" outcome unblocks a major lever (e.g. if iter_02 turns out to be a real +30 elo gain, the multi-iteration training pipeline is back open; if PUCT c=2.0 is real, +25 elo free at play time). At ~12-14h cluster cost split across two idle boxes overnight, it's nearly free.
+
+**Infra extracted along the way (commit-worthy in their own right):**
+- New `src/carcassonne_ai/claim.py` — work-stealing claim primitive (atomic O_CREAT|O_EXCL on a `.claim` sidecar, with stale-recovery semantics from the run_selfplay_iter implementation). Refactored out of `run_selfplay_iter.py`; both that script and `eval_iter_head_to_head.py` import it.
+- `eval_iter_head_to_head.py` gained `--shared-claim` / `--claim-stale-secs` / `--claim-host` — evals can now work-steal across boxes the same way self-play does. Plus per-job consolidated-from-disk summary so each box's printed verdict reflects the cross-box outcome.
+- `eval_iter_head_to_head.py` gained `--new-c-puct` / `--old-c-puct` — per-side PUCT exploration constant. Default None falls through to `--c-puct`, so all existing call sites are unaffected. Enables A/B testing exploration constants on the same checkpoint both sides (the PUCT job's whole reason for being).
+- 12 tests still green; smoke confirmed.
+
+**Reversal cost:** low. The re-test outcomes either confirm the original verdicts (no change to current conclusions, narrowed noise bands) or update them (correction we should have made earlier). The infra changes are backwards-compat and useful regardless of the re-test results.
+
+**Phase:** 4 (self-play) — methodological / infrastructure.
+
+## 2026-05-19 (late) — Deepsearch verdict revised: anchor-gate plane mattered; matched-regime (sims=800) reading is +17 elo / 52% wr (n=100) — within noise but flips sign from the sims=200 verdict
+
+**Context.** The earlier 2026-05-19 entry below ("Deeper-search self-play retrain did not advance") rested on a single anchor-gate at sims=200. After publishing it, the question came up: deepsearch was *trained* with sims=800 teacher search — was it fair to evaluate it at sims=200 play, the regime tuned to iter_01? The natural matched-regime test (deepsearch vs iter_01 both played at sims=800, n=100) had not been run. We then ran it.
+
+**The run.** Same 100 (seed, player) pairs as the sims=200 anchor (seeds 900000–900099, i%2 player split). Both sides played at sims=800. Work-stealing across both boxes via a newly-extracted `carcassonne_ai.claim` module + a `--shared-claim` flag added to `eval_iter_head_to_head.py`. The eval started as a manual seed-split (5800X 70 / Xeon 30); mid-run the durability gap (no crash failover) prompted a pivot to shared-claim — 54 cached games preserved via exists-check, then both boxes ran the *same* `--games 100 --seed-start 900000` command pointed at one CIFS eval_dir; the claim primitive divvied up the remaining 43 seeds atomically. 24 active workers, 14 5800x + 10 xeon. Wallclock ~3.5h end-to-end (kill→pivot→restart→complete).
+
+**Result.** deepsearch (NEW) vs iter_01 (OLD), 100 games: **52W / 1D / 47L, avg diff +0.61, elo +17.4** (0.50σ above 50%; binomial SE ±5pp).
+
+**Comparison across measurement planes:**
+
+| play sims | result | avg diff | elo |
+|---|---|---|---|
+| 200 (anchor-gate v1, iter_01-matched) | 45W/0D/55L | −1.2 | **−34.9** |
+| 800 (anchor-gate v2, deepsearch-matched) | 52W/1D/47L | +0.6 | **+17.4** |
+
+~52-elo swing from measurement plane alone, with a clean sign flip. Each reading individually is within its noise band (0.5–1σ from 50%); the *anti-correlation* across planes is the suggestive signal — if both were pure noise we'd expect drift in the same direction or independent, not a clean flip.
+
+**What this changes about the prior entry.** "The plain v2.7 retrain recipe is confirmed plateaued at iter_01 across all three lever attempts" overreached on the deepsearch leg. iter_02 (+0.2 at sims=200, iter_01's matched plane) and iter_B1 (+4.6 / 49% at sims=200, iter_01's matched plane) remain flat — those were measured at their training-matched plane and the conclusion stands for those legs. The deepsearch leg was measured *off-plane* and the matched-plane reading is ambiguous (point estimate slightly positive, not significant). The two-strategy plateau (iter_02 + iter_B1) is real; calling it three strategies was wrong.
+
+**Hypothesis the data is consistent with.** Training-sims and play-sims should match. A deeper-teacher policy is tuned to behaviors a deeper search will actually take advantage of at play time; at shallower play it may even score slightly worse because the policy is now relatively under-confident in lines a deeper search would close out. Not proven at n=100 (point estimate within noise) — but the +52-elo flip is the right shape if the hypothesis holds, and the wrong shape if both readings are pure noise.
+
+**Decision.** (1) Do NOT promote deepsearch to global-best yet — +17.4 elo at 0.5σ doesn't clear the same bar iter_01 cleared (1.9σ at n=100 in 2026-05-16). (2) **The n=200 confirmation plan was upgraded to n=400** after a meta-audit (next entry below) revealed n=100/200 is below the resolution needed for matched-strength comparisons in this project. (3) **Conditional on the n=400 confirmation:** if the matched-plane edge holds (≥+30 elo ≈ 1.7σ at n=400), deepsearch becomes the new global-best **for the sims=800 play regime**; if it reverts to ~50%, iter_01 stays. Either way the +200 elo sims=200→800 play-time win (2026-05-18 sims-ladder) is a free side-channel benefit independent of which checkpoint is selected.
+
+**Independent of the n=200 outcome:** the broader claim "the v2.7 leaf is the ceiling" is now less load-bearing. iter_02 and iter_B1 are still flat, so the policy IS saturated at iter_01-matched-plane evaluation. But the deepsearch leg leaves open the chance that training-and-play matched search regimes have more room than the sims=200-only view suggested. Leaf-eval redesign remains the highest-leverage longer-term lever; the matched-regime hypothesis is a cheaper near-term experiment if n=200 confirms.
+
+**Reversal cost:** low. The original entry stays below (history); this entry corrects its conclusion in light of the matched-plane data.
+
+**Phase:** 4 (self-play).
+
 ## 2026-05-19 — Deeper-search self-play retrain did not advance; v2.7 plateau confirmed across 3 strategies — leaf-eval becomes the next ceiling
+
+> **2026-05-19 (late) — partial retraction:** see the entry immediately above. The deepsearch leg of this argument used the wrong measurement plane (sims=200 anchor); at the matched sims=800 plane the verdict is ambiguous (+17.4 elo, 0.5σ above 50%) rather than negative. The iter_02 and iter_B1 legs were measured at their matched plane and stand. The original text below is preserved unedited for history.
+
 
 **Context.** STATUS 2026-05-18 had two strength levers still on the table: (a) deeper-search self-play — retrain with a sims=800 teacher (might un-stick the plateau); (b) leaf-eval redesign (bigger project). The sims-depth A/B (iter_01 @ sims=800 vs itself @ sims=200, n=50, +200 elo) had proved search itself is a large lever *given the leaf* — the working hypothesis was that compounding stronger teacher search into training would lift the policy at production sims=200.
 

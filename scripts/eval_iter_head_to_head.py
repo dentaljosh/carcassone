@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import multiprocessing as mp
+import socket
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -28,6 +29,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from carcassonne_ai.claim import try_claim as _try_claim
 from carcassonne_ai.elo import update_pair
 from carcassonne_ai.eval_server import (
     ServerHandles,
@@ -81,7 +83,9 @@ _worker_old: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
 _worker_sims: int = 0       # new side
 _worker_old_sims: int = 0   # old side; == _worker_sims unless an asymmetric-sims A/B
-_worker_c_puct: float = 1.5
+_worker_c_puct: float = 1.5     # symmetric default
+_worker_new_c_puct: float = 1.5  # NEW side's c_puct (= _worker_c_puct unless overridden)
+_worker_old_c_puct: float = 1.5  # OLD side's c_puct (= _worker_c_puct unless overridden)
 _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
@@ -94,6 +98,10 @@ _worker_new_leaf_cfg = None
 _worker_old_leaf_cfg = None
 _worker_new_handles: ServerHandles | None = None
 _worker_old_handles: ServerHandles | None = None
+# Work-stealing claim (only used with --shared-claim). See carcassonne_ai.claim.
+_worker_shared_claim: bool = False
+_worker_claim_host: str = ""
+_worker_claim_stale_secs: int = 5400
 
 
 def _result_path(
@@ -189,6 +197,9 @@ def _worker_init(
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
     orch_cfg: dict | None = None, leaf_eval: str = "nn",
     new_leaf_cfg=None, old_leaf_cfg=None, old_sims: int | None = None,
+    shared_claim: bool = False, claim_host: str = "",
+    claim_stale_secs: int = 5400,
+    new_c_puct: float | None = None, old_c_puct: float | None = None,
 ) -> None:
     """Pool initializer.
 
@@ -206,10 +217,14 @@ def _worker_init(
     global _worker_batch_size, _worker_virtual_loss, _worker_use_fp16, _worker_leaf_eval
     global _worker_new_leaf_cfg, _worker_old_leaf_cfg
     global _worker_new_handles, _worker_old_handles
+    global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
+    global _worker_new_c_puct, _worker_old_c_puct
 
     _worker_sims = sims
     _worker_old_sims = old_sims if old_sims is not None else sims
     _worker_c_puct = c_puct
+    _worker_new_c_puct = new_c_puct if new_c_puct is not None else c_puct
+    _worker_old_c_puct = old_c_puct if old_c_puct is not None else c_puct
     _worker_eval_dir = eval_dir
     _worker_batch_size = batch_size
     _worker_virtual_loss = virtual_loss
@@ -217,6 +232,9 @@ def _worker_init(
     _worker_leaf_eval = leaf_eval
     _worker_new_leaf_cfg = new_leaf_cfg
     _worker_old_leaf_cfg = old_leaf_cfg
+    _worker_shared_claim = shared_claim
+    _worker_claim_host = claim_host
+    _worker_claim_stale_secs = claim_stale_secs
 
     if orch_cfg is not None:
         _worker_device = torch.device("cpu")
@@ -237,13 +255,28 @@ def _worker_init(
     _worker_old = _load_net(old_path, _worker_device)
 
 
-def _play_one(args: tuple[int, int]) -> GameResult:
+def _play_one(args: tuple[int, int]) -> GameResult | None:
+    """None return = work-stealing skip (another box owns this seed). The
+    caller filters Nones out of the results aggregation."""
     seed, new_player = args
-    cached = _try_load(_result_path(
+    result_path = _result_path(
         _worker_eval_dir, _worker_sims, _worker_old_sims, seed, new_player
-    ))
+    )
+    cached = _try_load(result_path)
     if cached is not None:
         return cached
+
+    # Work-stealing: atomically claim this (seed, player) before any expensive
+    # setup. If another worker — on this box or the other — already owns it,
+    # skip; the pool will hand us the next task. Legacy (non-shared) runs skip
+    # this entirely. The `.claim` sits next to the eventual `.json`; the
+    # already-passed exists-check above is the permanent done-marker.
+    if _worker_shared_claim:
+        claim_path = result_path.with_suffix(".claim")
+        if not _try_claim(
+            claim_path, _worker_claim_host, _worker_claim_stale_secs
+        ):
+            return None
 
     import random
     random.seed(seed)
@@ -310,13 +343,13 @@ def _play_one(args: tuple[int, int]) -> GameResult:
 
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
-        seed=seed, c_puct=_worker_c_puct,
+        seed=seed, c_puct=_worker_new_c_puct,
         batch_size=_worker_batch_size, batch_evaluator=new_batch_eval,
         virtual_loss=_worker_virtual_loss,
     )
     old_mcts = NeuralMCTS(
         game=game_old, evaluator=old_eval, simulations=_worker_old_sims,
-        seed=seed + 1, c_puct=_worker_c_puct,
+        seed=seed + 1, c_puct=_worker_old_c_puct,
         batch_size=_worker_batch_size, batch_evaluator=old_batch_eval,
         virtual_loss=_worker_virtual_loss,
     )
@@ -407,6 +440,16 @@ def main(argv: list[str] | None = None) -> int:
                         "Set different to A/B search depth on the SAME "
                         "checkpoint, e.g. --sims 800 --old-sims 200.")
     p.add_argument("--c-puct", type=float, default=1.5)
+    p.add_argument(
+        "--new-c-puct", type=float, default=None,
+        help="Per-side override for c_puct on the NEW side. Defaults to "
+             "--c-puct. Use with --old-c-puct + same checkpoint both sides "
+             "to A/B PUCT exploration constants (e.g. c=2.0 vs c=1.5).",
+    )
+    p.add_argument(
+        "--old-c-puct", type=float, default=None,
+        help="Per-side override for c_puct on the OLD side (see --new-c-puct).",
+    )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers. Default 8 leaves SMT headroom for "
                         "other workloads on a 5800X. For dedicated runs, "
@@ -479,6 +522,27 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     p.add_argument(
+        "--shared-claim", action="store_true",
+        help="Work-stealing mode: both boxes run the SAME command pointed at "
+             "ONE --output-root on a shared filesystem (CIFS/NFS); each worker "
+             "atomically claims (O_CREAT|O_EXCL on a .claim sidecar next to "
+             "the per-game JSON) the next unplayed (seed, player) before "
+             "playing it. Auto load-balances + crash-tolerant. See "
+             "carcassonne_ai.claim and run_selfplay_iter.py.",
+    )
+    p.add_argument(
+        "--claim-stale-secs", type=int, default=5400,
+        help="A claim with mtime older than this is re-claimable (default 90 "
+             "min — comfortably > a sims=800 game). Flag is exposed so tests "
+             "can lower it.",
+    )
+    p.add_argument(
+        "--claim-host", type=str, default=socket.gethostname(),
+        help="Identity written into the claim body (host:pid:unix_ts). Default "
+             "is the local hostname; override on tests / single-host smokes "
+             "to force distinct identities.",
+    )
+    p.add_argument(
         "--orch-shards", type=int, default=1,
         help="Number of parallel eval-server processes per net (new+old "
              "each get their own pool of N shards). Default 1 = single "
@@ -505,7 +569,10 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"head-to-head: iter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}, "
         f"{args.games} games at sims={args.sims} (old side: {args.old_sims or args.sims}), "
-        f"c_puct={args.c_puct}, "
+        f"c_puct={args.c_puct}"
+        + (f" (new={args.new_c_puct} old={args.old_c_puct})"
+           if (args.new_c_puct is not None or args.old_c_puct is not None) else "")
+        + ", "
         f"{n_workers} workers, eval_dir={eval_dir}, "
         f"orchestrator={args.orchestrator}, leaf_eval={args.leaf_eval}"
         + (
@@ -586,15 +653,25 @@ def main(argv: list[str] | None = None) -> int:
                 args.batch_size, args.virtual_loss, args.fp16,
                 orch_cfg, args.leaf_eval,
                 new_leaf_cfg, old_leaf_cfg, args.old_sims,
+                args.shared_claim, args.claim_host, args.claim_stale_secs,
+                args.new_c_puct, args.old_c_puct,
             ),
         ) as pool:
-            for done, r in enumerate(
-                pool.imap_unordered(_play_one, pool_args, chunksize=1), 1
-            ):
+            scanned = 0
+            for r in pool.imap_unordered(_play_one, pool_args, chunksize=1):
+                scanned += 1
+                if r is None:
+                    # Work-stealing skip: another box owns this seed. Don't
+                    # inflate the running tally.
+                    continue
                 results.append(r)
+                played = len(results)
                 wins_so_far = sum(1 for x in results if x.won_by_new)
-                if done % max(1, args.games // 5) == 0 or done == args.games:
-                    print(f"  ... {done}/{args.games}, new wins {wins_so_far}/{done}")
+                if played % max(1, args.games // 5) == 0 or scanned == args.games:
+                    print(
+                        f"  ... scanned {scanned}/{args.games}, "
+                        f"this box played {played}, new wins {wins_so_far}/{played}"
+                    )
                     sys.stdout.flush()
     finally:
         if new_pool is not None:
@@ -603,10 +680,29 @@ def main(argv: list[str] | None = None) -> int:
             shutdown_server_pool(old_pool)
     elapsed = time.perf_counter() - t0
 
+    # Shared-claim: this box only played its claimed share of the seed range,
+    # but the other box wrote the rest to the same eval_dir. Re-load all
+    # on-disk JSONs for the expected seed range so the final summary reflects
+    # the CONSOLIDATED cross-box outcome, not just this box's contribution.
+    if args.shared_claim:
+        consolidated = []
+        for seed_i in range(args.games):
+            seed = args.seed_start + seed_i
+            new_player = seed_i % 2
+            on_disk = _try_load(_result_path(
+                str(eval_dir), args.sims,
+                args.old_sims if args.old_sims is not None else args.sims,
+                seed, new_player,
+            ))
+            if on_disk is not None:
+                consolidated.append(on_disk)
+        results = consolidated
+
+    n_played = len(results)
     wins = sum(1 for r in results if r.won_by_new)
     draws = sum(1 for r in results if r.drew)
-    losses = args.games - wins - draws
-    avg_diff = sum(r.diff for r in results) / args.games
+    losses = n_played - wins - draws
+    avg_diff = (sum(r.diff for r in results) / n_played) if n_played else 0.0
 
     if args.no_elo_log:
         # Compute the standalone delta (anchor at 0) for reporting only;

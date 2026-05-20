@@ -22,7 +22,6 @@ Detached (recommended for long iters):
 from __future__ import annotations
 
 import argparse
-import errno
 import multiprocessing as mp
 import os
 import random
@@ -36,6 +35,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from carcassonne_ai.claim import (
+    claim_body as _claim_body,
+    is_stale as _claim_is_stale,
+    try_claim as _try_claim,
+)
 from carcassonne_ai.eval_server import (
     ServerHandles,
     shutdown_server,
@@ -123,122 +127,11 @@ def _result_path(out_dir: Path, seed: int) -> Path:
     return out_dir / f"seed_{seed:06d}.npz"
 
 
-# --- Work-stealing claim primitive (only used with --shared-claim) ----------
-# A worker claims a seed by exclusively creating `seed_NNNNNN.claim` before
-# playing it. The O_CREAT|O_EXCL create is the SOLE arbiter — across processes
-# and across machines on a shared filesystem, exactly one caller can create the
-# file. The completed `.npz` (written atomically — temp file then rename) is
-# the permanent "done" marker; the `.claim` is only a best-effort lock.
-
+# Work-stealing claim primitive: see `carcassonne_ai.claim`. Imported above as
+# `_try_claim` / `_claim_is_stale` / `_claim_body` for back-compat (the
+# `test_selfplay_claim` suite imports the underscored names from this module).
 def _claim_path(out_dir: Path, seed: int) -> Path:
     return out_dir / f"seed_{seed:06d}.claim"
-
-
-def _claim_body(host: str) -> bytes:
-    # host:pid:unix_ts — informational (identifies the claim's owner for
-    # debugging). Staleness is judged from the file's mtime, not this ts.
-    return f"{host}:{os.getpid()}:{int(time.time())}".encode()
-
-
-def _claim_is_stale(claim_path: Path, stale_secs: int) -> bool:
-    """True if the claim looks abandoned (re-claimable), judged by the claim
-    file's mtime — its creation time, since a claim file is written once and
-    never touched again.
-
-    mtime, not the embedded timestamp, is deliberate: it stays correct across
-    the brief window between the O_EXCL create and the body write. A
-    just-created, not-yet-written claim is young -> NOT stale -> a sibling
-    mid-claim is never stolen from. A vanished claim counts as stale (the seed
-    is free again); a transient stat() error counts as NOT stale, so a healthy
-    claim survives a filesystem hiccup."""
-    try:
-        mtime = claim_path.stat().st_mtime
-    except FileNotFoundError:
-        return True
-    except OSError:
-        return False
-    return (time.time() - mtime) > stale_secs
-
-
-def _claim_fd_write(fd: int, host: str) -> None:
-    try:
-        os.write(fd, _claim_body(host))
-    finally:
-        os.close(fd)
-
-
-def _try_claim(claim_path: Path, host: str, stale_secs: int) -> bool:
-    """Claim a seed for this worker. Returns True iff claimed.
-
-    Fast path: an O_CREAT|O_EXCL create — across processes, and across machines
-    on a shared filesystem, exactly one caller can create the file. This path
-    is exactly-once.
-
-    Slow path: a claim already exists; recover it only if it is stale (its
-    owner died). The recovering worker `os.rename`s the stale claim aside
-    rather than unlinking it — among workers racing on the *same* claim file
-    only one rename succeeds (the rest get FileNotFoundError) — then re-creates
-    the claim via the same O_EXCL race so it competes fairly with fresh-path
-    claimers.
-
-    Stale-recovery is NOT exactly-once. A worker whose staleness check predates
-    an earlier winner's re-created claim can rename that fresh claim aside and
-    win too, so concurrent recovery yields between 1 and N winners (N = racers)
-    — bounded, never an unbounded cascade. This is accepted, not fixed
-    (REVIEW_LOG.md D15 / DECISIONS.md 2026-05-19): the duplicate is harmless —
-    crash-recovery only, a bounded number of replayed games, and the atomic
-    `.npz` write (temp file then rename) is the real correctness layer so a
-    replay overwrites identically. A concurrency redesign risks losing a
-    claim, which is worse."""
-    try:
-        fd = os.open(claim_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-    except FileExistsError:
-        fd = None
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            fd = None
-        else:
-            return False  # transient FS error — skip this seed, try another
-    if fd is not None:
-        try:
-            _claim_fd_write(fd, host)
-        except OSError:
-            # Body write or close failed (e.g. a CIFS flush EIO). The claim
-            # file exists but we don't trust the mount — skip the seed rather
-            # than crash the run; the claim goes stale and is recovered later.
-            return False
-        return True
-
-    # A claim already exists. Re-claim only if it looks abandoned.
-    if not _claim_is_stale(claim_path, stale_secs):
-        return False
-    # Atomically take ownership of the recovery: rename the stale claim aside.
-    # Only one racer can rename a given source file; the rest fail here.
-    staged = claim_path.with_name(
-        f".{claim_path.name}.recovering.{os.getpid()}.{time.monotonic_ns()}"
-    )
-    try:
-        os.rename(claim_path, staged)
-    except OSError:
-        return False  # another worker is already recovering this claim
-    try:
-        os.unlink(staged)  # discard the dead owner's claim
-    except OSError as e:
-        # The staged file is inert — no `seed_*` glob matches `.*.recovering.*`
-        # — so leaving it only wastes an inode. Log it so an operator can sweep
-        # leftovers later rather than swallowing the failure silently.
-        sys.stderr.write(f"[claim] could not unlink staged {staged}: {e}\n")
-    # The seed is free again — re-create via O_EXCL, competing fairly with any
-    # fresh-path claimer (so still exactly one winner).
-    try:
-        fd = os.open(claim_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-    except OSError:
-        return False  # a fresh-path worker beat us to the re-created claim
-    try:
-        _claim_fd_write(fd, host)
-    except OSError:
-        return False  # body write/close failed (FS hiccup) — skip the seed
-    return True
 
 
 def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
