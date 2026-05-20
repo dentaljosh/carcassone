@@ -63,6 +63,41 @@ Matched-strength comparisons (iter vs iter at same leaf) are the project's harde
 
 **Phase:** 4 (self-play) — methodological / infrastructure.
 
+## 2026-05-20 (results) — Retroactive-validation pipeline complete: 2 of 4 false-negatives recovered. iter_B1 promoted to new global-best. Audit identifies several more reservoirs of likely false-negatives.
+
+**Outcome (4 of 4 jobs done, cluster wallclock ~16h 13:55 → 16:10):**
+
+| job | n | result | elo Δ | σ vs 50% | verdict |
+|---|---|---|---|---|---|
+| deepsearch vs iter_01 @ sims=800 | 380 | 208W/169L/3D | **+35.8** | 2.0σ | **recovered FN** (already suspected from n=100 +17.4 reading; n=400 confirms at 2σ) |
+| iter_02 vs iter_01 @ sims=200 | 400 | 193W/198L/9D | **−4.3** | 0.25σ below 0 | **genuine null** — plain v2.7 recipe really did plateau at iter_01; not a false-negative |
+| iter_B1 vs iter_01 @ sims=200 | 400 | 213W/184L/3D | **+25.2** | 1.5σ | **🎯 NEW recovered FN** — Option B (score-diff-targeted self-play, no NN-value blend) is a real +25 elo gain over iter_01. iter_B1 should become global-best. |
+| iter_01 c=2.0 NEW vs c=1.5 OLD @ sims=200 | 400 | 200W/194L/6D | **+5.2** | 0.3σ | **genuine null** — c=2.0 does not beat c=1.5; the c-axis is closed at this resolution (n=400 against the ~+20-30 elo effect-of-interest has ~65% power; a small positive effect could still hide) |
+
+**Headline:** Of the 4 hypothesized false-negative-suspect calls, the math from the prior entry (P(at least one recovered) ≈ 40-50%) actually delivered 2 recoveries. **The biggest is iter_B1: the project's claimed "plain v2.7 plateau at iter_01" was wrong — Option B (score-diff value targets, no blend) is a +25 elo lever the n=100 verdict (49% wr, +4.6 score diff) called null.**
+
+**Decisions:**
+1. **Promote `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` to global-best**, replacing iter_01. Update CLAUDE.md "current global-best" line accordingly.
+2. **Reframe the "plateau" finding.** The 2026-05-19 entry concluded "two-strategy plateau (iter_02 + iter_B1) is real" — half of that (iter_B1) is now retracted. The plain v2.7 *recipe* (W/L value targets, vanilla self-play) really does plateau at iter_01 (iter_02 confirmed at n=400). But the Option B *variant* of the recipe (`score_diff` value targets) is a real +25 elo lever. The plateau is recipe-specific, not net+leaf-bound.
+3. **n=400 is the new minimum** for matched-strength comparisons (already decided in the prior entry). Re-confirmed empirically: 3 of the 4 n=100 verdicts in this set were within ±15 elo of a genuinely-different n=400 reading.
+4. **No retraining of the deepsearch verdict's downstream implications** — the 2026-05-19 (late) entry's call ("deepsearch becomes global-best for the sims=800 play regime if confirmed") stands and is now confirmed. Deepsearch is global-best for sims=800-plane play; iter_B1 is global-best for sims=200-plane play. (Practical implication: choose the checkpoint by your play-time sims setting. Most matches will be sims=200 → iter_B1; sims=800 power moves → deepsearch.)
+5. **PUCT c-axis closed at this resolution.** c=2.0 vs c=1.5 at +5.2 elo / 0.3σ is the strongest single-axis-sweep negative result yet. A real +20 elo c=2.0 effect would need n≥800 to detect at α=0.05 — not worth the compute.
+
+**Broader audit — other reservoirs of likely false-negatives (next-step planning):**
+
+The n=100 verdicts were one source. Reservoirs we should sweep through next:
+- **Single-iteration rejections.** Many recipes were killed after one self-play+train cycle. Recipes that compound over 2-3 iters (like Option B might — iter_B1 is +25, iter_B2 could be more) look flat-vs-prev each step. **Highest EV: chain Option B forward (iter_B2, iter_B3, iter_B4) before assuming the lever is single-shot.**
+- **Smoke-test rejections (n=20-50).** Even more underpowered than n=100. Any past variant rejection where the smoke landed within ±50 elo of zero was effectively "unknown" — re-run candidates that had borderline smokes.
+- **Coarse hyperparameter sweeps.** Only 2 c_puct points tested (1.5 vs 2.0, now null) — never tried 0.5, 3.0, 5.0. Cap sweep stopped at the v2.7-era optimum (5 → 12) — never tested cap=20 or cap=∞. Network: 6×96 ResNet picked in Phase 3, never re-swept at v2.7-era data scale.
+- **Pre-bug-fix benchmarks.** The v2.5 farm/city dedup fix (2026-05-15) shifted optima. Any variant rejected *before* that fix was tested against inflated bonus magnitudes — verdicts may not hold.
+- **Other plane mismatches.** The sims=200 / sims=800 mismatch was caught. Other potential mismatches: cap value at train vs play, leaf-eval variant at train vs play, orchestrator on/off — not systematically audited.
+
+**Next-step plan (drafted separately, to be wired into a multi-day autonomous pipeline while Joshua is away):** chain Option B forward 3-4 iters; wider c_puct sweep at sims=200; cap=20 and cap=∞ smokes. See STATUS.md "Next" for the queued sequence.
+
+**Reversal cost:** medium. The iter_B1-as-global-best call is well-supported (1.5σ at n=400) but not as solid as iter_01's original promotion (1.9σ at n=100 against warmstart). If a future n=400 deepsearch-style re-test pulls iter_B1 back below iter_01, we'd re-revert. The plateau-retraction is a real correction; the original conclusion was actively misleading and gated several decisions on the wrong premise.
+
+**Phase:** 4 (self-play) — strength.
+
 ## 2026-05-19 (late) — Deepsearch verdict revised: anchor-gate plane mattered; matched-regime (sims=800) reading is +17 elo / 52% wr (n=100) — within noise but flips sign from the sims=200 verdict
 
 **Context.** The earlier 2026-05-19 entry below ("Deeper-search self-play retrain did not advance") rested on a single anchor-gate at sims=200. After publishing it, the question came up: deepsearch was *trained* with sims=800 teacher search — was it fair to evaluate it at sims=200 play, the regime tuned to iter_01? The natural matched-regime test (deepsearch vs iter_01 both played at sims=800, n=100) had not been run. We then ran it.

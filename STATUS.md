@@ -2,16 +2,24 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-20, overnight) — **methodological retroactive-validation pipeline running** across the cluster. After the deepsearch matched-plane re-bench (n=100 sims=800 → +17.4 elo, 0.5σ; sign-flipped from the original sims=200 anchor's −34.9 elo) prompted a meta-audit of "what other 'null' calls might be false-negative-suspect at n=100," concluded the project has been systematically false-negative-prone for matched-strength comparisons (n=100 detects ≥+40 elo confidently; +20-30 elo edges go un-confirmed). Wired up a 4-job autonomous sequencer (`/home/doctor/sequencer.sh` + `/home/doctor/puct_followup.sh`, both nohup'd, survives Mac sleep) re-running the highest-leverage past nulls at n=400:
+## Right now (2026-05-20, 16:10) — **retroactive-validation pipeline COMPLETE; 2 of 4 false-negatives recovered.**
 
-  1. **deepsearch vs iter_01 @ sims=800 n=400** — extends the matched-plane re-bench from n=100; ~110 cached at launch, ~6h cluster
-  2. **iter_02 vs iter_01 @ sims=200 n=400** — the "policy saturated" verdict that drove closing the plain-recipe lever and Option 2 + leaf-redesign pivot; fresh play, ~1.8h cluster
-  3. **iter_B1 vs iter_01 @ sims=200 n=400** — the Option-2 NN-value-blend pipeline verdict (49% wr n=100 → null call); fresh play, ~1.8h cluster
-  4. **iter_01 c=2.0 NEW vs c=1.5 OLD @ sims=200 n=400** (queued behind 1-3) — PUCT exploration constant A/B; potential one-time free win if real
+Final verdicts (all jobs n=400 at the named sims; full table + decision context in [DECISIONS.md](DECISIONS.md) 2026-05-20 (results)):
 
-P(at least one false-negative recovered) under reasonable priors: ~40-50%. Total cluster wallclock ETA **~12:00 today**. Outputs land in `/tmp/retest_verdicts.txt`, sentinels at `/tmp/{retest_sequencer,puct_followup}.DONE`. All runs use the work-stealing `--shared-claim` primitive across both boxes; durability survives any single-box death via 90-min stale-claim recovery.
+| job | n | result | elo Δ | σ vs 50% | verdict |
+|---|---|---|---|---|---|
+| deepsearch vs iter_01 @ sims=800 | 380 | 208W/169L/3D | **+35.8** | 2.0σ | **recovered FN** (suspected → confirmed) |
+| iter_02 vs iter_01 @ sims=200 | 400 | 193W/198L/9D | **−4.3** | 0.25σ below 0 | genuine null |
+| iter_B1 vs iter_01 @ sims=200 | 400 | 213W/184L/3D | **+25.2** | 1.5σ | **🎯 NEW recovered FN** |
+| iter_01 c=2.0 NEW vs c=1.5 OLD @ sims=200 | 400 | 200W/194L/6D | **+5.2** | 0.3σ | genuine null |
 
-**Global-best remains `iter_01`** pending these results. If the sequencer materially shifts any prior verdict, expect a STATUS rewrite + DECISIONS retraction. See [DECISIONS.md](DECISIONS.md) 2026-05-19 (late) for the matched-plane deepsearch reasoning that triggered this audit.
+**Global-best updated:**
+- **sims=200-plane play** → `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1) replaces iter_01. +25.2 elo, 1.5σ at n=400.
+- **sims=800-plane play** → `checkpoints/v25_retrain_deepsearch/iter_00.pt` (deepsearch) replaces iter_01 at that plane. +35.8 elo, 2.0σ at n=380. Pair with the +200 elo sims=200→800 play-time win (sims-ladder, 2026-05-18) for the strongest play config.
+
+**Plateau retraction:** the 2026-05-19 entry's "plain v2.7 plateau across all three strategies" overreached. Only iter_02 (the plain W/L-target recipe) really plateaued. Option B (`score_diff` value targets) gave +25 elo — it is **not** plateaued; chaining Option B forward (iter_B2, iter_B3, ...) is the highest-EV next move.
+
+**Next (queued, multi-day autonomous pipeline while Joshua is away — to be wired):** chain Option B → iter_B2/B3/B4 (each ~9h: self-play + train + n=400 anchor-gate vs iter_B(n-1)); wider c_puct sweep at sims=200 (c=0.5, c=3.0, c=5.0 each n=400 vs iter_B1); cap=20 and cap=∞ smokes. Plan + sequencer to be wired before Joshua's away days.
 
 **Code-review loop — DONE 2026-05-19:** a 4-iteration multi-agent review of all living code applied **14 safe fixes** and logged **16 deferred findings** with rationale → [REVIEW_LOG.md](REVIEW_LOG.md). Action-needed deferrals are parked in [BACKLOG.md](BACKLOG.md): D1/D13 (encoding — next retrain), D16 (leaf-eval — next cap re-sweep), D9 (claim cleanup — before next multi-iter run), D15 (stale-recovery race — accept+document). The running self-play workers are unaffected — edits apply on next launch.
 
@@ -70,6 +78,7 @@ vast.ai's docker-pull infra failed across 7 boxes on 2026-05-15 (all images, all
 - **2026-05-16** — iter_01 retrain confirmed (+13.3, new global best). Strategy lit-review parked in BACKLOG. Docs hygiene + checkpoint cleanup (v1-v6 checkpoints removed, 2.7G→563M; `iter_12.pt` kept as `checkpoints/v6_iter12.pt`).
 - **2026-05-17** — iter_02 flattened (+0.2 — policy saturated against the fixed leaf). Closure-P leaf refinement = null (pooled 47.5%, n=200) → pivot to Option 2 (NN value-head blend). Phase A wired (eb42c25); W/L-blend smoke mildly harmful → 2-stage Phase B, iter_B1 launched. Self-play hot path profiled + optimized (hash-cache + get_side, ~20-24%, 080fea7); deeper memoization (Options A/B) parked — find_farm is start-dependent.
 - **2026-05-19 → 2026-05-20 (overnight)** — 4-iter multi-agent review → 14 fixes (F1–F14) + 16 deferred; see [REVIEW_LOG.md](REVIEW_LOG.md) / [BACKLOG.md](BACKLOG.md). **Deepsearch retrain anchor-gate**: sims=200 plane FAILED (45W/0D/55L, −34.9 elo), sims=800 matched plane AMBIGUOUS (52W/1D/47L, +17.4 elo, 0.5σ — clean sign flip from the sims=200 reading). Triggered a meta-audit: realized matched-strength comparisons at n=100 have ~50-60% power against +30 elo edges → project has been systematically false-negative-prone. **Wired up 4-job autonomous re-test sequencer** (deepsearch n=400 sims=800, iter_02 n=400 sims=200, iter_B1 n=400 sims=200, PUCT c=2.0-vs-c=1.5 n=400 sims=200), running overnight. **Infra extracted in the process:** new `src/carcassonne_ai/claim.py` shared module (refactored out of `run_selfplay_iter.py`); `eval_iter_head_to_head.py` gained `--shared-claim`/`--claim-stale-secs`/`--claim-host` (work-stealing + crash-tolerance for evals) and `--new-c-puct`/`--old-c-puct` (per-side PUCT for A/B testing exploration constants with the same checkpoint both sides). 12 tests green; backwards-compat preserved for all existing call sites.
+- **2026-05-20 (results)** — pipeline COMPLETE. **2 of 4 false-negatives recovered:** deepsearch confirmed at +35.8 elo / 2σ (sims=800 plane); iter_B1 newly recovered at +25.2 elo / 1.5σ (sims=200 plane). iter_02 (−4.3 elo) and PUCT c=2.0 (+5.2 elo) confirmed genuine nulls. **iter_B1 is the new sims=200-plane global-best**, replacing iter_01. The "plain v2.7 plateau across all strategies" claim is retracted — only the W/L-target recipe (iter_02) plateaued; the score-diff-target recipe (Option B) is a +25 elo lever not yet chained. Highest-EV next move: chain Option B → B2/B3/B4. Full table + audit of remaining false-negative reservoirs in [DECISIONS.md](DECISIONS.md) 2026-05-20 (results).
 
 ## Key contact files for a fresh thread
 
