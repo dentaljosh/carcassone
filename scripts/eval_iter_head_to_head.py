@@ -180,6 +180,22 @@ def _apply_value_blend(cfg, blend: float):
     return replace(cfg if cfg is not None else DEFAULT_CONFIG, value_blend=blend)
 
 
+def _apply_leaf_cap(cfg, cap: float | None):
+    """Override `LeafConfig.bonus_cap` and `opp_bonus_cap` (kept symmetric) on
+    `cfg`. `cfg` may be None — then build from DEFAULT_CONFIG. `cap` None or
+    <= 0 is a no-op (returns `cfg` unchanged, possibly None). Used for the
+    per-side cap A/B sweep — same checkpoint, same leaf variant, but each
+    side caps the closure-anticipation bonus at a different value."""
+    if cap is None or cap <= 0:
+        return cfg
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return replace(
+        cfg if cfg is not None else DEFAULT_CONFIG,
+        bonus_cap=float(cap), opp_bonus_cap=float(cap),
+    )
+
+
 def _effective_blend(leaf_cfg) -> float:
     """The value-head blend λ in force for a side: the LeafConfig's own
     `value_blend` if it has one, else DEFAULT_CONFIG's (env-built) value —
@@ -519,6 +535,18 @@ def main(argv: list[str] | None = None) -> int:
         "--old-leaf-value-blend", type=float, default=0.0,
         help="Value-head blend λ for the OLD side. See --new-leaf-value-blend.",
     )
+    p.add_argument(
+        "--new-leaf-cap", type=float, default=None,
+        help="Override `LeafConfig.bonus_cap` / `opp_bonus_cap` for the NEW "
+             "side (only under --leaf-eval v2_5). None (default) = use the "
+             "variant's built-in cap (env-built DEFAULT_CONFIG). Set this "
+             "different from --old-leaf-cap to A/B the cap with the same "
+             "checkpoint both sides.",
+    )
+    p.add_argument(
+        "--old-leaf-cap", type=float, default=None,
+        help="Override the leaf cap for the OLD side. See --new-leaf-cap.",
+    )
     p.add_argument("--orch-max-batch", type=int, default=256)
     p.add_argument("--orch-batch-timeout-ms", type=float, default=2.0)
     p.add_argument(
@@ -583,11 +611,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     sys.stdout.flush()
 
-    new_leaf_cfg = _apply_value_blend(
-        _leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend
+    new_leaf_cfg = _apply_leaf_cap(
+        _apply_value_blend(
+            _leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend
+        ),
+        args.new_leaf_cap,
     )
-    old_leaf_cfg = _apply_value_blend(
-        _leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend
+    old_leaf_cfg = _apply_leaf_cap(
+        _apply_value_blend(
+            _leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend
+        ),
+        args.old_leaf_cap,
     )
 
     t0 = time.perf_counter()

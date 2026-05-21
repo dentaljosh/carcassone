@@ -110,6 +110,8 @@ def _config_from_env() -> LeafConfig:
         opp_bonus_cap=float(os.environ.get("CARCASSONNE_V25_OPP_CAP", str(bonus_cap))),
         meeple_k=float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0")),
         value_blend=float(os.environ.get("CARCASSONNE_V25_VALUE_BLEND", "0.0")),
+        tile_counting_closure=(os.environ.get("CARCASSONNE_V25_TILE_COUNTING") == "1"),
+        closure_continuous_slack=float(os.environ.get("CARCASSONNE_V25_CLOSURE_SLACK", "0.0")),
     )
 
 
