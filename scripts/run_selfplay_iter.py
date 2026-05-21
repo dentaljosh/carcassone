@@ -59,9 +59,18 @@ from carcassonne_ai.evaluators import (
 )
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.remote_eval_bridge import (
+    BridgeServer,
+    start_bridge,
+    stop_bridge,
+)
 from carcassonne_ai.remote_evaluators import (
     make_remote_batch_evaluator,
     make_remote_single_evaluator,
+)
+from carcassonne_ai.remote_socket_handles import (
+    SocketServerHandles,
+    connect_remote,
 )
 from carcassonne_ai.selfplay import play_one_selfplay_game
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
@@ -78,7 +87,27 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _worker_net: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
 _worker_cfg: dict | None = None
-_worker_handles: ServerHandles | None = None
+_worker_handles: ServerHandles | SocketServerHandles | None = None
+
+
+def _parse_host_port(s: str) -> tuple[str, int]:
+    """argparse type for HOST:PORT flags."""
+    if ":" not in s:
+        raise argparse.ArgumentTypeError(
+            f"expected HOST:PORT, got {s!r}"
+        )
+    host, port_s = s.rsplit(":", 1)
+    try:
+        port = int(port_s)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(
+            f"port in {s!r} is not an integer"
+        ) from e
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError(
+            f"port {port} out of range 1-65535"
+        )
+    return host, port
 
 
 def _worker_init(checkpoint_path: str, cfg: dict) -> None:
@@ -97,12 +126,21 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         _worker_device = torch.device("cpu")
         _worker_net = None
         # Each pool worker picks a unique global worker_id off the id_q
-        # (mp.Queue seeded with 0..N-1). It then looks up its routing-bundle
-        # in cfg["orch_handles_by_worker"][worker_id] — which already encodes
-        # which shard's request_q/response_q to talk to. The pool layer
-        # decides routing; the worker is shard-agnostic.
+        # (mp.Queue seeded with 0..N-1).
         global_worker_id = cfg["orch_id_q"].get()
-        _worker_handles = cfg["orch_handles_by_worker"][global_worker_id]
+        remote_addr = cfg.get("remote_eval_server")
+        if remote_addr:
+            # Network mode: open a TCP connection to the remote bridge. The
+            # SocketServerHandles exposes the same .request_q.put() /
+            # .response_q.get() API as the local IPC ServerHandles, so the
+            # make_remote_*_evaluator factories below work unchanged.
+            host, port = remote_addr
+            _worker_handles = connect_remote(host, port, global_worker_id)
+        else:
+            # Local IPC: look up the per-worker routing bundle in
+            # cfg["orch_handles_by_worker"][worker_id] — already encodes
+            # which shard's request_q/response_q to talk to.
+            _worker_handles = cfg["orch_handles_by_worker"][global_worker_id]
         return
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
@@ -240,8 +278,10 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="run_selfplay_iter")
-    p.add_argument("--checkpoint", type=Path, required=True,
-                   help="Network checkpoint to use as the self-play opponent.")
+    p.add_argument("--checkpoint", type=Path, required=False, default=None,
+                   help="Network checkpoint to use as the self-play opponent. "
+                        "Required unless --remote-eval-server is set (a remote "
+                        "client doesn't load the model — the server does).")
     p.add_argument("--output-root", type=Path, required=True,
                    help="Root dir for self-play data; per-iter subdirs created.")
     p.add_argument("--iter", type=int, required=True, dest="iter_idx",
@@ -354,6 +394,29 @@ def main(argv: list[str] | None = None) -> int:
              "(default: this machine's hostname). Override to force distinct "
              "identities when stress-testing the claim race on one box.",
     )
+    p.add_argument(
+        "--serve-on", type=_parse_host_port, default=None,
+        metavar="HOST:PORT",
+        help="Server mode: in addition to local workers, start a TCP bridge "
+             "on HOST:PORT exposing --serve-slots eval-server slots to "
+             "remote machines. Requires --orchestrator. The local pool is "
+             "started with (--workers + --serve-slots) slots total — local "
+             "workers claim the first --workers, remote clients claim the "
+             "rest. Default off.",
+    )
+    p.add_argument(
+        "--serve-slots", type=int, default=0,
+        help="Only with --serve-on. Slots reserved for remote workers. "
+             "Set >= the total worker count across all remote clients.",
+    )
+    p.add_argument(
+        "--remote-eval-server", type=_parse_host_port, default=None,
+        metavar="HOST:PORT",
+        help="Client mode: do not start a local eval-server. Each local "
+             "worker opens a TCP connection to the remote bridge at "
+             "HOST:PORT and ships eval requests over the network. Implies "
+             "--orchestrator. Mutually exclusive with --serve-on.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
@@ -365,6 +428,20 @@ def main(argv: list[str] | None = None) -> int:
             "--reset with --shared-claim would wipe a directory other "
             "machines are writing to. Refusing."
         )
+
+    if args.remote_eval_server and args.serve_on:
+        p.error("--remote-eval-server and --serve-on are mutually exclusive")
+    if args.serve_on and not args.orchestrator:
+        p.error("--serve-on requires --orchestrator")
+    if args.serve_on and args.serve_slots <= 0:
+        p.error("--serve-on requires --serve-slots > 0")
+    if args.remote_eval_server:
+        # Remote mode is an orchestrator client; the remote box owns the
+        # server pool. Force the orchestrator code path on so _worker_init
+        # takes the orchestrator branch.
+        args.orchestrator = True
+    if not args.remote_eval_server and args.checkpoint is None:
+        p.error("--checkpoint is required (only optional with --remote-eval-server)")
 
     iter_dir = args.output_root / f"iter_{args.iter_idx:02d}"
 
@@ -462,38 +539,69 @@ def main(argv: list[str] | None = None) -> int:
     # cfg. n_shards=1 is single-server (back-compat); n_shards>1 cracks
     # the GIL bottleneck (DECISIONS.md 2026-05-13).
     server_pool = None
+    bridge: BridgeServer | None = None
     if args.orchestrator:
-        print(
-            f"  starting eval-server pool "
-            f"(shards={args.orch_shards}, "
-            f"max_batch={args.orch_max_batch}, "
-            f"timeout={args.orch_batch_timeout_ms}ms, "
-            f"fp16={args.fp16})…"
-        )
-        sys.stdout.flush()
-        server_pool = start_server_pool(
-            checkpoint_path=str(args.checkpoint),
-            n_workers=n_workers,
-            n_shards=args.orch_shards,
-            max_batch=args.orch_max_batch,
-            batch_timeout_ms=args.orch_batch_timeout_ms,
-            use_fp16=args.fp16,
-            policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
-        )
-        id_q = ctx.Queue()
-        for w in range(n_workers):
-            id_q.put(w)
-        cfg["orch_handles_by_worker"] = server_pool.handles_by_worker
-        cfg["orch_id_q"] = id_q
-        shard_pids = [p.pid for p in server_pool.procs if p is not None]
-        print(f"  eval-server pool ready (shard pids={shard_pids})")
-        sys.stdout.flush()
+        if args.remote_eval_server:
+            host, port = args.remote_eval_server
+            print(
+                f"  remote eval-server mode: connecting to "
+                f"{host}:{port} from {n_workers} local workers"
+            )
+            sys.stdout.flush()
+            id_q = ctx.Queue()
+            for w in range(n_workers):
+                id_q.put(w)
+            cfg["remote_eval_server"] = (host, port)
+            cfg["orch_id_q"] = id_q
+        else:
+            # Local server. If --serve-on is set, oversize the pool by
+            # serve_slots so the bridge has slots for remote clients.
+            local_total = n_workers + max(0, args.serve_slots)
+            print(
+                f"  starting eval-server pool "
+                f"(shards={args.orch_shards}, "
+                f"max_batch={args.orch_max_batch}, "
+                f"timeout={args.orch_batch_timeout_ms}ms, "
+                f"fp16={args.fp16}, slots={local_total} = "
+                f"{n_workers} local + {max(0, args.serve_slots)} remote)…"
+            )
+            sys.stdout.flush()
+            server_pool = start_server_pool(
+                checkpoint_path=str(args.checkpoint or ""),
+                n_workers=local_total,
+                n_shards=args.orch_shards,
+                max_batch=args.orch_max_batch,
+                batch_timeout_ms=args.orch_batch_timeout_ms,
+                use_fp16=args.fp16,
+                policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
+            )
+            id_q = ctx.Queue()
+            for w in range(n_workers):
+                id_q.put(w)
+            # Local workers claim the first n_workers slots; any remaining
+            # slots (when --serve-slots > 0) go to the bridge.
+            cfg["orch_handles_by_worker"] = server_pool.handles_by_worker[:n_workers]
+            cfg["orch_id_q"] = id_q
+            shard_pids = [p.pid for p in server_pool.procs if p is not None]
+            print(f"  eval-server pool ready (shard pids={shard_pids})")
+            sys.stdout.flush()
+
+            if args.serve_on:
+                bridge_handles = server_pool.handles_by_worker[n_workers:]
+                bhost, bport = args.serve_on
+                bridge = start_bridge(bridge_handles, host=bhost, port=bport)
+                print(
+                    f"  remote-eval bridge listening on "
+                    f"{bridge.host}:{bridge.port} "
+                    f"({args.serve_slots} slots for remote workers)"
+                )
+                sys.stdout.flush()
 
     try:
         with ctx.Pool(
             processes=n_workers,
             initializer=_worker_init,
-            initargs=(str(args.checkpoint), cfg),
+            initargs=(str(args.checkpoint or ""), cfg),
         ) as pool:
             for done, (seed, status, n_positions) in enumerate(
                 pool.imap_unordered(_play_one_pool, pool_args, chunksize=1), 1
@@ -524,6 +632,10 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     sys.stdout.flush()
     finally:
+        # Stop the bridge BEFORE the server pool so any in-flight remote
+        # workers see EOF cleanly before their backing slots disappear.
+        if bridge is not None:
+            stop_bridge(bridge)
         if server_pool is not None:
             shutdown_server_pool(server_pool)
     elapsed = time.perf_counter() - t0

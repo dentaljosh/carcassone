@@ -23,6 +23,36 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-20 — Network-distributed eval-server: TCP bridge in front of the existing orchestrator pool, lets a GPU-less box (Zenbook) borrow the 5800X's GPU for inference
+
+**Context.** Zenbook (i7-12700H, 16 GB, no NVIDIA) bootstrapped 2026-05-20 to add as a 3rd cluster box. Two ways to use it: (a) run its own standalone CPU eval-server — works without any new code, but CPU forward is ~80 ms/eval and contributes maybe Xeon-tier throughput; (b) network-distribute the orchestrator so Zenbook's CPU workers offload inference to the 5800X GPU via TCP. Option (b) is meaningfully faster (workers do MCTS only, not torch forwards) and uses RAM Zenbook already has.
+
+**Options considered:**
+- **A. Standalone CPU eval-server (no new code).** Trivial: just point Zenbook's existing self-play at its own CPU. Works today, ~0.5-1.0 games/min added. But it's also the upper bound on what CPU can do at sims=200 — the laptop CPU is the limiter, the GPU on the 5800X sits unused for Zenbook's share of work.
+- **B. Network-distributed eval-server bridge** (chosen). Add a small TCP listener in front of the existing eval-server orchestrator pool; remote workers connect, ship `(obs, scalars, mask)` over the wire, get `(priors, value)` back. ~0.8-1.0 games/min, much less Zenbook CPU pressure, GPU does the heavy work for both boxes.
+- **C. Build a real distributed coordinator (Ray / gRPC / ZMQ).** Overkill — we have 2-3 boxes on one LAN with one tenant. The complexity tax buys nothing.
+
+**Decision.** Build B as a thin TCP bridge:
+
+- **Wire format**: 4 B big-endian uint32 frame length, then per-message payload. Each numpy array is serialised via `np.save` with `allow_pickle=False` into a `BytesIO`, length-prefixed. **No serialization-via-eval anywhere** — `np.load` with `allow_pickle=False` refuses object dtypes. Wire path: `[frame_len][worker_id][request_id][3 npy blobs]`. ~70 KB per single-board request, well under the 64 MB safety cap.
+- **Server side**: a daemon thread per connection runs `recv_framed → request_q.put → response_q.get → send_framed`. The bridge **pre-claims K extra slots** in the existing `start_server_pool` (i.e. starts the pool with `n_workers + K` slots) and binds one slot per inbound connection. The running eval-server code is **unchanged** — to the server, the bridge looks like K more local mp.Queue workers.
+- **Client side**: a `SocketServerHandles` mimics the existing `eval_server.ServerHandles` interface (same `.request_q.put()` / `.response_q.get()` API), so the existing `make_remote_batch_evaluator` factories work without changes.
+- **Failure handling**: if a remote worker disconnects with a request in flight, the bridge drains the eventual server response before releasing the slot — otherwise the next connection on that slot would receive the prior reply. CIFS-style transient errors fall through to the worker's existing `BrokenServerError` path; reconnect is at the worker level.
+
+**Reason.** Bridge mode is ~20% faster than CPU-only and saves Zenbook's CPU for MCTS work where it actually helps. The thin-wrapper approach (re-use the existing orchestrator pool, just front it with TCP) means zero changes to the running self-play code path — workers don't know whether their `ServerHandles` is local mp.Queue or socket-backed.
+
+**Verification.** 9 unit tests (`tests/test_remote_eval_bridge.py`) cover wire roundtrip, concurrent workers, slot exhaustion, slot recycling on disconnect, worker_id restamping. All pass on both the 5800X and Zenbook venvs. Loopback smoke (server + client both on the 5800X, CPU mode): 12932 evals roundtripped, 0 failures, 13 fresh server games + 7 fresh client games out of 20 total — work-stealing balanced as expected.
+
+**Reversal cost.** Low. New code is additive — the `--serve-on` / `--remote-eval-server` flags are off by default; without them the script behaves exactly as before. Easy to revert by not using the flags.
+
+**Phase.** Phase 4 (self-play loop).
+
+**Worker-count knee on Zenbook.** Bridge-mode bench 2026-05-20 with localhost stub (5 ms simulated forward) swept W ∈ {4,8,12,14,16,20}: peak at W=8 (5.26 games/min), curve flat 8→20 (5.0-5.3 games/min). Production recommendation **W=10** (pad +2 from raw peak to give bridge-conn threads + OS headroom, since stub workers in the bench cost ~0.5 cores). Matches the "2×P-cores − 2" heuristic for the 12700H (6 P-cores → 10). HT didn't add throughput on this hybrid CPU because (i) E-cores have no HT, (ii) Linux Thread Director on Alder Lake is shaky pre-6.2, (iii) laptop thermal envelope limits sustained boost. Decision: pin v3 sequencer to `WORKERS_ZENBOOK=10`; sanity-check W=10 vs W=12 against real 5800X GPU once firewall opens.
+
+**Deploy blocker.** Windows firewall on the 5800X needs to allow inbound TCP 19999 LAN-scoped — 1-line PowerShell as admin, see `/home/doctor/network_bridge_deploy.md`. Until then, deploying CPU-only Zenbook (option A) as the interim — adds Xeon-tier throughput today without admin work, swap to bridge mode the moment firewall opens.
+
+---
+
 ## 2026-05-20 — Methodological retroactive-validation pipeline: the project's n=100 matched-strength comparisons have been systematically false-negative-prone; re-running 4 high-leverage past nulls at n=400
 
 **Context.** The sims=800 matched-plane re-bench (entry below) — 52% wr at n=100, point estimate slightly positive — sits squarely in the "ambiguous, would-need-more-data" band, the same band where several earlier "null" calls landed (iter_02 at 53.5% / n=100, iter_B1 at 49% / n=100, PUCT c-sweep at n=50). The question came up: have we been throwing out false negatives across the project?

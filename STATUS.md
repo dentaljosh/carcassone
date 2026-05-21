@@ -2,7 +2,26 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-20, 16:10) — **retroactive-validation pipeline COMPLETE; 2 of 4 false-negatives recovered.**
+## Right now (2026-05-21) — **maximalist 8-day FN-hunt pipeline running; network bridge built, deploy gated on firewall**
+
+**Maximalist sequencer** (`/home/doctor/maximalist_sequencer.sh`, PID 57674, nohup'd on the 5800X). 5 phases: Phase 1 (Option B chain B2→B7 at n=2000), Phase 2 (PUCT wider sweep c=0.5/1.0/3.0 at n=1000), Phase 3 (deepsearch chain DS_02 sims=800), Phase 4 (FN re-confirms), Phase 5 (tile-counting closure smoke). Currently in **Phase 1 / B2 self-play at ~600/1200, ETA ~5h to first verdict.** Logs: `/tmp/maximalist.log`, verdicts append to `/tmp/maximalist_verdicts.txt`, sentinel `/tmp/maximalist.DONE`.
+
+**Network-distributed eval-server bridge — BUILT 2026-05-20, deploy gated on firewall.** Zenbook (i7-12700H, 16 GB, no NVIDIA) is now bootstrapped + venv'd; goal is to add it as a 3rd cluster box. Two deploy paths exist:
+
+| mode | throughput | needs |
+|---|---|---|
+| **CPU-only** standalone (own CPU eval-server) | ~0.5-1.0 games/min (Xeon-tier) | nothing — ships now |
+| **Bridge-client** (Zenbook workers → 5800X GPU via TCP) | ~0.8-1.0 games/min | admin firewall rule for TCP 19999 on 5800X |
+
+Bridge is the better deploy: ~20% faster + much less Zenbook CPU pressure. Joshua is remote; firewall rule (1-line PowerShell as admin, see `/home/doctor/network_bridge_deploy.md`) pending. **Decision (2026-05-21):** ship CPU-only Zenbook now to start contributing, swap in bridge mode once firewall opens. CPU-only worker-count bench in flight (see DECISIONS.md 2026-05-20 — Network bridge).
+
+Bridge code (committed): `src/carcassonne_ai/remote_eval_bridge.py` (TCP listener + bridge thread, length-prefixed `np.save(allow_pickle=False)` wire format with no serialization-via-eval) + `src/carcassonne_ai/remote_socket_handles.py` (drop-in socket-backed ServerHandles) + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server`/`--serve-slots` flags + 9 unit tests (pass on 5800X **and** Zenbook). Loopback smoke: 12932 evals roundtripped across server + client, 0 failures. Bridge-mode worker-count bench on Zenbook: peak at W=8, plateau to W=20, recommend W=10 in production (matches your "2×P-cores − 2" heuristic — Zenbook has 6 P-cores).
+
+**Sequencer v3 ready** (`/home/doctor/maximalist_sequencer_v3.sh`, syntax-clean, +96 LoC vs v1) — wires Zenbook as bridge-client; drop in once firewall opens.
+
+---
+
+## Recent (2026-05-20, 16:10) — **retroactive-validation pipeline COMPLETE; 2 of 4 false-negatives recovered.**
 
 Final verdicts (all jobs n=400 at the named sims; full table + decision context in [DECISIONS.md](DECISIONS.md) 2026-05-20 (results)):
 
