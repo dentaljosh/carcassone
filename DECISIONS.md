@@ -41,6 +41,8 @@ This is the **"anchor before scaling" memory rule** failing in practice. Each st
 - **If B2 ≥ ~+10**: implement anchor-fraction self-play (static anchor=iter_B1, fraction=0.3, alternating sides) per design in this session. Pilot 1 chain step under anchor-fraction; if validates, chain forward.
 - **If B2 ≈ −19**: anchor-fraction won't save a broken recipe; pivot to Phase 3 deepsearch / loop's orphaned deepsearch train+anchor / leaf-eval rework.
 
+**Resolved 2026-05-24 11:00.** B2 anchor came back at **−6.1 elo vs iter_01** (193W/200L/7D, n=400, 0.36σ null). Not −19, but not positive either — **Option B chain doesn't even gain in step 1**. B1's confirmed +25 cushion already half-erased by B2. Anchor-fraction would hold the line at iter_B1's strength but can't manufacture gains where the recipe produces none. **Option B as a chain lever is dead.** Pivoting per the B2≈−19 branch above: kicked off the orphaned loop deepsearch train+anchor immediately (PID 5369, nice 19, train+anchor n=100 sims=200 vs iter_01, ETA ~35 min from 11:23). Anchor-fraction implementation will be scoped to the deepsearch lever instead of Option B.
+
 **Other phase impacts:**
 - **Phase 2 (PUCT sweep on iter_B1)**: unaffected by drift — no chain step. Still valid to run as-is (~24h).
 - **Phase 4 (FN re-confirms, leaf-eval ablations on iter_B1)**: unaffected — no chain step. Still valid (~10h).
