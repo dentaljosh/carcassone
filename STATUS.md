@@ -2,22 +2,38 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-21) — **maximalist 8-day FN-hunt pipeline running; network bridge built, deploy gated on firewall**
+## Right now (2026-05-24, 08:00) — **Option B chain KILLED. iter_B1 remains global best. B2 anchor running.**
 
-**Maximalist sequencer** (`/home/doctor/maximalist_sequencer.sh`, PID 57674, nohup'd on the 5800X). 5 phases: Phase 1 (Option B chain B2→B7 at n=2000), Phase 2 (PUCT wider sweep c=0.5/1.0/3.0 at n=1000), Phase 3 (deepsearch chain DS_02 sims=800), Phase 4 (FN re-confirms), Phase 5 (tile-counting closure smoke). Currently in **Phase 1 / B2 self-play at ~600/1200, ETA ~5h to first verdict.** Logs: `/tmp/maximalist.log`, verdicts append to `/tmp/maximalist_verdicts.txt`, sentinel `/tmp/maximalist.DONE`.
+**Phase 1 chain ran B2→B4 then killed.** Maximalist completed Phase 1 chain steps 2, 3, 4 (each n=2000 vs previous chain ckpt). Chain elo deltas looked OK (+11.4 / +2.4 / +1.4 — see verdict table below) so chain kept going. **But the chain-vs-prev measurements were lying.** Direct anchor test 2026-05-24 07:50: **B4 vs iter_01 @ sims=200 n=400 = 186W/208L/6D, elo_delta = −19.1.** B4 is *worse* than iter_01 by 19 elo. The whole chain drifted ~55 elo against the fixed reference while each chain step measured ~neutral against its predecessor. **Textbook "anchor before scaling" failure** ([feedback_anchor_before_scaling](.../memory/...)) — Phase 1 has no global anchor, only chain anchors.
 
-**Network-distributed eval-server bridge — BUILT 2026-05-20, deploy gated on firewall.** Zenbook (i7-12700H, 16 GB, no NVIDIA) is now bootstrapped + venv'd; goal is to add it as a 3rd cluster box. Two deploy paths exist:
+**Maximalist + watchdog + health_log KILLED 2026-05-24 ~07:55** (Joshua's call). B5 self-play / B5 vs B4 eval discarded mid-flight (would have wasted ~55h more compute on B5/B6/B7 chain that's already drifting away from iter_01).
 
-| mode | throughput | needs |
-|---|---|---|
-| **CPU-only** standalone (own CPU eval-server) | ~0.5-1.0 games/min (Xeon-tier) | nothing — ships now |
-| **Bridge-client** (Zenbook workers → 5800X GPU via TCP) | ~0.8-1.0 games/min | admin firewall rule for TCP 19999 on 5800X |
+**Current global best at sims=200 plane: still `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01).** sims=800 plane: still `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01).
 
-Bridge is the better deploy: ~20% faster + much less Zenbook CPU pressure. Joshua is remote; firewall rule (1-line PowerShell as admin, see `/home/doctor/network_bridge_deploy.md`) pending. **Decision (2026-05-21):** ship CPU-only Zenbook now to start contributing, swap in bridge mode once firewall opens. CPU-only worker-count bench in flight (see DECISIONS.md 2026-05-20 — Network bridge).
+**B2 vs iter_01 anchor running now** (n=400, 5800X full 14w + Xeon full 10w, ETA ~2h). Confirms whether B2 was *also* drift from step 1, or if Option B chain at least got one good step before degrading. Output `/mnt/c/carc-shared/B2_vs_iter01_anchor/`. Logs `/tmp/B2_vs_iter01_{5800x,xeon}.log`.
 
-Bridge code (committed): `src/carcassonne_ai/remote_eval_bridge.py` (TCP listener + bridge thread, length-prefixed `np.save(allow_pickle=False)` wire format with no serialization-via-eval) + `src/carcassonne_ai/remote_socket_handles.py` (drop-in socket-backed ServerHandles) + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server`/`--serve-slots` flags + 9 unit tests (pass on 5800X **and** Zenbook). Loopback smoke: 12932 evals roundtripped across server + client, 0 failures. Bridge-mode worker-count bench on Zenbook: peak at W=8, plateau to W=20, recommend W=10 in production (matches your "2×P-cores − 2" heuristic — Zenbook has 6 P-cores).
+### Phase 1 verdict table (the misleading chain math)
+| step | result vs prev | elo Δ (chain) | direct vs iter_01 |
+|---|---|---|---|
+| B1 (iter_B1) | — | — | **+25.2** (2026-05-20 n=400) ← still global best |
+| B2 vs B1 | 1014W / 949L / 23D | +11.4 | **n=400 anchor in flight** |
+| B3 vs B2 | 994 / 980 / 26 | +2.4 | not measured |
+| B4 vs B3 | 995 / 987 / 18 | +1.4 | **−19.1** (n=400, confirmed regression) |
+| B5 vs B4 | (started 06:17, killed at 248/2000) | aborted | n/a |
 
-**Sequencer v3 ready** (`/home/doctor/maximalist_sequencer_v3.sh`, syntax-clean, +96 LoC vs v1) — wires Zenbook as bridge-client; drop in once firewall opens.
+### Open questions
+- **Is B2 also worse than iter_01?** If yes: Option B chain was bad from step 1; the recipe is dead. If no: chain held for 1 step then degraded; investigate why. Either way, **iter_B1 remains the sims=200 global best** until something beats it directly.
+- **Next lever after B2 verdict:** likely Phase 3 (deepsearch DS_02) or the orphaned loop deepsearch train+anchor (data already collected at `/mnt/c/carc-shared/deepsearch/iter_00/`).
+
+### Lessons memorialized today
+- [feedback_no_sigstop_mp_queue](../.claude/projects/.../memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
+- [feedback_xeon_ssh_quoting](../.claude/projects/.../memory/feedback_xeon_ssh_quoting.md) — don't wrap wsl invocation in outer quotes when ssh'ing Xeon
+
+**Zenbook called dead-end for now** (2026-05-21 — Joshua's call). Bridge infrastructure stays in tree as committed code (see "Bridge code" below) for future deploy. Sequencer v3 (`/home/doctor/maximalist_sequencer_v3.sh`) sits ready but is NOT in use.
+
+**Loop's deepsearch train+anchor — STILL ORPHANED.** Data ready at `/mnt/c/carc-shared/deepsearch/iter_00/` (1200 games sims=800, warm-from iter_01). Now that the maximalist is killed and 5800X GPU will be free after the B2 anchor, this is a candidate for the next experiment. ~5 min train + ~30 min anchor n=100 sims=200.
+
+**Bridge code (committed, unchanged):** `src/carcassonne_ai/remote_eval_bridge.py` (TCP listener + bridge thread, length-prefixed `np.save(allow_pickle=False)` wire format) + `src/carcassonne_ai/remote_socket_handles.py` (drop-in socket-backed ServerHandles) + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server`/`--serve-slots` flags + 9 unit tests (pass on 5800X **and** Zenbook). Loopback smoke: 12932 evals, 0 failures. The earlier "W=10 production" recommendation came from a STUB-eval bench — the only real-GPU bench attempt (today) was junk; no validated production W yet.
 
 ---
 

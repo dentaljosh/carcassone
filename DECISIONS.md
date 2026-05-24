@@ -23,6 +23,41 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-24 — Option B chain Phase 1 KILLED after B4; chain-vs-prev anchors were lying about absolute strength; pivoting to anchor-fraction multi-opponent self-play
+
+**Context.** Maximalist sequencer ran Phase 1 chain B2→B4 (B5 in progress, killed mid-flight) over 2026-05-21→24. Each chain step measured iter B(i) vs B(i-1) at n=2000, sims=200. Chain elo deltas looked acceptable: B2=+11.4 / B3=+2.4 / B4=+1.4 — no skip-forward (<−10 elo threshold) trigger. But **directly anchored against iter_01 (the canonical reference) at n=400**, B4 came back at **−19.1 elo** (186W/208L/6D, 1.1σ regression). Given iter_B1 = chain-step-0 = B1 was confirmed at +25.2 over iter_01 (2026-05-20 n=400), this means the chain drifted **~55 elo against the fixed reference** while each chain step looked ~neutral against its predecessor.
+
+This is the **"anchor before scaling" memory rule** failing in practice. Each step's measurement was vs a drifting reference, so the chain was free to spiral away from any externally-meaningful elo. The maximalist's Phase 1 (and Phases 3, 5-retrain) only does chain anchors — no global anchor — and is structurally vulnerable to this pattern.
+
+**Likely cause: RPS / intransitivity from self-specialization.** Each B(i)'s self-play data is dominated by play patterns against B(i-1). The network specializes against B(i-1)'s style → loses generality vs off-distribution opponents (iter_01). Classic AlphaZero failure mode without league/multi-opponent training.
+
+**Options considered:**
+- **A. Run more chain steps and hope** (B5/B6/B7 already queued). Rejected: drift is already 55 elo deep; another 60h of compute almost certainly worsens it.
+- **B. Anchor-fraction multi-opponent self-play.** Mix N% of self-play games against a fixed strong anchor (iter_B1) into the chain. Prevents drift by tying training data distribution to a fixed reference. Well-established cure for this failure mode. ~190 LoC, ~5h to implement. **CHOSEN pending B2 vs iter_01 anchor verdict.**
+- **C. League play (AlphaStar-style, N specialized agents).** Right long-term solution but overkill for our scale (1200 games/iter, 7M-param net). Engineering project: ~2-3 days.
+- **D. Different recipe entirely (e.g., score_diff abandoned, leaf-eval rework).** Doesn't address the structural drift, just hopes a different starting point doesn't show it.
+
+**Decision.** Kill chain after B4 (executed 2026-05-24 07:55). Run B2 vs iter_01 direct anchor at n=400 to differentiate "Option B recipe was broken from step 1" (B2 also ≈ −19) from "chain held for 1 step then drifted" (B2 ≈ +25). Then:
+- **If B2 ≥ ~+10**: implement anchor-fraction self-play (static anchor=iter_B1, fraction=0.3, alternating sides) per design in this session. Pilot 1 chain step under anchor-fraction; if validates, chain forward.
+- **If B2 ≈ −19**: anchor-fraction won't save a broken recipe; pivot to Phase 3 deepsearch / loop's orphaned deepsearch train+anchor / leaf-eval rework.
+
+**Other phase impacts:**
+- **Phase 2 (PUCT sweep on iter_B1)**: unaffected by drift — no chain step. Still valid to run as-is (~24h).
+- **Phase 4 (FN re-confirms, leaf-eval ablations on iter_B1)**: unaffected — no chain step. Still valid (~10h).
+- **Phase 5 smoke (tile-counting vs v2.7 leaf on iter_B1)**: unaffected — no chain step. Still valid (~3h).
+- **Phase 3 (deepsearch DS_02)**: IS a chain step — same drift risk. Should be re-implemented under anchor-fraction (anchor = iter_01 or existing deepsearch ckpt). Defer until anchor-fraction lands.
+- **Phase 5 conditional retrain**: IS a chain step. Same — defer or rewrite under anchor-fraction.
+
+**Reason.** B2-B4 chain elo (+11.4 / +2.4 / +1.4) "looked fine" by chain measurement, but the direct anchor revealed catastrophic drift. The sequencer's design lacked a global anchor and shipped that bug into ~3 days of compute. The cure (anchor-fraction in self-play, OR adding a "vs iter_01 anchor at n=400 each step" to chain phases as a cheap drift detector) is cheap enough that NOT having it was the real mistake.
+
+**Reversal cost.** Low for the kill itself (`--shared-claim` makes restart cheap — wasted compute is sunk). Medium for the anchor-fraction implementation: new flag in `run_selfplay_iter.py`, second eval-server in pool, two-evaluator routing in `selfplay.py:play_one_selfplay_game`. Defaults off; legacy behavior preserved when `--anchor-fraction 0.0`.
+
+**Phase.** Phase 4 (self-play loop), specifically the chain methodology.
+
+**Memory cross-refs.** [feedback_anchor_before_scaling](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_anchor_before_scaling.md) was the exact warning. The maximalist sequencer's design (chain-only anchors) was the mechanism that ignored it. Future autonomous pipelines must include a global anchor per chain step.
+
+---
+
 ## 2026-05-20 — Network-distributed eval-server: TCP bridge in front of the existing orchestrator pool, lets a GPU-less box (Zenbook) borrow the 5800X's GPU for inference
 
 **Context.** Zenbook (i7-12700H, 16 GB, no NVIDIA) bootstrapped 2026-05-20 to add as a 3rd cluster box. Two ways to use it: (a) run its own standalone CPU eval-server — works without any new code, but CPU forward is ~80 ms/eval and contributes maybe Xeon-tier throughput; (b) network-distribute the orchestrator so Zenbook's CPU workers offload inference to the 5800X GPU via TCP. Option (b) is meaningfully faster (workers do MCTS only, not torch forwards) and uses RAM Zenbook already has.

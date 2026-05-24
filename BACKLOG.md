@@ -241,6 +241,16 @@ These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-
 
 (none yet)
 
+## 2026-05-21 — Validate remote_eval_bridge slot-leakage / stale-response handling
+
+**Context:** Today's Zenbook bridge worker-count bench saw throughput collapse with more workers (W=4 → 1.0 g/min, W=6 → 0.5, W=8 → 0 — STUB+contention bench, never re-run cleanly). One plausible cause is a real correctness bug in the bridge's stale-response drain logic.
+
+**Suspect:** `src/carcassonne_ai/remote_eval_bridge.py:_conn_loop` lines ~175-196. When a remote connection dies mid-request (`pending=True`), the bridge tries to `handles.response_q.get(timeout=60.0)` to drain the in-flight response before returning the slot to the pool. If the server's response takes >60s (under load), the drain fails and the slot goes back to the pool **with a stale response still queued**. The NEXT connection to grab that slot does `handles.response_q.get()` and receives the stale prior response — which `send_framed(conn, pack_response(resp))` sends to the new client **without verifying `request_id`**. Silent corruption: the client gets priors/values for a different board.
+
+**Why deferred:** Zenbook is dead-end for now (2026-05-21, Joshua), so bridge isn't being used. No production impact. But this needs fixing before the next bridge deploy — and the fix is easy: in `_conn_loop` either (a) verify `resp.request_id == req.request_id` before sending and drop the response if not, or (b) drain unconditionally with no timeout (block until the in-flight response arrives or the server dies, then release the slot). Option (b) is simpler and correct because the server is guaranteed to respond eventually (or be dead, in which case we shouldn't reuse its slots anyway).
+
+**Verification when picked up:** rebench W={4,8,16} against a clean GPU (no other workload sharing). If throughput scales monotonically, the prior degradation was contention, not this bug. If W>4 still degrades, the bug is real — fix per above, re-bench.
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
