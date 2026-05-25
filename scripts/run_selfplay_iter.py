@@ -88,6 +88,8 @@ _worker_net: CarcassonneNet | None = None
 _worker_device: torch.device | None = None
 _worker_cfg: dict | None = None
 _worker_handles: ServerHandles | SocketServerHandles | None = None
+_worker_anchor_net: CarcassonneNet | None = None
+_worker_anchor_handles: ServerHandles | SocketServerHandles | None = None
 
 
 def _parse_host_port(s: str) -> tuple[str, int]:
@@ -120,6 +122,7 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     each Pool worker a stable index, since Pool itself doesn't expose one.
     """
     global _worker_net, _worker_device, _worker_cfg, _worker_handles
+    global _worker_anchor_net, _worker_anchor_handles
     _worker_cfg = cfg
     if cfg.get("orchestrator"):
         # CPU-only worker. No torch.cuda, no checkpoint load.
@@ -141,6 +144,13 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
             # cfg["orch_handles_by_worker"][worker_id] — already encodes
             # which shard's request_q/response_q to talk to.
             _worker_handles = cfg["orch_handles_by_worker"][global_worker_id]
+        # Anchor pool: a second set of per-worker handles backed by an
+        # independent server-pool running the anchor checkpoint. Only some
+        # games use it (see anchor_fraction); workers always hold the
+        # handle ready so anchor games don't pay setup cost mid-pool.
+        anchor_handles_by_worker = cfg.get("orch_anchor_handles_by_worker")
+        if anchor_handles_by_worker is not None:
+            _worker_anchor_handles = anchor_handles_by_worker[global_worker_id]
         return
     _worker_device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
@@ -154,6 +164,20 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
     _worker_net = net
+    # Per-worker anchor net (non-orchestrator path). Loaded once per worker;
+    # same CUDA device as the learner net (acceptable VRAM cost for our 30 MB
+    # nets — the orchestrator path is the production one anyway).
+    anchor_ckpt_path = cfg.get("anchor_checkpoint")
+    if anchor_ckpt_path:
+        a_ckpt = torch.load(
+            anchor_ckpt_path, map_location=_worker_device, weights_only=False
+        )
+        a_net = CarcassonneNet(
+            n_filters=a_ckpt["n_filters"], n_blocks=a_ckpt["n_blocks"]
+        ).to(_worker_device)
+        a_net.load_state_dict(a_ckpt["model_state"])
+        a_net.train(False)
+        _worker_anchor_net = a_net
 
 
 def _seed_for(iter_idx: int, game_idx: int) -> int:
@@ -210,42 +234,61 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         cfg.get("leaf_eval", "nn") != "nn" and DEFAULT_CONFIG.value_blend == 0.0
     )
 
-    if cfg.get("orchestrator"):
-        assert _worker_handles is not None
-        evaluator = make_remote_single_evaluator(_worker_handles, game)
-        batch_evaluator = None
-        if cfg["batch_size"] > 1:
-            batch_evaluator = make_remote_batch_evaluator(_worker_handles, game)
-    else:
-        assert _worker_net is not None and _worker_device is not None
-        if use_policy_only:
-            evaluator = make_single_evaluator_policy_only(
-                _worker_net, _worker_device, game, use_fp16=use_fp16
-            )
+    def _build_evaluators(handles, net):
+        """Build (evaluator, batch_evaluator) for one net, applying the same
+        leaf-eval wrapping the learner uses (anchor must inference under the
+        same conditions it was trained for)."""
+        if cfg.get("orchestrator"):
+            assert handles is not None
+            ev = make_remote_single_evaluator(handles, game)
+            bev = None
+            if cfg["batch_size"] > 1:
+                bev = make_remote_batch_evaluator(handles, game)
         else:
-            evaluator = make_single_evaluator(
-                _worker_net, _worker_device, game, use_fp16=use_fp16
-            )
-        batch_evaluator = None
-        if cfg["batch_size"] > 1:
+            assert net is not None and _worker_device is not None
             if use_policy_only:
-                batch_evaluator = make_batch_evaluator_policy_only(
-                    _worker_net, _worker_device, game, use_fp16=use_fp16
+                ev = make_single_evaluator_policy_only(
+                    net, _worker_device, game, use_fp16=use_fp16
                 )
             else:
-                batch_evaluator = make_batch_evaluator(
-                    _worker_net, _worker_device, game, use_fp16=use_fp16
+                ev = make_single_evaluator(
+                    net, _worker_device, game, use_fp16=use_fp16
                 )
+            bev = None
+            if cfg["batch_size"] > 1:
+                if use_policy_only:
+                    bev = make_batch_evaluator_policy_only(
+                        net, _worker_device, game, use_fp16=use_fp16
+                    )
+                else:
+                    bev = make_batch_evaluator(
+                        net, _worker_device, game, use_fp16=use_fp16
+                    )
+        if cfg.get("leaf_eval") == "v2_5":
+            ev = make_v25_value_wrapper(ev)
+            if bev is not None:
+                bev = make_v25_batch_value_wrapper(bev)
+        return ev, bev
 
-    # Optional leaf-eval swap: replace NN value head with virtual_score_v2
-    # (DECISIONS.md 2026-05-14). Priors still come from the network;
-    # only the leaf VALUE crossing into MCTS changes. Compatible with both
-    # local and orchestrator paths since both expose the same (priors, value)
-    # interface.
-    if cfg.get("leaf_eval") == "v2_5":
-        evaluator = make_v25_value_wrapper(evaluator)
-        if batch_evaluator is not None:
-            batch_evaluator = make_v25_batch_value_wrapper(batch_evaluator)
+    evaluator, batch_evaluator = _build_evaluators(_worker_handles, _worker_net)
+
+    # Anchor-fraction: decide per-seed whether this game is a learner-vs-anchor
+    # mixed game and which side the learner plays. XOR the seed with a constant
+    # so this RNG decorrelates from any other per-seed RNG use downstream.
+    anchor_fraction = float(cfg.get("anchor_fraction", 0.0))
+    anchor_evaluator = None
+    anchor_batch_evaluator = None
+    learner_player_idx = 0
+    if anchor_fraction > 0.0 and (
+        _worker_anchor_handles is not None or _worker_anchor_net is not None
+    ):
+        seed_rng = random.Random(seed ^ 0xA1B2C3D4)
+        if seed_rng.random() < anchor_fraction:
+            anchor_evaluator, anchor_batch_evaluator = _build_evaluators(
+                _worker_anchor_handles, _worker_anchor_net
+            )
+            learner_player_idx = seed_rng.randint(0, 1)
+
     try:
         ds = play_one_selfplay_game(
             game=game,
@@ -260,6 +303,9 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             batch_evaluator=batch_evaluator,
             virtual_loss=cfg["virtual_loss"],
             value_target=cfg["value_target"],
+            anchor_evaluator=anchor_evaluator,
+            anchor_batch_evaluator=anchor_batch_evaluator,
+            learner_player_idx=learner_player_idx,
         )
     except Exception as e:
         # Engine edge cases (e.g. farm_util IndexError seen 2026-05-10) shouldn't
@@ -417,6 +463,22 @@ def main(argv: list[str] | None = None) -> int:
              "HOST:PORT and ships eval requests over the network. Implies "
              "--orchestrator. Mutually exclusive with --serve-on.",
     )
+    p.add_argument(
+        "--anchor-checkpoint", type=Path, default=None,
+        help="Anchor-fraction self-play: fixed strong-opponent checkpoint. "
+             "When set, a fraction of games (see --anchor-fraction) are played "
+             "as learner-vs-anchor (alternating side); only the learner's "
+             "moves are recorded. Breaks the rock-paper-scissors drift that "
+             "killed the Option B chain (2026-05-24 — DECISIONS.md). "
+             "Mutually exclusive with --serve-on / --remote-eval-server.",
+    )
+    p.add_argument(
+        "--anchor-fraction", type=float, default=0.0,
+        help="Fraction of self-play games played against --anchor-checkpoint "
+             "(default 0.0 → legacy behavior). 0.3 is the recommended starting "
+             "point — keeps 70%% pure self-play while exposing the learner to "
+             "a different opponent distribution.",
+    )
     p.add_argument("--reset", action="store_true",
                    help="Wipe the iter subdir before starting.")
     p.add_argument("--summary-only", action="store_true",
@@ -442,6 +504,15 @@ def main(argv: list[str] | None = None) -> int:
         args.orchestrator = True
     if not args.remote_eval_server and args.checkpoint is None:
         p.error("--checkpoint is required (only optional with --remote-eval-server)")
+    if args.anchor_fraction < 0.0 or args.anchor_fraction > 1.0:
+        p.error(f"--anchor-fraction must be in [0, 1]; got {args.anchor_fraction}")
+    if args.anchor_fraction > 0.0 and args.anchor_checkpoint is None:
+        p.error("--anchor-fraction > 0 requires --anchor-checkpoint")
+    if args.anchor_checkpoint and (args.serve_on or args.remote_eval_server):
+        p.error(
+            "--anchor-checkpoint is not supported with --serve-on or "
+            "--remote-eval-server (single-host only for now)"
+        )
 
     iter_dir = args.output_root / f"iter_{args.iter_idx:02d}"
 
@@ -508,6 +579,8 @@ def main(argv: list[str] | None = None) -> int:
         "shared_claim": args.shared_claim,
         "claim_stale_secs": args.claim_stale_secs,
         "claim_host": args.claim_host,
+        "anchor_checkpoint": str(args.anchor_checkpoint) if args.anchor_checkpoint else None,
+        "anchor_fraction": float(args.anchor_fraction),
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -539,6 +612,7 @@ def main(argv: list[str] | None = None) -> int:
     # cfg. n_shards=1 is single-server (back-compat); n_shards>1 cracks
     # the GIL bottleneck (DECISIONS.md 2026-05-13).
     server_pool = None
+    anchor_server_pool = None
     bridge: BridgeServer | None = None
     if args.orchestrator:
         if args.remote_eval_server:
@@ -585,6 +659,32 @@ def main(argv: list[str] | None = None) -> int:
             shard_pids = [p.pid for p in server_pool.procs if p is not None]
             print(f"  eval-server pool ready (shard pids={shard_pids})")
             sys.stdout.flush()
+
+            # Anchor-fraction: second independent server pool running the
+            # anchor checkpoint. Workers hold handles to both pools; the
+            # per-game routing in `_play_one_pool` picks which to use.
+            if args.anchor_checkpoint:
+                print(
+                    f"  starting ANCHOR eval-server pool "
+                    f"({args.anchor_checkpoint.name}) — same shard/batch/timeout "
+                    f"as learner pool"
+                )
+                sys.stdout.flush()
+                anchor_server_pool = start_server_pool(
+                    checkpoint_path=str(args.anchor_checkpoint),
+                    n_workers=n_workers,
+                    n_shards=args.orch_shards,
+                    max_batch=args.orch_max_batch,
+                    batch_timeout_ms=args.orch_batch_timeout_ms,
+                    use_fp16=args.fp16,
+                    policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
+                )
+                cfg["orch_anchor_handles_by_worker"] = (
+                    anchor_server_pool.handles_by_worker[:n_workers]
+                )
+                a_pids = [p.pid for p in anchor_server_pool.procs if p is not None]
+                print(f"  anchor eval-server pool ready (shard pids={a_pids})")
+                sys.stdout.flush()
 
             if args.serve_on:
                 bridge_handles = server_pool.handles_by_worker[n_workers:]
@@ -638,6 +738,8 @@ def main(argv: list[str] | None = None) -> int:
             stop_bridge(bridge)
         if server_pool is not None:
             shutdown_server_pool(server_pool)
+        if anchor_server_pool is not None:
+            shutdown_server_pool(anchor_server_pool)
     elapsed = time.perf_counter() - t0
     print(
         f"\nDone iter={args.iter_idx}: {fresh} fresh + {cached} cached + "

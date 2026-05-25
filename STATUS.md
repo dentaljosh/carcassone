@@ -2,11 +2,14 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-24, 11:25) — **Option B chain DEAD (broken from step 1). Pivoted to loop's deepsearch train+anchor (running). Next: anchor-fraction self-play for the deepsearch lever.**
+## Right now (2026-05-24, 22:30) — **Option B chain DEAD. deepsearch_v2 lever NULL. Anchor-fraction self-play built + smoke-validated. Sims=200 confirmation run queued (dual-box work-stealing).**
 
-**Phase 1 chain ran B2→B4 then killed.** Maximalist completed Phase 1 chain steps 2, 3, 4 (each n=2000 vs previous chain ckpt). Chain elo deltas looked OK (+11.4 / +2.4 / +1.4) so chain kept going. **But the chain-vs-prev measurements were lying.** Direct n=400 anchors against iter_01 told the real story:
+### What changed today
+1. **deepsearch_v2 verdict landed** (orphaned /loop run finished 12:34). Trained from the 2026-05-18→21 work-stealing deepsearch data (1200 games sims=800 warm-from iter_01). Anchor: **+13.9 elo @ n=100** then **+5.2 elo @ n=400** (combined +11.4) — under σ=17, so **null vs iter_01 at sims=200**. The sims=800 training data did *not* move the sims=200 needle. deepsearch_v2 ≈ iter_01 strength-wise; deepsearch (v1) is still the sims=800-plane best.
+2. **Anchor-fraction self-play DONE + smoke-validated.** New code in `src/carcassonne_ai/selfplay.py` (dual-MCTS routing, learner-only record filter) + `scripts/run_selfplay_iter.py` (`--anchor-checkpoint`, `--anchor-fraction` flags, dual server-pool wiring) + `tests/test_anchor_fraction_selfplay.py` (6 tests). Full suite green. Smoke run (4 games, fraction=0.5): 2 anchor games (84/82 records, single-sign values = learner-only), 2 self-play games (165/166 records, mixed signs) — exact contract. Mutually exclusive with `--serve-on`/`--remote-eval-server` (single-host or `--shared-claim` only).
+3. **Strategy pivot**: anchor-fraction will be tested at **sims=200** first (cheap) before any sims=800 commit. The deepsearch lever (sims=800 training) was null; no reason to assume sims=800 amplifies the anchor-fraction signal more than sims=200 reveals it. Warm-from = iter_01 (simpler, equivalent to deepsearch_v2).
 
-### Phase 1 verdict table (the misleading chain math)
+### Phase 1 (Option B chain) — DEAD verdict table
 | step | result vs prev | elo Δ (chain) | direct vs iter_01 (n=400) | reading |
 |---|---|---|---|---|
 | B1 (iter_B1) | — | — | **+25.2** (2026-05-20) | still global best at sims=200 |
@@ -15,34 +18,38 @@
 | B4 vs B3 | 995 / 987 / 18 | +1.4 | **−19.1** (186W/208L/6D) | clear regression |
 | B5 vs B4 | killed at 248/2000 | aborted | n/a | sequencer killed during this |
 
-**Conclusion: Option B chain doesn't even gain in step 1.** B1's +25 elo cushion was already half-eroded by B2 (−6 vs iter_01); by B4 the chain was 44 elo below B1. Anchor-fraction self-play (the canonical cure for chain drift) wouldn't help an Option B chain because the recipe doesn't gain even with a perfect anchor — it can only hold the line at iter_B1's strength. **Option B as a chain lever is dead.**
+Conclusion: Option B chain doesn't gain even in step 1. **Option B as a chain lever is dead.** The maximalist's Phase 1/3/5-retrain (chain steps without a global anchor) are all dead-shape. Phases 2/4/5-smoke (no chain) are still alive — they target iter_B1, unaffected by drift.
 
-**Maximalist + watchdog + health_log KILLED 2026-05-24 ~07:55** (Joshua's call). B5 self-play / B5 vs B4 eval discarded mid-flight (would have wasted ~55h more compute on the dead chain).
+### Maximalist pipeline status (sequential phases, killed mid-Phase-1 on 2026-05-24)
+| Phase | What | Status |
+|---|---|---|
+| 1 | Option B chain B2→B7 sims=200 n=2000 | KILLED at B5 eval 298/2000 (dead recipe) |
+| 2 | PUCT wider sweep (c=0.5/1.0/3.0 vs c=1.5) at iter_B1 | NEVER RAN — re-queueable as dual-box at n=400 |
+| 3 | Deepsearch DS_02 (sims=800 chain step) | NEVER RAN — replaced by anchor-fraction lever |
+| 4 | FN re-confirms (cap20, capInf, blend0.5 at iter_B1) | NEVER RAN — re-queueable as 3 sub-runs |
+| 5 | Tile-counting closure-P smoke vs v2.7 at iter_B1 | NEVER RAN — re-queueable as dual-box n=400 |
 
-**Current global best (unchanged):**
-- sims=200 plane: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01)
-- sims=800 plane: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01)
+### Current global best (unchanged today)
+- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01)
+- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01)
+- deepsearch_v2 (`v25_retrain_deepsearch_v2/iter_00.pt`) = null vs iter_01 — kept as a viable warm-from but not a new global best
 
-**Currently running: loop's orphaned deepsearch train+anchor** (PID 5369, `/home/doctor/loop_deepsearch_train_anchor.sh`, `nice -n 19`, logs `/tmp/loop_deepsearch_run.log`, sentinel `/tmp/loop_deepsearch_run.DONE`). Uses the 2026-05-18→21 work-stealing deepsearch data (`/mnt/c/carc-shared/deepsearch/iter_00/`, 1200 games sims=800 warm-from iter_01) to train a new ckpt at `checkpoints/v25_retrain_deepsearch_v2/iter_00.pt`, then anchor-gate n=100 sims=200 vs iter_01. Started 11:23, ETA ~35 min. **This was orphaned by the maximalist (Phase 3 used a different warm-from path); finally getting its verdict.**
+### Queue (sequential jobs, each dual-box work-stealing)
+1. **Job #1 — anchor-fraction sims=200 confirmation.** 1200 games self-play + train + anchor-gate n=100 vs iter_01. Warm-from iter_01, anchor=iter_B1, anchor-fraction=0.3, leaf v2_5, score_diff. Both boxes shared-claim. ETA ~4-5h. **The strategic answer** — does the lever work at sims=200?
+2. **Decision gate**: ≥+20 elo → Job #3a (sims=800 production, ~20-25h dual-box). Null → Job #3b (Phase 5 smoke + lever pivot — multi-anchor or fraction=0.5).
+3a. **anchor-fraction sims=800** (chain step 1, ~20-25h dual-box).
+3b. **Phase 5 smoke** (tile-counting vs v2.7 at iter_B1, n=400, ~2-3h dual-box).
+4. **Phase 4** (3 sub-runs: cap20-vs-12 n=400, capInf-vs-12 n=400, blend0.5-vs-pure n=500). ~6-8h dual-box.
+5. **Phase 2 PUCT sweep** (c=0.5, c=1.0, c=3.0 vs c=1.5 at iter_B1, n=400 each — cut from maximalist's n=1000). ~6h dual-box.
 
-### Next pivot (after deepsearch_v2 verdict)
-1. **Implement anchor-fraction self-play** (~5h, ~190 LoC). Design fully scoped (see DECISIONS.md 2026-05-24). Static anchor = iter_B1 OR deepsearch (depending on which plane we're improving), fraction=0.3, alternating sides. Scope it to the **deepsearch lever** — sims=800 chain is where the actual strength gains live (confirmed +35 elo at sims=800 plane). Option B chain doesn't need it (the recipe itself is dead).
-2. **Parallel: run Phase 2 + Phase 4 + Phase 5-smoke** (~37h total, GPU-parallel'able). All unaffected by chain drift; tune hyperparameters/leaf-evals against iter_B1.
-3. **Then: anchor-fraction'd deepsearch chain** (Phase 3 equivalent, ~32h per step).
+### Code-sync state (5800X ↔ Xeon)
+- 5800X is on `gpu-orchestrator` HEAD (anchor-fraction code committed today). Xeon HEAD is older (`2bee896`) but has manual edits including `--shared-claim` and `--new-leaf-variant` already in its working tree. **Anchor-fraction code MUST be rsync'd to Xeon** before Job #1 can dual-box (3 files via the share). Phase 5/4/2 work with Xeon's existing code.
 
 ### Lessons memorialized
 - [feedback_no_sigstop_mp_queue](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
 - [feedback_xeon_ssh_quoting](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_xeon_ssh_quoting.md) — don't wrap wsl invocation in outer quotes when ssh'ing Xeon
-- [feedback_anchor_before_scaling](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_anchor_before_scaling.md) — already existed; this week's failure was the textbook case (maximalist Phase 1 had only chain anchors, no global anchor — direct anchor would have caught the drift at B2 instead of B4)
-- **Next lever after B2 verdict:** likely Phase 3 (deepsearch DS_02) or the orphaned loop deepsearch train+anchor (data already collected at `/mnt/c/carc-shared/deepsearch/iter_00/`).
 
-### Lessons memorialized today
-- [feedback_no_sigstop_mp_queue](../.claude/projects/.../memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
-- [feedback_xeon_ssh_quoting](../.claude/projects/.../memory/feedback_xeon_ssh_quoting.md) — don't wrap wsl invocation in outer quotes when ssh'ing Xeon
-
-**Zenbook called dead-end for now** (2026-05-21 — Joshua's call). Bridge infrastructure stays in tree as committed code (see "Bridge code" below) for future deploy. Sequencer v3 (`/home/doctor/maximalist_sequencer_v3.sh`) sits ready but is NOT in use.
-
-**Loop's deepsearch train+anchor — STILL ORPHANED.** Data ready at `/mnt/c/carc-shared/deepsearch/iter_00/` (1200 games sims=800, warm-from iter_01). Now that the maximalist is killed and 5800X GPU will be free after the B2 anchor, this is a candidate for the next experiment. ~5 min train + ~30 min anchor n=100 sims=200.
+**Zenbook called dead-end for now** (2026-05-21). Bridge infrastructure stays in tree as committed code for future deploy. Sequencer v3 (`/home/doctor/maximalist_sequencer_v3.sh`) sits ready but is NOT in use.
 
 **Bridge code (committed, unchanged):** `src/carcassonne_ai/remote_eval_bridge.py` (TCP listener + bridge thread, length-prefixed `np.save(allow_pickle=False)` wire format) + `src/carcassonne_ai/remote_socket_handles.py` (drop-in socket-backed ServerHandles) + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server`/`--serve-slots` flags + 9 unit tests (pass on 5800X **and** Zenbook). Loopback smoke: 12932 evals, 0 failures. The earlier "W=10 production" recommendation came from a STUB-eval bench — the only real-GPU bench attempt (today) was junk; no validated production W yet.
 

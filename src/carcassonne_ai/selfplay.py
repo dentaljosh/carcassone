@@ -40,6 +40,9 @@ def play_one_selfplay_game(
     batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     virtual_loss: float = 1.0,
     value_target: str = "score_diff",
+    anchor_evaluator: Callable[[object], tuple[np.ndarray, float]] | None = None,
+    anchor_batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
+    learner_player_idx: int = 0,
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -84,9 +87,24 @@ def play_one_selfplay_game(
                     (Option 2, DECISIONS 2026-05-17 — lets a value head
                     blended into the leaf predict the same quantity).
                     "wl" → ±1/0, the AlphaZero-canonical win/loss target.
+      anchor_evaluator: if set, switches to anchor-fraction mode — the
+                       learner (using `evaluator`) plays as
+                       `learner_player_idx`; the anchor (using
+                       `anchor_evaluator`) plays the other side.
+                       Only the learner's moves are recorded; the anchor's
+                       moves are played but never saved (their value targets
+                       would teach the learner the anchor's policy).
+                       The anchor's MCTS runs with no Dirichlet noise and
+                       τ=0 always — it's meant to be a strong static
+                       opponent, not an exploring agent.
+      anchor_batch_evaluator: optional GPU-batched evaluator for the anchor
+                              side, mirroring `batch_evaluator`.
+      learner_player_idx: 0 or 1 — which player the learner takes when
+                          anchor_evaluator is set. Ignored otherwise.
 
     Returns:
-      GameDataset with N rows where N = number of plies in the game.
+      GameDataset with N rows: in standard self-play N = total plies; in
+      anchor-fraction mode N = plies where the learner moved (~½ of total).
     """
     import random as _random
 
@@ -100,7 +118,7 @@ def play_one_selfplay_game(
     # since the next root is a new state and the search semantics are
     # cleaner without stale subtree mass. (Same pattern as the warmstart
     # MCTS labeling path.) clear() also frees the legal-moves cache.
-    mcts = NeuralMCTS(
+    learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
         simulations=sims,
@@ -112,6 +130,29 @@ def play_one_selfplay_game(
         batch_evaluator=batch_evaluator,
         virtual_loss=virtual_loss,
     )
+
+    # Anchor-fraction mode: a second MCTS for the fixed opponent. No Dirichlet
+    # noise — the anchor is meant to play its strongest line, not explore.
+    # learner_player_idx is ignored if anchor_evaluator is None.
+    if anchor_evaluator is not None:
+        if learner_player_idx not in (0, 1):
+            raise ValueError(
+                f"learner_player_idx must be 0 or 1, got {learner_player_idx}"
+            )
+        anchor_mcts: NeuralMCTS | None = NeuralMCTS(
+            game=game,
+            evaluator=anchor_evaluator,
+            simulations=sims,
+            c_puct=c_puct,
+            seed=seed ^ 0xDEADBEEF,
+            dirichlet_alpha=0.0,
+            dirichlet_eps=0.0,
+            batch_size=batch_size,
+            batch_evaluator=anchor_batch_evaluator,
+            virtual_loss=virtual_loss,
+        )
+    else:
+        anchor_mcts = None
 
     boards_arr: list[np.ndarray] = []
     scalars_arr: list[np.ndarray] = []
@@ -127,44 +168,58 @@ def play_one_selfplay_game(
         if legal.size == 0:
             break
 
+        # Route by player when in anchor-fraction mode; otherwise the learner
+        # plays both sides as in standard self-play.
+        is_learner_move = (anchor_mcts is None) or (cur_player == learner_player_idx)
+        mcts = learner_mcts if is_learner_move else anchor_mcts
+
         # Snapshot the canonical board encoding from the current player's POV.
-        obs, scalars = game.get_canonical_form(board, cur_player)
+        # (Only used if we actually record this move.)
+        if is_learner_move:
+            obs, scalars = game.get_canonical_form(board, cur_player)
 
         # Run MCTS, build policy target from visit counts.
         mcts.clear()
         mcts.search(board)
-        counts, actions = mcts.root_visit_distribution(board)
-        policy = np.zeros(A, dtype=np.float32)
-        # Defensive: intersect MCTS-produced visits with the snapshot mask
-        # before normalizing. In rare cases NeuralMCTS produces a visit on
-        # an action the outer `get_valid_moves(board)` call doesn't include
-        # (most likely a stale legal-moves-cache entry from a prior search;
-        # not yet root-caused). Without this clip, the trainer's policy-CE
-        # validator (which checks "no mass on masked-off actions") aborts
-        # the run. Dropping such visits is correct: the snapshot mask is
-        # the contract for legality at this position. If everything got
-        # filtered we fall back to uniform-over-legal.
-        kept = 0.0
-        if counts.sum() > 0:
-            for a, c in zip(actions, counts):
-                ai = int(a)
-                if mask[ai]:
-                    policy[ai] = float(c)
-                    kept += float(c)
-        if kept > 0:
-            policy /= kept
-        else:
-            policy[legal] = 1.0 / legal.size
 
-        # Pick the action.
-        temperature = 1.0 if ply < temp_threshold else 0.0
+        if is_learner_move:
+            counts, actions = mcts.root_visit_distribution(board)
+            policy = np.zeros(A, dtype=np.float32)
+            # Defensive: intersect MCTS-produced visits with the snapshot mask
+            # before normalizing. In rare cases NeuralMCTS produces a visit on
+            # an action the outer `get_valid_moves(board)` call doesn't include
+            # (most likely a stale legal-moves-cache entry from a prior search;
+            # not yet root-caused). Without this clip, the trainer's policy-CE
+            # validator (which checks "no mass on masked-off actions") aborts
+            # the run. Dropping such visits is correct: the snapshot mask is
+            # the contract for legality at this position. If everything got
+            # filtered we fall back to uniform-over-legal.
+            kept = 0.0
+            if counts.sum() > 0:
+                for a, c in zip(actions, counts):
+                    ai = int(a)
+                    if mask[ai]:
+                        policy[ai] = float(c)
+                        kept += float(c)
+            if kept > 0:
+                policy /= kept
+            else:
+                policy[legal] = 1.0 / legal.size
+
+        # Pick the action. Anchor side always plays τ=0 (strongest line, no
+        # sampling) — only the learner explores via the τ schedule.
+        if is_learner_move:
+            temperature = 1.0 if ply < temp_threshold else 0.0
+        else:
+            temperature = 0.0
         action = mcts.select_for_training(board, temperature=temperature)
 
-        boards_arr.append(obs.astype(np.float32))
-        scalars_arr.append(scalars.astype(np.float32))
-        policies_arr.append(policy)
-        masks_arr.append(mask.astype(bool))
-        players_arr.append(cur_player)
+        if is_learner_move:
+            boards_arr.append(obs.astype(np.float32))
+            scalars_arr.append(scalars.astype(np.float32))
+            policies_arr.append(policy)
+            masks_arr.append(mask.astype(bool))
+            players_arr.append(cur_player)
 
         board, _ = game.get_next_state(board, action)
         ply += 1
