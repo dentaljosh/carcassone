@@ -23,6 +23,38 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-26 — c_puct=1.5 → ~3.0 free win at iter_B1 (sims=200): +47.2 elo at n=400, 2.8σ. Most "leaf-eval plateau" symptoms were stale-PUCT, not leaf saturation.
+
+**Context.** After 8 days of leaf-eval ablations (cap A/B, value-blend, tile-counting) and chain experiments (Option B, anchor-fraction, deepsearch_v2) all returning null or negative, ran the maximalist's Phase 2 PUCT wider sweep (deferred for ~6 weeks since the original c_puct calibration on warmstart-level checkpoints). Same checkpoint iter_B1 both sides; only the per-side c_puct differs. n=400 at sims=200.
+
+**Result table.** All measured at iter_B1, sims=200, leaf v2_5, c=1.5 as the OLD side:
+- c=0.5 → −54.3 elo (165W/227L/8D) — catastrophic
+- c=1.0 → −11.3 elo (192/205/3) — mildly worse
+- c=1.5 (baseline) → 0
+- c=2.0 → +5.2 (from 2026-05-20 retroactive test; null)
+- **c=3.0 → +47.2 elo (226/172/2) — 2.8σ positive**
+
+Phase 2b (c=2.5/4.0/5.0) is in flight to triangulate the peak; outcome lands ~2026-05-26 18:00.
+
+**Conceptual reading.** In `U(s,a) = Q + c_puct * P * sqrt(ΣN)/(1+N)`, raising c shifts action selection from Q-driven (trust the v2_5 leaf eval's accumulated rollups) to P-driven (trust the network's policy prior). The +47 elo at c=3.0 means **the network's policy is now sharper than the leaf-eval's Q values**. The original c=1.5 was tuned during Phase 3 warmstart on much weaker policies; it never got retuned as the network trained through iter_00 → iter_01 → iter_B1. Classic stale-hyperparameter failure. Several recent "leaf-eval plateau" symptoms (v2.7 leaf doesn't scale, Option-2 blend hurts, cap retunes null) look in retrospect like search wasn't using the policy enough — not that the leaf was actually the limit.
+
+**Why this was missed.** All ablations of the last 6 weeks held c=1.5 constant. The 2026-05-15 PUCT sweep (`puct_c2_vs_c15`) only tested c=2.0 (got +5.2, near-null) and concluded "c=1.5 holds" — that single near-baseline data point made the whole search-config axis look settled when it wasn't. **Lesson: never declare a hyperparameter axis settled from one off-peak point — at minimum bracket above and below.**
+
+**Options considered (the strategic pivot the PUCT find triggers):**
+- **A. Update production c_puct to peak (≈3.0 pending Phase 2b) and call it done.** Easiest. Banks the free win immediately. Risks: c may not transfer to sims=800, may have interactions with other hyperparams.
+- **B. (chosen) A + retune-everything-stale audit.** Bump production c, then sweep the other "set early, never re-tuned" hyperparams (temp_threshold=15, dirichlet_alpha=0.3, dirichlet_eps=0.25, virtual_loss=1.0) at the new peak c. Same staleness pattern likely applies. Also re-test the recent null verdicts (anchor-fraction, deepsearch_v2, tile-counting) at peak c — many may flip positive.
+- **C. Skip the retune audit, jump to bigger projects (transformer net, multi-anchor league).** Higher EV in theory, but option-B audit is cheap (~2-3 days dual-box) and several entries have meaningful probability of paying off.
+
+**Decision.** Option B. Wire (sims × c) 2D probe → re-test top nulls at peak c → other-hyperparam sweep, all dual-box shared-claim. Forward queue documented in STATUS.md. Once stale-hyperparam audit settles, take stock and decide on bigger architectural projects.
+
+**Reversal cost.** Low for the production c bump (config change). Low-medium for the queue itself (each eval is ~3h dual-box, easily killable). The lesson — "bracket hyperparameters above and below the current setpoint when you sweep" — is the durable change in methodology.
+
+**Phase.** Phase 4 (self-play loop) hyperparameter tuning.
+
+**Memory cross-ref:** [feedback_bug_fix_shifts_optima](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bug_fix_shifts_optima.md) — same lesson applied to bug fixes; here it applies to checkpoint progression. Adding a new memory note for the methodological lesson.
+
+---
+
 ## 2026-05-24 — Option B chain Phase 1 KILLED after B4; chain-vs-prev anchors were lying about absolute strength; pivoting to anchor-fraction multi-opponent self-play
 
 **Context.** Maximalist sequencer ran Phase 1 chain B2→B4 (B5 in progress, killed mid-flight) over 2026-05-21→24. Each chain step measured iter B(i) vs B(i-1) at n=2000, sims=200. Chain elo deltas looked acceptable: B2=+11.4 / B3=+2.4 / B4=+1.4 — no skip-forward (<−10 elo threshold) trigger. But **directly anchored against iter_01 (the canonical reference) at n=400**, B4 came back at **−19.1 elo** (186W/208L/6D, 1.1σ regression). Given iter_B1 = chain-step-0 = B1 was confirmed at +25.2 over iter_01 (2026-05-20 n=400), this means the chain drifted **~55 elo against the fixed reference** while each chain step looked ~neutral against its predecessor.
