@@ -2,68 +2,65 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-26, 09:00) — **🎯 BIG FIND: c_puct=3.0 beats c=1.5 by +47.2 elo at iter_B1, n=400. Free elo from a single hyperparameter retune. All other maximalist phases NULL. Phase 2b sweep (c=2.5/4.0/5.0) running to find peak.**
+## Right now (2026-05-27, 00:00) — **🎯 Two finds compounding: Phase 2b confirms sharp peak at c_puct=3.0 (+47.2 elo); Phase 3 J1 flips anchor-fraction from null → +30.5 elo at c=3. The "re-test old nulls at peak c" hypothesis is paying off.**
 
-### What's new (2026-05-25 → 2026-05-26)
-1. **Phase 2 PUCT sweep — MAJOR FIND.** At iter_B1, sims=200, n=400, same ckpt both sides:
-   - c=0.5 vs c=1.5 → **−54.3 elo** (catastrophic)
-   - c=1.0 vs c=1.5 → −11.3 elo
-   - c=1.5 (baseline) → 0
-   - c=2.0 (prior 2026-05-20 test) → +5.2 (null)
-   - **c=3.0 vs c=1.5 → +47.2 elo** (2.8σ, clearly positive)
-   - Phase 2b in flight: c=2.5, c=4.0, c=5.0 vs c=1.5 (find the peak). Verdict ~18:00 today.
-   - **Conceptual takeaway:** the policy head is now sharper than the v2_5 leaf-eval's Q values. High c lets search trust the prior more — and that wins. The original c=1.5 was tuned on earlier (weaker) policies and went stale. **Most "leaf-eval plateau" worries may have been a stale-hyperparam problem, not a leaf-eval problem.**
-2. **Maximalist Phases 2/4/5 all run + verdicted.** Three more nulls / negatives stack up:
-   - Phase 4a cap=20 vs cap=12 → **−21.7 elo** (cap=12 well-tuned; higher hurts)
-   - Phase 4b cap=∞ vs cap=12 → −0.9 (null; no monotonic "higher cap" trend)
-   - Phase 4c blend=0.5 vs pure → **−18.8 elo** (NN value-head blend confirmed dead at n=500)
-   - Phase 5 tile-counting vs v2.7 → +6.1 (null at n=400)
-3. **Anchor-fraction null at sims=200.** Job #1 (1200-game self-play + train + anchor-gate n=100 vs iter_01) verdict was +10.7 elo. Re-anchor at n=400 came back at **−4.3 elo** → combined 500-game read ≈ −1 elo = null. **Lever doesn't move sims=200 with fraction=0.3 and iter_B1 anchor — at c=1.5.** Worth re-testing at peak c before declaring dead.
-4. **deepsearch_v2 also null** (n=400: +5.2 elo, combined +11.4 over 500 games — under σ=17).
+### What's new (2026-05-26 → 2026-05-27)
+1. **Phase 2b DONE — c=3.0 is the peak, sharp.** Full curve at iter_B1, sims=200, n=400, same ckpt both sides:
+   - c=0.5 → −54.3 (catastrophic) · c=1.0 → −11.3 · c=1.5 → 0 (baseline) · c=2.0 → +5.2 · c=2.5 → +7.8 · **c=3.0 → +47.2** · c=4.0 → +25.2 · c=5.0 → +19.1
+   - Sharp climb 2.5→3.0 (+39.4), gentle falloff above. **Lock c=3.0 for production at sims=200.** Fine-triangulation (c=2.75, c=3.25) deferred — other levers will reshape the peak when re-tuned ([feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md)).
+2. **Phase 3 J1: anchor-fraction RECOVERED at c=3.** 215W/180L/5D, n=400 → **+30.5 elo / 1.7σ above zero**. Was null at c=1.5 (−1 elo combined n=500). **The lever was real all along; we were testing it at the wrong c.** Anchor-fraction is no longer dead — candidates to chain forward (iter_AF2 → AF3) and test at sims=800.
+3. **Phase 3 J2/J3/J4 running.** J2 = deepsearch_v2 retest at c=3 at **sims=800** (swapped from sims=200 to match training plane — more decisive test). 118/400 as of 00:00. J3 = tile-counting leaf retest at c=3 sims=200. J4 = c-probe at sims=800 (does c=3 transfer to deepsearch plane). Whole queue ETA ~18:00 today.
+4. **Third box incoming.** 14650HX + RTX 4070m laptop arriving — no SSD yet. Plan: Pop!_OS install to external USB-C SSD, tailscale for now (LAN later), join the work-stealing cluster as `--claim-host laptop`. Expected ~+50-70% cluster throughput.
 
 ### Verdict table — what we now know
 | lever | best result | conclusion |
 |---|---|---|
-| **c_puct=3.0 vs 1.5** | **+47.2 elo / 2.8σ** | **🎯 FREE WIN — update production config** |
-| sims=200 → sims=800 (prior) | +200 elo | already a known free win (different lever) |
+| **c_puct=3.0 vs 1.5** | **+47.2 elo / 5.2σ** | **🎯 FREE WIN — production sims=200 update** |
+| sims=200 → sims=800 (prior) | +200 elo | known free win (different lever) |
 | iter_B1 vs iter_01 (sims=200) | +25.2 elo | current sims=200 global best |
 | deepsearch v1 vs iter_01 (sims=800) | +35.8 elo | current sims=800 global best |
+| **anchor-fraction at sims=200 / c=3** | **+30.5 elo / 1.7σ** | **🎯 RECOVERED — was −1 at c=1.5** |
+| anchor-fraction at sims=200 / c=1.5 | −1 (combined 500) | confirmed stale-c artifact |
 | Option B chain (B2, B4 vs iter_01) | −6, −19 | dead recipe (chain broken from step 1) |
-| deepsearch_v2 vs iter_01 (sims=200) | +5.2 | null — sims=800 training didn't transfer down |
-| anchor-fraction at sims=200 / c=1.5 | −4.3 | null — but tested at sub-optimal c |
+| deepsearch_v2 (c=1.5 sims=200) | +5.2 | null at plane-mismatch; retesting at c=3 sims=800 (J2) |
+| tile-counting (c=1.5 sims=200) | +6.1 | null; retesting at c=3 (J3) |
 | cap=20 vs cap=12 (Phase 4a) | −21.7 | cap=12 is optimum |
 | cap=∞ vs cap=12 (Phase 4b) | −0.9 | null |
 | value-blend=0.5 vs pure (Phase 4c) | −18.8 | confirms Option 2 (NN value blend) dead |
-| tile-counting vs v2.7 (Phase 5) | +6.1 | null |
 
 ### Current global best
-- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01). With **c_puct=3.0** that's now +25 + ~47 = roughly +70 elo over iter_01 at production cost — pending Phase 2b peak confirmation.
-- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01). Need to re-tune c at sims=800 (c=3 was measured at sims=200; optimum likely lower at higher sims).
+- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01). With **c_puct=3.0** that's now +25 + ~47 = ~+70 elo over iter_01 at production cost. Anchor-fraction iter_AF1 alone gives +30.5 at c=3 — a separate +30 lever stacking question is open.
+- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01). c at this plane TBD (J4 in flight).
 
 ### Forward queue — the next few days
-The PUCT find changes priorities. The new throughline: **re-test the things we set early and never re-tuned, plus re-test old nulls at the new optimal c.**
+J1 flipping anchor-fraction validates the throughline: **re-test the things we set early at the new optimal c.**
 
-1. **Phase 2b** (in flight, ETA ~18:00 today) — c=2.5/4.0/5.0 sweep to find peak. If still climbing at c=5, follow-up sweep c=7/10/15 (~9h dual-box).
-2. **(sims × c) 2D probe** (~12h dual-box) — 4 evals at {sims=200, sims=800} × {c=1.5, c=peak}. Tells us the production config (high-c may not transfer to high-sims regime).
-3. **Re-test top 3 nulls at peak c** (~9h dual-box) — anchor-fraction, deepsearch_v2, tile-counting. Each may flip from null to positive when search is tuned right.
-4. **Hyperparameter staleness sweep** (~12h dual-box across ~3-4 evals) — temp_threshold (15), dirichlet_alpha (0.3), dirichlet_eps (0.25), virtual_loss (1.0). Same "set early, never re-tuned" pattern as c_puct.
-5. **Production config update** — bump production c_puct (and any other peak hyperparams) once steps 2 + 4 settle. Code change only, no compute.
-
-Estimated wallclock to clear this queue: ~2-3 days dual-box. By Thursday/Friday we'd have: best production config, whether any dead levers come back alive, whether other hyperparams hide more free wins.
-
-Strategic re-evaluation that has to come AFTER the queue:
-- If anchor-fraction comes alive at peak c → reconsider sims=800 production run (~25h).
-- If everything stays null and c is the only new lever → strength is approaching the recipe ceiling; bigger projects (transformer net, multi-anchor league, leaf-eval rewrite) become the next bucket.
+1. **Phase 3 queue** (in flight, ETA ~18:00 today): J1 done (anchor-fraction RECOVERED), J2 sims=800 deepsearch_v2 retest, J3 tile-counting retest, J4 sims=800 c-probe.
+2. **If J2 or J3 also flip** → chain those forward (deepsearch_v2 → DS3, tile-counting → train with the new leaf). High-EV next moves.
+3. **Anchor-fraction chain at c=3** (~25h dual-box per iter at sims=200) — train iter_AF2 with c=3 self-play; verify the +30 lever stacks with iter_B1's +25 + c_puct's +47. May need re-anchored before chaining.
+4. **(sims × c) 2D probe** (~12h dual-box) — only the (sims=800, c=peak) cell remains after J4. If J4 negative, keep c=1.5 at sims=800.
+5. **Hyperparameter staleness sweep** at c=3 (~12h dual-box across ~3-4 evals) — temp_threshold (15), dirichlet_alpha (0.3), dirichlet_eps (0.25), virtual_loss (1.0). Same "set early, never re-tuned" pattern as c_puct.
+6. **Production config update** — bump c_puct → 3.0 (and any other peaks) once verdicts land. Code change only.
+7. **Third-box deploy** (laptop, ~3-5h setup) — joins cluster, adds ~50% throughput, parallel with steps 3-5.
 
 ### Pipeline-running scripts (for fresh-thread takeover)
-- `/home/doctor/launch_phase2b_puct_5800x.sh` (5800X master, currently running, ~8.5h remaining)
-- `/mnt/c/carc-shared/code_sync/launch_xeon_phase2b_puct.sh` (Xeon mirror)
-- `/home/doctor/launch_queue_2026_05_25_5800x.sh` (Phase 4 + re-anchor — done)
-- `/home/doctor/launch_phase2_puct_5800x.sh` (Phase 2a — done, the big find)
-- All previous launchers and `wire_next.sh` orchestrator pattern stay in `/home/doctor/` for reference
+- `/home/doctor/phase3_continue.sh` (currently running, PID 86050) — sequencer for J2/J3/J4 after J1 finished
+- `/home/doctor/phase3_sequencer.sh` (the master — killed; superseded by phase3_continue.sh after J1)
+- `/home/doctor/launch_phase2b_puct_5800x.sh` (Phase 2b master — done)
+- `/home/doctor/launch_phase2_puct_5800x.sh` (Phase 2a — done, the c_puct find)
+- `/home/doctor/sequencer.sh` (4-job re-test pattern — reference template)
+- Per-job logs: `/tmp/p3_<name>_{5800x,xeon}.log`. Master log: `/tmp/phase3_continue.log`. Verdicts: `/tmp/phase3_verdicts.txt`. Sentinel: `/tmp/phase3_sequencer.DONE`.
 
-### Code-sync state (5800X ↔ Xeon)
-- 5800X is on `gpu-orchestrator` HEAD (anchor-fraction code committed 489e09a). Xeon HEAD is older (`2bee896`) but has manual edits including `--shared-claim`, `--new-leaf-variant`, AND today's anchor-fraction code (rsync'd via /mnt/c/carc-shared/code_sync/ on 2026-05-24). Both boxes can run the full queue.
+### Code-sync state (5800X ↔ Xeon ↔ laptop)
+- 5800X is on `gpu-orchestrator` HEAD. Xeon HEAD is older (`2bee896`) but has manual edits including `--shared-claim`, `--new-leaf-variant`, AND anchor-fraction code (rsync'd via /mnt/c/carc-shared/code_sync/ on 2026-05-24). Both run the full queue.
+- Laptop pending — will clone from `origin/gpu-orchestrator` (push first) and sync checkpoints via tailscale rsync or CIFS.
+
+### Third machine — 14650HX + RTX 4070m laptop (pending deploy 2026-05-27)
+- **Specs:** Intel i7-14650HX (8P+8E, ~24 threads), RTX 4070m 8GB. Expected ~1.3-1.5× 5800X throughput on CPU-bound MCTS workload; GPU well above net+leaf demand.
+- **Storage:** no SSD yet (incoming in days). Interim: Pop!_OS install onto a 60GB+ ext4 partition shrunk from an external USB-C SSD's exFAT (or fresh USB stick if SSD unavailable). Pop!_OS chosen for pre-bundled proprietary nvidia drivers (the laptop dGPU pain point).
+- **Network:** tailscale-only initially (no LAN — physical move comes later). CIFS-over-tailscale tolerable for sims=800 (low write rate); may need batched-rsync mitigation if sims=200 chatter is painful.
+- **Cluster role:** third work-stealing worker via `--shared-claim --claim-host laptop`. Bench W on first deploy; expect W=16-20 optimal given 8P+8E hybrid arch.
+- **Status:** awaiting partition + Pop!_OS install. Recipe drafted; post-install setup driven via tailscale SSH.
 
 ### Lessons memorialized
 - [feedback_no_sigstop_mp_queue](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
