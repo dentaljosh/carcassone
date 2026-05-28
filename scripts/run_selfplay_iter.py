@@ -343,7 +343,10 @@ def main(argv: list[str] | None = None) -> int:
                         "under the 10_000 per-iter seed stride.")
     p.add_argument("--sims", type=int, default=25,
                    help="NeuralMCTS simulations per move (default 25).")
-    p.add_argument("--c-puct", type=float, default=1.5)
+    p.add_argument("--c-puct", type=float, default=3.0,
+                   help="PUCT exploration constant. 2026-05-26 sweep at iter_B1 "
+                        "found c=3.0 is the peak (+47.2 elo at sims=200, +39.3 at "
+                        "sims=800). Was 1.5 until 2026-05-27.")
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)

@@ -80,7 +80,12 @@ def _server_loop(
     policy_only: bool = False,
 ) -> None:
     try:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
         ckpt = torch.load(
             checkpoint_path, map_location=device, weights_only=False
         )
@@ -90,15 +95,18 @@ def _server_loop(
         net.load_state_dict(ckpt["model_state"])
         net.train(False)
 
-        # Force CUDA init + cuDNN kernel selection BEFORE signaling ready,
+        # Force accelerator init + kernel selection BEFORE signaling ready,
         # so the first real request doesn't pay the ~1-2s warmup cost.
-        if device.type == "cuda":
+        if device.type in ("cuda", "mps"):
             with torch.no_grad():
                 _ = net(
                     torch.zeros(1, N_CHANNELS, 25, 25, device=device),
                     torch.zeros(1, N_SCALAR_FEATURES, device=device),
                 )
-                torch.cuda.synchronize()
+                if device.type == "cuda":
+                    torch.cuda.synchronize()
+                else:
+                    torch.mps.synchronize()
         ready_event.set()
     except Exception as e:
         sys.stderr.write(

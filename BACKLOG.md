@@ -16,6 +16,98 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-27 — Optuna / TPE over eval-time hyperparameters
+
+**Context:** 2026-05-26 c_puct find (+47 elo) was missed for 6 weeks because we manually tested one knob at a time and never joint-searched. With ~9+ tunable hyperparameters (c_puct, leaf_cap, leaf_variant, dirichlet_alpha/eps, virtual_loss, temp_threshold, tile_counting, anchor_fraction) the combinatorial space is intractable for manual exploration. Joshua flagged this 2026-05-27 — Optuna/TPE/Bayesian optimization is the standard answer.
+
+**Idea:** wrap `eval_iter_head_to_head.py` as an Optuna objective function. Search joint space over eval-time knobs (the cheap ones): {c_puct ∈ [1.5, 5.0], leaf_cap ∈ [8, 20], leaf_variant ∈ {v2_7, tile_counting, tile_counting_cont}, sims ∈ {200, 400, 800}}. TPE sampler with ~20-30 trials at n=400 each. Each trial ~2.5-12h dual-box depending on sims. Full study: ~2-3 days dual-box. Returns Pareto frontier of (elo vs compute) and identifies joint optima.
+
+**Why this is Tier 1 (speed multiplier):** automates the search loop forever. Every future re-tune (after a new training iter shifts the landscape) just re-runs the study. Catches joint-knob optima manual search would miss. Roughly halves search-phase wall-clock by avoiding redundant single-knob sweeps.
+
+**Why deferred:** ~half day of code work; should land right after Phase 3 queue finishes. Eval-time knobs only — training-time knobs (dirichlet, anchor_fraction, value_target) cost ~9-25h per trial which is too expensive for BO with our budget. For training knobs keep manual reasoning + targeted experiments. May revisit population-based training (PBT) for training knobs if we have a 6+ box cluster.
+
+**Cost if pursued:** ~50 LoC wrapper script using `optuna` (pip install). Trial dispatch reuses existing eval infrastructure (dual-box work-stealing, `--shared-claim`). Logs land in an Optuna SQLite study + the existing per-eval JSON files.
+
+## 2026-05-27 — Multi-fidelity screening (Hyperband / successive halving)
+
+**Context:** Most "is this lever real?" questions hit a noise wall: at n=100 we can't distinguish +10 elo from zero, at n=400 we can but it costs 4× compute. We currently default to n=400 for every test — risk-averse but expensive. Multi-fidelity BO (Hyperband, BOHB) screens cheaply, promotes promising trials to deeper evaluation.
+
+**Idea:** every search trial starts at n=100. If point estimate is within (current best ± 25 elo), kill it. If clearly positive (+20+ elo at n=100, ~2σ), promote to n=200. If still positive, promote to n=400. Most trials die at n=100 (the screening tier), saving ~75% of search compute. Risk: a real +15 elo win gets killed at the screen (1.5σ at n=100 → not promoted). Mitigation: re-screen the killed list periodically against a fresh baseline, since shifting landscapes can resurrect false-negative levers (the same lesson as [[bracket-hyperparams]]).
+
+**Why this is Tier 1 (speed multiplier):** roughly halves search compute on the screening phase. Pairs naturally with the Optuna entry above — Optuna handles "where to look next", multi-fidelity handles "how many games per trial."
+
+**Why deferred:** wait until Optuna wrapper lands; multi-fidelity is a natural extension. ~1 additional day of code.
+
+**Cost if pursued:** ~100 LoC adding tiered-n trial dispatch. Optuna has built-in support via `optuna.pruners.SuccessiveHalvingPruner`.
+
+## 2026-05-27 — Transposition table in MCTS — ALREADY IMPLEMENTED
+
+**Context (original):** suggested adding a state-keyed node cache to `NeuralMCTS` for ~5-20% sim throughput improvement on every search.
+
+**Status (2026-05-27 audit):** **already done.** `NeuralMCTS._nodes: dict[str, _NeuralNode]` exists, keyed by `game.string_representation(board)`. Both code paths that create child nodes (serial `_select_leaf` ~line 786 and batched `_select_leaf_with_vloss` ~line 705) call `self._nodes.setdefault(fresh.state_key, fresh)` — identical states reached via different move orders share one node. Backup propagates only along the path actually taken (the standard DAG-safe approach). `clear()` resets the table per-game.
+
+**Implication:** the 5-20% speedup benefit is already baked into our throughput numbers. No code work needed. Removing from Tier 1 task queue; leaving this entry in the backlog as anti-rediscovery: don't propose adding a transposition table again — it's there.
+
+## 2026-05-27 — Multi-anchor league (extends anchor-fraction beyond N=1)
+
+**Context:** Anchor-fraction at c=3 just recovered (+30.5 elo at n=400) — validates the lever. But our implementation uses ONE fixed anchor checkpoint (iter_B1) for the anchor fraction. AlphaStar's league play uses N anchors at varied skills (current main, main-exploiters, league-exploiters) — addresses RPS-style cycles by training against a diverse opponent portfolio. Pluribus did similar with blueprint mixing.
+
+**Idea:** extend `selfplay.py` anchor-fraction to support a *list* of anchor checkpoints, sampled per-game. Initial portfolio: {iter_01, iter_B1, deepsearch, deepsearch_v2} (covers different training histories). Anchor fraction stays at 0.3; each anchor game uniformly samples from the portfolio.
+
+**Why deferred:** Phase 3 J1 just validated single-anchor; need to confirm the chain works (iter_AF2, iter_AF3 at c=3) before adding portfolio complexity. Also: 4× checkpoints in VRAM means ~6GB total — fits on 5800X 24GB but tight on Xeon's RTX 4000 8GB. If pursued, evaluator pool needs lazy loading or rotation.
+
+**Cost if pursued:** ~80 LoC in selfplay.py + run_selfplay_iter.py. Existing dual-evaluator code path generalizes — just becomes N-evaluator.
+
+**Related:** existing entry "Specialist warmstarts + league play" (Phase 4 deferred section) — that one proposed heuristic-biased specialists; this one is checkpoint-history-based. Both could coexist.
+
+## 2026-05-27 — Distillation (small fast student from strong teacher)
+
+**Context:** Current production net is 6×96 ResNet (~7M params, ~5-6ms inference per batch). For family-game play, latency matters — Joshua wants to play and not wait 30 seconds for a move. Distillation: train a smaller student net to mimic a larger/stronger teacher's policy + value outputs on the teacher's self-play games.
+
+**Idea:** train a 4×64 student net (~1-2M params, ~2× faster inference) using KL divergence loss against iter_B1 (or whatever the future global-best is) on the existing self-play buffer. Should retain most of the teacher's strength at lower inference cost. Alternative: 6×64 (fewer params, same depth) or 4×96 (same width, less depth). Bench each.
+
+**Why this is Tier 3 (strategic):** doesn't make us stronger, makes us faster — important for the eventual family-play use case. Speeds up play time and potentially self-play if the student becomes the next iter's teacher (but quality drops, so probably not for self-play). Pairs well with sims=800 production play: if student inference is 2× faster, sims=1600 becomes affordable.
+
+**Why deferred:** premature until we have a stable global-best strong teacher. Worth doing once the recipe stops compounding (we're not there yet — c_puct find proved we're still in compounding regime).
+
+**Cost if pursued:** ~150 LoC training script + 4-6 hours train + bench. The architectural variants need a fresh warmstart (different tensor shapes from teacher).
+
+## 2026-05-27 — MuZero-style learned dynamics model
+
+**Context:** Our MCTS uses the vendored engine for state transitions — perfect for known-rules games but limits what the net can learn. MuZero learns the dynamics model end-to-end (state + action → next-state representation), and uses it for MCTS planning. For Carcassonne the dynamics are deterministic and the engine is correct, so MuZero offers no game-mechanics advantage — but the *latent* representation it learns can encode strategic features the engine doesn't expose (e.g. "this position has high meeple-lock risk"), which COULD be useful for Phase 5 analyzer.
+
+**Idea:** retrain with a MuZero-style head that predicts a latent state representation from raw board features, then uses MCTS over the latent dynamics. Largest end-state architectural change in our backlog.
+
+**Why this is Tier 4 (research bet):** ~6 week project. May not even improve playing strength (MuZero matched, didn't exceed, AlphaZero on Go). Worth considering only if (a) recipe truly plateaus AND (b) Phase 5 analyzer needs richer state representations than the engine exposes.
+
+**Why deferred:** not even close to needed. Current recipe still compounds; Phase 5 is gated on superhuman strength which we haven't hit. Park here so it doesn't get forgotten as a long-horizon option.
+
+## 2026-05-27 — Apple Neural Engine (ANE) inference on M5
+
+**Context:** M5 Mac Air joined the cluster 2026-05-27 with MPS (Apple GPU) for forward passes. ANE (Neural Engine) is a separate dedicated NN inference accelerator on Apple silicon — ~38 TOPS on M5, optimized specifically for inference, much more power-efficient than GPU.
+
+**Idea:** export the 7M-param ResNet to Core ML format via `coremltools`, run inference through Core ML Python API, wire into eval-server as a third backend alongside CUDA / MPS. Could be 2-5× faster than MPS for our small net.
+
+**Why deferred:** ~1-2 days dev work (export + integration + per-op compatibility check). Mac is currently the smallest cluster contributor (<25% even with MPS); the marginal speedup from ANE goes from "small contributor" to "still-small contributor that uses less power." Dev time better spent on Optuna improvements, league play, or anchor-fraction chain — all higher-EV. PyTorch can't target ANE directly so this is a real integration project, not a one-line patch.
+
+**When to revisit:**
+- Phone/iPad version for Phase 5 family-game UX — ANE inference at <1ms would dominate
+- Multi-Mac cluster (M-series farm) where per-Mac throughput matters more
+- Bigger network where forward-pass dominates per-game cost more
+- If we ever care about power-efficient inference (e.g. always-on coach mode)
+
+Currently: MPS is the right level of Apple silicon optimization. ANE stays in this entry.
+
+## 2026-05-27 — Transformer over board features
+
+**Context:** STATUS.md mentions this once as "bigger project" and we've never costed it. Convolutional ResNet has structural assumptions (local features, translation invariance) that suit images but may not match Carcassonne where strategic features are spatial relationships between distant tiles (farm connections, road-network topology). A small transformer over board features could capture those long-range interactions natively.
+
+**Idea:** replace the ResNet trunk with a 4-layer transformer encoder over a board-as-sequence representation (e.g. each placed tile + each open position as a token). Output flattens through the same policy/value heads. ~5-10M params depending on width.
+
+**Why this is Tier 4 (research bet):** unclear whether attention helps on a 35×35 grid with ~80 tokens (small). Modern AlphaZero variants (KataGo, recent chess engines) still use CNNs because the inductive bias matches the grid structure. The argument for transformer is the long-range interaction one, but it's speculative.
+
+**Why deferred:** ~3-4 week project (arch + warmstart + retrain). Only worth it if recipe truly plateaus AND we suspect long-range modeling is the bottleneck. Bench a feature-distance probe first (does a probe classifier on ResNet activations predict "long-range" structure poorly?) before committing.
+
 ## 2026-05-19 — Curriculum self-play: Base-game-first, then add farmers/river
 
 **Context:** Reading the Dwarkesh × Eric Jang interview (rebuilding AlphaGo) against our state. Eric's data-efficiency trick: don't train AlphaZero tabula-rasa on 19×19 — bootstrap a value function on 5×5/9×9 self-play, then transfer. Our value head is the documented bottleneck (Option 2 closed 2026-05-18: a 7.4M-param value head on ~1200 games is a weaker evaluator than the hand-tuned v2.7 heuristic) and the plain recipe is plateaued — so the interesting lever is data efficiency, not another recipe knob.

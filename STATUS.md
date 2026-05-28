@@ -2,65 +2,83 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-27, 00:00) — **🎯 Two finds compounding: Phase 2b confirms sharp peak at c_puct=3.0 (+47.2 elo); Phase 3 J1 flips anchor-fraction from null → +30.5 elo at c=3. The "re-test old nulls at peak c" hypothesis is paying off.**
+## Right now (2026-05-27, 23:15) — **🎯 Phase 3 COMPLETE + full cluster online (4 boxes). c_puct=3.0 is the new production default (committed). One null recovered (anchor-fraction +30.5), two confirmed dead, c-transfer to sims=800 confirmed (+39.3). Overnight: iter_B1 vs deepsearch @ sims=800 c=3 running on laptop.**
 
 ### What's new (2026-05-26 → 2026-05-27)
-1. **Phase 2b DONE — c=3.0 is the peak, sharp.** Full curve at iter_B1, sims=200, n=400, same ckpt both sides:
+1. **Phase 3 retest queue DONE.** All 4 jobs verdicted at n=400:
+   - **J1 anchor-fraction @ c=3, sims=200: RECOVERED +30.5 elo** (was −1 at c=1.5). Stale-c false-negative now confirmed real.
+   - **J2 deepsearch_v2 @ c=3, sims=800: confirmed dead −0.9 elo** (198W/199L/3D, almost exactly even). Plane-match didn't rescue it. Don't chain.
+   - **J3 tile_counting leaf @ c=3: confirmed dead −12.2 elo.** Leaf variant is not a lever at any c we've tested.
+   - **J4 sims=800 c-probe: c=3 vs c=1.5 → +39.3 elo / 3.4σ.** **c=3 transfers cleanly to sims=800** with a meaningful boost (smaller than sims=200's +47 but in the same ballpark).
+2. **Phase 2b sweep DONE earlier — c=3.0 is the peak, sharp.** Full curve at iter_B1, sims=200, n=400 each:
    - c=0.5 → −54.3 (catastrophic) · c=1.0 → −11.3 · c=1.5 → 0 (baseline) · c=2.0 → +5.2 · c=2.5 → +7.8 · **c=3.0 → +47.2** · c=4.0 → +25.2 · c=5.0 → +19.1
-   - Sharp climb 2.5→3.0 (+39.4), gentle falloff above. **Lock c=3.0 for production at sims=200.** Fine-triangulation (c=2.75, c=3.25) deferred — other levers will reshape the peak when re-tuned ([feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md)).
-2. **Phase 3 J1: anchor-fraction RECOVERED at c=3.** 215W/180L/5D, n=400 → **+30.5 elo / 1.7σ above zero**. Was null at c=1.5 (−1 elo combined n=500). **The lever was real all along; we were testing it at the wrong c.** Anchor-fraction is no longer dead — candidates to chain forward (iter_AF2 → AF3) and test at sims=800.
-3. **Phase 3 J2/J3/J4 running.** J2 = deepsearch_v2 retest at c=3 at **sims=800** (swapped from sims=200 to match training plane — more decisive test). 118/400 as of 00:00. J3 = tile-counting leaf retest at c=3 sims=200. J4 = c-probe at sims=800 (does c=3 transfer to deepsearch plane). Whole queue ETA ~18:00 today.
-4. **Third box incoming.** 14650HX + RTX 4070m laptop arriving — no SSD yet. Plan: Pop!_OS install to external USB-C SSD, tailscale for now (LAN later), join the work-stealing cluster as `--claim-host laptop`. Expected ~+50-70% cluster throughput.
+3. **Production config bumped (this commit).** `--c-puct` default in `scripts/eval_iter_head_to_head.py` and `scripts/run_selfplay_iter.py` is now **3.0** (was 1.5). Old callers passing `--c-puct 1.5` explicitly still work.
+4. **Cluster grew from 2 boxes to 4** (5800X+Xeon → +laptop +Mac M5 Air):
+   - **Laptop (popos-usb, 14650HX + RTX 4070m, deployed today):** CUDA on Pop!_OS 22.04 + driver 580, peak **W=24 → 196 g/h** at sims=200 c=3. Confirmed clean curve, dip at W=22 only (CPU-scheduling pathology). Sleep masked at systemd level to prevent suspend during cluster runs.
+   - **Mac M5 Air (joshuaishal@100.64.175.108, deployed today):** Apple M5 10-core, 32GB RAM. Best config **W=4 MPS no-orchestrator → 53 g/h.** MPS-via-orchestrator is SLOWER than MPS-direct (eval-server IPC + per-call MPS overhead exceeds compute on tiny batches). For Mac, always run without `--orchestrator`.
+   - **Cluster total: ~444 g/h** (5800X 120 + Xeon 75 + laptop 196 + Mac 53), up from 195 g/h dual-box = **2.3× throughput**.
+5. **MPS patch (this commit):** `eval_server.py` and `eval_iter_head_to_head.py` now auto-fall-back CUDA→MPS→CPU. No-op on CUDA boxes; lets Mac participate in orchestrator path (even if no-orch is faster for it).
+6. **Optuna wrapper drafted (this commit, `scripts/optuna_eval_search.py`):** TPE over {c_puct, leaf_cap, leaf_variant}, multi-fidelity (n=100 screen → n=400 promote). 20 trials ≈ 15-23h dual-box. NOT YET RUN — runs after Phase 4 docs settle.
+7. **BACKLOG audits surfaced 1 "already done":** **NeuralMCTS transposition table is already implemented** (`_nodes: dict[str, _NeuralNode]` + `setdefault` in both serial and batch leaf-selection paths). The 5-20% sim throughput benefit is already baked into our numbers. Removed from Tier 1 task queue; BACKLOG entry now serves as anti-rediscovery.
 
 ### Verdict table — what we now know
 | lever | best result | conclusion |
 |---|---|---|
-| **c_puct=3.0 vs 1.5** | **+47.2 elo / 5.2σ** | **🎯 FREE WIN — production sims=200 update** |
+| **c_puct=3.0 vs 1.5 (sims=200)** | **+47.2 elo / 5.2σ** | **🎯 FREE WIN — production default updated this commit** |
+| **c_puct=3.0 vs 1.5 (sims=800)** | **+39.3 elo / 3.4σ** | **🎯 transfers to sims=800 — unified bump justified** |
 | sims=200 → sims=800 (prior) | +200 elo | known free win (different lever) |
-| iter_B1 vs iter_01 (sims=200) | +25.2 elo | current sims=200 global best |
-| deepsearch v1 vs iter_01 (sims=800) | +35.8 elo | current sims=800 global best |
+| iter_B1 vs iter_01 (sims=200) | +25.2 elo | sims=200-plane global best |
+| deepsearch v1 vs iter_01 (sims=800) | +35.8 elo | sims=800-plane global best (pending iter_B1 vs deepsearch @ sims=800 c=3 — running overnight) |
 | **anchor-fraction at sims=200 / c=3** | **+30.5 elo / 1.7σ** | **🎯 RECOVERED — was −1 at c=1.5** |
-| anchor-fraction at sims=200 / c=1.5 | −1 (combined 500) | confirmed stale-c artifact |
 | Option B chain (B2, B4 vs iter_01) | −6, −19 | dead recipe (chain broken from step 1) |
-| deepsearch_v2 (c=1.5 sims=200) | +5.2 | null at plane-mismatch; retesting at c=3 sims=800 (J2) |
-| tile-counting (c=1.5 sims=200) | +6.1 | null; retesting at c=3 (J3) |
+| deepsearch_v2 @ c=3 sims=800 (J2) | −0.9 | confirmed dead even at plane match + peak c |
+| tile-counting leaf @ c=3 (J3) | −12.2 | confirmed dead at peak c; leaf variant is not a lever |
 | cap=20 vs cap=12 (Phase 4a) | −21.7 | cap=12 is optimum |
 | cap=∞ vs cap=12 (Phase 4b) | −0.9 | null |
 | value-blend=0.5 vs pure (Phase 4c) | −18.8 | confirms Option 2 (NN value blend) dead |
 
 ### Current global best
-- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1, +25.2 over iter_01). With **c_puct=3.0** that's now +25 + ~47 = ~+70 elo over iter_01 at production cost. Anchor-fraction iter_AF1 alone gives +30.5 at c=3 — a separate +30 lever stacking question is open.
-- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01). c at this plane TBD (J4 in flight).
+- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1). With **c=3.0** (now the default): ~+72 elo over iter_01 at production cost (iter_B1's +25 + c=3 lift ~+47 — additivity assumed, not yet verified). Anchor-fraction iter_AF1 alone gives +30.5 at c=3.
+- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01 at c=1.5). **Overnight run determines whether iter_B1 displaces deepsearch at sims=800 c=3** (laptop, n=400, ETA ~06:30 tomorrow).
 
 ### Forward queue — the next few days
-J1 flipping anchor-fraction validates the throughline: **re-test the things we set early at the new optimal c.**
-
-1. **Phase 3 queue** (in flight, ETA ~18:00 today): J1 done (anchor-fraction RECOVERED), J2 sims=800 deepsearch_v2 retest, J3 tile-counting retest, J4 sims=800 c-probe.
-2. **If J2 or J3 also flip** → chain those forward (deepsearch_v2 → DS3, tile-counting → train with the new leaf). High-EV next moves.
-3. **Anchor-fraction chain at c=3** (~25h dual-box per iter at sims=200) — train iter_AF2 with c=3 self-play; verify the +30 lever stacks with iter_B1's +25 + c_puct's +47. May need re-anchored before chaining.
-4. **(sims × c) 2D probe** (~12h dual-box) — only the (sims=800, c=peak) cell remains after J4. If J4 negative, keep c=1.5 at sims=800.
-5. **Hyperparameter staleness sweep** at c=3 (~12h dual-box across ~3-4 evals) — temp_threshold (15), dirichlet_alpha (0.3), dirichlet_eps (0.25), virtual_loss (1.0). Same "set early, never re-tuned" pattern as c_puct.
-6. **Production config update** — bump c_puct → 3.0 (and any other peaks) once verdicts land. Code change only.
-7. **Third-box deploy** (laptop, ~3-5h setup) — joins cluster, adds ~50% throughput, parallel with steps 3-5.
+1. **Overnight (in flight):** laptop running `iter_B1 vs deepsearch @ sims=800 c=3, n=400` — answers the sims=800-plane production checkpoint question.
+2. **Tomorrow AM (after overnight lands):** Wire Optuna study on 5800X+Xeon. TPE over {c_puct ∈ [1.5, 5], leaf_cap, leaf_variant}, multi-fidelity (n=100 screen → n=400 promote), 20 trials. ~15-23h dual-box. Find any joint optima we'd miss with manual one-knob search.
+3. **Anchor-fraction chain at c=3** (~25h per iter dual-box) — train iter_AF2 with c=3 self-play from iter_B1; verify +30 lever stacks with iter_B1's +25 + c=3's +47. Highest-EV remaining lever.
+4. **Stale-hyperparam screen** — dirichlet/temp_threshold/virtual_loss at c=3. Lower priority since most are self-play-only (need full retrain per trial, expensive).
+5. **Laptop unplug 10am-ish (~6h)** — cluster drops to 5800X+Xeon+Mac (~248 g/h) for that window. Overnight job finishes well before.
 
 ### Pipeline-running scripts (for fresh-thread takeover)
-- `/home/doctor/phase3_continue.sh` (currently running, PID 86050) — sequencer for J2/J3/J4 after J1 finished
-- `/home/doctor/phase3_sequencer.sh` (the master — killed; superseded by phase3_continue.sh after J1)
-- `/home/doctor/launch_phase2b_puct_5800x.sh` (Phase 2b master — done)
-- `/home/doctor/launch_phase2_puct_5800x.sh` (Phase 2a — done, the c_puct find)
-- `/home/doctor/sequencer.sh` (4-job re-test pattern — reference template)
-- Per-job logs: `/tmp/p3_<name>_{5800x,xeon}.log`. Master log: `/tmp/phase3_continue.log`. Verdicts: `/tmp/phase3_verdicts.txt`. Sentinel: `/tmp/phase3_sequencer.DONE`.
+- **Laptop overnight (running):** ssh wrapper PID 90669 on 5800X, python eval PID 19686 on laptop. Output: `/tmp/laptop_b1_vs_ds_s800/`. Log: `/tmp/laptop_overnight.log`.
+- **`/home/doctor/laptop_cluster_lib.sh`** — helpers for launching laptop in work-stealing pattern (rsync-from-laptop-to-5800X-CIFS instead of CIFS-over-tailscale chatter). Includes `kill_stale_workers_on_laptop` precondition.
+- **`/home/doctor/phase3_continue.sh`** (done) — sequencer that ran J2/J3/J4. Reference for the dual-box pattern.
+- **`/home/doctor/sequencer.sh`** — earlier 4-job re-test pattern, template.
+- **`scripts/optuna_eval_search.py`** (NEW, drafted, NOT yet run) — Optuna TPE wrapper with multi-fidelity. Will need ~50 LoC to add dual-box dispatch when wired.
+- Verdict files: `/tmp/phase3_verdicts.txt`. Sentinels: `/tmp/phase3_sequencer.DONE`.
 
-### Code-sync state (5800X ↔ Xeon ↔ laptop)
-- 5800X is on `gpu-orchestrator` HEAD. Xeon HEAD is older (`2bee896`) but has manual edits including `--shared-claim`, `--new-leaf-variant`, AND anchor-fraction code (rsync'd via /mnt/c/carc-shared/code_sync/ on 2026-05-24). Both run the full queue.
-- Laptop pending — will clone from `origin/gpu-orchestrator` (push first) and sync checkpoints via tailscale rsync or CIFS.
+### Code-sync state (5800X ↔ Xeon ↔ laptop ↔ Mac)
+- **5800X** on `gpu-orchestrator` HEAD (this commit).
+- **Xeon** HEAD is older (`2bee896`) but has manual edits matching today's behavior (rsync'd via /mnt/c/carc-shared/code_sync/).
+- **Laptop (popos-usb)** has GitHub-cloned `gpu-orchestrator` HEAD (pre-this-commit). Will need `git pull` to pick up the MPS patch + c_puct bump.
+- **Mac (M5 Air)** has GitHub-cloned HEAD (pre-this-commit). Already received MPS patch via rsync (pre-commit). Will need `git pull` after this commit to pick up the c_puct bump.
 
-### Third machine — 14650HX + RTX 4070m laptop (pending deploy 2026-05-27)
-- **Specs:** Intel i7-14650HX (8P+8E, ~24 threads), RTX 4070m 8GB. Expected ~1.3-1.5× 5800X throughput on CPU-bound MCTS workload; GPU well above net+leaf demand.
-- **Storage:** no SSD yet (incoming in days). Interim: Pop!_OS install onto a 60GB+ ext4 partition shrunk from an external USB-C SSD's exFAT (or fresh USB stick if SSD unavailable). Pop!_OS chosen for pre-bundled proprietary nvidia drivers (the laptop dGPU pain point).
-- **Network:** tailscale-only initially (no LAN — physical move comes later). CIFS-over-tailscale tolerable for sims=800 (low write rate); may need batched-rsync mitigation if sims=200 chatter is painful.
-- **Cluster role:** third work-stealing worker via `--shared-claim --claim-host laptop`. Bench W on first deploy; expect W=16-20 optimal given 8P+8E hybrid arch.
-- **Status:** awaiting partition + Pop!_OS install. Recipe drafted; post-install setup driven via tailscale SSH.
+### Cluster hardware summary
+| box | arch | workers | g/h (sims=200) | role |
+|---|---|---|---|---|
+| 5800X (`/home/doctor/projects/carcassone`) | Zen 3, 8C/16T, RTX 5060 Ti | W=14 | 120 | primary, orchestrator |
+| Xeon (`ssh xeon`) | Skylake-X, 6C/12T, Quadro RTX 4000 | W=10 | 75 | secondary, shared-claim |
+| Laptop popos-usb (`ssh laptop`) | Raptor 14650HX 8P+8E, RTX 4070m | W=24 | 196 | tertiary, tailscale; sleep masked |
+| Mac M5 Air (`ssh joshuaishal@100.64.175.108`) | Apple M5 10-core, no CUDA (MPS) | W=4 | 53 | quaternary, MPS no-orchestrator |
+| **total cluster** | | | **~444** | **2.3× the pre-cluster dual-box rate** |
+
+### Lessons memorialized
+- [feedback_no_sigstop_mp_queue](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
+- [feedback_xeon_ssh_quoting](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_xeon_ssh_quoting.md) — don't wrap wsl invocation in outer quotes when ssh'ing Xeon
+- [feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md) — sweep with brackets above AND below; never declare an axis settled from one off-baseline sample (the c_puct lesson)
+
+**Production config (post-this-commit):** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + **c_puct=3.0** (was 1.5) + sims=200 default, W per box from cluster table above.
+
+**Zenbook called dead-end** (2026-05-21). Bridge infrastructure stays committed for future deploy. Bridge code: `src/carcassonne_ai/remote_eval_bridge.py` + `src/carcassonne_ai/remote_socket_handles.py` + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server` flags + 9 unit tests (pass). Loopback smoke: 12932 evals, 0 failures. Not in production use.
 
 ### Lessons memorialized
 - [feedback_no_sigstop_mp_queue](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them

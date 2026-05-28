@@ -264,9 +264,12 @@ def _worker_init(
         _worker_old_handles = orch_cfg["old_handles_by_worker"][worker_id]
         return
 
-    _worker_device = torch.device(
-        "cuda" if torch.cuda.is_available() else "cpu"
-    )
+    if torch.cuda.is_available():
+        _worker_device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        _worker_device = torch.device("mps")
+    else:
+        _worker_device = torch.device("cpu")
     _worker_new = _load_net(new_path, _worker_device)
     _worker_old = _load_net(old_path, _worker_device)
 
@@ -455,7 +458,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="MCTS sims/move for the OLD side; default = --sims. "
                         "Set different to A/B search depth on the SAME "
                         "checkpoint, e.g. --sims 800 --old-sims 200.")
-    p.add_argument("--c-puct", type=float, default=1.5)
+    p.add_argument("--c-puct", type=float, default=3.0,
+                   help="PUCT exploration constant. 2026-05-26 sweep at iter_B1 "
+                        "found c=3.0 wins +47.2 elo vs c=1.5 at sims=200 (Phase 2a/2b), "
+                        "and J4 confirmed +39.3 elo at sims=800. Was 1.5 until 2026-05-27.")
     p.add_argument(
         "--new-c-puct", type=float, default=None,
         help="Per-side override for c_puct on the NEW side. Defaults to "
