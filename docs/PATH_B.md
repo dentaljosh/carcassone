@@ -118,13 +118,36 @@ The self-play loop runs unattended; these are guardrails that halt+report:
   policies/players/valid_masks). Touch: `selfplay.py` (emit), `warmstart.py`
   (`GameDataset` load), the warmstart label generator.
 
-### Step 2 — Domain input planes  (~1-2h dev)
-- Add broadcast/scalar input planes in `board_repr.py`: `tiles_remaining`,
-  `my_meeples_in_hand`, `opp_meeples_in_hand`, `is_endgame`, `contested_features`,
-  `my_dominant_farms`. These are reasoning *inputs* (net decides how to use them),
-  NOT frozen verdicts.
-- Changes net input channel count → breaks checkpoint compat → fresh warmstart
-  required (expected; we're doing one anyway).
+### Step 2 — Domain input planes  (REVISED 2026-05-29 — mostly redundant; net-new part gated on a find_farm speedup)
+- **Finding (2026-05-29):** 4 of the 6 originally-proposed inputs ALREADY exist as
+  scalars in `features.py` — `meeples_remaining` mine/opp, `tiles_remaining`,
+  `game_progress` (≈ is_endgame), plus `score_diff`. Don't re-add them.
+- The only net-new signals are **`contested_features` + `my/opp_dominant_farms`**
+  (farm-reasoning). These are FARM-derived → computing them runs farm enumeration
+  (`find_farm`), and network INPUTS are encoded at **every MCTS leaf** (~200/move),
+  so naively adding them hammers the #1 hot path. **They are deferred behind a
+  `find_farm` speedup** (the engine fix made `find_farm` start-independent →
+  cacheable/union-findable; see below).
+- **ACTIVE DEV (next, post-2026-05-29-compaction): the find_farm speedup.** Two
+  complementary pieces:
+  1. **Incremental farmer union-find** (the real win, the parked "Option B" — DECISIONS
+     2026-05-17 parked it because find_farm was start-dependent; the 2026-05-29 fix
+     unblocked it). Maintain a farm-component structure incrementally as tiles are
+     placed, instead of recomputing `find_farm` from scratch each call. Speeds the
+     EXISTING leaf eval (every leaf runs count_final_scores → find_farm), so it
+     accelerates ALL self-play + eval, not just the inputs. **Non-negotiable gate:**
+     a reconciliation test asserting the union-find result == `find_farm` across many
+     positions (mirror the aux-target n=2000 gate), then BENCH the throughput gain
+     (don't extrapolate). Watch the `apply_action_inplace` rollout path + tree
+     backtrack/rollback. Touch: `farm_util.py` (or a new incremental structure),
+     the MCTS apply path. ~substantial dev, pure dev (no compute).
+  2. **Leaf-pass sharing** (smaller): the v2.7 leaf already computes the farm
+     structure per leaf — share that single result with the input encoder instead
+     of recomputing, once farm inputs exist.
+- Only after the speedup: add `my/opp_dominant_farms` (+ maybe `contested`) reading
+  off the shared/union-find structure. Changes input shape → fresh warmstart (we're
+  doing one anyway). **Still lower-EV than the Step-3 aux heads** — but the union-find
+  speedup is worth it on its own (whole-pipeline throughput). See BACKLOG 2026-05-29.
 
 ### Step 3 — Auxiliary heads + losses  (~2-3h dev)
 - In `network.py` (`CarcassonneNet`): add output heads for ownership / score /

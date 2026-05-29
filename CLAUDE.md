@@ -132,6 +132,7 @@ When writing new parallel scripts: always launch with `python -u` for unbuffered
 
 The vendored `engine/` (wingedsheep) is patched. See DECISIONS.md for the full list, but in summary:
 - Tied-feature scoring fixed (engine returned None on ties; canonical rules say all tied players score full points)
+- **Farmer-adjacency / farm-scoring fix (2026-05-29):** `opposite_farmer_side` had a non-bijective typo (`TRT→BRR`) that made farmer adjacency asymmetric, so `FarmUtil.find_farm` returned start-dependent regions → farm scores were nondeterministic across processes (~2.2% of games) and double-counted same-player farmers on one field. Fixed to `TRT→BRB` (involution) + rewrote `find_farm` as a complete connected-component traversal. `find_farm` is now start-independent (→ cacheable/union-findable; speedup is active dev). See DECISIONS 2026-05-29.
 - Numpy 2.x compatibility fixes
 - `state.open_positions` adjacency tracking added — `TilePositionFinder` no longer scans the full 35×35 board
 - `StateUpdater.apply_action_inplace` added for MCTS rollouts (avoids deepcopy)

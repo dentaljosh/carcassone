@@ -65,7 +65,9 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 **Implication:** the 5-20% speedup benefit is already baked into our throughput numbers. No code work needed. Removing from Tier 1 task queue; leaving this entry in the backlog as anti-rediscovery: don't propose adding a transposition table again — it's there.
 
-## 2026-05-29 — Cache find_farm (now start-independent after the farmer-adjacency fix)
+## 2026-05-29 — find_farm speedup (leaf-sharing + union-find) — ⚡ PROMOTED TO ACTIVE DEV (Joshua, 2026-05-29)
+
+**No longer deferred.** This is the next dev task (starting after the 2026-05-29 compaction), ahead of the rest of Path B compute. Execution plan lives in [docs/PATH_B.md](docs/PATH_B.md) Step 2 (revised); the analysis below is the rationale. Sequence: incremental union-find + reconciliation gate (union-find == `find_farm`, mirror the aux n=2000 gate) + throughput bench → leaf-pass sharing → then the deferred Step-2 farm inputs become cheap.
 
 **Context:** `FarmUtil.find_farm` is the #1 hot path in the v2.7 leaf (~58% of leaf cost per the 2026-05-17 profiling) and was previously flagged un-cacheable because its flood-fill was *start-dependent* (different result depending on which farmer the search started from). The 2026-05-29 engine fix (DECISIONS.md — `opposite_farmer_side` bijection + complete-CC `find_farm`) makes the farm region **a well-defined function of the board state**, identical from any start. That removes the blocker on caching.
 
@@ -74,6 +76,10 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** correctness fix shipped first; caching is a pure-perf follow-up. Bench the fixed `find_farm` against the old one first (the CC rewrite changed the traversal — confirm no per-call regression) before adding a cache layer. Don't cache until after Path B's fresh warmstart so the leaf behaviour is stable.
 
 **Cost if pursued:** ~60-120 LoC (state-keyed memo is the cheap version; incremental union-find is the bigger, faster one). Mirror the legal-moves-cache invalidation discipline (clear per-move / per-search).
+
+**Caveat (2026-05-29) — a state-keyed memo gives only PARTIAL relief.** MCTS visits a different position at nearly every leaf, so a per-state cache mostly *misses* within a search (helps only on transpositions / cross-move recurrence). The near-zero-cost path is **reuse, not caching**: the v2.7 leaf ALREADY runs `find_farm` at every leaf (virtual_score → count_final_scores), so compute the farm structure once per leaf and share it between the leaf-value and any consumer, rather than recomputing. The biggest win is **incremental union-find** (maintain farm structure as tiles are placed down the tree). Either way, BENCH actual throughput before trusting "no slowdown."
+
+**Primary consumer = the deferred Step-2 farm INPUT features** (`my/opp_dominant_farms`, `contested_features`). Those were deferred from Path B precisely because they'd run farm enumeration at every leaf-encode; this speedup is the prerequisite. Gate both on **Step 9 = GO** — at scale the union-find speeds the whole pipeline (self-play + eval), so it earns its dev cost; before GO it's not worth it (farm inputs are lower-EV than the Step-3 aux heads).
 
 ## 2026-05-27 — Multi-anchor league (extends anchor-fraction beyond N=1)
 

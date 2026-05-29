@@ -23,6 +23,22 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-29 — Prioritize the find_farm speedup (leaf-sharing + union-find) as the next dev task
+
+**Context.** Path B Step 2 ("domain input planes") turned out mostly redundant — 4/6 proposed inputs already exist as scalars; the only net-new ones (`contested_features`, `my/opp_dominant_farms`) are farm-derived and would run `find_farm` at every MCTS leaf-encode, hammering the #1 hot path (~58% of leaf cost). Separately, the 2026-05-29 farmer-adjacency fix made `find_farm` **start-independent**, which unblocks the incremental farmer union-find that was parked 2026-05-17 *precisely because* find_farm was start-dependent.
+
+**Options.** (A) Skip farm inputs for the go/no-go probe, revisit at scale only if Step 9 = GO. (B) Build the `find_farm` speedup now (union-find + leaf-sharing), un-gating it from a GO.
+
+**Decision.** Chose **(B) — build the speedup now** (Joshua's call, 2026-05-29). Rationale: the union-find speeds the EXISTING leaf eval (every leaf already runs count_final_scores → find_farm), so it accelerates **all** self-play + eval throughput across the cluster — value independent of the farm-input feature, and independent of the Step-9 outcome. The farm inputs then come ~free as a downstream. It's pure dev (no compute), so it's productive work to do while the compute decisions (Steps 6–9 box choice) are still open.
+
+**Plan + guardrails.** [docs/PATH_B.md](docs/PATH_B.md) Step 2 (revised) + BACKLOG 2026-05-29. Sequence: incremental union-find → **reconciliation gate** (assert union-find == `find_farm` across many positions, mirroring the aux-target n=2000 gate) → **throughput bench** (measure, don't extrapolate) → leaf-pass sharing → then the farm input features. Correctness risks: the `apply_action_inplace` rollout path + MCTS tree backtrack/rollback of the incremental structure.
+
+**Reversal cost.** Low — additive perf work behind a correctness gate; if the union-find can't match find_farm or doesn't bench faster, drop it and keep the (correct) fixed find_farm.
+
+**Phase.** Phase 4 / Path B Step 2 prerequisite.
+
+---
+
 ## 2026-05-29 — Engine fix: farmer-adjacency bug made farm scoring start-dependent (taints virtual_score / v2.7 leaf)
 
 **Context.** Path B Step 1 (aux-target generation) needs per-feature *ownership* labels at game end, validated to reconcile with the engine's `count_final_scores`. Building the validator surfaced that the engine's farm scoring is **non-deterministic across processes**: the same terminal position can score differently depending on Python hash/set-pop order. Root cause traced to two layers:
