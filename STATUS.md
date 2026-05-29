@@ -2,9 +2,16 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-29) — **🟢 PATH B: STEP 6 SMOKE COMPLETE (PASS). Pipeline de-risked end-to-end. Steps 7→8→9 HELD for Joshua's "go": 3-box work-stealing, `nice -19`, farm scalars IN (and free).**
+## Right now (2026-05-29 18:15) — **🟢🚀 PATH B SCREENING RUN LIVE (launched over Shabbos; Joshua checks after Havdalah).** Step 7 warmstart → Step 8 self-play loop, **single-box 5800X**, `nice -19`, all 3 deterministic gates active. Driver `/home/doctor/run_pathb_step7_8.sh`, log `/tmp/pathb_step7_8.log` (PID in `/tmp/pathb_step7_8.pid`).
 
-**Launch plan (decided 2026-05-29, HOLD until Joshua says go):**
+**LIVE SCREENING RUN (2026-05-29 18:15) — config + what to check after Havdalah:**
+- **Why single-box 5800X (not 3-box):** `run_phase4_smoke` is single-box; the 3-box work-stealing MULTI-ITER loop is NOT wired, and launching that untested for 25h was the wrong risk. 5800X is the reliable always-on box. ~600 games/iter sims=200 → **~4h/iter → ~5-6 iters in 25h.** This is a DIRECTIONAL screening run, NOT the verdict (verdict needs frozen 1200 + n=400 A/B = Step 9).
+- **Knobs:** warmstart=100K heuristic 12-scalar+ownership (aux 0.15); loop = 600 games/iter, sims=200, orchestrator+batch8+W14 (matches 1b throughput), v2.7 leaf, mix 0, anchor-gate n=40 (max-fails 99 = no halt on anchor), chain h2h n=30. Entropy-floor guard 0.5 + NaN-abort active (these DO halt).
+- **THE signal to watch — value↔outcome corr (printed each iter):** `grep "value.outcome corr" /tmp/pathb_step7_8.log`. Climbing toward **0.61** (heuristic baseline; old NN was 0.18) = Path B bootstrap is working. Flat ~0.2 = architecture wall (real NO-GO direction). This is trustworthy (unlike self-anchored chain elo).
+- **Status / halt checks:** `kill -0 $(cat /tmp/pathb_step7_8.pid) && echo running || echo stopped`; `grep -E "COLLAPSE|Traceback|STEP 8 LOOP ENDED|complete in" /tmp/pathb_step7_8.log`; anchor trajectory `cat data/selfplay/pathb_loop/anchor_gate_log.json`.
+- **Post-Shabbos levers (NOT touched now):** (1) multi-shard `--orch-shards 2-4` if `nvidia-smi` shows GPU <30% mid-run (dispatch-bound → 1.5-2×); (2) 3-box work-stealing loop if worth wiring; (3) the frozen-recipe verdict run (1200 games) + Step 9 go/no-go A/B.
+
+**Original launch plan (now EXECUTING — kept for reference):**
 - **Topology:** work-stealing across all 3 boxes (5800X + Xeon + laptop), every worker `nice -n 19`. Same `--shared-claim` mechanism as Run A / deepsearch.
 - **Farm scalars: IN** (12-scalar net) — and made **free** (see below). So the go/no-go probe runs with the Step-3 ownership aux heads AND the Step-E farm inputs.
 - **Single manual flag:** `generate_warmstart_smoke --include-farm-scalars` + `train_warmstart --include-farm-scalars`. Everything downstream (self-play, train_iter, eval, eval-server) auto-derives the 12-scalar shape from the checkpoint's `n_scalar_features`. Frozen knobs per [docs/PATH_B.md](docs/PATH_B.md) table.
