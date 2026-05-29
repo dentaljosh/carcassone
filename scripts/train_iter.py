@@ -54,6 +54,34 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from train_warmstart import ownership_loss, policy_cross_entropy  # noqa: E402
 
 
+def _mean_policy_entropy(net, loader, device) -> float:
+    """Mean entropy (nats) of the masked-softmax policy head over `loader`.
+
+    Path B collapse signal: a healthy policy keeps spreading mass over legal
+    moves; entropy crashing toward 0 means the head has collapsed to a
+    near-deterministic policy (the closed-loop drift that wrecked early self-play
+    runs). The entropy-floor gate compares this against the warmstart net's
+    initial entropy. Returns 0.0 if the loader yields nothing.
+    """
+    net.train(False)
+    total = 0.0
+    n = 0
+    with torch.no_grad():
+        for board_b, scalar_b, _policy_b, _value_b, mask_b, _own_b in loader:
+            board_b = board_b.to(device, non_blocking=True)
+            scalar_b = scalar_b.to(device, non_blocking=True)
+            mask_b = mask_b.to(device, non_blocking=True).bool()
+            logits, _, _ = net.forward_train(board_b, scalar_b)
+            log_probs = F.log_softmax(logits.masked_fill(~mask_b, float("-inf")), dim=-1)
+            p = log_probs.exp()
+            # legal: -p·log p ; illegal: exp(-inf)=0 but 0·-inf=nan, so zero them.
+            plogp = torch.where(mask_b, p * log_probs, torch.zeros_like(p))
+            ent = -plogp.sum(dim=-1)
+            total += ent.sum().item()
+            n += int(ent.shape[0])
+    return total / max(n, 1)
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -142,6 +170,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--val-fraction", type=float, default=0.05)
     p.add_argument("--num-workers", type=int, default=2)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument(
+        "--entropy-floor-frac",
+        type=float,
+        default=0.5,
+        help="Path B collapse guard: halt the loop (exit 2) if the trained net's "
+        "mean policy entropy falls below this fraction of the warmstart net's "
+        "initial entropy. Baseline is measured at iter 0 and propagated forward in "
+        "the checkpoint so every iter compares to the same fixed reference. "
+        "0.0 disables the guard.",
+    )
     args = p.parse_args(argv)
 
     # Seed every RNG that affects training so two runs with the same --seed
@@ -234,6 +272,18 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  warm-started from {args.warm_from} "
           f"(filters={n_filters}, blocks={n_blocks}, "
           f"params={net.param_count():,})")
+
+    # Path B entropy-floor collapse guard: the baseline is the WARMSTART net's
+    # initial policy entropy — measured once (at iter 0, when warm_from IS the
+    # warmstart net) and then carried forward through the checkpoint so every
+    # later iter compares against the same fixed reference, not its own warm-from.
+    baseline_entropy = ckpt.get("baseline_policy_entropy")
+    if args.entropy_floor_frac > 0 and do_validation:
+        if baseline_entropy is None:
+            baseline_entropy = _mean_policy_entropy(net, val_loader, device)
+            print(f"  baseline policy entropy (warm net) = {baseline_entropy:.4f} nats")
+        else:
+            print(f"  baseline policy entropy (inherited) = {baseline_entropy:.4f} nats")
 
     optim = torch.optim.AdamW(
         net.parameters(), lr=args.lr, weight_decay=args.weight_decay
@@ -342,6 +392,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         sys.stdout.flush()
 
+    # Trained-net policy entropy (post-training) for the collapse guard.
+    trained_entropy = None
+    if args.entropy_floor_frac > 0 and do_validation:
+        trained_entropy = _mean_policy_entropy(net, val_loader, device)
+        metrics["policy_entropy"] = round(trained_entropy, 4)
+        metrics["baseline_policy_entropy"] = (
+            round(baseline_entropy, 4) if baseline_entropy is not None else None
+        )
+
     torch.save(
         {
             "model_state": net.state_dict(),
@@ -350,6 +409,10 @@ def main(argv: list[str] | None = None) -> int:
             "n_scalar_features": n_scalar_features,
             "iter": args.iter_idx,
             "epochs": args.epochs,
+            # Carry the fixed baseline forward so every iter compares against the
+            # original warmstart net, not its immediate warm-from.
+            "baseline_policy_entropy": baseline_entropy,
+            "policy_entropy": trained_entropy,
         },
         args.output,
     )
@@ -357,6 +420,31 @@ def main(argv: list[str] | None = None) -> int:
     with metrics_path.open("w") as fh:
         json.dump(metrics, fh, indent=2)
     print(f"\nSaved {args.output} (+ {metrics_path.name})")
+
+    # Entropy-floor collapse gate: report-and-halt AFTER saving (so the collapsed
+    # checkpoint + metrics stay inspectable). Exit 2 propagates through the loop
+    # harness (run_phase4_smoke._run_subcommand → RuntimeError) and stops the run.
+    if (
+        args.entropy_floor_frac > 0
+        and baseline_entropy is not None
+        and trained_entropy is not None
+    ):
+        floor = args.entropy_floor_frac * baseline_entropy
+        if trained_entropy < floor:
+            print(
+                f"\nCOLLAPSE: policy entropy {trained_entropy:.4f} < "
+                f"{args.entropy_floor_frac:.2f}× warmstart baseline "
+                f"{baseline_entropy:.4f} (floor {floor:.4f}). The policy head has "
+                f"collapsed toward determinism — halting the loop. Inspect "
+                f"{args.output} / {metrics_path.name} and DECISIONS.md before "
+                f"re-launching.",
+                file=sys.stderr,
+            )
+            return 2
+        print(
+            f"  policy entropy {trained_entropy:.4f} nats — OK (floor {floor:.4f} "
+            f"= {args.entropy_floor_frac:.2f}× baseline {baseline_entropy:.4f})"
+        )
     return 0
 
 

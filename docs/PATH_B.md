@@ -92,12 +92,16 @@ The self-play loop runs unattended; these are guardrails that halt+report.
 - **NaN/inf loss** in any epoch → abort iter. **✅ IMPLEMENTED** —
   `train_iter.py:275` + `train_warmstart.py:246` (`if not torch.isfinite(loss)`).
 - **Policy-entropy floor** (if mean policy entropy drops below ~0.5× the warmstart
-  net's initial entropy → collapse, abort+report). **❌ NOT IMPLEMENTED** — no
-  entropy check exists in train_iter / selfplay / run_phase4_smoke. **Step-8
-  prerequisite:** either (a) build it (measure warmstart baseline entropy once;
-  train_iter computes val-set mean policy entropy/iter; halt if <0.5× baseline;
-  ~40 LoC), or (b) consciously rely on the anchor-gate (n=100/iter) + stop-after-2
-  to catch collapse a bit later. Decide before launching the multi-day loop.
+  net's initial entropy → collapse, abort+report). **✅ IMPLEMENTED 2026-05-29** —
+  `train_iter.py --entropy-floor-frac` (default **0.5**, 0 disables). Baseline = the
+  warmstart net's policy entropy measured once at iter 0 and propagated forward in
+  the checkpoint (`baseline_policy_entropy`) so every iter compares to the same
+  fixed reference. Each iter measures the trained net's val-set mean policy entropy;
+  if < frac×baseline it saves the ckpt+metrics then **exits 2**, which propagates
+  through `run_phase4_smoke._run_subcommand` → halts the loop. run_phase4_smoke
+  doesn't pass the flag, so the 0.5 default is active automatically. Tests:
+  `tests/test_entropy_guard.py`; verified end-to-end (healthy 1.74 nats clears a
+  0.90 floor; forced trip exits 2).
 - **Anchor-gate per iter** (`eval_iter_head_to_head.py`): auto-play iter_N vs
   previous-best at **n=100, sims=200**; promote only if elo_delta > 0. **Stop after
   2 consecutive non-positive iters.** **✅ IMPLEMENTED** via run_phase4_smoke
