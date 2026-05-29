@@ -108,6 +108,12 @@ CONFIG = {
     "phase4_blend05_vs_pure": dict(new_ckpt="iter_B1", new_c=1.5, old_ckpt="iter_B1", old_c=1.5,
         conf="high", note="Phase 4c: NN value-blend lambda=0.5 (new) vs pure leaf (old), iter_B1 both sides, n=500. launch_queue_2026_05_25_5800x.sh (job D). -18.8 (value-blend dead)."),
 
+    # --- Hygiene re-measurements (2026-05-29, n=1600) settling the 2 flagged contradictions ---
+    "hygiene_c3_cap12_n1600": dict(new_ckpt="iter_B1", new_c=3.0, old_ckpt="iter_B1", old_c=1.5,
+        conf="high", note="HYGIENE n=1600: re-measure the c=3 spike. iter_B1 both sides, sims=200. Settles phase2_puct_c30 (+47.2@n400) vs optuna#17 (+13.9@n100). 5800X+Xeon work-stealing (launch_xeon_hygieneA.sh)."),
+    "hygiene_cap20_n1600": dict(new_ckpt="iter_B1", new_c=1.5, old_ckpt="iter_B1", old_c=1.5, new_cap=20, old_cap=12,
+        conf="high", note="HYGIENE n=1600: tie-break cap=20 vs cap=12. iter_B1 both sides, c=1.5, sims=200. Settles phase4_cap20 (-21.7) vs optuna#5 (+12.2). laptop solo; rsync /tmp/hygiene_cap20_n1600 -> shared before rebuild."),
+
     # --- Phase 5 smoke: tile_counting leaf vs v2_7, iter_B1 both sides ---
     "phase5_tilecounting_smoke": dict(new_ckpt="iter_B1", new_c=1.5, old_ckpt="iter_B1", old_c=1.5,
         new_var="tile_counting", old_var="v2_7",
