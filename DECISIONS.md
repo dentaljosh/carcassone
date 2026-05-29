@@ -23,6 +23,45 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-28 — GOAL CHANGE: attempt genuinely superhuman play (overrides the original-prompt scope)
+
+**Context.** The original prompt ([docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md)) explicitly scoped superhuman strength *out*: *"This is not a 'build superhuman Carcassonne AI' project. That's been attempted by academic groups since 2020 and has stalled — not because the idea is wrong, but because nobody's bothered to throw serious compute at it. We're not going to either."* The stated win condition was the **analyzer (Phase 5)** — "a 90th-percentile bot that explains *why* a move was bad is more useful to me than a superhuman black box." On 2026-05-28, during a strategic regroup, Joshua changed the goal: **he wants genuinely superhuman play — to beat the world champion.**
+
+**Decision.** Superhuman strength is now the **primary** goal. The analyzer (Phase 5) and heuristic research (Phase 6) become **downstream** — pursued after strength milestones, not the target. The locked *rule* scope (2p Base+River+Farmers) is unchanged.
+
+**What this honestly implies (surfaced at decision time, not papered over).**
+- This is a **research-grade goal the prompt deliberately avoided**; comparable academic attempts stalled. On a 3-box consumer cluster (~300 g/h eval) this is months-to-maybe-unreachable. We pursue it clear-eyed: real measurable progress is achievable; the summit is not promised.
+- **Two structural walls, neither touched by the eval-config tuning of the last month:**
+  1. **Measurement.** We have no strong, non-saturated reference. Tier-1 is a saturated 1-ply heuristic; self-anchored elo can climb +600 while absolute strength regresses (the Option-B-chain result proved this). *We cannot tell if we're approaching world-champ level.* First unblock: build a strong reference ladder (high-sim vanilla MCTS / the Ameneyro 2020 baseline) as an absolute yardstick, since a human benchmark isn't available now.
+  2. **Leaf ceiling.** Our strength is PUCT search over the **hand-crafted** v2.7 `virtual_score` leaf. A human-designed heuristic caps learned play near strong-human by construction. We already tried to let the NN value head exceed it (Option 2) and it was *worse* (closed 2026-05-18). Superhuman requires the *learned* components to beat the heuristic — the documented path is KataGo-style (domain-feature input planes + auxiliary loss heads + scale), all gated behind a fresh from-scratch warmstart (bundle the deferred D1/D13 feature fixes).
+- **The eval-config tuning era (c_puct/leaf_cap/leaf_variant, incl. tonight's Optuna) is rounding error against this goal** and should stop — see the meta-rule in EXPERIMENTS.md ("try-harder-with-the-same-architecture is the trap").
+
+**Roadmap implied (not yet committed — to be planned):** (1) strong reference ladder [unblocks measurement], (2) structural leaf/architecture change [the real lever], (3) scale compute + Optuna-over-*recipe* [where Optuna's automation finally earns its keep].
+
+**Reversal cost.** Low to state; high to pursue (months of compute). The goal can be re-narrowed to the analyzer at any time if the strength climb proves infeasible — the analyzer work is not lost, just deferred.
+
+**Phase.** Strategic pivot atop Phase 4.
+
+---
+
+## 2026-05-28 — Measurement infrastructure: `experiments/results.csv` as source of truth + results discipline
+
+**Context.** The regroup found that disorganization, not just bad luck, produced the false "c=3 = +47 elo" production change. Audit: **54 completed evals across 41 ad-hoc dirs**, config encoded only in directory names, and `elo_log.json` records the *outcome but not the config* (no c_puct/cap/variant). Four disconnected representations of the same results (dirnames, config-less elo_logs, the hand-maintained EXPERIMENTS.md table, the optuna study.db), none queryable. The c=3 contradiction (noise spike at n=400 vs the earlier "c is noise at n=20" finding, vs tonight's +13.9 re-screen) was invisible because no structure forced the comparison.
+
+**Decision.** Build one structured, queryable, git-diffable results table and make it the source of truth; adopt query-before-claim discipline.
+- **Artifact:** `experiments/results.csv` — one row per eval (full config both sides + outcome + n + sigma + provenance). CSV (not a DB) because ~54 rows, diffable in PRs, one-line pandas load. Optuna `study.db` exports into it.
+- **Root-cause fix:** `eval_iter_head_to_head.py` writes a self-describing `manifest.json` and appends its row to results.csv on completion → the table self-maintains; no future dirname archaeology.
+- **Backfill:** the existing 54 elo_logs + 18k per-game JSONs are reconciled with a one-time hand-authored dirname→config map (config isn't in the data). Run as a background subagent 2026-05-28; low-confidence rows flagged, not fabricated.
+- **Discipline (also added to CLAUDE.md operating norms):** cite the table, never duplicate authoritative numbers; query for prior measurements of a cell before declaring a finding; n=100 = screen (±17), n=400 = verdict (±9); a lone >1σ spike vs neighbors is noise, not a peak.
+
+**Why not heavier infra (SQLite/dashboard/framework).** 54 rows. A CSV + a 10-line pandas query helper covers every "pivot config-dim × n → elo" view we need. Over-building a results system would itself be the procrastination trap. EXPERIMENTS.md stays as the *narrative* layer that cites the table.
+
+**Reversal cost.** Trivial — it's additive (a CSV + a manifest write + doc norms); nothing depends on it that can't fall back to the old prose tables.
+
+**Phase.** Methodology / measurement, prerequisite for the superhuman push (addresses Wall 1 above).
+
+---
+
 ## 2026-05-28 (evening) — Optuna eval-search softens the c=3 "+47 free win"; flagging the headline claim for re-validation
 
 **Context.** The Optuna eval-time study (`eval_time_search_v1`, TPE over {c_puct, leaf_cap, leaf_variant}, multi-fidelity n=100→n=400) ran ~16 trials across 5800X+Xeon+laptop. To bridge it against the 2026-05-26 Phase 2 result, we `enqueue_trial`'d the exact canonical config (c=3.0, cap=12, v2_7) as a NEW-side-vs-(c=1.5,cap=12)-baseline trial — identical A/B design to Phase 2b.

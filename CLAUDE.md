@@ -4,11 +4,13 @@ If you're starting a new conversation in this repo, read this file first, then [
 
 ## What we're building
 
-AlphaZero-style Carcassonne AI + position analyzer for family games. The win condition is **Phase 5 (game review tool that explains where points were lost)**, not raw playing strength.
+AlphaZero-style Carcassonne AI. **Goal (changed 2026-05-28): attempt genuinely superhuman play — beat strong/expert humans, aspirationally the world champion, at 2-player Base+River+Farmers.**
 
-Full project spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase structure (0-7) and all original guesses live there.
+⚠️ **This OVERRIDES the original prompt.** [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) explicitly scoped superhuman *out* ("This is not a 'build superhuman Carcassonne AI' project... We're not going to either") and named the **analyzer (Phase 5)** as the win condition. Joshua changed the goal on 2026-05-28: superhuman strength is now primary; the analyzer (Phase 5) and heuristic research (Phase 6) are **downstream**, pursued after strength milestones, not the target. See [DECISIONS.md](DECISIONS.md) 2026-05-28 "Goal change". Pursue clear-eyed — this is the research-grade goal the prompt deliberately avoided (academic attempts since 2020 stalled). Two structural blockers gate it: (1) **measurement** — no strong non-saturated reference exists yet (Tier-1 is saturated; self-anchored elo can climb while absolute strength regresses), and (2) the **hand-crafted v2.7 leaf eval caps learned strength near strong-human by construction** — superhuman requires the *learned* components to exceed the heuristic, which they don't yet.
 
-**Locked scope** (Phases 1-5): 2-player, Base game + River expansion + Farmers, no Inns & Cathedrals, no Abbots, no Big meeples. Don't expand scope without explicit approval.
+Full original spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase structure (0-7) and original guesses live there — but treat the win-condition framing as superseded.
+
+**Locked scope:** 2-player, Base game + River expansion + Farmers, no Inns & Cathedrals, no Abbots, no Big meeples. Don't expand the *rule* scope without explicit approval.
 
 ## Where the truth lives
 
@@ -119,6 +121,11 @@ When writing new parallel scripts: always launch with `python -u` for unbuffered
 - **Bench, then extrapolate, then commit — don't skip the bench step.** When scaling worker counts or memory caps on a new box: measure real VRAM/CPU load at one known-safe config, subtract a margin (1 worker / 10% mem), then commit to that for the long run. Don't jump from "ran fine at N" to "let's try 2N" without an explicit measurement. The 2026-05-12 carcassone OOM came from extrapolating from prior calculations instead of measuring.
 - **Pre-flight smoke must use PRODUCTION knobs, not arbitrary ones.** Smoke at the same sims, batch_size, leaf_eval, worker count, and orchestrator-or-not as the upcoming scaled run. Linear extrapolation from a cheaper smoke is unreliable — per-leaf cost can grow nonlinearly with game length (more placed meeples = more farm/city util calls), batching/orchestrator interactions are config-specific, and cloud workers have different bottleneck profiles than local. On 2026-05-15 a sims=50 smoke extrapolated to sims=200 cloud was 6× off in wallclock; this cost ~$0.30 of contaminated training data before catching it.
 - **A bug fix in scored heuristics shifts hyperparameter optima.** When fixing a correctness bug in a leaf eval or scoring function, re-sweep the tunables (caps, weights, thresholds) before trusting old bench numbers. The 2026-05-15 v2.5 farm/city dedup fix dropped wr from 80% → 70% at the previously-tuned cap=5; a re-sweep found cap=12 + drop-3-open → 90%. The old optima were tuned against inflated bonus magnitudes.
+- **Results discipline — `experiments/results.csv` is the source of truth for experiment numbers** (added 2026-05-28 after disorganization caused a false production change — the "c=3 +47 elo" that was a noise spike; see DECISIONS 2026-05-28). Rules:
+  - STATUS / EXPERIMENTS / DECISIONS *cite* results.csv; they must not carry authoritative numbers that drift out of sync with it.
+  - **Before declaring any finding, query the table for prior measurements of the same cell.** A new result that contradicts a prior one is not a discovery until the contradiction is resolved.
+  - **n-thresholds:** n=100 is a *screen* (1σ ≈ ±17 elo); n=400 is a *verdict* (±9). Never promote a finding from a single screen. **A lone value that beats its parameter-neighbors by >1σ is a noise signature, not a peak** — re-measure before believing it.
+  - Every eval must write a self-describing `manifest.json` (full resolved config) so results never again require dirname archaeology to interpret.
 - **Fail loudly.** If a result doesn't match the spec, surface it.
 
 ## Engine notes

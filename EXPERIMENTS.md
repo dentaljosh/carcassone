@@ -2,16 +2,21 @@
 
 A living priority queue of ablations toward superhuman play. **Not exhaustive** — meant to prevent drift, not to predict everything. Each row is one knob, not a recipe combo. Rewrite priorities when a finding invalidates a downstream question.
 
-**Goal:** superhuman play. Concretely: the best checkpoint (iter_01, v2.7 leaf) wins ~80-90% vs Tier-1 — but Tier-1 is a 1-ply heuristic player that a thinking human beats 2-of-3 in casual play, so **Tier-1 is saturated as a reference and beating it is *not* superhuman.** The only meaningful remaining bar is direct evidence of beating a strong human player. No checkpoint has been benchmarked against a human yet — that gap is the real blocker on declaring any progress toward superhuman.
+**Goal (primary, set 2026-05-28):** genuinely superhuman play — **beat strong/expert humans, aspirationally the world champion**, at 2p Base+River+Farmers. This is now the explicit target (overrides the original prompt; see [DECISIONS.md](DECISIONS.md) 2026-05-28 "Goal change"). The analyzer (Phase 5) and heuristic research (Phase 6) are downstream.
+
+**The measurement problem is the #1 blocker.** The best checkpoint wins ~80-90% vs Tier-1, but Tier-1 is a saturated 1-ply heuristic a thinking human beats 2-of-3 — beating it is *not* superhuman. Self-anchored checkpoint-vs-checkpoint elo can climb while absolute strength regresses (Option-B chain proved it). No human benchmark is available right now. **So before more training has meaning, build a strong non-saturated reference ladder** (high-sim vanilla MCTS / the Ameneyro 2020 baseline) as an absolute yardstick. Without it we're flying blind.
+
+**The leaf is the strength ceiling.** Search over the hand-crafted v2.7 leaf caps us near strong-human by construction; the path past it is making the *learned* components exceed the heuristic (KataGo-style domain planes + aux heads + scale), not more config tuning.
 
 **Phase 5 (analyzer) is gated on superhuman.** Don't drift to Phase 5 work.
 
 ## Rules of engagement
 
 - One knob varied per experiment. Hold everything else fixed.
-- Bench n ≥ 20 (SE ~10pp); n ≥ 50 if the question is statistical (e.g. small effect).
-- Reuse a fixed seed range across comparisons.
-- Log result here (date, knob, winrate, conclusion) when complete. Move row from "open" to "done."
+- **`experiments/results.csv` is the source of truth for numbers** (added 2026-05-28). This ledger is the *narrative* layer — it cites the table, it does not own the authoritative numbers. Before claiming a finding, **query results.csv for prior measurements of the same cell** and resolve any contradiction.
+- **n-discipline:** n=100 is a *screen* (1σ ≈ ±17 elo); n=400 is a *verdict* (1σ ≈ ±9). **Never promote a finding from a single screen.** A lone value beating its parameter-neighbors by >1σ is a **noise signature, not a peak** — re-measure. (This rule exists because the "c=3 +47" spike, sandwiched between +8 and +25 neighbors, was promoted to production and then re-screened at +13.9 — see DECISIONS 2026-05-28.)
+- Reuse a fixed seed range across comparisons. Every eval must write a self-describing `manifest.json`.
+- Log result in results.csv (auto-appended by the eval script); summarize the conclusion here. Move row from "open" to "done."
 - If a finding flips an assumption downstream, *re-prioritize* the open list before continuing.
 
 ## Currently running
