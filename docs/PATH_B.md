@@ -87,14 +87,22 @@ read the result. Most are NEW (not in results.csv — that's eval-side knobs onl
 
 ## Deterministic gates (baked into the loop — NOT human check-ins)
 
-The self-play loop runs unattended; these are guardrails that halt+report:
-- **NaN/inf loss** in any epoch → abort iter, report.
-- **Policy-entropy floor**: if mean policy entropy drops below ~0.5× the
-  warmstart net's initial entropy → collapse, abort+report.
-- **Anchor-gate per iter** (already the pattern in `eval_iter_head_to_head.py`):
-  auto-play iter_N vs previous-best at **n=100, sims=200**; promote iter_N as new
-  best only if elo_delta > 0. **Stop the loop after 2 consecutive non-positive
-  iters** (the iter_02-flatline detection — saturation reached).
+The self-play loop runs unattended; these are guardrails that halt+report.
+**Implementation status audited 2026-05-29** (before any Step-8 launch):
+- **NaN/inf loss** in any epoch → abort iter. **✅ IMPLEMENTED** —
+  `train_iter.py:275` + `train_warmstart.py:246` (`if not torch.isfinite(loss)`).
+- **Policy-entropy floor** (if mean policy entropy drops below ~0.5× the warmstart
+  net's initial entropy → collapse, abort+report). **❌ NOT IMPLEMENTED** — no
+  entropy check exists in train_iter / selfplay / run_phase4_smoke. **Step-8
+  prerequisite:** either (a) build it (measure warmstart baseline entropy once;
+  train_iter computes val-set mean policy entropy/iter; halt if <0.5× baseline;
+  ~40 LoC), or (b) consciously rely on the anchor-gate (n=100/iter) + stop-after-2
+  to catch collapse a bit later. Decide before launching the multi-day loop.
+- **Anchor-gate per iter** (`eval_iter_head_to_head.py`): auto-play iter_N vs
+  previous-best at **n=100, sims=200**; promote only if elo_delta > 0. **Stop after
+  2 consecutive non-positive iters.** **✅ IMPLEMENTED** via run_phase4_smoke
+  `--anchor-gate --anchor-max-fails 2`; set `--anchor-min-winrate 0.5` so "fail" ==
+  "non-positive" (wr≤0.5 ≈ elo_delta≤0), matching the spec.
 - Human re-engages ONLY on a gate trip or at the final go/no-go A/B.
 
 ## Build steps — the TODO (ordered; aux-targets first = correctness linchpin)
