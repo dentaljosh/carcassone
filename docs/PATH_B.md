@@ -183,7 +183,16 @@ The self-play loop runs unattended; these are guardrails that halt+report.
   `train_warmstart --include-farm-scalars`. **Still lower-EV than the Step-3 aux heads**, but
   now free to include.
 
-## LAUNCH RECIPE (2026-05-29 — 3-box work-stealing, nice -19, farm scalars IN — HOLD until Joshua says go)
+## LAUNCH RECIPE (2026-05-29 — 3-box work-stealing, nice -19, farm scalars IN — ✅ EXECUTING since 19:15)
+
+> **STATUS 2026-05-29 19:15: LAUNCHED as a SCREENING run.** Steps 6 (smoke PASS, 1a PROCEED,
+> 1b W=14/18/24) done. Step 7 warmstart → `checkpoints/pathb/warm.pt` (100K, 12-scalar, aux 0.15) done.
+> Step 8 running via **`/home/doctor/run_pathb_cluster_loop.sh`** (NOT run_phase4_smoke — that's
+> single-box; the cluster loop adapts the maximalist 3-box work-stealing infra). 3 boxes, 600
+> games/iter (screening density, not frozen 1200), log `/tmp/pathb_cluster.log`. value↔outcome corr
+> + entropy guard live per iter. Step 9 (verdict A/B, n=400, frozen 1200) is the post-screening call.
+> Details + after-Havdalah checks in STATUS.md.
+
 
 Decided config: work-stealing across 5800X + Xeon + laptop, all workers `nice -n 19`, farm
 scalars ON. Frozen knobs per the table above.

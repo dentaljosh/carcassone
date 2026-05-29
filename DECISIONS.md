@@ -23,6 +23,24 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-29 (evening) — Path B Steps 6–8 executed: smoke PASS, collapse guard + value-corr built, 3-box work-stealing screening run LAUNCHED over Shabbos
+
+**Context.** Joshua gave the go to run Step 6 ("run the smoke. low priority nice"), then escalated to launch the loop over Shabbos ("yolo it… wire up 7 and 8, I check back after havdalah"), then **demanded all 3 boxes** for the loop.
+
+**Step 6 (de-risk) — PASS.** Tiny end-to-end smoke (gen 12-scalar → aux-weight sweep {0,0.15,0.5} → self-play → train_iter → anchor-gate): 0 NaN, aux loss falls, mains flat across aux weights (→ freezing aux=0.15 justified), value-leaf swap runs. **1a profile (in-process, sims=200) → PROCEED:** leaf eval ~86% (expected), `get_next_state`/deepcopy only ~10% (confirms the speedup analysis), no >2× surprise. ⚠️ cProfiling `run_selfplay_iter` directly is useless (it spawns a Pool → misses worker hot path); profile in-process via `play_one_selfplay_game` (`scripts/profile_selfplay_inproc.py`). **1b W-rebench (3 boxes, real `run_selfplay_iter`, NOT bench_workers which times raw-engine games): curves FLAT** (post-speedup self-play is eval/dispatch-bound, W barely matters ≥10) → **5800x W=14, Xeon W=18, laptop W=24**; cluster ≈546 g/h.
+
+**Collapse guard + value-corr (new, committed `00b093e` + value-corr commit).** `train_iter.py --entropy-floor-frac` (default 0.5): baseline = warmstart-net policy entropy at iter 0, propagated in the checkpoint; per-iter trained entropy < frac×baseline → exit 2 → loop halts. And a per-iter **value↔outcome correlation** readout (Pearson of value-head vs stored outcome target) — the TRUSTWORTHY progress signal (vs self-anchored chain elo which can climb while absolute strength regresses; beat heuristic's 0.61, old NN was 0.18). Tests + e2e verified. Gate audit found the entropy floor was the only one of the 3 promised deterministic guards not implemented; now all 3 active (NaN-abort, anchor-gate stop, entropy floor).
+
+**3-box loop — DECISION: adapt the proven maximalist infra, don't build from scratch.** `run_phase4_smoke` is single-box; the multi-iter 3-box work-stealing loop wasn't wired. `maximalist_sequencer.sh` already had proven 5800x+xeon work-stealing (`launch_on_host`/`run_selfplay`, held-ssh foreground keeps the Xeon WSL VM alive; `stage_launcher.sh` copies the launcher LOCAL on Xeon to dodge the share-unmounted chicken-egg). Adapted it into `/home/doctor/run_pathb_cluster_loop.sh` + added a **laptop branch** (native Linux, share already mounted, simple held-ssh). Verified each box claims+plays SOLO (mini-scale combined tests just race — the 5800x fills tiny/fast batches before the others boot; irrelevant at production scale). **Launch-hang bug found+fixed:** `pid=$(launch_on_host …)` hung — command substitution waits on the backgrounded worker's orchestrator children holding the pipe fd. Fixed via **pidfile** (launch_on_host writes PID to a file, called WITHOUT `$()`). After fix: all 3 launch instantly, all 3 GPUs active (~26-40% — NOT pegged, consistent with dispatch/CPU-leaf-bound, not GPU-bound), 56 claims = 14+18+24 workers, games landing.
+
+**Screening run (NOT the verdict).** Launched 600 games/iter (not the frozen 1200) for trajectory density over Shabbos: ~9 g/min cluster → ~66min self-play/iter → ~15+ iters in 25h. Directional read of the value-corr trajectory; the GO/NO-GO verdict still needs the frozen 1200 + n=400 Step-9 A/B. Box choice: all 3 per Joshua's demand, accepting the risk that the 3-box multi-iter loop is freshly-wired (mitigated: solo-verified each box + no-hang mini-test + the gates halt on trouble).
+
+**Reversal cost.** Low — the run is killable; warm.pt + per-iter checkpoints preserved on the share; the loop halts cleanly on collapse/NaN.
+
+**Phase.** Phase 4 / Path B Steps 6–8.
+
+---
+
 ## 2026-05-29 — Path B Step E shipped: farm scalars IN + made free + flip-on wired; launch plan set (HELD)
 
 **Context.** Joshua decided (2026-05-29) to include the 2 farm-control input scalars in the Path B probe ("farm scalars in. make them free."), and to launch Path B as **3-box work-stealing at `nice -19`** — but **not** until he gives the go.
