@@ -162,6 +162,7 @@ def _relabel_one_seed(args: tuple[int, str, str]) -> tuple[int, str]:
         policies=ds.policies,
         values=new_values,
         valid_masks=ds.valid_masks,
+        ownership=ds.ownership,  # carry ownership labels through the relabel
     )
     new_ds.save(dst)
     return seed, "fresh"

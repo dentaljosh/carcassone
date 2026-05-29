@@ -15,11 +15,17 @@ the AlphaZero-canonical win/loss target.
 """
 from __future__ import annotations
 
+import copy
 from typing import Callable
 
 import numpy as np
 
 from .action_space import action_size as compute_action_size
+from .aux_targets import (
+    OWNERSHIP_PLANES,
+    extract_terminal_ownership,
+    ownership_planes,
+)
 from .game_wrapper import Game
 from .mcts import NeuralMCTS
 from .warmstart import GameDataset
@@ -159,6 +165,16 @@ def play_one_selfplay_game(
     policies_arr: list[np.ndarray] = []
     masks_arr: list[np.ndarray] = []
     players_arr: list[int] = []  # current_player at each ply, for value sign
+    offsets_arr: list = []  # board.offset per recorded ply, for ownership projection
+
+    # Track the pre-terminal board + the terminating action so we can rebuild a
+    # meeple-intact terminal state for the ownership aux labels. (We can't read
+    # ownership off the final board: the engine's count_final_scores consumes the
+    # meeples at termination. And we can't stub count_final_scores during play —
+    # the v2.7 leaf eval calls it on every MCTS leaf. So we re-apply just the last
+    # action to a copy with scoring stubbed for that single call.)
+    prev_board = board
+    last_action: int | None = None
 
     ply = 0
     while game.get_game_ended(board, 0) == 0.0 and ply < max_plies:
@@ -220,7 +236,10 @@ def play_one_selfplay_game(
             policies_arr.append(policy)
             masks_arr.append(mask.astype(bool))
             players_arr.append(cur_player)
+            offsets_arr.append(board.offset)
 
+        prev_board = board
+        last_action = int(action)
         board, _ = game.get_next_state(board, action)
         ply += 1
 
@@ -255,6 +274,7 @@ def play_one_selfplay_game(
         [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
     )
 
+    W = game.window_size
     if not boards_arr:
         # Edge case: game terminated before any plies were recorded.
         return GameDataset(
@@ -263,7 +283,35 @@ def play_one_selfplay_game(
             policies=np.empty((0, A), dtype=np.float32),
             values=np.empty((0,), dtype=np.float32),
             valid_masks=np.empty((0, A), dtype=bool),
+            ownership=np.empty((0, OWNERSHIP_PLANES, W, W), dtype=np.float32),
         )
+
+    # Ownership aux labels = the FINAL feature ownership, projected onto each
+    # recorded position's window + POV (every position predicts the game's
+    # outcome, like the value target). Rebuild a meeple-intact terminal state by
+    # re-applying the terminating action with count_final_scores stubbed for that
+    # one call (see the note where prev_board is declared).
+    from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+
+    term_board = copy.deepcopy(prev_board)
+    _orig_cfs = PointsCollector.count_final_scores
+    PointsCollector.count_final_scores = classmethod(lambda cls, game_state: None)
+    try:
+        game.apply_action_inplace(term_board, last_action)
+    finally:
+        PointsCollector.count_final_scores = _orig_cfs
+    if not term_board.state.is_terminated():
+        raise RuntimeError(
+            "ownership-label reconstruction did not reach a terminal state "
+            f"(ply={ply}) — refusing to emit mislabeled ownership targets"
+        )
+    records = extract_terminal_ownership(term_board.state)
+    ownership_arr = np.stack(
+        [
+            ownership_planes(records, offsets_arr[i], players_arr[i], W)
+            for i in range(len(boards_arr))
+        ]
+    )
 
     return GameDataset(
         boards=np.stack(boards_arr),
@@ -271,4 +319,5 @@ def play_one_selfplay_game(
         policies=np.stack(policies_arr),
         values=values_arr,
         valid_masks=np.stack(masks_arr),
+        ownership=ownership_arr,
     )

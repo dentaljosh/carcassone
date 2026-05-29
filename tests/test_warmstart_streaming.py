@@ -32,6 +32,7 @@ def _write_synthetic(path: Path, n_positions: int, seed: int) -> None:
         policies=rng.standard_normal((n_positions, 11)).astype(np.float32),
         values=rng.standard_normal(n_positions).astype(np.float32),
         valid_masks=rng.integers(0, 2, size=(n_positions, 11)).astype(bool),
+        ownership=rng.integers(-1, 2, size=(n_positions, 3, 5, 5)).astype(np.float32),
     )
     ds.save(path)
 
@@ -64,12 +65,13 @@ def test_streaming_yields_all_positions(synthetic_files: list[Path]) -> None:
 
 def test_streaming_yields_correct_shapes(synthetic_files: list[Path]) -> None:
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
-    for board, scalar, policy, value, mask in ds:
+    for board, scalar, policy, value, mask, ownership in ds:
         assert board.shape == (4, 5, 5)
         assert scalar.shape == (3,)
         assert policy.shape == (11,)
         assert value.shape == ()
         assert mask.shape == (11,)
+        assert ownership.shape == (3, 5, 5)
         break
 
 
@@ -77,9 +79,10 @@ def test_dataloader_with_streaming_assembles_batches(synthetic_files: list[Path]
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
     loader = DataLoader(ds, batch_size=3, num_workers=0)
     total = 0
-    for board_b, scalar_b, policy_b, value_b, mask_b in loader:
+    for board_b, scalar_b, policy_b, value_b, mask_b, own_b in loader:
         total += board_b.shape[0]
         assert board_b.shape[1:] == (4, 5, 5)
+        assert own_b.shape[1:] == (3, 5, 5)
     assert total == 4 * 5
 
 
@@ -89,7 +92,7 @@ def test_streaming_with_workers_yields_all_positions(synthetic_files: list[Path]
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
     loader = DataLoader(ds, batch_size=1, num_workers=2)
     rows = []
-    for board_b, scalar_b, policy_b, value_b, mask_b in loader:
+    for board_b, scalar_b, policy_b, value_b, mask_b, own_b in loader:
         rows.append((board_b.numpy(), scalar_b.numpy(), value_b.item()))
     assert len(rows) == 4 * 5
 
@@ -111,9 +114,9 @@ def test_set_epoch_changes_file_order(synthetic_files: list[Path]) -> None:
     """When shuffle_files_each_epoch=True, set_epoch(k) varies the order."""
     ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=False, seed=7)
     ds.set_epoch(0)
-    order_a = [v.item() for _, _, _, v, _ in ds]
+    order_a = [v.item() for _, _, _, v, _, _ in ds]
     ds.set_epoch(1)
-    order_b = [v.item() for _, _, _, v, _ in ds]
+    order_b = [v.item() for _, _, _, v, _, _ in ds]
     assert order_a != order_b
     # But the multisets are equal — same positions, different order.
     assert sorted(order_a) == sorted(order_b)
@@ -165,8 +168,8 @@ def test_streaming_shuffle_reproducible_across_runs(synthetic_files: list[Path])
     """
     ds_a = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
     ds_a.set_epoch(0)
-    order_a = [v.item() for _, _, _, v, _ in ds_a]
+    order_a = [v.item() for _, _, _, v, _, _ in ds_a]
     ds_b = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=True, shuffle_within_file=True, seed=42)
     ds_b.set_epoch(0)
-    order_b = [v.item() for _, _, _, v, _ in ds_b]
+    order_b = [v.item() for _, _, _, v, _, _ in ds_b]
     assert order_a == order_b

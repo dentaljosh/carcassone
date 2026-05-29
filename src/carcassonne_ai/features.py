@@ -41,9 +41,15 @@ DECK_NORM = 85.0
 
 def encode_scalars(state: "CarcassonneGameState", player: int, total_tiles: int) -> np.ndarray:
     opp = 1 - player
-    tiles_remaining = len(state.deck) + (1 if state.next_tile is not None else 0)
-    progress = 1.0 - (tiles_remaining / max(total_tiles, 1))
     is_tiles = state.phase.value == "tiles"
+    # D13 fix (2026-05-29): the engine doesn't clear state.next_tile after
+    # play_tile — it still holds the just-placed tile through the MEEPLES phase
+    # until draw_tile runs. So counting next_tile unconditionally overcounted the
+    # deck by 1 on every MEEPLES-phase encode (~half of all evals), and `progress`
+    # jumped by 1/total at each TILES->MEEPLES transition. Only count next_tile as
+    # a future tile during the TILES phase. (Matches rule_based_player intent.)
+    tiles_remaining = len(state.deck) + (1 if (is_tiles and state.next_tile is not None) else 0)
+    progress = 1.0 - (tiles_remaining / max(total_tiles, 1))
     return np.array(
         [
             state.meeples[player] / MEEPLE_NORM,

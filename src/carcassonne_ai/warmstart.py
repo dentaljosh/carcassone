@@ -30,6 +30,7 @@ from typing import Iterator
 import numpy as np
 
 from .action_space import action_size as compute_action_size
+from .aux_targets import OWNERSHIP_PLANES, extract_terminal_ownership, ownership_planes
 from .game_wrapper import Game
 from .virtual_score import virtual_score, virtual_score_inplace
 
@@ -49,6 +50,9 @@ class GameDataset:
     policies: np.ndarray     # (N, A) float32
     values: np.ndarray       # (N,) float32
     valid_masks: np.ndarray  # (N, A) bool
+    # Path B aux target: per-cell final feature ownership, current-player POV,
+    # (N, OWNERSHIP_PLANES, W, W) float32 in {-1, 0, +1} (city/road/farm planes).
+    ownership: np.ndarray
 
     def save(self, path: Path) -> None:
         """Save to a private temp file then atomically rename onto `path`.
@@ -76,6 +80,7 @@ class GameDataset:
             policies=self.policies,
             values=self.values,
             valid_masks=self.valid_masks,
+            ownership=self.ownership,
         )
         partial.replace(path)
 
@@ -92,6 +97,7 @@ class GameDataset:
                     policies=data["policies"],
                     values=data["values"],
                     valid_masks=data["valid_masks"],
+                    ownership=data["ownership"],
                 )
         except Exception as e:
             raise RuntimeError(
@@ -315,6 +321,7 @@ def generate_one_game_dataset(
     policies_arr = []
     values_arr = []
     masks_arr = []
+    ownership_arr = []
 
     # Defer MCTS imports so heuristic-only runs don't pay the cost.
     # Share one MCTS-side Game across all positions in this run; the legal-moves
@@ -339,11 +346,17 @@ def generate_one_game_dataset(
             mcts_game.clear_caches()  # bound per-search memory; cache is per-MCTS anyway
             del mcts
         value = float(normalized_value_target(snap_board.state, player))
+        # Ownership aux label: "who owns each feature if scored now" — the same
+        # virtual_score semantics as the value target above, so value + ownership
+        # are consistent. Projected onto this position's window + POV.
+        records = extract_terminal_ownership(snap_board.state)
+        owners = ownership_planes(records, snap_board.offset, player, game.window_size)
         boards_arr.append(obs.astype(np.float32))
         scalars_arr.append(scalars.astype(np.float32))
         policies_arr.append(policy)
         values_arr.append(value)
         masks_arr.append(mask.astype(bool))
+        ownership_arr.append(owners)
 
     return GameDataset(
         boards=np.stack(boards_arr) if boards_arr else np.empty((0, 0, 0, 0), dtype=np.float32),
@@ -351,6 +364,11 @@ def generate_one_game_dataset(
         policies=np.stack(policies_arr) if policies_arr else np.empty((0, A), dtype=np.float32),
         values=np.array(values_arr, dtype=np.float32),
         valid_masks=np.stack(masks_arr) if masks_arr else np.empty((0, A), dtype=bool),
+        ownership=(
+            np.stack(ownership_arr)
+            if ownership_arr
+            else np.empty((0, OWNERSHIP_PLANES, game.window_size, game.window_size), dtype=np.float32)
+        ),
     )
 
 
@@ -485,6 +503,7 @@ def make_streaming_dataset(
                         torch.from_numpy(ds.policies[i]),
                         torch.tensor(ds.values[i], dtype=torch.float32),
                         torch.from_numpy(ds.valid_masks[i]),
+                        torch.from_numpy(ds.ownership[i]),
                     )
 
     return StreamingWarmstartDataset()

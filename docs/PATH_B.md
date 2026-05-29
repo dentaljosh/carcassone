@@ -39,6 +39,35 @@ already run:
 
 We don't build the test — we build a value head *worth* testing.
 
+## Diagnostic gate — so a NO-GO is credible, not a tuning artifact
+
+A bare negative A/B is ambiguous: did the architecture fail, or did we freeze a
+bad knob? We resolve this by measuring the value head's quality **independent of
+the head-to-head**, which turns "negative" into "negative *with a mechanism*."
+
+**The orthogonal signal: value↔outcome correlation.** The Option-2 post-mortem
+(2026-05-18) measured the old NN value head at **corr +0.18** with the game
+outcome vs the heuristic's **+0.61** (STATUS.md / DECISIONS.md). That **+0.61 is
+the baseline to beat.** After Path B training — and BEFORE trusting the A/B elo —
+measure the learned value's correlation (and held-out value MSE vs the
+heuristic's) on a sample of self-play games:
+
+| value-corr vs 0.61 | A/B elo | reading |
+|---|---|---|
+| still ~0.2–0.3 | loses | **real NO-GO** — a value head that can't predict outcomes can't be rescued by any eval-side knob. Architecture/data is the wall. Credible stop. |
+| ~0.55–0.65 | loses | failure is **integration/eval-side** (leaf-swap blend, search `c`), NOT the value head — a fixable, knob-shaped result. Look there before declaring NO-GO. |
+| aux losses flat in training | — | labels are garbage (the Step 1 farm-ownership linchpin), not a tuning problem. |
+
+**Confound insurance on the one genuinely-new knob (aux-weight).** The frozen
+knobs split two ways: *inherited + validated* (sims / c_puct / dirichlet / temp /
+value_target / epochs / games — the exact iter_01/B1 recipe, so NOT suspects if
+the probe fails) and *genuinely-new* (aux-weight, domain planes, head arch). Only
+aux-weight is a free scalar worth pre-checking, and it's cheap at warmstart (no
+self-play loop): train warmstart at aux-weight **{0.0, 0.15, 0.5}** and confirm
+(a) the policy/value mains don't degrade as the weight rises and (b) the aux heads
+actually learn. If 0.15 looks clean there, freezing it for the loop is
+*justified*, not assumed. Folded into Step 6.
+
 ## Frozen hyperparameters (decide once, HOLD — do not tweak mid-run)
 
 The discipline (CLAUDE.md "Results discipline"): pick these up front, freeze them,
@@ -117,6 +146,10 @@ The self-play loop runs unattended; these are guardrails that halt+report:
   self-play iter (e.g. 25 games, sims=25) → train → anchor-gate. Assert: no NaN,
   aux losses decrease, anchor-gate runs, the value-leaf swap works. **This catches
   a bug before it eats days of compute.** Do not skip.
+- **Aux-weight sensitivity (confound insurance — see "Diagnostic gate"):** run the
+  small warmstart at aux-weight **{0.0, 0.15, 0.5}**; confirm the mains don't
+  degrade as weight rises and the aux losses fall. Justifies freezing 0.15 for the
+  loop instead of assuming it. Cheap here (warmstart only, no self-play).
 
 ### Step 7 — Launch warmstart  (compute: ~hours, detached, ask which box)
 - Full warmstart of the new arch from heuristic-labeled data. nice -19, detached.
@@ -129,6 +162,10 @@ The self-play loop runs unattended; these are guardrails that halt+report:
 ### Step 9 — The decisive go/no-go A/B  (compute: ~hours)
 - `(NN-value-leaf)` vs `(v2.7-heuristic-leaf)`, same policy net both sides,
   sims=200, n=400, via the existing `value_blend` leaf-swap. GO if > +15 elo.
+- **Report value↔outcome correlation alongside the elo (see "Diagnostic gate").**
+  The elo is the headline; the corr is the *attribution*. A NO-GO is only credible
+  paired with its mechanism — corr < 0.61 → real architecture wall; corr ≥ 0.61
+  but elo loses → the failure is eval-side, look there before stopping.
 - Append the result to `experiments/results.csv` (and write a manifest — see
   "results discipline" / the deferred manifest root-cause fix).
 

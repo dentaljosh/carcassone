@@ -26,27 +26,53 @@ class FarmUtil:
 
     @classmethod
     def find_farm(cls, game_state: CarcassonneGameState, farmer_connection_with_coordinate: FarmerConnectionWithCoordinate) -> Farm:
-        farmer_connections_with_coordinate: [FarmerConnectionWithCoordinate] = {farmer_connection_with_coordinate}
-        open_sides: Set[CoordinateWithFarmerSide] = set(map(lambda x: CoordinateWithFarmerSide(farmer_connection_with_coordinate.coordinate, x), farmer_connection_with_coordinate.farmer_connection.tile_connections))
-        to_explore: Set[CoordinateWithFarmerSide] = set(map(lambda farmer_side: cls.opposite_edge(farmer_side), open_sides))
-        to_ignore: Set[CoordinateWithFarmerSide] = open_sides.union(to_explore)
+        # Patched (vendored fork): complete, start-independent connected-component
+        # search over farmer connections.
+        #
+        # The original traversal kept a single `to_ignore` edge-set seeded
+        # asymmetrically from the start node and marked edges ignored as it
+        # popped them (in set/hash order), so an edge could be pruned before the
+        # branch behind it was explored. The region it returned therefore
+        # depended on the start coordinate AND on hash order: from some farmer
+        # meeples it under-collected the connection set, so `find_meeples` missed
+        # meeples and `count_farm_points` missed adjacent finished cities. Worse,
+        # via `count_final_scores` this made two same-player farmers on one field
+        # score either once or twice depending on pop order — a ~2.2% rate of
+        # nondeterministic, sometimes-doubled farm scores that also tainted
+        # `virtual_score` / the v2.7 leaf. See DECISIONS.md 2026-05-29.
+        #
+        # This rewrite visits each connection node exactly once (keyed by
+        # coordinate + connection identity) and explores every tile_connection of
+        # every visited node, so the component is maximal and identical for any
+        # start node. Being start-independent, find_farm is now also safely
+        # cacheable (was previously called out as un-cacheable) — see BACKLOG.
+        start = farmer_connection_with_coordinate
+        component: dict = {cls._farm_node_key(start): start}
+        stack: [FarmerConnectionWithCoordinate] = [start]
+        while stack:
+            node: FarmerConnectionWithCoordinate = stack.pop()
+            for farmer_side in node.farmer_connection.tile_connections:
+                neighbor_edge: CoordinateWithFarmerSide = cls.opposite_edge(
+                    CoordinateWithFarmerSide(node.coordinate, farmer_side)
+                )
+                neighbor: Optional[FarmerConnectionWithCoordinate] = cls.farm_for_position(game_state, neighbor_edge)
+                if neighbor is None:
+                    continue
+                key = cls._farm_node_key(neighbor)
+                if key not in component:
+                    component[key] = neighbor
+                    stack.append(neighbor)
 
-        while len(to_explore) > 0:
-            open_edge: CoordinateWithFarmerSide = to_explore.pop()
-            to_ignore.add(open_edge)
-            new_farmer_connection_with_coordinate: FarmerConnectionWithCoordinate = cls.farm_for_position(game_state, open_edge)
-            if new_farmer_connection_with_coordinate is not None:
-                farmer_connections_with_coordinate.add(new_farmer_connection_with_coordinate)
-                new_open_sides: Set[CoordinateWithFarmerSide] = set(map(lambda x: CoordinateWithFarmerSide(new_farmer_connection_with_coordinate.coordinate, x), new_farmer_connection_with_coordinate.farmer_connection.tile_connections))
-                new_to_explore: Set[CoordinateWithFarmerSide] = set(map(lambda farmer_side: cls.opposite_edge(farmer_side), new_open_sides))
-                to_ignore = to_ignore.union(new_open_sides)
-                new_edge_to_explore: CoordinateWithFarmerSide
-                for new_edge_to_explore in new_to_explore:
-                    if new_edge_to_explore not in to_ignore:
-                        to_explore.add(new_edge_to_explore)
-                        to_ignore.add(new_edge_to_explore)
+        return Farm(set(component.values()))
 
-        return Farm(farmer_connections_with_coordinate)
+    @staticmethod
+    def _farm_node_key(fcc: FarmerConnectionWithCoordinate):
+        # A farmer connection is uniquely identified by its tile coordinate plus
+        # the identity of the FarmerConnection object (a single tile may host
+        # several disjoint field connections). farm_for_position returns wrappers
+        # around the persistent tile.farms objects, so id() is stable for the
+        # game-state lifetime that find_farm runs in.
+        return (fcc.coordinate.row, fcc.coordinate.column, id(fcc.farmer_connection))
 
     @classmethod
     def opposite_edge(cls, coordinate_with_farmer_side: CoordinateWithFarmerSide) -> CoordinateWithFarmerSide:

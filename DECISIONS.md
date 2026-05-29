@@ -23,6 +23,32 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-29 — Engine fix: farmer-adjacency bug made farm scoring start-dependent (taints virtual_score / v2.7 leaf)
+
+**Context.** Path B Step 1 (aux-target generation) needs per-feature *ownership* labels at game end, validated to reconcile with the engine's `count_final_scores`. Building the validator surfaced that the engine's farm scoring is **non-deterministic across processes**: the same terminal position can score differently depending on Python hash/set-pop order. Root cause traced to two layers:
+1. `SideModificationUtil.opposite_farmer_side` was **not a bijection** — `TRT → BRR` (a typo; should be `BRB`). So `BRR` was the image of both `TRT` and `BLL`, and `BRB` was never produced. Crossing the top edge's right-half must mirror to the neighbour's bottom edge right-half (`BRB`). The typo made farmer adjacency **asymmetric**.
+2. `FarmUtil.find_farm`'s flood-fill kept a single `to_ignore` edge-set seeded asymmetrically from the start node and marked edges visited in set-pop order, pruning branches before they were explored. Combined with (1), `find_farm` returned **start-dependent** regions — from some farmer meeples it under-collected connections, so `find_meeples` missed meeples and `count_farm_points` missed adjacent finished cities. Via `count_final_scores` this made two same-player farmers on one field score **once or twice depending on pop order**.
+
+**Magnitude (measured, 500 random games):** ~**2.2%** of games mis-scored, mean score-diff error **9.3 pts** (max 30), **0.2%** flip who wins. The same bug lives in `virtual_score` → the **v2.7 leaf eval** the entire current strength rests on, and in `possible_move_finder` (farmer-placement legality). All historical `results.csv` numbers were produced against this buggy, slightly-nondeterministic scorer.
+
+**Options considered.**
+  - A: **Fix the engine** — correct `opposite_farmer_side` + rewrite `find_farm` as a complete, start-independent connected-component search. Pro: fixes the root cause everywhere (scoring, leaf, move-gen); deterministic. Con: changes the v2.7 leaf on ~2.2% of evals → per the "bug-fix-shifts-optima" rule, cap/c_puct optima may move; invalidates exact reproduction of some past numbers.
+  - B: **Path-B-local** — use a deterministic dedup-correct scorer only for the new self-play data; leave the engine alone. Pro: zero blast radius. Con: leaves the buggy leaf in place; value-target currency mismatch.
+  - C: **Replicate the bug** so labels match the (buggy) value target exactly. Con: teaches the aux head a non-deterministic target.
+
+**Decision.** Chose **A — fix the engine now** (Joshua's explicit call when the fork was surfaced). Two vendored-fork patches: `side_modification_util.opposite_farmer_side` `TRT → BRB`; `farm_util.find_farm` rewritten as a node-deduped CC traversal (visits each `(coord, connection)` once, explores every `tile_connection`). After the fix `opposite_farmer_side` is a clean bijective involution ({TLL,TRR}{TLT,BLB}{TRT,BRB}{BRR,BLL}), `find_farm` is start-independent (0/… overlapping-but-unequal components across 300 games, was 112), and the aux-ownership extractor reconciles with `count_final_scores` **exactly at n=2000 (0 failures; was 2.2%)**.
+
+**Consequences / follow-ups.**
+- **Re-sweep flag:** the v2.7 leaf changed slightly → the cap=12 / c_puct production optima were tuned against the buggy leaf and should be re-validated before being trusted (memory: bug-fix-shifts-optima). Path B regenerates everything from a fresh warmstart anyway, so this lands naturally.
+- **`find_farm` is now start-independent → safely cacheable** (it was previously called out as un-cacheable for exactly this reason) — a real future throughput lever for the hot leaf path. Logged for BACKLOG.
+- The overnight hygiene runs (c=3, cap=20) are on the pre-fix engine on their boxes; not disrupted — their results just describe the old leaf. Propagate this fix to all cluster boxes before the next training/eval run.
+
+**Reversal cost.** Medium — it's a vendored-engine correctness change, but well-tested (full suite + n=2000 reconciliation) and isolated to farmer adjacency.
+
+**Phase.** Phase 4 / Path B Step 1.
+
+---
+
 ## 2026-05-28 — GOAL CHANGE: attempt genuinely superhuman play (overrides the original-prompt scope)
 
 **Context.** The original prompt ([docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md)) explicitly scoped superhuman strength *out*: *"This is not a 'build superhuman Carcassonne AI' project. That's been attempted by academic groups since 2020 and has stalled — not because the idea is wrong, but because nobody's bothered to throw serious compute at it. We're not going to either."* The stated win condition was the **analyzer (Phase 5)** — "a 90th-percentile bot that explains *why* a move was bad is more useful to me than a superhuman black box." On 2026-05-28, during a strategic regroup, Joshua changed the goal: **he wants genuinely superhuman play — to beat the world champion.**

@@ -58,12 +58,17 @@ def test_masked_softmax_zeros_invalid(net: CarcassonneNet) -> None:
 
 
 def test_autograd_flows(net: CarcassonneNet) -> None:
-    """A backward pass should populate gradients on every parameter."""
+    """A backward pass through the TRAINING forward (policy+value+ownership)
+    should populate gradients on every parameter, including the aux head.
+
+    (`forward` is the inference path and deliberately skips the ownership head,
+    so it would leave ownership_head.* without gradients — the trainers use
+    forward_train.)"""
     B = 2
     board = torch.randn(B, N_CHANNELS, 25, 25, requires_grad=False)
     scalars = torch.randn(B, N_SCALAR_FEATURES, requires_grad=False)
-    policy, value = net(board, scalars)
-    loss = policy.sum() + value.sum()
+    policy, value, ownership = net.forward_train(board, scalars)
+    loss = policy.sum() + value.sum() + ownership.sum()
     loss.backward()
     for name, p in net.named_parameters():
         assert p.grad is not None, f"{name} has no gradient"

@@ -78,6 +78,25 @@ def policy_cross_entropy(
     return -(target * log_probs).sum(dim=-1).mean()
 
 
+def ownership_loss(
+    pred: torch.Tensor, target: torch.Tensor, board: torch.Tensor
+) -> torch.Tensor:
+    """Path B ownership aux loss: MSE between tanh ownership prediction and the
+    {-1,0,+1} target, restricted to placed-tile cells.
+
+    pred / target: (B, P, W, W); board: (B, C, W, W). Cells with no tile carry no
+    ownership signal, so we mask to CH_TILE_PRESENT to keep the gradient focused
+    on the placed region (the only place ownership is defined) instead of diluting
+    it with trivial empty-cell zeros.
+    """
+    from carcassonne_ai.board_repr import CH_TILE_PRESENT
+
+    tile_present = board[:, CH_TILE_PRESENT : CH_TILE_PRESENT + 1, :, :]
+    sq = (pred - target) ** 2 * tile_present
+    denom = tile_present.sum() * pred.shape[1] + 1e-6
+    return sq.sum() / denom
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="train_warmstart")
     p.add_argument(
@@ -92,6 +111,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument("--filters", type=int, default=96)
     p.add_argument("--blocks", type=int, default=6)
+    p.add_argument(
+        "--aux-weight",
+        type=float,
+        default=0.15,
+        help="Path B ownership aux-loss weight (added to policy CE + value MSE). "
+        "0.0 disables the aux gradient. Step-6 sensitivity sweeps {0.0,0.15,0.5}.",
+    )
     p.add_argument("--val-fraction", type=float, default=0.05)
     p.add_argument(
         "--num-workers",
@@ -185,19 +211,22 @@ def main(argv: list[str] | None = None) -> int:
         t0 = time.perf_counter()
         train_pol_loss = 0.0
         train_val_loss = 0.0
+        train_own_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
             mask_b = mask_b.to(device, non_blocking=True)
+            own_b = own_b.to(device, non_blocking=True)
             opt.zero_grad()
-            policy_logits, value_pred = net(board_b, scalar_b)
+            policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
             pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
             val_loss = F.mse_loss(value_pred, value_b)
-            loss = pol_loss + val_loss
+            own_loss = ownership_loss(own_pred, own_b, board_b)
+            loss = pol_loss + val_loss + args.aux_weight * own_loss
             if not torch.isfinite(loss):
                 nan_skipped += 1
                 continue  # skip the step; weights stay clean
@@ -206,47 +235,56 @@ def main(argv: list[str] | None = None) -> int:
             scheduler.step()
             train_pol_loss += pol_loss.item()
             train_val_loss += val_loss.item()
+            train_own_loss += own_loss.item()
             n_batches += 1
         if nan_skipped:
             print(f"  [warn] skipped {nan_skipped} NaN-loss batch(es) this epoch")
         train_pol_loss /= max(n_batches, 1)
         train_val_loss /= max(n_batches, 1)
+        train_own_loss /= max(n_batches, 1)
 
         if do_validation:
             net.train(False)
             val_pol_loss = 0.0
             val_val_loss = 0.0
+            val_own_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
                     value_b = value_b.to(device, non_blocking=True)
                     mask_b = mask_b.to(device, non_blocking=True)
-                    policy_logits, value_pred = net(board_b, scalar_b)
+                    own_b = own_b.to(device, non_blocking=True)
+                    policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
                     val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
                     val_val_loss += F.mse_loss(value_pred, value_b).item()
+                    val_own_loss += ownership_loss(own_pred, own_b, board_b).item()
                     v_n += 1
             val_pol_loss /= max(v_n, 1)
             val_val_loss /= max(v_n, 1)
+            val_own_loss /= max(v_n, 1)
+            # best-by-val tracks the mains (policy+value); the aux head is a
+            # regularizer, not the objective we checkpoint on.
             val_total = val_pol_loss + val_val_loss
         else:
             val_pol_loss = float("nan")
             val_val_loss = float("nan")
+            val_own_loss = float("nan")
             val_total = float("inf")
 
         elapsed = time.perf_counter() - t0
         if do_validation:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  "
-                f"val pol/val={val_pol_loss:.3f}/{val_val_loss:.4f}"
+                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  "
+                f"val pol/val/own={val_pol_loss:.3f}/{val_val_loss:.4f}/{val_own_loss:.4f}"
             )
         else:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-                f"train pol/val={train_pol_loss:.3f}/{train_val_loss:.4f}  (no val)"
+                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  (no val)"
             )
         sys.stdout.flush()
 

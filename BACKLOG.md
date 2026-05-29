@@ -65,6 +65,16 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 **Implication:** the 5-20% speedup benefit is already baked into our throughput numbers. No code work needed. Removing from Tier 1 task queue; leaving this entry in the backlog as anti-rediscovery: don't propose adding a transposition table again — it's there.
 
+## 2026-05-29 — Cache find_farm (now start-independent after the farmer-adjacency fix)
+
+**Context:** `FarmUtil.find_farm` is the #1 hot path in the v2.7 leaf (~58% of leaf cost per the 2026-05-17 profiling) and was previously flagged un-cacheable because its flood-fill was *start-dependent* (different result depending on which farmer the search started from). The 2026-05-29 engine fix (DECISIONS.md — `opposite_farmer_side` bijection + complete-CC `find_farm`) makes the farm region **a well-defined function of the board state**, identical from any start. That removes the blocker on caching.
+
+**Idea:** memoize farm regions keyed by board state (or incrementally maintain a farmer union-find as tiles are placed). Because the region is now canonical, a state-keyed cache or union-find is correctness-safe. Potential large win on the leaf hot path (farms dominate it), which directly speeds self-play + eval throughput across the cluster.
+
+**Why deferred:** correctness fix shipped first; caching is a pure-perf follow-up. Bench the fixed `find_farm` against the old one first (the CC rewrite changed the traversal — confirm no per-call regression) before adding a cache layer. Don't cache until after Path B's fresh warmstart so the leaf behaviour is stable.
+
+**Cost if pursued:** ~60-120 LoC (state-keyed memo is the cheap version; incremental union-find is the bigger, faster one). Mirror the legal-moves-cache invalidation discipline (clear per-move / per-search).
+
 ## 2026-05-27 — Multi-anchor league (extends anchor-fraction beyond N=1)
 
 **Context:** Anchor-fraction at c=3 just recovered (+30.5 elo at n=400) — validates the lever. But our implementation uses ONE fixed anchor checkpoint (iter_B1) for the anchor fraction. AlphaStar's league play uses N anchors at varied skills (current main, main-exploiters, league-exploiters) — addresses RPS-style cycles by training against a diverse opponent portfolio. Pluribus did similar with blueprint mixing.
@@ -147,13 +157,11 @@ Currently: MPS is the right level of Apple silicon optimization. ANE stays in th
 
 **Context:** A 4-iteration multi-agent code review (full findings + rationale in `REVIEW_LOG.md` at repo root) applied 13 safe fixes and deferred 16. Four deferred items are real fixes with a known trigger point — parked here so they are not forgotten. D6 (warmstart-mix train/val leakage) was reviewed and deliberately **skipped** — warmstart mixing is over (`--warmstart-mix 0.0`).
 
-### D13 — `features.py` `tiles_remaining` off-by-one — fix at the NEXT CLEAN RETRAIN
-**Idea:** `tiles_remaining` counts the just-placed tile on every MEEPLES-phase encode (the engine doesn't clear `state.next_tile` until `draw_tile`). Wrong by ~1.2% for ~50% of evaluations; `progress` jumps by 1/total at each TILES→MEEPLES transition. Fix: `len(deck) + (1 if is_tiles and next_tile else 0)`.
-**Why deferred:** it's a network INPUT feature. Currently benign — training and inference agree (both buggy). Fixing `features.py` alone desyncs inference from the current checkpoint + every existing `.npz` (which store pre-encoded scalars). Only fix as part of a fresh from-scratch baseline (fix feature → regen data → retrain). **Decide together with D1.**
+### D13 — `features.py` `tiles_remaining` off-by-one — ✅ RESOLVED 2026-05-29 (Path B retrain boundary)
+**Fixed** in `features.py:encode_scalars`: `tiles_remaining = len(deck) + (1 if is_tiles and next_tile else 0)`. Was counting the just-placed tile on every MEEPLES-phase encode (~1.2% off on ~50% of evals; `progress` jumped 1/total at TILES→MEEPLES). Taken now because Path B regenerates all data + warmstart from scratch, so the inference/training desync the deferral worried about doesn't apply.
 
-### D1 — `board_repr.py` ref-tile encoded differently in TILES vs MEEPLES phase — decide at the NEXT CLEAN RETRAIN (with D13)
-**Idea:** the reference-tile channels encode the *unrotated* `state.next_tile` during the TILES phase but the *rotated* `last_tile_action.tile` during the MEEPLES phase — two different meanings for the same channel range. May be partly intentional (in the MEEPLES phase the decision genuinely concerns the just-placed tile), but it is an unexamined inconsistency the network has to absorb.
-**Why deferred:** changing it is a network-INPUT encoding change → retraining boundary, exactly like D13. Make it a conscious call (unify the two, or keep + document the rationale) at the next from-scratch baseline.
+### D1 — `board_repr.py` ref-tile encoded differently in TILES vs MEEPLES phase — ✅ RESOLVED 2026-05-29 (keep + document)
+**Resolution: keep the phase-dependent reference tile — it is correct, not a bug.** TILES phase encodes the *unrotated* `next_tile` (the decision is where/how to place+rotate it); MEEPLES phase encodes the *rotated* placed tile (the decision is meeple placement on the now-fixed tile). The phase one-hots + `CH_LAST_TILE_POS` let the net disambiguate. The alternative (always encode the placed tile) would hide the to-be-placed tile during the TILES decision. Rationale documented inline at `encode_board`.
 
 ### D16 — `virtual_score_v2.py` board-edge city 100% closure bonus — fix at the NEXT LEAF-EVAL CAP RE-SWEEP
 **Idea:** `_close_prob(0)` returns 1.0; a city whose only open edge points off the 35×35 board counts 0 in-bounds open positions but is still `finished=False`, so it gets a full closure-anticipation bonus it physically cannot earn. Fix: `continue` (no bonus) when `_open_city_positions==0` on an unfinished city — at both the city-closure and farm-growth loops (~line 351).

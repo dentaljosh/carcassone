@@ -318,6 +318,15 @@ def encode_board(
                     "config drift?"
                 )
 
+    # D1 resolution (2026-05-29): the reference tile is intentionally
+    # phase-dependent, NOT a bug. In TILES phase the decision is where/how to
+    # place+rotate the drawn tile, so the relevant reference is the UNROTATED
+    # next_tile. In MEEPLES phase the tile is already placed and rotated and the
+    # decision is meeple placement, so the relevant reference is the placed,
+    # rotated last tile. The phase one-hots (scalars) + CH_LAST_TILE_POS let the
+    # net disambiguate the two meanings. Reviewed alternative (always encode the
+    # placed tile): rejected — it would hide the to-be-placed tile's identity
+    # during the TILES decision. Keep phase-dependent + documented.
     ref_tile: "Tile | None"
     if state.phase.value == "tiles":
         ref_tile = state.next_tile
