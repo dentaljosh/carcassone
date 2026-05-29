@@ -199,20 +199,27 @@ Xeon; re-rsync to laptop).
    sims=25) → `train_iter` → anchor-gate via `eval_iter_head_to_head`. Assert: no NaN, aux losses
    fall, 12-scalar shape flows through, the value-leaf swap works. Also run the aux-weight
    sweep {0.0, 0.15, 0.5} at warmstart (confound insurance). **This catches a bug before days of compute.**
-   - **1a. PROFILE the self-play at production knobs (`cProfile`, one box, ~5 min).** The 1.48×
-     leaf speedup shifted the bottleneck; the full pipeline (NN-batched eval + tree ops) hasn't
-     been re-profiled since. Run one short `run_selfplay_iter` at PRODUCTION sims/batch/leaf/W
-     under `python -m cProfile -o /tmp/sp.prof`, then sort by cumtime. Expect the new hot path to
-     be the per-tree-step `deepcopy` in `get_next_state` (~sims deepcopies/move), `string_
-     representation`, or `get_valid_moves` — NOT the leaf anymore. **If any single function is a
-     >2× surprise vs its components, stop and fix before the multi-day run** (the "profile before
-     long jobs" rule — saved ~3h in Phase 2). If nothing jumps out, proceed.
-   - **1b. RE-BENCH worker count (W) per box (~5 min each).** The current W (5800X=14, Xeon=10,
+   - **1a. PROFILE the per-game hot path (`cProfile`, in-process, ~5 min).** The 1.48× leaf
+     speedup shifted the bottleneck; the tree-ops side hasn't been re-profiled. ⚠️ **Do NOT
+     `cProfile run_selfplay_iter.py` directly** — it always spawns a `spawn` `Pool`
+     (`run_selfplay_iter.py:732`), so the parent profile captures only the main/orchestrator
+     process and MISSES the per-game worker hot path (tree ops, `get_next_state` deepcopy, leaf
+     eval) entirely. **Profile IN-PROCESS instead:** a tiny single-process harness that calls
+     `selfplay.play_one_selfplay_game(...)` directly (no Pool) at **sims=200, batch_size=8, the
+     v2.7 leaf wrapper** (`evaluators.make_v25_value_wrapper` / `make_v25_batch_value_wrapper`)
+     on the warm net, for ~3 games, under `python -m cProfile -o /tmp/sp.prof`; then
+     `pstats … sort_stats('cumulative')`. Expect the new hot path = per-tree-step `deepcopy` in
+     `get_next_state`, `string_representation`, or `get_valid_moves` — NOT the leaf. **If any
+     single fn is a >2× surprise vs its components, stop and fix before the multi-day run** (the
+     "profile before long jobs" rule — saved ~3h in Phase 2). Else proceed.
+   - **1b. RE-BENCH worker count (W) per box (~5 min each).** Current W (5800X=14, Xeon=10,
      laptop=24) were tuned against the OLD, slower leaf; a 1.48× faster leaf shifts the CPU/GPU
-     balance (eval-server was already ~70% idle → likely MORE workers now optimal, or the GPU
-     becomes the new ceiling). Sweep W around the current value at production knobs
-     (`scripts/bench_workers.py` or a short timed `run_selfplay_iter`), pick the per-box peak, and
-     use those W for Step 8. Don't extrapolate — measure (bench-then-commit).
+     balance (eval-server was ~70% idle → likely MORE workers now optimal, or the GPU becomes the
+     ceiling). ⚠️ **`scripts/bench_workers.py` is the WRONG tool** — it times RAW-engine random
+     games (no MCTS / no NN / no orchestrator), unrepresentative of self-play. Instead **time the
+     REAL `run_selfplay_iter`** (orchestrator path, `--orchestrator --batch-size 8 --leaf-eval
+     v2_5 --sims 200`, fixed `--games ~20`) at W ∈ {10,12,14,16,18}, read its own wall-clock /
+     games-per-min, pick the per-box peak. Don't extrapolate — measure (bench-then-commit).
 2. **Step 7 — warmstart:** full `generate_warmstart_smoke ... --include-farm-scalars` corpus →
    `train_warmstart --include-farm-scalars --aux-weight 0.15` (6×96 trunk). Detached (nohup), nice -19.
    Produces the 12-scalar warm net (checkpoint records `n_scalar_features=12`).
