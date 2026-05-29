@@ -176,14 +176,22 @@ The self-play loop runs unattended; these are guardrails that halt+report:
 Decided config: work-stealing across 5800X + Xeon + laptop, all workers `nice -n 19`, farm
 scalars ON. Frozen knobs per the table above.
 
-**Step 0 (pre-launch) — PROPAGATE to Xeon + laptop (REQUIRED; the clones still run the PRE-FIX
-engine from Run A).** The launchers auto-sync only `scripts/`, but this work changed `engine/`
-(`farm_util.py`, `city_util.py`) and `src/` (features, game_wrapper, virtual_score(_v2),
-evaluators, eval_server, warmstart). The branch is ahead of `origin/gpu-orchestrator` by >10, so
-the clones can't `git pull` without first pushing (ask Joshua) — simplest is to **rsync
-`engine/ src/ scripts/ tests/`** to each reachable box (Xeon `ssh xeon`→WSL; laptop `ssh laptop`,
-may be powered off — power on / skip if unavailable, but then don't include it in the WS pool).
-Verify with a quick `pytest tests/test_farm_index.py` on each box before adding it to the run.
+**Step 0 (pre-launch) — PROPAGATE to Xeon + laptop. ✅ DONE 2026-05-29.** Both clones now run the
+fixed engine + full Path B code (`engine/ src/ scripts/ tests/`). Mechanism used:
+- **Xeon** (`/home/doctor/projects/carcassone`): staged the 4 dirs to the 5800X `code_sync` share
+  (`/mnt/c/carc-shared/code_sync/`), then ran `sync_pathb.sh` on the Xeon over `ssh xeon`→WSL
+  (rsync from `/mnt/carc-shared/code_sync/` into the repo). **`sync_pathb.sh` lives on the share**
+  for re-use. NOTE: pass the wsl invocation with NO shell operators on the cmd line (cmd.exe mangles
+  `| && ;`) — that's why the chaining lives inside the script file. `pytest test_farm_index.py` 20/20.
+- **Laptop** (`/home/pop/carcassone`, user `pop`): direct `rsync -a engine src scripts tests
+  laptop:/home/pop/carcassone/` (Linux→Linux, no share hop). `pytest test_farm_index.py` 20/20.
+
+Original note (kept for context): the launchers auto-sync only `scripts/`, but this work changed
+`engine/` (`farm_util.py`, `city_util.py`) and `src/` (features, game_wrapper, virtual_score(_v2),
+evaluators, eval_server, warmstart, aux_targets). The branch is ahead of `origin/gpu-orchestrator`
+by >10, so the clones can't `git pull` without a push (ask Joshua) — hence the rsync/share route.
+**Re-run before launch if any of those files change again** (re-stage + re-run `sync_pathb.sh` on
+Xeon; re-rsync to laptop).
 
 1. **Step 6 smoke (do FIRST, ~30 min):** tiny end-to-end at toy scale with farm scalars on —
    `generate_warmstart_smoke --label-strategy heuristic --include-farm-scalars --n <small>` →
