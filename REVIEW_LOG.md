@@ -237,3 +237,28 @@ previous rotation forward.
 
 Running total: **15 safe fixes** (F1–F15). 16 findings logged (D1–D16); D5 and
 D15 since resolved (F14, F15).
+
+---
+
+## Follow-up — 2026-05-29 (D1 + D13 resolved at the Path B retrain boundary)
+
+Both were deferred as "fix at the next clean retrain" because fixing them in
+isolation desyncs the current checkpoint/data. Path B regenerates all data +
+warmstart from scratch, so that boundary is now — both taken:
+
+- **D13 — RESOLVED (fixed).** `features.py:encode_scalars` now counts
+  `state.next_tile` only in the TILES phase:
+  `tiles_remaining = len(deck) + (1 if (is_tiles and next_tile) else 0)`. The
+  MEEPLES-phase overcount (and the `progress` jump at TILES→MEEPLES) is gone.
+  Regression test added: `tests/test_features.py` asserts the deck count in BOTH
+  phases over a random game. (Committed in 6ac64f1; test 2026-05-29.)
+- **D1 — RESOLVED (keep + document).** The phase-dependent ref-tile is
+  *intentional*, not a bug: TILES decision needs the UNROTATED `next_tile`
+  (rotation is part of the action); MEEPLES decision needs the PLACED, rotated
+  tile. The phase one-hots + `CH_LAST_TILE_POS` let the net disambiguate the two
+  meanings; always-encode-the-placed-tile was considered and rejected (it would
+  hide the to-be-placed tile's identity during the TILES decision). Documented
+  inline at `board_repr.py:321-329`.
+
+Both also recorded in BACKLOG.md (✅ RESOLVED 2026-05-29). No deferred D-finding
+remains that gates Path B.
