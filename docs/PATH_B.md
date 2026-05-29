@@ -171,8 +171,16 @@ The self-play loop runs unattended; these are guardrails that halt+report:
 ## LAUNCH RECIPE (2026-05-29 — 3-box work-stealing, nice -19, farm scalars IN — HOLD until Joshua says go)
 
 Decided config: work-stealing across 5800X + Xeon + laptop, all workers `nice -n 19`, farm
-scalars ON. Frozen knobs per the table above. Pre-launch: propagate the latest commits to the
-Xeon + laptop clones (code sync) so all 3 boxes run identical engine+scripts.
+scalars ON. Frozen knobs per the table above.
+
+**Step 0 (pre-launch) — PROPAGATE to Xeon + laptop (REQUIRED; the clones still run the PRE-FIX
+engine from Run A).** The launchers auto-sync only `scripts/`, but this work changed `engine/`
+(`farm_util.py`, `city_util.py`) and `src/` (features, game_wrapper, virtual_score(_v2),
+evaluators, eval_server, warmstart). The branch is ahead of `origin/gpu-orchestrator` by >10, so
+the clones can't `git pull` without first pushing (ask Joshua) — simplest is to **rsync
+`engine/ src/ scripts/ tests/`** to each reachable box (Xeon `ssh xeon`→WSL; laptop `ssh laptop`,
+may be powered off — power on / skip if unavailable, but then don't include it in the WS pool).
+Verify with a quick `pytest tests/test_farm_index.py` on each box before adding it to the run.
 
 1. **Step 6 smoke (do FIRST, ~30 min):** tiny end-to-end at toy scale with farm scalars on —
    `generate_warmstart_smoke --label-strategy heuristic --include-farm-scalars --n <small>` →
