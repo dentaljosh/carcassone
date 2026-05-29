@@ -89,8 +89,14 @@ def _server_loop(
         ckpt = torch.load(
             checkpoint_path, map_location=device, weights_only=False
         )
+        # Scalar width follows the checkpoint (Path B Step E: 12 with farm
+        # scalars, else 10). The worker building inputs MUST use a Game with the
+        # matching include_farm_scalars so the tensor it sends is this wide.
+        n_scalar = int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES))
         net = CarcassonneNet(
-            n_filters=ckpt["n_filters"], n_blocks=ckpt["n_blocks"]
+            n_filters=ckpt["n_filters"],
+            n_blocks=ckpt["n_blocks"],
+            n_scalar_features=n_scalar,
         ).to(device)
         net.load_state_dict(ckpt["model_state"])
         net.train(False)
@@ -101,7 +107,7 @@ def _server_loop(
             with torch.no_grad():
                 _ = net(
                     torch.zeros(1, N_CHANNELS, 25, 25, device=device),
-                    torch.zeros(1, N_SCALAR_FEATURES, device=device),
+                    torch.zeros(1, n_scalar, device=device),
                 )
                 if device.type == "cuda":
                     torch.cuda.synchronize()

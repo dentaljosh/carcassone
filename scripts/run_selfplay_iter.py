@@ -57,6 +57,7 @@ from carcassonne_ai.evaluators import (
     make_v25_batch_value_wrapper,
     make_v25_value_wrapper,
 )
+from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.remote_eval_bridge import (
@@ -159,7 +160,9 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         checkpoint_path, map_location=_worker_device, weights_only=False
     )
     net = CarcassonneNet(
-        n_filters=ckpt["n_filters"], n_blocks=ckpt["n_blocks"]
+        n_filters=ckpt["n_filters"],
+        n_blocks=ckpt["n_blocks"],
+        n_scalar_features=int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
     ).to(_worker_device)
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
@@ -173,7 +176,9 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
             anchor_ckpt_path, map_location=_worker_device, weights_only=False
         )
         a_net = CarcassonneNet(
-            n_filters=a_ckpt["n_filters"], n_blocks=a_ckpt["n_blocks"]
+            n_filters=a_ckpt["n_filters"],
+            n_blocks=a_ckpt["n_blocks"],
+            n_scalar_features=int(a_ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
         ).to(_worker_device)
         a_net.load_state_dict(a_ckpt["model_state"])
         a_net.train(False)
@@ -222,7 +227,10 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         ):
             return seed, "skipped", 0
 
-    game = Game(enable_legal_moves_cache=True)
+    game = Game(
+        enable_legal_moves_cache=True,
+        include_farm_scalars=cfg.get("include_farm_scalars", False),
+    )
     use_fp16 = cfg.get("use_fp16", False)
     # If the v2.5 leaf is going to override the value anyway, we can skip the
     # value-head forward in both the per-worker and orchestrator paths.
@@ -574,7 +582,20 @@ def main(argv: list[str] | None = None) -> int:
         else min(args.workers, remaining or 1)
     )
 
+    # Path B Step E: derive the farm-scalar shape from the learner checkpoint so
+    # workers build a Game whose get_canonical_form emits the matching scalar
+    # width (the server net is sized from the same checkpoint in eval_server).
+    # Off (10-scalar) for pre-Step-E checkpoints and remote-server mode.
+    include_farm_scalars = False
+    if args.checkpoint is not None:
+        _peek = torch.load(str(args.checkpoint), map_location="cpu", weights_only=False)
+        include_farm_scalars = (
+            int(_peek.get("n_scalar_features", N_SCALAR_FEATURES)) > N_SCALAR_FEATURES
+        )
+        del _peek
+
     cfg = {
+        "include_farm_scalars": include_farm_scalars,
         "sims": args.sims,
         "c_puct": args.c_puct,
         "dirichlet_alpha": args.dirichlet_alpha,

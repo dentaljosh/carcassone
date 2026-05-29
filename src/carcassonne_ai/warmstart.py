@@ -266,6 +266,7 @@ def generate_one_game_dataset(
     skip_late: int = 10,
     heuristic_tau: float = DEFAULT_HEURISTIC_TAU,
     heuristic_lookahead: str = "1ply",
+    include_farm_scalars: bool = False,
 ) -> GameDataset:
     """Play a random game; sample N mid-game positions; label each.
 
@@ -273,6 +274,10 @@ def generate_one_game_dataset(
     heuristic_lookahead: "1ply" (default; tile-phase scored at tile-only) or
                         "2ply" (tile-phase scored as tile + best meeple
                         follow-up; ~3-4x slower gen).
+    include_farm_scalars: Path B Step E — emit the 12-scalar feature vector (10
+                        base + 2 farm-control) in the recorded dataset. Must match
+                        the net trained on this corpus (train_warmstart
+                        --include-farm-scalars). Default off → legacy 10-scalar.
     """
     if label_strategy not in ("mcts", "heuristic"):
         raise ValueError(f"label_strategy must be 'mcts' or 'heuristic', got {label_strategy!r}")
@@ -285,7 +290,7 @@ def generate_one_game_dataset(
     # own action choices.
     random.seed(seed)
     rng = random.Random(seed + 1)
-    game = Game(enable_legal_moves_cache=True)
+    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars)
     board = game.get_init_board()
 
     # Walk the game, recording at each step the data we'd need to label
@@ -329,7 +334,7 @@ def generate_one_game_dataset(
     # we save N×Game-construction overhead.
     if label_strategy == "mcts":
         from .mcts import MCTS
-        mcts_game = Game(enable_legal_moves_cache=True)
+        mcts_game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars)
 
     for idx in chosen:
         snap_board, mask, player = snapshots[idx]

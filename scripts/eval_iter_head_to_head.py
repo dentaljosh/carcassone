@@ -48,6 +48,7 @@ from carcassonne_ai.evaluators import (
     make_v25_batch_value_wrapper,
     make_v25_value_wrapper,
 )
+from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
@@ -98,6 +99,8 @@ _worker_new_leaf_cfg = None
 _worker_old_leaf_cfg = None
 _worker_new_handles: ServerHandles | None = None
 _worker_old_handles: ServerHandles | None = None
+_worker_new_farm: bool = False  # Path B Step E: new side's Game emits farm scalars
+_worker_old_farm: bool = False
 # Work-stealing claim (only used with --shared-claim). See carcassonne_ai.claim.
 _worker_shared_claim: bool = False
 _worker_claim_host: str = ""
@@ -143,11 +146,20 @@ def _save(eval_dir: str, result: GameResult) -> None:
 def _load_net(path: str, device: torch.device) -> CarcassonneNet:
     ckpt = torch.load(path, map_location=device, weights_only=False)
     net = CarcassonneNet(
-        n_filters=ckpt["n_filters"], n_blocks=ckpt["n_blocks"]
+        n_filters=ckpt["n_filters"],
+        n_blocks=ckpt["n_blocks"],
+        n_scalar_features=int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
     ).to(device)
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
     return net
+
+
+def _ckpt_uses_farm_scalars(path: str) -> bool:
+    """Peek a checkpoint's n_scalar_features (Path B Step E) → whether its Game
+    must emit the 2 farm-control scalars (12-scalar net) to match."""
+    ckpt = torch.load(path, map_location="cpu", weights_only=False)
+    return int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES)) > N_SCALAR_FEATURES
 
 
 def _leaf_config_for(variant: str):
@@ -235,6 +247,13 @@ def _worker_init(
     global _worker_new_handles, _worker_old_handles
     global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
     global _worker_new_c_puct, _worker_old_c_puct
+    global _worker_new_farm, _worker_old_farm
+
+    # Path B Step E: each side's Game must emit the scalar width its net/server
+    # expects. Peek the checkpoints (cheap, once per worker) in BOTH modes —
+    # orchestrator workers still build the encode-side Games locally.
+    _worker_new_farm = _ckpt_uses_farm_scalars(new_path)
+    _worker_old_farm = _ckpt_uses_farm_scalars(old_path)
 
     _worker_sims = sims
     _worker_old_sims = old_sims if old_sims is not None else sims
@@ -300,8 +319,8 @@ def _play_one(args: tuple[int, int]) -> GameResult | None:
     import random
     random.seed(seed)
 
-    game_new = Game(enable_legal_moves_cache=True)
-    game_old = Game(enable_legal_moves_cache=True)
+    game_new = Game(enable_legal_moves_cache=True, include_farm_scalars=_worker_new_farm)
+    game_old = Game(enable_legal_moves_cache=True, include_farm_scalars=_worker_old_farm)
     if _worker_new_handles is not None:
         # Orchestrator mode: two remote evaluators talking to two servers.
         assert _worker_old_handles is not None

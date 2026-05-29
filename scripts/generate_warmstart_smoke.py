@@ -42,9 +42,10 @@ def _seed_path(subdir: str, seed: int) -> Path:
     return DATA_ROOT / subdir / f"seed_{seed:05d}.npz"
 
 
-def _worker(args: tuple[int, str, str, int, int, float, str]) -> tuple[int, str, int]:
+def _worker(args: tuple[int, str, str, int, int, float, str, bool]) -> tuple[int, str, int]:
     """One-game worker. Returns (seed, status, n_positions)."""
-    seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau, heuristic_lookahead = args
+    (seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau,
+     heuristic_lookahead, include_farm_scalars) = args
     path = _seed_path(subdir, seed)
     if path.exists():
         try:
@@ -59,6 +60,7 @@ def _worker(args: tuple[int, str, str, int, int, float, str]) -> tuple[int, str,
         mcts_sims=mcts_sims,
         heuristic_tau=heuristic_tau,
         heuristic_lookahead=heuristic_lookahead,
+        include_farm_scalars=include_farm_scalars,
     )
     ds.save(path)
     return seed, "fresh", len(ds)
@@ -87,6 +89,12 @@ def _summarize(subdir: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="generate_warmstart_smoke")
     p.add_argument("--label-strategy", choices=("mcts", "heuristic"), required=True)
+    p.add_argument(
+        "--include-farm-scalars",
+        action="store_true",
+        help="Path B Step E: emit 12-scalar feature vectors (10 base + 2 farm-control) "
+        "in the generated data. Pair with train_warmstart --include-farm-scalars.",
+    )
     p.add_argument("--n", type=int, default=5000, help="target total positions")
     p.add_argument("--positions-per-game", type=int, default=10)
     p.add_argument("--mcts-sims", type=int, default=50, help="MCTS sims/move when strategy=mcts")
@@ -140,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     pool_args = [
         (args.seed_start + i, args.label_strategy, subdir,
          args.positions_per_game, args.mcts_sims, args.heuristic_tau,
-         args.heuristic_lookahead)
+         args.heuristic_lookahead, args.include_farm_scalars)
         for i in range(n_games)
     ]
     already = sum(1 for a in pool_args if _seed_path(subdir, a[0]).exists())
