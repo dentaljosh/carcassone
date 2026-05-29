@@ -113,7 +113,10 @@ The self-play loop runs unattended; these are guardrails that halt+report:
   ownership is the risky part** (long-range, the engine's most-likely-buggy area).
 - **VALIDATE before training**: on a sample of games, assert the ownership labels
   reconcile with the engine's final scorer. A wrong label teaches the aux head
-  garbage. This validation gate is non-negotiable.
+  garbage. This validation gate is non-negotiable. **✅ PASSED 2026-05-29:
+  `validate_aux_targets.py --n 2000` → 0 reconciliation fails / 26,317 feature
+  records / 12,086 farm records / 649 contested fields. Linchpin cleared; the
+  smoke's "aux losses fall" check is now meaningful.**
 - Add the new label arrays to the `.npz` schema (alongside boards/scalars/
   policies/players/valid_masks). Touch: `selfplay.py` (emit), `warmstart.py`
   (`GameDataset` load), the warmstart label generator.
