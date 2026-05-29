@@ -44,7 +44,7 @@ from .board_repr import (
     encode_board,
 )
 from .eta import measure_one, print_banner
-from .features import N_SCALAR_FEATURES, encode_scalars
+from .features import N_FARM_SCALARS, N_SCALAR_FEATURES, encode_scalars
 
 
 SCORE_NORM_SCALE = 15.0  # see DECISIONS.md (validated against 1000 random games)
@@ -88,6 +88,7 @@ class Game:
         supplementary_rules: tuple[SupplementaryRule, ...] = (SupplementaryRule.FARMERS,),
         window_size: int = DEFAULT_WINDOW_SIZE,
         enable_legal_moves_cache: bool = False,
+        include_farm_scalars: bool = False,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -109,6 +110,13 @@ class Game:
         self.tile_sets = tuple(tile_sets)
         self.supplementary_rules = tuple(supplementary_rules)
         self.window_size = int(window_size)
+        # Path B Step E (2026-05-29): append the 2 farm-control scalars to the
+        # network input. OFF by default so existing 10-scalar checkpoints load &
+        # eval unchanged; the new-arch Path-B warmstart opts in (and builds its
+        # net with n_scalar_features = get_scalar_feature_size()). MUST match the
+        # net the Game feeds — a 12-scalar Game with a 10-scalar net (or vice
+        # versa) is a shape error at the policy_fc/value_fc1 cat.
+        self.include_farm_scalars = bool(include_farm_scalars)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -157,7 +165,7 @@ class Game:
         return action_size(self.window_size)
 
     def get_scalar_feature_size(self) -> int:
-        return N_SCALAR_FEATURES
+        return N_SCALAR_FEATURES + (N_FARM_SCALARS if self.include_farm_scalars else 0)
 
     # --- Transitions -----------------------------------------------------
 
@@ -295,7 +303,9 @@ class Game:
         player. Caught by external review 2026-04-28.)
         """
         arr = encode_board(board.state, player, board.offset)
-        scalars = encode_scalars(board.state, player, board.total_tiles)
+        scalars = encode_scalars(
+            board.state, player, board.total_tiles, include_farm=self.include_farm_scalars
+        )
         return arr, scalars
 
     encode_observation = get_canonical_form

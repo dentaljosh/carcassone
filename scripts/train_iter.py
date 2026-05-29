@@ -222,7 +222,14 @@ def main(argv: list[str] | None = None) -> int:
     ckpt = torch.load(args.warm_from, map_location=device, weights_only=False)
     n_filters = int(ckpt["n_filters"])
     n_blocks = int(ckpt["n_blocks"])
-    net = CarcassonneNet(n_filters=n_filters, n_blocks=n_blocks).to(device)
+    # n_scalar_features propagates from the warmstart (Path B Step E: 12 if farm
+    # scalars are on, else 10). Default 10 for pre-Step-E checkpoints. The
+    # self-play .npz this trains on must carry matching-width scalars (i.e.
+    # run_selfplay_iter used Game(include_farm_scalars=...) consistently).
+    n_scalar_features = int(ckpt.get("n_scalar_features", 10))
+    net = CarcassonneNet(
+        n_filters=n_filters, n_blocks=n_blocks, n_scalar_features=n_scalar_features
+    ).to(device)
     net.load_state_dict(ckpt["model_state"])
     print(f"  warm-started from {args.warm_from} "
           f"(filters={n_filters}, blocks={n_blocks}, "
@@ -340,6 +347,7 @@ def main(argv: list[str] | None = None) -> int:
             "model_state": net.state_dict(),
             "n_filters": n_filters,
             "n_blocks": n_blocks,
+            "n_scalar_features": n_scalar_features,
             "iter": args.iter_idx,
             "epochs": args.epochs,
         },

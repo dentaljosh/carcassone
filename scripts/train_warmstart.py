@@ -112,6 +112,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--filters", type=int, default=96)
     p.add_argument("--blocks", type=int, default=6)
     p.add_argument(
+        "--include-farm-scalars",
+        action="store_true",
+        help="Path B Step E: train a 12-scalar net (10 base + 2 farm-control). "
+        "The training data MUST have been generated with the same flag "
+        "(Game(include_farm_scalars=True)) so the scalar widths match. The "
+        "choice is saved in the checkpoint as n_scalar_features and propagates "
+        "to train_iter automatically.",
+    )
+    p.add_argument(
         "--aux-weight",
         type=float,
         default=0.15,
@@ -187,8 +196,15 @@ def main(argv: list[str] | None = None) -> int:
         persistent_workers=(args.num_workers > 0),
     )
 
-    net = CarcassonneNet(n_filters=args.filters, n_blocks=args.blocks).to(device)
-    print(f"  net params: {net.param_count():,}  (filters={args.filters}, blocks={args.blocks})")
+    from carcassonne_ai.features import N_FARM_SCALARS, N_SCALAR_FEATURES
+    n_scalar_features = N_SCALAR_FEATURES + (N_FARM_SCALARS if args.include_farm_scalars else 0)
+    net = CarcassonneNet(
+        n_filters=args.filters, n_blocks=args.blocks, n_scalar_features=n_scalar_features
+    ).to(device)
+    print(
+        f"  net params: {net.param_count():,}  (filters={args.filters}, "
+        f"blocks={args.blocks}, scalars={n_scalar_features})"
+    )
 
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # ceil so we don't underestimate batch count and let the cosine schedule
@@ -295,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
                     "model_state": net.state_dict(),
                     "n_filters": args.filters,
                     "n_blocks": args.blocks,
+                    "n_scalar_features": n_scalar_features,
                     "epoch": epoch,
                     "val_pol_loss": val_pol_loss,
                     "val_val_loss": val_val_loss,
@@ -308,6 +325,7 @@ def main(argv: list[str] | None = None) -> int:
             "model_state": net.state_dict(),
             "n_filters": args.filters,
             "n_blocks": args.blocks,
+            "n_scalar_features": n_scalar_features,
             "data_root": str(args.data_root),
         },
         args.output,
