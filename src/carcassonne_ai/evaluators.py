@@ -146,16 +146,42 @@ def make_v25_value_wrapper(
     Compatible with both local and remote evaluators since it only consumes
     the (priors, value) output shape."""
     import math
+
+    from . import virtual_score as _vs
     from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
 
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
 
     def wrapped(board: Board) -> tuple[np.ndarray, float]:
-        priors, v_nn = base_evaluator(board)
-        h = math.tanh(
-            virtual_score_v2(board.state, board.state.current_player, eff_cfg) / 15.0
-        )
+        st = board.state
+        # Share one farm/city flood-fill memo across BOTH the policy-encode
+        # (base_evaluator -> get_canonical_form, which with farm input scalars on
+        # floods farmer fields) and the v2.7 leaf value below. The leaf value
+        # would flood those same fields anyway, so sharing makes the farm-scalar
+        # floods ~free. virtual_score_v2 reuses an attached cache rather than
+        # creating its own. Gated on the memo toggles so the bench/gate OFF
+        # baseline (USE_*_CACHE=False) still runs legacy per-call flood-fills.
+        own_farm = _vs.USE_FARM_CACHE and not hasattr(st, "_farm_cache")
+        own_city = _vs.USE_CITY_CACHE and not hasattr(st, "_city_cache")
+        if own_farm:
+            st._farm_cache = {}
+        if own_city:
+            st._city_cache = {}
+        try:
+            priors, v_nn = base_evaluator(board)
+            h = math.tanh(virtual_score_v2(st, st.current_player, eff_cfg) / 15.0)
+        finally:
+            if own_farm:
+                try:
+                    del st._farm_cache
+                except AttributeError:
+                    pass
+            if own_city:
+                try:
+                    del st._city_cache
+                except AttributeError:
+                    pass
         if blend > 0.0:
             return priors, (1.0 - blend) * h + blend * float(v_nn)
         return priors, h
@@ -172,22 +198,53 @@ def make_v25_batch_value_wrapper(
     `virtual_score_v2`, optionally blended with the network value head when
     `cfg.value_blend` > 0. `cfg` is an optional `LeafConfig` (None → DEFAULT_CONFIG)."""
     import math
+
+    from . import virtual_score as _vs
     from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
 
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
 
     def wrapped_batch(boards: list[Board]) -> tuple[np.ndarray, np.ndarray]:
-        priors, values_nn = base_batch_evaluator(boards)
         if not boards:
+            priors, values_nn = base_batch_evaluator(boards)
             return priors, values_nn
-        h = np.array(
-            [
-                math.tanh(virtual_score_v2(b.state, b.state.current_player, eff_cfg) / 15.0)
-                for b in boards
-            ],
-            dtype=np.float32,
-        )
+        # Per-board farm/city memo, attached BEFORE the batched encode and held
+        # through the per-board leaf-value loop, so each board's farm-input-scalar
+        # floods (done during base_batch_evaluator's encode) are reused by its
+        # virtual_score_v2 below — making the farm scalars ~free. See the
+        # single-board wrapper for the rationale + toggle gating.
+        owned = []
+        for b in boards:
+            st = b.state
+            of = _vs.USE_FARM_CACHE and not hasattr(st, "_farm_cache")
+            oc = _vs.USE_CITY_CACHE and not hasattr(st, "_city_cache")
+            if of:
+                st._farm_cache = {}
+            if oc:
+                st._city_cache = {}
+            owned.append((st, of, oc))
+        try:
+            priors, values_nn = base_batch_evaluator(boards)
+            h = np.array(
+                [
+                    math.tanh(virtual_score_v2(b.state, b.state.current_player, eff_cfg) / 15.0)
+                    for b in boards
+                ],
+                dtype=np.float32,
+            )
+        finally:
+            for st, of, oc in owned:
+                if of:
+                    try:
+                        del st._farm_cache
+                    except AttributeError:
+                        pass
+                if oc:
+                    try:
+                        del st._city_cache
+                    except AttributeError:
+                        pass
         if blend > 0.0:
             return priors, (1.0 - blend) * h + blend * values_nn.astype(np.float32)
         return priors, h

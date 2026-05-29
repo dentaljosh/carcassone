@@ -410,20 +410,31 @@ def virtual_score_v2(
     # long-lived (e.g. MCTS-tree) state — get_next_state's deepcopy would strip
     # them anyway. USE_FARM_CACHE / USE_CITY_CACHE off -> legacy flood-fills (the
     # bench/gate A/B baselines).
-    farm_cache = {} if _vs.USE_FARM_CACHE else None
-    city_cache = {} if _vs.USE_CITY_CACHE else None
-    if farm_cache is not None:
-        state._farm_cache = farm_cache
-    if city_cache is not None:
-        state._city_cache = city_cache
+    # REUSE a caller-attached cache if present (e.g. make_v25_value_wrapper shares
+    # one cache across the policy-encode AND this leaf-value pass, so the farm
+    # input scalars' floods are reused here for free). Only create+detach a cache
+    # we own — never delete the caller's, or the encode<->leaf sharing breaks.
+    own_farm = _vs.USE_FARM_CACHE and not hasattr(state, "_farm_cache")
+    own_city = _vs.USE_CITY_CACHE and not hasattr(state, "_city_cache")
+    if own_farm:
+        state._farm_cache = {}
+    if own_city:
+        state._city_cache = {}
+    farm_cache = getattr(state, "_farm_cache", None)
+    city_cache = getattr(state, "_city_cache", None)
     try:
         base = virtual_score(state, player, farm_cache=farm_cache, city_cache=city_cache)
         bonus_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
         bonus_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
     finally:
-        for _attr in ("_farm_cache", "_city_cache"):
+        if own_farm:
             try:
-                delattr(state, _attr)
+                del state._farm_cache
+            except AttributeError:
+                pass
+        if own_city:
+            try:
+                del state._city_cache
             except AttributeError:
                 pass
     score = base + bonus_self - bonus_opp

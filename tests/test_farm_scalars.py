@@ -133,6 +133,38 @@ def test_normalization_in_range():
     assert sat / max(total, 1) < 0.10, f"farm scalars saturate too often: {sat}/{total}"
 
 
+@pytest.mark.parametrize("seed", [0, 1, 2, 3, 7])
+def test_v25_wrapper_value_matches_standalone_leaf(seed):
+    """make_v25_value_wrapper shares one farm/city cache across the policy-encode
+    and the leaf value. Its value must equal the standalone leaf value (sharing
+    must not corrupt the result), with farm scalars ON (12-scalar Game)."""
+    from carcassonne_ai.evaluators import make_v25_value_wrapper
+    from carcassonne_ai.virtual_score_v2 import virtual_score_v2
+
+    game = Game(include_farm_scalars=True)
+    board = _play(seed)
+    st = board.state
+
+    def base_eval(b):
+        # exercises get_canonical_form (the encode, incl. farm_control_scalars)
+        _, _ = game.get_canonical_form(b, b.state.current_player)
+        mask = game.get_valid_moves(b)
+        legal = np.flatnonzero(mask)
+        priors = np.zeros(mask.shape, dtype=np.float32)
+        if legal.size:
+            priors[legal] = 1.0 / legal.size
+        return priors, 0.0
+
+    wrapped = make_v25_value_wrapper(base_eval)
+    _, wrapped_value = wrapped(board)
+    import math
+    standalone = math.tanh(virtual_score_v2(st, st.current_player) / 15.0)
+    assert wrapped_value == pytest.approx(standalone, abs=1e-6)
+    # the shared cache must be detached after the call (no leak on the tree state)
+    assert not hasattr(st, "_farm_cache")
+    assert not hasattr(st, "_city_cache")
+
+
 def test_network_accepts_12_scalars():
     net = CarcassonneNet(n_filters=32, n_blocks=2, n_scalar_features=12)
     game = Game(include_farm_scalars=True)
