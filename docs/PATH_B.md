@@ -228,6 +228,11 @@ Xeon; re-rsync to laptop).
      REAL `run_selfplay_iter`** (orchestrator path, `--orchestrator --batch-size 8 --leaf-eval
      v2_5 --sims 200`, fixed `--games ~20`) at W ∈ {10,12,14,16,18}, read its own wall-clock /
      games-per-min, pick the per-box peak. Don't extrapolate — measure (bench-then-commit).
+     **✅ RESULT 2026-05-29 (8 games/W, sims=200): curves FLAT** (post-speedup self-play is
+     eval/GPU-bound — W barely matters ≥10). Peaks: **5800X W=14 (2.87 g/min), Xeon W=18 (1.90),
+     laptop W=24 (4.34)**; cluster ≈546 g/h → ~2.2h self-play per 1200-game iter. Use these W for
+     Step 8. Drivers: `/home/doctor/run_pathb_1b_wsweep.sh` (+ `xeon_1b_fg.sh` for the Xeon
+     foreground-over-held-ssh, since WSL2 teardown kills nohup'd bg jobs).
 2. **Step 7 — warmstart:** full `generate_warmstart_smoke ... --include-farm-scalars` corpus →
    `train_warmstart --include-farm-scalars --aux-weight 0.15` (6×96 trunk). Detached (nohup), nice -19.
    Produces the 12-scalar warm net (checkpoint records `n_scalar_features=12`).
