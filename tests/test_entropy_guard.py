@@ -13,7 +13,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from train_iter import _mean_policy_entropy  # noqa: E402
+from train_iter import _mean_policy_entropy, _value_outcome_corr  # noqa: E402
 
 
 class _StubNet:
@@ -70,3 +70,45 @@ def test_healthy_policy_passes_floor():
     baseline = _entropy(torch.zeros(1, 8), torch.ones(1, 8))
     healthy = _entropy(torch.tensor([[1.5, 1.0, 0.8, 0.5, 0.3, 0.2, 0.1, 0.0]]), torch.ones(1, 8))
     assert healthy > 0.5 * baseline
+
+
+class _ValueStub:
+    """Returns a fixed value prediction; mimics CarcassonneNet.forward_train's
+    (policy, value, ownership) tuple for the value-corr readout."""
+
+    def __init__(self, pred: torch.Tensor):
+        self._pred = pred
+
+    def train(self, mode: bool = True):
+        return self
+
+    def forward_train(self, board, scalar):
+        b = board.shape[0]
+        return torch.zeros(b, 4), self._pred[:b], None
+
+
+def _corr(pred: torch.Tensor, target: torch.Tensor):
+    b = pred.shape[0]
+    board = torch.zeros(b, 1, 1, 1)
+    scalar = torch.zeros(b, 10)
+    policy = torch.zeros(b, 4)
+    mask = torch.ones(b, 4)
+    own = torch.zeros(b, 1, 1, 1)
+    loader = [(board, scalar, policy, target, mask, own)]
+    return _value_outcome_corr(_ValueStub(pred), loader, torch.device("cpu"))
+
+
+def test_value_corr_perfect_positive():
+    t = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5])
+    assert abs(_corr(2.0 * t + 0.05, t) - 1.0) < 1e-4
+
+
+def test_value_corr_perfect_negative():
+    t = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5])
+    assert abs(_corr(-t, t) + 1.0) < 1e-4
+
+
+def test_value_corr_degenerate_returns_none():
+    # constant prediction -> zero variance -> None (not a crash).
+    t = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5])
+    assert _corr(torch.full((5,), 0.3), t) is None

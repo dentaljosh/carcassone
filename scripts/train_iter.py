@@ -82,6 +82,43 @@ def _mean_policy_entropy(net, loader, device) -> float:
     return total / max(n, 1)
 
 
+def _value_outcome_corr(net, loader, device):
+    """Pearson r between the value head's prediction and the stored value target
+    (the game-outcome score_diff) over `loader`.
+
+    The Path B diagnostic (PATH_B 'Diagnostic gate'): a learned value worth using
+    must actually predict outcomes. The v2.7 heuristic leaf sits at ~0.61; the old
+    data-starved NN value was ~0.18. This is the TRUSTWORTHY per-iter signal —
+    unlike the self-anchored chain elo, it can't climb while absolute strength
+    regresses. Returns None if a variance is degenerate or the loader is empty.
+    """
+    net.train(False)
+    sx = sy = sxx = syy = sxy = 0.0
+    n = 0
+    with torch.no_grad():
+        for board_b, scalar_b, _policy_b, value_b, _mask_b, _own_b in loader:
+            board_b = board_b.to(device, non_blocking=True)
+            scalar_b = scalar_b.to(device, non_blocking=True)
+            value_b = value_b.to(device, non_blocking=True)
+            _, value_pred, _ = net.forward_train(board_b, scalar_b)
+            x = value_pred.flatten().double()
+            y = value_b.flatten().double()
+            sx += x.sum().item()
+            sy += y.sum().item()
+            sxx += (x * x).sum().item()
+            syy += (y * y).sum().item()
+            sxy += (x * y).sum().item()
+            n += int(x.numel())
+    if n < 2:
+        return None
+    cov = sxy - sx * sy / n
+    vx = sxx - sx * sx / n
+    vy = syy - sy * sy / n
+    if vx <= 0 or vy <= 0:
+        return None
+    return cov / (vx * vy) ** 0.5
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -399,6 +436,17 @@ def main(argv: list[str] | None = None) -> int:
         metrics["policy_entropy"] = round(trained_entropy, 4)
         metrics["baseline_policy_entropy"] = (
             round(baseline_entropy, 4) if baseline_entropy is not None else None
+        )
+
+    # Value↔outcome correlation — the TRUSTWORTHY per-iter progress signal (vs the
+    # self-anchored chain elo, which can climb while absolute strength regresses).
+    # Beat the v2.7 heuristic leaf's ~0.61 to believe the learned value is working.
+    value_corr = _value_outcome_corr(net, val_loader, device) if do_validation else None
+    if value_corr is not None:
+        metrics["value_outcome_corr"] = round(value_corr, 4)
+        print(
+            f"  value↔outcome corr = {value_corr:+.4f}  "
+            f"(target: beat heuristic 0.61; old data-starved NN was 0.18)"
         )
 
     torch.save(
