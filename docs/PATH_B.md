@@ -128,26 +128,45 @@ The self-play loop runs unattended; these are guardrails that halt+report:
   so naively adding them hammers the #1 hot path. **They are deferred behind a
   `find_farm` speedup** (the engine fix made `find_farm` start-independent →
   cacheable/union-findable; see below).
-- **ACTIVE DEV (next, post-2026-05-29-compaction): the find_farm speedup.** Two
-  complementary pieces:
-  1. **Incremental farmer union-find** (the real win, the parked "Option B" — DECISIONS
-     2026-05-17 parked it because find_farm was start-dependent; the 2026-05-29 fix
-     unblocked it). Maintain a farm-component structure incrementally as tiles are
-     placed, instead of recomputing `find_farm` from scratch each call. Speeds the
-     EXISTING leaf eval (every leaf runs count_final_scores → find_farm), so it
-     accelerates ALL self-play + eval, not just the inputs. **Non-negotiable gate:**
-     a reconciliation test asserting the union-find result == `find_farm` across many
-     positions (mirror the aux-target n=2000 gate), then BENCH the throughput gain
-     (don't extrapolate). Watch the `apply_action_inplace` rollout path + tree
-     backtrack/rollback. Touch: `farm_util.py` (or a new incremental structure),
-     the MCTS apply path. ~substantial dev, pure dev (no compute).
-  2. **Leaf-pass sharing** (smaller): the v2.7 leaf already computes the farm
-     structure per leaf — share that single result with the input encoder instead
-     of recomputing, once farm inputs exist.
-- Only after the speedup: add `my/opp_dominant_farms` (+ maybe `contested`) reading
-  off the shared/union-find structure. Changes input shape → fresh warmstart (we're
-  doing one anyway). **Still lower-EV than the Step-3 aux heads** — but the union-find
-  speedup is worth it on its own (whole-pipeline throughput). See BACKLOG 2026-05-29.
+- **✅ Leaf flood-fill speedup DONE 2026-05-29 (farm + city)** (dev complete, gated,
+  benched; commit pending). Implemented as **lazy per-leaf memos** (`_farm_cache` farm
+  regions, `_city_cache` city components), NOT the incremental union-find imagined here:
+  the production leaf path (NeuralMCTS) uses functional `get_next_state` (deepcopy per
+  step, no rollback — `apply_action_inplace` is only the vanilla-MCTS *random rollout*
+  path, which the v2.7 leaf never runs), so per-leaf-state is correct, not
+  incremental-across-tree. Profiling reset the priors: post-fix `find_farm` ~41% of the
+  leaf (not 58%), `find_cities`/`find_city` ~31%, **>50% of those calls redundant within
+  one eval**, deepcopy negligible. A/B picked lazy over eager whole-board decomposition
+  (farm-only 1.27× vs 1.11×); **combined farm + city = 1.70× leaf / 1.48× end-to-end
+  search** → ~33% faster ALL self-play + eval. City memo returns a fresh City per call
+  (caches flood-fill data only) to preserve count_farm_points' identity-dedup →
+  value-invariant. **Gate (non-negotiable, mirrors aux n=2000):**
+  `scripts/reconcile_farm_index.py` region + value equivalence, **n=400, 921,953 nodes,
+  0/0 mismatches**; `tests/test_farm_index.py`. `find_all_farms` (eager decomposition)
+  kept in `farm_util` for the farm INPUT features below + as oracle. See DECISIONS
+  2026-05-29 "Leaf flood-fill speedup IMPLEMENTED" / BACKLOG 2026-05-29.
+- **Step E (farm INPUT features) — ✅ BUILT (2 scalars, opt-in, OFF by default).**
+  `features.farm_control_scalars` adds 2 RAW structural scalars: `contested_field_count`
+  (# fields both players farm) + `farm_control_balance` (# fields I lead − # opp leads),
+  normalized by 4.0, appended after the base 10. Deliberately raw counts, NOT
+  value-weighted by adjacent cities (value-weighting would re-encode the v2.7 heuristic's
+  evaluation → contaminate the probe). Scalars not planes: an ownership *plane* would
+  duplicate the Step-3 ownership aux *target* (feeding the answer we want learned). Gated
+  by `Game(include_farm_scalars=True)` (→ `get_scalar_feature_size()` 10→12); the choice
+  is saved in the checkpoint as `n_scalar_features` and propagates to `train_iter`
+  automatically. Tests: `tests/test_farm_scalars.py` (29; index tally == independent
+  find_meeples recompute, symmetry, net accepts 12). **Cost:** +~0.49 ms/encode (~doubles
+  the cheap encode) — computed lazily (floods only farmer-occupied fields via `_farm_cache`,
+  reusing the leaf-speedup memo). This erodes the 1.48× leaf speedup somewhat *when on*;
+  a follow-up could make it ~free by sharing the `_farm_cache` between the encode and the
+  leaf-value pass in `make_v25_value_wrapper` (a hot-path change — not done yet).
+  **Flip-on checklist for the Path-B warmstart** (all must agree on the 12-scalar shape):
+  1. warmstart data gen + `train_warmstart --include-farm-scalars` (saves `n_scalar_features=12`);
+  2. self-play (`run_selfplay_iter`) + eval (`eval_iter_head_to_head`): build their `Game`s with
+     `include_farm_scalars=True` — cleanest is to derive it from the loaded checkpoint's
+     `n_scalar_features > 10` (NOT yet wired in those worker scripts — the remaining launch step);
+  3. `train_iter` already auto-reads `n_scalar_features` from the warm-from checkpoint.
+  **Still lower-EV than the Step-3 aux heads.** The leaf speedup earned its keep independent of this.
 
 ### Step 3 — Auxiliary heads + losses  (~2-3h dev)
 - In `network.py` (`CarcassonneNet`): add output heads for ownership / score /

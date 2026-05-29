@@ -23,6 +23,48 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-29 — c=3 "+47" RE-VALIDATED at n=1600 → corrected to +18.5; production default unchanged
+
+**Context.** The c_puct=3 production default rested on Phase 2b's +47.2 elo / 5.2σ (n=400), flagged UNDER RE-VALIDATION on 2026-05-28 after Optuna #17 re-screened the same config at +13.9 (n=100) — ~2σ below. Run A was the clean settle: a fresh **n=1600** A/B, iter_B1 both sides, (c=3,cap=12,v2_7) vs (c=1.5,cap=12,v2_7), sims=200, on the **pre-fix engine** (so the leaf matches the original c=3 measurement — this is a hygiene check of the historical claim, not the new fixed leaf).
+
+**Result.** 832W / 747L / 20D = **+18.5 elo / 2.1σ at n=1599** (`experiments/results.csv` `hygiene_c3_vs_c15_n1600`).
+
+**Decision / reading.** c=3 IS a real, significant positive over c=1.5 — but **~40% of the headline +47.2**, which was an inflated point estimate (regression to mean), exactly as the [[bracket-hyperparams]] / [[results-table-source-of-truth]] memories warn. **c=3 stays the production eval-side default** (it's still ≥ c=1.5); the "biggest single free win in weeks / sharp +47 peak" framing is **retired → ~+18**. This closes the last open eval-config re-validation. Consistent with Optuna #17 (+13.9/n=100) and the broader study (winners cluster c=1.5–2.0, c=3 not a standout). Forward: stop spending on eval-config tuning (rounding error vs the superhuman goal); the levers are the structural/Path-B work.
+
+**Caveat unchanged.** This validates the *eval-side* c=3 only; the *self-play-side* c=3 bump (training-data generation) remains hypothesis-only (see 2026-05-28 entry).
+
+**Reversal cost.** None — documentation/epistemics correction; production default unchanged.
+
+**Phase.** Phase 4 hyperparameter methodology.
+
+---
+
+## 2026-05-29 — Leaf flood-fill speedup IMPLEMENTED: lazy per-leaf farm + city memo (not incremental union-find) — 1.70× leaf / 1.48× search
+
+**Context.** Executing the speedup prioritized below. Two priors turned out wrong and reshaped the implementation; both were caught by measuring first (profiling + an A/B bench) instead of trusting the plan's framing.
+
+**Finding 1 — the architecture rules out incremental-union-find-with-rollback.** The plan (PATH_B Step 2) described "maintain a farm union-find as tiles are placed down the tree, with rollback." But the production leaf path is **NeuralMCTS**, which reaches every leaf via **functional `get_next_state`** (deepcopy per step, `StateUpdater.apply_action`), *not* mutate-and-undo. `apply_action_inplace` (the rollback path) is only used by vanilla-MCTS *random rollouts*, which the v2.7 leaf never runs. So there is no tree to thread an incremental structure through — the correct shape is **per-leaf-state**, not incremental-across-tree.
+
+**Finding 2 (profiling, post-fix) — find_farm is ~41% of the leaf, and 54% of its calls are redundant within a single eval.** `cProfile` of `virtual_score_v2` over representative mid/late states: `find_farm` cumtime ≈ 41% (was quoted ~58% pre-fix), `find_cities` ≈ 31%, **deepcopy negligible (~0.4%)** (contradicts old "deepcopy dominates" lore for this leaf). 11.1 `find_farm` calls/leaf, **6.0 redundant** — the same field re-flood-filled once per farmer meeple, across both consumers (`count_final_scores` + the two closure-bonus passes).
+
+**Options for capturing the redundancy.**
+  - A: **Eager whole-board decomposition** (`find_all_farms`: one CC pass, index every farm). Benched **1.11× leaf / 1.16× search** — modest, because it pays to enumerate fields no meeple queries.
+  - B: **Lazy per-region memo** (`_farm_cache`: memoize `find_farm` under every node of each region as it's first queried; share one cache across all three consumers per leaf). Benched **1.29× leaf / 1.20× search**. Strictly less work than A (only queried fields), and trivially correct (pure memoization of the already-trusted `find_farm`).
+
+**Decision.** Chose **B (lazy memo)** as the production path. `find_farm_by_coordinate` consults an optional `state._farm_cache`; `virtual_score`/`virtual_score_v2` attach one shared cache per leaf eval and detach in `finally`. Behind a `virtual_score.USE_FARM_CACHE` toggle (the A/B baseline). Kept `find_all_farms` (the eager decomposition) in `farm_util` for the future farm INPUT features (Step E, which needs every farm) and as the reconciliation oracle. Safe because: `find_farm` is now start-independent (the farmer-adjacency fix), board topology is frozen during a leaf eval (`count_final_scores` mutates scores/meeples, never `tile.farms`), and `CarcassonneGameState.__deepcopy__` strips unknown attrs so a cache can't leak across `get_next_state`.
+
+**Correctness gate (non-negotiable, mirrors the aux n=2000 gate).** `scripts/reconcile_farm_index.py` — REGION equivalence (`find_all_farms[node]` == `find_farm(node)` for every farmer connection) AND VALUE equivalence (`virtual_score_v2` bit-identical cache-on vs cache-off). **n=400: 919,457 farm nodes, 0 region + 0 value mismatches.** Permanent regression: `tests/test_farm_index.py` (16 cases). No regressions in `test_virtual_score`/`test_aux_targets`.
+
+**City follow-on (same day, Joshua's "fix find cities for now").** Applied the same lazy memo to `CityUtil.find_city` (`_city_cache`) — the other big redundant leaf cost (~31%; `find_cities`/`count_farm_points` re-run it per farmer connection + per city side, count_final_scores per city meeple). `find_city` is a symmetric BFS to closure → start-independent by construction (no farm-style bug), so caching is safe. **One subtlety:** `count_farm_points` dedups adjacent cities via a `set()` keyed on City *identity*, so the memo caches only the `(positions, finished)` flood-fill data and **returns a fresh `City` object each call** — preserving that identity-dedup exactly (value-invariant). Gated by `USE_CITY_CACHE`, shared per leaf eval alongside `_farm_cache` (CoordinateWithSide keys are value-hashable → valid across the deepcopy). `find_meeples`/consumers only read `city_positions`, so sharing the positions set is safe.
+
+**Impact (combined farm + city).** Benched **1.70× leaf / 1.48× end-to-end search** (farm-only was 1.27×/1.20×; city adds 1.33× on top) — ~33% throughput on ALL self-play + eval across the cluster (every NeuralMCTS leaf runs the v2.7 leaf). Gate re-run with BOTH caches toggled: **n=400, 921,953 nodes, 0 region + 0 value mismatches.** `tests/test_farm_index.py` (now incl. a fresh-City memo test) green.
+
+**Reversal cost.** Low — additive, behind `USE_FARM_CACHE` / `USE_CITY_CACHE`, gate-verified. Files: `engine/.../farm_util.py` (find_all_farms + cache branch), `engine/.../city_util.py` (find_city memo + `_compute_city`), `src/.../virtual_score.py`, `virtual_score_v2.py`; tools `scripts/{reconcile_farm_index,bench_farm_index,profile_leaf_farm}.py`; `tests/test_farm_index.py`.
+
+**Phase.** Phase 4 / Path B Step 2 prerequisite.
+
+---
+
 ## 2026-05-29 — Prioritize the find_farm speedup (leaf-sharing + union-find) as the next dev task
 
 **Context.** Path B Step 2 ("domain input planes") turned out mostly redundant — 4/6 proposed inputs already exist as scalars; the only net-new ones (`contested_features`, `my/opp_dominant_farms`) are farm-derived and would run `find_farm` at every MCTS leaf-encode, hammering the #1 hot path (~58% of leaf cost). Separately, the 2026-05-29 farmer-adjacency fix made `find_farm` **start-independent**, which unblocks the incremental farmer union-find that was parked 2026-05-17 *precisely because* find_farm was start-dependent.
