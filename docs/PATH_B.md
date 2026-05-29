@@ -188,6 +188,20 @@ Verify with a quick `pytest tests/test_farm_index.py` on each box before adding 
    sims=25) → `train_iter` → anchor-gate via `eval_iter_head_to_head`. Assert: no NaN, aux losses
    fall, 12-scalar shape flows through, the value-leaf swap works. Also run the aux-weight
    sweep {0.0, 0.15, 0.5} at warmstart (confound insurance). **This catches a bug before days of compute.**
+   - **1a. PROFILE the self-play at production knobs (`cProfile`, one box, ~5 min).** The 1.48×
+     leaf speedup shifted the bottleneck; the full pipeline (NN-batched eval + tree ops) hasn't
+     been re-profiled since. Run one short `run_selfplay_iter` at PRODUCTION sims/batch/leaf/W
+     under `python -m cProfile -o /tmp/sp.prof`, then sort by cumtime. Expect the new hot path to
+     be the per-tree-step `deepcopy` in `get_next_state` (~sims deepcopies/move), `string_
+     representation`, or `get_valid_moves` — NOT the leaf anymore. **If any single function is a
+     >2× surprise vs its components, stop and fix before the multi-day run** (the "profile before
+     long jobs" rule — saved ~3h in Phase 2). If nothing jumps out, proceed.
+   - **1b. RE-BENCH worker count (W) per box (~5 min each).** The current W (5800X=14, Xeon=10,
+     laptop=24) were tuned against the OLD, slower leaf; a 1.48× faster leaf shifts the CPU/GPU
+     balance (eval-server was already ~70% idle → likely MORE workers now optimal, or the GPU
+     becomes the new ceiling). Sweep W around the current value at production knobs
+     (`scripts/bench_workers.py` or a short timed `run_selfplay_iter`), pick the per-box peak, and
+     use those W for Step 8. Don't extrapolate — measure (bench-then-commit).
 2. **Step 7 — warmstart:** full `generate_warmstart_smoke ... --include-farm-scalars` corpus →
    `train_warmstart --include-farm-scalars --aux-weight 0.15` (6×96 trunk). Detached (nohup), nice -19.
    Produces the 12-scalar warm net (checkpoint records `n_scalar_features=12`).
