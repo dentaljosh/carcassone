@@ -155,18 +155,42 @@ The self-play loop runs unattended; these are guardrails that halt+report:
   by `Game(include_farm_scalars=True)` (→ `get_scalar_feature_size()` 10→12); the choice
   is saved in the checkpoint as `n_scalar_features` and propagates to `train_iter`
   automatically. Tests: `tests/test_farm_scalars.py` (29; index tally == independent
-  find_meeples recompute, symmetry, net accepts 12). **Cost:** +~0.49 ms/encode (~doubles
-  the cheap encode) — computed lazily (floods only farmer-occupied fields via `_farm_cache`,
-  reusing the leaf-speedup memo). This erodes the 1.48× leaf speedup somewhat *when on*;
-  a follow-up could make it ~free by sharing the `_farm_cache` between the encode and the
-  leaf-value pass in `make_v25_value_wrapper` (a hot-path change — not done yet).
-  **Flip-on checklist for the Path-B warmstart** (all must agree on the 12-scalar shape):
-  1. warmstart data gen + `train_warmstart --include-farm-scalars` (saves `n_scalar_features=12`);
-  2. self-play (`run_selfplay_iter`) + eval (`eval_iter_head_to_head`): build their `Game`s with
-     `include_farm_scalars=True` — cleanest is to derive it from the loaded checkpoint's
-     `n_scalar_features > 10` (NOT yet wired in those worker scripts — the remaining launch step);
-  3. `train_iter` already auto-reads `n_scalar_features` from the warm-from checkpoint.
-  **Still lower-EV than the Step-3 aux heads.** The leaf speedup earned its keep independent of this.
+  find_meeples recompute, symmetry, net accepts 12). **Cost: ~FREE (+0.035 ms/leaf, 2.2%).**
+  `make_v25_value_wrapper` (single + batch) shares one `_farm_cache`/`_city_cache` across the
+  policy-encode (where the farm scalars flood farmer fields) and the v2.7 leaf-value pass — the
+  leaf value floods the same fields anyway, so the scalar floods are reused. (Standalone it was
+  +0.49 ms/encode; sharing cut it to +0.035 ms.) Value-invariant: gate n=400 0/0 + a
+  wrapper-value==standalone-leaf test. **Flip-on is WIRED end-to-end** — every consumer derives
+  the 12-scalar shape from the checkpoint's `n_scalar_features`: eval-server net + warmup,
+  `run_selfplay_iter` worker/anchor nets + worker Games (main-process checkpoint peek →
+  `cfg["include_farm_scalars"]`), `eval_iter_head_to_head` per-side Games, `train_iter`. The
+  ONLY manual flag is at the start: `generate_warmstart_smoke --include-farm-scalars` +
+  `train_warmstart --include-farm-scalars`. **Still lower-EV than the Step-3 aux heads**, but
+  now free to include.
+
+## LAUNCH RECIPE (2026-05-29 — 3-box work-stealing, nice -19, farm scalars IN — HOLD until Joshua says go)
+
+Decided config: work-stealing across 5800X + Xeon + laptop, all workers `nice -n 19`, farm
+scalars ON. Frozen knobs per the table above. Pre-launch: propagate the latest commits to the
+Xeon + laptop clones (code sync) so all 3 boxes run identical engine+scripts.
+
+1. **Step 6 smoke (do FIRST, ~30 min):** tiny end-to-end at toy scale with farm scalars on —
+   `generate_warmstart_smoke --label-strategy heuristic --include-farm-scalars --n <small>` →
+   `train_warmstart --include-farm-scalars` (small) → 1 short `run_selfplay_iter` (e.g. 25 games,
+   sims=25) → `train_iter` → anchor-gate via `eval_iter_head_to_head`. Assert: no NaN, aux losses
+   fall, 12-scalar shape flows through, the value-leaf swap works. Also run the aux-weight
+   sweep {0.0, 0.15, 0.5} at warmstart (confound insurance). **This catches a bug before days of compute.**
+2. **Step 7 — warmstart:** full `generate_warmstart_smoke ... --include-farm-scalars` corpus →
+   `train_warmstart --include-farm-scalars --aux-weight 0.15` (6×96 trunk). Detached (nohup), nice -19.
+   Produces the 12-scalar warm net (checkpoint records `n_scalar_features=12`).
+3. **Step 8 — self-play loop:** `run_selfplay_iter` → `train_iter` → anchor-gate, looped,
+   work-stealing `--shared-claim` across all 3 boxes, knobs frozen, deterministic gates baked in
+   (NaN guard, entropy floor, stop-after-2-flat). Launch once, walk away. (include_farm auto-derives
+   from the warm checkpoint — no extra flag needed downstream.)
+4. **Step 9 — go/no-go A/B:** `(NN-value-leaf)` vs `(v2.7-heuristic-leaf)`, same policy net both
+   sides, sims=200, n=400, via the `value_blend` leaf-swap. GO if > +15 elo. **Report value↔outcome
+   correlation alongside the elo** (baseline to beat: heuristic's +0.61; the diagnostic gate).
+   Append to `experiments/results.csv` + write a manifest.
 
 ### Step 3 — Auxiliary heads + losses  (~2-3h dev)
 - In `network.py` (`CarcassonneNet`): add output heads for ownership / score /

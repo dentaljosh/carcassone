@@ -23,6 +23,22 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-29 — Path B Step E shipped: farm scalars IN + made free + flip-on wired; launch plan set (HELD)
+
+**Context.** Joshua decided (2026-05-29) to include the 2 farm-control input scalars in the Path B probe ("farm scalars in. make them free."), and to launch Path B as **3-box work-stealing at `nice -19`** — but **not** until he gives the go.
+
+**Make-free.** The scalars cost +0.49 ms/encode standalone (a whole farmer-field flood per encode), which would erode the 1.48× leaf speedup when on. Fixed by **sharing one `_farm_cache`/`_city_cache` across the policy-encode and the v2.7 leaf-value pass** in `make_v25_value_wrapper` (single + batch): the leaf value floods the same fields anyway, so the scalar floods are reused → **+0.035 ms/leaf (2.2%)**. `virtual_score_v2` was changed to REUSE an attached cache rather than create+delete its own (so it doesn't clobber the wrapper's shared cache). Value-invariant: reconciliation gate n=400 (920k nodes, 0/0) + a wrapper-value==standalone-leaf test. (`70e1b62`)
+
+**Flip-on wired end-to-end.** Rather than a manual flag in every worker script (mismatch-prone), the 12-scalar shape **propagates from the checkpoint's `n_scalar_features`**: eval-server builds net+warmup from it; `run_selfplay_iter` sizes worker/anchor nets from it and the main process peeks the learner checkpoint to set `cfg["include_farm_scalars"]` for worker Games; `eval_iter_head_to_head` derives a per-side Game flag from each checkpoint; `train_iter` reads it from the warm-from checkpoint; `generate_one_game_dataset`/`generate_warmstart_smoke` take `--include-farm-scalars`. **The only manual flag is at the start** (gen + `train_warmstart --include-farm-scalars`); everything downstream auto-derives. Default off → all pre-Step-E (10-scalar) checkpoints byte-identical. (`06b065c`)
+
+**Launch plan (HELD).** 3-box work-stealing (`--shared-claim`), `nice -19`, farm scalars on, frozen knobs per [docs/PATH_B.md](docs/PATH_B.md) table. Full step-by-step in PATH_B "LAUNCH RECIPE" (Step 6 smoke first, then 7 warmstart → 8 loop → 9 go/no-go A/B + value↔outcome corr). **Do NOT launch until Joshua says go.** Pre-launch: propagate commits to Xeon+laptop clones.
+
+**Reversal cost.** Low — all additive + gated; farm scalars opt-in, the share-cache is behind the same toggles.
+
+**Phase.** Phase 4 / Path B Step E + launch prep.
+
+---
+
 ## 2026-05-29 — c=3 "+47" RE-VALIDATED at n=1600 → corrected to +18.5; production default unchanged
 
 **Context.** The c_puct=3 production default rested on Phase 2b's +47.2 elo / 5.2σ (n=400), flagged UNDER RE-VALIDATION on 2026-05-28 after Optuna #17 re-screened the same config at +13.9 (n=100) — ~2σ below. Run A was the clean settle: a fresh **n=1600** A/B, iter_B1 both sides, (c=3,cap=12,v2_7) vs (c=1.5,cap=12,v2_7), sims=200, on the **pre-fix engine** (so the leaf matches the original c=3 measurement — this is a hygiene check of the historical claim, not the new fixed leaf).
