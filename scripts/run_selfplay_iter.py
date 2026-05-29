@@ -344,9 +344,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--sims", type=int, default=25,
                    help="NeuralMCTS simulations per move (default 25).")
     p.add_argument("--c-puct", type=float, default=3.0,
-                   help="PUCT exploration constant. 2026-05-26 sweep at iter_B1 "
-                        "found c=3.0 is the peak (+47.2 elo at sims=200, +39.3 at "
-                        "sims=800). Was 1.5 until 2026-05-27.")
+                   help="PUCT exploration constant in self-play tree search. "
+                        "Bumped 2026-05-27 ALONGSIDE the eval-side bump, but "
+                        "ONLY EVAL-SIDE IS VALIDATED (Phase 2b +47.2 elo at "
+                        "sims=200, J4 +39.3 at sims=800 — both head-to-head "
+                        "with iter_B1 as the player, different c each side). "
+                        "Self-play-side c=3 is a hypothesis: deeper exploration "
+                        "during self-play SHOULD yield more diverse training "
+                        "data and stronger checkpoints, but no A/B has been "
+                        "done (train iter with c=1.5 self-play vs c=3 self-play, "
+                        "then eval head-to-head). Was 1.5 until 2026-05-27.")
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)

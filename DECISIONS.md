@@ -23,6 +23,54 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-28 (evening) — Optuna eval-search softens the c=3 "+47 free win"; flagging the headline claim for re-validation
+
+**Context.** The Optuna eval-time study (`eval_time_search_v1`, TPE over {c_puct, leaf_cap, leaf_variant}, multi-fidelity n=100→n=400) ran ~16 trials across 5800X+Xeon+laptop. To bridge it against the 2026-05-26 Phase 2 result, we `enqueue_trial`'d the exact canonical config (c=3.0, cap=12, v2_7) as a NEW-side-vs-(c=1.5,cap=12)-baseline trial — identical A/B design to Phase 2b.
+
+**Result.** Trial #17 screened at **+13.9 elo at n=100** (did not clear the +15 promote threshold, so stayed at n=100). Phase 2b measured the same config at **+47.2 at n=400**. At n=100, 1σ ≈ ±17 elo, so +13.9 is ~2σ below +47.2.
+
+**Reading (careful — sample sizes differ).** A single n=100 screen CANNOT refute an n=400 result; the error bars overlap at ~2σ. But combined with the rest of the study — winners cluster at c=1.5–2.0, the study best is (c=2.0, cap=19, tcc) +24.4, and no high-c config stands out — the weight of evidence is that **Phase 2b's +47.2 was an inflated point estimate (regression-to-mean candidate), and c=3's true edge over the c=1.5 baseline is more modest (~+14, in line with the field).** This is exactly the failure mode the [[bracket-hyperparams]] memory warns about, applied to our own headline result: a single n=400 reading made c=3 look like a sharp +47 peak; broader sampling flattens it.
+
+**What this does and doesn't change.**
+- Does NOT mean c=3 is wrong — every measurement still has c=3 ≥ the c=1.5 baseline. The production default is not in danger of being *worse* than old.
+- DOES retract the "sharp +47 peak / biggest single free win in weeks" framing. c=3 is *a* reasonable setting, not a standout.
+- The whole **c×cap interaction** claim from the 2026-05-28 10:30 STATUS entry is downgraded — it was built on n=100 noise.
+
+**Decision.** Keep c=3 as the production default for now (it's not worse), but **flag the +47 claim as UNDER RE-VALIDATION** and run a fresh **n=400 (c=3, cap=12) vs (c=1.5, cap=12)** before treating any c value as settled. Do NOT re-bump or re-tune off the Optuna n=100 screens — they're too noisy. The clean follow-up is one targeted n=400 eval (cheap, dual-box ~3h), ideally alongside (c=2.0, cap=19) to check the study's apparent best at full power.
+
+**Reversal cost.** None — this is a documentation/epistemics correction, not a code change. The production default is unchanged.
+
+**Phase.** Phase 4 hyperparameter tuning. Methodology: re-validate your own headline wins at full n before enshrining them.
+
+---
+
+## 2026-05-28 — c_puct bump: eval-side validated, self-play-side bumped on hypothesis (NOT yet A/B'd). Documenting the conflation before it bites us.
+
+**Context.** On 2026-05-27 we bumped the `--c-puct` default in both `scripts/eval_iter_head_to_head.py` and `scripts/run_selfplay_iter.py` from 1.5 → 3.0, citing the Phase 2b sweep (+47.2 elo at sims=200) and J4 (+39.3 at sims=800) as justification. That was the same commit. Today (2026-05-28) we noticed the two scripts use c_puct in **structurally different ways**, and the evidence only validates one of them.
+
+**The distinction.**
+- **Eval-side c_puct** (`eval_iter_head_to_head.py`): controls PUCT during head-to-head play with a *trained* checkpoint. Phase 2b and J4 tested exactly this: same iter_B1 both sides, different c, count wins. Verdict +47.2 / +39.3 — clean, validated.
+- **Self-play-side c_puct** (`run_selfplay_iter.py`): controls PUCT during *training data generation*. A different c changes (a) which actions get selected in self-play games, (b) the shape of the visit distribution that becomes the policy target, and (c) downstream game outcomes that become value targets. The resulting `.npz` files are then fed to `train_iter.py`. The thing we'd measure is the **strength of the trained checkpoint that results** — not the strength of self-play games themselves.
+
+**Why the conflation is plausible-but-unverified.** It's reasonable to assume that c=3 self-play yields a stronger checkpoint than c=1.5 self-play: deeper exploration → more diverse training data → better generalization. But this is a hypothesis. Counter-arguments: (1) Self-play also has Dirichlet noise on root priors and τ=1 for the first 15 moves, which already inject exploration; an additional PUCT widening may be redundant or even hurt by over-spreading visit distributions and producing softer (less informative) policy targets. (2) The Phase 2b/J4 result was specifically about **playing strength of a fixed checkpoint with different c**, which is upstream of the data-generation question. (3) AlphaZero papers typically use the same c at self-play and eval, but their c was tuned end-to-end; ours wasn't.
+
+**Options considered.**
+- **A. Roll back self-play default to c=1.5 until A/B run.** Conservative. Costs ~0 (just a default change). Reverts the change that was never validated.
+- **B. (chosen) Keep c=3 self-play default, document the gap loudly, schedule an A/B.** Pragmatic. The hypothesis is reasonable and every new run from today onward generates evidence under c=3. Reverting now would create a "what default were the files in this dir generated under?" tracking burden, since we have ~0 c=3 self-play data on disk yet. Document the unverified status, run an explicit A/B at some point.
+- **C. Train two iters now (c=1.5 self-play vs c=3 self-play from same warm-from), eval head-to-head before producing any more self-play data.** Most rigorous but blocks ~25h of compute on validating something that probably works.
+
+**Decision.** Option B. Update the docstring on `run_selfplay_iter.py --c-puct` to flag the eval-vs-selfplay distinction and the unverified status. Add a "UNTESTED" row to the STATUS.md verdict table for "c_puct=3.0 in self-play data generation." Add this decision entry. The A/B test gets queued in the forward queue, not blocking.
+
+**What would falsify.** Train iter_X(c=1.5_sp) and iter_X(c=3.0_sp) from the same warm-from on the same data-volume budget. Eval head-to-head, both at c=3 (the validated eval setting). If c=3-self-play loses or is null, roll back the self-play default to 1.5 and reconcile.
+
+**Reversal cost.** Low. Changing the default back to 1.5 is a one-line edit. If we later discover c=3 self-play hurt, the affected output is the data on disk from c=3 self-play runs — flagged via metadata or just the `cfg` JSON each run writes.
+
+**Phase.** Phase 4. Methodology lesson, not a scientific finding.
+
+**Memory cross-ref:** [feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md) — same family of failure mode (declaring a config change settled from off-target evidence).
+
+---
+
 ## 2026-05-26 — c_puct=1.5 → ~3.0 free win at iter_B1 (sims=200): +47.2 elo at n=400, 2.8σ. Most "leaf-eval plateau" symptoms were stale-PUCT, not leaf saturation.
 
 **Context.** After 8 days of leaf-eval ablations (cap A/B, value-blend, tile-counting) and chain experiments (Option B, anchor-fraction, deepsearch_v2) all returning null or negative, ran the maximalist's Phase 2 PUCT wider sweep (deferred for ~6 weeks since the original c_puct calibration on warmstart-level checkpoints). Same checkpoint iter_B1 both sides; only the per-side c_puct differs. n=400 at sims=200.

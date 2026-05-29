@@ -16,6 +16,23 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-28 — Shortened-game variant (fewer tiles) as a screening regime
+
+**Context:** Joshua flagged 2026-05-28: would training/eval on shortened games (subset of the tile deck → shorter games → faster wall-clock) let us screen more ablations cheaply, with findings then validated on the full game? Engine supports trivial deck subsetting (the deck is a list of tile counts in the wingedsheep code).
+
+**Idea:** monkey-patch the deck to N% of normal counts (try N=50%, N=30%). Train one iter and eval at the subset size. Then re-evaluate the winning configs on the full deck to check whether findings transfer. If they do within ~10 elo, use the subset deck as the default screening regime.
+
+**Estimated speedup ceiling:** ~2-3×. Per-game compute = (sims/position) × positions × per-position-cost. Halving the deck halves positions; engine per-position cost also grows ~linearly with placed tiles (board adjacency scan), so a small extra multiplier. Not transformative — sims=200 → sims=100 would give comparable speedup with less risk.
+
+**Why deferred:**
+1. **Generalization risk is real.** The findings that drive our search (c_puct, leaf cap, value-target) are partly *endgame*-driven: c matters most in late midgame when most cities/roads close, leaf cap matters because of completion-timing, farm scoring only triggers at game end. Cutting 50% of tiles cuts ~80% of the closing-phase decisions. A short-game finding could disagree with full-game by 20-30 elo, bigger than most deltas we chase. Risk: false-negative screening (missing real wins) AND false-positive screening (chasing artifacts).
+2. **Validation pilot would cost ~1 day** (train one full-deck iter + one half-deck iter from the same warm-from + cross-eval). Worth doing only if we anticipate 50+ more screening ablations. At current pace (5-10 planned) it doesn't pay off.
+3. Adjacent idea — **feature curriculum staging** (base-game-only → +farmers → +river) — is already in BACKLOG with a similar generalization risk and similar deferral logic. Both are "train on a simpler variant first" with different axes.
+
+**Why this is in the backlog, not killed:** if we ever move into a regime of doing many cheap ablations (e.g., heuristic-leaf redesign sweep, or post-distillation re-tunes on the smaller student), revisit this. The pilot cost is bounded and the speedup is real if generalization holds.
+
+**Related:** [[curriculum-stage-by-feature]] (BACKLOG above) — adjacent idea, simpler-variant axis is "rules" not "tile count."
+
 ## 2026-05-27 — Optuna / TPE over eval-time hyperparameters
 
 **Context:** 2026-05-26 c_puct find (+47 elo) was missed for 6 weeks because we manually tested one knob at a time and never joint-searched. With ~9+ tunable hyperparameters (c_puct, leaf_cap, leaf_variant, dirichlet_alpha/eps, virtual_loss, temp_threshold, tile_counting, anchor_fraction) the combinatorial space is intractable for manual exploration. Joshua flagged this 2026-05-27 — Optuna/TPE/Bayesian optimization is the standard answer.

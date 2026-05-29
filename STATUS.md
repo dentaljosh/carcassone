@@ -2,7 +2,28 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
-## Right now (2026-05-27, 23:15) — **🎯 Phase 3 COMPLETE + full cluster online (4 boxes). c_puct=3.0 is the new production default (committed). One null recovered (anchor-fraction +30.5), two confirmed dead, c-transfer to sims=800 confirmed (+39.3). Overnight: iter_B1 vs deepsearch @ sims=800 c=3 running on laptop.**
+## Right now (2026-05-28, 21:50) — **⚠️ Optuna study is softening (not refuting) the c=3 "+47 free win." 16 trials done; best is (c=2.0, cap=19, tcc) +24.4. The canonical (c=3, cap=12, v2_7) re-screened at +13.9 at n=100 (trial #17) — below Phase 2's +47.2 at n=400, but n=100 is too noisy to refute it. Winners cluster c=1.5–2.0, c=3 not standing out. Laptop rejoined the LAN cluster (3 boxes). Study finishes tonight.**
+
+### What's new (2026-05-28 evening)
+- **⚠️ Phase 2's c=3 "+47 free win" looks softer, but is NOT cleanly refuted (sample-size caveat).** Optuna trial #17 ran the EXACT canonical config (c=3.0, cap=12, v2_7) as the NEW side vs the (c=1.5, cap=12) baseline OLD side — same A/B design as Phase 2 — and screened at **+13.9 at n=100**. It did NOT promote (below the +15 threshold), so it stayed at n=100, where 1σ ≈ ±17 elo. **That means +13.9 (n=100) is ~2σ below Phase 2's +47.2 (n=400) — suggestive of regression-to-mean / an inflated original point estimate, but a single n=100 screen can't refute an n=400 result.** What it does do: it removes the *expectation* that c=3 is a standout. To settle it cleanly we'd need a fresh n=400 at (c=3, cap=12) vs (c=1.5, cap=12) — the deferred c×cap disambiguation, now upgraded to "re-validate the headline c=3 claim."
+- **Emerging Optuna picture (16 COMPLETE, 3 RUNNING) — the soft signal:** winners cluster at **c=1.5–2.0**, c=3 does not stand out:
+  - #9 (c=2.0, cap=19, tile_counting_cont) → **+24.4** [PROMOTED n=400] ← study best
+  - #13 (c=5.0, cap=17, v2_7) → +18.3 [PROMOTED] (lone high-c survivor; noisy)
+  - #17 (c=3.0, cap=12, v2_7) → +13.9 [screen, Phase-2 reference point]
+  - #5 (c=1.5, cap=20, v2_7) → +12.2 [PROMOTED]
+  - #8 (c=2.0, cap=11, v2_7) → +12.2 [PROMOTED]
+  - high-c probes (#1 c=2.75, #2 c=2.0/cap=8, #10 c=3.75) all negative.
+  - **Caveat: most of these are n=100 (1σ ≈ ±17), so the ordering within +12 to +24 is NOT significant.** What IS reasonably clear: nothing is hugely better than baseline, and c=3 is not specially favored.
+  - **My earlier "strong c×cap interaction" claim (10:30 entry below) was overstated** — it was built on n=100 noise. Trial #18 (c=3.0, cap=20) is running now to nail it down; trial #17 already softens the story.
+- **Laptop REJOINED the cluster (3 boxes again).** Brought to the same physical LAN, mounts the 5800X SMB share over **LAN CIFS** (not tailscale — locking risk gone), runs an Optuna worker (W=24, PID 4743, `--worker-id laptop`, n_trials=3). Trial game-output goes to laptop-local /tmp; only study.db on the share (minimizes wifi traffic). Launcher: `/home/doctor/launch_laptop_optuna.sh`. Laptop LAN IP 192.168.0.221 (wifi); tailnet IP 100.82.188.43 still resolves (tailscale does direct-LAN).
+- **2 reference trials enqueued** via `study.enqueue_trial`: (c=3, cap=12) [done → #17, +13.9] and (c=3, cap=20) [running → #18]. These fill the gap TPE didn't sample on its own.
+- **Earlier overnight results (still valid):**
+  - **sims=800 plane (iter_B1 vs deepsearch_v1 @ c=3, n=400): TIED at −4.3 elo.** Either is fine. Data at `data/laptop_results/b1_vs_ds_s800_n400_c3/`.
+  - **deepsearch_v3 anchor-gate (sims=200 c=3 n=100): +17.4 elo** (1σ). Re-train of v1's recipe; marginal, doesn't displace iter_B1.
+- **Operational fixes (in this commit):**
+  - **Per-worker TPE seed** — `sampler_seed = 42 + crc32(worker_id)` so distributed workers don't sample identical points. Triggered by a 3-trial seed-42 collision overnight.
+  - **ssh keepalives** (`-o ServerAliveInterval=60 -o ServerAliveCountMax=5`) on remote launches — the Xeon worker died once at 02:28 ("Broken pipe", killed a 104-min trial) before this.
+  - **`nice -n 19`** on all production processes. Standing rule (memory: [[nice-19-for-production]]).
 
 ### What's new (2026-05-26 → 2026-05-27)
 1. **Phase 3 retest queue DONE.** All 4 jobs verdicted at n=400:
@@ -12,11 +33,10 @@
    - **J4 sims=800 c-probe: c=3 vs c=1.5 → +39.3 elo / 3.4σ.** **c=3 transfers cleanly to sims=800** with a meaningful boost (smaller than sims=200's +47 but in the same ballpark).
 2. **Phase 2b sweep DONE earlier — c=3.0 is the peak, sharp.** Full curve at iter_B1, sims=200, n=400 each:
    - c=0.5 → −54.3 (catastrophic) · c=1.0 → −11.3 · c=1.5 → 0 (baseline) · c=2.0 → +5.2 · c=2.5 → +7.8 · **c=3.0 → +47.2** · c=4.0 → +25.2 · c=5.0 → +19.1
-3. **Production config bumped (this commit).** `--c-puct` default in `scripts/eval_iter_head_to_head.py` and `scripts/run_selfplay_iter.py` is now **3.0** (was 1.5). Old callers passing `--c-puct 1.5` explicitly still work.
-4. **Cluster grew from 2 boxes to 4** (5800X+Xeon → +laptop +Mac M5 Air):
-   - **Laptop (popos-usb, 14650HX + RTX 4070m, deployed today):** CUDA on Pop!_OS 22.04 + driver 580, peak **W=24 → 196 g/h** at sims=200 c=3. Confirmed clean curve, dip at W=22 only (CPU-scheduling pathology). Sleep masked at systemd level to prevent suspend during cluster runs.
-   - **Mac M5 Air (joshuaishal@100.64.175.108, deployed today):** Apple M5 10-core, 32GB RAM. Best config **W=4 MPS no-orchestrator → 53 g/h.** MPS-via-orchestrator is SLOWER than MPS-direct (eval-server IPC + per-call MPS overhead exceeds compute on tiny batches). For Mac, always run without `--orchestrator`.
-   - **Cluster total: ~444 g/h** (5800X 120 + Xeon 75 + laptop 196 + Mac 53), up from 195 g/h dual-box = **2.3× throughput**.
+3. **Production config bumped (this commit).** `--c-puct` default in `scripts/eval_iter_head_to_head.py` and `scripts/run_selfplay_iter.py` is now **3.0** (was 1.5). Old callers passing `--c-puct 1.5` explicitly still work. **⚠️ Caveat (added 2026-05-28):** Phase 2b + J4 validated c=3 as the *eval-side* exploration constant only (head-to-head play, same checkpoint each side, different c). The self-play-side bump (c_puct used by MCTS *during training data generation*) was made on the hypothesis that c=3 also yields stronger training data — never A/B'd. To validate: train one iter with c=1.5 self-play and one with c=3 self-play from the same warm-from, eval head-to-head.
+4. **Cluster: 3 active boxes (Mac parked 2026-05-28).** 5800X + Xeon + Laptop = **~391 g/h** at sims=200 c=3 (2.0× the pre-cluster dual-box rate). Per-box:
+   - **Laptop (popos-usb, 14650HX + RTX 4070m, deployed 2026-05-27):** CUDA on Pop!_OS 22.04 + driver 580, peak **W=24 → 196 g/h** at sims=200 c=3. Confirmed clean curve, dip at W=22 only (CPU-scheduling pathology). Sleep masked at systemd level to prevent suspend during cluster runs.
+   - **Mac M5 Air — PARKED 2026-05-28.** Sweep complete (W=4→53, W=6→57.5, W=8→56.6, W=10→56.6 g/h, MPS no-orchestrator) — plateaus around W=6 at ~57 g/h, MPS device-bound. Not joining the active cluster for now (marginal contribution + tailnet dependency + battery management). Can resume by ssh'ing in another Optuna worker pointed at the shared study DB.
 5. **MPS patch (this commit):** `eval_server.py` and `eval_iter_head_to_head.py` now auto-fall-back CUDA→MPS→CPU. No-op on CUDA boxes; lets Mac participate in orchestrator path (even if no-orch is faster for it).
 6. **Optuna wrapper drafted (this commit, `scripts/optuna_eval_search.py`):** TPE over {c_puct, leaf_cap, leaf_variant}, multi-fidelity (n=100 screen → n=400 promote). 20 trials ≈ 15-23h dual-box. NOT YET RUN — runs after Phase 4 docs settle.
 7. **BACKLOG audits surfaced 1 "already done":** **NeuralMCTS transposition table is already implemented** (`_nodes: dict[str, _NeuralNode]` + `setdefault` in both serial and batch leaf-selection paths). The 5-20% sim throughput benefit is already baked into our numbers. Removed from Tier 1 task queue; BACKLOG entry now serves as anti-rediscovery.
@@ -24,8 +44,9 @@
 ### Verdict table — what we now know
 | lever | best result | conclusion |
 |---|---|---|
-| **c_puct=3.0 vs 1.5 (sims=200)** | **+47.2 elo / 5.2σ** | **🎯 FREE WIN — production default updated this commit** |
-| **c_puct=3.0 vs 1.5 (sims=800)** | **+39.3 elo / 3.4σ** | **🎯 transfers to sims=800 — unified bump justified** |
+| **c_puct=3.0 vs 1.5 (sims=200)** | **+47.2 elo / 5.2σ (n=400, Phase 2b)** | **⚠️ UNDER RE-VALIDATION — Optuna trial #17 re-screened the same config at +13.9 (n=100); ~2σ below, suggests +47 was inflated. Production default stays c=3 pending a fresh n=400 re-check.** |
+| **c_puct=3.0 vs 1.5 (sims=800)** | **+39.3 elo / 3.4σ** | **🎯 transfers to sims=800 — eval-side bump justified** |
+| c_puct=3.0 in *self-play data generation* | UNTESTED | bumped 2026-05-27 on hypothesis; no A/B run. Train two iters (c=1.5 vs c=3 self-play, same warm-from) → head-to-head to validate. |
 | sims=200 → sims=800 (prior) | +200 elo | known free win (different lever) |
 | iter_B1 vs iter_01 (sims=200) | +25.2 elo | sims=200-plane global best |
 | deepsearch v1 vs iter_01 (sims=800) | +35.8 elo | sims=800-plane global best (pending iter_B1 vs deepsearch @ sims=800 c=3 — running overnight) |
@@ -33,50 +54,58 @@
 | Option B chain (B2, B4 vs iter_01) | −6, −19 | dead recipe (chain broken from step 1) |
 | deepsearch_v2 @ c=3 sims=800 (J2) | −0.9 | confirmed dead even at plane match + peak c |
 | tile-counting leaf @ c=3 (J3) | −12.2 | confirmed dead at peak c; leaf variant is not a lever |
-| cap=20 vs cap=12 (Phase 4a) | −21.7 | cap=12 is optimum |
+| cap=20 vs cap=12 @ c=1.5 (Optuna #5, n=400) | **+12.2** | **🎯 NEW — cap=20 wins at c=1.5 (contradicts Phase 4a at −21.7; possibly baseline shifted or stronger at n=400)** |
+| cap=20 vs cap=12 (Phase 4a, c=1.5) | −21.7 | superseded by Optuna #5 at n=400 |
 | cap=∞ vs cap=12 (Phase 4b) | −0.9 | null |
 | value-blend=0.5 vs pure (Phase 4c) | −18.8 | confirms Option 2 (NN value blend) dead |
+| iter_B1 vs deepsearch_v1 @ sims=800 c=3 (n=400, laptop overnight) | −4.3 | **TIED — both checkpoints equivalent at sims=800 c=3 plane** |
+| deepsearch_v3 vs iter_01 @ sims=200 c=3 (n=100) | +17.4 | marginal positive, not significant; doesn't displace iter_B1 |
+| **(c=2.75, cap=20) vs (c=1.5, cap=12) baseline (Optuna #1)** | **−17.4** | **🚨 c×cap negative interaction — joint effect ≠ sum of marginals** |
 
 ### Current global best
-- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1). With **c=3.0** (now the default): ~+72 elo over iter_01 at production cost (iter_B1's +25 + c=3 lift ~+47 — additivity assumed, not yet verified). Anchor-fraction iter_AF1 alone gives +30.5 at c=3.
-- **sims=800 plane**: `checkpoints/v25_retrain_deepsearch/iter_00.pt` (+35.8 over iter_01 at c=1.5). **Overnight run determines whether iter_B1 displaces deepsearch at sims=800 c=3** (laptop, n=400, ETA ~06:30 tomorrow).
+- **sims=200 plane**: `checkpoints/v25_retrain_optionB_iter1/iter_00.pt` (iter_B1). With **c=3.0, cap=12** (current production config): ~+72 elo over iter_01 (iter_B1's +25 + c=3 lift ~+47 — additivity ASSUMED, c×cap interaction discovered 2026-05-28 weakens this; verify with (iter_B1 at c=3 cap=12) vs (iter_01 at c=1.5 cap=12) at n=400).
+- **sims=800 plane**: iter_B1 ≈ deepsearch_v1 (TIED at sims=800 c=3, n=400, 2026-05-28). Either is fine. Both ~+35-40 elo over iter_01 at c=3.
 
 ### Forward queue — the next few days
-1. **Overnight (in flight):** laptop running `iter_B1 vs deepsearch @ sims=800 c=3, n=400` — answers the sims=800-plane production checkpoint question.
-2. **Tomorrow AM (after overnight lands):** Wire Optuna study on 5800X+Xeon. TPE over {c_puct ∈ [1.5, 5], leaf_cap, leaf_variant}, multi-fidelity (n=100 screen → n=400 promote), 20 trials. ~15-23h dual-box. Find any joint optima we'd miss with manual one-knob search.
-3. **Anchor-fraction chain at c=3** (~25h per iter dual-box) — train iter_AF2 with c=3 self-play from iter_B1; verify +30 lever stacks with iter_B1's +25 + c=3's +47. Highest-EV remaining lever.
-4. **Stale-hyperparam screen** — dirichlet/temp_threshold/virtual_loss at c=3. Lower priority since most are self-play-only (need full retrain per trial, expensive).
-5. **Laptop unplug 10am-ish (~6h)** — cluster drops to 5800X+Xeon+Mac (~248 g/h) for that window. Overnight job finishes well before.
+1. **Optuna study completes ~16:30 today** (5800X + Xeon still running 4 more trials each). Watch trial #8 (c=2.0, cap=11, v2_7 — possibly promoting) and #9 (c=2.0, cap=19, tile_counting_cont). All future trials use per-worker TPE seeds → diverging suggestions.
+2. **Disambiguate c×cap interaction (Optuna #5 finding):** explicit (c=3, cap=20) vs (c=3, cap=12) head-to-head at n=400 — needed to know whether the production default (c=3, cap=12) is actually the joint optimum or just one of several local optima. Optuna may probe this naturally before the study ends; if not, run as a targeted eval.
+3. **Anchor-fraction chain at c=3** (~25h per iter dual-box) — train iter_AF2 with c=3 self-play from iter_B1; verify +30 lever stacks with iter_B1's +25 + c=3's +47. Highest-EV remaining lever after Optuna lands.
+4. **Self-play c_puct A/B** — validates the 2026-05-27 self-play-side bump (eval-side is already verified; self-play-side is hypothesis-only — see DECISIONS 2026-05-28). Train two iters from same warm-from with c=1.5 vs c=3 self-play, head-to-head.
+5. **Stale-hyperparam screen** — dirichlet/temp_threshold/virtual_loss at c=3. Lower priority since most are self-play-only (need full retrain per trial, expensive).
+6. **Laptop has rejoined cluster post-overnight reboot** — available again at 100.82.188.43 (tailscale IP is permanent across reboots). Can add to Optuna later by ssh'ing in another worker pointed at the shared study DB.
 
 ### Pipeline-running scripts (for fresh-thread takeover)
-- **Laptop overnight (running):** ssh wrapper PID 90669 on 5800X, python eval PID 19686 on laptop. Output: `/tmp/laptop_b1_vs_ds_s800/`. Log: `/tmp/laptop_overnight.log`.
+- **In-flight Optuna study (continues until ~16:30):**
+  - **5800X worker**: PID 16218, launched by sequencer ~01:49, currently on its 4th trial (#8). Log: `/tmp/optuna_5800x.log`.
+  - **Xeon worker**: revived 03:21 after ssh broken-pipe; current ssh PID 50551, xeon-side python PID 288. Log: `/tmp/optuna_xeon_v3.log`.
+  - **Study DB**: `/mnt/c/carc-shared/optuna_runs/study.db` (SQLite, both boxes read/write). Study name `eval_time_search_v1`. Per-trial output dirs `trial_NNNN_<workerid>/`.
+  - **Inspect**: `python -c "import optuna; s = optuna.load_study(study_name='eval_time_search_v1', storage='sqlite:////mnt/c/carc-shared/optuna_runs/study.db'); print(s.best_trial)"`
+- **Laptop overnight (DONE, shut down):** results at `data/laptop_results/b1_vs_ds_s800_n400_c3/` (400 JSONs + elo_log.json, 1.7M). Laptop powered off 2026-05-28 ~10:00; rebooted ~10:14 to test tailscale-after-reboot (verified IP unchanged); can be shut down again safely.
+- **`/home/doctor/launch_xeon_eval.sh`** — Xeon launcher for dual-box anchor-gates (mounts CIFS, syncs from `/mnt/carc-shared/code_sync/scripts/`, runs eval with `--shared-claim --claim-host xeon`, `nice -n 19`). Currently UNUSED in tonight's pipeline (5800X-only finish-line) but ready for future dual-box anchor-gates.
+- **`/home/doctor/launch_xeon_optuna.sh`** — Xeon launcher for Optuna worker (mounts CIFS, syncs scripts, runs optuna_eval_search.py with `--worker-id xeon`, `nice -n 19`). Pattern: same launcher can be invoked again from any new box (laptop, etc.) to add a worker to the running study.
 - **`/home/doctor/laptop_cluster_lib.sh`** — helpers for launching laptop in work-stealing pattern (rsync-from-laptop-to-5800X-CIFS instead of CIFS-over-tailscale chatter). Includes `kill_stale_workers_on_laptop` precondition.
 - **`/home/doctor/phase3_continue.sh`** (done) — sequencer that ran J2/J3/J4. Reference for the dual-box pattern.
-- **`/home/doctor/sequencer.sh`** — earlier 4-job re-test pattern, template.
-- **`scripts/optuna_eval_search.py`** (NEW, drafted, NOT yet run) — Optuna TPE wrapper with multi-fidelity. Will need ~50 LoC to add dual-box dispatch when wired.
-- Verdict files: `/tmp/phase3_verdicts.txt`. Sentinels: `/tmp/phase3_sequencer.DONE`.
 
-### Code-sync state (5800X ↔ Xeon ↔ laptop ↔ Mac)
-- **5800X** on `gpu-orchestrator` HEAD (this commit).
-- **Xeon** HEAD is older (`2bee896`) but has manual edits matching today's behavior (rsync'd via /mnt/c/carc-shared/code_sync/).
-- **Laptop (popos-usb)** has GitHub-cloned `gpu-orchestrator` HEAD (pre-this-commit). Will need `git pull` to pick up the MPS patch + c_puct bump.
-- **Mac (M5 Air)** has GitHub-cloned HEAD (pre-this-commit). Already received MPS patch via rsync (pre-commit). Will need `git pull` after this commit to pick up the c_puct bump.
+### Code-sync state (5800X ↔ Xeon ↔ laptop; Mac parked)
+- **5800X** on `gpu-orchestrator` HEAD with uncommitted edits: STATUS.md, DECISIONS.md, scripts/optuna_eval_search.py (distributed-worker refactor), scripts/run_selfplay_iter.py (c_puct docstring caveat).
+- **Xeon** auto-syncs latest scripts via `/mnt/carc-shared/code_sync/scripts/` on every launcher invocation. After tonight, Xeon repo has the same versions of optuna_eval_search.py / eval_iter_head_to_head.py / run_selfplay_iter.py as 5800X.
+- **Laptop (popos-usb)** has GitHub-cloned `gpu-orchestrator` HEAD (pre-this-commit). Has the c_puct=3.0 default + MPS patch. Currently running the iter_B1 vs deepsearch eval — don't disturb until ~06:15.
 
 ### Cluster hardware summary
 | box | arch | workers | g/h (sims=200) | role |
 |---|---|---|---|---|
-| 5800X (`/home/doctor/projects/carcassone`) | Zen 3, 8C/16T, RTX 5060 Ti | W=14 | 120 | primary, orchestrator |
+| 5800X (`/home/doctor/projects/carcassone`) | Zen 3, 8C/16T, RTX 5060 Ti | W=14 | 120 | primary, orchestrator, GPU train |
 | Xeon (`ssh xeon`) | Skylake-X, 6C/12T, Quadro RTX 4000 | W=10 | 75 | secondary, shared-claim |
 | Laptop popos-usb (`ssh laptop`) | Raptor 14650HX 8P+8E, RTX 4070m | W=24 | 196 | tertiary, tailscale; sleep masked |
-| Mac M5 Air (`ssh joshuaishal@100.64.175.108`) | Apple M5 10-core, no CUDA (MPS) | W=4 | 53 | quaternary, MPS no-orchestrator |
-| **total cluster** | | | **~444** | **2.3× the pre-cluster dual-box rate** |
+| **total cluster** | | | **~391** | **2.0× the pre-cluster dual-box rate** |
+| Mac M5 Air — PARKED 2026-05-28 | Apple M5 10-core, MPS | W=6 | 57 | not active; rejoin by ssh'ing a new Optuna worker pointed at the shared study DB |
 
 ### Lessons memorialized
 - [feedback_no_sigstop_mp_queue](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_no_sigstop_mp_queue.md) — SIGSTOP on mp.Queue processes breaks them
 - [feedback_xeon_ssh_quoting](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_xeon_ssh_quoting.md) — don't wrap wsl invocation in outer quotes when ssh'ing Xeon
 - [feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md) — sweep with brackets above AND below; never declare an axis settled from one off-baseline sample (the c_puct lesson)
 
-**Production config (post-this-commit):** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + **c_puct=3.0** (was 1.5) + sims=200 default, W per box from cluster table above.
+**Production config (post-this-commit):** v2.7 leaf (`CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`) + **c_puct=3.0** (was 1.5; eval-side validated, self-play-side hypothesis — see DECISIONS 2026-05-28) + sims=200 default, W per box from cluster table above. **All production processes run at `nice -n 19`** (low priority, keeps boxes responsive) — Joshua's standing rule 2026-05-28.
 
 **Zenbook called dead-end** (2026-05-21). Bridge infrastructure stays committed for future deploy. Bridge code: `src/carcassonne_ai/remote_eval_bridge.py` + `src/carcassonne_ai/remote_socket_handles.py` + `scripts/run_selfplay_iter.py` `--serve-on`/`--remote-eval-server` flags + 9 unit tests (pass). Loopback smoke: 12932 evals, 0 failures. Not in production use.
 
