@@ -44,6 +44,7 @@ from wingedsheep.carcassonne.utils.city_util import CityUtil
 from wingedsheep.carcassonne.utils.farm_util import FarmUtil
 from wingedsheep.carcassonne.utils.points_collector import PointsCollector
 
+from . import virtual_score as _vs
 from .virtual_score import virtual_score
 
 if TYPE_CHECKING:
@@ -397,12 +398,34 @@ def virtual_score_v2(
         )
     if cfg is None:
         cfg = DEFAULT_CONFIG
-    base = virtual_score(state, player)
     opp = 1 - player
-    # Compute bonuses on the live (non-mutated) state. virtual_score deepcopies
-    # internally so it does not mutate `state`.
-    bonus_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
-    bonus_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
+    # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region
+    # memo (`_farm_cache`) and ONE lazy city-component memo (`_city_cache`) across
+    # all three consumers in this leaf eval — virtual_score's count_final_scores
+    # (on its snapshot) and both closure-bonus passes (on the live state). A
+    # state's deepcopy shares Tile/FarmerConnection refs (and CoordinateWithSide
+    # city keys are value-hashable), so a cache populated on the live state is
+    # valid on virtual_score's snapshot too. find_farm_by_coordinate / find_city
+    # read the caches transparently. Detached in finally so neither lingers on a
+    # long-lived (e.g. MCTS-tree) state — get_next_state's deepcopy would strip
+    # them anyway. USE_FARM_CACHE / USE_CITY_CACHE off -> legacy flood-fills (the
+    # bench/gate A/B baselines).
+    farm_cache = {} if _vs.USE_FARM_CACHE else None
+    city_cache = {} if _vs.USE_CITY_CACHE else None
+    if farm_cache is not None:
+        state._farm_cache = farm_cache
+    if city_cache is not None:
+        state._city_cache = city_cache
+    try:
+        base = virtual_score(state, player, farm_cache=farm_cache, city_cache=city_cache)
+        bonus_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
+        bonus_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
+    finally:
+        for _attr in ("_farm_cache", "_city_cache"):
+            try:
+                delattr(state, _attr)
+            except AttributeError:
+                pass
     score = base + bonus_self - bonus_opp
     if cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])

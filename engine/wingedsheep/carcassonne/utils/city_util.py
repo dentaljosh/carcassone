@@ -14,6 +14,43 @@ class CityUtil:
 
     @classmethod
     def find_city(cls, game_state: CarcassonneGameState, city_position: CoordinateWithSide) -> City:
+        # Patched (vendored fork, 2026-05-29): lazy memo of the city flood-fill on
+        # the v2.7 leaf hot path. find_cities/count_farm_points re-run find_city
+        # per farmer connection AND per city side, and count_final_scores re-runs
+        # it per city meeple — ~31% of leaf cost, heavily redundant on the same
+        # city. If the caller attaches a `_city_cache` dict to the state, memoize
+        # the (positions, finished) flood-fill result under EVERY city_position in
+        # the component, then RETURN A FRESH City object each call. The fresh
+        # wrapper is deliberate: count_farm_points dedups adjacent cities via a
+        # set() keyed on City *identity*, so reusing one object would change the
+        # score — returning distinct objects (sharing the read-only positions set)
+        # preserves the leaf VALUE exactly while skipping the flood-fill. Verified
+        # by scripts/reconcile_farm_index.py (value equivalence) + tests. Safe to
+        # cache: find_city is a symmetric BFS to closure (start-independent, unlike
+        # the old find_farm), so the component is a function of the board, and the
+        # board topology is frozen for a leaf eval (count_final_scores mutates
+        # scores/meeples, never tile.city). CoordinateWithSide is value-hashable,
+        # so one cache is valid across a state and its (Tile-sharing) deepcopy.
+        cache = getattr(game_state, "_city_cache", None)
+        if cache is not None:
+            hit = cache.get(city_position)
+            if hit is not None:
+                positions, finished = hit
+                return City(city_positions=positions, finished=finished)
+            positions, finished = cls._compute_city(game_state, city_position)
+            entry = (positions, finished)
+            for pos in positions:
+                cache.setdefault(pos, entry)
+            return City(city_positions=positions, finished=finished)
+
+        positions, finished = cls._compute_city(game_state, city_position)
+        return City(city_positions=positions, finished=finished)
+
+    @classmethod
+    def _compute_city(cls, game_state: CarcassonneGameState, city_position: CoordinateWithSide):
+        """The city flood-fill, factored out of find_city so the memo wraps it.
+        Returns (city_positions set, finished bool) — identical to the prior
+        in-line computation."""
         cities: Set[CoordinateWithSide] = set(cls.cities_for_position(game_state, city_position))
         open_edges: Set[CoordinateWithSide] = set(map(lambda x: cls.opposite_edge(x), cities))
         explored: Set[CoordinateWithSide] = cities.union(open_edges)
@@ -30,7 +67,7 @@ class CityUtil:
                     explored.add(new_open_edge)
 
         finished: bool = len(explored) == len(cities)
-        return City(city_positions=cities, finished=finished)
+        return cities, finished
 
     @classmethod
     def opposite_edge(cls, city_position: CoordinateWithSide):

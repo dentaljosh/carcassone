@@ -30,7 +30,23 @@ if TYPE_CHECKING:
     from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
 
 
-def virtual_score(state: "CarcassonneGameState", player: int) -> int:
+# A/B toggles for the 2026-05-29 leaf flood-fill memoization — the lazy
+# `_farm_cache` (farm regions, count_final_scores' find_farm) and `_city_cache`
+# (city components, find_city via count_final_scores + count_farm_points + the
+# closure bonus). True in production; flipped to False by the bench /
+# reconciliation gate to measure each speedup and assert value-invariance.
+# Reference them as module attributes (`virtual_score.USE_FARM_CACHE` etc.) so a
+# runtime flip is seen by virtual_score_v2 too.
+USE_FARM_CACHE = True
+USE_CITY_CACHE = True
+
+
+def virtual_score(
+    state: "CarcassonneGameState",
+    player: int,
+    farm_cache: dict | None = None,
+    city_cache: dict | None = None,
+) -> int:
     """Estimate the final score differential `score[player] - score[opp]`
     by running the engine's end-of-game scoring on a copy of the state.
 
@@ -40,6 +56,14 @@ def virtual_score(state: "CarcassonneGameState", player: int) -> int:
     Mutates nothing — operates on a deep copy. For perf-critical inner
     loops where the caller already owns a scratch copy, prefer
     `virtual_score_inplace` to skip the second deepcopy.
+
+    `farm_cache` (2026-05-29 find_farm speedup): a dict attached to the scoring
+    snapshot so `count_final_scores` memoizes farm flood-fills (one per distinct
+    field instead of one per farmer meeple). A caller that also scores the same
+    state elsewhere (e.g. virtual_score_v2's closure bonus) passes its shared
+    cache in — valid because a state's deepcopy shares Tile/FarmerConnection
+    refs, so id-keyed entries stay correct on the copy. When None and
+    USE_FARM_CACHE is on, a fresh cache is used for this call.
     """
     if state.players != 2:
         raise ValueError(
@@ -47,12 +71,25 @@ def virtual_score(state: "CarcassonneGameState", player: int) -> int:
         )
 
     snapshot = copy.deepcopy(state)
+    if farm_cache is not None:
+        snapshot._farm_cache = farm_cache
+    elif USE_FARM_CACHE:
+        snapshot._farm_cache = {}
+    if city_cache is not None:
+        snapshot._city_cache = city_cache
+    elif USE_CITY_CACHE:
+        snapshot._city_cache = {}
     PointsCollector.count_final_scores(game_state=snapshot)
     opp = 1 - player
     return int(snapshot.scores[player]) - int(snapshot.scores[opp])
 
 
-def virtual_score_inplace(state: "CarcassonneGameState", player: int) -> int:
+def virtual_score_inplace(
+    state: "CarcassonneGameState",
+    player: int,
+    farm_cache: dict | None = None,
+    city_cache: dict | None = None,
+) -> int:
     """Same return value as `virtual_score`, but MUTATES the input state
     by invoking the engine's `count_final_scores` directly on it. After
     this call the state's `scores` reflect end-of-game resolution and the
@@ -67,6 +104,14 @@ def virtual_score_inplace(state: "CarcassonneGameState", player: int) -> int:
             f"virtual_score_inplace is implemented for 2-player only; "
             f"got {state.players}"
         )
+    if farm_cache is not None:
+        state._farm_cache = farm_cache
+    elif USE_FARM_CACHE:
+        state._farm_cache = {}
+    if city_cache is not None:
+        state._city_cache = city_cache
+    elif USE_CITY_CACHE:
+        state._city_cache = {}
     PointsCollector.count_final_scores(game_state=state)
     opp = 1 - player
     return int(state.scores[player]) - int(state.scores[opp])
