@@ -23,6 +23,24 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-31 — Path B screening SUCCEEDED (value head crosses the heuristic); loop extended to iter 24
+
+**Result.** The 3-box screening loop (12 iters, 600 games/iter, sims=200, farm scalars + ownership aux on) finished Sat 18:26. The diagnostic that gates the whole probe — **held-out value↔outcome correlation** (`train_iter._value_outcome_corr`, val split) — traced a clean S-curve: **0.38 → 0.81**, crossing the v2.7 heuristic's **0.61** ~iter 3-4 and plateauing ~0.81 (old data-starved NN value head = 0.18). No policy-entropy collapse (1.75 → 1.66, floor 0.87). Per-iter anchor-gate iter_11 vs frozen warm: **30W/0D/10L, +190.8 elo**.
+
+**Reading.** A **strong GO *signal***: the learned value head now substantially out-predicts the heuristic on held-out outcomes — the exact Path-B question, on the right (fixed-reference) metric. **NOT yet the verdict:** +190 is self-anchored vs warm (Option-B lesson: self-anchored elo can climb while absolute strength regresses), and corr is mechanism, not playing strength. **Step 9 — go/no-go A/B (NN-value-leaf vs v2.7, same policy net both sides, n=400; GO if >+15 elo) — remains the decisive test, still pending.**
+
+**Why it stopped at 12.** Hardcoded `ITERS=12`, NOT a plateau (loop halts only on NaN / entropy-floor collapse; anchor-gate non-halting). corr-saturation ≠ strength-saturation (value-corr ceiling <1 from tile-draw luck).
+
+**Decision: extend the loop** (Joshua, 2026-05-31). Resumed iters **12→23** in the same run dir (warm-from iter_11, `--window 10` buffer continuous); `run_pathb_cluster_loop.sh` gained `START` resume-in-place support. 3-box WS, nice -19, ~24h. Driver 29976, Monitor `bhnvreb82`.
+
+**Open gaps (production loop v2).** (1) Loop gates only vs frozen warm → no per-iter marginal-strength signal / no plateau-stop; gate vs running-best + stop-after-2-flat. (2) Post-leaf-speedup self-play is GPU/eval-bound (Step-1b W-rebench: W barely matters ≥10, Xeon 10→18) → open throughput lever is a multi-shard eval-server, not more workers. (3) Beyond Step 9, an external/absolute reference ladder (Joshua → club/online → pros) is required to *claim* superhuman.
+
+**Reversal cost.** Low (additive; just more iters; stoppable anytime).
+
+**Phase.** Phase 4 / Path B Step 8 → Step 9 pending.
+
+---
+
 ## 2026-05-29 (evening) — Path B Steps 6–8 executed: smoke PASS, collapse guard + value-corr built, 3-box work-stealing screening run LAUNCHED over Shabbos
 
 **Context.** Joshua gave the go to run Step 6 ("run the smoke. low priority nice"), then escalated to launch the loop over Shabbos ("yolo it… wire up 7 and 8, I check back after havdalah"), then **demanded all 3 boxes** for the loop.
