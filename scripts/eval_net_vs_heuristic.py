@@ -201,13 +201,17 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--seed-start", type=int, default=600000)
     ap.add_argument("--out-subdir", type=str, default=None,
-                    help="subdir under data/ladder (default: derived from ckpt name)")
+                    help="subdir under the out-root (default: derived from ckpt name)")
+    ap.add_argument("--out-root", type=str, default=None,
+                    help="root dir for results (default: REPO/data/ladder). Point at the "
+                         "CIFS share to fan out across boxes with disjoint --seed-start ranges.")
     ap.add_argument("--summary-only", action="store_true")
     args = ap.parse_args(argv)
 
     heur_sims = args.heur_sims if args.heur_sims is not None else args.sims
     sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}"
-    out = EVAL_ROOT / sub
+    root = Path(args.out_root) if args.out_root else EVAL_ROOT
+    out = root / sub
     out.mkdir(parents=True, exist_ok=True)
 
     # alternate net_player across seeds for color balance
