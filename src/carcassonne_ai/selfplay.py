@@ -224,6 +224,16 @@ def play_one_selfplay_game(
 
         # Pick the action. Anchor side always plays τ=0 (strongest line, no
         # sampling) — only the learner explores via the τ schedule.
+        # NOTE (review S1, 2026-05-31 — INTENTIONAL, not a bug): `ply` is the
+        # GAME CLOCK (total plies, incremented every move at the bottom of the
+        # loop), so the learner's τ=1 exploration window closes by game *progress*,
+        # not by a per-learner-move quota. This is the correct AlphaZero
+        # convention: temperature decay is tied to how deep into the game a
+        # position is (opening vs midgame), which the game clock measures. In
+        # anchor games the learner therefore samples τ=1 on ~half of
+        # `temp_threshold` of its own moves — which is the right game-stage-
+        # relative amount, not a halved quota. Deliberately kept as game-clock
+        # gating; do not switch to a learner-only counter without re-validating.
         if is_learner_move:
             temperature = 1.0 if ply < temp_threshold else 0.0
         else:
