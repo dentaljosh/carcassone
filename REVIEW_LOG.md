@@ -342,3 +342,35 @@ None.
 Convergence trend is strong (3→5→clean-except-one-block). One **round-4 confirm**
 remains (the last of the "3 more"): re-verify F-iter7-1/2 + a final sweep; expected
 to be DRY → loop converged → anchor-fraction path launch-safe (modulo launcher wiring).
+
+---
+
+## Iteration 8 (pre-launch round 4, CONVERGENCE) — 2026-05-31
+
+Round 4 — confirmation round, run on a **Sonnet reviewers+verifiers / Opus
+synthesis** mix (~284K tokens, ~⅓ the cost of the all-Opus rounds). 4 dimensions:
+verify the R3 fixes (incl. a double-shutdown edge check), final leak sweep,
+anchor-path end-to-end across seams, completeness critic.
+
+**Result: DRY — 0 findings. LOOP CONVERGED.**
+
+- **R3 fixes verified to hold:** SIGHUP handler (`run_selfplay_iter.py:346`) unwinds
+  the finally like SIGTERM; anchor try/except guard (`:743-755`) tears down the
+  learner pool on anchor-init failure. **Double-shutdown edge proven clean:** the
+  anchor start is *outside* the main `try` (`:774`), so on anchor failure the except
+  shuts down `server_pool` once and the re-raise propagates *before* the `try` is
+  entered → the `finally`'s shutdown never double-fires; `anchor_server_pool`/
+  `bridge` are None-initialized so the normal-exit finally is None-safe. 43 targeted
+  tests green.
+- **No blocking issues** after 4 rounds + 2-skeptic adversarial verification.
+
+### The 4-round arc
+R1 (3/6 clean): anchor scalar-width guard [highest-value catch — silent training vs
+a random opponent], ALL_DEAD halt, S1 documented. R2 (5/6 clean): SIGTERM cleanup,
+bridge slot-leak, atomic save. R3: SIGHUP gap + anchor-pool-OOM teardown. R4: dry.
+**The search/encoding/IPC-protocol/RNG/train-data/scoring cores were CLEAN
+throughout; every bug lived in orchestration teardown + the anchor seam.**
+
+**Verdict: CONVERGED. The anchor-fraction self-play path is launch-safe** — the only
+remaining gate is operational (build the launcher that passes `--anchor-checkpoint`;
+the scalar-width + teardown guards activate the instant it's wired).
