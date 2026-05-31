@@ -2,6 +2,16 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A new Claude thread reading [CLAUDE.md](CLAUDE.md) → here should be able to take over without missing a beat. Keep this file SHORT — current state only. Historical narrative lives in [DECISIONS.md](DECISIONS.md).
 
+## Right now (2026-05-31) — **🟢 PATH B SCREENING SUCCEEDED → loop EXTENDED (iters 12→23), LIVE.**
+
+**Screening result (12 iters, done Sat 18:26):** held-out **value↔outcome corr S-curve 0.38 → 0.81**, crossing the v2.7 heuristic's 0.61 ~iter 3-4 and plateauing ~0.81 (old data-starved NN = 0.18). No entropy collapse (1.75→1.66, floor 0.87). Anchor-gate iter_11 vs warm: **30W/0D/10L, +190.8 elo**. → **Strong GO *signal*** (the learned value head now out-predicts the heuristic — the core Path-B question). NOT the verdict: +190 is self-anchored vs warm and corr is the *diagnostic*; **Step 9 go/no-go A/B (NN-value-leaf vs v2.7, n=400) is the decisive test, still pending.**
+
+**Why it stopped at 12:** hardcoded `ITERS=12`, NOT a plateau (loop halts only on NaN/entropy-collapse; anchor-gate is non-halting).
+
+**EXTENDED run LIVE (2026-05-31):** ONE driver `29976` = `run_pathb_cluster_loop.sh` (gained `START` resume-in-place support), iters **12→23** (`START=12 ITERS=24`), warm-from `ckpt/iter_11.pt`, same `pathb_loop` dir (continuous `--window 10` buffer), anchor-gate vs original warm, `nice -19`, ~24h ETA. Log `/tmp/pathb_cluster_resume.log`, pidfile `/tmp/pathb_cluster_resume.pid`, **Monitor `bhnvreb82`** (per-iter + completion/death). iter_12 confirmed producing on all 3 boxes. (`pgrep -fc run_pathb_cluster_loop`=2 is driver + Monitor self-match, not a duplicate.)
+
+**Open gaps (production v2):** (a) loop gates only vs WARM → no per-iter *marginal-strength* read; gate vs running-best + add a real plateau-stop. (b) post-speedup self-play is GPU/eval-bound → **multi-shard eval-server** is the open throughput lever (Step-1b W-rebench: Xeon W 10→18). (c) Step 9 verdict + external/absolute reference (you → pros) still required.
+
 ## Right now (2026-05-29 19:15) — **🟢🚀 PATH B 3-BOX SCREENING RUN LIVE (over Shabbos; Joshua checks after Havdalah).** Warmstart done → self-play loop work-stealing across **5800X + Xeon + laptop**, `nice -19`, all 3 deterministic gates active. Driver `/home/doctor/run_pathb_cluster_loop.sh`, log `/tmp/pathb_cluster.log` (PID in `/tmp/pathb_cluster.pid`). VERIFIED: all 3 boxes claiming + all 3 GPUs active.
 
 **LIVE 3-BOX SCREENING RUN (2026-05-29 19:15) — config + what to check after Havdalah:**
