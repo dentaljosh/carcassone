@@ -14,10 +14,11 @@
 
 **DECISION (2026-05-31): push strength via ANCHOR-FRACTION self-play.** Goal = extend iter_11. **Pre-launch review loop COMPLETE — 4 rounds, CONVERGED** (REVIEW_LOG iters 5-8): fixed anchor scalar-width corruption [highest-value catch], SIGTERM+SIGHUP teardown, bridge slot-leak, atomic save, anchor-pool-OOM guard. Cores (search/encoding/IPC/RNG/train-data/scoring) clean throughout; all bugs were in orchestration teardown + the anchor seam. Optimization audit: **no throughput/leaf lever on the table** (orch-shards killed-at-our-scale, union-find dead-end, leaf banked). **Corrected config (audit caught a fatal lineage bug):** all-12-scalar, **warm-from + anchor = iter_11** (NOT the 10-scalar iter_B1/deepsearch the plan named), **sims=200 first** (escalate to 800 only if it gates positive), gate each iter vs iter_11 (fixed verified ref) + stop-after-2-flat, anchor_fraction=0.3.
 
-**NEXT (boxes free):**
+**🟢 LIVE NOW — ceiling-probe blend sweep, 3-box** (`/home/doctor/run_ceiling_probe.sh`, seq PID was 97450; laptop hot-added via `/home/pop/run_laptop_ceiling.sh` driver 3040). 2 cells × n=400, `--shared-claim` work-stealing: **A** = iter_01 @ λ=0.1, **B** = iter_11 @ λ=0.1 (same net both sides, NEW=blend / OLD=pure v2.7). Folders `/mnt/c/carc-shared/ceiling_probe/iter0{1,11}_lam01`. **Q: did blend-tolerance RISE iter_01→iter_11 (= leaf ceiling liftable)?** Fast (orchestrator NeuralMCTS, not CPU HeuristicMCTS) → ~30-40 min, not 2h. **On done: tally each cell** (glob the per-game `s0200_seed*_p*.json`, W=NEW-blend wins) → log results.csv + DECISIONS. Laptop share was unmounted post-restart → remounted + now in fstab (auto-mounts on boot); Xeon W=16 is fine (orchestrator/IPC-bound, load ~6/12 — see CLAUDE.md worker-count note).
+
+**NEXT (after probe frees boxes):**
 1. **Wire the 3-box anchor-fraction launcher** (sims=200, iter_11 warm+anchor, the F-iter5-1 width-guard + R3 teardown guards activate on wiring) + 4-game smoke. `run_pathb_cluster_loop.sh` is the base (gates vs $WARM → set WARM=iter_11; add anchor flags + stop-after-2-flat).
-2. **Ceiling-probe blend sweep** (parallel, ~2h 3-box): iter_01 vs iter_11 @ λ=0.1, n=400 — is the leaf ceiling liftable (doubles as pivot #3). `run_blend_sweep.sh` is the base.
-3. **#2 Joshua plays iter_11** @ `--sims 800` anytime: `python scripts/play_vs_net.py --checkpoint /mnt/c/carc-shared/pathb_loop/ckpt/iter_11.pt --sims 800 --human 0`.
+2. **#2 Joshua plays iter_11** @ `--sims 800` anytime: `python scripts/play_vs_net.py --checkpoint /mnt/c/carc-shared/pathb_loop/ckpt/iter_11.pt --sims 800 --human 0`.
 
 **Killed/paused:** the extended self-play loop (was driver 29976) was KILLED during the pivot to free boxes for Step 9 — iter_12 had ~429 banked seeds in `pathb_loop/iter_12/` if we ever resume (`START=12 ITERS=24`). 12 screening checkpoints safe in `pathb_loop/ckpt/`.
 
