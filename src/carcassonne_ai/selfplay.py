@@ -16,6 +16,8 @@ the AlphaZero-canonical win/loss target.
 from __future__ import annotations
 
 import copy
+import os
+import time
 from typing import Callable
 
 import numpy as np
@@ -29,6 +31,27 @@ from .aux_targets import (
 from .game_wrapper import Game
 from .mcts import NeuralMCTS
 from .warmstart import GameDataset
+
+
+# --- throughput-bench instrumentation (gated; zero-cost unless CARC_BENCH_TP set) ---
+_BENCH_TP = os.environ.get("CARC_BENCH_TP")
+_bench_moves = 0
+_bench_last = 0.0
+
+
+def _bench_tick() -> None:
+    """Count one self-play move; emit a per-worker cumulative line every ~3s.
+    Used by scripts/bench_pipeline_sweep.py to measure moves/sec (a smooth,
+    fast-to-steady-state throughput unit, unlike bursty game completions).
+    No-op (one truthiness check per move) unless CARC_BENCH_TP is set."""
+    global _bench_moves, _bench_last
+    if not _BENCH_TP:
+        return
+    _bench_moves += 1
+    now = time.perf_counter()
+    if now - _bench_last >= 3.0:
+        print(f"BENCHTP pid={os.getpid()} t={now:.3f} moves={_bench_moves}", flush=True)
+        _bench_last = now
 
 
 def play_one_selfplay_game(
@@ -252,6 +275,7 @@ def play_one_selfplay_game(
         last_action = int(action)
         board, _ = game.get_next_state(board, action)
         ply += 1
+        _bench_tick()
 
     # Backfill value targets from the final outcome, sign-flipped per ply so
     # each position sees its own current-player's result. `z_p0` is player 0's
