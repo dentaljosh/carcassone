@@ -262,3 +262,28 @@ warmstart from scratch, so that boundary is now — both taken:
 
 Both also recorded in BACKLOG.md (✅ RESOLVED 2026-05-29). No deferred D-finding
 remains that gates Path B.
+
+---
+
+## Iteration 5 (pre-launch, anchor-fraction self-play) — 2026-05-31
+
+Multi-agent workflow review (6 dimensions → 2-skeptic adversarial verify →
+synthesis) over the exact code path of the upcoming anchor-fraction run. 5 raw
+findings → 3 survived verify (2 confirmed 2/2, 1 disputed 1/1). **3 of 6
+dimensions came back clean after verification: `training`, `eval-gating`,
+`scoring-labels`** — the parts that most directly determine checkpoint quality
+(value/policy targets, anchor-gate logic, outcome/label backfill).
+
+### Fixed (safe corrections applied)
+
+| # | File:line | Bug | Fix |
+|---|---|---|---|
+| F-iter5-1 (B1) | `run_selfplay_iter.py:589` | **Anchor/learner scalar-width mismatch silently corrupts training.** `include_farm_scalars` derived from the learner checkpoint only; a single learner-width `Game` feeds BOTH evaluators, so a 12-scalar learner + 10-scalar anchor → wrong-width scalars → anchor forward crashes → server returns **uniform stub priors** → learner trains against a RANDOM opponent, poisoned games recorded unflagged. (Independently confirms the 2026-05-31 config-audit lineage finding.) | Capture `learner_ns`; if `--anchor-checkpoint` set, peek its `n_scalar_features` and `raise SystemExit` on mismatch. Fail loud, same-lineage required. |
+| F-iter5-2 (B2) | `~/run_pathb_cluster_loop.sh:125` (untracked launcher) | **`wait_for_count` ALL_DEAD return swallowed.** `set -e` is off, so the `return 1` on the all-PIDs-dead path was ignored → `train_iter.py` runs on PARTIAL data and `--window 10` propagates the poisoned iter into the next 9, silently. | Guarded the call: `if ! wait_for_count …; then … exit 1; fi` — halts like train-failure already does (`:133-134`). |
+
+### Deferred (judgment call for Joshua)
+
+**S1 — `selfplay.py:228,244` — `temp_threshold` counts TOTAL plies, not learner-only plies.** [Minor, disputed 1/1]
+In anchor mode `ply` increments on every move but the τ=1 exploration schedule (`ply < temp_threshold`) gates the *learner's* moves — so with alternating play the learner samples τ=1 on only ~7-8 of its own opening moves instead of `temp_threshold`. **Genuine split:** one verifier calls it a real ~halving of learner opening diversity; the other argues game-clock gating (decay tied to game progress, not a per-agent quota) is the correct AlphaZero convention. No data corruption either way; only affects the minority anchor-fraction games. **Recommendation:** a one-line decision — document the game-clock gating as intentional, OR add a `learner_ply` counter. Not a launch blocker.
+
+**Verdict:** safe to launch after F-iter5-1 + F-iter5-2 (both applied). S1 is a clarity decision, not a gate.

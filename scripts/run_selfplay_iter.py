@@ -587,12 +587,32 @@ def main(argv: list[str] | None = None) -> int:
     # width (the server net is sized from the same checkpoint in eval_server).
     # Off (10-scalar) for pre-Step-E checkpoints and remote-server mode.
     include_farm_scalars = False
+    learner_ns = N_SCALAR_FEATURES
     if args.checkpoint is not None:
         _peek = torch.load(str(args.checkpoint), map_location="cpu", weights_only=False)
-        include_farm_scalars = (
-            int(_peek.get("n_scalar_features", N_SCALAR_FEATURES)) > N_SCALAR_FEATURES
-        )
+        learner_ns = int(_peek.get("n_scalar_features", N_SCALAR_FEATURES))
+        include_farm_scalars = learner_ns > N_SCALAR_FEATURES
         del _peek
+
+    # Defense-in-depth (pre-launch review B1, 2026-05-31): the anchor and learner
+    # MUST share scalar width. A single learner-width Game feeds BOTH evaluators,
+    # so a mismatched anchor net (e.g. a 10-scalar legacy anchor + a 12-scalar
+    # Path-B learner) receives wrong-width scalars -> the anchor forward crashes ->
+    # the server returns uniform stub priors -> the learner silently trains against
+    # a RANDOM opponent (poisoned games recorded unflagged), defeating the entire
+    # point of anchor-fraction. Fail loud instead of corrupting the run.
+    if getattr(args, "anchor_checkpoint", None) is not None:
+        _peek_a = torch.load(str(args.anchor_checkpoint), map_location="cpu", weights_only=False)
+        anchor_ns = int(_peek_a.get("n_scalar_features", N_SCALAR_FEATURES))
+        del _peek_a
+        if anchor_ns != learner_ns:
+            raise SystemExit(
+                f"FATAL: --anchor-checkpoint n_scalar_features ({anchor_ns}) != "
+                f"--checkpoint n_scalar_features ({learner_ns}). Mixing 10/12-scalar "
+                f"lineages in anchor-fraction is unsupported (a single learner-width "
+                f"Game feeds both nets; the mismatched anchor would emit uniform stub "
+                f"priors). Use same-lineage checkpoints for learner and anchor."
+            )
 
     cfg = {
         "include_farm_scalars": include_farm_scalars,
