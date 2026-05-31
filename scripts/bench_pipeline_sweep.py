@@ -169,16 +169,14 @@ def build_cmd(checkpoint: str, scratch: Path, cfg: dict) -> list[str]:
            "--seed-start", str(cfg.get("seed_start", 7_000_000)),
            "--sims", str(cfg.get("sims", 200)),
            "--workers", str(cfg["W"]),
-           "--batch-size", str(cfg.get("mcts_batch", 1)),
-           # PRODUCTION self-play knobs (run_pathb_cluster_loop.sh) — bench the
-           # REAL workload, not defaults: v2.7 leaf VALUE (CPU, not the nn GPU
-           # value) + farm scalars (12-scalar net). leaf-eval and farm-scalars
-           # are exactly the bottleneck-relevant ones (CPU vs GPU balance,
-           # per-leaf cost); the rest match production for fidelity.
-           "--leaf-eval", "v2_5", "--c-puct", "3.0",
-           "--include-farm-scalars", "--aux-weight", "0.15",
-           "--temperature", "1.0", "--temp-moves", "20",
-           "--dirichlet-alpha", "0.3", "--dirichlet-frac", "0.25"]
+           "--batch-size", str(cfg.get("mcts_batch", 8)),
+           # EXACT production self-play knobs (run_pathb_cluster_loop.sh:119):
+           # v2.7 leaf VALUE (CPU) + score_diff target + the production
+           # virtual-loss batch baseline of 8. run_selfplay_iter auto-handles the
+           # 12-scalar width from the checkpoint — there is NO farm-scalar/aux/
+           # temperature/dirichlet flag on this script (those live on the
+           # warmstart/gen scripts; passing them = "unrecognized arguments").
+           "--leaf-eval", "v2_5", "--value-target", "score_diff"]
     # NOTE: --fp16 is a top-level flag (run_selfplay_iter.py:409), wired into the
     # per-worker path. Whether it reaches the orchestrator server pool
     # (start_server_pool, ~line 710) needs confirming before trusting an
@@ -316,14 +314,16 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
 def matrix(box: str) -> list[tuple[str, dict]]:
     """1-D sweeps around the per-box baseline. (axis_label, override_dict)."""
     b = BOX[box]
-    base = dict(orchestrator=True, orch_shards=1, mcts_batch=1,
+    base = dict(orchestrator=True, orch_shards=1, mcts_batch=8,  # production baseline (run_pathb:119)
                 orch_batch_timeout_ms=2.0, orch_fp16=False, W=b["Wdef"])
     cells: list[tuple[str, dict]] = []
     # Axis 1 — workers (re-confirm the flat-≥10 curve at current post-speedup code)
     for w in b["W"]:
         cells.append((f"W={w}", {**base, "W": w}))
-    # Axis 2 — mcts_batch (virtual-loss; ** changes search — speed only here **)
-    for mb in (2, 4, 8):
+    # Axis 2 — mcts_batch (virtual-loss). Production baseline is 8 (== the W=Wdef
+    # cell); sweep around it. ** changes search — speed only here; strength is a
+    # separate check before adopting any non-8 value **
+    for mb in (1, 2, 4, 16):
         cells.append((f"mcts_batch={mb}", {**base, "mcts_batch": mb}))
     # Axis 3 — orchestrator OFF (per-worker local GPU loads the net into EVERY
     # worker). Only fits on the 16GB card and only to mid-W; the 8GB boxes (Xeon
