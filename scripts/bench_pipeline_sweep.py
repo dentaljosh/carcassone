@@ -169,7 +169,16 @@ def build_cmd(checkpoint: str, scratch: Path, cfg: dict) -> list[str]:
            "--seed-start", str(cfg.get("seed_start", 7_000_000)),
            "--sims", str(cfg.get("sims", 200)),
            "--workers", str(cfg["W"]),
-           "--batch-size", str(cfg.get("mcts_batch", 1))]
+           "--batch-size", str(cfg.get("mcts_batch", 1)),
+           # PRODUCTION self-play knobs (run_pathb_cluster_loop.sh) — bench the
+           # REAL workload, not defaults: v2.7 leaf VALUE (CPU, not the nn GPU
+           # value) + farm scalars (12-scalar net). leaf-eval and farm-scalars
+           # are exactly the bottleneck-relevant ones (CPU vs GPU balance,
+           # per-leaf cost); the rest match production for fidelity.
+           "--leaf-eval", "v2_5", "--c-puct", "3.0",
+           "--include-farm-scalars", "--aux-weight", "0.15",
+           "--temperature", "1.0", "--temp-moves", "20",
+           "--dirichlet-alpha", "0.3", "--dirichlet-frac", "0.25"]
     # NOTE: --fp16 is a top-level flag (run_selfplay_iter.py:409), wired into the
     # per-worker path. Whether it reaches the orchestrator server pool
     # (start_server_pool, ~line 710) needs confirming before trusting an
