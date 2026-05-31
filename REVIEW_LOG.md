@@ -316,3 +316,29 @@ None. No medium/disputed findings this round.
 **Verdict:** round 2 was NOT dry (2 confirmed high + 1 low, all fixed). Per the
 "up to 3 more rounds while finding important bugs" mandate → run round 3 focused
 on the lifecycle/teardown + crash paths to confirm the fixes close the loop.
+
+---
+
+## Iteration 7 (pre-launch round 3, crash/teardown + fix-verification) — 2026-05-31
+
+Round 3 — 5 dimensions on crash-recovery / teardown / control-flow + an explicit
+adversarial re-check of the 3 round-2 fixes. **The R2 trio held up (no
+regression):** the SIGTERM handler unwinds the finally, the ordered
+bridge-then-pool teardown is intact, the atomic save survived. 3 raw → 2 kept.
+Two findings, both in the eval-server startup/signal block (everything else —
+crash-recovery, the rest of teardown, fix-verification — clean).
+
+### Fixed (safe corrections applied)
+
+| # | File:line | Bug | Fix |
+|---|---|---|---|
+| F-iter7-1 (R3-B1) | `run_selfplay_iter.py:345` | **Missing SIGHUP handler** — the R2 SIGTERM fix is signal-specific. A dropped held-ssh (Mac sleep / net flap — a documented recurring event here) delivers **SIGHUP**, not SIGTERM, to the remote Xeon/laptop worker → default disposition kills it without unwinding → same orphaned-CUDA-children leak the SIGTERM fix prevents. (5800X shielded by local `nohup`; remote procs started by sshd with default SIGHUP disposition are not.) | Added `signal.signal(SIGHUP, lambda *_: sys.exit(0))` alongside the SIGTERM handler — same idiom, one line. |
+| F-iter7-2 (R3-N1) | `run_selfplay_iter.py:733` | **Anchor server pool started OUTSIDE the main try/finally.** If the anchor pool OOMs at init (realistic: loading the 2nd net on the 8GB Xeon/laptop while the learner pool already holds VRAM), the exception bypasses teardown → the already-running learner pool leaks / hangs on atexit-join. Latent today (anchor-checkpoint not in a live launcher) but becomes blocking the instant anchor-fraction is wired. | Wrapped the anchor `start_server_pool` in `try/except BaseException: shutdown_server_pool(server_pool); raise` — tears the learner pool down on any anchor-start failure (incl. a signal during startup). |
+
+### Deferred
+None.
+
+**Verdict:** round 3 found B-1 (high) + N-1 (medium-becomes-blocking), both fixed.
+Convergence trend is strong (3→5→clean-except-one-block). One **round-4 confirm**
+remains (the last of the "3 more"): re-verify F-iter7-1/2 + a final sweep; expected
+to be DRY → loop converged → anchor-fraction path launch-safe (modulo launcher wiring).

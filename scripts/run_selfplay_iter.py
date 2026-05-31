@@ -332,14 +332,18 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Run teardown on SIGTERM (review R2-B1): the cluster loop stops workers with
-    # `pkill -TERM`. Python's default SIGTERM disposition exits WITHOUT unwinding,
-    # so the try/finally that calls shutdown_server_pool / stop_bridge never runs
-    # and the non-daemon eval-server (spawn_main) children orphan, each holding a
-    # CUDA context — one VRAM leak per box per iter, accumulating to OOM over a
-    # long loop. Translate SIGTERM into a normal SystemExit so the finally-block
-    # teardown executes and the orchestrator cleans up its own eval-server pool.
+    # Run teardown on SIGTERM *and* SIGHUP (review R2-B1 + R3-B1): the cluster loop
+    # stops workers with `pkill -TERM`, and a dropped held-ssh (Mac sleep, network
+    # flap) delivers SIGHUP to the remote worker. Python's default disposition for
+    # BOTH exits WITHOUT unwinding, so the try/finally that calls
+    # shutdown_server_pool / stop_bridge never runs and the non-daemon eval-server
+    # (spawn_main) children orphan, each holding a CUDA context — a VRAM leak per
+    # box. The local 5800X is shielded by `nohup` (ignores SIGHUP), but the Xeon
+    # and laptop python procs are started fresh by the remote sshd with the default
+    # SIGHUP disposition, so local-side nohup does NOT cover them. Translate both
+    # signals into a normal SystemExit so the finally-block teardown executes.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    signal.signal(signal.SIGHUP, lambda *_: sys.exit(0))
     p = argparse.ArgumentParser(prog="run_selfplay_iter")
     p.add_argument("--checkpoint", type=Path, required=False, default=None,
                    help="Network checkpoint to use as the self-play opponent. "
@@ -730,15 +734,25 @@ def main(argv: list[str] | None = None) -> int:
                     f"as learner pool"
                 )
                 sys.stdout.flush()
-                anchor_server_pool = start_server_pool(
-                    checkpoint_path=str(args.anchor_checkpoint),
-                    n_workers=n_workers,
-                    n_shards=args.orch_shards,
-                    max_batch=args.orch_max_batch,
-                    batch_timeout_ms=args.orch_batch_timeout_ms,
-                    use_fp16=args.fp16,
-                    policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
-                )
+                # Guard (review R3-N1): this anchor pool starts OUTSIDE the main
+                # try/finally (at the `try:` below), and the LEARNER pool above is
+                # already running + holding VRAM. If anchor init raises — a
+                # realistic CUDA OOM loading the 2nd net on the 8GB Xeon/laptop —
+                # the exception would bypass teardown and leak (or hang on
+                # atexit-join of) the learner pool. Tear it down explicitly first.
+                try:
+                    anchor_server_pool = start_server_pool(
+                        checkpoint_path=str(args.anchor_checkpoint),
+                        n_workers=n_workers,
+                        n_shards=args.orch_shards,
+                        max_batch=args.orch_max_batch,
+                        batch_timeout_ms=args.orch_batch_timeout_ms,
+                        use_fp16=args.fp16,
+                        policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
+                    )
+                except BaseException:
+                    shutdown_server_pool(server_pool)
+                    raise
                 cfg["orch_anchor_handles_by_worker"] = (
                     anchor_server_pool.handles_by_worker[:n_workers]
                 )
