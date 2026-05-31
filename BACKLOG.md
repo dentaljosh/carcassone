@@ -16,6 +16,18 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-05-31 — Eval/measurement gauntlets are CPU-bound; their GPU sits ~75% idle (batch-1)
+
+**Context:** during the iter_11 n=400 ladder run (`eval_net_vs_heuristic.py`) Joshua noticed the 5800X GPU read **76% util but only 47 W of its 180 W limit** (clocks near-boost at 2820/3090, so not throttling). CPU was a genuine ~90%. This is the **eval-script corollary** to the already-documented self-play GPU-boundedness (DECISIONS 2026-05-19 "Open gaps" #2: self-play is CPU-leaf-bound, GPUs ~26-40%; DECISIONS 2026-05-20 eval-server bridge).
+
+**Finding:** the eval/measurement gauntlets (`eval_net_vs_heuristic.py`, `eval_iter_head_to_head.py`) run **per-worker batch-1 inference with NO orchestrator** — each worker holds its own `make_single_evaluator`. So the net-prior forward passes are tiny single-position kernels: GPU "utilization" pins high (a kernel is almost always resident) but actual throughput/power is ~25% (latency-bound, kernel-launch + memory-latency dominated). The real bottleneck is the **CPU `virtual_score` v2.7 leaf**, used by *both* sides (HeuristicMCTS's whole search + the neural side's leaf VALUE — only the priors come from the net).
+
+**Operational takeaways (act on these now, no code needed):**
+1. **Pick eval boxes by CPU cores, not GPU.** A bigger/faster GPU does ~nothing for gauntlet throughput; more/faster CPU cores do. (Retroactively: the laptop's weak GPU was never the eval throughput problem — its 8 GB VRAM ceiling at high W and flaky net were.)
+2. **`util%` is a misleading "busy" signal for batch-1 — read `power.draw`.** 90% util + 26% power = nearly-idle GPU. Use `nvidia-smi --query-gpu=power.draw,utilization.gpu,clocks.sm` to tell real load from nominal.
+
+**Why deferred (the code fix):** wiring the eval gauntlets onto the existing eval-server/orchestrator (batched inference, already built for self-play, DECISIONS 2026-05-20) would only batch the **prior** fraction — the CPU `virtual_score` leaf still dominates, so the win is modest for evals specifically (unlike pure-NN self-play, where batching is the known big lever and is already done). The higher-ROI eval lever is the **`virtual_score`/`find_farm` speedup** (union-find/cacheable after the start-independent rewrite — "active dev" per CLAUDE.md), which cuts the actual bottleneck. Revisit GPU-batching for evals only if/when a future leaf is GPU-heavy. Related: [[results-table-source-of-truth]], the self-play eval-server entries in DECISIONS.
+
 ## 2026-05-28 — Shortened-game variant (fewer tiles) as a screening regime
 
 **Context:** Joshua flagged 2026-05-28: would training/eval on shortened games (subset of the tile deck → shorter games → faster wall-clock) let us screen more ablations cheaply, with findings then validated on the full game? Engine supports trivial deck subsetting (the deck is a list of tile counts in the wingedsheep code).
