@@ -23,6 +23,26 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 beats a strong reference (+119 elo, first absolute signal)
+
+**Context.** Step 9 closed the value-as-leaf lever (calibration cliff — see entry below). Value-leaf needs scale we don't have. Joshua chose to PIVOT to **measure absolute strength + enable play**, explicitly NOT scale-blind (which would burn weeks into an unmeasurable ceiling). Selected: #1 measurement ladder, #2 headless play, #3 confirm blend.
+
+**The measurement wall this addresses.** Tier-1 (1-ply heuristic) is saturated; self-anchored elo (iter_N vs warm/prev) can climb while absolute strength regresses (the Option-B lesson). We had NO trustworthy absolute read. Fix: a strong, NON-saturated reference = **HeuristicMCTS** (v2.7 leaf + UCT search — the same leaf our bot uses, but NO learned policy). Test: NeuralMCTS(net priors + v2.7 leaf VALUE — the production play config, NOT the raw value head Step 9 killed) vs HeuristicMCTS at **matched sims**. Isolates exactly: does the LEARNED POLICY beat pure heuristic search at equal compute?
+
+**Result (n=100, matched sims=200, c=3):** iter_11 net **66W/1D/33L = 66.5%, +119 elo / 3.2σ, +14.5 score margin.** (Early n=28 was 86%/+311 → regressed to mean, as flagged; the n=100 is the honest number, n=400 verdict running.)
+
+**Reading.** The first TRUSTWORTHY absolute-strength signal in the project: the learned policy decisively beats a strong, non-saturated reference at matched compute. This **validates the +190 self-anchored gain as real strength, not drift** — measurement-first paid off (we now KNOW). Calibration: +119 over our own heuristic+search = "clearly stronger than the thing we built," = ladder rung 1 cleared, NOT "superhuman" (HeuristicMCTS ≈ strong-amateur, not expert). Next rungs: beat Joshua → stronger external reference → pros.
+
+**Tools built + committed.** `scripts/eval_net_vs_heuristic.py` (ladder gauntlet, `ca24392`/`9d39cc5`), `scripts/play_vs_net.py` (headless terminal play — the tkinter GUI is unusable over the SSH chain; `5504fb6`), `scripts/tally_ladder.py` (union tally over fanned-out 3-box runs, validated vs n=100; `1b151c9`).
+
+**Decisions.** (1) Pivot accepted: measurement + play before any more scaling. (2) Promote ladder to n=400 (3-box, disjoint seed ranges → shared folder, running). (3) Don't switch the production leaf to NN value. (4) iter_11 is our confirmed-strongest checkpoint → the play-bot target at sims=800.
+
+**Reversal cost.** Low — additive tooling + eval; no production change.
+
+**Phase.** Phase 4 / Path B → measurement workstream (CLAUDE.md Wall #1).
+
+---
+
 ## 2026-05-31 — Path B Step 9 VERDICT: pure NN-value leaf fails (-800), but it's a CALIBRATION CLIFF, not a dead value head
 
 **Result.** Step 9 go/no-go (iter_11, same policy net both sides, NEW=pure NN-value leaf λ=1.0 vs OLD=pure v2.7 leaf λ=0.0, n=400, sims=200, c=3, 3-box): **3W/1D/396L, avg margin −73.7, −800 elo (capped).** Authoritative tally (`scripts/tally_step9.py`, 400/400, 0 corrupt, slot balance 200/200) confirms the driver's number.
