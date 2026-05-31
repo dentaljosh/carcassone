@@ -287,3 +287,32 @@ dimensions came back clean after verification: `training`, `eval-gating`,
 In anchor mode `ply` increments on every move but the τ=1 exploration schedule (`ply < temp_threshold`) gates the *learner's* moves — so with alternating play the learner samples τ=1 on only ~7-8 of its own opening moves instead of `temp_threshold`. **Genuine split:** one verifier calls it a real ~halving of learner opening diversity; the other argues game-clock gating (decay tied to game progress, not a per-agent quota) is the correct AlphaZero convention. No data corruption either way; only affects the minority anchor-fraction games. **Recommendation:** a one-line decision — document the game-clock gating as intentional, OR add a `learner_ply` counter. Not a launch blocker.
 
 **Verdict:** safe to launch after F-iter5-1 + F-iter5-2 (both applied). S1 is a clarity decision, not a gate.
+
+---
+
+## Iteration 6 (pre-launch round 2, deeper dimensions) — 2026-05-31
+
+Round 2 of the anchor-fraction pre-launch loop — 6 dimensions round 1 didn't
+touch: MCTS search internals, net/encoding, eval-server IPC protocol,
+concurrency/RNG/determinism, lifecycle/resource-leaks, train-data integrity.
+4 raw → 3 survived verify (3 confirmed). **5 of 6 dimensions clean
+(`mcts-search-core`, `network-encoding`, `evalserver-ipc-protocol`,
+`concurrency-rng-determinism`, `traindata-integrity`)** — the search math, the
+train/serve encoding, the IPC response-routing, the RNG/cache-race surface, and
+the npz/target schema all held under deeper scrutiny. All 3 surviving findings
+clustered in **lifecycle/teardown**.
+
+### Fixed (safe corrections applied)
+
+| # | File:line | Bug | Fix |
+|---|---|---|---|
+| F-iter6-1 (R2-B1) | `run_selfplay_iter.py:333` (main entry) | **SIGTERM bypasses cleanup → orphaned eval-server children leak VRAM.** The cluster loop stops workers with `pkill -TERM`; Python's default SIGTERM exits WITHOUT unwinding, so the `try/finally` calling `shutdown_server_pool`/`stop_bridge` never runs. The non-daemon `spawn_main` eval-server children don't match the `run_selfplay_iter` pkill pattern → orphan, hold a CUDA context → one leak/box/iter → OOM over a 12-iter loop. | Install `signal.signal(SIGTERM, lambda *_: sys.exit(0))` at the top of `main()` so the finally-teardown runs and the orchestrator tears down its own pool. (Deliberately did NOT add the review's secondary blunt `pkill -f multiprocessing.spawn` sweep to `cleanup_sp` — it would collaterally kill a CONCURRENT orchestrator job, e.g. the ceiling-probe sweep; the handler makes it unnecessary on the TERM path the loop uses.) |
+| F-iter6-2 (R2-B2) | `remote_eval_bridge.py:164` | **Untimed `response_q.get()` permanently leaks a bridge slot on eval-server crash → silent multi-box stall.** If the eval-server crashes mid-batch, the in-flight get blocks forever; the slot is never released; once all slots park here, remote workers stall with `BrokenServerError` and the box makes zero progress for the rest of the iter (a 5800X server crash silently kills the Xeon's contribution). The asymmetry was the tell — the finally-drain (`:190`) and the client side both already time out; only the primary in-loop get was untimed. | Added `timeout=drain_timeout_s` so `queue.Empty` propagates to the `except` → socket closes, finally drains, slot returns to the pool. |
+| F-iter6-3 (R2-L1) | `train_iter.py:452` | **Non-atomic checkpoint save** (CONFIRMED low). `torch.save` writes straight to `iter_NN.pt`; a SIGKILL/OOM/power-loss mid-write leaves a truncated `.pt` that the next iter's bare `torch.load` (resume guard checks `exists()` only) crashes on. The Xeon's 26 GB RAM cap makes OOM-SIGKILL plausible. | Write `*.partial.pt` then `Path.replace()` — mirrors `warmstart.py`'s atomic idiom. |
+
+### Deferred
+None. No medium/disputed findings this round.
+
+**Verdict:** round 2 was NOT dry (2 confirmed high + 1 low, all fixed). Per the
+"up to 3 more rounds while finding important bugs" mandate → run round 3 focused
+on the lifecycle/teardown + crash paths to confirm the fixes close the loop.

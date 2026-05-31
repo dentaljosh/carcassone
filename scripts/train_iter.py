@@ -449,6 +449,11 @@ def main(argv: list[str] | None = None) -> int:
             f"(target: beat heuristic 0.61; old data-starved NN was 0.18)"
         )
 
+    # Atomic save (review R2-L1): write a temp file then rename, so a SIGKILL /
+    # OOM / power-loss mid-write can't leave a truncated .pt that the next iter's
+    # bare torch.load picks up (resume guards check exists() only) and crashes the
+    # loop. Mirrors warmstart.py's temp-then-replace idiom.
+    _tmp_output = args.output.with_name(args.output.stem + ".partial.pt")
     torch.save(
         {
             "model_state": net.state_dict(),
@@ -462,8 +467,9 @@ def main(argv: list[str] | None = None) -> int:
             "baseline_policy_entropy": baseline_entropy,
             "policy_entropy": trained_entropy,
         },
-        args.output,
+        _tmp_output,
     )
+    _tmp_output.replace(args.output)
     metrics_path = args.output.with_suffix(".metrics.json")
     with metrics_path.open("w") as fh:
         json.dump(metrics, fh, indent=2)

@@ -161,7 +161,15 @@ def _conn_loop(conn: socket.socket, addr, handles: ServerHandles,
             req = dataclasses.replace(req, worker_id=handles.worker_id)
             handles.request_q.put(req)
             pending = True
-            resp = handles.response_q.get()
+            # Bounded wait (review R2-B2): an untimed get() blocks this broker
+            # thread FOREVER if the eval-server crashes mid-batch — no response
+            # ever lands, the slot is never released, and once every slot is
+            # parked here all remote workers stall with BrokenServerError for the
+            # rest of the iter (one 5800X server crash silently kills the Xeon's
+            # whole contribution). Time out and let queue.Empty propagate to the
+            # except below: the socket closes and the finally drains + frees the
+            # slot. Mirrors the finally-drain and the client-side get() timeouts.
+            resp = handles.response_q.get(timeout=drain_timeout_s)
             pending = False
             send_framed(conn, pack_response(resp))
     except (ConnectionError, EOFError, OSError) as e:

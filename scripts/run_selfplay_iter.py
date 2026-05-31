@@ -26,6 +26,7 @@ import multiprocessing as mp
 import os
 import random
 import shutil
+import signal
 import socket
 import sys
 import time
@@ -331,6 +332,14 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Run teardown on SIGTERM (review R2-B1): the cluster loop stops workers with
+    # `pkill -TERM`. Python's default SIGTERM disposition exits WITHOUT unwinding,
+    # so the try/finally that calls shutdown_server_pool / stop_bridge never runs
+    # and the non-daemon eval-server (spawn_main) children orphan, each holding a
+    # CUDA context — one VRAM leak per box per iter, accumulating to OOM over a
+    # long loop. Translate SIGTERM into a normal SystemExit so the finally-block
+    # teardown executes and the orchestrator cleans up its own eval-server pool.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     p = argparse.ArgumentParser(prog="run_selfplay_iter")
     p.add_argument("--checkpoint", type=Path, required=False, default=None,
                    help="Network checkpoint to use as the self-play opponent. "
