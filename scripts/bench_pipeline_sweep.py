@@ -68,7 +68,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 PY = sys.executable
-ENV_EXTRA = {"CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_V25_CAP": "12"}
+ENV_EXTRA = {"CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_V25_CAP": "12",
+             "CARC_BENCH_TP": "1"}
 
 # Three different GPU architectures across the cluster — relevant for fp16, whose
 # autocast overhead vs Tensor-Core gain is arch-dependent: fp16 was benched SLOWER
@@ -197,6 +198,39 @@ def count_npz(scratch: Path) -> int:
     return sum(1 for _ in scratch.rglob("seed_*.npz"))
 
 
+def count_bench_moves(log: Path) -> int:
+    """Sum over worker processes of each worker's latest cumulative move count.
+
+    selfplay.py's _bench_tick() prints ``BENCHTP pid=<pid> t=<wall> moves=<cum>``
+    roughly every 3 s per worker process (gated on CARC_BENCH_TP); <cum> is that
+    worker's monotonic lifetime move count, NOT a per-interval delta. So window
+    throughput is the DELTA of this sum across the measure window:
+        moves_per_s = (count_bench_moves(end) - count_bench_moves(start)) / elapsed
+    Parsing pid lets us track each worker independently and sum — robust to the
+    pool interleaving its lines into one shared stdout.
+    """
+    try:
+        latest = {}
+        with open(log, errors="replace") as f:
+            for line in f:
+                if not line.startswith("BENCHTP "):
+                    continue
+                pid = mv = None
+                for tok in line.split():
+                    if tok.startswith("pid="):
+                        pid = tok[4:]
+                    elif tok.startswith("moves="):
+                        try:
+                            mv = int(tok[6:])
+                        except ValueError:
+                            mv = None
+                if pid is not None and mv is not None:
+                    latest[pid] = mv  # monotonic per pid -> last seen is the max
+        return sum(latest.values())
+    except FileNotFoundError:
+        return 0
+
+
 def classify(cpu_p50: float, gpu_pw_p50: float, stat: dict,
              load_p50: float, threads: int) -> str:
     cpu_high = cpu_p50 > 80
@@ -237,10 +271,11 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
             break
 
     pw, util, mem, cpu, load = [], [], [], [], []
-    gmin = 0.0
+    moves_s = 0.0
+    games_landed = 0
     if status == "ok":
         cpu_rd = CpuReader()
-        c0, t0 = count_npz(scratch), time.perf_counter()
+        c0, t0 = count_bench_moves(log), time.perf_counter()
         with open(samples_path, "a", newline="") as sf:
             sw = csv.writer(sf)
             for i in range(measure_s):
@@ -266,8 +301,9 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
                     sw.writerow([axis, i, g["pw"], g["util"], g["mem"],
                                  g["clk"], round(c, 1), round(l1, 2)])
         elapsed = time.perf_counter() - t0
-        c1 = count_npz(scratch)
-        gmin = (c1 - c0) / (elapsed / 60.0) if elapsed > 0 else 0.0
+        c1 = count_bench_moves(log)
+        moves_s = (c1 - c0) / elapsed if elapsed > 0 else 0.0
+        games_landed = count_npz(scratch)
 
     # teardown — kill the whole process group (workers + eval-server shards)
     try:
@@ -297,7 +333,8 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
     load_p50 = _pctl(load, 0.50)
     bottleneck = classify(cpu_p50, pw_p50, stat, load_p50, threads) if status == "ok" else status
     return {
-        "g_per_min": round(gmin, 3),
+        "moves_per_s": round(moves_s, 2),
+        "games_landed": games_landed,
         "gpu_pw_p50": round(pw_p50, 1) if pw_p50 == pw_p50 else "",
         "gpu_pw_p95": round(_pctl(pw, 0.95), 1) if pw else "",
         "gpu_util_p50": round(_pctl(util, 0.50), 1) if util else "",
@@ -374,7 +411,8 @@ def main() -> int:
                  "gpu_clk", "cpu_pct", "load1"])
 
     fields = ["box", "axis", "W", "mcts_batch", "orchestrator", "orch_shards",
-              "orch_batch_timeout_ms", "orch_fp16", "sims", "g_per_min",
+              "orch_batch_timeout_ms", "orch_fp16", "sims", "moves_per_s",
+              "games_landed",
               "gpu_pw_p50", "gpu_pw_p95", "gpu_util_p50", "gpu_mem_max",
               "cpu_pct_p50", "loadavg_p50", "n_samples", "bottleneck",
               "status", "err_tail"]
@@ -402,7 +440,7 @@ def main() -> int:
                    "orch_fp16": cfg.get("orch_fp16", False),
                    "sims": cfg.get("sims", 200), **res}
             w.writerow(row); f.flush()
-            print(f"    -> {res['g_per_min']} g/min  gpu_pw={res['gpu_pw_p50']}W "
+            print(f"    -> {res['moves_per_s']} mv/s ({res['games_landed']}g)  gpu_pw={res['gpu_pw_p50']}W "
                   f"util={res['gpu_util_p50']}%  cpu={res['cpu_pct_p50']}%  "
                   f"load={res['loadavg_p50']}  [{res['bottleneck']}]", flush=True)
     print(f"[{args.box}] DONE -> {out}  (raw: {samples_path})", flush=True)
