@@ -18,7 +18,9 @@ WRONG proxy. This drives the REAL run_selfplay_iter.py as a subprocess, lets it
 reach steady state (--warmup s), then counts seed_*.npz landings over --measure s:
     g/min = landed_during_window / (measure_s / 60)
 canceling Pool-fork + eval-server-spawn startup. The whole process group is killed
-and scratch wiped between cells.
+and scratch wiped between cells. Cells are TIME-BOXED, so wall-clock per box =
+cell_count x window, independent of how slow the box is (a slow box just lands
+fewer games inside its window — that IS the measurement).
 
 TELEMETRY — every --sample-every s during the window:
     GPU: power.draw(W), utilization.gpu(%), memory.used(MB), clocks.sm(MHz)
@@ -59,7 +61,6 @@ import csv
 import os
 import shutil
 import signal
-import statistics
 import subprocess
 import sys
 import time
@@ -69,10 +70,14 @@ REPO = Path(__file__).resolve().parent.parent
 PY = sys.executable
 ENV_EXTRA = {"CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_V25_CAP": "12"}
 
+# Three different GPU architectures across the cluster — relevant for fp16, whose
+# autocast overhead vs Tensor-Core gain is arch-dependent: fp16 was benched SLOWER
+# on Turing (Xeon Quadro RTX 4000) and Blackwell (5800x 5060Ti + cloud 5090) but
+# has NEVER been tested on Ada (laptop 4070m), the one card with a real shot at it.
 BOX = {
-    "5800x":  {"threads": 16, "vram": 16, "W": [8, 10, 12, 14, 16, 20], "Wdef": 14},
-    "xeon":   {"threads": 12, "vram": 8,  "W": [8, 10, 12, 16, 18, 24], "Wdef": 18},
-    "laptop": {"threads": 16, "vram": 8,  "W": [10, 14, 18, 24, 28],    "Wdef": 24},
+    "5800x":  {"threads": 16, "vram": 16, "arch": "Blackwell", "W": [8, 10, 12, 14, 16, 20], "Wdef": 14},
+    "xeon":   {"threads": 12, "vram": 8,  "arch": "Turing",    "W": [8, 10, 12, 16, 18, 24], "Wdef": 18},
+    "laptop": {"threads": 16, "vram": 8,  "arch": "Ada",       "W": [10, 14, 18, 24, 28],    "Wdef": 24},
 }
 
 _SMI = None  # resolved nvidia-smi exe (or False if none works)
@@ -165,12 +170,12 @@ def build_cmd(checkpoint: str, scratch: Path, cfg: dict) -> list[str]:
            "--sims", str(cfg.get("sims", 200)),
            "--workers", str(cfg["W"]),
            "--batch-size", str(cfg.get("mcts_batch", 1))]
-    # NOTE: --fp16 is a top-level flag (run_selfplay_iter.py:409). It is wired
-    # into the per-worker path; whether it reaches the orchestrator server pool
+    # NOTE: --fp16 is a top-level flag (run_selfplay_iter.py:409), wired into the
+    # per-worker path. Whether it reaches the orchestrator server pool
     # (start_server_pool, ~line 710) needs confirming before trusting an
-    # orchestrator-mode fp16 cell — the start_server_pool call there passes
-    # n_shards/max_batch/batch_timeout_ms but not use_fp16. The fp16 cell is
-    # therefore most meaningful in the orch-off path until that's wired.
+    # orchestrator-mode fp16 cell — that call passes n_shards/max_batch/
+    # batch_timeout_ms but not use_fp16. So the fp16 cell is most meaningful in
+    # the orch-off path until that's wired.
     if cfg.get("orch_fp16", False):
         cmd += ["--fp16"]
     if cfg.get("orchestrator", True):
@@ -257,7 +262,7 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
         c1 = count_npz(scratch)
         gmin = (c1 - c0) / (elapsed / 60.0) if elapsed > 0 else 0.0
 
-    # teardown
+    # teardown — kill the whole process group (workers + eval-server shards)
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     except ProcessLookupError:
@@ -300,23 +305,37 @@ def run_cell(checkpoint: str, scratch: Path, cfg: dict, stat: dict,
 
 
 def matrix(box: str) -> list[tuple[str, dict]]:
+    """1-D sweeps around the per-box baseline. (axis_label, override_dict)."""
     b = BOX[box]
-    Wdef = b["Wdef"]
     base = dict(orchestrator=True, orch_shards=1, mcts_batch=1,
-                orch_batch_timeout_ms=2.0, orch_fp16=False, W=Wdef)
+                orch_batch_timeout_ms=2.0, orch_fp16=False, W=b["Wdef"])
     cells: list[tuple[str, dict]] = []
+    # Axis 1 — workers (re-confirm the flat-≥10 curve at current post-speedup code)
     for w in b["W"]:
         cells.append((f"W={w}", {**base, "W": w}))
+    # Axis 2 — mcts_batch (virtual-loss; ** changes search — speed only here **)
     for mb in (2, 4, 8):
         cells.append((f"mcts_batch={mb}", {**base, "mcts_batch": mb}))
-    off_W = [w for w in b["W"] if (b["vram"] >= 16 or w <= 8)]
-    for w in (off_W or [b["W"][0]]):
+    # Axis 3 — orchestrator OFF (per-worker local GPU loads the net into EVERY
+    # worker). Only fits on the 16GB card and only to mid-W; the 8GB boxes (Xeon
+    # Turing / laptop Ada) OOM above ~W=8. Few points to find the crossover, not
+    # all W (keeps box cell-counts roughly even). An OOM at the 8GB low-W point
+    # is itself the datum: "orchestrator is required at 8GB".
+    if b["vram"] >= 16:
+        off_W = [w for w in (8, 12, 16) if w in b["W"]]
+    else:
+        off_W = b["W"][:1]
+    for w in off_W:
         cells.append((f"orch_off W={w}", {**base, "orchestrator": False, "W": w}))
-    for s in (2, 4):
+    # Axis 4 — orch_shards (GIL relief): each shard owns a net copy (~2GB).
+    # 4 shards ~8GB -> only on the 16GB card; 8GB boxes get the 2-shard point.
+    for s in ((2, 4) if b["vram"] >= 16 else (2,)):
         cells.append((f"orch_shards={s}", {**base, "orch_shards": s}))
+    # Axis 5 — coalesce linger (expected null per DECISIONS 1100)
     for t in (8.0, 16.0):
         cells.append((f"timeout_ms={t}", {**base, "orch_batch_timeout_ms": t}))
-    cells.append(("orch_fp16", {**base, "orch_fp16": True}))
+    # Axis 6 — fp16, labelled by arch; Ada (laptop) is the one untested card.
+    cells.append((f"fp16[{b['arch']}]", {**base, "orch_fp16": True}))
     return cells
 
 
@@ -334,6 +353,7 @@ def main() -> int:
 
     stat = gpu_static()
     b = BOX[args.box]
+    threads = os.cpu_count() or b["threads"]   # real count beats the hardcoded guess
     cells = [(lbl, cfg) for lbl, cfg in matrix(args.box) if args.only in lbl]
     out = Path(args.out_csv)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -352,7 +372,7 @@ def main() -> int:
     new_file = not out.exists()
     per_cell = args.warmup + args.measure + 35
     print(f"[{args.box}] gpu: limit={stat['limit']}W idle={stat['idle']}W  "
-          f"threads={b['threads']}  smi={_smi_exe()}", flush=True)
+          f"arch={b['arch']} threads={threads}  smi={_smi_exe()}", flush=True)
     print(f"[{args.box}] {len(cells)} cells x ~{per_cell}s "
           f"= ~{len(cells)*per_cell//60} min -> {out}", flush=True)
 
@@ -363,7 +383,7 @@ def main() -> int:
         for i, (lbl, cfg) in enumerate(cells, 1):
             print(f"[{args.box} {i}/{len(cells)}] {lbl} ...", flush=True)
             res = run_cell(args.checkpoint, Path(args.scratch), cfg, stat,
-                           b["threads"], args.warmup, args.measure,
+                           threads, args.warmup, args.measure,
                            args.sample_every, samples_path, lbl)
             row = {"box": args.box, "axis": lbl, "W": cfg["W"],
                    "mcts_batch": cfg.get("mcts_batch", 1),
