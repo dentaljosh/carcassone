@@ -23,6 +23,38 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-05-31 — Path B Step 9 VERDICT: pure NN-value leaf fails (-800), but it's a CALIBRATION CLIFF, not a dead value head
+
+**Result.** Step 9 go/no-go (iter_11, same policy net both sides, NEW=pure NN-value leaf λ=1.0 vs OLD=pure v2.7 leaf λ=0.0, n=400, sims=200, c=3, 3-box): **3W/1D/396L, avg margin −73.7, −800 elo (capped).** Authoritative tally (`scripts/tally_step9.py`, 400/400, 0 corrupt, slot balance 200/200) confirms the driver's number.
+
+**This contradicted the screening (held-out corr 0.81), so before filing a NO-GO we ran diagnostics.** Three checks (`scripts/diag_value_leaf.py` + two inline) RULED OUT the bug hypotheses:
+- **Not a sign/POV flip:** corr(NN, v2.7)=+0.31, sign-agreement 57.5% (both > chance); NN value sane (mean −0.01, std 0.64, range [−0.94,+0.96]).
+- **No train/serve skew:** recorded iter_11 self-play data is genuinely 12-wide with live, varying farm scalars (contested/balance non-zero); self-play records via the SAME `get_canonical_form` eval uses; encode is deterministic.
+- **Leaf wrapper does not perturb:** `make_v25_value_wrapper` at λ=1.0 returns EXACTLY the raw NN value + identical priors (−0.83183 both). Not pathologically overconfident (|v|>0.9 only 11.7%).
+
+**Blend sweep (the decisive follow-up; n=30 each, same net both sides, NEW=λ blend vs OLD=pure v2.7):**
+| λ | record | elo vs pure-v2.7 |
+|---|---|---|
+| 0.1 | 16W/14L | **+23** (break-even, ±64) |
+| 0.25 | 12W/2D/16L | −47 |
+| 0.5 | 13W/17L | −47 |
+| 1.0 | 3W/1D/396L | **−800** |
+→ **A smooth, monotonic CALIBRATION CLIFF**: graceful for λ≤0.5 (all within ~1σ of break-even), catastrophic ONLY at pure-NN. A wiring bug would break at all λ; this degrades gracefully → consistent with a real property, not a bug.
+
+**Verdict / reading.** Path B is a **partial success, NOT the NO-GO the −800 implied.** The learned value head DID learn real signal (corr 0.18→0.81, correctly wired) and is **usable as a small blend** (≈break-even at λ=0.1). It is simply **not robust enough at 12-iter scale to be the SOLE search leaf** — MCTS at c=3 steered entirely by it walks into its off-distribution errors. This is the same value-as-search-leaf wall Option 2 hit in May, now at much better in-distribution prediction; KataGo got past it with massive scale + regularization. **The original Step-9 framing (pure-NN-leaf, GO if >+15) was too-extreme a test** — the production-relevant question is the blend, and the blend is viable-to-neutral, not harmful.
+
+**Decisions.**
+1. **Step 9 = soft NO-GO on the PURE-NN-leaf**; **partial GO on the value head as a blend.** Don't switch the production leaf to NN value.
+2. **Review-agent team: SKIP for now.** The smooth λ-curve + 3 cleared bug hypotheses make a hidden-bug explanation unlikely; a deep code review is low-EV here. Revisit only if a future result looks anomalous.
+3. **Strength gain stands:** the +190 anchor-gate (iter_11 vs warm) came via the v2.7 leaf and is untouched by this — the policy genuinely improved.
+4. **Next levers (not the value-leaf):** keep iterating (the extended loop is the cheap continuation); if we want the value-leaf to harden, that needs scale + a value-target regularizer, which is a bigger commitment than 12 iters.
+
+**Reversal cost.** None — diagnostics + logging only; no production change.
+
+**Phase.** Phase 4 / Path B Step 9 (closed).
+
+---
+
 ## 2026-05-31 — Path B screening SUCCEEDED (value head crosses the heuristic); loop extended to iter 24
 
 **Result.** The 3-box screening loop (12 iters, 600 games/iter, sims=200, farm scalars + ownership aux on) finished Sat 18:26. The diagnostic that gates the whole probe — **held-out value↔outcome correlation** (`train_iter._value_outcome_corr`, val split) — traced a clean S-curve: **0.38 → 0.81**, crossing the v2.7 heuristic's **0.61** ~iter 3-4 and plateauing ~0.81 (old data-starved NN value head = 0.18). No policy-entropy collapse (1.75 → 1.66, floor 0.87). Per-iter anchor-gate iter_11 vs frozen warm: **30W/0D/10L, +190.8 elo**.
