@@ -1,0 +1,6 @@
+run,iter,date,selfplay_sec,train_sec,gate_sec,total_sec,total_min,games,sims,gate_wr,value_corr,notes
+pathb_anchor,0,2026-06-01 09:43,,,,3474,57.9,600,200,0.475,0.18,backfill (log truncated at resume); no phase split
+pathb_anchor,1,2026-06-01 10:41,,,,3663,61.1,600,200,0.55,0.58,backfill; no phase split
+pathb_anchor,2,2026-06-01 11:42,2718,,,3801,63.4,600,200,0.375,0.67,backfill; train+gate=1083s combined
+pathb_anchor,3,2026-06-01 14:01,622,542,679,1843,30.7,600,200,0.5875,+0.7500,
+pathb_anchor,4,2026-06-01 14:32,,,,,,600,200,,,

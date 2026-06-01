@@ -23,6 +23,27 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-01 — Confirm-before-kill: make the plateau-stop symmetric with the keep decision
+
+**Context.** The plateau guard (entry below, item 5) hard-`break`s the loop after MAX_FLAT(=2) consecutive n=40 gates fail to beat the running best. Joshua flagged the asymmetry: a *positive* n=40 gate we (correctly) distrust as noise and demand more data — but a *negative* streak we acted on by killing the whole run. Same ±8% noise, opposite credence. Worse, the guard compared each gate against the running **max** (`best_wr`), so a lucky early high (e.g. iter_1's 55%, when the true rate was ~47%) inflates the bar and biases the counter toward false-trips. And the cost asymmetry runs the same way: a false-positive wastes ~1 iter (~1 hr); a false-negative abandons a working approach and sends us to the much harder leaf rework.
+
+**Options considered:**
+  - A: Leave it — accept that n=40×2 is the stop signal. Cheap but kills on screen-grade evidence; violates our own "n=400 = verdict, never promote/demote on a screen" rule.
+  - B: Just raise ANCHOR_GAMES/MAX_FLAT — tightens but multiplies *every* iter's gate cost, and still a fixed-threshold guess.
+  - C: **Confirm-before-kill** — when the flat streak trips, run ONE n=CONFIRM_GAMES(400) head-to-head of **latest iter vs current best** (net-vs-net), and only stop if latest fails CONFIRM_THRESH(0.54, ~1.5σ over 0.5 at n=400). Else the streak was noise → adopt latest as best, reset, continue.
+
+**Decision:** chose **C**. Live in `~/run_pathb_cluster_loop.sh` (`confirm_gate()` + rewritten plateau block; backed up to `code_sync/`).
+
+**Reason / properties:**
+- **Symmetric** — the kill now needs the same verdict-grade (n=400) evidence we'd demand to believe a positive.
+- **Ratchet-immune** — confirm compares latest-vs-best *directly* (head-to-head), not against the noise-inflated iter_11 ref.
+- **Reversible** — a positive confirm resets and continues; a confirmed stop logs the follow-up (gate best vs iter_11 @ n=400 to classify success-vs-null before the leaf pivot).
+- **No false-kill on infra failure** — if the confirm gate yields no verdict (boxes die / share hiccup mid-confirm), it resets flat and re-confirms next plateau rather than killing on no data.
+- Two bugs caught while wiring: (1) the eval script zero-pads vs-iter (`:02d`) so the confirm's output-dir lookup had to match (`iter_NN_vs_ON`), else `wait_for_count` hangs → false "kill"; (2) the infra-failure fall-through above.
+
+**Reversal cost:** low (env knobs `CONFIRM_GAMES`/`CONFIRM_THRESH`; set `CONFIRM_GAMES=0`-style or revert the block to restore the bare guard).
+**Phase:** 4 (self-play strength push). **Activates on next driver restart** (running driver parsed the loop pre-edit).
+
 ## 2026-06-01 — Strength-push loop wired: mixed-mode + anchor-fraction + plateau guard (ready to launch, HELD for go)
 
 **Context.** With the bench done (entry below), wired the bench-optimal config + the long-deferred anchor-fraction strength loop into `~/run_pathb_cluster_loop.sh` (the untracked production launcher; backed up to `code_sync/`).
