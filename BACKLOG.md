@@ -292,7 +292,7 @@ These would let the net learn the "endgame: place a meeple every move" rule in 1
 **Context:** the 2026-05-13 orchestrator N-sweep proved workers (not the dispatcher) are the bottleneck. Workers spend ~50% of their time on Python MCTS tree work — selection, expansion, backup, all in pure Python with numpy.
 **Idea:** profile `src/carcassonne_ai/mcts.py` against a 200-sim self-play game; identify the hot lines (likely PUCT selection or virtual-loss accounting); rewrite in Cython or as a single numpy vectorized pass. KataGo and Leela Chess Zero both have C++ MCTS for the same reason.
 **Cost:** ~1-2 days of profiling + rewrite + tests. Compute cost negligible.
-**Why deferred:** a throughput win, not a strength win — only worth it before a long multi-iter run. fp16 is NOT a lever (benched slower twice: autocast overhead exceeds compute savings on a 7M-param net + small batch).
+**Why deferred:** a throughput win, not a strength win — only worth it before a long multi-iter run. fp16 is **batch-conditional** (REFINED 2026-06-01, see DECISIONS): the old "slower twice" result holds at small per-worker batch (orch-off / virtual-loss), but under the **orchestrator** (max_batch 256) fp16 is FASTER on Blackwell (+24%) / Ada (+31%), ~null on Turing — not a blanket "not a lever."
 
 ### Symmetry exploitation — CONFIRMED not used (free ~4× data on the table)
 **Status:** Verified 2026-05-13: grep for `rot90|symmetr|augment` in `src/`, `train_iter.py`, `train_warmstart.py` finds zero matches (only `flip` for player-perspective handling, semantically different).

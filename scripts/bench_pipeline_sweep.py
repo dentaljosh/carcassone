@@ -72,9 +72,12 @@ ENV_EXTRA = {"CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_V25_CAP": "12"
              "CARC_BENCH_TP": "1"}
 
 # Three different GPU architectures across the cluster — relevant for fp16, whose
-# autocast overhead vs Tensor-Core gain is arch-dependent: fp16 was benched SLOWER
-# on Turing (Xeon Quadro RTX 4000) and Blackwell (5800x 5060Ti + cloud 5090) but
-# has NEVER been tested on Ada (laptop 4070m), the one card with a real shot at it.
+# autocast overhead vs Tensor-Core gain is BOTH arch- and batch-regime-dependent
+# (measured 2026-06-01, DECISIONS): under the orchestrator (max_batch 256) fp16 is
+# FASTER on Blackwell (5800x 5060Ti +24%) and Ada (laptop 4070m +31%), ~null on
+# Turing (Xeon Quadro RTX 4000). It is SLOWER at small per-worker batch (orch-off /
+# virtual-loss) where autocast overhead exceeds the gain — the old "benched slower"
+# regime. So: fp16 ON under orchestrator on Blackwell/Ada; OFF under orch-off.
 BOX = {
     "5800x":  {"threads": 16, "vram": 16, "arch": "Blackwell", "W": [8, 10, 12, 14, 16, 20], "Wdef": 14},
     "xeon":   {"threads": 12, "vram": 8,  "arch": "Turing",    "W": [8, 10, 12, 16, 18, 24], "Wdef": 18},

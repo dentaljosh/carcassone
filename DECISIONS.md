@@ -23,6 +23,35 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-01 — Pipeline bench: orchestrator is the wrong tool for the CPU v2.7 leaf → mixed-mode self-play (+87% cluster); cloud-era W≈48 / fp16 doctrines superseded
+
+**Context.** Ran a per-box per-lever throughput sweep (`scripts/bench_pipeline_sweep.py`, real self-play at production knobs sims=200/v2_5 leaf/score_diff, 240s windows) on all 3 boxes, then a 3-rep verdict-grade confirm of the surprising cells, then a 3-rep deploy-config pass. Data: `/mnt/c/carc-shared/bench/sweep_*.csv`, `sweep_confirm_*.csv`, `sweep_deploy_*.csv`.
+
+**What the data says (all confirm/deploy numbers are 3-rep, CV ≤2%).**
+- **Worker count is FLAT** under the orchestrator on every box (5800x 7.4–8.1 across W=8–20; xeon ~5.4; laptop ~9.8). All read `ipc_latency` → workers block on the eval-server socket, not CPU.
+- **The orchestrator's single GIL-bound dispatch thread is the limiter** (`eval_server.py:135`, mp.Queue pickling a ~0.5MB obs/request). The production leaf is **`v2_5` = `virtual_score`, a CPU heuristic** — the NN only supplies priors — so the GPU sits idle (28W/180W) while the dispatcher is the wall. **The orchestrator earns its keep only when the leaf is a GPU NN-value forward (the abandoned v1–v6 recipes); it outlived its workload.**
+- Turning the orchestrator OFF (per-worker inline eval) wins on every box: 5800x 7.4→**14.70** (orch-off W=16, cpu_bound), laptop 9.2→**19.26** (orch-off W=10, gpu 95%), xeon 5.4→**7.0** (→gpu_compute on the weak Turing). `orch_shards=2` is a partial recovery (5800x 11.2, laptop 13.4, xeon 6.9).
+- **fp16 is batch-regime-dependent** (reconciles the old "benched slower twice" claim — it was right for small batch): under the **orchestrator** (max_batch 256) fp16 is FASTER on Blackwell (5800x 5060Ti, 9.19 vs 7.40, +24%) and Ada (laptop 4070m, 12.05 vs 9.17, +31%), ~null on Turing. But under **orch-off** (small per-worker batch) fp16 HURTS: 5800x deploy orch-off+fp16 = 13.81 < 14.70 no-fp16 (−6%). The deploy pass also showed the laptop shards+fp16+mb16 stack (18.39) does NOT beat plain orch-off (19.26).
+
+**Decision — mixed-mode per box (the SIMPLEST lever wins where VRAM fits):**
+| box | config | mv/s (3-rep) | vs prod orch-on Wdef |
+|---|---|---|---|
+| 5800x (16GB) | **orch-off W=16, no fp16** | 14.70 | +99% |
+| xeon (8GB) | **orch_shards=2** (≈orch-off W=8) | 6.99 | +30% |
+| laptop (8GB) | **orch-off W=10** | 19.26 | +110% |
+
+Cluster 21.9→41.0 mv/s = **+87%**. fp16 + shards were red herrings on the strong boxes; orch-off alone wins where the net×W fits VRAM. **Not yet wired into the strength loop** — gated on a Pass-3 strength/correctness check that orch-off + prior-batching-order is strength-neutral (likely — MCTS is robust to tiny prior noise — but unverified; do not promote unverified).
+
+**Superseded cloud-era doctrines (the root cause of weeks of mis-tuning):**
+- **"orchestrator saturates / GIL bites at W≈48"** (this file ~L806/838/859/1085) was measured on the **2026-05-12 vast.ai 48-CORE EPYC + 5090** box ($0.37/hr). On the 12–16-thread cluster the GIL-bound dispatcher saturates at **W≈14**. W≈48 was never valid here.
+- **"orch-shards GIL only bites at W≈48"** (BACKLOG) — sharding gives +35–50% at W=14–24 on the cluster. Same vast.ai origin.
+- **"fp16 is not a lever / benched slower"** (BACKLOG:295, `bench_pipeline_sweep.py:74-77` comment) — REFINED to batch-conditional (above), not blanket-true.
+
+**Not doing:** a shared-memory-IPC orchestrator rewrite (the real single-thread fix — kill the mp.Queue pickle). Parked in BACKLOG; revisit ONLY if a future GPU-bound (NN-value) leaf returns, where cross-worker batching pays off again. For the CPU leaf, orch-off already wins.
+
+**Reversal cost:** low (mode flags only; no checkpoint/data change).
+**Phase:** 4 (self-play throughput).
+
 ## 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 beats a strong reference (+119 elo, first absolute signal)
 
 **Context.** Step 9 closed the value-as-leaf lever (calibration cliff — see entry below). Value-leaf needs scale we don't have. Joshua chose to PIVOT to **measure absolute strength + enable play**, explicitly NOT scale-blind (which would burn weeks into an unmeasurable ceiling). Selected: #1 measurement ladder, #2 headless play, #3 confirm blend.
