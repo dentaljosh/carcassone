@@ -25,7 +25,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## 2026-06-01 — Pipeline bench: orchestrator is the wrong tool for the CPU v2.7 leaf → mixed-mode self-play (+87% cluster); cloud-era W≈48 / fp16 doctrines superseded
 
-**Context.** Ran a per-box per-lever throughput sweep (`scripts/bench_pipeline_sweep.py`, real self-play at production knobs sims=200/v2_5 leaf/score_diff, 240s windows) on all 3 boxes, then a 3-rep verdict-grade confirm of the surprising cells, then a 3-rep deploy-config pass. Data: `/mnt/c/carc-shared/bench/sweep_*.csv`, `sweep_confirm_*.csv`, `sweep_deploy_*.csv`.
+**Context.** Ran a per-box per-lever throughput sweep (`scripts/bench_pipeline_sweep.py`, real self-play at production knobs sims=200/v2_5 leaf/score_diff, 240s windows) on all 3 boxes, then a 3-rep verdict-grade confirm of the surprising cells, then a 3-rep deploy-config pass. **Consolidated table (every cell tested, all passes, mean±std): [`experiments/bench_pipeline_results.csv`](experiments/bench_pipeline_results.csv)** (regenerate via `scripts/aggregate_bench_results.py`); raw per-pass data `/mnt/c/carc-shared/bench/sweep_*.csv`.
 
 **What the data says (all confirm/deploy numbers are 3-rep, CV ≤2%).**
 - **Worker count is FLAT** under the orchestrator on every box (5800x 7.4–8.1 across W=8–20; xeon ~5.4; laptop ~9.8). All read `ipc_latency` → workers block on the eval-server socket, not CPU.
