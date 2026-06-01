@@ -382,6 +382,17 @@ def matrix(box: str) -> list[tuple[str, dict]]:
         cells.append((f"timeout_ms={t}", {**base, "orch_batch_timeout_ms": t}))
     # Axis 6 — fp16, labelled by arch; Ada (laptop) is the one untested card.
     cells.append((f"fp16[{b['arch']}]", {**base, "orch_fp16": True}))
+    # DEPLOY — the STACKED per-box recommendation, measured as ONE cell. The
+    # 1-D axes above confirm each lever alone; this confirms the COMBINATION we
+    # ship (lever interactions are not guaranteed additive — e.g. fp16's GPU
+    # win shrinks when orch-off makes the 5800x CPU-bound). Select via --only deploy.
+    deploy = {
+        "5800x":  {**base, "orchestrator": False, "W": 16, "orch_fp16": True},
+        "xeon":   {**base, "orchestrator": True, "orch_shards": 2},
+        "laptop": {**base, "orchestrator": True, "orch_shards": 2,
+                   "orch_fp16": True, "mcts_batch": 16},
+    }
+    cells.append(("deploy", deploy[box]))
     return cells
 
 
@@ -394,13 +405,19 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=45)
     ap.add_argument("--measure", type=int, default=240)
     ap.add_argument("--sample-every", type=int, default=2)
-    ap.add_argument("--only", default="", help="substring filter on axis label")
+    ap.add_argument("--only", default="",
+                    help="comma-list of substrings; cell kept if ANY token matches its axis label")
+    ap.add_argument("--repeats", type=int, default=1,
+                    help="run each selected cell N times (round-robin) for a variance read")
     args = ap.parse_args()
 
     stat = gpu_static()
     b = BOX[args.box]
     threads = os.cpu_count() or b["threads"]   # real count beats the hardcoded guess
-    cells = [(lbl, cfg) for lbl, cfg in matrix(args.box) if args.only in lbl]
+    only_toks = [t for t in args.only.split(",") if t]
+    cells = [(lbl, cfg) for lbl, cfg in matrix(args.box)
+             if not only_toks or any(t in lbl for t in only_toks)]
+    cells = cells * max(1, args.repeats)   # round-robin repeats for thermal/variance read
     out = Path(args.out_csv)
     out.parent.mkdir(parents=True, exist_ok=True)
     samples_path = out.parent / f"samples_{args.box}.csv"
