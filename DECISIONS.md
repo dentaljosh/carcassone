@@ -52,6 +52,11 @@ Cluster 21.9→41.0 mv/s = **+87%**. fp16 + shards were red herrings on the stro
 **Reversal cost:** low (mode flags only; no checkpoint/data change).
 **Phase:** 4 (self-play throughput).
 
+**Phase-3 eval addendum (same session).** Added `--mode eval` + BENCHTP to `eval_net_vs_heuristic` and swept its W (no-orchestrator, batch-1 priors + CPU leaf — the n=400-gauntlet path; n=1/cell screen). Findings:
+- **Eval is FASTEST on the laptop = 15.8 mv/s (4070m, GPU-bound 99%) — 2.2× the 5800x (7.1) and 3× the xeon (5.3).** Box-ranking is more lopsided than self-play (an n=400 gauntlet ≈ 63 min on laptop vs ≈2.3 hr on 5800x). So verdict gauntlets should run on the laptop, or work-steal across 3 (`--shared-claim`), NOT inline on the 5800x — yet the in-loop anchor-gate (`run_pathb_cluster_loop.sh:145`) currently runs inline on the 5800x (the *slowest* eval box). Move it / fan it out when convenient.
+- **The "eval → W≤10 CPU-bound" rule (CLAUDE.md) is box-dependent — REFINED:** only the strong-GPU 5800x is CPU/latency-bound (plateau ~7 across W=8–16, peak W≈10). The GPU-weaker xeon (Turing) and laptop (Ada) are **GPU-bound** and want W≈14–16 (more workers keep the slow GPU fed — same as orchestrator self-play, opposite of the rule). xeon default W=12 leaves ~5%; bump eval `--workers` to 14–16.
+- No big throughput knob remains — the find_farm/leaf speedup (2026-05-29) already captured it; defaults are near-optimal except the xeon W bump + the placement win. Data: `sweep_evalw_*.csv`.
+
 ## 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 beats a strong reference (+119 elo, first absolute signal)
 
 **Context.** Step 9 closed the value-as-leaf lever (calibration cliff — see entry below). Value-leaf needs scale we don't have. Joshua chose to PIVOT to **measure absolute strength + enable play**, explicitly NOT scale-blind (which would burn weeks into an unmeasurable ceiling). Selected: #1 measurement ladder, #2 headless play, #3 confirm blend.
