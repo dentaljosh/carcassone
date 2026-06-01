@@ -164,6 +164,17 @@ def _pctl(xs: list[float], q: float) -> float:
 
 
 def build_cmd(checkpoint: str, scratch: Path, cfg: dict) -> list[str]:
+    if cfg.get("mode") == "eval":
+        # PHASE-3 eval path: eval_net_vs_heuristic.py — per-worker batch-1, NO
+        # orchestrator, CPU virtual_score leaf dominates (BACKLOG:23-29). Sweeps W
+        # only to find the CPU-bound knee. Huge --n so it never finishes the window;
+        # fresh out-root each cell (run_cell rmtree's scratch) -> no resume-cache.
+        return [PY, "-u", "scripts/eval_net_vs_heuristic.py",
+                "--checkpoint", checkpoint, "--n", "100000",
+                "--sims", str(cfg.get("sims", 200)), "--c-puct", "3.0",
+                "--workers", str(cfg["W"]),
+                "--out-root", str(scratch), "--out-subdir", "benchtmp",
+                "--seed-start", str(cfg.get("seed_start", 7_000_000))]
     cmd = [PY, "-u", "scripts/run_selfplay_iter.py",
            "--checkpoint", checkpoint, "--output-root", str(scratch),
            "--iter", "0", "--games", "100000",
@@ -396,6 +407,16 @@ def matrix(box: str) -> list[tuple[str, dict]]:
     return cells
 
 
+def eval_matrix(box: str) -> list[tuple[str, dict]]:
+    """PHASE-3 eval W-sweep (eval_net_vs_heuristic, no orchestrator, CPU leaf).
+    Spans the CPU-bound knee incl. a bit of oversubscription past thread count."""
+    b = BOX[box]
+    base = dict(mode="eval", orchestrator=False, orch_shards=1, mcts_batch=8,
+                orch_batch_timeout_ms=2.0, orch_fp16=False, W=b["Wdef"])
+    ws = [w for w in (6, 8, 10, 12, 14, 16, 20) if w <= b["threads"] + 4]
+    return [(f"eval W={w}", {**base, "W": w}) for w in ws]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--box", required=True, choices=list(BOX))
@@ -409,13 +430,16 @@ def main() -> int:
                     help="comma-list of substrings; cell kept if ANY token matches its axis label")
     ap.add_argument("--repeats", type=int, default=1,
                     help="run each selected cell N times (round-robin) for a variance read")
+    ap.add_argument("--mode", choices=["selfplay", "eval"], default="selfplay",
+                    help="selfplay = run_selfplay_iter sweep; eval = Phase-3 eval_net_vs_heuristic W-sweep")
     args = ap.parse_args()
 
     stat = gpu_static()
     b = BOX[args.box]
     threads = os.cpu_count() or b["threads"]   # real count beats the hardcoded guess
+    mat = eval_matrix if args.mode == "eval" else matrix
     only_toks = [t for t in args.only.split(",") if t]
-    cells = [(lbl, cfg) for lbl, cfg in matrix(args.box)
+    cells = [(lbl, cfg) for lbl, cfg in mat(args.box)
              if not only_toks or any(t in lbl for t in only_toks)]
     cells = cells * max(1, args.repeats)   # round-robin repeats for thermal/variance read
     out = Path(args.out_csv)

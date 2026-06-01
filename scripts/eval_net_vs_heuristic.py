@@ -46,6 +46,7 @@ from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrap
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.selfplay import _bench_tick  # gated moves/s instrumentation (CARC_BENCH_TP)
 
 REPO = Path(__file__).resolve().parent.parent
 EVAL_ROOT = REPO / "data" / "ladder"
@@ -143,6 +144,7 @@ def _play_one(args) -> GameResult:
             action = heur_mcts.best_action(board)
         board, _ = game.get_next_state(board, action)
         moves += 1
+        _bench_tick()  # no-op unless CARC_BENCH_TP set
 
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
