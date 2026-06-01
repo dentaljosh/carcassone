@@ -23,6 +23,23 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-01 — Strength-push loop wired: mixed-mode + anchor-fraction + plateau guard (ready to launch, HELD for go)
+
+**Context.** With the bench done (entry below), wired the bench-optimal config + the long-deferred anchor-fraction strength loop into `~/run_pathb_cluster_loop.sh` (the untracked production launcher; backed up to `code_sync/`).
+
+**What was wired (all 6, two smokes clean):**
+1. **Mixed-mode self-play** — `selfplay_mode()` per box: 5800x orch-off W=16, xeon `--orch-shards 2` (W=18), laptop orch-off W=10. +87% cluster (21.9→41.0 mv/s). Strength-neutral: orch-off uses the inline evaluator that `tests/test_eval_server.py` proves matches the orchestrator <1e-5 — **this is the Pass-3 check, satisfied by existing passing tests, no new experiment needed.**
+2. **3-box anchor-gate fan-out** — gate launches on all boxes with `--shared-claim`; after `wait_for_count`, a consolidated Python tally over all boxes' JSONs (eval is fastest on the laptop, so fanning beats inline-on-5800x).
+3. **WARM/anchor/gate-ref = iter_11** — default `WARM_SRC` now the confirmed-strongest ckpt; gates cumulative climb vs a FIXED ref.
+4. **Anchor-fraction self-play** — `--anchor-fraction 0.3 --anchor-checkpoint <WARM=iter_11>` on the self-play cmd (anchor fixed at iter_11 while warm_from chains). Review-hardened (REVIEW_LOG iters 5-8); per-worker anchor-net path works under orch-off (smoke-confirmed, no scalar-width crash).
+5. **Plateau guard** — `stop-after-MAX_FLAT(=2)`: tracks the best gate wr vs iter_11, stops after 2 consecutive non-improving iters. n=ANCHOR_GAMES(40) is noisy (1σ≈±8%) → coarse; raise ANCHOR_GAMES/MAX_FLAT to tighten. (This guard previously did NOT exist.)
+6. **Safety** — clobber guard (refuses START=0 over an existing `iter_00.pt`) + default `RUN=pathb_anchor` (fresh dir, can't overwrite the pathb_loop screening ckpts iter_00..iter_11).
+
+**Decision:** loop is launch-ready, HELD for Joshua's go (big multi-box compute, ~9–10 hr for 12 iters ≈2× faster post-bench). Launch: `RUN=pathb_anchor nohup nice -n 19 bash /home/doctor/run_pathb_cluster_loop.sh > /tmp/pathb_anchor.log 2>&1 & disown`. sims=200 first; escalate to 800 only if it gates positive.
+
+**Reversal cost:** low (launcher only; checkpoints/data untouched until launched).
+**Phase:** 4 (strength push).
+
 ## 2026-06-01 — Pipeline bench: orchestrator is the wrong tool for the CPU v2.7 leaf → mixed-mode self-play (+87% cluster); cloud-era W≈48 / fp16 doctrines superseded
 
 **Context.** Ran a per-box per-lever throughput sweep (`scripts/bench_pipeline_sweep.py`, real self-play at production knobs sims=200/v2_5 leaf/score_diff, 240s windows) on all 3 boxes, then a 3-rep verdict-grade confirm of the surprising cells, then a 3-rep deploy-config pass. **Consolidated table (every cell tested, all passes, mean±std): [`experiments/bench_pipeline_results.csv`](experiments/bench_pipeline_results.csv)** (regenerate via `scripts/aggregate_bench_results.py`); raw per-pass data `/mnt/c/carc-shared/bench/sweep_*.csv`.
