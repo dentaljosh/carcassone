@@ -2,7 +2,9 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-02) — 🟢 PHASE 0 DONE + RIVER DROPPED + SYMMETRY-AUG built. 🔵 RE-BASELINE RUNNING. Plan staged A→B→C.
+## Right now (2026-06-02) — 🟢 PHASE 0 DONE + RIVER DROPPED + SYMMETRY-AUG built + RE-BASELINE done (iter_11 = +25.2 elo) + DOCS rewritten + CODE-REVIEW iter-9 clean. 🔵 STAGE A2 SWEEP RUNNING (cap + c_puct screens).
+
+**🔵 IN FLIGHT (2026-06-02 ~12:25):** Stage A2 wave 1 — cap + c_puct re-sweep on the new base-only game, 3-box, n=100/cell. `eval_iter_head_to_head.py` iter_11 BOTH sides, varying only the swept knob (isolates its effect on the production NeuralMCTS player). Cells: `self_cap12_c3` (noise sanity), `cap08`/`cap16` (vs prod cap=12, C1-driven), `cpuct2`/`cpuct4` (vs prod c=3.0, C2-driven). Launcher `~/sweep_stageA.sh` (tracked snapshot `scripts/sweep_stageA.sh`), out `/mnt/c/carc-shared/sweepA/<cell>/`. ETA ~80 min for screens → n=400 verdict on winners. **FPU is wave 2** (code edit to `mcts.py:_select_child_puct` + re-sync, after wave 1). A6 de-saturated value-target mode (`score_diff_wide`=tanh/40) landed (use at Stage B).
 
 **READ FIRST:** [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) (the path forward) + [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md) (the concrete build) + [docs/research/foundational_audit_2026-06-02.md](docs/research/foundational_audit_2026-06-02.md) (the evidence). These SUPERSEDE the old leaf-gate / afterstate / residual-leaf / anchor-fraction plan (now history in DECISIONS + git).
 

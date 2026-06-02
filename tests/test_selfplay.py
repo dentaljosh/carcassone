@@ -60,11 +60,26 @@ def test_value_targets_score_diff_mode() -> None:
         )
 
 
+def test_value_targets_score_diff_wide_mode() -> None:
+    """value_target='score_diff_wide' → tanh(margin/40), the C6 de-saturated
+    target. Like score_diff it is graded inside (-1, 1), but with a wider norm
+    it sits further from the saturating ±1 region for the same margin — so for
+    any non-draw the |wide| magnitude is strictly LESS than the |/15| one."""
+    wide = _play(seed=1, sims=2, temp_threshold=3, value_target="score_diff_wide")
+    narrow = _play(seed=1, sims=2, temp_threshold=3, value_target="score_diff")
+    wvals, nvals = wide.values.tolist(), narrow.values.tolist()
+    assert all(-1.0 < v < 1.0 for v in wvals), f"out of (-1,1): {set(wvals)}"
+    wmag = max(abs(v) for v in wvals)
+    nmag = max(abs(v) for v in nvals)
+    if nmag > 1e-9:  # same seed → same game → same margin; not a draw
+        assert wmag < nmag, f"wide {wmag} should be < narrow {nmag} (less saturated)"
+
+
 def test_value_targets_share_one_magnitude() -> None:
     """Every position's target is ±z_p0 (sign-flipped by player-to-move), so
     across one game the targets take at most one distinct magnitude. Holds
-    for both encodings — it is the 'sign flips with the player' invariant."""
-    for vt in ("score_diff", "wl"):
+    for all encodings — it is the 'sign flips with the player' invariant."""
+    for vt in ("score_diff", "score_diff_wide", "wl"):
         ds = _play(seed=2, sims=2, temp_threshold=3, value_target=vt)
         mags = {round(abs(v), 6) for v in ds.values.tolist()}
         assert len(mags) == 1, f"{vt}: >1 distinct magnitude: {mags}"

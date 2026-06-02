@@ -379,11 +379,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
     p.add_argument(
-        "--value-target", choices=["score_diff", "wl"], default="score_diff",
+        "--value-target", choices=["score_diff", "score_diff_wide", "wl"],
+        default="score_diff",
         help="Per-position value target encoding. 'score_diff' (default) = "
              "tanh((p0-p1)/15), the graded margin in the same currency as the "
              "v2.7 heuristic leaf (Option 2, 2026-05-17 — so a value head "
              "blended into the leaf predicts a like-for-like quantity). "
+             "'score_diff_wide' = tanh((p0-p1)/40), the C6 de-saturated target "
+             "(/15 pins to ±1 for 30-80pt margins → MSE kills mid-range "
+             "calibration; use at the Stage-B retrain). "
              "'wl' = ±1/0, the AlphaZero-canonical win/loss target.",
     )
     p.add_argument(

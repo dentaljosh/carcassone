@@ -298,11 +298,17 @@ def play_one_selfplay_game(
     p1_score = int(board.state.scores[1])
     if value_target == "score_diff":
         z_p0 = float(np.tanh((p0_score - p1_score) / 15.0))
+    elif value_target == "score_diff_wide":
+        # C6 de-saturation: /15 pins to ±1 for 30-80pt margins, killing
+        # mid-range calibration under MSE. /40 keeps the graded margin inside
+        # tanh's responsive region for the realistic base-only score spread.
+        z_p0 = float(np.tanh((p0_score - p1_score) / 40.0))
     elif value_target == "wl":
         z_p0 = float(np.sign(p0_score - p1_score))
     else:
         raise ValueError(
-            f"value_target must be 'score_diff' or 'wl', got {value_target!r}"
+            "value_target must be 'score_diff', 'score_diff_wide', or 'wl', "
+            f"got {value_target!r}"
         )
     values_arr = np.array(
         [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
