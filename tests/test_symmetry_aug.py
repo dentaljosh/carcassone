@@ -202,6 +202,36 @@ def test_action_side_maps_are_inverse_of_board_src_maps():
         assert BR._SRC_CORNER[fwd] == c
 
 
+def test_action_rotation_perm_rotates_policy_consistently():
+    from carcassonne_ai.action_space import (
+        action_rotation_perm, action_size, rotate_action,
+    )
+
+    W = 9
+    A = action_size(W)
+    P = action_rotation_perm(W)
+    assert P.shape == (A,)
+    assert sorted(P.tolist()) == list(range(A))  # bijection
+
+    rng = np.random.default_rng(1)
+    policy = rng.random(A).astype(np.float32)
+    policy /= policy.sum()
+    rotated = np.zeros_like(policy)
+    rotated[P] = policy
+    # mass preserved
+    np.testing.assert_allclose(rotated.sum(), policy.sum(), rtol=1e-6)
+    # each action's mass lands on its rotate_action slot
+    for a in range(A):
+        assert rotated[rotate_action(a, W)] == policy[a]
+    # 4 rotations of the vector return to the original
+    out = policy.copy()
+    for _ in range(4):
+        nxt = np.zeros_like(out)
+        nxt[P] = out
+        out = nxt
+    np.testing.assert_allclose(out, policy, atol=0)
+
+
 def test_passes_are_rotation_fixed():
     from carcassonne_ai.action_space import (
         meeple_pass_index, rotate_action, tile_pass_index,

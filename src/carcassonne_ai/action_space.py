@@ -180,6 +180,31 @@ def rotate_action(idx: int, window_size: int) -> int:
     raise ValueError(f"action index {idx} out of range for window {W}")
 
 
+def action_rotation_perm(window_size: int):
+    """Permutation array P with P[a] = rotate_action(a, W), for rotating a whole
+    policy/valid-mask vector under a 90° CCW board rotation:
+
+        rotated_policy = np.zeros_like(policy); rotated_policy[P] = policy
+        rotated_mask   = np.zeros_like(mask);   rotated_mask[P]   = mask
+
+    (P is a bijection, so this scatters each action's value to its rotated slot.)
+    Cached per window size.
+    """
+    import numpy as np
+
+    cached = _ROT_PERM_CACHE.get(window_size)
+    if cached is None:
+        A = action_size(window_size)
+        cached = np.fromiter(
+            (rotate_action(a, window_size) for a in range(A)), dtype=np.int64, count=A
+        )
+        _ROT_PERM_CACHE[window_size] = cached
+    return cached
+
+
+_ROT_PERM_CACHE: dict[int, "object"] = {}
+
+
 def encode(action: Action, off: WindowOffset, phase: str) -> int:
     """Encode any engine Action to a flat index. `phase` is "tiles" or "meeples"."""
     if isinstance(action, TileAction):
