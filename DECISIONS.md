@@ -23,6 +23,29 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
+
+**Context.** The correction plan said "batch C3+C4+C5+C6+C7+C8 into ONE retrain (pay it once)." A 3-agent review of the Phase-0 work + a direct code read changed the calculus.
+
+**Decision: stage by QUESTION, cheapest-informative-first** (Joshua-approved). Full spec: [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md).
+  - **Stage A** (no retrain): re-baseline on the new game + cheap code (symmetry aug, gate, exploration, target mode) + the owed re-sweeps.
+  - **Stage B** (cheap retrain): does the value head IN the search loop (C3, the F-B1 root cause) beat the v2.7 ceiling with NO new planes? Gate Stage C on it.
+  - **Stage C** (expensive): representation planes (C4), only if Stage B breaks upward.
+**Reason:** C4 (representation) is ~1 day of engineering and is independent of whether C3 helps. Testing the near-free root-cause lever first de-risks the expensive build. "A few days of real science" > one big bet we can't attribute.
+**Reversal cost:** low (it's a sequencing choice).
+
+**Review findings that shaped this (3 agents, no new critical bugs):**
+- **F-B1 CONFIRMED:** prod loop `run_pathb_cluster_loop.sh:283` passes `--leaf-eval v2_5`; the `nn` argparse default is overridden. The net value really never drove a move.
+- Negamax signs, canonical form, action round-trip, terminal scoring re-verified clean.
+- **C2 PUCT-selection residual** (pre-existing, beyond the original C2 fix): `_select_child_puct` double-scored transposition-collided actions. FIXED 2026-06-02 (commit 3a31d2a) via an incremental alias structure on `_NeuralNode` + `_link_child`; base `MCTS` selection left unchanged (it's the reference ladder — changing it breaks comparability). Verified by an extended `scripts/verify_mcts_transposition_fix.py`.
+
+**Stage-A work landed (committed + pushed):**
+- **C5 symmetry augmentation DONE** end-to-end (rotate board/action/policy + dataset augment + streaming-loader flag `--augment-rotations`, default off; 16 tests). 90° only; reflection deferred.
+- Loop orchestrator **version-controlled** (`scripts/run_pathb_cluster_loop.sh`).
+- **3 boxes synced** to HEAD via an offline git **bundle** on the CIFS share — the remotes have no github DNS over Tailscale, so `push`+`pull` doesn't work; `git bundle create` on the share + `git fetch <bundle>` + `git reset --hard` on each box does. Reusable pattern.
+- **Re-baseline RUNNING:** iter_11 vs HeuristicMCTS, n=400, 3-box, on the new base-only bug-fixed game (n=8 smoke 3W/5L=0.375 — iter_11 likely lost its edge; expected after cleaning the foundation).
+**Phase:** Phase 1 (staging + Stage A).
+
 ## 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
 
 **Context.** Acting on the foundational-audit correction plan. Joshua confirmed "drop rivers" and "get started on all those bug fixes."

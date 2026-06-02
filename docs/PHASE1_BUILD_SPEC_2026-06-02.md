@@ -37,13 +37,14 @@ representation work only if it pays. One retrain per *question*, not one retrain
 
 Everything here is unit-testable or eval-only — NO multi-hour self-play. All of it is owed anyway.
 
-### A1. Re-baseline measurement on the bug-fixed, base-only game
+### A1. Re-baseline measurement on the bug-fixed, base-only game — 🔵 RUNNING (2026-06-02)
 - **Why:** C1 changed scoring, C2 changed search, River is gone → every prior elo/cap/c_puct
   number was measured on a different game. We are flying blind until we re-anchor.
 - **Do:** re-run the HeuristicMCTS ladder reference and the iter_11 vs HeuristicMCTS anchor at the
   new game (n=400, sims=200, base-only). Establishes the new "where we actually are" number.
-- **Cost:** one eval sweep (no training). ETA: bench first (base-only games are shorter → faster);
-  state ETA + pick boxes before launching.
+- **Status:** n=400 3-box run live (`/home/doctor/run_rebaseline.sh`, disjoint seed shards 700000–700399
+  → `/mnt/c/carc-shared/rebaseline/iter_11_s200_h200_c30`). n=8 smoke was **3W/5L = 0.375** (vs +181.7
+  elo on the old River/buggy game) — if confirmed, iter_11 is no longer champion on the real game.
 
 ### A2. Re-sweep v2.7 caps (owed after C1) + c_puct/FPU (owed after C2)
 - **Files:** env `CARCASSONNE_V25_CAP`, `CARCASSONNE_V25_DROP_THREE_OPEN`; `c_puct`; FPU in
@@ -54,26 +55,29 @@ Everything here is unit-testable or eval-only — NO multi-hour self-play. All o
 - **Note:** FPU change is a code edit to `_select_child_puct` (the same hot path we just touched) —
   small, A/B it.
 
-### A3. Symmetry augmentation (C5) — data-loader change, works on existing + future .npz
-- **Files:** `board_repr.py` (add `rotate_board_repr_90` — permute per-side edge channels [0,16),
-  internal-pair channels [19,31), meeple-side [31,41), farmer-corner [41,49), and the reference-tile
-  blocks [49,77) the same way; rotate the last-placed one-hot [77,78)); `action_space.py` (add
-  `rotate_action` — remap position+rotation+meeple-side indices); `warmstart.py` data loader (emit 4
-  rotations). **Defer reflection** (curved roads aren't reflection-symmetric).
-- **Test:** round-trip `rotate×4 == identity`; a placement's value/scoring is rotation-invariant;
-  policy target permutes consistently. No retrain to build/test.
+### A3. Symmetry augmentation (C5) — ✅ DONE 2026-06-02
+- **Built:** `board_repr.rotate_board_repr_90` (+ `_batch`), `action_space.rotate_action` +
+  `action_rotation_perm`, `warmstart.rotate_dataset_90` / `augment_with_rotations`, wired into the
+  streaming loader (`make_streaming_dataset(augment_rotations=)`) + `train_iter.py --augment-rotations`
+  (default OFF). 90° only; reflection deferred (curved roads).
+- **Verified:** 16 tests (`tests/test_symmetry_aug.py`) — round-trip ×4==identity, hand-geometry
+  direction, tile-rotation delta matched to the edge-channel perm, policy mass preserved, streaming
+  yields 4× rows with the flag. **To USE: pass `--augment-rotations` at the Stage-B retrain.**
 
 ### A4. Exploration knobs (C8)
 - **Files:** `run_selfplay_iter.py:378-380` defaults → `dirichlet_alpha 0.3→0.53` (measured),
   widen `temp_threshold` past the opening. Pure config; A/B during the Stage-B retrain.
 
 ### A5. Conditional gate (C7) — keep best, don't random-walk
-- **File:** `run_pathb_cluster_loop.sh`. Change `:277` `warm_from` to the **best-so-far** checkpoint
-  (track `best_ckpt` alongside existing `best_iter`); adopt iter N as the new best/parent only when
-  it beats best at **verdict-n** (`confirm_gate` already exists) vs a FIXED, ideally
-  OUT-OF-LINEAGE reference (HeuristicMCTS, per `anchor_before_scaling`). Else warm-from best-so-far.
-- **Risk:** shell-only, but it's the untracked production script → commit a copy into the repo
-  (`scripts/`) so it's version-controlled and reviewable (it currently isn't).
+- **pt1 ✅ DONE 2026-06-02:** the loop script is now version-controlled at
+  `scripts/run_pathb_cluster_loop.sh` (md5-verified snapshot; running copy stays in `~/` per the
+  share chicken-egg). Confirmed against real code: warm-from iter_(N-1) is unconditional (:285), the
+  gate is advisory (:318), but `best_iter` + `confirm_gate` machinery already exists (:355,:148) → the
+  logic change is small.
+- **pt2 PENDING (Stage-B wiring):** change `warm_from` to the **best-so-far** checkpoint (track
+  `best_ckpt`); adopt iter N as parent only when it beats best at **verdict-n** (`confirm_gate`) vs a
+  FIXED, ideally OUT-OF-LINEAGE reference (HeuristicMCTS, per `anchor_before_scaling`). Validated only
+  when the loop runs → do it in the Stage-B pass, not blind.
 
 ### A6. De-saturated value target (C6) — add the mode now, use it in Stage B
 - **File:** `selfplay.py:300` + `run_selfplay_iter.py` `--value-target`. Add a `score_diff_wide`

@@ -113,10 +113,10 @@ are off-distribution now (expected — Phase 1 warmstarts from scratch).
 
 ## PHASE 2 — Data / training-quality multipliers (do alongside the Phase-1 retrain)
 
-- **C5 [MAJOR] Symmetry augmentation:** rotation (4×) in the data loader — `rotate_board_repr_90`
-  (permute per-side edge / internal-pair / meeple-side channels + farmer corners) + `rotate_action`
-  (remap policy target). Works on existing .npz, no scratch retrain. Defer reflection (curved roads
-  aren't reflection-symmetric). BACKLOG-known, never done.
+- **C5 [MAJOR] Symmetry augmentation — ✅ DONE 2026-06-02 (Stage A3):** rotation (4×) built end-to-end
+  — `rotate_board_repr_90` + `rotate_action` + `action_rotation_perm` + `augment_with_rotations`, wired
+  into the streaming loader behind `--augment-rotations` (default off). 16 tests. Reflection deferred
+  (curved roads). Flip the flag at the Stage-B retrain.
 - **C6 [MAJOR] De-saturate the value target:** `tanh((p0-p1)/15)` pins to ±1 for 30-80pt margins →
   MSE kills mid-range calibration. Widen norm (e.g. /40) or switch to W/L + BCE; re-derive the 0.61
   corr reference. (selfplay.py:300, train_iter.py:359)
