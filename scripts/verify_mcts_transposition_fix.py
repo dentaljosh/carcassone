@@ -64,6 +64,8 @@ def main():
     raw_gt_dedup_with_collision = 0
     dedup_has_collision = 0        # FIX BROKEN if > 0
     dedup_ne_unique = 0           # FIX BROKEN if > 0
+    sel_groups = 0                # collision groups checked (selection side)
+    sel_alias_bad = 0            # FIX BROKEN if > 0: group not (n-1 aliases + 1 repr)
     seed = args.seed_start
 
     while nodes_probed < args.n:
@@ -105,6 +107,16 @@ def main():
         if colliding:
             nodes_with_collision += 1
             total_colliding_actions += n_collide_actions
+            # --- selection-side (PUCT) alias structure check ---
+            # Each collision group must have exactly one representative in
+            # child_canon and (n-1) members flagged as aliases (skipped in PUCT),
+            # with the representative carrying the folded prior_bonus.
+            for cid, acts in colliding.items():
+                sel_groups += 1
+                canon = root.child_canon.get(cid)
+                n_alias = sum(1 for a in acts if a in root.child_aliases)
+                if canon is None or n_alias != len(acts) - 1 or canon in root.child_aliases:
+                    sel_alias_bad += 1
 
         # --- fixed view: root_visit_distribution (deduped) ---
         counts, actions = mcts.root_visit_distribution(board)
@@ -131,11 +143,15 @@ def main():
     print(f"nodes where raw>dedup (inflated): {raw_gt_dedup_with_collision}")
     print(f"FIXED vector still has collision: {dedup_has_collision}  (must be 0)")
     print(f"dedup-sum != unique-child-sum:    {dedup_ne_unique}  (must be 0)")
+    print(f"selection alias groups checked:   {sel_groups}")
+    print(f"selection alias structure BAD:    {sel_alias_bad}  (must be 0)")
     ok = (
         nodes_with_collision > 0
         and dedup_has_collision == 0
         and dedup_ne_unique == 0
         and raw_gt_dedup_with_collision == nodes_with_collision
+        and sel_groups > 0
+        and sel_alias_bad == 0
     )
     print(f"VERDICT: {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1

@@ -330,6 +330,17 @@ class _NeuralNode:
     expanded: bool = False
     N: int = 0
     W: float = 0.0  # total value from player_to_move's perspective
+    # --- transposition-collision bookkeeping (C2 search-side fix) ---
+    # Rotations of a symmetric tile produce the IDENTICAL child board, so several
+    # actions link to the SAME child object. Without this, PUCT scores that one
+    # move once PER colliding action (each with its own prior) — the move gets
+    # multiple bites at the selection apple. We collapse them: the FIRST action
+    # to link a given child is its representative; later colliding actions become
+    # ALIASES (skipped in selection) and their prior is folded into the
+    # representative's `prior_bonus` so the move competes once with summed prior.
+    child_canon: dict[int, int] = field(default_factory=dict)   # id(child) -> repr action
+    child_aliases: set[int] = field(default_factory=set)        # actions to skip in PUCT
+    prior_bonus: dict[int, float] = field(default_factory=dict)  # repr action -> folded prior
 
     @property
     def Q(self) -> float:
@@ -594,6 +605,30 @@ class NeuralMCTS:
             terminal_value=terminal_value,
         )
 
+    def _link_child(
+        self, node: _NeuralNode, action: int, child: _NeuralNode
+    ) -> None:
+        """Attach `child` to `node` under `action`, maintaining the
+        transposition-collision alias structure (C2 search-side fix).
+
+        The FIRST action to link a given child object becomes that child's
+        representative. A later action that links the SAME object (a symmetric
+        rotation yielding the identical board) is recorded as an alias — skipped
+        by `_select_child_puct` — and its prior is folded once into the
+        representative's `prior_bonus`, so the move competes in PUCT exactly once
+        with the summed prior instead of once per colliding rotation.
+        """
+        node.children[action] = child
+        cid = id(child)
+        canon = node.child_canon.get(cid)
+        if canon is None:
+            node.child_canon[cid] = action
+        elif canon != action and action not in node.child_aliases:
+            node.child_aliases.add(action)
+            node.prior_bonus[canon] = (
+                node.prior_bonus.get(canon, 0.0) + node.priors.get(action, 0.0)
+            )
+
     def _expand(self, node: _NeuralNode, board: Board) -> None:
         """Query the network at this state; populate node.priors, node.leaf_value,
         node.valid_actions. Idempotent — safe to call multiple times.
@@ -697,7 +732,13 @@ class NeuralMCTS:
         sqrt_parent_N = math.sqrt(max(node.N, 1))
         best_action = node.valid_actions[0]
         best_score = -math.inf
+        aliases = node.child_aliases
+        prior_bonus = node.prior_bonus
         for action in node.valid_actions:
+            # Skip transposition aliases: a colliding rotation whose move is
+            # already represented by another action (its prior was folded in).
+            if aliases and action in aliases:
+                continue
             child = node.children.get(action)
             if child is None:
                 q = 0.0
@@ -705,7 +746,10 @@ class NeuralMCTS:
             else:
                 q = child.Q if child.player_to_move == node.player_to_move else -child.Q
                 n = child.N
-            u = self.c_puct * node.priors[action] * sqrt_parent_N / (1 + n)
+            p = node.priors[action]
+            if prior_bonus:
+                p += prior_bonus.get(action, 0.0)
+            u = self.c_puct * p * sqrt_parent_N / (1 + n)
             score = q + u
             if score > best_score:
                 best_score = score
@@ -774,7 +818,7 @@ class NeuralMCTS:
             if child is None:
                 fresh = self._create_node(board)
                 child = self._nodes.setdefault(fresh.state_key, fresh)
-                parent.children[action] = child
+                self._link_child(parent, action, child)
                 self._apply_vloss_at_child(parent, child)
                 path.append(child)
                 needs_eval = (not child.is_terminal) and (not child.expanded)
@@ -862,7 +906,7 @@ class NeuralMCTS:
                 # zero. (Matches _select_leaf_with_vloss's needs_eval logic.)
                 if not child.expanded:
                     self._expand(child, board)
-                node.children[action] = child
+                self._link_child(node, action, child)
                 path.append(child)
                 node = child
                 break

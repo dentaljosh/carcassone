@@ -37,11 +37,15 @@ round-trip, and terminal scoring (the audit's "CORRECT" list holds). Findings:
   is `nn`, but the production loop `run_pathb_cluster_loop.sh:283` explicitly passes
   `--leaf-eval v2_5` for self-play (and `v2_5` for every eval at :149/:217/:317). So prod
   self-play really did run the v2.7 leaf — the net value never drove a move. Root-cause intact.
-- **C2 residual [OPEN DECISION]:** the C2 fix covers the training *target* (`root_visit_distribution`)
-  and `best_action`, but `NeuralMCTS._select_child_puct` still scores transposition-collided
-  actions separately in the in-search PUCT argmax (pre-existing; corrupts search *exploration*,
-  not training *data*). Clean fix is invasive (expansion-time state-dedup + prior-summing in the
-  hot path) and changes search behavior → re-validate. Decide: fix now (retrain validates it) vs defer.
+- **C2 residual [✅ FIXED 2026-06-02, Joshua: fix now]:** `NeuralMCTS._select_child_puct` now skips
+  transposition aliases and competes each move once with the summed prior. Implemented via an
+  incremental alias structure on `_NeuralNode` (`child_canon`/`child_aliases`/`prior_bonus`),
+  maintained by a new `_link_child` helper at both child-link sites; the first action to link a
+  given child is its representative, later colliding rotations fold their prior in. Base `MCTS`
+  selection intentionally LEFT unchanged (it's the reference ladder — changing its search would
+  break comparability with prior ladder numbers; its `best_action` outcome is already collision-
+  robust). Verified `scripts/verify_mcts_transposition_fix.py` (now also checks the selection-side
+  alias structure: every collision group = n-1 aliases + 1 representative). Full suite green.
 - **C7 line-number drift:** the plan's C7 offsets (277/311/140) predate the current untracked loop
   script. Real gate = the anchor eval at `run_pathb_cluster_loop.sh:317`; whether it ever REJECTS
   (vs advisory) must be confirmed during the Phase-1 build, not assumed.
