@@ -23,7 +23,9 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
-## 2026-06-01 — Anchor-fraction self-play VERDICT: real +39 elo over iter_11 (v2.7 leaf ceiling is NOT absolute)
+## 2026-06-01 — Anchor-fraction self-play VERDICT: ~~real +39 over iter_11~~ → OVERTURNED by the ladder (no absolute gain)
+
+**⚠️ UPDATE (same day, ladder result `ladder_iter4_vs_heuristic_n400`): the +39 below was a FALSE POSITIVE.** iter_4 vs HeuristicMCTS @ c=3.0 n=400 = +165.1 elo vs iter_11's +181.7 → **diff −16.6 ±27.7 = 0.6σ = TIED** (iter_4 nominally *lower*). On the absolute, independent anchor at production c=3.0, **iter_4 is NOT stronger than iter_11.** The head-to-head +39 (c=1.5, vs the same-lineage iter_11) was **anchor-overfitting** (iter_4 trained 30% vs iter_11 → learned to beat *it specifically*) ± a c=1.5 artifact — classic [[feedback_anchor_before_scaling]]: relative-vs-lineage-anchor ≠ absolute strength. **anchor-fraction did NOT break the v2.7 leaf ceiling.** The "takeaways" below (esp. #1 "ceiling NOT absolute") are RETRACTED; the leaf ceiling stands. New lessons: (a) anchor against an INDEPENDENT reference, never a same-lineage one; (b) the ladder caught a false positive the head-to-head would have shipped — always confirm a relative gain absolutely. **Next lever = leaf rework (learned-residual leaf).** The original (now-superseded) reasoning is preserved below for the record.
 
 **Context.** First full run of the anchor-fraction strength loop (`RUN=pathb_anchor`: warm-chain from iter_11, 30% of self-play games vs the fixed iter_11 anchor, all 3 boxes). Ran iters 0–6, then self-stopped via the new confirm-before-kill (plateau confirmed). The open question from the prompt-superseding goal: can the *learned* signal exceed the hand-crafted v2.7 leaf, which was hypothesized to cap strength near iter_11?
 
