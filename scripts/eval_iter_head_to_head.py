@@ -87,6 +87,8 @@ _worker_old_sims: int = 0   # old side; == _worker_sims unless an asymmetric-sim
 _worker_c_puct: float = 1.5     # symmetric default
 _worker_new_c_puct: float = 1.5  # NEW side's c_puct (= _worker_c_puct unless overridden)
 _worker_old_c_puct: float = 1.5  # OLD side's c_puct (= _worker_c_puct unless overridden)
+_worker_new_fpu: float | None = None  # NEW side FPU reduction (None = legacy q=0)
+_worker_old_fpu: float | None = None  # OLD side FPU reduction (None = legacy q=0)
 _worker_eval_dir: str = ""
 _worker_batch_size: int = 1
 _worker_virtual_loss: float = 1.0
@@ -120,6 +122,30 @@ def _result_path(
     return Path(eval_dir) / (
         f"s{sims:04d}o{old_sims:04d}_seed{seed:06d}_p{new_player}.json"
     )
+
+
+def _build_work(seed_start: int, games: int, paired: bool) -> list[tuple[int, int]]:
+    """The (deck_seed, new_player) list to play.
+
+    Unpaired (default, legacy): game i = deck `seed_start+i`, net color `i%2` —
+    net-as-p0 and net-as-p1 use DIFFERENT decks, so first-player advantage is
+    averaged over different decks instead of cancelled (round-2 audit G-M2).
+
+    Paired (--paired): each deck is played BOTH ways (same seed, p0 AND p1), so
+    within a pair the net sees both sides of the identical deck → first-player
+    advantage cancels exactly and variance ~halves. `_result_path` keys on
+    (seed, new_player) so the two orientations write distinct files.
+    """
+    if not paired:
+        return [(seed_start + i, i % 2) for i in range(games)]
+    work: list[tuple[int, int]] = []
+    for d in range(games // 2):
+        base = seed_start + d
+        work.append((base, 0))
+        work.append((base, 1))
+    if games % 2:  # odd count → one leftover unpaired game
+        work.append((seed_start + games // 2, 0))
+    return work
 
 
 def _try_load(path: Path) -> GameResult | None:
@@ -228,6 +254,7 @@ def _worker_init(
     shared_claim: bool = False, claim_host: str = "",
     claim_stale_secs: int = 5400,
     new_c_puct: float | None = None, old_c_puct: float | None = None,
+    new_fpu: float | None = None, old_fpu: float | None = None,
 ) -> None:
     """Pool initializer.
 
@@ -247,6 +274,7 @@ def _worker_init(
     global _worker_new_handles, _worker_old_handles
     global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
     global _worker_new_c_puct, _worker_old_c_puct
+    global _worker_new_fpu, _worker_old_fpu
     global _worker_new_farm, _worker_old_farm
 
     # Path B Step E: each side's Game must emit the scalar width its net/server
@@ -260,6 +288,8 @@ def _worker_init(
     _worker_c_puct = c_puct
     _worker_new_c_puct = new_c_puct if new_c_puct is not None else c_puct
     _worker_old_c_puct = old_c_puct if old_c_puct is not None else c_puct
+    _worker_new_fpu = new_fpu
+    _worker_old_fpu = old_fpu
     _worker_eval_dir = eval_dir
     _worker_batch_size = batch_size
     _worker_virtual_loss = virtual_loss
@@ -381,13 +411,13 @@ def _play_one(args: tuple[int, int]) -> GameResult | None:
 
     new_mcts = NeuralMCTS(
         game=game_new, evaluator=new_eval, simulations=_worker_sims,
-        seed=seed, c_puct=_worker_new_c_puct,
+        seed=seed, c_puct=_worker_new_c_puct, fpu_reduction=_worker_new_fpu,
         batch_size=_worker_batch_size, batch_evaluator=new_batch_eval,
         virtual_loss=_worker_virtual_loss,
     )
     old_mcts = NeuralMCTS(
         game=game_old, evaluator=old_eval, simulations=_worker_old_sims,
-        seed=seed + 1, c_puct=_worker_old_c_puct,
+        seed=seed + 1, c_puct=_worker_old_c_puct, fpu_reduction=_worker_old_fpu,
         batch_size=_worker_batch_size, batch_evaluator=old_batch_eval,
         virtual_loss=_worker_virtual_loss,
     )
@@ -491,14 +521,33 @@ def main(argv: list[str] | None = None) -> int:
         "--old-c-puct", type=float, default=None,
         help="Per-side override for c_puct on the OLD side (see --new-c-puct).",
     )
+    p.add_argument(
+        "--new-fpu", type=float, default=None,
+        help="FPU reduction for the NEW side (round-2 audit F-D-FPU). None "
+             "(default) = legacy optimistic-zero (unvisited child q=0). A float r "
+             "uses q = parent.Q - r. A/B vs --old-fpu with same checkpoint both "
+             "sides to test FPU (e.g. --new-fpu 0.2 --old-fpu none-equivalent).",
+    )
+    p.add_argument(
+        "--old-fpu", type=float, default=None,
+        help="FPU reduction for the OLD side (see --new-fpu). Default None = "
+             "legacy q=0 (the current production behavior).",
+    )
     p.add_argument("--workers", type=int, default=8,
                    help="Pool workers. Default 8 leaves SMT headroom for "
                         "other workloads on a 5800X. For dedicated runs, "
                         "W=16 is the empirical local optimum (measured "
                         "2026-05-09 on RTX 5060 Ti).")
-    p.add_argument("--seed-start", type=int, default=900_000,
-                   help="Eval seed base (kept high so it doesn't collide with "
-                        "self-play seeds, which use iter * 10_000 + game_idx).")
+    p.add_argument("--seed-start", type=int, default=1_000_000_000,
+                   help="Eval seed base. Default 1e9 keeps it FAR above self-play "
+                        "seeds (iter*10_000+game_idx) — round-2 audit G-M6 found "
+                        "the old 900k floor collides with self-play at iter>=80, "
+                        "contaminating evals with trained-on decks.")
+    p.add_argument("--paired", action="store_true",
+                   help="G-M2: play each deck BOTH colors (seed,p0)+(seed,p1) so "
+                        "first-player advantage cancels within the pair and "
+                        "variance ~halves. --games is the TOTAL (= 2 x decks); "
+                        "use an even number. Strongly preferred for verdicts.")
     p.add_argument(
         "--batch-size", type=int, default=1,
         help="NeuralMCTS batch size for virtual-loss / batched-eval mode "
@@ -616,9 +665,7 @@ def main(argv: list[str] | None = None) -> int:
     # 16 × 2 = 6.4GB), but watch nvidia-smi if you scale up.
     n_workers = min(args.workers, args.games)
 
-    pool_args = [
-        (args.seed_start + i, i % 2) for i in range(args.games)
-    ]
+    pool_args = _build_work(args.seed_start, args.games, args.paired)
     print(
         f"head-to-head: iter_{args.iter_idx:02d} vs iter_{args.vs_iter:02d}, "
         f"{args.games} games at sims={args.sims} (old side: {args.old_sims or args.sims}), "
@@ -714,6 +761,7 @@ def main(argv: list[str] | None = None) -> int:
                 new_leaf_cfg, old_leaf_cfg, args.old_sims,
                 args.shared_claim, args.claim_host, args.claim_stale_secs,
                 args.new_c_puct, args.old_c_puct,
+                args.new_fpu, args.old_fpu,
             ),
         ) as pool:
             scanned = 0
@@ -745,9 +793,7 @@ def main(argv: list[str] | None = None) -> int:
     # the CONSOLIDATED cross-box outcome, not just this box's contribution.
     if args.shared_claim:
         consolidated = []
-        for seed_i in range(args.games):
-            seed = args.seed_start + seed_i
-            new_player = seed_i % 2
+        for seed, new_player in _build_work(args.seed_start, args.games, args.paired):
             on_disk = _try_load(_result_path(
                 str(eval_dir), args.sims,
                 args.old_sims if args.old_sims is not None else args.sims,

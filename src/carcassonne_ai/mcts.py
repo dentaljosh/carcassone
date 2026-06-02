@@ -378,6 +378,7 @@ class NeuralMCTS:
         batch_evaluator=None,  # Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]
         virtual_loss: float = 1.0,
         fair_chance: bool = False,
+        fpu_reduction: float | None = None,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -398,6 +399,13 @@ class NeuralMCTS:
         # larger change (the tree keys children by action, which assumes a
         # placement yields one child; per-draw branching needs real chance nodes).
         self.fair_chance = bool(fair_chance)
+        # FPU (first-play urgency) for UNVISITED children in PUCT (round-2 audit
+        # G-T/F-D-FPU). None (default) = legacy optimistic-zero (q=0). A float r
+        # uses q = parent.Q - r, so an unvisited child is valued near the
+        # parent's own estimate minus a reduction instead of a hardcoded 0 (which
+        # is mis-scaled against the [-1,1] Q range, esp. once a raw net value
+        # drives the leaf at Stage B). A/B'd via --new-fpu/--old-fpu.
+        self.fpu_reduction = fpu_reduction
         self.rng = random.Random(seed)
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
@@ -741,7 +749,10 @@ class NeuralMCTS:
                 continue
             child = node.children.get(action)
             if child is None:
-                q = 0.0
+                # FPU: legacy q=0 (None) or parent.Q - reduction. node.Q is from
+                # node.player_to_move's POV — same POV the unvisited child is
+                # scored in here — so no sign flip is needed.
+                q = 0.0 if self.fpu_reduction is None else node.Q - self.fpu_reduction
                 n = 0
             else:
                 q = child.Q if child.player_to_move == node.player_to_move else -child.Q
