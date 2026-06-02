@@ -23,6 +23,21 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7) — the learned policy adds ~nothing over the v2.7 leaf
+
+**The headline empirical result of the Phase-0 cleanup.** iter_11 (our "strongest" checkpoint) vs HeuristicMCTS, n=400, matched c=3.0/sims=200, on the NEW base-only **bug-fixed** game (C1 farm-dedup + C2 MCTS-transposition fixes, River dropped), 3-box disjoint seed shards 700000–700399:
+- **212W / 5D / 183L = 53.6% = +25.2 elo (±17.4, ~1.45σ).** Row: `results.csv: ladder_iter11_vs_heuristic_baseonly_n400`.
+- **COLLAPSED from the old-game +181.7 elo** (`ladder_iter11_vs_heuristic_n400`, measured on River + buggy farm scoring).
+
+**Interpretation.** ~85% of our headline "beats strong heuristic-search by +181.7" was **game-artifact**: River, the buggy farm scoring, and the fact that iter_11 trained on that exact broken game (so both the checkpoint and the apparent edge lived in the old distribution). On the real game the learned policy is **statistically ≈ the v2.7 leaf** (+25 at 1.45σ — barely positive, not the +180 we believed). This is the audit's central thesis (F-B1: the learned value was never doing the work; the hand-crafted leaf was) measured at verdict strength.
+
+**Consequences.**
+- This is NOT new failure — it's the bill for cleaning the foundation, predicted when the n=8 smoke flashed 0.375. The infrastructure (pipeline, 3-box cluster, warmstart, MCTS, val-corr→0.81) is sound; the *game underneath it* was rotten and is now fixed.
+- **We finally have a trustworthy baseline:** clean game, n=400 verdict, independent non-saturated reference, correct scoring. Numbers from here are real.
+- **Stage B is now unambiguous and low-risk:** there's no real learned strength to lose (we're at ≈heuristic), so the only question that matters is whether value-head-in-the-loop can build genuine learned strength past the v2.7 ceiling on the clean game.
+- **iter_11 is no longer a meaningful champion.** Stage B retrains from scratch on the real game. The 12 old screening checkpoints are off-distribution.
+**Phase:** Phase 1 (Stage A re-baseline).
+
 ## 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
 
 **Context.** The correction plan said "batch C3+C4+C5+C6+C7+C8 into ONE retrain (pay it once)." A 3-agent review of the Phase-0 work + a direct code read changed the calculus.
@@ -43,7 +58,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 - **C5 symmetry augmentation DONE** end-to-end (rotate board/action/policy + dataset augment + streaming-loader flag `--augment-rotations`, default off; 16 tests). 90° only; reflection deferred.
 - Loop orchestrator **version-controlled** (`scripts/run_pathb_cluster_loop.sh`).
 - **3 boxes synced** to HEAD via an offline git **bundle** on the CIFS share — the remotes have no github DNS over Tailscale, so `push`+`pull` doesn't work; `git bundle create` on the share + `git fetch <bundle>` + `git reset --hard` on each box does. Reusable pattern.
-- **Re-baseline RUNNING:** iter_11 vs HeuristicMCTS, n=400, 3-box, on the new base-only bug-fixed game (n=8 smoke 3W/5L=0.375 — iter_11 likely lost its edge; expected after cleaning the foundation).
+- **Re-baseline DONE:** see the headline entry above — iter_11 +25.2 elo on the new game (was +181.7).
 **Phase:** Phase 1 (staging + Stage A).
 
 ## 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED

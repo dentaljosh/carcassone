@@ -18,10 +18,14 @@
 
 **Stage-A progress (no-retrain, committed + pushed):** symmetry aug (C5) **COMPLETE end-to-end** — board/action/policy-vector rotation + dataset augment + streaming-loader flag `train_iter.py --augment-rotations` (default OFF, zero behavior change), 16 tests (`tests/test_symmetry_aug.py`); flip the flag at Stage B. Loop orchestrator version-controlled (`scripts/run_pathb_cluster_loop.sh`; the running copy stays in `~/` per the share chicken-egg). 3 boxes synced to HEAD via an offline git **bundle** (remotes have no github DNS — see DECISIONS 2026-06-02 + memory).
 
-### NEXT ACTIONS — staged A→B→C (Joshua-approved; NOT "one batched retrain")
-1. **Finish Stage A:** the re-baseline (in flight) → then re-sweep v2.7 caps + c_puct/FPU on the new game (eval runs; need box + ETA). Optional: de-saturated value-target mode (C6) + exploration knobs (C8) — but those are tested only when Stage B runs.
-2. **Stage B — the cheap root-cause retrain (one question):** does the value head IN the search loop (C3, the F-B1 root cause) beat the v2.7 ceiling with NO new planes? `--leaf-eval nn` (or `value_blend` ramp) + de-saturated target + conditional gate (C7) + exploration (C8) + symmetry aug ON. Short loop, base-only, from-scratch warmstart at current width. Evaluate on the INDEPENDENT HeuristicMCTS ladder at n=400. **Gate Stage C on it.**
-3. **Stage C — the expensive representation retrain (C4):** live farm-connectivity input planes + bag histogram + open-feature planes + farm scalars ON. Only if Stage B breaks upward. Fresh warmstart at the new input width.
+### NEXT ACTIONS — immediate sequence (agreed 2026-06-02)
+1. **Rewrite the big docs:** EXPERIMENTS.md (strip the duplicate number ledger → cite results.csv; demote the pre-audit roadmap to a post-correction backlog subordinate to the build spec) + a DECISIONS.md dated TOC (254k, loaded every session).
+2. **Thorough code review** of the Phase-0 + Stage-A changes (and the foundation generally) before building Stage B on it.
+3. **Finish Stage A:** re-sweep v2.7 caps + c_puct/FPU on the new game — now HIGHER value, since the re-baseline showed the leaf+search carry the strength (policy adds ~nothing). Eval runs; need box + ETA.
+
+### THEN — staged B→C (Joshua-approved; NOT "one batched retrain")
+- **Stage B — the cheap root-cause retrain (one question):** does the value head IN the search loop (C3, the F-B1 root cause) beat the v2.7 ceiling with NO new planes? `--leaf-eval nn` (or `value_blend` ramp) + de-saturated target (C6) + conditional gate (C7) + exploration (C8) + symmetry aug ON (`--augment-rotations`). Short loop, base-only, from-scratch warmstart at current width. Evaluate on the INDEPENDENT HeuristicMCTS ladder at n=400. **Gate Stage C on it.**
+- **Stage C — the expensive representation retrain (C4):** live farm-connectivity input planes + bag histogram + open-feature planes + farm scalars ON. Only if Stage B breaks upward. Fresh warmstart at the new input width.
 
 ---
 
