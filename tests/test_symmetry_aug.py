@@ -134,6 +134,84 @@ def _encode_real_board(seed: int):
     return encode_board(board.state, board.state.current_player, off)
 
 
+def test_rotate_action_round_trip_full_space():
+    from carcassonne_ai.action_space import action_size, rotate_action
+
+    for W in (5, 9, 25):
+        A = action_size(W)
+        for a in range(A):
+            r = a
+            for _ in range(4):
+                r = rotate_action(r, W)
+            assert r == a, f"action {a} not identity after 4 rotations (W={W})"
+
+
+def test_rotate_action_cell_matches_rot90():
+    # A tile action's cell remap must match np.rot90(k=1) — the same spatial
+    # transform rotate_board_repr_90 applies.
+    from carcassonne_ai.action_space import N_ROTATIONS, rotate_action
+
+    Wt = 9
+    for wr in range(Wt):
+        for wc in range(Wt):
+            idx = (wr * Wt + wc) * N_ROTATIONS + 0  # rot=0
+            out = rotate_action(idx, Wt)
+            cell = out // N_ROTATIONS
+            nwr, nwc = divmod(cell, Wt)
+            er, ec = _expected_rotated_cell_W(wr, wc, Wt)
+            assert (nwr, nwc) == (er, ec)
+
+
+def _expected_rotated_cell_W(r, c, w):
+    m = np.zeros((w, w), dtype=np.float32)
+    m[r, c] = 1.0
+    mr = np.rot90(m, k=1)
+    er, ec = map(int, np.argwhere(mr == 1.0)[0])
+    return er, ec
+
+
+def test_rotate_tile_delta_matches_edge_channel_perm():
+    # ROT_TILE_DELTA must be the unique tile.turn() delta that reproduces the
+    # edge-channel permutation rotate_board_repr_90 applies — i.e. the action's
+    # tile-orientation remap agrees with the board-repr's edge rotation.
+    from carcassonne_ai.action_space import ROT_TILE_DELTA
+    from carcassonne_ai.board_repr import _encode_tile_edges, CH_EDGES, EDGE_BLOCK
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+
+    eperm = BR._ROT_CHANNEL_PERM[CH_EDGES:CH_EDGES + EDGE_BLOCK]
+    universal = set(range(4))
+    for T in base_tiles.values():
+        for rot in range(4):
+            placed = T.turn(rot)
+            rotated_edges = _encode_tile_edges(placed)[eperm]
+            universal &= {
+                d for d in range(4)
+                if np.array_equal(_encode_tile_edges(placed.turn(d)), rotated_edges)
+            }
+    assert universal == {ROT_TILE_DELTA}, f"edge-perm delta {sorted(universal)} != {ROT_TILE_DELTA}"
+
+
+def test_action_side_maps_are_inverse_of_board_src_maps():
+    # rotate_action's forward side/corner maps must be the exact inverse of
+    # board_repr's source maps, so action and board rotate the SAME direction.
+    from carcassonne_ai.action_space import _FWD_CORNER, _FWD_SIDE
+
+    for s, fwd in _FWD_SIDE.items():
+        assert BR._SRC_SIDE_4[fwd] == s
+    for c, fwd in _FWD_CORNER.items():
+        assert BR._SRC_CORNER[fwd] == c
+
+
+def test_passes_are_rotation_fixed():
+    from carcassonne_ai.action_space import (
+        meeple_pass_index, rotate_action, tile_pass_index,
+    )
+
+    for W in (5, 9, 25):
+        assert rotate_action(tile_pass_index(W), W) == tile_pass_index(W)
+        assert rotate_action(meeple_pass_index(W), W) == meeple_pass_index(W)
+
+
 def test_real_board_structural_preservation():
     for seed in range(5):
         arr = _encode_real_board(seed)
