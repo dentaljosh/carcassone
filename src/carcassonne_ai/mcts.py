@@ -22,6 +22,7 @@ Implementation notes:
 """
 from __future__ import annotations
 
+import copy
 import math
 import random
 from dataclasses import dataclass, field
@@ -353,6 +354,7 @@ class NeuralMCTS:
         batch_size: int = 1,
         batch_evaluator=None,  # Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]
         virtual_loss: float = 1.0,
+        fair_chance: bool = False,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -360,6 +362,19 @@ class NeuralMCTS:
         self.evaluator = evaluator
         self.simulations = simulations
         self.c_puct = c_puct
+        # fair_chance=True makes the search NON-CLAIRVOYANT: the engine's deck is
+        # pre-shuffled in its TRUE future order, so by default every simulation
+        # descends along the actual upcoming tiles (single-determinization /
+        # perfect-info search — the agent "sees" future draws). With fair_chance
+        # the search instead runs on a copy of the root whose UNSEEN deck is
+        # re-shuffled (contents preserved, order randomized) — one plausible
+        # future per move, the information a real player actually has. The real
+        # game board is never mutated (we descend from a copy), so the actual
+        # draw order is unchanged. This is single-determinization, NOT an
+        # expectation over draws — the exact-chance-node ensemble is a separate,
+        # larger change (the tree keys children by action, which assumes a
+        # placement yields one child; per-draw branching needs real chance nodes).
+        self.fair_chance = bool(fair_chance)
         self.rng = random.Random(seed)
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
@@ -380,9 +395,26 @@ class NeuralMCTS:
         # again at its root.
         self._noisy_roots: set[str] = set()
 
+    def _reshuffled_root(self, board: Board) -> Board:
+        """Return a copy of `board` whose UNSEEN deck is re-shuffled (contents
+        preserved, order randomized) — the fair-chance / non-clairvoyant root.
+        `next_tile` (the already-revealed current tile) is left untouched; only
+        the not-yet-drawn `state.deck` is permuted. The caller's board is never
+        mutated, so the real game's draw order is preserved. Cheap: one board
+        deepcopy + one list shuffle per move (negligible vs the sims)."""
+        b = copy.deepcopy(board)
+        self.rng.shuffle(b.state.deck)
+        b._str_repr_cache = None  # deck order isn't in the key, but be safe
+        return b
+
     def search(self, root_board: Board) -> dict[int, int]:
         """Run `simulations` PUCT iterations from `root_board`. Returns a
         {action_idx: visit_count} dict for the root's children."""
+        if self.fair_chance:
+            # One plausible future per move; the search can no longer see the
+            # true upcoming tiles. Same root_key (deck ORDER isn't in the key),
+            # so node lookup/expansion are unchanged — only the descent differs.
+            root_board = self._reshuffled_root(root_board)
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)
         if root is None:
