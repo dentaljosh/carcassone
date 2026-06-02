@@ -27,7 +27,7 @@ def test_d13_tiles_remaining_counts_next_tile_only_in_tiles_phase():
     while game.get_game_ended(board, 0) == 0.0 and n < 300:
         st = board.state
         is_tiles = st.phase.value == "tiles"
-        feats = encode_scalars(st, st.current_player, total_tiles=83)
+        feats = encode_scalars(st, st.current_player, total_tiles=board.total_tiles)
         tiles_remaining = round(float(feats[5]) * DECK_NORM)
         if is_tiles:
             # The drawn-but-unplaced tile is a genuine future placement.

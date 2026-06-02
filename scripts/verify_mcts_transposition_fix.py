@@ -60,6 +60,7 @@ def main():
 
     nodes_probed = 0
     nodes_with_collision = 0
+    nodes_with_visited_collision = 0
     total_colliding_actions = 0
     raw_gt_dedup_with_collision = 0
     dedup_has_collision = 0        # FIX BROKEN if > 0
@@ -107,6 +108,13 @@ def main():
         if colliding:
             nodes_with_collision += 1
             total_colliding_actions += n_collide_actions
+            # A collision only INFLATES the raw sum if the shared child was
+            # actually visited (N>0). Unvisited collisions contribute 0 to both
+            # raw and dedup sums (0==0), so they can't satisfy raw>dedup — the
+            # criterion below must only require inflation for VISITED collisions,
+            # else a correct fix FALSE-FAILs whenever a colliding child has N=0.
+            if any(root.children[acts[0]].N > 0 for acts in colliding.values()):
+                nodes_with_visited_collision += 1
             # --- selection-side (PUCT) alias structure check ---
             # Each collision group must have exactly one representative in
             # child_canon and (n-1) members flagged as aliases (skipped in PUCT),
@@ -139,8 +147,10 @@ def main():
           f"({nodes_probed} decision nodes, sims={args.sims}) ===")
     print(f"nodes WITH >=1 collision:        {nodes_with_collision} "
           f"({100*nodes_with_collision/max(1,nodes_probed):.1f}%)")
+    print(f"  of which VISITED (N>0):        {nodes_with_visited_collision}")
     print(f"total colliding action slots:    {total_colliding_actions}")
-    print(f"nodes where raw>dedup (inflated): {raw_gt_dedup_with_collision}")
+    print(f"nodes where raw>dedup (inflated): {raw_gt_dedup_with_collision} "
+          f"(must == {nodes_with_visited_collision})")
     print(f"FIXED vector still has collision: {dedup_has_collision}  (must be 0)")
     print(f"dedup-sum != unique-child-sum:    {dedup_ne_unique}  (must be 0)")
     print(f"selection alias groups checked:   {sel_groups}")
@@ -149,7 +159,7 @@ def main():
         nodes_with_collision > 0
         and dedup_has_collision == 0
         and dedup_ne_unique == 0
-        and raw_gt_dedup_with_collision == nodes_with_collision
+        and raw_gt_dedup_with_collision == nodes_with_visited_collision
         and sel_groups > 0
         and sel_alias_bad == 0
     )

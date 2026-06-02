@@ -374,3 +374,51 @@ throughout; every bug lived in orchestration teardown + the anchor seam.**
 **Verdict: CONVERGED. The anchor-fraction self-play path is launch-safe** — the only
 remaining gate is operational (build the launcher that passes `--anchor-checkpoint`;
 the scalar-width + teardown guards activate the instant it's wired).
+
+---
+
+## Iteration 9 (Phase-0 + Stage-A foundation review) — 2026-06-02
+
+4 parallel Opus reviewers, one per domain of the post-audit changes (commits
+`36d9cca`..`a625a3d`): **C1** farm-scoring dedup (engine) / **C2** MCTS
+transposition dedup (output + PUCT selection) / **C5** symmetry augmentation
+(board+action+dataset rotation) / **River-drop + the version-controlled
+3-box loop orchestrator**. Run on the local 5800x.
+
+**Headline: no critical correctness bugs in the code.** Symmetry aug verified
+across 12 invariants (CCW direction consistency between np.rot90 / channel perm /
+ROT_TILE_DELTA=3 / x,y remap; 4×=identity round-trip at tensor, action-space, and
+dataset levels; `action_rotation_perm` a valid bijection; val set not augmented).
+C1 dedup key `frozenset(city_positions)` proven sound (CoordinateWithSide is
+value-hashable, BFS start-independent, city_positions never mutated post-build; no
+divergence between the engine fix and the v2.7 leaf's own dedup). C2 `id(child)`
+dedup proven non-trivial (transposition table reuses one node object via
+`setdefault(state_key)`); prior_bonus accounting, Dirichlet-noise ordering, and
+shared-N visit counts all correct; base `MCTS` search confirmed unchanged.
+DECK_NORM=72 confirmed against the engine's base deck (72 tiles → 71 in deck after
+the start-tile pop; `board.total_tiles`=72).
+
+### Fixed (safe corrections applied)
+
+| # | File:line | Bug | Fix |
+|---|---|---|---|
+| F-iter9-1 | `run_pathb_cluster_loop.sh` (self-play/anchor-gate/confirm-gate/verify cmds) | **`nice -n 19` missing on all REMOTE workers.** The outer loop is nice'd and that propagates to local 5800x subshells, but ssh to xeon/laptop opens a fresh session at nice=0 → remote self-play + all evals ran at default priority, contending with interactive use (standing-rule violation). Only the local `train_iter.py` was nice'd. | Prepended `nice -n 19` to the `cmd`/`gcmd`/`ccmd`/`vcmd` strings so the niceness rides the command onto whichever box runs it. |
+| F-iter9-2 | `run_pathb_cluster_loop.sh:114` (laptop branch) | **No CIFS-mount preflight on the laptop** (xeon branch had one). A reboot can drop the `_netdev,nofail` share, leaving an empty root-owned mountpoint; the worker then writes into it and the run dies on the first NoSuchFile/perm error (the 2026-05-31 failure mode). The old comment also wrongly said "no sudo available" — the laptop has passwordless sudo. | Added `mountpoint -q $SHARE_REMOTE \|\| sudo mount $SHARE_REMOTE` + a fatal guard if still unmounted, before `cd`. |
+| F-iter9-3 | `test_features.py:30` | Stale `total_tiles=83` (the old Base+River deck) after River was dropped. The test doesn't assert on the `progress` scalar that uses it, so it passed — but it was silently testing progress against a wrong denominator (>DECK_NORM), masking any future regression. | Changed to `total_tiles=board.total_tiles` (dynamic, =72). |
+| F-iter9-4 | `verify_mcts_transposition_fix.py:152` | **Verifier false-FAIL risk.** Pass criterion required `raw>dedup` for EVERY colliding node, but an unvisited collision (N=0) contributes 0 to both sums (0==0, not >), so a correct fix would FAIL whenever any colliding child went unvisited. | Track `nodes_with_visited_collision` and require inflation only for visited collisions. Re-ran: PASS (3/3 visited collisions inflated). |
+
+### Deferred (real findings, not auto-fixed)
+
+**D-iter9-1 — `run_pathb_cluster_loop.sh:285` — unconditional warm-from-previous (the C7 root-walk).** [Important → Stage B]
+`warm_from` is always `iter_(N-1).pt`; `best_iter` is tracked for the plateau guard but never fed back to train, so a degraded iter poisons its successors. **Confirmed (conf 100), exact line located.** NOT fixed now because the CORRECTION_PLAN explicitly batches C7 into the Stage-B retrain (conditional gate + keep-best). The one-line change (`warm_from` ← `iter_$best_iter.pt` once a gate has fired) is ready to drop in at Stage B.
+
+**D-iter9-2 — `mcts.py` — `_link_child` canonical (first-linked) differs from `_deduped_children` canonical (lowest index).** [Behaviorally neutral — accept]
+The agent flagged a possible training-target/PUCT-representative mismatch. On analysis it has **zero behavioral effect**: both the policy target (`root_visit_distribution`) and play selection (`select_for_training`/`best_action`) go through `_deduped_children` (lowest index, deterministic), so the internal PUCT representative index never reaches training or play; colliding actions are interchangeable (same board, same child, summed prior) so PUCT behaves identically regardless of which index holds the bonus. Not worth a change to load-bearing search code right before Stage B.
+
+**D-iter9-3 — `mcts.py` — transient alias window: a collision group's first 1–2 visits compete before the alias link is registered.** [Accept — bounded]
+During build-up, the 2nd colliding action is selected once before it's known as an alias, so ~1–2 sims per collision group use a split prior instead of the summed one. Bounded (vs the original bug's every-sim doubling), self-corrects after both actions are tried. Eager pre-linking would cost a full child enumeration; not worth it.
+
+**D-iter9-4 — `city_util.find_cities` now value-dedups via the new `City.__hash__`.** [Benign — note]
+Adding `__eq__/__hash__` to `City` means `find_cities`' internal `set` now collapses two sides of the same city on one tile into one entry (previously identity-distinct). Correct behavior; the only other caller (`virtual_score_v2._closure_anticipation_bonus`) does its own frozenset dedup, so nothing breaks. Documented in case a future caller assumes one-City-per-side.
+
+**Verdict:** 4 safe fixes (F-iter9-1..4); 4 findings deferred (1 → Stage B by plan, 3 accepted). The Phase-0 correctness cores (farm scoring, MCTS dedup, rotation math, deck/River) are **clean** — Stage B can build on them.

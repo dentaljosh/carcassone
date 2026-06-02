@@ -112,10 +112,13 @@ EOF
       "wsl -d Ubuntu-24.04 -- bash -lc '/home/doctor/launch_xeon_${name}.sh'" > "$log" 2>&1 < /dev/null &
     echo $! > "$pidout"; disown
   elif [ "$host" = "laptop" ]; then
-    # native Linux: held ssh runs the worker foreground (no WSL, share already
-    # mounted, no sudo available so we rely on the existing mount).
+    # native Linux: held ssh runs the worker foreground (no WSL). The CIFS share
+    # is in fstab (_netdev,nofail) + the laptop has passwordless sudo, so re-mount
+    # it if a reboot dropped it BEFORE relying on it — else writes hit an empty
+    # root-owned mountpoint and the run dies on the first NoSuchFile/perm error
+    # (the 2026-05-31 failure mode). Fatal out if it still won't mount.
     nohup ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=15 laptop \
-      "cd $LAPTOP_REPO && $cmdline" > "$log" 2>&1 < /dev/null &
+      "mountpoint -q $SHARE_REMOTE || sudo mount $SHARE_REMOTE 2>/dev/null; mountpoint -q $SHARE_REMOTE || { echo 'FATAL: $SHARE_REMOTE not mounted on laptop' >&2; exit 1; }; cd $LAPTOP_REPO && $cmdline" > "$log" 2>&1 < /dev/null &
     echo $! > "$pidout"; disown
   fi
 }
@@ -154,7 +157,7 @@ confirm_gate() {
     cw=$(gate_workers "$host"); goutp=$OUT_LOCAL
     gnew=$CKPT_LOCAL/iter_$nn.pt; gold=$CKPT_LOCAL/iter_$on.pt
     [ "$host" != "5800x" ] && { goutp=$(remote_path "$OUT_LOCAL"); gnew=$(remote_path "$gnew"); gold=$(remote_path "$gold"); }
-    ccmd="env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $newi --vs-iter $oldi --games $games --sims $SIMS --c-puct 1.5 --leaf-eval v2_5 --workers $cw --orchestrator --no-elo-log --seed-start 900000 --shared-claim --claim-host $host"
+    ccmd="nice -n 19 env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $newi --vs-iter $oldi --games $games --sims $SIMS --c-puct 1.5 --leaf-eval v2_5 --workers $cw --orchestrator --no-elo-log --seed-start 900000 --shared-claim --claim-host $host"
     cpidf="/tmp/pathb_confirmpid_${host}"; rm -f "$cpidf"
     launch_on_host "$host" "confirm_${RUN}" "$ccmd" "/tmp/pathb_confirm_${host}.log" "$cpidf"
     sleep 1; cp=$(cat "$cpidf" 2>/dev/null); cpids="$cpids $cp"; echo "  launched confirm on $host (W=$cw) PID=$cp"
@@ -222,7 +225,7 @@ if [ -n "${VERIFY:-}" ]; then
     for host in "${HOSTS[@]}"; do
       vw=$(gate_workers "$host"); goutp=$OUT_LOCAL; gnew=$np; gold=$op
       [ "$host" != "5800x" ] && { goutp=$(remote_path "$OUT_LOCAL"); gnew=$(remote_path "$np"); gold=$(remote_path "$op"); }
-      vcmd="env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $vidx --vs-iter $vsent --games $vgames --sims $SIMS --c-puct ${VCPUCT:-1.5} --leaf-eval v2_5 --workers $vw --orchestrator --no-elo-log --seed-start $vseed --shared-claim --claim-host $host"
+      vcmd="nice -n 19 env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $vidx --vs-iter $vsent --games $vgames --sims $SIMS --c-puct ${VCPUCT:-1.5} --leaf-eval v2_5 --workers $vw --orchestrator --no-elo-log --seed-start $vseed --shared-claim --claim-host $host"
       vpidf="/tmp/pathb_verifypid_${host}"; rm -f "$vpidf"
       launch_on_host "$host" "verify_${vlabel}" "$vcmd" "/tmp/pathb_verify_${host}_${vlabel}.log" "$vpidf"
       sleep 1; vp=$(cat "$vpidf" 2>/dev/null); vpids="$vpids $vp"; echo "  launched $vlabel on $host (W=$vw) PID=$vp"
@@ -288,7 +291,7 @@ for ((N=START; N<ITERS; N++)); do
   for host in "${HOSTS[@]}"; do
     read -r w orchflags <<< "$(selfplay_mode "$host")"; outp=$OUT_LOCAL; warmp=$warm_from; anchorp=$WARM
     [ "$host" != "5800x" ] && { outp=$(remote_path "$OUT_LOCAL"); warmp=$(remote_path "$warm_from"); anchorp=$(remote_path "$WARM"); }
-    cmd="env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-target score_diff --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
+    cmd="nice -n 19 env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-target score_diff --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
     pidf="/tmp/pathb_pid_${host}_$NN"; rm -f "$pidf"
     launch_on_host "$host" "sp_${RUN}_$NN" "$cmd" "/tmp/pathb_sp_${host}_$NN.log" "$pidf"
     sleep 1; pid=$(cat "$pidf" 2>/dev/null)
@@ -322,7 +325,7 @@ for ((N=START; N<ITERS; N++)); do
   for host in "${HOSTS[@]}"; do
     gw=$(gate_workers "$host"); goutp=$OUT_LOCAL; gnew=$CKPT_LOCAL/iter_$NN.pt; gold=$WARM
     [ "$host" != "5800x" ] && { goutp=$(remote_path "$OUT_LOCAL"); gnew=$(remote_path "$gnew"); gold=$(remote_path "$WARM"); }
-    gcmd="env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $N --vs-iter 9999 --games $ANCHOR_GAMES --sims $SIMS --c-puct 1.5 --leaf-eval v2_5 --workers $gw --orchestrator --no-elo-log --seed-start 800000 --shared-claim --claim-host $host"
+    gcmd="nice -n 19 env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $N --vs-iter 9999 --games $ANCHOR_GAMES --sims $SIMS --c-puct 1.5 --leaf-eval v2_5 --workers $gw --orchestrator --no-elo-log --seed-start 800000 --shared-claim --claim-host $host"
     gpidf="/tmp/pathb_gatepid_${host}_$NN"; rm -f "$gpidf"
     launch_on_host "$host" "gate_${RUN}_$NN" "$gcmd" "/tmp/pathb_gate_${host}_$NN.log" "$gpidf"
     sleep 1; gp=$(cat "$gpidf" 2>/dev/null); gpids="$gpids $gp"; echo "  launched gate on $host (W=$gw) PID=$gp"
