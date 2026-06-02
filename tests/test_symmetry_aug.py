@@ -242,6 +242,61 @@ def test_passes_are_rotation_fixed():
         assert rotate_action(meeple_pass_index(W), W) == meeple_pass_index(W)
 
 
+def _synth_dataset(n=3, w=5, seed=7):
+    from carcassonne_ai.action_space import action_size
+    from carcassonne_ai.aux_targets import OWNERSHIP_PLANES
+    from carcassonne_ai.warmstart import GameDataset
+
+    rng = np.random.default_rng(seed)
+    A = action_size(w)
+    pol = rng.random((n, A)).astype(np.float32)
+    pol /= pol.sum(axis=1, keepdims=True)
+    return GameDataset(
+        boards=rng.random((n, N_CHANNELS, w, w)).astype(np.float32),
+        scalars=rng.random((n, 10)).astype(np.float32),
+        policies=pol,
+        values=rng.random(n).astype(np.float32),
+        valid_masks=(rng.random((n, A)) > 0.5),
+        ownership=rng.integers(-1, 2, (n, OWNERSHIP_PLANES, w, w)).astype(np.float32),
+    )
+
+
+def test_dataset_rotation_round_trip_and_consistency():
+    from carcassonne_ai.warmstart import rotate_dataset_90
+
+    ds = _synth_dataset()
+    # single-sample primitive consistency: batched row 0 == single-sample fn
+    r1 = rotate_dataset_90(ds)
+    np.testing.assert_allclose(r1.boards[0], rotate_board_repr_90(ds.boards[0]))
+    # 4 rotations == identity across all rotated fields
+    cur = ds
+    for _ in range(4):
+        cur = rotate_dataset_90(cur)
+    np.testing.assert_allclose(cur.boards, ds.boards, atol=0)
+    np.testing.assert_allclose(cur.policies, ds.policies, atol=0)
+    np.testing.assert_array_equal(cur.valid_masks, ds.valid_masks)
+    np.testing.assert_allclose(cur.ownership, ds.ownership, atol=0)
+    # orientation-invariant fields unchanged by a rotation
+    np.testing.assert_allclose(r1.scalars, ds.scalars)
+    np.testing.assert_allclose(r1.values, ds.values)
+    # policy mass preserved per row
+    np.testing.assert_allclose(r1.policies.sum(axis=1), ds.policies.sum(axis=1), rtol=1e-6)
+
+
+def test_augment_with_rotations_quadruples():
+    from carcassonne_ai.warmstart import augment_with_rotations
+
+    ds = _synth_dataset(n=3)
+    aug = augment_with_rotations(ds)
+    assert len(aug) == 12  # 4 x 3
+    # first block is the originals untouched
+    np.testing.assert_allclose(aug.boards[:3], ds.boards, atol=0)
+    np.testing.assert_allclose(aug.values[:3], ds.values, atol=0)
+    # all four blocks share the same value/scalar rows (rotation-invariant)
+    for k in range(4):
+        np.testing.assert_allclose(aug.values[k * 3:(k + 1) * 3], ds.values, atol=0)
+
+
 def test_real_board_structural_preservation():
     for seed in range(5):
         arr = _encode_real_board(seed)

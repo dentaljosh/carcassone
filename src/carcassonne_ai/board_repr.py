@@ -476,6 +476,15 @@ def rotate_board_repr_90(arr: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(np.rot90(arr, k=1, axes=(1, 2))[_ROT_CHANNEL_PERM])
 
 
+def rotate_board_repr_90_batch(arr: np.ndarray) -> np.ndarray:
+    """Batched rotate_board_repr_90 for a stack of tensors (N, N_CHANNELS, W, W)."""
+    if arr.ndim != 4 or arr.shape[1] != N_CHANNELS:
+        raise ValueError(f"expected (N, {N_CHANNELS}, W, W), got {arr.shape}")
+    return np.ascontiguousarray(
+        np.rot90(arr, k=1, axes=(2, 3))[:, _ROT_CHANNEL_PERM, :, :]
+    )
+
+
 # ---------------------------------------------------------------------------
 # Backwards-compat shims for legacy channel constants. Existing tests import
 # CH_MEEPLE_MINE / CH_MEEPLE_OPP / CH_FARMER_MINE / CH_FARMER_OPP and treat

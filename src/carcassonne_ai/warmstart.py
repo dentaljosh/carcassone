@@ -108,6 +108,60 @@ class GameDataset:
         return self.boards.shape[0]
 
 
+def rotate_dataset_90(ds: "GameDataset") -> "GameDataset":
+    """Rotate every example in a GameDataset 90° CCW (C5 symmetry augmentation).
+
+    boards -> rotate_board_repr_90 (spatial + directional channel perm);
+    policies / valid_masks -> scattered through the action-rotation permutation;
+    ownership -> spatial rotation only (per-cell planes, no directional channels);
+    scalars + values -> unchanged (orientation-invariant). Applying 4× is identity.
+    """
+    from .action_space import action_rotation_perm
+    from .action_space import action_size as _asize
+    from .board_repr import rotate_board_repr_90_batch
+
+    W = ds.boards.shape[-1]
+    A = ds.policies.shape[-1]
+    if A != _asize(W):
+        raise ValueError(
+            f"policy width {A} != action_size({W})={_asize(W)} — window/action mismatch"
+        )
+    P = action_rotation_perm(W)
+    pol = np.zeros_like(ds.policies)
+    pol[:, P] = ds.policies
+    msk = np.zeros_like(ds.valid_masks)
+    msk[:, P] = ds.valid_masks
+    return GameDataset(
+        boards=rotate_board_repr_90_batch(ds.boards),
+        scalars=ds.scalars.copy(),
+        policies=pol,
+        values=ds.values.copy(),
+        valid_masks=msk,
+        ownership=np.ascontiguousarray(np.rot90(ds.ownership, k=1, axes=(2, 3))),
+    )
+
+
+def augment_with_rotations(ds: "GameDataset") -> "GameDataset":
+    """Return a GameDataset with each example + its 3 rotations (4× rows).
+
+    Free data: Carcassonne is invariant under the 4 square rotations (reflection
+    is NOT — curved roads / directed art break it). Use in the training data
+    loader; no scratch retrain needed (operates on existing tensors)."""
+    rots = [ds]
+    cur = ds
+    for _ in range(3):
+        cur = rotate_dataset_90(cur)
+        rots.append(cur)
+    return GameDataset(
+        boards=np.concatenate([r.boards for r in rots], axis=0),
+        scalars=np.concatenate([r.scalars for r in rots], axis=0),
+        policies=np.concatenate([r.policies for r in rots], axis=0),
+        values=np.concatenate([r.values for r in rots], axis=0),
+        valid_masks=np.concatenate([r.valid_masks for r in rots], axis=0),
+        ownership=np.concatenate([r.ownership for r in rots], axis=0),
+    )
+
+
 DEFAULT_HEURISTIC_TAU = 10.0
 
 
