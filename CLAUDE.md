@@ -20,6 +20,10 @@ Full original spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase st
 | [DECISIONS.md](DECISIONS.md) | Every non-trivial decision with options-considered + reason. **Refines or overrides the original prompt.** Read before assuming any prompt number is still current. |
 | [BACKLOG.md](BACKLOG.md) | Deferred ideas, optimizations, stretch goals. Don't action without Joshua's approval. |
 | [STATUS.md](STATUS.md) | Current branch, last commit, what's running, immediate next action |
+| [docs/research/foundational_audit_2026-06-02.md](docs/research/foundational_audit_2026-06-02.md) | **Why the learned value can't beat the v2.7 heuristic** — 6 root causes + 2 live bugs (the 2026-06-02 reframe; the evidence) |
+| [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) | Master fix sequence (phases 0–3). **Supersedes the old leaf/afterstate/anchor-fraction plan.** |
+| [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md) | Concrete staged build (A→B→C, cheapest-informative-first) executing the correction plan |
+| [experiments/results.csv](experiments/results.csv) | **Source of truth for experiment numbers** (elo/wr). STATUS/EXPERIMENTS/DECISIONS cite it; don't carry authoritative numbers that drift from it. |
 | [REVIEW_LOG.md](REVIEW_LOG.md) | Multi-agent code-review findings: fixes applied (F-numbers) and deliberately deferred items (D-numbers) with rationale |
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |

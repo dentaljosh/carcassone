@@ -2,7 +2,9 @@
 
 A living priority queue of ablations toward superhuman play. **Not exhaustive** — meant to prevent drift, not to predict everything. Each row is one knob, not a recipe combo. Rewrite priorities when a finding invalidates a downstream question.
 
-**Goal (primary, set 2026-05-28):** genuinely superhuman play — **beat strong/expert humans, aspirationally the world champion**, at 2p Base+River+Farmers. This is now the explicit target (overrides the original prompt; see [DECISIONS.md](DECISIONS.md) 2026-05-28 "Goal change"). The analyzer (Phase 5) and heuristic research (Phase 6) are downstream.
+**Goal (primary, set 2026-05-28):** genuinely superhuman play — **beat strong/expert humans, aspirationally the world champion**, at **2p Base+Farmers** (River DROPPED 2026-06-02 — see DECISIONS). This is now the explicit target (overrides the original prompt; see [DECISIONS.md](DECISIONS.md) 2026-05-28 "Goal change"). The analyzer (Phase 5) and heuristic research (Phase 6) are downstream.
+
+**⚠️ 2026-06-02 reframe — read first:** a foundational audit ([docs/research/foundational_audit_2026-06-02.md](docs/research/foundational_audit_2026-06-02.md)) operationalized "the leaf is the ceiling": the v2.7 leaf was masking 2 live bugs (farm + MCTS double-counts, FIXED) AND the learned value head was **never in the search loop**. The current path is the staged correction ([docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) / [PHASE1_BUILD_SPEC](docs/PHASE1_BUILD_SPEC_2026-06-02.md)), not the open-ablation list below — treat that list as the post-correction backlog.
 
 **The measurement problem is the #1 blocker.** The best checkpoint wins ~80-90% vs Tier-1, but Tier-1 is a saturated 1-ply heuristic a thinking human beats 2-of-3 — beating it is *not* superhuman. Self-anchored checkpoint-vs-checkpoint elo can climb while absolute strength regresses (Option-B chain proved it). No human benchmark is available right now. **So before more training has meaning, build a strong non-saturated reference ladder** (high-sim vanilla MCTS / the Ameneyro 2020 baseline) as an absolute yardstick. Without it we're flying blind.
 
@@ -21,7 +23,7 @@ A living priority queue of ablations toward superhuman play. **Not exhaustive** 
 
 ## Currently running
 
-(none)
+- **A1 re-baseline (2026-06-02):** iter_11 (NeuralMCTS) vs HeuristicMCTS, n=400, 3-box, on the new base-only bug-fixed game. Establishes the post-Phase-0 "where we actually stand." n=8 smoke 3W/5L=0.375 (screen). Verdict → results.csv. See STATUS.md.
 
 ## Open — by component, priority order
 

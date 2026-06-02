@@ -2,8 +2,9 @@
 
 Master plan to fix everything the foundational audit found. Read with
 [docs/research/foundational_audit_2026-06-02.md](research/foundational_audit_2026-06-02.md)
-(the evidence) and STATUS.md (live state). This is the path forward; supersedes the old
-"residual leaf / afterstate / pivot" NEXT block.
+(the evidence), [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) (the concrete,
+staged build that EXECUTES this plan), and STATUS.md (live state). This is the path forward;
+supersedes the old "residual leaf / afterstate / pivot" NEXT block.
 
 ## What changed (why this plan exists)
 6 weeks of leaf-tuning treated a *symptom*. A 6-agent audit (2026-06-02) found the real story:
@@ -121,9 +122,11 @@ are off-distribution now (expected — Phase 1 warmstarts from scratch).
   MSE kills mid-range calibration. Widen norm (e.g. /40) or switch to W/L + BCE; re-derive the 0.61
   corr reference. (selfplay.py:300, train_iter.py:359)
 - **C7 [MAJOR] Make the loop gate keep good iters:** `run_pathb_cluster_loop.sh` warm-froms the prev
-  iter unconditionally (line 277); gate is "advisory" (line 311). Accept iter N only if it beats
-  best-so-far at verdict-n vs the fixed ref (confirm machinery at line 140 exists); else warm-from
-  best-so-far. Stops the chain random-walk.
+  iter UNCONDITIONALLY (the `warm_from=…iter_$((N-1))` assignment, ~:285) and the anchor-gate is
+  "advisory only" (~:318, comment says so). Accept iter N only if it beats best-so-far at verdict-n
+  vs the fixed ref (the `confirm_gate()` machinery + `best_iter` tracking already exist, ~:148/:355);
+  else warm-from best-so-far. Stops the chain random-walk. (Line numbers approximate — the script is
+  now tracked at `scripts/run_pathb_cluster_loop.sh`; grep the behavior, don't trust exact lines.)
 - **C8 [MAJOR] Exploration:** dirichlet_alpha 0.3 → measured ~0.53; widen temp_threshold (τ=1 window)
   past the opening. A/B at n≥100. (run_selfplay_iter.py:378-380)
 - **C-D [re-sweep] c_puct + FPU:** FPU=0 for unvisited children is mis-scaled vs the ±0.1-0.5 Q
