@@ -74,6 +74,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from collections import defaultdict
+
 from carcassonne_ai.evaluators import (
     make_single_evaluator,
     make_v25_value_wrapper,
@@ -82,6 +84,12 @@ from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+
+from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
+from wingedsheep.carcassonne.objects.game_phase import GamePhase
+from wingedsheep.carcassonne.utils.state_updater import StateUpdater
+from wingedsheep.carcassonne.utils.tile_position_finder import TilePositionFinder
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -130,6 +138,83 @@ def _root_q(mcts: NeuralMCTS, game: Game, board) -> float:
     root_key = game.string_representation(board)
     root = mcts._nodes[root_key]
     return float(root.Q)
+
+
+def _tile_best_v27(state, tile, player: int, cfg, max_placements: int = 0) -> float | None:
+    """Best-response v2.7 value of holding `tile` at this position: max over
+    legal placements of tanh(virtual_score_v2(after placement, player)/15),
+    in `player`'s POV. Returns None if `tile` cannot be placed anywhere.
+
+    Uses StateUpdater.apply_action (deep-copies internally, so `state` is never
+    mutated) and places action.tile directly (the engine's play_tile reads the
+    action's tile, NOT state.next_tile), so we can score any hypothetical tile
+    against the real board without touching next_tile. Stops after the tile
+    placement (state lands in MEEPLES phase, same player) — meeple choice is
+    deliberately not optimized; this is a consistent relative tile-value used
+    only as a control-variate, not a full best-response.
+    """
+    pps = TilePositionFinder.possible_playing_positions(
+        game_state=state, tile_to_play=tile
+    )
+    if not pps:
+        return None
+    if max_placements and len(pps) > max_placements:
+        # Subsample deterministically (every k-th) to bound cost on hot boards.
+        step = len(pps) / max_placements
+        pps = [pps[int(i * step)] for i in range(max_placements)]
+    best: float | None = None
+    for pp in pps:
+        action = TileAction(
+            tile=tile.turn(pp.turns),
+            coordinate=pp.coordinate,
+            tile_rotations=pp.turns,
+        )
+        s2 = StateUpdater.apply_action(game_state=state, action=action)
+        v = math.tanh(virtual_score_v2(s2, player, cfg) / 15.0)
+        if best is None or v > best:
+            best = v
+    return best
+
+
+def _draw_luck(board, cfg, max_placements: int = 0) -> float:
+    """Luck of the draw that revealed this TILES-phase position's `next_tile`,
+    in the drawing (current) player's POV:
+
+        luck = Q(actual_tile) - E_{t ~ bag}[Q(t)]
+
+    where Q(t) = best-response v2.7 value of holding tile-type t (above), the
+    bag-before-this-draw = state.deck + [next_tile] (next_tile was the top draw),
+    P(t) = count(t)/|bag| over distinct tile descriptions, and the expectation
+    is renormalized over placeable types (unplaceable types — engine would
+    discard+redraw — are dropped). E[luck] = 0 over the draw distribution by
+    construction, so accumulated luck is a valid zero-mean control variate.
+
+    Returns 0.0 at non-TILES positions or when the actual tile is unplaceable.
+    """
+    state = board.state
+    if state.phase != GamePhase.TILES or state.next_tile is None:
+        return 0.0
+    player = int(state.current_player)
+    pool = list(state.deck) + [state.next_tile]
+    by_type: dict[str, list] = defaultdict(list)
+    for t in pool:
+        by_type[t.description].append(t)
+    actual_desc = state.next_tile.description
+
+    exp_q = 0.0
+    total_mass = 0
+    q_actual: float | None = None
+    for desc, tiles in by_type.items():
+        q = _tile_best_v27(state, tiles[0], player, cfg, max_placements)
+        if q is None:
+            continue  # unplaceable type — engine would discard+redraw; drop it
+        exp_q += len(tiles) * q
+        total_mass += len(tiles)
+        if desc == actual_desc:
+            q_actual = q
+    if total_mass == 0 or q_actual is None:
+        return 0.0
+    return float(q_actual - exp_q / total_mass)
 
 
 def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
@@ -198,6 +283,17 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         # v27: raw v2.7 leaf value at this position (current-player POV).
         v27 = float(evaluator(board)[1])
 
+        # luck_in: control variate — luck of the draw that gave the current
+        # player this position's next_tile (TILES phase only; 0 elsewhere).
+        # Computed with the SAME v2.7 config the leaf value uses (DEFAULT_CONFIG,
+        # env-built). Skipped unless --with-luck (it adds counterfactual
+        # placement scoring on top of the search).
+        if cfg.get("with_luck"):
+            luck_in = _draw_luck(board, DEFAULT_CONFIG, cfg.get("luck_max_placements", 0))
+        else:
+            luck_in = 0.0
+        phase_str = "tiles" if board.state.phase == GamePhase.TILES else "meeples"
+
         # vsearch: deep-search root value. Fresh tree per move so no stale
         # subtree mass leaks across roots (matches selfplay's clear()-per-move).
         mcts.clear()
@@ -211,6 +307,8 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
                 "player": cur_player,
                 "v27": v27,
                 "vsearch": vsearch,
+                "luck_in": luck_in,
+                "phase": phase_str,
                 # outcome + frac filled after the game ends (need total_moves).
             }
         )
@@ -284,6 +382,11 @@ def _summarize(out_dir: Path) -> int:
     vsearch_l: list[float] = []
     outcome_l: list[float] = []
     frac_l: list[float] = []
+    player_l: list[int] = []
+    fwd_luck_l: list[float] = []   # forward (future) luck for this position, p0 frame
+    games_z: list[float] = []      # per-game outcome (p0 frame)
+    games_luck: list[float] = []   # per-game total luck (p0 frame)
+    have_luck = True               # AND across all games: every record carries luck_in
     n_games = 0
     for f in files:
         try:
@@ -291,17 +394,47 @@ def _summarize(out_dir: Path) -> int:
         except Exception as e:
             print(f"  load failed: {f.name}: {e}")
             continue
+        if not recs:
+            continue
         n_games += 1
-        for r in recs:
+        recs = sorted(recs, key=lambda r: int(r["move_index"]))
+        g_have = all("luck_in" in r for r in recs)
+        have_luck = have_luck and g_have
+        # luck_in is in the drawing (current) player's POV; convert to p0 frame.
+        luck_p0 = [
+            (float(r["luck_in"]) if int(r["player"]) == 0 else -float(r["luck_in"]))
+            if g_have else 0.0
+            for r in recs
+        ]
+        # forward luck for position i = sum of luck_p0 STRICTLY after i (the draw
+        # at i is already revealed when v27/vsearch are evaluated there; the noise
+        # vs the final outcome is the luck of FUTURE draws).
+        nrec = len(recs)
+        suffix = [0.0] * nrec
+        acc = 0.0
+        for i in range(nrec - 1, -1, -1):
+            suffix[i] = acc
+            acc += luck_p0[i]
+        # acc now = total game luck (p0 frame). z is game-constant (p0 frame).
+        z_p0 = (float(recs[0]["outcome"]) if int(recs[0]["player"]) == 0
+                else -float(recs[0]["outcome"]))
+        if g_have:
+            games_z.append(z_p0)
+            games_luck.append(acc)
+        for i, r in enumerate(recs):
             v27_l.append(float(r["v27"]))
             vsearch_l.append(float(r["vsearch"]))
             outcome_l.append(float(r["outcome"]))
             frac_l.append(float(r["frac"]))
+            player_l.append(int(r["player"]))
+            fwd_luck_l.append(suffix[i])
 
     v27 = np.asarray(v27_l, dtype=np.float64)
     vsearch = np.asarray(vsearch_l, dtype=np.float64)
     outcome = np.asarray(outcome_l, dtype=np.float64)
     frac = np.asarray(frac_l, dtype=np.float64)
+    player = np.asarray(player_l, dtype=np.int64)
+    fwd_luck = np.asarray(fwd_luck_l, dtype=np.float64)
     n = v27.size
     if n == 0:
         print(f"{out_dir}: {n_games} games but 0 positions")
@@ -394,6 +527,67 @@ def _summarize(out_dir: Path) -> int:
           f"corr margin clear>={CORR_MARGIN}")
     print(f"  RESIDUAL SIGNAL: {verdict}")
     print(f"  reason: {why}")
+
+    # ---------------- CONTROL VARIATE (draw-luck adjustment) ----------------
+    # Only when the data carries per-position luck_in (i.e. produced by a
+    # --with-luck run). Two payoffs:
+    #   (1) MEASUREMENT: game-level variance reduction → the sample-efficiency
+    #       multiplier for win-rate / outcome evals (backgammon's "luck-adjusted
+    #       results"); turns n into ~n/(1-VR) effective.
+    #   (2) LEAF GO/NO-GO: re-run the WARMUP with the luck removed from the
+    #       outcome target. If the corr ceiling lifts and the vsearch margin now
+    #       clears CORR_MARGIN, deep search DOES correct v2.7 toward truth — the
+    #       weak/inconclusive WARMUP was a noise artifact → green-light residual.
+    if have_luck:
+        print()
+        print("--- CONTROL VARIATE: draw-luck-adjusted outcome ---")
+        # Game-level (measurement / sample-efficiency).
+        gz = np.asarray(games_z, dtype=np.float64)
+        gl = np.asarray(games_luck, dtype=np.float64)
+        if gz.size >= 5 and gl.var() > 0 and gz.var() > 1e-6:
+            beta_g = float(np.cov(gz, gl, bias=True)[0, 1] / gl.var())
+            gz_adj = gz - beta_g * gl
+            vr_game = 1.0 - (gz_adj.var() / gz.var()) if gz.var() > 0 else 0.0
+            eff_mult = (1.0 / (1.0 - vr_game)) if vr_game < 1.0 else float("inf")
+            print(f"  games={gz.size}  beta_game={beta_g:+.3f}")
+            print(f"  Var(outcome)      = {gz.var():.4f}")
+            print(f"  Var(outcome-luck) = {gz_adj.var():.4f}")
+            print(f"  variance reduction = {vr_game*100:5.1f}%  "
+                  f"→ effective-n multiplier ~{eff_mult:.2f}x")
+        else:
+            print("  (too few games / zero luck variance for game-level CV)")
+        print()
+        # Position-level (the WARMUP re-run on the de-noised target).
+        outcome_p0 = np.where(player == 0, outcome, -outcome)
+        if fwd_luck.var() > 0:
+            beta_p = float(np.cov(outcome_p0, fwd_luck, bias=True)[0, 1] / fwd_luck.var())
+        else:
+            beta_p = 0.0
+        adj_p0 = outcome_p0 - beta_p * fwd_luck
+        outcome_adj = np.where(player == 0, adj_p0, -adj_p0)
+        vr_pos = 1.0 - (adj_p0.var() / outcome_p0.var()) if outcome_p0.var() > 0 else 0.0
+        corr_v27_adj = _pearson(v27, outcome_adj)
+        corr_vs_adj = _pearson(vsearch, outcome_adj)
+        margin_adj = corr_vs_adj - corr_v27_adj
+        print(f"  beta_pos={beta_p:+.3f}  position-level variance reduction "
+              f"= {vr_pos*100:.1f}%")
+        print(f"  corr(v27,     outcome_adj) = {corr_v27_adj:.4f}  "
+              f"(was {corr_v27:.4f}, {corr_v27_adj - corr_v27:+.4f})")
+        print(f"  corr(vsearch, outcome_adj) = {corr_vs_adj:.4f}  "
+              f"(was {corr_vsearch:.4f}, {corr_vs_adj - corr_vsearch:+.4f})")
+        print(f"  ADJUSTED MARGIN (vsearch-v27) = {margin_adj:+.4f}  "
+              f"(was {corr_margin:+.4f}; clear>={CORR_MARGIN})")
+        if std_diff >= STD_STRONG and margin_adj >= CORR_MARGIN:
+            adj_verdict = "strong (luck-adjusted)"
+        elif std_diff < STD_NONE:
+            adj_verdict = "none"
+        else:
+            adj_verdict = "weak (luck-adjusted)"
+        print(f"  ADJUSTED RESIDUAL SIGNAL: {adj_verdict}")
+    else:
+        print()
+        print("  (no luck_in in data — re-run with --with-luck for the "
+              "control-variate / luck-adjusted verdict)")
     return 0
 
 
@@ -433,6 +627,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--summary-only", action="store_true",
                    help="Aggregate existing seed_*.json and print gate/warmup/"
                         "verdict; do not play.")
+    p.add_argument("--with-luck", action="store_true",
+                   help="Also compute the draw-luck control variate per position "
+                        "(counterfactual best-response v2.7 over the tile bag). "
+                        "Enables the luck-adjusted WARMUP / sample-efficiency "
+                        "report in --summary-only. Adds counterfactual-placement "
+                        "cost on top of the search (~+30-50%% at TILES positions).")
+    p.add_argument("--luck-max-placements", type=int, default=0,
+                   help="Cap placements scored per counterfactual tile (0 = no "
+                        "cap; subsample to bound luck cost on hot mid-game boards).")
     args = p.parse_args(argv)
 
     sub = _subdir_name(args.checkpoint, args.sims, args.c_puct)
@@ -465,6 +668,8 @@ def main(argv: list[str] | None = None) -> int:
         "c_puct": args.c_puct,
         "leaf_eval": args.leaf_eval,
         "include_farm_scalars": include_farm_scalars,
+        "with_luck": args.with_luck,
+        "luck_max_placements": args.luck_max_placements,
     }
 
     print(
