@@ -422,3 +422,25 @@ During build-up, the 2nd colliding action is selected once before it's known as 
 Adding `__eq__/__hash__` to `City` means `find_cities`' internal `set` now collapses two sides of the same city on one tile into one entry (previously identity-distinct). Correct behavior; the only other caller (`virtual_score_v2._closure_anticipation_bonus`) does its own frozenset dedup, so nothing breaks. Documented in case a future caller assumes one-City-per-side.
 
 **Verdict:** 4 safe fixes (F-iter9-1..4); 4 findings deferred (1 → Stage B by plan, 3 accepted). The Phase-0 correctness cores (farm scoring, MCTS dedup, rotation math, deck/River) are **clean** — Stage B can build on them.
+
+---
+
+## Round-2 foundational audit — 2026-06-02 (see docs/research/foundational_audit_round2_2026-06-02.md)
+
+Re-ran the morning's 6-agent foundational sweep to catch what it missed. Round 1 was strong on
+correctness/representation but BLIND to **measurement methodology, the training recipe, and Stage-B
+wiring readiness.** New findings logged as G-* in the round-2 doc. Highlights:
+- **G-M1 [CRITICAL]:** the +25.2 elo re-baseline is NOT significant (z=1.45); the "n=400=±9 verdict"
+  doctrine is wrong (±17.4 near wr=0.5). iter_11 ≈ heuristic (inconclusive), not "+25".
+- **G-M2/G-M6:** eval doesn't pair decks across colors (variance inflated); self-play↔eval seed
+  collision at iter≳60 (train/test contamination). Both cheap fixes.
+- **G-T1/G-T2:** no LR schedule + value loss starved 5–10× by unweighted summation (score_diff_wide
+  worsens it) → Stage B could fail for a loss-weighting reason, not science.
+- **G-S1 [CRITICAL for Stage B]:** the value_blend ramp is partly vaporware (only in the v2_5 path;
+  `leaf_eval=nn` bypasses it; no scheduler; policy-only guard reads import-time default).
+- **G-S2/G-S3/G-S4:** no base-only warmstart corpus (hidden regen dep); C7 gate refs in-lineage iter_11;
+  A2 c_puct/FPU sweep re-invalidated by Stage B (cap sweep durable).
+- **STRATEGIC:** no above-amateur reference exists → project can pass all gates without verifying the
+  superhuman goal. Joshua decision needed (build a Stage-0 reference).
+- **REJECTED:** the `count_final_scores` "crash/double-count" claim — verified harmless (2nd pop finds a
+  cleared feature; the TODO is redundancy, not a bug).
