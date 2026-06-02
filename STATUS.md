@@ -2,7 +2,13 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-02) — 🟢 PHASE 0 DONE (C1+C2 fixed & verified) + RIVER DROPPED. Next: the ONE batched Phase-1 retrain. **NEXT ACTION: Phase-1 (value-head-in-loop + representation planes + symmetry aug + de-saturated target + conditional gate), warmstart from scratch base-only.**
+## Right now (2026-06-02) — 🟢 PHASE 0 DONE + RIVER DROPPED + C2 PUCT-residual fixed + SYMMETRY-AUG built. 🔵 RE-BASELINE RUNNING. Plan staged A→B→C (see [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md), Joshua-approved).
+
+**🔵 IN FLIGHT:** n=400 re-baseline of iter_11 (NeuralMCTS) vs HeuristicMCTS on the NEW base-only bug-fixed game, 3-box (`/home/doctor/run_rebaseline.sh` → `/mnt/c/carc-shared/rebaseline/iter_11_s200_h200_c30`, summary in `/tmp/rebaseline.log`). **n=8 smoke was 3W/5L = 0.375** (down from +181.7 elo on the old River/buggy game) — if confirmed, iter_11 is no longer champion on the real game (expected after cleaning the foundation; motivates Stage B). All 3 boxes synced to HEAD via offline git bundle (remotes have no github DNS).
+
+**Stage-A progress (no-retrain work, mostly committed):** symmetry aug (C5) DONE & tested (board/action/policy-vector rotation + dataset augment, 15 tests, `tests/test_symmetry_aug.py`) — only the train-loop flag remains (Stage-B wiring). Loop orchestrator version-controlled (`scripts/run_pathb_cluster_loop.sh`). Pending: re-sweep v2.7 caps + c_puct/FPU (after re-baseline); de-saturated target (C6, value-scale decision at Stage B); conditional gate (C7, small shell change — gate machinery already exists).
+
+**Staging (approved):** A = cheap no-retrain work + re-baseline → B = cheap C3-only retrain (does value-head-in-loop beat the v2.7 ceiling?) → C = representation planes, gated on B. NOT "one batched retrain" — test the root-cause lever before the expensive build.
 
 **✅ Phase 0 complete (committed, no retrain needed to verify):**
 - **C1 farm double-count FIXED** — `count_farm_points` now dedups touched cities by `frozenset(city_positions)`; `City` got `__eq__/__hash__`. Verified `scripts/verify_farm_dedup_fix.py` (n=150, 876 farms): fixed score == independent correct ref on ALL farms; 16.3% of farms were over-scored pre-fix (matches audit's ~17%), 633 spurious pts removed. ⚠️ STILL TODO: **re-sweep the v2.7 caps** (CARCASSONNE_V25_CAP / drop-3-open) — a scoring-bug fix shifts hyperparam optima.
