@@ -20,11 +20,13 @@ class CityUtil:
         # it per city meeple — ~31% of leaf cost, heavily redundant on the same
         # city. If the caller attaches a `_city_cache` dict to the state, memoize
         # the (positions, finished) flood-fill result under EVERY city_position in
-        # the component, then RETURN A FRESH City object each call. The fresh
-        # wrapper is deliberate: count_farm_points dedups adjacent cities via a
-        # set() keyed on City *identity*, so reusing one object would change the
-        # score — returning distinct objects (sharing the read-only positions set)
-        # preserves the leaf VALUE exactly while skipping the flood-fill. Verified
+        # the component, then RETURN A FRESH City object each call. Returning a
+        # fresh wrapper (sharing the read-only positions set) is HARMLESS for
+        # dedup: as of 2026-06-02 count_farm_points dedups adjacent cities by
+        # frozenset(city_positions) and City itself has value __eq__/__hash__
+        # (objects/city.py), so identity no longer matters — fresh vs reused both
+        # collapse correctly. (Pre-2026-06-02 the fresh object was load-bearing
+        # because dedup keyed on City identity; that coupling is gone.) Verified
         # by scripts/reconcile_farm_index.py (value equivalence) + tests. Safe to
         # cache: find_city is a symmetric BFS to closure (start-independent, unlike
         # the old find_farm), so the component is a function of the board, and the

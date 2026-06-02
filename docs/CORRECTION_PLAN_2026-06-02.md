@@ -30,6 +30,26 @@ Both bugs fixed + verified without a retrain; full test suite green (323 passed)
 also dropped here (folded forward from Phase 1's scope decision — Joshua confirmed). Carry-over:
 the two re-sweeps below (v2.7 caps, c_puct/FPU) still owed, do them alongside the retrain prep.
 
+**Post-fix review (2026-06-02, 3 parallel agents — reviewer + 2 explore):** no new critical
+bugs; agents independently re-verified the negamax signs, canonical form, action encode/decode
+round-trip, and terminal scoring (the audit's "CORRECT" list holds). Findings:
+- **F-B1 CONFIRMED (was in doubt).** `run_selfplay_iter.py`'s `--leaf-eval` argparse *default*
+  is `nn`, but the production loop `run_pathb_cluster_loop.sh:283` explicitly passes
+  `--leaf-eval v2_5` for self-play (and `v2_5` for every eval at :149/:217/:317). So prod
+  self-play really did run the v2.7 leaf — the net value never drove a move. Root-cause intact.
+- **C2 residual [OPEN DECISION]:** the C2 fix covers the training *target* (`root_visit_distribution`)
+  and `best_action`, but `NeuralMCTS._select_child_puct` still scores transposition-collided
+  actions separately in the in-search PUCT argmax (pre-existing; corrupts search *exploration*,
+  not training *data*). Clean fix is invasive (expansion-time state-dedup + prior-summing in the
+  hot path) and changes search behavior → re-validate. Decide: fix now (retrain validates it) vs defer.
+- **C7 line-number drift:** the plan's C7 offsets (277/311/140) predate the current untracked loop
+  script. Real gate = the anchor eval at `run_pathb_cluster_loop.sh:317`; whether it ever REJECTS
+  (vs advisory) must be confirmed during the Phase-1 build, not assumed.
+- **Plan infra reality (agent 2):** ownership planes exist only as AUX TARGETS (not inputs);
+  farm-connectivity input planes, bag histogram, and city-open-edge planes do NOT exist yet;
+  `value_blend` knob exists + wired; root-Q value targets NOT built (only final-score). Size the
+  Phase-1 build accordingly.
+
 ### C1 [BLOCKER] ✅ DONE — Farm scoring double-count
 - **File:** `engine/wingedsheep/carcassonne/utils/points_collector.py:284-299` (`count_farm_points`);
   `engine/.../objects/city.py` (City has no `__eq__/__hash__`).
