@@ -283,17 +283,25 @@ class PointsCollector:
 
     @classmethod
     def count_farm_points(cls, game_state: CarcassonneGameState, farm: Farm):
-        cities: Set[City] = set()
+        # Dedup touched cities by their POSITION SET, not object identity.
+        # `City` had no __eq__/__hash__ (set dedups by id) and find_cities
+        # returns fresh City objects per call, so a field touching one finished
+        # city from N farmer connections used to score N*3 instead of 3
+        # (~17% of farms over-scored — corrupted reward + the v2.7 leaf).
+        # Mirrors the correct dedup in virtual_score_v2.py:348.
+        counted_city_keys: Set[frozenset] = set()
 
         points = 0
 
         farmer_connection_with_coordinate: FarmerConnectionWithCoordinate
         for farmer_connection_with_coordinate in farm.farmer_connections_with_coordinate:
-            cities = cities.union(CityUtil.find_cities(game_state=game_state, coordinate=farmer_connection_with_coordinate.coordinate, sides=farmer_connection_with_coordinate.farmer_connection.city_sides))
-
-        city: City
-        for city in cities:
-            if city.finished:
-                points += 3
+            cities = CityUtil.find_cities(game_state=game_state, coordinate=farmer_connection_with_coordinate.coordinate, sides=farmer_connection_with_coordinate.farmer_connection.city_sides)
+            for city in cities:
+                city_key = frozenset(city.city_positions)
+                if city_key in counted_city_keys:
+                    continue
+                counted_city_keys.add(city_key)
+                if city.finished:
+                    points += 3
 
         return points

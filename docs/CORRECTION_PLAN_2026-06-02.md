@@ -24,9 +24,13 @@ Evaluate every strength claim on the INDEPENDENT HeuristicMCTS ladder at n=400 (
 
 ---
 
-## PHASE 0 — Correctness bugs (cheap, verify WITHOUT retrain, gate everything)
+## PHASE 0 — Correctness bugs (cheap, verify WITHOUT retrain, gate everything) — ✅ DONE 2026-06-02
 
-### C1 [BLOCKER] Farm scoring double-count
+Both bugs fixed + verified without a retrain; full test suite green (323 passed). River
+also dropped here (folded forward from Phase 1's scope decision — Joshua confirmed). Carry-over:
+the two re-sweeps below (v2.7 caps, c_puct/FPU) still owed, do them alongside the retrain prep.
+
+### C1 [BLOCKER] ✅ DONE — Farm scoring double-count
 - **File:** `engine/wingedsheep/carcassonne/utils/points_collector.py:284-299` (`count_farm_points`);
   `engine/.../objects/city.py` (City has no `__eq__/__hash__`).
 - **Fix:** dedup touched cities by `frozenset(city.city_positions)` (mirror virtual_score_v2.py:348);
@@ -36,7 +40,10 @@ Evaluate every strength claim on the INDEPENDENT HeuristicMCTS ladder at n=400 (
 - **After:** RE-SWEEP the v2.7 caps (CARCASSONNE_V25_CAP, drop-3-open) — a scoring-bug fix shifts
   hyperparam optima (standing rule). The whole v2.7 leaf changes when this lands.
 
-### C2 [BLOCKER] MCTS transposition visit double-count
+**C1 verified:** `scripts/verify_farm_dedup_fix.py` n=150 (876 farms): NEW==REF on ALL farms,
+16.3% over-scored pre-fix, 633 spurious pts removed. Re-sweep of v2.7 caps still owed.
+
+### C2 [BLOCKER] ✅ DONE — MCTS transposition visit double-count
 - **File:** `src/carcassonne_ai/mcts.py` — children keyed by action via `setdefault(state_key)`;
   `root_visit_distribution`/`select_for_training`/`best_action` read `children[a].N` per action.
   Rotationally-symmetric tiles emit ≥2 rotations → identical board → both action slots share one node
@@ -71,11 +78,12 @@ Evaluate every strength claim on the INDEPENDENT HeuristicMCTS ladder at n=400 (
 - **Minimum:** turn `include_farm_scalars=True` (currently OFF in prod global-best checkpoints).
 - **Impact:** changes net input width → retrain from a fresh warmstart.
 
-### SCOPE DECISION (fold in here): DROP RIVER?
-C4 forces a from-scratch-ish retrain → this is THE moment to drop River (competitive/WC = base-only;
-River is a non-scoring setup variant). Trivial engine change (game_wrapper.py:87 `tile_sets`,
-deck-norm in features.py). Joshua's caveat: base-only opening is MORE chaotic → deeper+sharper AND
-higher-variance (the ×1.21 control variate barely dents that). **Needs Joshua's explicit confirm.**
+### SCOPE DECISION (fold in here): DROP RIVER? — ✅ DONE 2026-06-02 (Joshua confirmed)
+Done early (in Phase 0). `Game` default `tile_sets=(BASE,)`, `DECK_NORM 85→72` (base deck = 72
+tiles). Engine keeps River support for explicit callers; production self-play/eval/training is
+base-only. Suite green. Caveat stands: base-only opening is MORE chaotic → deeper+sharper AND
+higher-variance (the ×1.21 control variate barely dents that). Existing river-trained checkpoints
+are off-distribution now (expected — Phase 1 warmstarts from scratch).
 
 ---
 

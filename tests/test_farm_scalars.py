@@ -31,7 +31,10 @@ from wingedsheep.carcassonne.objects.meeple_type import MeepleType
 from wingedsheep.carcassonne.utils.farm_util import FarmUtil
 
 
-def _play(seed: int, plies: int = 150):
+def _play(seed: int, plies: int = 130):
+    # Base-only games terminate at ~141-144 plies; cap below that so we return a
+    # deep but NON-terminal board (callers run get_valid_moves on it, which fails
+    # on a terminal state). River's old 83-tile deck ran to ~166 plies.
     game = Game()
     random.seed(seed)
     board = game.get_init_board()

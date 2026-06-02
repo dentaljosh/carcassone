@@ -4,13 +4,13 @@ If you're starting a new conversation in this repo, read this file first, then [
 
 ## What we're building
 
-AlphaZero-style Carcassonne AI. **Goal (changed 2026-05-28): attempt genuinely superhuman play — beat strong/expert humans, aspirationally the world champion, at 2-player Base+River+Farmers.**
+AlphaZero-style Carcassonne AI. **Goal (changed 2026-05-28): attempt genuinely superhuman play — beat strong/expert humans, aspirationally the world champion, at 2-player Base+Farmers.** (River was DROPPED 2026-06-02 — competitive/WC play is base-only; see DECISIONS.md 2026-06-02.)
 
 ⚠️ **This OVERRIDES the original prompt.** [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) explicitly scoped superhuman *out* ("This is not a 'build superhuman Carcassonne AI' project... We're not going to either") and named the **analyzer (Phase 5)** as the win condition. Joshua changed the goal on 2026-05-28: superhuman strength is now primary; the analyzer (Phase 5) and heuristic research (Phase 6) are **downstream**, pursued after strength milestones, not the target. See [DECISIONS.md](DECISIONS.md) 2026-05-28 "Goal change". Pursue clear-eyed — this is the research-grade goal the prompt deliberately avoided (academic attempts since 2020 stalled). Two structural blockers gate it: (1) **measurement** — no strong non-saturated reference exists yet (Tier-1 is saturated; self-anchored elo can climb while absolute strength regresses), and (2) the **hand-crafted v2.7 leaf eval caps learned strength near strong-human by construction** — superhuman requires the *learned* components to exceed the heuristic, which they don't yet.
 
 Full original spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase structure (0-7) and original guesses live there — but treat the win-condition framing as superseded.
 
-**Locked scope:** 2-player, Base game + River expansion + Farmers, no Inns & Cathedrals, no Abbots, no Big meeples. Don't expand the *rule* scope without explicit approval.
+**Locked scope:** 2-player, Base game + Farmers, no River (dropped 2026-06-02), no Inns & Cathedrals, no Abbots, no Big meeples. Don't expand the *rule* scope without explicit approval.
 
 ## Where the truth lives
 

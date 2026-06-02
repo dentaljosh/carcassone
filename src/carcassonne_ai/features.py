@@ -10,14 +10,14 @@ Layout (current-player-relative, all values normalized to roughly [-1, 1]):
   2  score_mine                 / 100    (typical end-of-game ~80-150)
   3  score_opp                  / 100
   4  score_diff_mine_minus_opp  / 50     (typical |diff| <= 50; saturation OK)
-  5  tiles_remaining_in_deck    / 85     (total deck ~83 with BASE+THE_RIVER)
+  5  tiles_remaining_in_deck    / 72     (base-only deck = 72 tiles; River dropped 2026-06-02)
   6  current_player_flag        (already 0/1)
   7  phase_tiles                (already 0/1)
   8  phase_meeples              (already 0/1)
   9  game_progress              (already in [0, 1])
 
 Length: 10. Normalization rationale: Phase 3 external review flagged that raw
-scalars (scores up to 150, deck size up to 83) had vastly different magnitudes
+scalars (scores up to 150, deck size up to 72) had vastly different magnitudes
 than the binary phase one-hots, slowing learning by forcing the dense head to
 absorb the scaling. Constants are deliberately conservative (rare saturation is
 preferable to compressing the typical range).
@@ -37,7 +37,7 @@ N_FARM_SCALARS = 2  # optional farm-control scalars, appended when include_farm=
 MEEPLE_NORM = 7.0
 SCORE_NORM = 100.0
 SCORE_DIFF_NORM = 50.0
-DECK_NORM = 85.0
+DECK_NORM = 72.0  # base-only deck = 72 tiles (River dropped 2026-06-02)
 FARM_SCALAR_NORM = 4.0  # typical |contested|, |balance| <= ~4 (saturation OK)
 
 

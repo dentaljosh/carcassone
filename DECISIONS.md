@@ -23,6 +23,24 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
+
+**Context.** Acting on the foundational-audit correction plan. Joshua confirmed "drop rivers" and "get started on all those bug fixes."
+
+**What was done (commit follows this entry):**
+- **C1 — farm scoring double-count FIXED.** `count_farm_points` (points_collector.py) now dedups touched cities by `frozenset(city.city_positions)` (mirrors virtual_score_v2.py:348) instead of relying on an identity-keyed `set[City]`. Added value `__eq__/__hash__` to `City` (defense-in-depth). **Verify (no retrain):** `scripts/verify_farm_dedup_fix.py` n=150 (876 farms) — fixed score equals an independent position-set-dedup reference on ALL farms; 16.3% of farms were over-scored pre-fix (matches the audit's ~17%), 633 spurious points removed, worst single farm +12.
+- **C2 — MCTS transposition visit double-count FIXED.** Rotationally-symmetric tiles emit ≥2 rotations → identical board → the transposition table (`self._nodes`, keyed by board string) hands both action slots the SAME child object, so reading `children[a].N` per action double-counts visit mass. Added `NeuralMCTS._deduped_children` (collapse actions sharing a child object to the lowest-index action) and routed `root_visit_distribution`, `select_for_training`, `best_action`, and base `MCTS.best_action` through it. **Verify (no retrain):** `scripts/verify_mcts_transposition_fix.py` sims=64 — 17.5% of decision nodes had collisions (audit ~20%); the fixed visit vector is collision-free and its mass equals the unique-child sum. (HeuristicMCTS.best_action outcome was provably robust to the collision — same child object → same board — so the +181.7 ladder numbers were NOT corrupted by C2; only NeuralMCTS policy *targets* were.)
+
+**Decision: DROP RIVER (Joshua confirmed).**
+**Options considered:**
+  - A: keep River (status quo) — more tiles/strategies, but competitive/world-championship play is base-only and the River opening is a non-scoring setup variant we'd be optimizing for needlessly.
+  - B: drop River → base-only (BASE tile set, FARMERS). Matches the target meta. Caveat (Joshua): base-only opening is MORE chaotic (no scripted river spine) → deeper/sharper game AND higher draw-variance.
+**Decision:** B. `Game` default `tile_sets=(TileSet.BASE,)`; `features.DECK_NORM 85→72` (base deck = 72 tiles vs 83 with River). Engine retains River support for explicit callers; production self-play/eval/training now base-only. Test harness fix: `test_farm_scalars._play` ply cap 150→130 (base games terminate at ~141-144 plies; 150 returned a terminal board and crashed `get_valid_moves`). Full suite green (323 passed, 1 skipped).
+**Reason:** C4 (representation planes) forces a from-scratch warmstart anyway → this was the free moment to switch the rule scope. Aligns the whole pipeline with the actual superhuman target meta.
+**Reversal cost:** low (flip the default back; engine code unchanged).
+**Consequence:** existing river-trained checkpoints (iter_11 etc.) are now off-distribution — expected; Phase 1 retrains from scratch base-only. Carry-over re-sweeps still owed (do alongside retrain prep): v2.7 caps (C1 shifts scoring optima) and c_puct/FPU (C2 changed the visit distribution).
+**Phase:** Phase 0 (correctness) + folded-forward scope decision.
+
 ## 2026-06-02 — FOUNDATIONAL AUDIT: the leaf was a symptom; pivot to correctness/architecture fixes; clairvoyance DE-PRIORITIZED
 
 **Context.** After the residual-leaf soft-no, the question became "why has AlphaZero failed so badly on a game we *accidentally made deterministic*?" First finding: the MCTS never modeled chance — it descends the engine's pre-shuffled deck in true order (clairvoyant single-determinization; documented in mcts.py:18 as a deliberate Phase-2 simplification for the OLD modest goal, never re-audited when the goal changed to superhuman 2026-05-28). Then a 6-agent parallel audit swept every foundational domain.

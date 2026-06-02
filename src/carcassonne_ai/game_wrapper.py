@@ -3,8 +3,11 @@
 Mirrors alpha-zero-general's Game.py method names so a Coach/Arena port is
 trivial later, but does NOT inherit from it (its API assumes 2D board arrays).
 
-Scope (locked for Phases 1-5): 2 players, BASE + THE_RIVER tile sets,
-FARMERS supplementary rule. No Inns & Cathedrals, no Abbots, no Big meeples.
+Scope (2026-06-02 onward): 2 players, BASE tile set only, FARMERS supplementary
+rule. River was DROPPED 2026-06-02 (competitive / world-championship play is
+base-only; River is a non-scoring setup variant) — see DECISIONS.md. No Inns &
+Cathedrals, no Abbots, no Big meeples. The engine still supports THE_RIVER if a
+caller passes it explicitly, but production self-play/eval/training is base-only.
 
 Window size is configurable via Game(window_size=...). Default is 25 based on
 Phase 0 random-game measurements, but can be changed at construction time
@@ -84,7 +87,7 @@ class Game:
     def __init__(
         self,
         players: int = 2,
-        tile_sets: tuple[TileSet, ...] = (TileSet.BASE, TileSet.THE_RIVER),
+        tile_sets: tuple[TileSet, ...] = (TileSet.BASE,),
         supplementary_rules: tuple[SupplementaryRule, ...] = (SupplementaryRule.FARMERS,),
         window_size: int = DEFAULT_WINDOW_SIZE,
         enable_legal_moves_cache: bool = False,

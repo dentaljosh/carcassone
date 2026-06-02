@@ -2,7 +2,12 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-02) — 🔴 FOUNDATIONAL AUDIT done; the leaf was a symptom. Correction plan written → fix 2 live bugs, then ONE batched retrain. **NEXT ACTION: Phase-0 bug fixes (C1, C2).**
+## Right now (2026-06-02) — 🟢 PHASE 0 DONE (C1+C2 fixed & verified) + RIVER DROPPED. Next: the ONE batched Phase-1 retrain. **NEXT ACTION: Phase-1 (value-head-in-loop + representation planes + symmetry aug + de-saturated target + conditional gate), warmstart from scratch base-only.**
+
+**✅ Phase 0 complete (committed, no retrain needed to verify):**
+- **C1 farm double-count FIXED** — `count_farm_points` now dedups touched cities by `frozenset(city_positions)`; `City` got `__eq__/__hash__`. Verified `scripts/verify_farm_dedup_fix.py` (n=150, 876 farms): fixed score == independent correct ref on ALL farms; 16.3% of farms were over-scored pre-fix (matches audit's ~17%), 633 spurious pts removed. ⚠️ STILL TODO: **re-sweep the v2.7 caps** (CARCASSONNE_V25_CAP / drop-3-open) — a scoring-bug fix shifts hyperparam optima.
+- **C2 MCTS visit double-count FIXED** — added `NeuralMCTS._deduped_children` (collapse actions sharing one child object to the lowest index); routed `root_visit_distribution`/`select_for_training`/`best_action` (+ base `MCTS.best_action`) through it. Verified `scripts/verify_mcts_transposition_fix.py` (sims=64): 17.5% of decision nodes had collisions (audit ~20%), fixed visit vector is collision-free, mass == unique-child sum. ⚠️ STILL TODO: **re-sweep c_puct + FPU** (the visit distribution the old c-sweep tuned against changed).
+- **RIVER DROPPED** — `Game` default `tile_sets=(BASE,)`, `DECK_NORM 85→72`. Base-only deck = 72 tiles. Full suite green (323 passed, 1 skip). Existing river-trained checkpoints are now off-distribution (expected — Phase-1 retrains from scratch). See DECISIONS 2026-06-02.
 
 **READ FIRST:** [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) (the path forward) + [docs/research/foundational_audit_2026-06-02.md](docs/research/foundational_audit_2026-06-02.md) (the evidence). These supersede the old leaf/afterstate/pivot plan.
 
@@ -10,10 +15,9 @@
 
 **Clairvoyance is NOT a strength lever** (screen n=76, iter_11, sims=200/c=3: clairvoyant vs fair = 36W/40L = 0.474, −0.5σ = dead even). Good news: our +180 numbers are NOT future-sight-inflated (validity intact). Consequence: the exact-chance-node rebuild is **demoted** — the chance gap bites VALUE-LEARNING (single-future high-variance targets), not search strength. `scripts/diag_clairvoyance.py` + `NeuralMCTS(fair_chance=…)` built (commit e88d82b).
 
-### NEXT ACTIONS (from the correction plan; bugs first, no retrain to verify)
-1. **C1 — farm scoring double-count** (`engine/.../points_collector.py:284-299` + City `__eq__/__hash__`). Verify: farm-discrepancy check → 0 mismatches. Then RE-SWEEP v2.7 caps (scoring fix shifts optima).
-2. **C2 — MCTS transposition visit double-count** (`src/carcassonne_ai/mcts.py`; edge/node split or dedup same-child actions in the visit distribution). Verify: collision check. Then re-sweep c_puct/FPU.
-3. **Then ONE batched retrain** (Phase 1): value head in the loop (`leaf_eval=nn`/deep-search targets) + representation planes (farm connectivity + bag histogram + open-feature progress; turn on farm scalars) + **DROP RIVER** (Joshua confirm — C4 forces a retrain anyway, the moment to do it) + symmetry aug + de-saturated value target + conditional gate + exploration A/B. Evaluate on the INDEPENDENT HeuristicMCTS ladder at n=400.
+### NEXT ACTIONS (Phase 0 + River done; now the batched retrain)
+0. **(carry-over re-sweeps, do alongside the retrain prep):** v2.7 caps (C1 shifted optima) + c_puct/FPU (C2 changed the visit distribution).
+1. **The ONE batched retrain** (Phase 1, base-only): value head in the loop (`leaf_eval=nn`/deep-search targets) + representation planes (farm connectivity + bag histogram + open-feature progress; turn on farm scalars) + symmetry aug + de-saturated value target + conditional gate + exploration A/B. Warmstart from scratch (input width changes + base-only deck). Evaluate on the INDEPENDENT HeuristicMCTS ladder at n=400.
 
 ### Superseded this session (kept for context, detail in git log / docs)
 - **Leaf gate** (sims=800, n=40, commit 870b08d) = MIXED, then **luck-adjusted re-gate** (`--with-luck`, commit 7e7ebf1, n=40) = SOFT NO on the learned-residual leaf (adjusted margin +0.012, shrank under de-noising). Draw-luck control variate works as a measurement tool (×1.21, modest, keep). Both now subsumed by the audit: the residual idea was one symptom-fix among six root causes.

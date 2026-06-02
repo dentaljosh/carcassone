@@ -121,7 +121,19 @@ class MCTS:
             self.search(root_board)
             root = self._nodes[self.game.string_representation(root_board)]
         # Only consider visited children. Unvisited (N==0) have undefined Q.
-        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        # Dedup transposition collisions: rotations of a symmetric tile share
+        # one child node object (root.children[a1] is root.children[a2]); keep
+        # the lowest-index action per unique child. (Outcome-neutral here —
+        # equivalent actions yield the same board — but keeps the iteration
+        # consistent with NeuralMCTS and avoids scoring one child twice.)
+        _seen: set[int] = set()
+        visited = []
+        for a in sorted(root.children):
+            c = root.children[a]
+            if c.N <= 0 or id(c) in _seen:
+                continue
+            _seen.add(id(c))
+            visited.append((a, c))
         if not visited:
             # Pathological: search ran but no child was visited. Fall back to
             # any legal action.
@@ -451,6 +463,34 @@ class NeuralMCTS:
                 self._simulate(root_board, root)
         return {a: child.N for a, child in root.children.items()}
 
+    def _deduped_children(
+        self, root: "_NeuralNode"
+    ) -> list[tuple[int, "_NeuralNode"]]:
+        """Return [(action, child)] with transposition collisions removed.
+
+        Rotationally-symmetric tiles (straight roads, etc.) emit ≥2 rotations
+        that produce the IDENTICAL resulting board → identical state_key → the
+        transposition table hands BOTH action slots the SAME child node object
+        (root.children[a1] is root.children[a2]). That child accumulates visits
+        from either edge, so reading children[a].N per-action counts its visit
+        mass once PER colliding slot — ~2× inflation on ~20% of decision nodes,
+        corrupting the policy target and best_action.
+
+        Collapse each group of actions sharing one child to its lowest-index
+        action (deterministic). The actions are interchangeable by definition —
+        they yield the same board the search already treats as one node — so the
+        combined visit count belongs to a single slot; the others get nothing.
+        """
+        out: list[tuple[int, "_NeuralNode"]] = []
+        seen: set[int] = set()
+        for a in sorted(root.children):
+            child = root.children[a]
+            if id(child) in seen:
+                continue
+            seen.add(id(child))
+            out.append((a, child))
+        return out
+
     def select_for_training(
         self, root_board: Board, temperature: float
     ) -> int:
@@ -470,7 +510,7 @@ class NeuralMCTS:
         if root is None or root.N == 0:
             self.search(root_board)
             root = self._nodes[root_key]
-        visited = [(a, c.N) for a, c in root.children.items() if c.N > 0]
+        visited = [(a, c.N) for a, c in self._deduped_children(root) if c.N > 0]
         if not visited:
             return next(iter(root.children))
         actions, visits = zip(*visited)
@@ -498,10 +538,9 @@ class NeuralMCTS:
         if root is None:
             self.search(root_board)
             root = self._nodes[root_key]
-        actions = list(root.children.keys())
-        counts = np.array(
-            [root.children[a].N for a in actions], dtype=np.float64
-        )
+        items = self._deduped_children(root)
+        actions = [a for a, _ in items]
+        counts = np.array([c.N for _, c in items], dtype=np.float64)
         return counts, actions
 
     def best_action(self, root_board: Board) -> int:
@@ -510,7 +549,7 @@ class NeuralMCTS:
         if root is None or root.N == 0:
             self.search(root_board)
             root = self._nodes[root_key]
-        visited = [(a, c) for a, c in root.children.items() if c.N > 0]
+        visited = [(a, c) for a, c in self._deduped_children(root) if c.N > 0]
         if not visited:
             return next(iter(root.children))
 
