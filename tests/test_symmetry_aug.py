@@ -297,6 +297,24 @@ def test_augment_with_rotations_quadruples():
         np.testing.assert_allclose(aug.values[k * 3:(k + 1) * 3], ds.values, atol=0)
 
 
+def test_streaming_augment_flag_quadruples_rows(tmp_path):
+    from carcassonne_ai.warmstart import make_streaming_dataset
+
+    ds = _synth_dataset(n=4, w=5)
+    path = tmp_path / "seed_0.npz"
+    ds.save(path)
+
+    base = list(make_streaming_dataset([path], shuffle_files_each_epoch=False,
+                                       shuffle_within_file=False))
+    aug = list(make_streaming_dataset([path], shuffle_files_each_epoch=False,
+                                      shuffle_within_file=False,
+                                      augment_rotations=True))
+    assert len(base) == 4          # original rows
+    assert len(aug) == 16          # 4 rotations x 4 rows
+    # each yielded item is the 6-tuple (board, scalar, policy, value, mask, own)
+    assert len(aug[0]) == 6
+
+
 def test_real_board_structural_preservation():
     for seed in range(5):
         arr = _encode_real_board(seed)

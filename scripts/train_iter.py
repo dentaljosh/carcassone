@@ -186,6 +186,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--iter", type=int, required=True, dest="iter_idx")
     p.add_argument("--window", type=int, default=10,
                    help="Replay-buffer window: last K iters' games (default 10).")
+    p.add_argument("--augment-rotations", action="store_true",
+                   help="C5 symmetry aug: expand each training file to its 4 board "
+                        "rotations (4x label-correct data). Train set only; off by default.")
     p.add_argument("--warmstart-mix-fraction", type=float, default=0.0,
                    help="Fraction of training samples from the warmstart "
                         "dataset (rest from self-play buffer). Plan: 1.0 "
@@ -265,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         shuffle_files_each_epoch=True,
         shuffle_within_file=True,
         seed=args.seed,
+        augment_rotations=args.augment_rotations,
     )
     if do_validation:
         val_ds = make_streaming_dataset(

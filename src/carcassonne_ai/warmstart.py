@@ -497,6 +497,7 @@ def make_streaming_dataset(
     shuffle_files_each_epoch: bool = True,
     shuffle_within_file: bool = True,
     seed: int = 0,
+    augment_rotations: bool = False,
 ):
     """Build a torch IterableDataset that streams (board, scalar, policy,
     value, mask) tuples from the given .npz file list.
@@ -549,6 +550,12 @@ def make_streaming_dataset(
                 ds = GameDataset.load(path)
                 if len(ds) == 0:
                     continue
+                # C5 symmetry augmentation: expand each file to its 4 board
+                # rotations before yielding rows (off by default → no behavior
+                # change to existing training). Carcassonne is rotation-invariant
+                # (reflection is not), so this is 4× free, label-correct data.
+                if augment_rotations:
+                    ds = augment_with_rotations(ds)
                 idx_order = list(range(len(ds)))
                 if shuffle_within_file:
                     import zlib
