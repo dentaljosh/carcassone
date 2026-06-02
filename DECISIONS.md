@@ -23,6 +23,23 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 ## Decisions
 
+## 2026-06-01 — Anchor-fraction self-play VERDICT: real +39 elo over iter_11 (v2.7 leaf ceiling is NOT absolute)
+
+**Context.** First full run of the anchor-fraction strength loop (`RUN=pathb_anchor`: warm-chain from iter_11, 30% of self-play games vs the fixed iter_11 anchor, all 3 boxes). Ran iters 0–6, then self-stopped via the new confirm-before-kill (plateau confirmed). The open question from the prompt-superseding goal: can the *learned* signal exceed the hand-crafted v2.7 leaf, which was hypothesized to cap strength near iter_11?
+
+**Result (verdict-grade, n=400, c=1.5 sims=200; `results.csv` `anchor_*`):**
+- **iter_4 vs iter_11 = 55.6% = +39.3 elo / 2.25σ → REAL gain.** iter_4 is the new best checkpoint.
+- iter_6 vs iter_4 = 49.1% (equal) — the two best ckpts are the same strength despite n=40 iter_11 gates of 57.5 vs 68.8 ⇒ those swings were **noise**.
+- iter_0 vs iter_5 = 46.5% (floor check, n=100) — chain is **non-monotonic**: checkpoints bounce (iter_4/iter_6 ~+39 over iter_11; iter_0/iter_5 ~iter_11 level). Pipeline healthy (val-corr climbed 0.18→0.81 monotonically, entropy OK).
+
+**Decision / takeaways:**
+1. **The v2.7 leaf ceiling is NOT an absolute wall** — anchor-fraction self-play produced a checkpoint measurably stronger than iter_11. This was the open hypothesis (see the "Value-as-leaf CLOSED" entry, which said lifting the ceiling "needs a genuinely stronger *learned* signal — what anchor-fraction is meant to produce"). It produced one. Modest (+39), but real.
+2. **The gain is small and noisy/non-monotonic** — not a steady climb; the best checkpoints happen to land ~+39, others sit at iter_11. So anchor-fraction is a real but weak lever; the leaf remains the bigger one for a *large* gain.
+3. **Methodology, logged hard: per-iter n=40 gates are SCREENS, not verdicts.** The +39 real signal was invisible/misleading at n=40 (gates swung 37.5–68.8%); only n=400 resolved it. I flip-flopped twice reading the n=40 trend (null→"climbing"→noise→real). Reinforces [[feedback_results_table_source_of_truth]] and the n=100-screen/n=400-verdict rule — and validates the confirm-before-kill design (it correctly auto-escalated to n=400 at the plateau).
+
+**Caveat.** Measured at the loop gate's c=1.5, not the ladder's c=3.0 — iter_4's *absolute* strength vs HeuristicMCTS not yet re-laddered (NEXT #1).
+**Reversal cost:** n/a (a measurement). **Phase:** 4.
+
 ## 2026-06-01 — Confirm-before-kill: make the plateau-stop symmetric with the keep decision
 
 **Context.** The plateau guard (entry below, item 5) hard-`break`s the loop after MAX_FLAT(=2) consecutive n=40 gates fail to beat the running best. Joshua flagged the asymmetry: a *positive* n=40 gate we (correctly) distrust as noise and demand more data — but a *negative* streak we acted on by killing the whole run. Same ±8% noise, opposite credence. Worse, the guard compared each gate against the running **max** (`best_wr`), so a lucky early high (e.g. iter_1's 55%, when the true rate was ~47%) inflates the bar and biases the counter toward false-trips. And the cost asymmetry runs the same way: a false-positive wastes ~1 iter (~1 hr); a false-negative abandons a working approach and sends us to the much harder leaf rework.
