@@ -1,5 +1,11 @@
 # Phase 3 design notes (draft, not yet plan-mode reviewed)
 
+> **⚠️ HISTORICAL (pre-implementation sketch, ~2026-04).** Phase 3 shipped (6×96 ResNet +
+> heuristic warmstart; see README/DECISIONS "Phase 3 closure"). These are early design notes
+> from before the build AND before the 2026-05-28 goal-change / 2026-06-02 audit. Retained for
+> history; not a current plan. Current network/representation direction = Stage C of
+> [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md).
+
 > Sketched during the s=20 tournament's wall-clock window. Treat as starting points; full plan-mode review needed before any implementation.
 
 ## What Phase 3 has to deliver

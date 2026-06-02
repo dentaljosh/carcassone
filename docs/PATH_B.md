@@ -1,5 +1,13 @@
 # Path B — turning the value-bootstrap back on (KataGo-style)
 
+> **⚠️ STATUS 2026-06-02 — PARTIALLY FOLDED INTO THE CORRECTION PLAN, not dead.** The
+> 2026-06-02 foundational audit reframed the work, but Path B's core ideas ARE the current
+> Stages B/C: value-head-in-the-search-loop (Stage B) and KataGo-style representation /
+> ownership planes (Stage C — the `aux_targets.py` ownership infra was built here). For the
+> CURRENT sequencing read [CORRECTION_PLAN_2026-06-02.md](CORRECTION_PLAN_2026-06-02.md) +
+> [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) FIRST; this doc is design
+> background whose step-numbering is superseded by the staged A→B→C plan.
+
 > **Durable handoff doc.** Written 2026-05-29 right before a context compaction.
 > A post-compaction Claude (or fresh thread) should be able to execute this
 > step-by-step. Read [CLAUDE.md](../CLAUDE.md) → [STATUS.md](../STATUS.md) →
