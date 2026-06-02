@@ -6,6 +6,99 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 
 **Don't log:** variable names, file organization, formatting choices, library version pinning, anything that's purely a style decision.
 
+## Index (newest first)
+
+> Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) + [STATUS.md](STATUS.md).
+
+**2026-06 — correction era (current)**
+- 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7); learned policy ≈ v2.7 leaf
+- 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
+- 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
+- 2026-06-02 — FOUNDATIONAL AUDIT: the leaf was a symptom; clairvoyance DE-PRIORITIZED
+- 2026-06-01 — Anchor-fraction self-play VERDICT: +39 over iter_11 OVERTURNED by the ladder
+- 2026-06-01 — Confirm-before-kill: plateau-stop made symmetric with the keep decision
+- 2026-06-01 — Strength-push loop wired: mixed-mode + anchor-fraction + plateau guard
+- 2026-06-01 — Pipeline bench: orchestrator wrong for CPU v2.7 leaf → mixed-mode (+87% cluster); W≈48/fp16 superseded
+
+**2026-05 — measurement / Path-B / leaf-tuning era**
+- 2026-05-31 — PIVOT off value-as-leaf → measurement ladder; iter_11 +119 elo vs strong reference
+- 2026-05-31 — Path B Step 9 VERDICT: pure NN-value leaf fails (-800) but it's a CALIBRATION CLIFF
+- 2026-05-31 — Path B screening SUCCEEDED (value head crosses heuristic); loop extended to iter 24
+- 2026-05-29 — Path B Steps 6–8: smoke PASS, collapse guard + value-corr; 3-box screening LAUNCHED
+- 2026-05-29 — Path B Step E: farm scalars IN + free + flip-on wired
+- 2026-05-29 — c=3 "+47" RE-VALIDATED at n=1600 → corrected to +18.5; default unchanged
+- 2026-05-29 — Leaf flood-fill speedup: lazy per-leaf farm + city memo (1.70× leaf / 1.48× search)
+- 2026-05-29 — Prioritize the find_farm speedup as next dev task
+- 2026-05-29 — Engine fix: farmer-adjacency bug made farm scoring start-dependent
+- 2026-05-28 — GOAL CHANGE: attempt genuinely superhuman play (overrides original prompt)
+- 2026-05-28 — Measurement infrastructure: results.csv as source of truth + results discipline
+- 2026-05-28 (evening) — Optuna eval-search softens the c=3 "+47"; flagged for re-validation
+- 2026-05-28 — c_puct bump: eval-side validated, self-play-side on hypothesis (not yet A/B'd)
+- 2026-05-26 — c_puct=1.5→3.0 free win at iter_B1: +47.2 elo n=400; "plateau" was stale-PUCT
+- 2026-05-24 — Option B chain KILLED after B4; chain-vs-prev anchors lied; pivot to anchor-fraction
+- 2026-05-20 — Network-distributed eval-server: TCP bridge for GPU-less box
+- 2026-05-20 — Retroactive-validation pipeline: re-running 4 high-leverage past nulls at n=400
+- 2026-05-20 (results) — 2 of 4 false-negatives recovered; iter_B1 promoted to global-best
+- 2026-05-19 (late) — Deepsearch verdict revised: matched-regime sims=800 = +17 elo (within noise)
+- 2026-05-19 — Deeper-search self-play didn't advance; v2.7 plateau confirmed across 3 strategies
+- 2026-05-19 — Code-review loop: 14 fixes; work-stealing stale-recovery race accepted
+- 2026-05-18 — Option 2 (NN value-head leaf blend) closed; plain v2.7 plateaued
+- 2026-05-17 — self-play perf: hash-cache + get_side shipped; deeper memoization parked
+- 2026-05-17 — closure-probability accuracy is not the leaf lever → pivot to Option-2
+- 2026-05-17 — iter_02 flattens: policy saturated against fixed v2.7 leaf; compounding ceiling found
+- 2026-05-16 — iter_01 retrain confirms data-scarcity hypothesis
+- 2026-05-15 — PUCT c sweep: low c (≤1.0) catastrophic; default c=1.5 well-chosen
+- 2026-05-15 — v3 leaf: cap tuning fitting n=20 noise; v2.7 cap=12 at local optimum
+- 2026-05-15 — v2.5 dedup bug fix + cap/P re-sweep + cloud retrain: iter_00 +21pp over warmstart
+- 2026-05-14 — v2.5 hyperparameter sweep: sims=200 sweet spot, cap=5 inverted-U optimum
+- 2026-05-14 — orchestrator at W=6 hurts, W=12 helps — IPC vs batching tradeoff
+- 2026-05-14 — v2.5 BENCH PASSES 83.3% vs Tier-1; production candidate
+- 2026-05-14 — v2-diagnostic: bonus scale 4-7× v1 base — tanh saturates
+- 2026-05-14 — virtual_score_v2 FAILS bench: ~47pp regression vs v1
+- 2026-05-14 — Virtual_score diagnostic: closure-blindness + farm-composition opacity dominant
+- 2026-05-14 — Sims sweep + uniform-priors ablation: policy worth ~18pp; sims=400 ceiling
+- 2026-05-14 — The NN value head was the bug: NN priors + virtual_score flipped Tier-1 75%→40%
+- 2026-05-14 — Cloud-prep: --leaf-eval v2_5 plumbed; MCTS virtual-loss 3× batch-fill
+- 2026-05-13 — Tier-1 baseline destroys warmstart_canonical AND iter_12 → recipe-ceiling confirmed
+- 2026-05-13 — Phase B cloud bench: W=32 optimum, full iter 5.2 min, h2h OOM falsified
+- 2026-05-13 — Phase A cloud bench: 5-loop MCTS perf patches validated
+- 2026-05-13 — MCTS perf loop 2/3/4: tile/rotation/str caches, placed_coords set
+- 2026-05-13 — MCTS perf loop 1: engine state __deepcopy__ cut wallclock 3.3×
+- 2026-05-13 — Orchestrator multi-process pool: NULL, workers are bottleneck not GIL
+- 2026-05-13 — Phase 4 v6 cloud: 20 iters, iter_12 = 70% wr (new peak above v5's 65%)
+- 2026-05-12 — Phase 4 v5 HALTED at iter 9 (3 anchor FAILs); peak iter 6 = 65%
+- 2026-05-12 — Phase A cloud bench: W=96 optimum (15% faster than W=48)
+- 2026-05-12 — GPU orchestrator landed + validated, 10-14% slower local (expected)
+- 2026-05-12 — MPS test: W=48 + fp32 + no-MPS optimal
+- 2026-05-12 — Cloud bench: W=48 + fp32 optimum on RTX 5090 + 48-core EPYC
+- 2026-05-11 — Phase 4 v2 recipe FAILED acceptance: mix=0.3 floor not enough
+- 2026-05-10 — Chain-vs-prev ELO discredited; 30-iter "PASS" was absolute regression
+- 2026-05-08 — Virtual-loss + batched-eval MCTS landed
+
+**2026-04 — Phase 0-4 foundation era**
+- 2026-05-03 — Phase 4 smoke PASS: 5 iters, ELO 0→176
+- 2026-04-29 — Phase 3 closure: v2 the warmstart, proceed to Phase 4
+- 2026-04-28 — Phase 3 v1 acceptance + v2 retry plan (sharper tau)
+- 2026-04-28 — Engine bug: city_diagonal_top_left_road shared description
+- 2026-04-28 — Phase 3 production gen sized to 100K not 500K
+- 2026-04-28 — Phase 3 production prerequisites landed
+- 2026-04-28 — Phase 3 smoke: HEURISTIC wins, scale to 500K (pause for prereqs)
+- 2026-04-28 — External review findings + bug fixes
+- 2026-04-28 — Phase 3 network capacity: 6 ResBlocks × 96 filters
+- 2026-04-28 — Phase 2 acceptance: MCTS(s=20) 96/100 vs random + Q-tiebreak fix
+- 2026-04-27 — Phase 4 prereq: get_valid_moves performance strategy
+- 2026-04-27 — Phase 1 quick-bench results (per-call cost map)
+- 2026-04-27 — Phase 1 action-space encoding: phase-aware flat (size 2511)
+- 2026-04-27 — Window size is a Game config parameter
+- 2026-04-27 — Parallel-worker count: full SMT fan-out (16 on 5800X)
+- 2026-04-27 — Phase 0 measurement results (random play only)
+- 2026-04-27 — Vendor upstream repos rather than git submodules
+- 2026-04-27 — Reward normalization: tanh(diff / 15)
+- 2026-04-27 — Window-overflow handling: drop the game
+- 2026-04-27 — Patch engine: ties award full points to all tied players
+- 2026-04-27 — Patch engine: lazy tkinter import
+- 2026-04-27 — Patch engine: silence print statements behind flag
+
 ## Format
 
 ```
