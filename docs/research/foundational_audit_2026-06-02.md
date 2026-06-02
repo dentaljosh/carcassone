@@ -61,7 +61,12 @@ No chance nodes; search descends the true future deck (mcts.py:18,365). Teacher 
 draws; student (net, fair inputs) cannot → value labels encode unlearnable information; floor on
 value error set by deck entropy the teacher didn't pay. Also inflates all strength numbers
 (clairvoyant-vs-clairvoyant). `fair_chance=True` exists but is single-determinization (not an
-expectation) and unwired in production. **Measurement IN FLIGHT:** clairvoyance screen (n=76).
+expectation) and unwired in production. **SCREEN RESULT (2026-06-02, n=76, iter_11, sims=200/c=3):
+clairvoyant vs fair = 36W/40L = 0.474 match score (−0.5σ) = DEAD EVEN.** → future-sight is NOT
+load-bearing for SEARCH STRENGTH; our +180 numbers are NOT clairvoyance-inflated (validity intact).
+So the chance problem bites via VALUE-LEARNING (single-future high-variance targets + net can't see
+the bag, F-B3), NOT via search strength. **De-prioritizes the exact-chance-node rebuild as a strength
+lever** — it's a value-target-quality fix, behind the TIER-1 bugs + F-B1/F-B3.
 **Caveat F-B2b [MAJOR]:** `fair_chance` reshuffle is unsound vs the transposition table — deck order
 isn't in the state key, so determinized children with different futures merge. Fix before trusting
 any non-clairvoyant search (add deck-order/seed to key, or real chance nodes).
