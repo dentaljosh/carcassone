@@ -370,6 +370,113 @@ def canonical_swap(arr: np.ndarray) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
+# Symmetry augmentation (C5): 90° board rotation of an ENCODED tensor.
+#
+# Carcassonne is invariant under the 4 rotations of the square (reflection is
+# NOT a symmetry — curved roads / the directed tile art break it), so each
+# self-play position yields 4 equivalent training examples. This rotates a
+# (N_CHANNELS, W, W) tensor by 90° COUNTER-CLOCKWISE, matching
+# np.rot90(., k=1, axes=(1,2)) on the spatial plane, with a matching permutation
+# of the DIRECTIONAL channel groups (edges, internal pairs, meeple sides, farmer
+# corners, and the broadcast reference-tile blocks). The companion action remap
+# lives in action_space.rotate_action and MUST use the same geometric direction.
+#
+# Direction (90° CCW), expressed as new<-old (the new channel for side/corner S
+# is sourced from the OLD side/corner that rotates INTO S):
+#   sides:   TOP<-RIGHT, RIGHT<-BOTTOM, BOTTOM<-LEFT, LEFT<-TOP
+#   corners: TL<-TR, TR<-BR, BR<-BL, BL<-TL
+# CENTER (normal-meeple slot 5) is rotation-fixed.
+_SRC_SIDE_4: dict[Side, Side] = {
+    Side.TOP: Side.RIGHT,
+    Side.RIGHT: Side.BOTTOM,
+    Side.BOTTOM: Side.LEFT,
+    Side.LEFT: Side.TOP,
+}
+_SRC_CORNER: dict[Side, Side] = {
+    Side.TOP_LEFT: Side.TOP_RIGHT,
+    Side.TOP_RIGHT: Side.BOTTOM_RIGHT,
+    Side.BOTTOM_RIGHT: Side.BOTTOM_LEFT,
+    Side.BOTTOM_LEFT: Side.TOP_LEFT,
+}
+
+
+def _pair_src_index(i: int) -> int:
+    """For SIDE_PAIRS[i] = (a, b), the index of the unordered source pair
+    (_SRC_SIDE_4[a], _SRC_SIDE_4[b]) — used to permute the internal road/city
+    pair channels under rotation."""
+    a, b = SIDE_PAIRS[i]
+    sa, sb = _SRC_SIDE_4[a], _SRC_SIDE_4[b]
+    want = {sa, sb}
+    for j, (x, y) in enumerate(SIDE_PAIRS):
+        if {x, y} == want:
+            return j
+    raise AssertionError(f"no source pair for {SIDE_PAIRS[i]!r}")
+
+
+def _build_rot_channel_perm() -> np.ndarray:
+    """perm[new_channel] = old_channel for a 90° CCW rotation. Non-directional
+    channels (tile-present, shield, chapel, last-tile-pos) map to themselves;
+    spatial rotation handles their content."""
+    perm = np.arange(N_CHANNELS, dtype=np.int64)
+
+    def side_src_idx(sides: tuple[Side, ...], s: Side) -> int:
+        src = s if s == Side.CENTER else _SRC_SIDE_4[s]
+        return sides.index(src)
+
+    # edges [0,16): 4 sides x 4 cats
+    for i, s in enumerate(SIDES_4):
+        src = SIDES_4.index(_SRC_SIDE_4[s])
+        for cat in range(EDGE_CATEGORIES):
+            perm[CH_EDGES + i * EDGE_CATEGORIES + cat] = CH_EDGES + src * EDGE_CATEGORIES + cat
+    # internal road / city pairs (6 each)
+    for i in range(N_SIDE_PAIRS):
+        src = _pair_src_index(i)
+        perm[CH_INTERNAL_ROAD + i] = CH_INTERNAL_ROAD + src
+        perm[CH_INTERNAL_CITY + i] = CH_INTERNAL_CITY + src
+    # normal meeple slots (5 sides, mine + opp); CENTER fixed
+    for i, s in enumerate(SIDES_5):
+        src = side_src_idx(SIDES_5, s)
+        perm[CH_NORMAL_MEEPLE_MINE + i] = CH_NORMAL_MEEPLE_MINE + src
+        perm[CH_NORMAL_MEEPLE_OPP + i] = CH_NORMAL_MEEPLE_OPP + src
+    # farmer corner slots (4 corners, mine + opp)
+    for i, c in enumerate(CORNERS_4):
+        src = CORNERS_4.index(_SRC_CORNER[c])
+        perm[CH_FARMER_MEEPLE_MINE + i] = CH_FARMER_MEEPLE_MINE + src
+        perm[CH_FARMER_MEEPLE_OPP + i] = CH_FARMER_MEEPLE_OPP + src
+    # reference-tile broadcast: edges (16) + internal pairs (6 road + 6 city)
+    for i, s in enumerate(SIDES_4):
+        src = SIDES_4.index(_SRC_SIDE_4[s])
+        for cat in range(EDGE_CATEGORIES):
+            perm[CH_REF_TILE_EDGES + i * EDGE_CATEGORIES + cat] = (
+                CH_REF_TILE_EDGES + src * EDGE_CATEGORIES + cat
+            )
+    for i in range(N_SIDE_PAIRS):
+        src = _pair_src_index(i)
+        perm[CH_REF_TILE_INTERNAL + i] = CH_REF_TILE_INTERNAL + src
+        perm[CH_REF_TILE_INTERNAL + N_SIDE_PAIRS + i] = (
+            CH_REF_TILE_INTERNAL + N_SIDE_PAIRS + src
+        )
+    return perm
+
+
+_ROT_CHANNEL_PERM = _build_rot_channel_perm()
+
+
+def rotate_board_repr_90(arr: np.ndarray) -> np.ndarray:
+    """Rotate an encoded (N_CHANNELS, W, W) board tensor 90° counter-clockwise.
+
+    Spatial 90° CCW (np.rot90 on the W×W plane) + a matching permutation of the
+    directional channel groups. Applying this 4× is the identity. The companion
+    policy/action remap is action_space.rotate_action (same geometric direction).
+    """
+    if arr.ndim != 3 or arr.shape[0] != N_CHANNELS:
+        raise ValueError(
+            f"expected ({N_CHANNELS}, W, W), got {arr.shape}"
+        )
+    return np.ascontiguousarray(np.rot90(arr, k=1, axes=(1, 2))[_ROT_CHANNEL_PERM])
+
+
+# ---------------------------------------------------------------------------
 # Backwards-compat shims for legacy channel constants. Existing tests import
 # CH_MEEPLE_MINE / CH_MEEPLE_OPP / CH_FARMER_MINE / CH_FARMER_OPP and treat
 # them as a single channel each. After the per-side / per-corner expansion

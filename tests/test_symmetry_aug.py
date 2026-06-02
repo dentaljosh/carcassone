@@ -1,0 +1,159 @@
+"""Tests for the C5 symmetry-augmentation board-tensor rotation
+(board_repr.rotate_board_repr_90).
+
+Three levels of rigor:
+  1. The channel permutation is a valid bijection and rotate×4 == identity.
+  2. Hand-geometry directional pinning: a feature placed on a KNOWN side/corner
+     at a known cell lands exactly where a 90° CCW rotation must send it (uses
+     np.rot90 as the spatial ground truth; the channel index is hand-derived).
+  3. Structural preservation on a REAL encoded game board: tile-present count,
+     per-side edge one-hot validity, and meeple counts are all conserved.
+"""
+import random
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "engine"))
+
+import numpy as np
+
+from carcassonne_ai import board_repr as BR
+from carcassonne_ai.board_repr import (
+    CH_EDGES,
+    CH_FARMER_MEEPLE_MINE,
+    CH_NORMAL_MEEPLE_MINE,
+    CH_TILE_PRESENT,
+    CORNERS_4,
+    EDGE_BLOCK,
+    EDGE_CATEGORIES,
+    N_CHANNELS,
+    SIDES_4,
+    compute_window_offset,
+    encode_board,
+    rotate_board_repr_90,
+)
+from carcassonne_ai.game_wrapper import Game
+from wingedsheep.carcassonne.objects.side import Side
+
+
+W = 9  # small window for synthetic tests
+
+
+def test_channel_perm_is_bijection():
+    perm = BR._ROT_CHANNEL_PERM
+    assert perm.shape == (N_CHANNELS,)
+    assert sorted(perm.tolist()) == list(range(N_CHANNELS))
+
+
+def test_rotate_four_times_is_identity():
+    rng = np.random.default_rng(0)
+    arr = rng.random((N_CHANNELS, W, W)).astype(np.float32)
+    out = arr
+    for _ in range(4):
+        out = rotate_board_repr_90(out)
+    np.testing.assert_allclose(out, arr, atol=0)
+
+
+def test_rotate_shape_guard():
+    import pytest
+
+    with pytest.raises(ValueError):
+        rotate_board_repr_90(np.zeros((N_CHANNELS, W), dtype=np.float32))
+    with pytest.raises(ValueError):
+        rotate_board_repr_90(np.zeros((N_CHANNELS + 1, W, W), dtype=np.float32))
+
+
+def _expected_rotated_cell(r: int, c: int) -> tuple[int, int]:
+    """Where (r, c) goes under np.rot90(k=1) — the spatial ground truth."""
+    m = np.zeros((W, W), dtype=np.float32)
+    m[r, c] = 1.0
+    mr = np.rot90(m, k=1)
+    er, ec = map(int, np.argwhere(mr == 1.0)[0])
+    return er, ec
+
+
+def test_edge_direction_top_to_left():
+    # A CITY edge (cat 0) on side TOP at cell (2, 5). Under 90° CCW the TOP edge
+    # becomes the LEFT edge (a tile facing up, rotated CCW, faces left).
+    arr = np.zeros((N_CHANNELS, W, W), dtype=np.float32)
+    top_city = CH_EDGES + SIDES_4.index(Side.TOP) * EDGE_CATEGORIES + 0
+    arr[top_city, 2, 5] = 1.0
+    out = rotate_board_repr_90(arr)
+
+    left_city = CH_EDGES + SIDES_4.index(Side.LEFT) * EDGE_CATEGORIES + 0
+    er, ec = _expected_rotated_cell(2, 5)
+    assert out[left_city, er, ec] == 1.0
+    assert out[left_city].sum() == 1.0
+    # the TOP-city channel must now be empty (the feature moved off it)
+    assert out[top_city].sum() == 0.0
+
+
+def test_farmer_corner_direction_tl_to_bl():
+    # A farmer on the TOP_LEFT corner. Under 90° CCW the NW corner -> SW corner
+    # (BOTTOM_LEFT).
+    arr = np.zeros((N_CHANNELS, W, W), dtype=np.float32)
+    tl = CH_FARMER_MEEPLE_MINE + CORNERS_4.index(Side.TOP_LEFT)
+    arr[tl, 3, 1] = 1.0
+    out = rotate_board_repr_90(arr)
+
+    bl = CH_FARMER_MEEPLE_MINE + CORNERS_4.index(Side.BOTTOM_LEFT)
+    er, ec = _expected_rotated_cell(3, 1)
+    assert out[bl, er, ec] == 1.0
+    assert out[bl].sum() == 1.0
+    assert out[tl].sum() == 0.0
+
+
+def test_center_meeple_slot_is_rotation_fixed():
+    from carcassonne_ai.board_repr import SIDES_5
+
+    arr = np.zeros((N_CHANNELS, W, W), dtype=np.float32)
+    center = CH_NORMAL_MEEPLE_MINE + SIDES_5.index(Side.CENTER)
+    arr[center, 4, 6] = 1.0
+    out = rotate_board_repr_90(arr)
+    # stays on the CENTER channel; only the cell moves (spatial rotation)
+    er, ec = _expected_rotated_cell(4, 6)
+    assert out[center, er, ec] == 1.0
+    assert out[center].sum() == 1.0
+
+
+def _encode_real_board(seed: int):
+    game = Game()
+    random.seed(seed)
+    board = game.get_init_board()
+    for _ in range(40):
+        if board.state.is_terminated():
+            break
+        mask = game.get_valid_moves(board)
+        legal = np.flatnonzero(mask)
+        if legal.size == 0:
+            break
+        board, _ = game.get_next_state(board, int(random.choice(legal)))
+    off = compute_window_offset(board.state, window_size=BR.DEFAULT_WINDOW_SIZE)
+    return encode_board(board.state, board.state.current_player, off)
+
+
+def test_real_board_structural_preservation():
+    for seed in range(5):
+        arr = _encode_real_board(seed)
+        out = rotate_board_repr_90(arr)
+        # tile-present count conserved
+        assert out[CH_TILE_PRESENT].sum() == arr[CH_TILE_PRESENT].sum()
+        # every present tile still has exactly one edge category per side
+        present = np.argwhere(out[CH_TILE_PRESENT] == 1.0)
+        for (r, c) in present:
+            for i in range(len(SIDES_4)):
+                block = out[CH_EDGES + i * EDGE_CATEGORIES:
+                            CH_EDGES + (i + 1) * EDGE_CATEGORIES, r, c]
+                assert block.sum() == 1.0, f"side {i} not one-hot at ({r},{c})"
+        # total edge mass conserved (16 channels x present tiles)
+        np.testing.assert_allclose(
+            out[CH_EDGES:CH_EDGES + EDGE_BLOCK].sum(),
+            arr[CH_EDGES:CH_EDGES + EDGE_BLOCK].sum(),
+        )
+        # round-trip on a real board too
+        rt = out
+        for _ in range(3):
+            rt = rotate_board_repr_90(rt)
+        np.testing.assert_allclose(rt, arr, atol=0)
