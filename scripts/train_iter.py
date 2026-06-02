@@ -202,6 +202,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument(
+        "--lr-schedule", choices=["none", "cosine"], default="none",
+        help="G-T1 (round-2 audit): LR schedule. 'none' (default) = flat lr "
+             "(prior behavior). 'cosine' = CosineAnnealingLR over --epochs; use "
+             "at Stage B for a low-LR value-head refine phase.",
+    )
+    p.add_argument(
+        "--value-loss-weight", type=float, default=1.0,
+        help="G-T2 (round-2 audit): coefficient on the value MSE in the total "
+             "loss. Default 1.0 = prior behavior. Policy CE dominates the value "
+             "term ~5-10x unweighted; raise this (1-5) at Stage B to stop "
+             "starving the value head (esp. with --value-target score_diff_wide).",
+    )
+    p.add_argument(
         "--aux-weight",
         type=float,
         default=0.15,
@@ -329,6 +342,14 @@ def main(argv: list[str] | None = None) -> int:
     optim = torch.optim.AdamW(
         net.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
+    # G-T1 (round-2 audit): optional LR schedule. Default "none" = flat lr
+    # (exact prior behavior). "cosine" decays over the epochs — use at Stage B,
+    # where the value head is in the loop and benefits from a low-LR refine phase.
+    sched = None
+    if args.lr_schedule == "cosine":
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optim, T_max=max(args.epochs, 1)
+        )
 
     metrics = {
         "iter": args.iter_idx,
@@ -362,7 +383,12 @@ def main(argv: list[str] | None = None) -> int:
             pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
             val_loss = F.mse_loss(value_pred, value_b)
             own_loss = ownership_loss(own_pred, own_b, board_b)
-            loss = pol_loss + val_loss + args.aux_weight * own_loss
+            # G-T2 (round-2 audit): policy CE (O(2-6) over 2511 actions) dominates
+            # value MSE (O(0.1-1)) ~5-10x in the unweighted sum, starving the value
+            # head — the exact thing Stage B needs load-bearing. value_loss_weight
+            # defaults to 1.0 (prior behavior); sweep it up (1-5x) at Stage B,
+            # especially with score_diff_wide which shrinks the value-target scale.
+            loss = pol_loss + args.value_loss_weight * val_loss + args.aux_weight * own_loss
             if not torch.isfinite(loss):
                 # zero_grad already ran above this batch, so skipping here
                 # leaves no stale gradient to leak into the next batch's step.
@@ -432,6 +458,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  (no val)"
             )
         sys.stdout.flush()
+        if sched is not None:
+            sched.step()
 
     # Trained-net policy entropy (post-training) for the collapse guard.
     trained_entropy = None
