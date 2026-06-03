@@ -2,11 +2,19 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-03 overnight) — 🟢 PHASE 0 + RE-BASELINE + ROUND-2 AUDIT + EVAL-PATH FIXES + WORK-STEALING + CLUSTER DASHBOARD + FAILURE-MODE HOOKS + STAGE-A2 VERDICT all done. 🔵 OVERNIGHT: high-sim ladder + warmstart corpus.
+## Right now (2026-06-03 overnight) — 🟢 PHASE 0 + RE-BASELINE + ROUND-2 AUDIT + EVAL-PATH + WORK-STEALING + DASHBOARD + HOOKS + STAGE-A2 VERDICT + STAGE-B WIRING (branch) + TEST-GAP CLOSE all done. 🔵 high-sim ladder running. ⏭ NEXT = Joshua.
 
-**🔵 RUNNING OVERNIGHT (launched 2026-06-03 00:15):**
-- **High-sim HeuristicMCTS reference rung** (measurement-wall yardstick): iter_11 vs HeuristicMCTS at **matched sims=800**, 3 boxes, DISJOINT shards (legacy `eval_net_vs_heuristic.py`, proven path), launcher `~/ladder_highsim.sh` (snapshot `scripts/ladder_highsim.sh`), PID 1182711, log `/tmp/ladder.log`, out `/mnt/c/carc-shared/ladder_highsim/iter11_s800_h800_c30/`. N=1200 **oversized on purpose** (won't finish; tally partial in AM — per-game JSON resumable). sims=800 games are multi-min → expect ~500–1000 by morning. Watcher `b7u4yunim`. **AM tally:** `eval_net_vs_heuristic.py … --out-subdir iter11_s800_h800_c30 --seed-start 800000 --summary-only`.
-- **Warmstart corpus (G-S2) DONE/finishing** on 5800x: base-only bug-fixed, 1ply heuristic, 12-scalar, cap=12 → `data/warmstart/baseonly_v27cap12/` (≥105K positions, target 300K). Clears the Stage-B warmstart prerequisite (old corpus was River-era). 1ply gen is ~2500 games/min — NOT a long job.
+**⏭ NEXT — NEEDS JOSHUA (Stage B is wired + reviewed + NOT launched):** decide (1) the pre-registered **success bar** (suggest ≥25 elo over iter_11 @ n=400 paired) and (2) the **blend ramp curve**. Then the cheap pre-launch steps: train `warm.pt` from the corpus (~15 min), **Xeon OOM smoke** (blend>0 full-forward on 8GB), wire **G-S3** (gate→HeuristicMCTS + warm_from=best). Full package + launch command: **`docs/STAGE_B_LAUNCH_READINESS.md`**.
+
+**✅ STAGE-B WIRING DONE — branch `stage-b-wiring`** (off `gpu-orchestrator`@e595d6c; code-reviewed **"correct + safe to launch"**; merge is Joshua's call). Closes the F-B1 root cause (the learned value was never in the search loop):
+- **G-S1** — `--value-blend` puts the NN value into the leaf `(1-λ)·v2.7 + λ·v_nn`; `blend_for_iter()` ramp in the loop, **DEFAULT OFF** (`STAGE_B_BLEND=1` enables; curve is a PROPOSAL). Smoke-verified blend changes the search; anchor stays blend=0 (pure v2.7). Commits **7fa696d** + **b2ba341** (anchor) + **bfbd47d** (review fix: anchor orch server always policy_only). Plan: `docs/STAGE_B_G-S1_PLAN_2026-06-03.md`.
+- **G-T1/T2** — `LR_SCHEDULE`/`VALUE_LOSS_WEIGHT` env knobs into the loop train step (defaults = current behavior; Stage B sets cosine / ~3). Commit **8965852**.
+
+**✅ TEST-GAP CLOSE (be46466) — top 3 regression holes now gate CI** (were script-only / absent): `tests/test_farm_dedup_c1.py` (C1 farm double-count), `test_mcts_transposition_c2.py` (C2 visit dedup), `test_value_in_loop_fb1.py` (F-B1: value_blend steers the search — guards the wiring). All pass w/ teeth-assertions. Gap analysis: `docs/TEST_SUITE_GAP_ANALYSIS_2026-06-03.md` (#4 cross-proc determinism + #5 tied-scoring still open).
+
+**🔵 RUNNING — high-sim reference rung (ladder):** iter_11 vs HeuristicMCTS @ sims=800, 3 boxes disjoint shards, `~/ladder_highsim.sh` (snapshot `scripts/ladder_highsim.sh`), out `/mnt/c/carc-shared/ladder_highsim/iter11_s800_h800_c30/`. ~**324/1200 @ 02:1x** (N=1200 oversized; per-game resumable). ⚠️ the RUNNING launcher's self-poll uses a buggy `s*.json` glob (logs 0/1200, will false-stop at its 2h mark) — **HARMLESS**: per-box workers are independent + watcher **`b31dw5g1c`** tracks the real `n*.json` count and auto-tallies at ≥1140. Count: `find …/iter11_s800_h800_c30 -name 'n*.json'|wc -l`. Tally: `eval_net_vs_heuristic.py … --out-subdir iter11_s800_h800_c30 --seed-start 800000 --summary-only`. **AM: record the elo verdict → results.csv.**
+
+**✅ Warmstart corpus (G-S2) DONE:** `data/warmstart/baseonly_v27cap12/` **300K** positions (base-only bug-fixed, 1ply heuristic, 12-scalar, cap=12). The Stage-B starting net (`warm.pt`) is NOT yet trained from it — that's a ~15-min pre-launch step (deliberately not run overnight to avoid GPU-contending the ladder).
 
 **✅ FAILURE-MODE HOOKS LIVE (390b482):** `scripts/hooks/{pretooluse_lint,posttooluse_log}.py`, registered project-scoped in `.claude/settings.local.json` (gitignored; see `scripts/hooks/README.md`). PreToolUse blocks foreground `sleep≥10s` + CIFS mount-path mismatch (N1); PostToolUse logs failures → `.claude/tool_failures.jsonl`. Built from the 2026-06-02 transcript audit (BACKLOG entry).
 
@@ -33,16 +41,14 @@
 
 **Stage-A progress (no-retrain, committed + pushed):** symmetry aug (C5) **COMPLETE end-to-end** — board/action/policy-vector rotation + dataset augment + streaming-loader flag `train_iter.py --augment-rotations` (default OFF, zero behavior change), 16 tests (`tests/test_symmetry_aug.py`); flip the flag at Stage B. Loop orchestrator version-controlled (`scripts/run_pathb_cluster_loop.sh`; the running copy stays in `~/` per the share chicken-egg). 3 boxes synced to HEAD via an offline git **bundle** (remotes have no github DNS — see DECISIONS 2026-06-02 + memory).
 
-### NEXT ACTIONS — immediate sequence (updated 2026-06-02 eve)
-0. ~~Rewrite big docs~~ ✅ · ~~code review iter-9~~ ✅ · ~~round-2 audit~~ ✅ · ~~eval-path + safe fixes~~ ✅
-1. **Verdict ≈ done** (c_puct + cap FLAT, recorded in `results.csv verdict_*`; fpu04 finishing). **No production change** (c=3.0 + cap=12 stay). **The one open item: CONFIRM FPU at n=400 paired** — fpu02 screened +45 elo/z=1.85 (under 2σ). If fpu04 also leans positive, run an n=400 paired FPU cell (work-stealing) and promote `fpu_reduction` to the production NeuralMCTS config if it holds. FPU is also re-tuned at Stage B (G-S4), so this can fold into the Stage-B sweep.
-2. **Stage-B-readiness batch (the round-2 G-* queue — do BEFORE Stage B, all in the round-2 doc):**
-   - **G-S1** fix the `value_blend` ramp: it's only wired into the `v2_5` leaf path, so Stage B must ramp `CARCASSONNE_V25_VALUE_BLEND` (not `--leaf-eval nn`); add an iter-indexed blend SCHEDULE to the loop; fix the policy-only guard that reads the import-time `DEFAULT_CONFIG.value_blend` instead of the env-resolved one.
-   - **G-S3** point the loop's keep-best gate at **HeuristicMCTS** (out-of-lineage), not in-lineage iter_11; wire `warm_from=best_ckpt` (C7).
-   - **G-T2** wire `--value-loss-weight` (sweep 1–5×) + **G-T1** `--lr-schedule cosine` into the loop (value head is gradient-starved ~5–10× unweighted).
-   - **G-S2** regenerate the base-only bug-fixed warmstart corpus (all on-disk warmstart data is April River-era) — gated on the final cap; multi-hour, needs box+ETA.
-   - **High-sim HeuristicMCTS reference rung** (Joshua's pick for the measurement wall) — an above-amateur yardstick so Stage B/C verdicts mean something. Also add `--paired` to `eval_net_vs_heuristic.py` for the ladder.
-3. **Pre-Stage-B code-review swarm** — NARROW, scoped to the Stage-B wiring diff only (not another full-foundation sweep), + a "will Stage B fail for a non-science reason?" critic. Then launch.
+### NEXT ACTIONS — immediate sequence (updated 2026-06-03 overnight)
+DONE this session: ~~verdict~~ ✅ (c_puct+cap FLAT, no prod change; FPU the lever) · ~~work-stealing default~~ ✅ · ~~dashboard~~ ✅ · ~~failure-mode hooks~~ ✅ · ~~G-S2 warmstart corpus (300K)~~ ✅ · ~~G-S1 value_blend wiring + anchor~~ ✅ · ~~G-T1/T2 knobs into loop~~ ✅ · ~~pre-Stage-B code review~~ ✅ ("safe to launch", 1 fix applied) · ~~test-gap close (C1/C2/F-B1)~~ ✅ — **all on branch `stage-b-wiring`**.
+1. **Record the ladder elo verdict → `results.csv`** when the run finishes (watcher `b31dw5g1c`; tally via `--summary-only --seed-start 800000`). This calibrates the high-sim reference rung (where iter_11 sits vs HeuristicMCTS@800).
+2. **⏭ NEEDS JOSHUA before Stage-B launch** (see `docs/STAGE_B_LAUNCH_READINESS.md`):
+   - (a) pre-register the **success bar** (suggest ≥25 elo over iter_11 @ n=400 paired);
+   - (b) pick the **blend ramp curve** (`blend_for_iter()` proposal: 0→0.15→0.30→0.50→0.70→1.0).
+3. **Then the cheap pre-launch steps:** train `warm.pt` from `data/warmstart/baseonly_v27cap12/` (~15 min); **Xeon OOM smoke** (blend>0 full-forward on 8GB, W=18 sims=200, watch CUDA VRAM); wire **G-S3** (gate→HeuristicMCTS out-of-lineage + `warm_from=best_ckpt`, C7 — left for Joshua, gate-design judgment); merge `stage-b-wiring`; launch `STAGE_B_BLEND=1 VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine bash ~/run_pathb_cluster_loop.sh`.
+4. **Optional:** confirm FPU at n=400 paired (or fold into the Stage-B G-S4 sweep — leaning fold); add test gaps #4 (cross-proc determinism) + #5 (tied-scoring).
 
 ### THEN — staged B→C (Joshua-approved; NOT "one batched retrain")
 - **Stage B — the cheap root-cause retrain (one question):** does the value head IN the search loop (C3, the F-B1 root cause) beat the v2.7 ceiling with NO new planes? `--leaf-eval nn` (or `value_blend` ramp) + de-saturated target (C6) + conditional gate (C7) + exploration (C8) + symmetry aug ON (`--augment-rotations`). Short loop, base-only, from-scratch warmstart at current width. Evaluate on the INDEPENDENT HeuristicMCTS ladder at n=400. **Gate Stage C on it.**

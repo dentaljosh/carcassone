@@ -11,6 +11,8 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) + [STATUS.md](STATUS.md).
 
 **2026-06 — correction era (current)**
+- 2026-06-03 — STAGE-B WIRING (branch `stage-b-wiring`): value-blend-in-loop (G-S1, the F-B1 fix) + G-T1/T2 knobs + anchor stays blend=0; code-reviewed "safe to launch"; NOT launched (gated on Joshua's success-bar + blend-curve)
+- 2026-06-03 — TEST-GAP CLOSE: C1/C2/F-B1 regression guards added to pytest (were script-only or absent; the suite green-lit all 4 shipped bugs)
 - 2026-06-02 (late) — STAGE-A2 VERDICT (paired n=400): c_puct + cap FLAT → production unchanged; FPU the one lever (+45 screen, n=400 confirm pending)
 - 2026-06-02 (late) — Work-stealing is the DEFAULT for eval sweeps (`--shared-claim`, not disjoint shards); cluster dashboard (heartbeat + status) added
 - 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7); learned policy ≈ v2.7 leaf
@@ -117,6 +119,16 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 ```
 
 ## Decisions
+
+## 2026-06-03 — STAGE-B WIRING built on a branch (value-in-loop, the F-B1 fix) + test-gap close
+
+Done overnight (Joshua authorized autonomous progress on the decided path, stop at launch). All on branch **`stage-b-wiring`** (off `gpu-orchestrator`@e595d6c; merge is Joshua's call). Stage B is the cheap retrain that tests whether the learned value head, finally IN the search loop, beats the v2.7 leaf ceiling on the clean base-only game.
+- **G-S1 (7fa696d, b2ba341, bfbd47d):** `run_selfplay_iter.py --value-blend λ` blends the NN value into the leaf `(1-λ)·tanh(vs2/15) + λ·v_nn`; the 3 guard sites now read the per-iter value (not import-time `DEFAULT_CONFIG`); `blend_for_iter()` ramp in `run_pathb_cluster_loop.sh` is **DEFAULT OFF** (`STAGE_B_BLEND=1` enables; the curve is a PROPOSAL Joshua tunes). The fixed iter_11 anchor stays **blend=0** (plays pure v2.7 as trained; plan risk #4) — incl. its orch eval-server forced policy_only (review Issue 1, saves 8GB-box VRAM). Smoke-verified: same-seed self-play differs between blend 0.0 and 0.9 (the value reaches the leaf + steers the search).
+- **G-T1/T2 (8965852):** `LR_SCHEDULE` (none|cosine) + `VALUE_LOSS_WEIGHT` env knobs into the loop train step; defaults = current behavior; Stage B un-starves the value head (e.g. cosine / 3×).
+- **Code review:** subagent verdict "**correct + safe to launch**" — found + I fixed 1 issue (anchor orch server wasted full-forward → OOM-margin on 8GB). Otherwise clean (propagation both paths, default-off byte-identical, score-diff currency matches, no set-u bugs).
+- **Test-gap close (be46466):** the suite had green-lit all 4 shipped bugs (C1/C2 guarded only by un-wired `scripts/verify_*.py`; F-B1 untested). Added pytest guards: `test_farm_dedup_c1` (C1), `test_mcts_transposition_c2` (C2), `test_value_in_loop_fb1` (F-B1: value_blend steers the search — guards the wiring). All pass with teeth-assertions (they exercise the bug-prone paths). #4 cross-proc determinism + #5 tied-scoring still open.
+- **NOT launched.** Gated on Joshua: (1) pre-registered success bar (suggest ≥25 elo over iter_11 @ n=400 paired), (2) blend curve. Then warm.pt train + Xeon OOM smoke + G-S3 (gate→HeuristicMCTS). Package: `docs/STAGE_B_LAUNCH_READINESS.md` + `docs/STAGE_B_G-S1_PLAN_2026-06-03.md` + `docs/TEST_SUITE_GAP_ANALYSIS_2026-06-03.md`.
+**Phase:** Phase 1 (Stage B readiness; build complete, launch pending).
 
 ## 2026-06-02 (late) — STAGE-A2 VERDICT: c_puct + cap FLAT (production unchanged); FPU the one live lever
 
