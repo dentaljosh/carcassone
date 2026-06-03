@@ -240,14 +240,20 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     # ("policy_only")); per-worker path uses the policy-only factory here.
     # Exception (Option 2): value_blend > 0 blends the NN value head into the
     # leaf, so the value head must be computed — no policy-only fast path.
-    use_policy_only = (
-        cfg.get("leaf_eval", "nn") != "nn" and cfg.get("value_blend", 0.0) == 0.0
-    )
+    def _build_evaluators(handles, net, blend=None):
+        """Build (evaluator, batch_evaluator) for one net.
 
-    def _build_evaluators(handles, net):
-        """Build (evaluator, batch_evaluator) for one net, applying the same
-        leaf-eval wrapping the learner uses (anchor must inference under the
-        same conditions it was trained for)."""
+        `blend` is the value_blend λ for THIS evaluator's leaf; None → the
+        learner's cfg value. The anchor passes blend=0.0 so the fixed reference
+        (iter_11, trained with the value head OUT of the search loop) plays
+        exactly as it was trained — NOT with the learner's mid-ramp blend
+        (G-S1 plan risk #4). With the v2_5 leaf, leaf_cfg's value_blend=0.0
+        makes the wrapper discard any NN value, so the anchor stays pure v2.7
+        even on the orchestrator path (where the server may still compute it)."""
+        eff_blend = cfg.get("value_blend", 0.0) if blend is None else blend
+        # Skip the value-head forward only when the v2_5 leaf fully overrides the
+        # value (blend == 0). blend > 0 needs the NN value head computed.
+        po = (cfg.get("leaf_eval", "nn") != "nn" and eff_blend == 0.0)
         if cfg.get("orchestrator"):
             assert handles is not None
             ev = make_remote_single_evaluator(handles, game)
@@ -256,7 +262,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
                 bev = make_remote_batch_evaluator(handles, game)
         else:
             assert net is not None and _worker_device is not None
-            if use_policy_only:
+            if po:
                 ev = make_single_evaluator_policy_only(
                     net, _worker_device, game, use_fp16=use_fp16
                 )
@@ -266,7 +272,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
                 )
             bev = None
             if cfg["batch_size"] > 1:
-                if use_policy_only:
+                if po:
                     bev = make_batch_evaluator_policy_only(
                         net, _worker_device, game, use_fp16=use_fp16
                     )
@@ -275,12 +281,10 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
                         net, _worker_device, game, use_fp16=use_fp16
                     )
         if cfg.get("leaf_eval") == "v2_5":
-            # G-S1: per-iter value_blend overrides the import-time DEFAULT_CONFIG
-            # so the ramp actually reaches the worker leaf. All other LeafConfig
-            # fields (cap, drop-three-open, …) still come from env via DEFAULT_CONFIG.
-            leaf_cfg = dataclasses.replace(
-                DEFAULT_CONFIG, value_blend=cfg.get("value_blend", 0.0)
-            )
+            # G-S1: per-iter value_blend overrides import-time DEFAULT_CONFIG so the
+            # ramp reaches the worker leaf. Other LeafConfig fields (cap, etc.) still
+            # come from env via DEFAULT_CONFIG.
+            leaf_cfg = dataclasses.replace(DEFAULT_CONFIG, value_blend=eff_blend)
             ev = make_v25_value_wrapper(ev, cfg=leaf_cfg)
             if bev is not None:
                 bev = make_v25_batch_value_wrapper(bev, cfg=leaf_cfg)
@@ -301,7 +305,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         seed_rng = random.Random(seed ^ 0xA1B2C3D4)
         if seed_rng.random() < anchor_fraction:
             anchor_evaluator, anchor_batch_evaluator = _build_evaluators(
-                _worker_anchor_handles, _worker_anchor_net
+                _worker_anchor_handles, _worker_anchor_net, blend=0.0
             )
             learner_player_idx = seed_rng.randint(0, 1)
 
