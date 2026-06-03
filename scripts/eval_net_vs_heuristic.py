@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import socket
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -42,6 +43,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import numpy as np
 import torch
 
+from carcassonne_ai.claim import try_claim as _try_claim
 from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrapper
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
@@ -54,6 +56,10 @@ EVAL_ROOT = REPO / "data" / "ladder"
 _worker_net = None
 _worker_device = None
 _worker_include_farm = False
+# Work-stealing claim (only used with --shared-claim). Mirrors eval_iter_head_to_head.
+_worker_shared_claim: bool = False
+_worker_claim_host: str = ""
+_worker_claim_stale_secs: int = 5400
 
 
 @dataclass
@@ -94,8 +100,13 @@ def _save(p: Path, r: GameResult):
     tmp.replace(p)
 
 
-def _worker_init(checkpoint: str):
+def _worker_init(checkpoint: str, shared_claim: bool = False,
+                 claim_host: str = "", claim_stale_secs: int = 5400):
     global _worker_net, _worker_device, _worker_include_farm
+    global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
+    _worker_shared_claim = shared_claim
+    _worker_claim_host = claim_host
+    _worker_claim_stale_secs = claim_stale_secs
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(checkpoint, map_location=_worker_device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
@@ -114,6 +125,15 @@ def _play_one(args) -> GameResult:
     cached = _try_load(p)
     if cached is not None:
         return cached
+
+    # Work-stealing: atomically claim this (seed, net_player) before the
+    # expensive game. If another box owns it, skip (return None). The .claim
+    # sits next to the eventual .json; the exists-check above is the permanent
+    # done-marker. Mirrors eval_iter_head_to_head.
+    if _worker_shared_claim:
+        claim_path = p.with_suffix(".claim")
+        if not _try_claim(claim_path, _worker_claim_host, _worker_claim_stale_secs):
+            return None
 
     import random
     random.seed(seed)
@@ -192,6 +212,24 @@ def _summary(results, sims, heur_sims):
         print("READ: net ~ heuristic search (within noise) -> policy adds little at this sims/scale.")
 
 
+def _build_work(seed_start: int, n: int, paired: bool):
+    """Yield (seed, net_player) pairs.
+
+    Legacy (unpaired): alternate net_player across n consecutive seeds.
+    Paired (G-M2 deck-pairing): play each DECK both colors — same seed with the
+    net as p0 AND as p1 — so first-player advantage AND deck-draw variance both
+    cancel (~halves variance vs unpaired). n must be even; n/2 distinct decks.
+    """
+    if not paired:
+        return [(seed_start + i, i % 2) for i in range(n)]
+    work = []
+    for i in range(n // 2):
+        seed = seed_start + i
+        work.append((seed, 0))
+        work.append((seed, 1))
+    return work
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="eval_net_vs_heuristic")
     ap.add_argument("--checkpoint", type=Path, required=True)
@@ -206,9 +244,23 @@ def main(argv=None) -> int:
                     help="subdir under the out-root (default: derived from ckpt name)")
     ap.add_argument("--out-root", type=str, default=None,
                     help="root dir for results (default: REPO/data/ladder). Point at the "
-                         "CIFS share to fan out across boxes with disjoint --seed-start ranges.")
+                         "CIFS share + use --shared-claim to work-steal across boxes "
+                         "(all boxes pass the SAME --seed-start/--n).")
+    ap.add_argument("--paired", action="store_true",
+                    help="deck-pairing (G-M2): play each deck both colors so first-player "
+                         "advantage + deck variance cancel (~halves variance). n must be even.")
+    ap.add_argument("--shared-claim", action="store_true",
+                    help="work-stealing across boxes: atomically claim each (seed,player) via "
+                         "an O_CREAT|O_EXCL .claim sidecar so idle boxes pull the tail instead "
+                         "of sitting idle. All boxes use the SAME --seed-start/--n/--out-root.")
+    ap.add_argument("--claim-stale-secs", type=int, default=5400,
+                    help="a .claim older than this is re-claimable (default 90 min).")
+    ap.add_argument("--claim-host", type=str, default=socket.gethostname(),
+                    help="identity written into the claim body (host:pid:ts).")
     ap.add_argument("--summary-only", action="store_true")
     args = ap.parse_args(argv)
+    if args.paired and args.n % 2 != 0:
+        ap.error("--paired requires an even --n (n/2 decks x 2 colors)")
 
     heur_sims = args.heur_sims if args.heur_sims is not None else args.sims
     sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}"
@@ -216,12 +268,9 @@ def main(argv=None) -> int:
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
 
-    # alternate net_player across seeds for color balance
-    tasks = []
-    for i in range(args.n):
-        seed = args.seed_start + i
-        net_player = i % 2
-        tasks.append((str(out), seed, net_player, args.sims, heur_sims, args.c_puct))
+    # color balance via _build_work (paired = each deck both colors)
+    tasks = [(str(out), seed, net_player, args.sims, heur_sims, args.c_puct)
+             for seed, net_player in _build_work(args.seed_start, args.n, args.paired)]
 
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, args.sims, heur_sims, args.c_puct, t[1], t[2]))) is not None]
@@ -242,9 +291,13 @@ def main(argv=None) -> int:
     if todo:
         t0 = time.perf_counter()
         with Pool(processes=workers, initializer=_worker_init,
-                  initargs=(str(args.checkpoint),)) as pool:
+                  initargs=(str(args.checkpoint), args.shared_claim,
+                            args.claim_host, args.claim_stale_secs)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
+                if r is None:
+                    # work-steal skip: another box owns this (seed,player).
+                    continue
                 results.append(r)
                 done += 1
                 if done % 10 == 0 or done == len(todo):
