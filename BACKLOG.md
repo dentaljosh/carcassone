@@ -35,7 +35,7 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 **Non-hookable workflow findings (track separately):** N2 — doc/self-knowledge gaps surfaced as frustration ("200k tokens to get here", raised 39×) → keep STATUS/results.csv answer-ready, enforce per-run manifest.json. N3 — orphan-process anxiety (Joshua asked for a census 31×) → make a pre-launch process census (pid+age+CPU) a DEFAULT step, don't wait to be asked.
 
-**Why deferred:** not building yet (Joshua: "just talking"). Rule set now finalized from the audit; build PostToolUse logger first when greenlit.
+**✅ BUILT 2026-06-02 (commit 390b482).** Both hooks live: `scripts/hooks/pretooluse_lint.py` + `posttooluse_log.py` (tracked), registered project-scoped in gitignored `.claude/settings.local.json` (see `scripts/hooks/README.md`). N1 (CIFS box→mount table + $SHARE) and N3 (pre-launch census) folded into CLAUDE.md. Remaining/optional: tune the advisory set as `.claude/tool_failures.jsonl` accumulates; verify which failure classes PostToolUse actually catches vs need transcript mining.
 
 ## 2026-06-02 — Work-stealing claim-tail inefficiency + dashboard reachability/Tier-C
 
