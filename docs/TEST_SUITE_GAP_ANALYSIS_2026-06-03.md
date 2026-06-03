@@ -35,11 +35,16 @@ Well-covered (don't spend effort here): symmetry aug (16 equivariance asserts), 
 - Determinism tests lean on global `random.seed()`; cross-file RNG ordering is a latent fragility.
 
 ## Top 5 tests to add (highest ROI first)
-1. `count_farm_points` == position-set-dedup ref over random games (C1).
-2. Net VALUE alone changes a NeuralMCTS move (F-B1) — guards the Stage-B contract directly.
-3. MCTS visit-dedup collision-free + `child_canon` alias structure (C2).
-4. Cross-process scoring determinism: same seed → identical scores across spawned workers (farmer-adjacency class).
-5. Tied-feature scoring pays all tied owners in full (engine patch).
+1. ✅ **DONE (be46466)** `count_farm_points` == position-set-dedup ref over random games (C1) → `tests/test_farm_dedup_c1.py`.
+2. ✅ **DONE (be46466)** Net VALUE (via value_blend) changes a NeuralMCTS search (F-B1) → `tests/test_value_in_loop_fb1.py` (guards the G-S1 wiring).
+3. ✅ **DONE (be46466)** MCTS visit-dedup collision-free + mass==unique-sum + `child_canon` alias structure (C2) → `tests/test_mcts_transposition_c2.py`.
+4. ⬜ Cross-process scoring determinism: same seed → identical scores across spawned workers (farmer-adjacency class). *Still open (multi-process, fiddly).*
+5. ⬜ Tied-feature scoring pays all tied owners in full (engine patch). *Still open (needs a constructed tied feature).*
+
+**Status:** top 3 (the two worst regression holes C1/C2 + the Stage-B-guarding F-B1) CLOSED
+overnight; all 3 pass with teeth-assertions confirming they exercise the bug-prone paths.
+#4 and #5 remain (lower urgency; deferred — #4 contends with running jobs, #5 needs careful
+engine setup). The verify scripts are now superseded for C1/C2 by the pytest ports.
 
 **Cheapest move:** wire the 3 `scripts/verify_*.py` into pytest (or port their core asserts) —
 closes #1 and #3 immediately, since they already encode exactly the C1/C2 checks.
