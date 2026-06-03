@@ -2,7 +2,13 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-02 late eve) — 🟢 PHASE 0 + RE-BASELINE + ROUND-2 AUDIT + EVAL-PATH FIXES + WORK-STEALING + CLUSTER DASHBOARD + STAGE-A2 VERDICT all done. NEXT = FPU n=400 confirm (or fold into Stage B) → Stage-B-readiness queue.
+## Right now (2026-06-03 overnight) — 🟢 PHASE 0 + RE-BASELINE + ROUND-2 AUDIT + EVAL-PATH FIXES + WORK-STEALING + CLUSTER DASHBOARD + FAILURE-MODE HOOKS + STAGE-A2 VERDICT all done. 🔵 OVERNIGHT: high-sim ladder + warmstart corpus.
+
+**🔵 RUNNING OVERNIGHT (launched 2026-06-03 00:15):**
+- **High-sim HeuristicMCTS reference rung** (measurement-wall yardstick): iter_11 vs HeuristicMCTS at **matched sims=800**, 3 boxes, DISJOINT shards (legacy `eval_net_vs_heuristic.py`, proven path), launcher `~/ladder_highsim.sh` (snapshot `scripts/ladder_highsim.sh`), PID 1182711, log `/tmp/ladder.log`, out `/mnt/c/carc-shared/ladder_highsim/iter11_s800_h800_c30/`. N=1200 **oversized on purpose** (won't finish; tally partial in AM — per-game JSON resumable). sims=800 games are multi-min → expect ~500–1000 by morning. Watcher `b7u4yunim`. **AM tally:** `eval_net_vs_heuristic.py … --out-subdir iter11_s800_h800_c30 --seed-start 800000 --summary-only`.
+- **Warmstart corpus (G-S2) DONE/finishing** on 5800x: base-only bug-fixed, 1ply heuristic, 12-scalar, cap=12 → `data/warmstart/baseonly_v27cap12/` (≥105K positions, target 300K). Clears the Stage-B warmstart prerequisite (old corpus was River-era). 1ply gen is ~2500 games/min — NOT a long job.
+
+**✅ FAILURE-MODE HOOKS LIVE (390b482):** `scripts/hooks/{pretooluse_lint,posttooluse_log}.py`, registered project-scoped in `.claude/settings.local.json` (gitignored; see `scripts/hooks/README.md`). PreToolUse blocks foreground `sleep≥10s` + CIFS mount-path mismatch (N1); PostToolUse logs failures → `.claude/tool_failures.jsonl`. Built from the 2026-06-02 transcript audit (BACKLOG entry).
 
 **✅ STAGE A2 VERDICT DONE (paired n=400/200, work-stealing 3-box; `sweep_verdict_steal.sh`).** c_puct + cap FLAT (no prod change); FPU the one positive lever (both screens, confirm pending). Cluster idle except heartbeats + dashboard. Full numbers below + in `results.csv verdict_*`.
 - **VERDICT — c_puct + cap are FLAT (paired n=400, se≈2.5pp):** `self_c3` **49.5%** (z=−0.20) → deck-pairing VALIDATED (unpaired self-cell was 42% harness bias, gone). `c15` **+15.6** (z=0.90 n.s.), `c20` **−17.4** (z=−1.0 n.s. — REVERSES the n=100 "+18pp c=2.0" screen = noise), `c25` **−15.6** (z=−0.90 n.s.). **→ c_puct flat across 1.5–3.0; production c=3.0 + cap=12 STAY.** Rows in `results.csv` (`verdict_*`).
