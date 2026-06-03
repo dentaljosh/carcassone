@@ -64,6 +64,21 @@ STAGE_B_BLEND="${STAGE_B_BLEND:-0}"          # 1 → enable the value-blend ramp
 MAX_FLAT="${MAX_FLAT:-2}"
 CONFIRM_GAMES="${CONFIRM_GAMES:-400}"
 CONFIRM_THRESH="${CONFIRM_THRESH:-0.54}"
+# G-S3 (2026-06-03, Joshua-approved): the keep/gate reference is HeuristicMCTS
+# (OUT-OF-LINEAGE), NOT the warm net. iter_11 is the self-play ANCHOR (in-lineage), so
+# gating vs it rewards overfitting — the 2026-06-01 iter_4 "+39 vs iter_11" that TIED on
+# the independent ladder. Gating vs HeuristicMCTS uses the SAME tool + reference as the
+# +56.7-elo ladder rung, so the per-iter gate and the campaign verdict share one currency
+# (elo vs heuristic). The gate runs at value_blend=0 (net priors + v2.7 leaf, exactly
+# comparable to the ladder rung — isolates POLICY improvement; the value-head contribution
+# is tested at the n=400 campaign verdict). warm_from = best gated checkpoint (reject a
+# regressing iter and re-branch from the best). NOTE: per-iter gate cost ≈ n=GATE_GAMES
+# eval on top of self-play+train — observe it on iter 0; drop GATE_GAMES if too slow.
+GATE_GAMES="${GATE_GAMES:-200}"             # per-iter gate n (paired) vs HeuristicMCTS
+GATE_CPUCT="${GATE_CPUCT:-3.0}"             # match production/ladder c=3.0
+KEEP_MARGIN_ELO="${KEEP_MARGIN_ELO:-10}"    # adopt iter as new best iff elo >= best_elo + this
+SEED_ELO="${SEED_ELO:-25.2}"                # iter_11 elo vs heuristic @ sims=200 (re-baseline n=400)
+GATE_SEED="${GATE_SEED:-500000}"            # gate seed-start (per-iter dirs avoid file collision)
 read -r -a HOSTS <<< "${HOSTS:-5800x xeon laptop}"
 PY=.venv/bin/python
 ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12"
@@ -299,15 +314,19 @@ else
   echo "RESUME from iter $START (warm_from=iter_$(printf "%02d" $((START-1))).pt; anchor-gate vs original warm)"
 fi
 
-# Plateau tracking (stop-after-MAX_FLAT-flat, vs the fixed iter_11 gate ref).
-best_wr="-1"; best_iter=-1; flat=0
+# G-S3: track best elo vs HeuristicMCTS; warm_from = iter_$best_iter (or WARM if none beat
+# the seed yet). best_elo seeded with iter_11's re-baseline elo so an iter must EXCEED the
+# seed to be adopted (we never warm from worse-than-iter_11).
+best_elo="$SEED_ELO"; best_iter=-1; flat=0
 
 for ((N=START; N<ITERS; N++)); do
   NN=$(printf "%02d" "$N")
   BLEND=$(blend_for_iter "$N")   # G-S1: value-blend λ for this iter (0.0 unless STAGE_B_BLEND=1)
   iter_dir=$OUT_LOCAL/iter_$NN
   mkdir -p "$iter_dir"
-  if [ "$N" -eq 0 ]; then warm_from=$WARM; else warm_from=$CKPT_LOCAL/iter_$(printf "%02d" $((N-1))).pt; fi
+  # G-S3: warm from the BEST gated checkpoint, not the latest — a regressing iter is
+  # rejected and the next iter re-branches from the best (best_iter=-1 → the iter_11 seed).
+  if [ "$N" -eq 0 ] || [ "$best_iter" -lt 0 ]; then warm_from=$WARM; else warm_from=$CKPT_LOCAL/iter_$(printf "%02d" "$best_iter").pt; fi
   echo ""; echo "########## ITER $N: self-play @ $(date) (warm_from=$warm_from value_blend=$BLEND) ##########"
   pids=""
   for host in "${HOSTS[@]}"; do
@@ -342,84 +361,61 @@ for ((N=START; N<ITERS; N++)); do
   trc=$?
   if [ $trc -ne 0 ]; then echo "TRAIN exited $trc (entropy collapse / NaN?) — HALTING loop at iter $N"; exit $trc; fi
 
-  echo "########## ITER $N: anchor-gate vs warm (3-box, --shared-claim) @ $(date) ##########"
-  # Fan the gate across all boxes (eval is fastest on the laptop; DECISIONS 2026-06-01).
-  # Each box plays its claimed share into the shared eval_dir; we tally all JSONs after.
-  # Advisory only — the loop continues regardless of the gate outcome.
-  gate_dir=$OUT_LOCAL/eval/iter_${NN}_vs_9999
+  echo "########## ITER $N: GATE vs HeuristicMCTS (G-S3 out-of-lineage, n=$GATE_GAMES paired, c=$GATE_CPUCT, 3-box --shared-claim) @ $(date) ##########"
+  # Fan the gate across all boxes; each claims its share into the shared eval dir; tally
+  # the full pool after via --summary-only. Reference = HeuristicMCTS (NOT the warm net):
+  # same currency as the +56.7 ladder rung. Runs at value_blend=0 (priors + v2.7 leaf).
+  gate_dir=$OUT_LOCAL/eval/iter_${NN}_vs_heur
   gpids=""
   for host in "${HOSTS[@]}"; do
-    gw=$(gate_workers "$host"); goutp=$OUT_LOCAL; gnew=$CKPT_LOCAL/iter_$NN.pt; gold=$WARM
-    [ "$host" != "5800x" ] && { goutp=$(remote_path "$OUT_LOCAL"); gnew=$(remote_path "$gnew"); gold=$(remote_path "$WARM"); }
-    gcmd="nice -n 19 env $ENVV $PY -u scripts/eval_iter_head_to_head.py --new-checkpoint $gnew --old-checkpoint $gold --output-root $goutp --iter $N --vs-iter 9999 --games $ANCHOR_GAMES --sims $SIMS --c-puct 1.5 --leaf-eval v2_5 --workers $gw --orchestrator --no-elo-log --seed-start 800000 --shared-claim --claim-host $host"
+    gw=$(gate_workers "$host"); goutp=$OUT_LOCAL; gnew=$CKPT_LOCAL/iter_$NN.pt
+    [ "$host" != "5800x" ] && { goutp=$(remote_path "$OUT_LOCAL"); gnew=$(remote_path "$gnew"); }
+    gcmd="nice -n 19 env $ENVV $PY -u scripts/eval_net_vs_heuristic.py --checkpoint $gnew --n $GATE_GAMES --sims $SIMS --heur-sims $SIMS --c-puct $GATE_CPUCT --workers $gw --out-root $goutp --out-subdir eval/iter_${NN}_vs_heur --seed-start $GATE_SEED --paired --shared-claim --claim-host $host"
     gpidf="/tmp/pathb_gatepid_${host}_$NN"; rm -f "$gpidf"
     launch_on_host "$host" "gate_${RUN}_$NN" "$gcmd" "/tmp/pathb_gate_${host}_$NN.log" "$gpidf"
     sleep 1; gp=$(cat "$gpidf" 2>/dev/null); gpids="$gpids $gp"; echo "  launched gate on $host (W=$gw) PID=$gp"
   done
-  gate_wr=""
-  if wait_for_count "$gate_dir" "s*.json" "$ANCHOR_GAMES" "$gpids" "iter$N-gate"; then
-    gate_out=$("$PY" - "$gate_dir" <<'PYTALLY'
-import json, sys, glob, os
-d = sys.argv[1]; w = l = dr = 0
-for f in glob.glob(os.path.join(d, "s*.json")):
-    try: r = json.load(open(f))
-    except Exception: continue
-    if r.get("drew"): dr += 1
-    elif r.get("won_by_new"): w += 1
-    else: l += 1
-tot = w + l + dr
-wr = (w + 0.5 * dr) / tot if tot else 0.0
-print(f"  ANCHOR-GATE: {w}W/{dr}D/{l}L of {tot} (wr={wr:.1%}) vs warm  WR={wr:.4f}")
-PYTALLY
-)
+  gate_elo=""
+  if wait_for_count "$gate_dir" "n*.json" "$GATE_GAMES" "$gpids" "iter$N-gate"; then
+    # Full-pool tally (reads every n*.json in the dir; prints "ELO (net vs heuristic): X").
+    gate_out=$(nice -n 19 env $ENVV $PY -u scripts/eval_net_vs_heuristic.py --checkpoint $CKPT_LOCAL/iter_$NN.pt --n $GATE_GAMES --sims $SIMS --heur-sims $SIMS --c-puct $GATE_CPUCT --out-root $OUT_LOCAL --out-subdir eval/iter_${NN}_vs_heur --seed-start $GATE_SEED --paired --summary-only 2>&1)
     echo "$gate_out"
-    gate_wr=$(printf '%s\n' "$gate_out" | sed -n 's/.*WR=\([0-9.]*\).*/\1/p' | tail -1)
+    gate_elo=$(printf '%s\n' "$gate_out" | sed -n 's/.*ELO (net vs heuristic): \([+-][0-9.]*\).*/\1/p' | tail -1)
   else
-    echo "  (anchor-gate incomplete — some boxes died; continuing)"
+    echo "  (gate incomplete — some boxes died; continuing without an elo this iter)"
   fi
   # reap gate stragglers on every box (mirrors cleanup_sp)
   for host in "${HOSTS[@]}"; do
     case $host in
-      5800x) pkill -TERM -f eval_iter_head_to_head 2>/dev/null || true ;;
-      xeon)  ssh -o ConnectTimeout=10 xeon "wsl -d Ubuntu-24.04 -- pkill -TERM -f eval_iter_head_to_head" 2>/dev/null || true ;;
-      laptop) ssh -o ConnectTimeout=10 laptop "pkill -TERM -f eval_iter_head_to_head" 2>/dev/null || true ;;
+      5800x) pkill -TERM -f eval_net_vs_heuristic 2>/dev/null || true ;;
+      xeon)  ssh -o ConnectTimeout=10 xeon "wsl -d Ubuntu-24.04 -- pkill -TERM -f eval_net_vs_heuristic" 2>/dev/null || true ;;
+      laptop) ssh -o ConnectTimeout=10 laptop "pkill -TERM -f eval_net_vs_heuristic" 2>/dev/null || true ;;
     esac
   done; sleep 5
 
-  # Plateau guard: gate wr is measured vs the FIXED iter_11 ref, so it should climb
-  # as the learner improves. Stop after MAX_FLAT consecutive iters that fail to beat
-  # the running best. (n=ANCHOR_GAMES is noisy → coarse; see header note.)
-  if [ -n "$gate_wr" ]; then
-    if awk "BEGIN{exit !($gate_wr > $best_wr)}"; then
-      best_wr=$gate_wr; best_iter=$N; flat=0; echo "  gate wr=$gate_wr — new best vs iter_11 (iter $N; flat reset to 0)"
+  # G-S3 keep/plateau: gate elo is measured vs HeuristicMCTS (out-of-lineage, fixed ref),
+  # so it should climb as the learner improves. Adopt iter $N as the new best (→ next
+  # warm_from) iff its elo beats the running best by ≥ KEEP_MARGIN_ELO. Stop after MAX_FLAT
+  # consecutive iters that fail to set a new best. n=GATE_GAMES is much less noisy than the
+  # old n=40 wr screen (n=200 paired ≈ ±12 elo), so a flat streak is trustworthy on its own;
+  # the net-vs-net confirm_gate is superseded (in-lineage, the trap we moved away from).
+  if [ -n "$gate_elo" ]; then
+    thresh=$(awk "BEGIN{printf \"%.4f\", $best_elo + $KEEP_MARGIN_ELO}")
+    if awk "BEGIN{exit !($gate_elo >= $thresh)}"; then
+      best_elo=$gate_elo; best_iter=$N; flat=0
+      echo "  GATE: iter $N = ${gate_elo} elo vs heuristic ≥ best+margin ($thresh) — NEW BEST → warm_from=iter_$NN; flat reset to 0"
     else
-      flat=$((flat + 1)); echo "  gate wr=$gate_wr did NOT beat best=$best_wr (iter $best_iter; flat $flat/$MAX_FLAT)"
-    fi
-    if [ "$flat" -ge "$MAX_FLAT" ]; then
-      # CONFIRM BEFORE KILL: the flat streak is screen-grade (n=ANCHOR_GAMES, ±8%). Verify
-      # at verdict grade (n=CONFIRM_GAMES) that iter $N really isn't still improving over the
-      # best, before throwing away a possibly-working run. Symmetric with the bar we'd demand
-      # for a positive; immune to the running-best ratchet (compares latest-vs-best directly).
-      echo "########## PLATEAU SUSPECTED: $flat flat gates (n=$ANCHOR_GAMES, ±8%) — CONFIRMING iter $N vs best (iter $best_iter) at n=$CONFIRM_GAMES before killing @ $(date) ##########"
-      confirm_gate "$N" "$best_iter" "$CONFIRM_GAMES"
-      if [ -z "$confirm_wr" ]; then
-        # Confirm gate produced no verdict (boxes died / share hiccup mid-confirm). Do NOT
-        # kill the run on an infra failure — that's the false-kill we're trying to avoid.
-        # Reset flat so we re-confirm at the next plateau rather than stopping on no data.
-        echo "  CONFIRM INCONCLUSIVE: confirm gate produced no result (infra failure?) — NOT killing; resetting flat, will re-confirm at next plateau. @ $(date)"
-        flat=0
-      elif awk "BEGIN{exit !($confirm_wr >= $CONFIRM_THRESH)}"; then
-        echo "  CONFIRM: iter $N beats best (iter $best_iter) at n=$CONFIRM_GAMES (wr=$confirm_wr ≥ $CONFIRM_THRESH) — the flat streak was n=$ANCHOR_GAMES NOISE. Adopting iter $N as best; flat reset; CONTINUING."
-        best_iter=$N; best_wr=$gate_wr; flat=0
-      else
-        echo "########## PLATEAU CONFIRMED at n=$CONFIRM_GAMES: iter $N vs best (iter $best_iter) wr=${confirm_wr:-NA} < $CONFIRM_THRESH — real stall, STOPPING at iter $N. Best = iter $best_iter. @ $(date) ##########"
-        echo "  (absolute verdict: gate best iter $best_iter vs iter_11 at n=400 to classify success-vs-null before pivoting to the leaf.)"
+      flat=$((flat + 1))
+      echo "  GATE: iter $N = ${gate_elo} elo vs heuristic < best+margin ($thresh; best=$best_elo iter $best_iter); flat $flat/$MAX_FLAT"
+      if [ "$flat" -ge "$MAX_FLAT" ]; then
+        echo "########## PLATEAU: $flat iters (n=$GATE_GAMES gate) without a new best — STOPPING at iter $N. Best = iter $best_iter ($best_elo elo vs heuristic). @ $(date) ##########"
+        echo "  (campaign verdict: run iter $best_iter vs iter_11 at n=400 paired; success bar = +25 elo over iter_11.)"
         echo "########## ITER $N COMPLETE @ $(date) ##########"
         break
       fi
     fi
   else
-    echo "  (no gate wr captured this iter — skipping plateau check)"
+    echo "  (no gate elo captured this iter — skipping keep/plateau check)"
   fi
   echo "########## ITER $N COMPLETE @ $(date) ##########"
 done
