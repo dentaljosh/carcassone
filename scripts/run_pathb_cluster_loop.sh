@@ -93,7 +93,7 @@ workers_for() { case $1 in 5800x) echo 14;; xeon) echo 18;; laptop) echo 24;; *)
 # inline evaluator the orchestrator wraps (tests/test_eval_server.py: identical <1e-5).
 selfplay_mode() { case $1 in
   5800x)  echo "16 ";;                                # orch-off W=16  -> 14.70 mv/s (+99%)
-  laptop) echo "10 ";;                                # orch-off W=10  -> 19.26 mv/s (+110%)
+  laptop) echo "16 ";;                                # orch-off W=16 (bumped 2026-06-03: 24-threaded box was half-idle at W=10 — loadavg 10/24, GPU 48W/43% VRAM; old W=10 from stale pre-Phase-0 bench never bracketed above 10. Verify VRAM under blend.)
   xeon)   echo "18 --orchestrator --orch-shards 2";;  # shards=2       -> 6.99 mv/s (+30%)
   *)      echo "8 --orchestrator";;
 esac; }
