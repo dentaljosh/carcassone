@@ -81,7 +81,10 @@ SEED_ELO="${SEED_ELO:-25.2}"                # iter_11 elo vs heuristic @ sims=20
 GATE_SEED="${GATE_SEED:-500000}"            # gate seed-start (per-iter dirs avoid file collision)
 read -r -a HOSTS <<< "${HOSTS:-5800x xeon laptop}"
 PY=.venv/bin/python
-ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12"
+# CARC_RUN tags every worker (incl mp-spawn + orphans) with this run's name — read back
+# by scripts/cluster_census.py via /proc/<pid>/environ for deterministic provenance, and
+# `cluster_census.py --kill-tag $RUN` to cleanly kill the whole run incl orphaned workers.
+ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARC_RUN=$RUN"
 mkdir -p "$OUT_LOCAL" "$CKPT_LOCAL" "$CODE_SYNC"
 cd "$REPO" || { echo "FATAL: no repo at $REPO"; exit 1; }
 
