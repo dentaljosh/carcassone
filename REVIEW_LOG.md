@@ -444,3 +444,46 @@ wiring readiness.** New findings logged as G-* in the round-2 doc. Highlights:
   superhuman goal. Joshua decision needed (build a Stage-0 reference).
 - **REJECTED:** the `count_final_scores` "crash/double-count" claim — verified harmless (2nd pop finds a
   cleared feature; the TODO is redundancy, not a bug).
+
+---
+
+## Independent read-only audit — 2026-06-03 (Stage B in-flight)
+
+External agent red-teamed the live Stage B run + Phase-0 fixes. CONFIRMED on code read: the
+C1 farm-dedup and C2 NeuralMCTS target/action-path fixes are real; value sign/scale consistent
+(score_diff `/15` for both the label and the blended leaf); deck-pair worklist is same-seed-both-colors.
+
+**Fixed this session (commit cc35fed):**
+- **F16 [HIGH] keep-best volatile across relaunches** — the loop reset `best_iter=-1` on every
+  start, so a crash+resume would re-branch from WARM (iter_11) instead of the adopted best,
+  silently corrupting the chain. Now persists/restores `$OUT_LOCAL/loop_state.env` after each gate
+  (effective on next relaunch; deployed copy intentionally NOT overwritten mid-run).
+- **doc [HIGH] STATUS "from-scratch warmstart" was FALSE** — `md5sum` proves `stage_b/warm.pt` is a
+  byte-identical copy of `iter_11.pt`. Corrected STATUS everywhere + added the isolation caveat.
+
+**Deferred (real, not active in the live run):**
+- **D17 [HIGH] Stage B doesn't cleanly isolate C3** — warm-from-iter_11 (river-era policy) +
+  `score_diff` (not C6 wide) + augment OFF + default exploration → a positive mixes policy-transfer
+  + clean-retrain + λ-ramp; a null doesn't falsify C3. ACCEPTED as a SCREEN. Clean test = a λ=0
+  control arm at identical warmstart/data budget (Joshua decision — compute cost).
+- **D18 [HIGH] per-iter gate can't resolve its own +10-elo keep margin** — n=200 ≈ ±25 elo (ordinary
+  binomial in `eval_net_vs_heuristic.py:189`; pairing not credited in the CI), so adopt/reject is
+  noise-driven. Mitigated for THIS run by the disabled plateau guard (all 12 run regardless). Verdict
+  must be n≥400 paired + pair-level bootstrap; re-rank all iters by gate elo, don't trust the loop's
+  adopted "best".
+- **D19 [MED] base `MCTS.search()` returns raw un-deduped child N** (`mcts.py:96`), consumed by
+  `warmstart.py:402` → a future MCTS-labeled warmstart can resurrect C2-style inflated policy targets.
+  Not active (current warmstart is heuristic-labeled). Fix: dedupe in search() or add a named raw method.
+- **D20 [MED] fair-chance determinization key omits deck order** (`game_wrapper.py:363`) → repeated
+  searches / determinization ensembles can merge different-future states. Latent; unused in the live
+  run. Fix before any C9 determinization work.
+- **D21 [MED] no per-iter/per-eval manifest** — `.npz` saves arrays only; eval writes per-game JSON
+  only → results need log archaeology (how stale claims form). Fix: write `manifest.json` (commit,
+  WARM_SRC, args, env, blend curve, ckpt hashes) per iter/eval.
+- **D22 [LOW] deterministic seed crash strands an iter** — `run_selfplay_iter.py:330` returns "failed"
+  with no `.failed` marker; combined with the new claim self-heal it would re-attempt + re-fail forever,
+  stalling at <GAMES. Not yet hit. Fix: write a `.failed` marker that counts toward completion.
+
+**Final call (auditor, CONCUR):** let the live run finish as an EXPLORATORY screen; do NOT use it as
+the Stage-C kill/go gate. Strong positive → re-measure n≥400 paired (ideally also sims=800); a null is
+uninterpretable against the broader correction plan.
