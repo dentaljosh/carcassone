@@ -57,5 +57,15 @@ STAGE_B_BLEND=1 VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine \
 - **G-S3 still pending:** point the keep-best gate at HeuristicMCTS (out-of-lineage) +
   `warm_from=best_ckpt`. Not yet wired — do before trusting the loop's gate decisions.
 
-## Code review
-Branch diff reviewed by a subagent (findings folded in here when complete). Bottom line TBD.
+## Code review (done — subagent, 2026-06-03)
+**Bottom line: wiring is correct + safe to launch Stage B**, pending the Xeon OOM smoke below.
+All categories clean: value_blend propagation (both no-orch + orch paths), anchor correctness
+(plays pure v2.7), default-off byte-identical to current production, no silent no-op, no
+set-u bugs, score-diff currency matches (leaf `/15` == `score_diff` target `/15`).
+- **One issue found + FIXED (commit bfbd47d):** the anchor orch server wastefully ran the
+  value-head forward during Stage B (its `policy_only` keyed off the learner's `--value-blend`),
+  raising VRAM on the 8GB Xeon where OOM is the flagged risk. Now `policy_only=(leaf_eval!="nn")`
+  unconditional — the anchor always plays blend=0 so it can always skip the value head.
+- **Remaining gate before launch (not a code bug):** 1-iter smoke at production knobs on the
+  Xeon (W=18, sims=200, blend>0) watching the Compute/CUDA VRAM, to confirm full-forward
+  doesn't OOM. DON'T extrapolate wallclock from a cheaper smoke.
