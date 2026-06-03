@@ -11,6 +11,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) + [STATUS.md](STATUS.md).
 
 **2026-06 — correction era (current)**
+- 2026-06-03 — STAGE-B GATES 1+2 LOCKED (Joshua): success bar = ≥25 elo over iter_11 @ n=400 paired; blend curve = `0,0,0.15,0.30,0.50,0.70,1.0` (= `blend_for_iter()`). G-S3 gate design = last open decision before launch
 - 2026-06-03 — STAGE-B WIRING (branch `stage-b-wiring`): value-blend-in-loop (G-S1, the F-B1 fix) + G-T1/T2 knobs + anchor stays blend=0; code-reviewed "safe to launch"; NOT launched (gated on Joshua's success-bar + blend-curve)
 - 2026-06-03 — TEST-GAP CLOSE: C1/C2/F-B1 regression guards added to pytest (were script-only or absent; the suite green-lit all 4 shipped bugs)
 - 2026-06-02 (late) — STAGE-A2 VERDICT (paired n=400): c_puct + cap FLAT → production unchanged; FPU the one lever (+45 screen, n=400 confirm pending)
