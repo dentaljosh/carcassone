@@ -331,6 +331,12 @@ for ((N=START; N<ITERS; N++)); do
   BLEND=$(blend_for_iter "$N")   # G-S1: value-blend λ for this iter (0.0 unless STAGE_B_BLEND=1)
   iter_dir=$OUT_LOCAL/iter_$NN
   mkdir -p "$iter_dir"
+  # Self-heal stale claims (claim w/o npz) from a prior killed/jittered attempt so a
+  # RESUME can complete those seeds. Safe HERE: runs BEFORE this iter's workers launch,
+  # so it can never clear a live claim. Without it, a mid-iter worker death (manual kill,
+  # or a laptop Tailscale drop killing a held-ssh) strands that worker's in-flight claims
+  # and the resume permanently stalls at GAMES - n_workers_killed (the iter-1 556/600 bug).
+  for c in "$iter_dir"/*.claim; do [ -e "$c" ] || break; n="${c%.claim}.npz"; [ -f "$n" ] || rm -f "$c"; done
   # G-S3: warm from the BEST gated checkpoint, not the latest — a regressing iter is
   # rejected and the next iter re-branches from the best (best_iter=-1 → the iter_11 seed).
   if [ "$N" -eq 0 ] || [ "$best_iter" -lt 0 ]; then warm_from=$WARM; else warm_from=$CKPT_LOCAL/iter_$(printf "%02d" "$best_iter").pt; fi
