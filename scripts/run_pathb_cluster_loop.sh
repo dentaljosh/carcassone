@@ -78,6 +78,23 @@ selfplay_mode() { case $1 in
   xeon)   echo "18 --orchestrator --orch-shards 2";;  # shards=2       -> 6.99 mv/s (+30%)
   *)      echo "8 --orchestrator";;
 esac; }
+# G-S1 Stage-B value-blend ramp: λ for blending the NN value head INTO the search
+# leaf ((1-λ)*v2.7 + λ*v_nn) — the fix for F-B1 (value head never in the loop).
+# DEFAULT OFF (0.0 every iter = current production, value head NOT in loop) so this
+# script is unchanged for non-Stage-B runs. Set STAGE_B_BLEND=1 to enable the ramp.
+# ⚠️ The curve below is a PROPOSAL — Joshua tunes it before the real Stage-B run.
+# Gates (gcmd/ccmd/vcmd) deliberately omit --value-blend → stay at 0.0 (comparable).
+blend_for_iter() {
+  [ "${STAGE_B_BLEND:-0}" = "1" ] || { echo "0.0"; return; }
+  case $1 in
+    0|1) echo "0.0";;    # warmup on the pure v2.7 leaf
+    2)   echo "0.15";;
+    3)   echo "0.30";;
+    4)   echo "0.50";;
+    5)   echo "0.70";;
+    *)   echo "1.0";;
+  esac
+}
 # Anchor-gate eval workers per box (net-vs-net loads 2 nets/worker -> 2x VRAM, so
 # conservative on the 8GB boxes; UNBENCHED for this script — eval_wsweep measured
 # eval_net_vs_heuristic, not head-to-head). Gate fans across boxes via --shared-claim.
@@ -283,15 +300,16 @@ best_wr="-1"; best_iter=-1; flat=0
 
 for ((N=START; N<ITERS; N++)); do
   NN=$(printf "%02d" "$N")
+  BLEND=$(blend_for_iter "$N")   # G-S1: value-blend λ for this iter (0.0 unless STAGE_B_BLEND=1)
   iter_dir=$OUT_LOCAL/iter_$NN
   mkdir -p "$iter_dir"
   if [ "$N" -eq 0 ]; then warm_from=$WARM; else warm_from=$CKPT_LOCAL/iter_$(printf "%02d" $((N-1))).pt; fi
-  echo ""; echo "########## ITER $N: self-play @ $(date) (warm_from=$warm_from) ##########"
+  echo ""; echo "########## ITER $N: self-play @ $(date) (warm_from=$warm_from value_blend=$BLEND) ##########"
   pids=""
   for host in "${HOSTS[@]}"; do
     read -r w orchflags <<< "$(selfplay_mode "$host")"; outp=$OUT_LOCAL; warmp=$warm_from; anchorp=$WARM
     [ "$host" != "5800x" ] && { outp=$(remote_path "$OUT_LOCAL"); warmp=$(remote_path "$warm_from"); anchorp=$(remote_path "$WARM"); }
-    cmd="nice -n 19 env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-target score_diff --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
+    cmd="nice -n 19 env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-blend $BLEND --value-target score_diff --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
     pidf="/tmp/pathb_pid_${host}_$NN"; rm -f "$pidf"
     launch_on_host "$host" "sp_${RUN}_$NN" "$cmd" "/tmp/pathb_sp_${host}_$NN.log" "$pidf"
     sleep 1; pid=$(cat "$pidf" 2>/dev/null)

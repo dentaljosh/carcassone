@@ -75,6 +75,7 @@ from carcassonne_ai.remote_socket_handles import (
     connect_remote,
 )
 from carcassonne_ai.selfplay import play_one_selfplay_game
+import dataclasses
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 from carcassonne_ai.warmstart import GameDataset
 
@@ -240,7 +241,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     # Exception (Option 2): value_blend > 0 blends the NN value head into the
     # leaf, so the value head must be computed — no policy-only fast path.
     use_policy_only = (
-        cfg.get("leaf_eval", "nn") != "nn" and DEFAULT_CONFIG.value_blend == 0.0
+        cfg.get("leaf_eval", "nn") != "nn" and cfg.get("value_blend", 0.0) == 0.0
     )
 
     def _build_evaluators(handles, net):
@@ -274,9 +275,15 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
                         net, _worker_device, game, use_fp16=use_fp16
                     )
         if cfg.get("leaf_eval") == "v2_5":
-            ev = make_v25_value_wrapper(ev)
+            # G-S1: per-iter value_blend overrides the import-time DEFAULT_CONFIG
+            # so the ramp actually reaches the worker leaf. All other LeafConfig
+            # fields (cap, drop-three-open, …) still come from env via DEFAULT_CONFIG.
+            leaf_cfg = dataclasses.replace(
+                DEFAULT_CONFIG, value_blend=cfg.get("value_blend", 0.0)
+            )
+            ev = make_v25_value_wrapper(ev, cfg=leaf_cfg)
             if bev is not None:
-                bev = make_v25_batch_value_wrapper(bev)
+                bev = make_v25_batch_value_wrapper(bev, cfg=leaf_cfg)
         return ev, bev
 
     evaluator, batch_evaluator = _build_evaluators(_worker_handles, _worker_net)
@@ -453,6 +460,14 @@ def main(argv: list[str] | None = None) -> int:
              "v1 by 6.6pp at sims=400 (DECISIONS.md 2026-05-14). Priors "
              "always come from the network — only the leaf value source "
              "changes.",
+    )
+    p.add_argument(
+        "--value-blend", type=float, default=0.0,
+        help="Stage B (G-S1): blend weight λ for the NN value head into the "
+             "v2_5 leaf: (1-λ)*tanh(vs2/15) + λ*v_nn. 0.0 (default) = pure "
+             "v2.7 leaf (value head NOT in the search loop — the F-B1 failure). "
+             "λ>0 puts the learned value INTO the loop; ramp over iters via "
+             "run_pathb_cluster_loop.sh blend_for_iter(). Requires --leaf-eval v2_5.",
     )
     p.add_argument(
         "--shared-claim", action="store_true",
@@ -649,6 +664,7 @@ def main(argv: list[str] | None = None) -> int:
         "claim_host": args.claim_host,
         "anchor_checkpoint": str(args.anchor_checkpoint) if args.anchor_checkpoint else None,
         "anchor_fraction": float(args.anchor_fraction),
+        "value_blend": float(args.value_blend),
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -715,7 +731,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_batch=args.orch_max_batch,
                 batch_timeout_ms=args.orch_batch_timeout_ms,
                 use_fp16=args.fp16,
-                policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
+                policy_only=(args.leaf_eval != "nn" and args.value_blend == 0.0),
             )
             id_q = ctx.Queue()
             for w in range(n_workers):
@@ -752,7 +768,7 @@ def main(argv: list[str] | None = None) -> int:
                         max_batch=args.orch_max_batch,
                         batch_timeout_ms=args.orch_batch_timeout_ms,
                         use_fp16=args.fp16,
-                        policy_only=(args.leaf_eval != "nn" and DEFAULT_CONFIG.value_blend == 0.0),
+                        policy_only=(args.leaf_eval != "nn" and args.value_blend == 0.0),
                     )
                 except BaseException:
                     shutdown_server_pool(server_pool)
