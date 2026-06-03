@@ -66,7 +66,7 @@ echo "  xeon n=$nx ss=$sx W=10"
 # --- poll to completion (detached launcher; not interactive polling) ---
 stuck=0; prev=-1
 while true; do
-  cnt=$(find "$celldir" -name 's*.json' 2>/dev/null | wc -l)
+  cnt=$(find "$celldir" -name 'n*.json' 2>/dev/null | wc -l)  # eval_net_vs_heuristic names files n<sims>_h..._seed....json
   echo "[$(date +%H:%M)] ladder $cnt/$NTOTAL"
   [ "$cnt" -ge "$NTOTAL" ] && { echo "[ladder] COMPLETE $cnt/$NTOTAL @ $(date)"; break; }
   [ "$cnt" -eq "$prev" ] && stuck=$((stuck+1)) || stuck=0; prev=$cnt
