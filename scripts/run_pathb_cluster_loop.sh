@@ -325,6 +325,17 @@ fi
 # the seed yet). best_elo seeded with iter_11's re-baseline elo so an iter must EXCEED the
 # seed to be adopted (we never warm from worse-than-iter_11).
 best_elo="$SEED_ELO"; best_iter=-1; flat=0
+# Persist/restore keep-best across relaunches. AUDITOR (High, 2026-06-03): every relaunch
+# reset best_iter=-1, so a crash+resume would re-branch from WARM (iter_11) instead of the
+# adopted best — silently corrupting the rest of the chain. Restore prior state if present
+# (written after each gate below). On a crash with NO state file (old-code run), reconstruct
+# it from the log: grep the last 'NEW BEST → warm_from=iter_NN' and its elo, write best_iter/
+# best_elo into $STATE_FILE, then relaunch.
+STATE_FILE="$OUT_LOCAL/loop_state.env"
+if [ -f "$STATE_FILE" ]; then
+  . "$STATE_FILE"
+  echo "  restored keep-best: best_iter=$best_iter best_elo=$best_elo flat=$flat (from $STATE_FILE)"
+fi
 
 for ((N=START; N<ITERS; N++)); do
   NN=$(printf "%02d" "$N")
@@ -430,6 +441,7 @@ for ((N=START; N<ITERS; N++)); do
   else
     echo "  (no gate elo captured this iter — skipping keep/plateau check)"
   fi
+  printf 'best_iter=%s\nbest_elo=%s\nflat=%s\n' "$best_iter" "$best_elo" "$flat" > "$STATE_FILE"
   echo "########## ITER $N COMPLETE @ $(date) ##########"
 done
 echo "=== CLUSTER LOOP DONE @ $(date) ==="
