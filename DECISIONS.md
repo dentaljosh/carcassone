@@ -11,6 +11,8 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [docs/CORRECTION_PLAN_2026-06-02.md](docs/CORRECTION_PLAN_2026-06-02.md) + [STATUS.md](STATUS.md).
 
 **2026-06 — correction era (current)**
+- 2026-06-02 (late) — STAGE-A2 VERDICT (paired n=400): c_puct + cap FLAT → production unchanged; FPU the one lever (+45 screen, n=400 confirm pending)
+- 2026-06-02 (late) — Work-stealing is the DEFAULT for eval sweeps (`--shared-claim`, not disjoint shards); cluster dashboard (heartbeat + status) added
 - 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7); learned policy ≈ v2.7 leaf
 - 2026-06-02 — PHASE 1 STAGED A→B→C (not "one batched retrain"); Stage A progress
 - 2026-06-02 — PHASE 0 EXECUTED: C1+C2 bugs fixed & verified; RIVER DROPPED
@@ -115,6 +117,24 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 ```
 
 ## Decisions
+
+## 2026-06-02 (late) — STAGE-A2 VERDICT: c_puct + cap FLAT (production unchanged); FPU the one live lever
+
+The post-Phase-0 re-sweep owed since the C1/C2 bug fixes (which moved scoring + visit-distribution optima). Paired (G-M2) n=400 head-to-head, iter_11 both sides, only the knob-under-test differing, work-stealing across 3 boxes. Rows: `results.csv: verdict_*`.
+- **Pairing validated:** `self_c3` (iter_11 vs itself, identical c=3.0) = 49.5% / z=−0.20. The *unpaired* wave-1 self-cell was 42% — that 8pp was pure first-player harness bias, now cancelled, and variance ~halved (se 2.5pp). This is why we pair.
+- **c_puct FLAT across 1.5/2.0/2.5/3.0:** c15 +15.6 (z=0.90), c20 −17.4 (z=−1.0), c25 −15.6 (z=−0.90) — all n.s. vs c=3.0. The n=100 "+18pp at c=2.0" wave-1 screen **reversed** → it was harness bias + noise (textbook lone-spike-is-noise, the c=3 lesson again). **Production c=3.0 stays.**
+- **cap FLAT** (wave-1: cap=8/16 ≈ cap=12) → **cap=12 stays.**
+- **FPU is the ONE lever showing signal:** fpu_reduction=0.2 (vs legacy q=0) = 56.5% / +45.4 elo / **z=+1.85** at n=200 — the only non-flat cell in the entire sweep. **Per our own discipline this is a SCREEN, not a verdict** (z<2σ) → must confirm at n=400 paired before promoting `fpu_reduction` to the production NeuralMCTS config. fpu04 (0.4) finishing. FPU also gets re-tuned at Stage B (G-S4), so the confirm can fold into the Stage-B sweep.
+
+**Net production change: NONE** (c=3.0 + cap=12 both confirmed). The value of this run was negative (ruling out phantom levers) + validating the paired/work-stealing methodology for everything downstream.
+**Phase:** Phase 1 (Stage A re-sweep, closes the C1/C2-owed re-tune except FPU).
+
+## 2026-06-02 (late) — Work-stealing is the DEFAULT for eval sweeps; cluster dashboard added
+
+**Work-stealing (Joshua: "we need to do work stealing whenever possible").** The Stage-A2 verdict first ran with **disjoint per-box seed shards**, which stranded the fast laptop idle ~24 min on the foregone c25 tail while slower boxes ground on. Killed + relaunched with `--shared-claim`: all boxes point at the SAME full seed range and atomically claim `(seed, player)` via O_CREAT|O_EXCL `.claim` sidecars; the on-disk `.json` exists-check is the permanent done-marker so the existing 318 games were reused. **Decision: prefer `--shared-claim` over disjoint shards for ALL eval sweeps**, not just self-play loops. Wired the launcher `scripts/sweep_verdict_steal.sh` (12153b6) and back-ported `--shared-claim` + `--paired` into the ladder gauntlet `eval_net_vs_heuristic.py` (14bcb75) for the upcoming high-sim reference rung. **Known residual:** claim-based stealing has a *tail* inefficiency — once all remaining seeds are claimed-in-flight, a box that drains its queue exits rather than re-stealing (claims only expire after `claim-stale-secs`=90min), so the last ~Σworkers games finish on whichever box is fastest. Acceptable (the bulk idle is gone); a future refinement is a short stale window or queue-drain re-attempt.
+
+**Cluster dashboard (Tier A + B; fe27b9c).** `scripts/cluster_heartbeat.py` (stdlib-only, runs on each box with any `python3`) samples CPU%/loadavg/GPU(util,power,VRAM)/running-job every 4s → `<share>/status/<host>.json`. The CIFS share is the bus — boxes never talk to each other, sidestepping cross-Tailscale networking. `scripts/cluster_status.py` reads them: no flag = consolidated text table (replaces ad-hoc ssh-`ps` bash for my status checks — kills the rewrite-bash-every-time anti-pattern); `--serve PORT` = a tiny stdlib HTTP server rendering a live auto-refreshing web page (Tier B, the one Joshua picked). Tolerates laptop GPUs reporting `[N/A]` power.limit (parse per-field, don't drop the GPU). Reachability gotcha: server binds inside WSL2 (NAT'd) while tailscaled is on the Windows host → reach from Mac via SSH `-L 8765:localhost:8765` or a Windows `netsh portproxy` (for tailnet/phone); WSL mirrored-networking is the clean long-term fix but needs a WSL restart (deferred — would kill running jobs). The dashboard immediately surfaced a real read: the laptop runs GPU-bound on eval (load 12/24 but 4070 at 97%), and the claim-tail idle above.
+**Phase:** tooling (supports Phase 1+).
 
 ## 2026-06-02 — RE-BASELINE VERDICT: iter_11 = +25.2 elo on the clean game (was +181.7) — the learned policy adds ~nothing over the v2.7 leaf
 

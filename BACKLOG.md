@@ -16,6 +16,14 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-06-02 — Work-stealing claim-tail inefficiency + dashboard reachability/Tier-C
+
+**Context:** built `--shared-claim` work-stealing for eval sweeps + the cluster dashboard (DECISIONS 2026-06-02 late).
+**Ideas (two, both deferred):**
+1. **Claim-tail re-steal.** Claim-based stealing kills the bulk idle but leaves a tail: once all remaining seeds are claimed-in-flight, a box that drains its queue exits instead of re-attempting another box's slow claim (claims expire only after `claim-stale-secs`=90min). The last ~Σworkers games finish on the fastest box while others idle (seen on the dashboard: laptop idle on the fpu04 tail). Fix options: a short stale window for the *final* N games, a queue-drain re-attempt loop, or a tiny coordinator handing out the tail.
+2. **Dashboard reachability + Tier C.** Web server binds inside WSL2 (NAT'd), tailscaled is on the Windows host → currently reach via SSH `-L` or a manual `netsh portproxy`. Clean long-term: WSL **mirrored networking** (`.wslconfig networkingMode=mirrored`) — needs a WSL restart so deferred to a between-runs window. Tier C (FastAPI + history graphs + kill buttons) is overkill for 3 boxes. Also fold heartbeat+server relaunch into a launcher (4 long-lived procs die on box reboot, e.g. the 5950x swap).
+**Why deferred:** the MVP work-stealing + dashboard deliver the value; these are polish. Don't action without Joshua.
+
 ## 2026-05-31 — Eval/measurement gauntlets are CPU-bound; their GPU sits ~75% idle (batch-1)
 
 **Context:** during the iter_11 n=400 ladder run (`eval_net_vs_heuristic.py`) Joshua noticed the 5800X GPU read **76% util but only 47 W of its 180 W limit** (clocks near-boost at 2820/3090, so not throttling). CPU was a genuine ~90%. This is the **eval-script corollary** to the already-documented self-play GPU-boundedness (DECISIONS 2026-05-19 "Open gaps" #2: self-play is CPU-leaf-bound, GPUs ~26-40%; DECISIONS 2026-05-20 eval-server bridge).
