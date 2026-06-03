@@ -28,6 +28,18 @@ Full original spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase st
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |
 
+## Cluster share paths — ⚠️ THE MOUNT POINT DIFFERS BY BOX
+
+The CIFS share has **different mount paths per box.** Using the wrong one was the #1 cause of "No such file" errors in ad-hoc commands (27 in the 2026-06-02 transcript audit).
+
+| Box | Share mount | Use it in… |
+|---|---|---|
+| 5800x (local) | `/mnt/c/carc-shared` | commands run locally on the 5800x |
+| xeon | `/mnt/carc-shared` | inside `ssh xeon "…"` |
+| laptop | `/mnt/carc-shared` | inside `ssh laptop "…"` |
+
+**Rule:** local commands use `/mnt/c/carc-shared`; anything inside an `ssh xeon/laptop` uses `/mnt/carc-shared`. In scripts, resolve a per-box `$SHARE` (the launchers do this via a sed `SHARE_LOCAL`→`SHARE_REMOTE` substitution). The project PreToolUse lint hook (`scripts/hooks/pretooluse_lint.py`) blocks the two unambiguous misuses (local cmd using `/mnt/carc-shared`, or `ssh`-to-remote using `/mnt/c/carc-shared`); add `# allow-path` to override.
+
 ## SSH-disconnect resilience (Mac→Windows→WSL setup)
 
 Joshua connects via SSH from a Mac to Windows, then to WSL2. **When the Mac sleeps, SSH disconnects and SIGHUP propagates to any tty-attached process** — this killed two long runs on 2026-04-28 (warmstart gen at 125/500, T2 at 16/100). Per-game checkpoints saved the work but compute was lost.
@@ -145,6 +157,9 @@ When writing new parallel scripts: always launch with `python -u` for unbuffered
   - **Before declaring any finding, query the table for prior measurements of the same cell.** A new result that contradicts a prior one is not a discovery until the contradiction is resolved.
   - **n-thresholds (CORRECTED 2026-06-02, round-2 audit G-M1 — old figures were ~2× too optimistic):** near wr=0.5, σ_elo ≈ 695·√(0.25/n) for an UNPAIRED head-to-head → **n=100 → 1σ ≈ ±35 elo**, **n=400 → 1σ ≈ ±17 elo**, **±9 elo needs n ≈ 1500**. So **n=100 is a coarse screen; n=400 is a verdict ONLY for effects ≥ ~35 elo (2σ)** — it CANNOT resolve a +20 elo gain. Deck-PAIRING (same deck both colors, G-M2) ~halves variance → n=400 paired ≈ ±12 elo; prefer it. The 2026-06-02 re-baseline "+25.2 ± 17.4" was z=1.45 = **inconclusive**, NOT a verdict. Size n / pair / use a margin estimator to the effect you expect. Never promote a finding from a single screen. **A lone value that beats its parameter-neighbors by >1σ is a noise signature, not a peak** — re-measure before believing it.
   - Every eval must write a self-describing `manifest.json` (full resolved config) so results never again require dirname archaeology to interpret.
+- **Pre-launch process census — do it BY DEFAULT, don't wait to be asked.** Before any cluster launch, census what's already running (`ps -o pid,etime,%cpu,comm -C python --sort=-etime`, plus the dashboard `scripts/cluster_status.py --share /mnt/c/carc-shared`, plus `ssh xeon/laptop` equivalents). Joshua asked for this census 31× in one week (2026-06-02 audit) — make it a reflex, not a response. Remember a killed mp main does NOT reap its spawn workers (kill by exact pid).
+- **Don't block-poll with foreground `sleep`.** The #1 wall-clock + interrupt sink (447 sleeps / ~2.8h in one week). Use the Monitor tool with an until-loop, or `run_in_background=true` and wait for the completion notification. Short poll sleeps (`do sleep 2; done`) are fine; a foreground `sleep ≥10s` is the smell. The project PreToolUse hook blocks it (`# allow-sleep` overrides).
+- **Self-knowledge / doc freshness.** Recurring "where are we / why did it stop / what happened to iters N–M" churn (raised 39× in a week) = state not captured. Keep STATUS.md answer-ready (what's running, why it stopped, last verdict) and results.csv + per-run `manifest.json` authoritative, so a fresh thread doesn't reconstruct from scratch.
 - **Fail loudly.** If a result doesn't match the spec, surface it.
 
 ## Engine notes
