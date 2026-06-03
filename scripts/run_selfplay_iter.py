@@ -772,7 +772,11 @@ def main(argv: list[str] | None = None) -> int:
                         max_batch=args.orch_max_batch,
                         batch_timeout_ms=args.orch_batch_timeout_ms,
                         use_fp16=args.fp16,
-                        policy_only=(args.leaf_eval != "nn" and args.value_blend == 0.0),
+                        # Anchor always plays blend=0.0 (pure v2.7), so its server can
+                        # always skip the value-head forward — independent of the
+                        # learner's --value-blend. Saves VRAM/compute on the 8GB orch
+                        # box during Stage B (review Issue 1; OOM-risk margin).
+                        policy_only=(args.leaf_eval != "nn"),
                     )
                 except BaseException:
                     shutdown_server_pool(server_pool)
