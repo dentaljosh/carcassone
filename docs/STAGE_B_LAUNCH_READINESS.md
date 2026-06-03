@@ -1,10 +1,10 @@
 # Stage B — launch readiness (built overnight 2026-06-03, on branch `stage-b-wiring`)
 
-**STATUS: wiring DONE + smoke-verified; code-review pending; NOT launched.** Stage B is
-the cheap value-in-loop retrain that tests whether the learned value head, finally put
-INTO the search loop (the F-B1 fix), can beat the v2.7 leaf ceiling on the clean base-only
-game. Everything below is on branch `stage-b-wiring` (review + merge to `gpu-orchestrator`
-when satisfied — branch-per-phase, merge is your call).
+**STATUS (2026-06-03 AM): wiring DONE + code-reviewed + G-S3 wired + all decisions LOCKED.
+Cluster synced (11965b6). Final gate = the Xeon OOM smoke; then launch.** Stage B is the
+value-in-loop retrain that tests whether the learned value head, finally put INTO the search
+loop (the F-B1 fix), can beat the v2.7 leaf ceiling on the clean base-only game. Branch
+`stage-b-wiring` (merge to `gpu-orchestrator` is your call — branch-per-phase).
 
 ## What's wired (3 commits)
 - **7fa696d G-S1** — `--value-blend` in `run_selfplay_iter.py`; the 3 guard sites read the
@@ -20,29 +20,36 @@ when satisfied — branch-per-phase, merge is your call).
 leaf + changes the search); anchor-fraction=1.0 run completes 0-failed; `test_evaluators`
 + `test_selfplay` green; default-off path preserves current behavior.
 
-## ⚠️ TWO DECISIONS NEEDED FROM JOSHUA before launch
-1. **Pre-register the success bar.** "Stage B succeeds iff value-in-loop beats iter_11 by
-   ≥ X elo on the HeuristicMCTS ladder at n=Y." Pick X, Y *now* so we don't post-hoc
-   rationalize a null (the project's recurring failure). Suggest X≥25 elo, Y=400 paired.
-2. **The blend ramp curve.** Current PROPOSAL in `blend_for_iter()`: iters 0–1=0.0 (warmup),
-   then 0.15 / 0.30 / 0.50 / 0.70 / 1.0. Adjust the curve / length as you see fit.
+## ✅ DECISIONS — ALL LOCKED (Joshua, 2026-06-03)
+1. **Success bar:** Stage B succeeds iff the best iter beats **iter_11 by ≥25 elo @ n=400
+   paired** (~1.5σ; pre-registered to avoid post-hoc rationalizing a null).
+2. **Blend curve:** iters 0–1 = 0.0 (warmup), then **0.15 / 0.30 / 0.50 / 0.70 / 1.0** —
+   exactly `blend_for_iter()` as coded.
+3. **Warm-from = iter_11** (NOT a fresh corpus net). The 2026-06-03 high-sim ladder showed
+   iter_11 = **+56.7 elo vs HeuristicMCTS @ sims=800** (n=1143), i.e. its *policy priors*
+   transfer to the clean base-only game despite River-era training (base ⊂ base+river; the
+   bad part — the value head — is what Stage B retrains on clean self-play, value-blend
+   ramping from 0). So we inherit the good policy instead of climbing back from a weaker
+   imitation net. `WARM_SRC` default already = `pathb_loop/ckpt/iter_11.pt`; no train step.
+4. **G-S3 gate (wired, commit 11965b6):** per-iter gate = iter_N **vs HeuristicMCTS**
+   (out-of-lineage, same currency as the +56.7 rung), n=200 paired, c=3.0, value_blend=0;
+   adopt as new best (→ next `warm_from`) iff elo ≥ best+10; stop after MAX_FLAT no-new-best.
 
-## Pre-launch steps still owed (cheap; can be done before/at launch)
-- **Train the Stage-B starting checkpoint** (from-scratch base-only warmstart): the corpus
-  is ready at `data/warmstart/baseonly_v27cap12/` (300K, 12-scalar, cap=12). Run
-  `train_warmstart.py --include-farm-scalars` on it → `warm.pt`. (Old iter_11 is River-era;
-  Stage B starts fresh.) ~minutes.
-- Decide which `--warm-from` Stage B starts at (the new warm.pt) and `WARM`/anchor (the
-  ladder/gate reference — likely HeuristicMCTS via G-S3, still pending wiring).
-
-## Launch shape (fill the decisions, then)
+## Launch command (after the OOM smoke passes)
 ```bash
-# from the loop launcher, with Stage-B knobs:
-STAGE_B_BLEND=1 VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine \
+# fresh RUN dir, Stage-B knobs, warm from iter_11 (default WARM_SRC):
+RUN=stage_b STAGE_B_BLEND=1 VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine \
   nohup nice -n 19 bash ~/run_pathb_cluster_loop.sh > /tmp/stageb.log 2>&1 & disown
-# (set ITERS / WARM / warm-from per the loop's env; 3-box work-stealing; ETA TBD from a
-#  1-iter smoke at production knobs — DON'T extrapolate, measure.)
+# 3-box work-stealing; ITERS=12 / GAMES=600 / SIMS=200 / GATE_GAMES=200 defaults.
+# Per-iter ≈ self-play(600 g) + train + gate(n=200 vs heuristic). ETA/iter measured on iter 0.
 ```
+**Cluster readiness (2026-06-03 AM):** xeon + laptop synced to 11965b6; home launcher
+refreshed to 11965b6; xeon `stage_launcher.sh` present.
+**✅ OOM SMOKE PASSED (Xeon, blend=0.5, prod knobs W=18 shards=2 sims=200):** peak
+**2227 MiB / 8192 (27%)**, rc=0, zero CUDA/OOM errors, 12 g / 1365 pos / 295s. The value-head
+full-forward path is NOT a VRAM risk on the 8GB card. **All gates cleared — ready to launch.**
+(Throughput note, not a blocker: eval_server log shows dequeue=~85% → orchestrator dispatch
+is the limiter on xeon, GPU ~19W; that's the known shards=2 IPC-bound profile, fine for prod.)
 
 ## Open risks (from the G-S1 plan + review)
 - **CUDA OOM:** blend>0 makes the orchestrator run full-forward (value head) vs the old
