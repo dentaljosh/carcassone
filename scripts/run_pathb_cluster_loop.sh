@@ -89,16 +89,20 @@ mkdir -p "$OUT_LOCAL" "$CKPT_LOCAL" "$CODE_SYNC"
 cd "$REPO" || { echo "FATAL: no repo at $REPO"; exit 1; }
 
 workers_for() { case $1 in 5800x) echo 14;; xeon) echo 18;; laptop) echo 24;; *) echo 8;; esac; }
-# Self-play per-box mode (DECISIONS 2026-06-01 bench: mixed-mode = +87% cluster).
-# Echoes "W <orch-flags>". The CPU v2.7 leaf makes the single-thread orchestrator
-# the limiter, so bypass it (orch-off) where the net×W fits VRAM (5800x/laptop);
-# the 8GB Turing box uses orch_shards=2. Strength-neutral: orch-off uses the same
-# inline evaluator the orchestrator wraps (tests/test_eval_server.py: identical <1e-5).
+# Self-play per-box mode. RE-BENCHED 2026-06-03 on CURRENT (post-Phase-0) code via
+# scripts/sweep_selfplay.sh at blend=0.5 (the stale 2026-06-01 +87% bench was river-era).
+# VERDICT: orch-off wins on ALL 3 boxes by ~2× — the single GIL-bound orchestrator
+# dispatch thread is pure overhead for the CPU v2.7 leaf, even on the weak Quadro (xeon
+# off 5.87 > sh3 5.14 > orch 4.5 pos/s). At blend>0 the value-head GPU forward makes
+# self-play GPU-bound past ~W14 everywhere (W20-22 DROP), so W=14 is the flat-peak edge
+# on every box (per Joshua's lower-W-on-a-tie rule). Echoes "W <orch-flags>".
+#   5800x off W14=11.22 (≈W16 11.07; W20 9.51) | laptop off W14=15.69 (W18 16.27 nominal,
+#   +3.7% = within n=24 noise; W22 14.41) | xeon off W14=5.87 (W10 5.67; all orch/sh worse).
 selfplay_mode() { case $1 in
-  5800x)  echo "16 ";;                                # orch-off W=16  -> 14.70 mv/s (+99%)
-  laptop) echo "16 ";;                                # orch-off W=16 (bumped 2026-06-03: 24-threaded box was half-idle at W=10 — loadavg 10/24, GPU 48W/43% VRAM; old W=10 from stale pre-Phase-0 bench never bracketed above 10. Verify VRAM under blend.)
-  xeon)   echo "18 --orchestrator --orch-shards 2";;  # shards=2       -> 6.99 mv/s (+30%)
-  *)      echo "8 --orchestrator";;
+  5800x)  echo "14 ";;   # orch-off W14 (sweep best; orch 7.6 / sh2 8.05 far behind)
+  laptop) echo "14 ";;   # orch-off W14 (flat 14-18; lower-W on tie vs W18's +3.7% noise)
+  xeon)   echo "14 ";;   # orch-off W14 (was shards=2 W18; off beats ALL orchestrator modes)
+  *)      echo "8 ";;
 esac; }
 # G-S1 Stage-B value-blend ramp: λ for blending the NN value head INTO the search
 # leaf ((1-λ)*v2.7 + λ*v_nn) — the fix for F-B1 (value head never in the loop).
