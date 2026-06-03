@@ -99,9 +99,9 @@ workers_for() { case $1 in 5800x) echo 14;; xeon) echo 18;; laptop) echo 24;; *)
 #   5800x off W14=11.22 (≈W16 11.07; W20 9.51) | laptop off W14=15.69 (W18 16.27 nominal,
 #   +3.7% = within n=24 noise; W22 14.41) | xeon off W14=5.87 (W10 5.67; all orch/sh worse).
 selfplay_mode() { case $1 in
-  5800x)  echo "14 ";;   # orch-off W14 (sweep best; orch 7.6 / sh2 8.05 far behind)
-  laptop) echo "14 ";;   # orch-off W14 (flat 14-18; lower-W on tie vs W18's +3.7% noise)
-  xeon)   echo "14 ";;   # orch-off W14 (was shards=2 W18; off beats ALL orchestrator modes)
+  5800x)  echo "14 ";;   # orch-off W14 (fine sweep wsweep2: W14=11.99 jump vs W12 10.91; 16T)
+  laptop) echo "20 ";;   # orch-off W20 (fine sweep peak 19.29, +12% vs W14; 24T box wants high W)
+  xeon)   echo "10 ";;   # orch-off W10 (12T box, conservative no-oversubscribe; sweep cut early, lowest-impact)
   *)      echo "8 ";;
 esac; }
 # G-S1 Stage-B value-blend ramp: λ for blending the NN value head INTO the search
