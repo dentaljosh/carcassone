@@ -18,14 +18,24 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## 2026-06-02 — PreToolUse "failure-mode linter" hook (PROJECT-SCOPED only)
 
-**Context:** Joshua noticed the same failure modes recur across threads (no work-stealing, xeon nested-ssh operator mangling, etc.) and asked whether a hook could catch them before the tool runs. A transcript-audit agent (last 7 days) is mining for the actual recurring set + new ones — its output feeds the rule list.
-**Idea:** a `PreToolUse` hook on `Bash` that regex-lints the command string and (a) BLOCKS the always-wrong/high-confidence patterns, (b) advisory-warns the fuzzy ones. Triage from the design discussion:
-- **Tier 1 (block):** xeon ssh with shell operators inside `bash -lc '…'` (cmd.exe mangling); `pkill`/`pgrep` without `|| true`.
-- **Tier 2 (advisory):** eval/selfplay launch with `--seed-start` but no `--shared-claim` (work-stealing nudge); backgrounded `python … &` without nohup/setsid/disown; cluster launch without `nice -n 19`.
-- **Tier 3 (NOT hookable — leave to CLAUDE.md/memory):** parallel ssh (hook sees one call at a time), state-ETA / ask-which-box (intent), Read-before-Edit (already harness-enforced).
-- Start surgical (Tier-1 only) to avoid false-positive fatigue; the block path is the only reliable feedback channel so keep blocks rare + high-confidence. It's "CLAUDE.md-as-code" for the mechanically-checkable subset, and the real-time arm of the ~/projects/transcript-analysis audit.
-- **⚠️ SCOPE CONSTRAINT (Joshua, explicit):** register it in **`<project>/.claude/settings.json`** (this project's, already exists) — NOT global `~/.claude/settings.json` (where the idle hook lives). Project settings only fire in this dir → inherently project-only. Note `.claude/` is gitignored here, so the hook config + script live on this dev box only (acceptable — the hook only runs where Claude Code runs).
-**Why deferred:** not building yet (Joshua: "just talking"); finalize the rule set from the transcript-audit agent first.
+**Context:** Joshua noticed the same failure modes recur across threads and asked whether a hook could catch them. A transcript-audit agent mined the last 7 days (8 files, 645MB) — its findings RE-PRIORITIZED the rule set below.
+
+**Audit reframe (important):** the "parallel tool call cancelled" pattern (262×) is NOT a tool-batching bug — 0 multi-tool messages in 6,953. It's 8 USER INTERRUPTS of long single Bash calls, each cascading. Root cause = the blocking-`sleep` polling habit (447 sleep calls, ~2.8h of deliberate blocking). So the polling habit, not parallelism, is the dominant cost.
+
+**Two hooks (build PostToolUse logger first — passive, zero-risk):**
+- **PostToolUse logger** → append failures to `<project>/.claude/tool_failures.jsonl` (ts, tool, command, error sig, cwd). Mine the small log instead of re-chewing 645MB transcripts. ⚠️ verify which failure classes PostToolUse actually sees (Bash nonzero: yes; harness-validation like Read-before-Edit / parallel-cancel: maybe not → still need occasional transcript mining).
+- **PreToolUse blocker (`Bash`)** — audit-prioritized:
+  - **Tier 1 (block), TOP = reject foreground `sleep ≥10s`** → steer to Monitor / `run_in_background`. Kills the 447-sleep habit + all 8 interrupt-cascades at the source. THE highest-ROI rule (was not the original top pick).
+  - **Tier 1 #2 = CIFS-path validator (NEW finding N1):** assert a `carc-shared` path matches the box (`/mnt/c/carc-shared` on 5800x vs `/mnt/carc-shared` laptop/xeon) or that `mountpoint -q` passes. 27 failed turns came from this. Cheaper alt: a `$SHARE` env convention + a box→mount table in CLAUDE.md.
+  - **Tier 2 (advisory):** `--seed-start` without `--shared-claim` (work-stealing nudge); backgrounded `python &` without detach; cluster launch without `nice -n 19`.
+  - **Demoted (mostly under control now):** xeon ssh operator-mangling (only 5/44 errored), pkill `|| true` (minor). Don't lead with these.
+  - **NOT hookable → CLAUDE.md/memory:** parallel ssh (one call at a time), Read-before-Edit (harness-enforced; 22 hits, half on hot docs → pre-load DECISIONS/MEMORY/PATH_B at session start instead).
+- Start surgical; block path is the only reliable feedback channel → keep blocks rare + high-confidence.
+- **⚠️ SCOPE (Joshua, explicit):** register in **`<project>/.claude/settings.json`** (exists), NOT global `~/.claude` (where the idle hook lives). Project settings fire only in this dir → inherently project-only. `.claude/` is gitignored → hook config+script live on this dev box only (fine).
+
+**Non-hookable workflow findings (track separately):** N2 — doc/self-knowledge gaps surfaced as frustration ("200k tokens to get here", raised 39×) → keep STATUS/results.csv answer-ready, enforce per-run manifest.json. N3 — orphan-process anxiety (Joshua asked for a census 31×) → make a pre-launch process census (pid+age+CPU) a DEFAULT step, don't wait to be asked.
+
+**Why deferred:** not building yet (Joshua: "just talking"). Rule set now finalized from the audit; build PostToolUse logger first when greenlit.
 
 ## 2026-06-02 — Work-stealing claim-tail inefficiency + dashboard reachability/Tier-C
 
