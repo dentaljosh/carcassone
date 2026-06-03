@@ -48,6 +48,10 @@ ANCHOR_GAMES="${ANCHOR_GAMES:-40}"; POLL="${POLL:-60}"
 # injecting a strong stationary opponent so the learner can't drift into self-play
 # collusion. Flags are review-hardened (REVIEW_LOG iters 5-8). Anchor = WARM = iter_11.
 ANCHOR_FRACTION="${ANCHOR_FRACTION:-0.3}"
+# G-T1/T2 training knobs (default = current behavior; Stage B overrides via env).
+LR_SCHEDULE="${LR_SCHEDULE:-none}"          # none | cosine (G-T1)
+VALUE_LOSS_WEIGHT="${VALUE_LOSS_WEIGHT:-1.0}"  # value-loss multiplier (G-T2; Stage B ~3)
+STAGE_B_BLEND="${STAGE_B_BLEND:-0}"          # 1 → enable the value-blend ramp (G-S1)
 # Plateau guard: after MAX_FLAT consecutive n=ANCHOR_GAMES gate win-rates fail to beat
 # the running best, we SUSPECT a plateau. But n=ANCHOR_GAMES is noisy (1σ≈±8% at 40),
 # so a flat streak can be noise, not a real stall. CONFIRM-BEFORE-KILL: rather than
@@ -326,10 +330,14 @@ for ((N=START; N<ITERS; N++)); do
   fi
   cleanup_sp
 
-  echo "########## ITER $N: train @ $(date) ##########"
+  echo "########## ITER $N: train @ $(date) (lr=$LR_SCHEDULE vlw=$VALUE_LOSS_WEIGHT) ##########"
+  # G-T1/T2: LR schedule + value-loss weight. Defaults (none / 1.0) = current
+  # behavior. For Stage B the value head is gradient-starved → set e.g.
+  # VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine (Joshua tunes; sweep 1–5×).
   nice -n 19 env $ENVV $PY -u scripts/train_iter.py \
     --output-root "$OUT_LOCAL" --warmstart-root "$REPO/data/warmstart/heuristic_tau05" \
     --iter "$N" --window 10 --warmstart-mix-fraction 0.0 \
+    --lr-schedule "${LR_SCHEDULE:-none}" --value-loss-weight "${VALUE_LOSS_WEIGHT:-1.0}" \
     --warm-from "$warm_from" --output "$CKPT_LOCAL/iter_$NN.pt" --epochs 3
   trc=$?
   if [ $trc -ne 0 ]; then echo "TRAIN exited $trc (entropy collapse / NaN?) — HALTING loop at iter $N"; exit $trc; fi
