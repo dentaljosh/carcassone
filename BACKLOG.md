@@ -16,6 +16,17 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-06-02 — PreToolUse "failure-mode linter" hook (PROJECT-SCOPED only)
+
+**Context:** Joshua noticed the same failure modes recur across threads (no work-stealing, xeon nested-ssh operator mangling, etc.) and asked whether a hook could catch them before the tool runs. A transcript-audit agent (last 7 days) is mining for the actual recurring set + new ones — its output feeds the rule list.
+**Idea:** a `PreToolUse` hook on `Bash` that regex-lints the command string and (a) BLOCKS the always-wrong/high-confidence patterns, (b) advisory-warns the fuzzy ones. Triage from the design discussion:
+- **Tier 1 (block):** xeon ssh with shell operators inside `bash -lc '…'` (cmd.exe mangling); `pkill`/`pgrep` without `|| true`.
+- **Tier 2 (advisory):** eval/selfplay launch with `--seed-start` but no `--shared-claim` (work-stealing nudge); backgrounded `python … &` without nohup/setsid/disown; cluster launch without `nice -n 19`.
+- **Tier 3 (NOT hookable — leave to CLAUDE.md/memory):** parallel ssh (hook sees one call at a time), state-ETA / ask-which-box (intent), Read-before-Edit (already harness-enforced).
+- Start surgical (Tier-1 only) to avoid false-positive fatigue; the block path is the only reliable feedback channel so keep blocks rare + high-confidence. It's "CLAUDE.md-as-code" for the mechanically-checkable subset, and the real-time arm of the ~/projects/transcript-analysis audit.
+- **⚠️ SCOPE CONSTRAINT (Joshua, explicit):** register it in **`<project>/.claude/settings.json`** (this project's, already exists) — NOT global `~/.claude/settings.json` (where the idle hook lives). Project settings only fire in this dir → inherently project-only. Note `.claude/` is gitignored here, so the hook config + script live on this dev box only (acceptable — the hook only runs where Claude Code runs).
+**Why deferred:** not building yet (Joshua: "just talking"); finalize the rule set from the transcript-audit agent first.
+
 ## 2026-06-02 — Work-stealing claim-tail inefficiency + dashboard reachability/Tier-C
 
 **Context:** built `--shared-claim` work-stealing for eval sweeps + the cluster dashboard (DECISIONS 2026-06-02 late).
