@@ -14,12 +14,23 @@ def _uniform_evaluator(board) -> tuple[np.ndarray, float]:
     return np.full(a, 1.0 / a, dtype=np.float32), 0.0
 
 
+def _varied_evaluator(board) -> tuple[np.ndarray, float]:
+    """Uniform priors but a position-VARYING leaf value (decreases as the deck
+    drains). The constant-0 uniform evaluator backs up Q=0 everywhere — useless
+    for testing search_value, which records root.Q. A deck-size-driven value
+    gives distinct root.Q across plies so the recorded targets genuinely vary."""
+    a = action_size(board.offset.size)
+    pri = np.full(a, 1.0 / a, dtype=np.float32)
+    val = float(np.tanh((len(board.state.deck) - 35) / 20.0))
+    return pri, val
+
+
 def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5,
-          value_target: str = "score_diff"):
+          value_target: str = "score_diff", evaluator=_uniform_evaluator):
     g = Game(enable_legal_moves_cache=True)
     return play_one_selfplay_game(
         game=g,
-        evaluator=_uniform_evaluator,
+        evaluator=evaluator,
         sims=sims,
         c_puct=1.5,
         dirichlet_alpha=0.3,
@@ -83,6 +94,68 @@ def test_value_targets_share_one_magnitude() -> None:
         ds = _play(seed=2, sims=2, temp_threshold=3, value_target=vt)
         mags = {round(abs(v), 6) for v in ds.values.tolist()}
         assert len(mags) == 1, f"{vt}: >1 distinct magnitude: {mags}"
+
+
+def test_value_targets_search_value_mode() -> None:
+    """value_target='search_value' → per-position MCTS root.Q (current-player
+    POV), the overfitting fix. Contract: one value per recorded position, all in
+    [-1, 1]. Crucially, UNLIKE the outcome encodings (one shared magnitude per
+    game — see test_value_targets_share_one_magnitude), search values vary
+    position-to-position; with a deck-varying leaf value we get >1 distinct
+    magnitude, proving these are genuine per-position root.Q, not a re-baked z."""
+    ds = _play(seed=1, sims=8, temp_threshold=3, value_target="search_value",
+               evaluator=_varied_evaluator)
+    vals = ds.values.tolist()
+    assert len(vals) == len(ds.boards) == ds.policies.shape[0]
+    assert all(-1.0 <= v <= 1.0 for v in vals), f"out of [-1,1]: {set(vals)}"
+    assert all(np.isfinite(v) for v in vals)
+    mags = {round(abs(v), 6) for v in vals}
+    assert len(mags) > 1, (
+        "search_value collapsed to one magnitude — likely zeros (constant "
+        f"evaluator leaked) or the outcome z, not per-position root.Q: {mags}"
+    )
+
+
+def test_search_value_matches_root_q_per_ply() -> None:
+    """The recorded search_value for each ply equals NeuralMCTS.root_value at
+    that position — i.e. selfplay writes exactly root.Q, index-aligned. Replays
+    the same seeded game move-by-move and checks the first recorded ply's target
+    against an independent search's root.Q (current-player POV)."""
+    from carcassonne_ai.mcts import NeuralMCTS
+
+    ds = _play(seed=5, sims=8, temp_threshold=3, value_target="search_value",
+               evaluator=_varied_evaluator)
+    # Re-derive ply 0's root.Q independently with the same evaluator/sims/seed.
+    g = Game(enable_legal_moves_cache=True)
+    import random as _r
+    _r.seed(5)
+    board = g.get_init_board()
+    mcts = NeuralMCTS(game=g, evaluator=_varied_evaluator, simulations=8,
+                      c_puct=1.5, seed=5, dirichlet_alpha=0.3, dirichlet_eps=0.25)
+    mcts.search(board)
+    rq = mcts.root_value(board)
+    assert abs(float(ds.values[0]) - rq) < 1e-6, (
+        f"recorded search_value[0]={ds.values[0]} != root.Q={rq}"
+    )
+
+
+def test_search_value_seed_determinism() -> None:
+    ds1 = _play(seed=9, sims=6, value_target="search_value",
+                evaluator=_varied_evaluator)
+    ds2 = _play(seed=9, sims=6, value_target="search_value",
+                evaluator=_varied_evaluator)
+    assert np.array_equal(ds1.values, ds2.values)
+
+
+def test_search_value_differs_from_outcome_target() -> None:
+    """Same seeded game, search_value vs score_diff → different value arrays
+    (the whole point: the target source changed). Lengths match (same plies)."""
+    sv = _play(seed=2, sims=8, value_target="search_value",
+               evaluator=_varied_evaluator)
+    sd = _play(seed=2, sims=8, value_target="score_diff",
+               evaluator=_varied_evaluator)
+    assert len(sv.values) == len(sd.values)
+    assert not np.allclose(sv.values, sd.values)
 
 
 def test_policy_targets_are_distributions_over_legal_actions() -> None:

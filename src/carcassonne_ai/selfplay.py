@@ -8,10 +8,12 @@ each move.
 Returns a GameDataset (same schema as warmstart) so the existing IO and
 streaming-dataset machinery can be reused unchanged.
 
-Value targets encode the game outcome from each position's current-player
-POV. Two modes (see `value_target`): "score_diff" (default) = tanh(margin/15),
-the same graded currency as the v2.7 heuristic leaf tanh(vs2/15); "wl" = ±1/0,
-the AlphaZero-canonical win/loss target.
+Value targets encode each position's value from its current-player POV. Modes
+(see `value_target`): "score_diff" (default) = tanh(outcome margin/15), the same
+graded currency as the v2.7 heuristic leaf tanh(vs2/15); "score_diff_wide" =
+tanh(margin/40) (C6 de-saturated); "wl" = ±1/0, the AlphaZero-canonical win/loss
+target; "search_value" = the per-position MCTS root.Q (the overfitting fix,
+DECISIONS 2026-06-04 — ~100× more independent value labels than one-per-game z).
 """
 from __future__ import annotations
 
@@ -110,12 +112,18 @@ def play_one_selfplay_game(
       virtual_loss: PUCT W-penalty applied to in-flight nodes during batch
                     selection. Default 1.0 (works for unit-clamped values
                     in [-1, +1]).
-      value_target: how to encode the per-position outcome target.
+      value_target: how to encode the per-position value target.
                     "score_diff" (default) → tanh((p0-p1)/15), the graded
                     margin in the same currency as the v2.7 heuristic leaf
                     (Option 2, DECISIONS 2026-05-17 — lets a value head
                     blended into the leaf predict the same quantity).
+                    "score_diff_wide" → tanh((p0-p1)/40), the C6 de-saturated
+                    outcome target.
                     "wl" → ±1/0, the AlphaZero-canonical win/loss target.
+                    "search_value" → per-position MCTS root.Q (current-player
+                    POV), the overfitting fix (DECISIONS 2026-06-04): ~100× more
+                    independent value labels than the one-per-game outcome z.
+                    Requires recording root.Q per learner ply (done above).
       anchor_evaluator: if set, switches to anchor-fraction mode — the
                        learner (using `evaluator`) plays as
                        `learner_player_idx`; the anchor (using
@@ -189,6 +197,10 @@ def play_one_selfplay_game(
     masks_arr: list[np.ndarray] = []
     players_arr: list[int] = []  # current_player at each ply, for value sign
     offsets_arr: list = []  # board.offset per recorded ply, for ownership projection
+    # value_target="search_value" only: per-ply MCTS root.Q (current-player POV),
+    # the per-position search value used as the value target instead of the
+    # one-per-game outcome z (the overfitting fix, DECISIONS 2026-06-04).
+    search_values_arr: list[float] = []
 
     # Track the pre-terminal board + the terminating action so we can rebuild a
     # meeple-intact terminal state for the ownership aux labels. (We can't read
@@ -270,6 +282,12 @@ def play_one_selfplay_game(
             masks_arr.append(mask.astype(bool))
             players_arr.append(cur_player)
             offsets_arr.append(board.offset)
+            if value_target == "search_value":
+                # root.Q from the search we just ran (root still in mcts._nodes;
+                # select_for_training reads but never clears it). Already current-
+                # player POV → aligns with values_arr; no sign flip. Append in the
+                # SAME is_learner_move guard so it stays index-aligned with players_arr.
+                search_values_arr.append(float(mcts.root_value(board)))
 
         prev_board = board
         last_action = int(action)
@@ -294,25 +312,39 @@ def play_one_selfplay_game(
             f"self-play game did not terminate (ply={ply}, max_plies={max_plies})"
             f" — refusing to emit a dataset with mid-game value targets"
         )
-    p0_score = int(board.state.scores[0])
-    p1_score = int(board.state.scores[1])
-    if value_target == "score_diff":
-        z_p0 = float(np.tanh((p0_score - p1_score) / 15.0))
-    elif value_target == "score_diff_wide":
-        # C6 de-saturation: /15 pins to ±1 for 30-80pt margins, killing
-        # mid-range calibration under MSE. /40 keeps the graded margin inside
-        # tanh's responsive region for the realistic base-only score spread.
-        z_p0 = float(np.tanh((p0_score - p1_score) / 40.0))
-    elif value_target == "wl":
-        z_p0 = float(np.sign(p0_score - p1_score))
+    if value_target == "search_value":
+        # Per-position MCTS search value (root.Q, current-player POV) recorded
+        # per learner ply above. ~100× more independent value labels than the
+        # one-per-game outcome z → directly attacks the value head's overfitting
+        # (0.79 train → 0.32 held-out; DECISIONS 2026-06-04). Already POV-signed,
+        # so no per-ply z-flip — unlike the outcome targets below.
+        if len(search_values_arr) != len(players_arr):
+            raise RuntimeError(
+                f"search_value mode: recorded {len(search_values_arr)} root.Q "
+                f"values but {len(players_arr)} learner plies — record-site / "
+                f"is_learner_move mismatch"
+            )
+        values_arr = np.array(search_values_arr, dtype=np.float32)
     else:
-        raise ValueError(
-            "value_target must be 'score_diff', 'score_diff_wide', or 'wl', "
-            f"got {value_target!r}"
+        p0_score = int(board.state.scores[0])
+        p1_score = int(board.state.scores[1])
+        if value_target == "score_diff":
+            z_p0 = float(np.tanh((p0_score - p1_score) / 15.0))
+        elif value_target == "score_diff_wide":
+            # C6 de-saturation: /15 pins to ±1 for 30-80pt margins, killing
+            # mid-range calibration under MSE. /40 keeps the graded margin inside
+            # tanh's responsive region for the realistic base-only score spread.
+            z_p0 = float(np.tanh((p0_score - p1_score) / 40.0))
+        elif value_target == "wl":
+            z_p0 = float(np.sign(p0_score - p1_score))
+        else:
+            raise ValueError(
+                "value_target must be 'score_diff', 'score_diff_wide', 'wl', "
+                f"or 'search_value', got {value_target!r}"
+            )
+        values_arr = np.array(
+            [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
         )
-    values_arr = np.array(
-        [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
-    )
 
     W = game.window_size
     if not boards_arr:

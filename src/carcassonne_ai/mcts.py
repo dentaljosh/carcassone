@@ -562,6 +562,28 @@ class NeuralMCTS:
         counts = np.array([c.N for _, c in items], dtype=np.float64)
         return counts, actions
 
+    def root_value(self, root_board: Board) -> float:
+        """Return the root's search value Q (root current-player POV) from the
+        most recent search.
+
+        root.Q = W/N from `root.player_to_move`'s perspective (= the player to
+        move at the root = the position's current player), so the returned value
+        is in [-1, +1] from the current player's POV — the SAME POV convention as
+        the self-play value targets (`values_arr`). Used to record per-position
+        MCTS search-value targets (the overfitting fix, DECISIONS 2026-06-04):
+        ~100× more independent value labels than the one-per-game outcome z.
+
+        Reuses the already-computed root from the most recent search; runs one
+        search if the root is missing or unvisited (same UX as best_action /
+        root_visit_distribution).
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None or root.N == 0:
+            self.search(root_board)
+            root = self._nodes[root_key]
+        return float(root.Q)
+
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)

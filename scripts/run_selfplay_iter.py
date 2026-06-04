@@ -390,7 +390,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
     p.add_argument(
-        "--value-target", choices=["score_diff", "score_diff_wide", "wl"],
+        "--value-target",
+        choices=["score_diff", "score_diff_wide", "wl", "search_value"],
         default="score_diff",
         help="Per-position value target encoding. 'score_diff' (default) = "
              "tanh((p0-p1)/15), the graded margin in the same currency as the "
@@ -399,7 +400,12 @@ def main(argv: list[str] | None = None) -> int:
              "'score_diff_wide' = tanh((p0-p1)/40), the C6 de-saturated target "
              "(/15 pins to ±1 for 30-80pt margins → MSE kills mid-range "
              "calibration; use at the Stage-B retrain). "
-             "'wl' = ±1/0, the AlphaZero-canonical win/loss target.",
+             "'wl' = ±1/0, the AlphaZero-canonical win/loss target. "
+             "'search_value' = per-position MCTS root.Q (current-player POV) — "
+             "the overfitting fix (DECISIONS 2026-06-04): ~100× more independent "
+             "value labels than the one-per-game outcome z. Use at sims≥200 so "
+             "root.Q exceeds v2.7; warm from iter_01 with --leaf-eval v2_5 "
+             "--value-blend 0.",
     )
     p.add_argument(
         "--batch-size", type=int, default=1,
