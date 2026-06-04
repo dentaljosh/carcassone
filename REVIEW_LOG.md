@@ -480,6 +480,11 @@ C1 farm-dedup and C2 NeuralMCTS target/action-path fixes are real; value sign/sc
 - **D21 [MED] no per-iter/per-eval manifest** — `.npz` saves arrays only; eval writes per-game JSON
   only → results need log archaeology (how stale claims form). Fix: write `manifest.json` (commit,
   WARM_SRC, args, env, blend curve, ckpt hashes) per iter/eval.
+  **✅ FIXED 2026-06-04 (commit 8bf0ce3)** for the EVAL path: `carcassonne_ai/run_manifest.py`
+  `write_manifest()` writes `manifest.json` (game, code_rev[+dirty], leaf-env, resolved config) into
+  every `eval_net_vs_heuristic` / `eval_iter_head_to_head` run dir; `scripts/append_result_row.py`
+  appends results.csv rows FROM the manifest (no hand-typing → no era drift). results.csv also got
+  `game`+`code_rev` columns (70 rows backfilled). SELF-PLAY iter manifests (`.npz` dirs) still TODO.
 - **D22 [LOW] deterministic seed crash strands an iter** — `run_selfplay_iter.py:330` returns "failed"
   with no `.failed` marker; combined with the new claim self-heal it would re-attempt + re-fail forever,
   stalling at <GAMES. Not yet hit. Fix: write a `.failed` marker that counts toward completion.
