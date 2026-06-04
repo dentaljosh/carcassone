@@ -137,7 +137,9 @@ def main():
     ap.add_argument("--seeds", type=int, default=3)
     a = ap.parse_args()
     Path(a.gen_dir).mkdir(parents=True, exist_ok=True)
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    # NOTE: do NOT touch torch.cuda in the parent before the generation Pool — it would
+    # init CUDA in the parent and the forked workers can't re-init it. Workers set their
+    # own device in _init; the parent only needs CUDA later for training (set below).
     seeds = list(range(a.seed_start, a.seed_start + a.games))
     have = len(glob.glob(f"{a.gen_dir}/seed_*.npz"))
     if have < a.games:
@@ -149,6 +151,7 @@ def main():
     files = sorted(glob.glob(f"{a.gen_dir}/seed_*.npz"))[:a.games]
     games = [dict(np.load(f)) for f in files]
     npos = sum(len(g["margin"]) for g in games)
+    dev = "cuda" if torch.cuda.is_available() else "cpu"  # parent CUDA ok now (post-fork)
     print(f"\nPHASE 2 train: {len(games)} games, {npos} positions, dev={dev}")
     rng = np.random.default_rng(0); order = rng.permutation(len(games))
     cut = int(len(games) * 0.8); tr, va = list(order[:cut]), list(order[cut:])
@@ -166,4 +169,12 @@ def main():
 
 
 if __name__ == "__main__":
+    # spawn (not fork): the generation Pool workers init CUDA; forked workers can't
+    # re-init a CUDA context the parent may hold -> "Cannot re-initialize CUDA in forked
+    # subprocess" (nondeterministic). spawn gives each worker a fresh process.
+    import multiprocessing as mp
+    try:
+        mp.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass
     main()
