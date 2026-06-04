@@ -87,7 +87,11 @@ def _collect_files(data_dir: Path, iters: list[int] | None) -> list[Path]:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="probe_heldout_value_corr")
-    p.add_argument("--checkpoint", type=Path, required=True)
+    p.add_argument("--checkpoint", type=Path, required=True, nargs="+",
+                   help="One or more checkpoints. Multiple → evaluated on the "
+                        "SAME streamed held-out batches (identical positions, one "
+                        "CIFS pass) and printed as a comparison table — the clean "
+                        "apples-to-apples gate (e.g. iter_01 vs the new head).")
     p.add_argument("--data-dir", type=Path, required=True,
                    help="Held-out OUTCOME-target data root (e.g. stage_b/).")
     p.add_argument("--iters", type=int, nargs="*", default=None,
@@ -116,14 +120,19 @@ def main(argv: list[str] | None = None) -> int:
         files = [files[i] for i in dict.fromkeys(idx.tolist())]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ck = torch.load(args.checkpoint, map_location=device, weights_only=False)
-    net = CarcassonneNet(
-        n_filters=int(ck["n_filters"]),
-        n_blocks=int(ck["n_blocks"]),
-        n_scalar_features=int(ck.get("n_scalar_features", N_SCALAR_FEATURES)),
-    ).to(device)
-    net.load_state_dict(ck["model_state"])
-    net.train(False)
+    nets = []
+    labels = []
+    for cpath in args.checkpoint:
+        ck = torch.load(cpath, map_location=device, weights_only=False)
+        net = CarcassonneNet(
+            n_filters=int(ck["n_filters"]),
+            n_blocks=int(ck["n_blocks"]),
+            n_scalar_features=int(ck.get("n_scalar_features", N_SCALAR_FEATURES)),
+        ).to(device)
+        net.load_state_dict(ck["model_state"])
+        net.train(False)
+        nets.append(net)
+        labels.append(f"{cpath.parent.name}/{cpath.stem}")
 
     ds = make_streaming_dataset(
         files, shuffle_files_each_epoch=False, shuffle_within_file=False, seed=0
@@ -133,38 +142,46 @@ def main(argv: list[str] | None = None) -> int:
         persistent_workers=False, pin_memory=(device.type == "cuda"),
     )
 
-    acc_margin = _PearsonAccum()   # pred vs recovered true margin (the gate)
-    acc_raw = _PearsonAccum()      # pred vs raw tanh target (reference)
+    # One accumulator pair per net; all share the SAME streamed batches.
+    acc_margin = [_PearsonAccum() for _ in nets]
+    acc_raw = [_PearsonAccum() for _ in nets]
+    pred_rng = [(math.inf, -math.inf) for _ in nets]
     n_pos = 0
-    pmin, pmax = math.inf, -math.inf
     mmin, mmax = math.inf, -math.inf
     n_sat = 0
     with torch.no_grad():
         for board_b, scalar_b, _pol, value_b, _mask, _own in loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
-            _, v, _ = net.forward_train(board_b, scalar_b)
-            pred = v.flatten().double().cpu().numpy()
             tgt = value_b.flatten().double().numpy()
             margin = args.scale * np.arctanh(np.clip(tgt, -0.9999, 0.9999))
-            acc_margin.update(pred, margin)
-            acc_raw.update(pred, tgt)
-            n_pos += pred.size
+            for i, net in enumerate(nets):
+                _, v, _ = net.forward_train(board_b, scalar_b)
+                pred = v.flatten().double().cpu().numpy()
+                acc_margin[i].update(pred, margin)
+                acc_raw[i].update(pred, tgt)
+                lo, hi = pred_rng[i]
+                pred_rng[i] = (min(lo, pred.min()), max(hi, pred.max()))
+            n_pos += tgt.size
             n_sat += int(np.sum(np.abs(tgt) > 0.9999))
-            pmin, pmax = min(pmin, pred.min()), max(pmax, pred.max())
             mmin, mmax = min(mmin, margin.min()), max(mmax, margin.max())
 
-    print(f"checkpoint : {args.checkpoint}")
     print(f"held-out   : {len(files)} games, {n_pos} positions "
           f"(iters={args.iters if args.iters is not None else 'flat'}, "
           f"max_games={args.max_games})")
     print(f"target sat (|v|>0.9999): {n_sat / max(n_pos,1):.3%}  (atanh ceiling clip)")
-    print(f"pred range : [{pmin:+.3f}, {pmax:+.3f}]")
     print(f"margin rng : [{mmin:+.1f}, {mmax:+.1f}] (scale={args.scale})")
     print()
-    print(f"  corr(value_head, TRUE MARGIN) = {acc_margin.corr():+.4f}   <- the gate "
-          f"(iter_01 held-out ~0.32; v2.7 ~0.4-0.65)")
-    print(f"  corr(value_head, raw target)  = {acc_raw.corr():+.4f}")
+    print(f"  {'checkpoint':<34} {'corr(MARGIN)':>13} {'corr(raw)':>11} "
+          f"{'pred range':>18}")
+    print(f"  {'-'*34} {'-'*13} {'-'*11} {'-'*18}")
+    for i, lab in enumerate(labels):
+        lo, hi = pred_rng[i]
+        print(f"  {lab:<34} {acc_margin[i].corr():>+13.4f} "
+              f"{acc_raw[i].corr():>+11.4f} {f'[{lo:+.2f}, {hi:+.2f}]':>18}")
+    print()
+    print("  gate: corr(value_head, TRUE MARGIN) — iter_01 held-out +0.289; "
+          "v2.7 ~0.4-0.65. A search-value head BEATS +0.289 → overfitting fixed.")
     return 0
 
 
