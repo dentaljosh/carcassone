@@ -1,5 +1,36 @@
 # The +87 ceiling and the C4/C6 value-head rebuild — sketch (2026-06-04)
 
+## ⚡⚡ DEEPER FINDING (2026-06-04 pm): the value head OVERFITS — that's the real bottleneck
+
+While gating the value-target-source lever I measured iter_01's **actual** value head (not the small-CNN
+probe proxy) corr with the true margin, train vs held-out:
+
+```
+iter_01 value head, corr(value, true POV margin):
+  iter_01 self-play (IN training buffer):  +0.787   <- memorized
+  iter_02 self-play (HELD-OUT, post-train): +0.327
+  iter_05 self-play (further held-out):     +0.314
+```
+
+A **0.79 → 0.32 train/test collapse** = severe overfitting. Held-out 0.32 is **well below v2.7 (~0.65)** —
+which is *exactly* why blending the value head into the search HURTS (Stage B; the −123 play-time probe):
+on the off-distribution positions MCTS explores, the learned value is far worse than the heuristic, while
+v2.7 (hand-crafted) generalizes uniformly. Note the small-CNN C4a/C6 probes got ~0.5 held-out — *better*
+than the big net's 0.32 — i.e. the 7M net's capacity actively hurts generalization here.
+
+**Root cause:** the value target is the game OUTCOME, **one value per game shared across all ~144
+positions** → only ~600–1200 *independent* value labels per iteration vs a 7M-param net → it memorizes.
+This reframes the whole value-head problem: the bottleneck is **NOT representation (C4a refuted) or target
+saturation (C6 refuted) — it's label scarcity → overfitting.**
+
+**Why this vindicates the value-target-SOURCE lever (chosen 2026-06-04):** the MCTS **search value
+(root.Q) is distinct per position** → ~100× more independent labels → directly attacks the overfitting.
+So the lever isn't just "lower variance," it's "~100× more label signal." The gate below tests whether
+search-value is also a better *predictor* than v2.7; the definitive test (pending) is whether a head
+trained on per-position search-value **generalizes** above the 0.32 (and above v2.7's 0.65).
+
+---
+
 ## ⚡ PROBE RESULTS (2026-06-04 pm): BOTH cheap value levers (C4a + C6) REFUTED — cheap path exhausted
 
 **C6 (de-saturated target) — REFUTED** (`scripts/probe_value_target_c6.py`, commit 1c862ce). Same deep
