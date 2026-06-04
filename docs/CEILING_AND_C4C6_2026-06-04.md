@@ -187,3 +187,24 @@ This is a ~1-hour probe that gates a ~1.5-day spend. Run it first.
 The **measurement wall** is unchanged: HeuristicMCTS ≈ strong-amateur is our only reference, so even a
 ceiling-break can't be *proven* superhuman without an above-amateur yardstick (the "meatbag" —
 deferred). C4/C6 raises the ceiling; measurement tells us how high it actually is.
+
+---
+
+## ⚡ gate-2 RESULT (2026-06-04 pm): mechanism CONFIRMED, cheap test underpowered
+
+`scripts/gate2_value_head_searchvalue.py` (24 games, sims=50, held-out by-game), corr with true margin:
+```
+  v2.7 value                  : +0.401
+  search-value target (root.Q): +0.423   (~= v2.7 at sims=50)
+  head trained on OUTCOME      : -0.04    (overfit to noise -- confirms the bug)
+  head trained on SEARCH-VALUE : +0.166   (per-position helps vs outcome, but underfits)
+```
+CONFIRMED: per-position search-value targets generalize FAR better than game-shared outcome targets
+(0.166 vs -0.04). But two underpowering limits prevent a clean GO: (1) the **sims=50** search-value
+target is only ~= v2.7 (0.42 vs 0.40) -> a head can't exceed its target -> need HIGHER-sims search-value
+for the target itself to beat v2.7; (2) **24 games** too few -> head underfits (0.166 << its 0.423 target).
+Properly testing the lever needs high-sims search-value targets at production data scale -> fold them
+into the production self-play loop (fast gen) + a real retrain iteration (~day+). The ad-hoc generator
+can't do it cheaply (single-board GPU eval doesn't parallelize across processes -> hours single-stream).
+DECISION pending (Joshua): invest in the value-head rebuild (search-value targets, high-sims, in-loop)
+vs bank strong-amateur+ and pivot to measurement / Phase 5.
