@@ -1,6 +1,25 @@
 # The +87 ceiling and the C4/C6 value-head rebuild — sketch (2026-06-04)
 
-## ⚡ PROBE RESULT (2026-06-04 pm): C4a is REFUTED — don't build the farm-connectivity rebuild
+## ⚡ PROBE RESULTS (2026-06-04 pm): BOTH cheap value levers (C4a + C6) REFUTED — cheap path exhausted
+
+**C6 (de-saturated target) — REFUTED** (`scripts/probe_value_target_c6.py`, commit 1c862ce). Same deep
+CNN trained on tanh(m/15) vs tanh(m/40), scored by corr(head output, true margin):
+
+```
+                 corr(all)        corr(|m|>33 saturated subset)
+t15 (current)   +0.521 ±0.036     +0.733 ±0.021
+t40 (C6 wide)   +0.491 ±0.048     +0.690 ±0.046   <- no better; marginally worse
+```
+
+De-saturation gives NO gain. The head already tracks big margins fine with the "saturating" tanh/15
+target (corr 0.733 on |m|>33) — MSE on ±0.99 targets still carries graded gradient and corr is
+scale-invariant, so saturation never destroyed the ranking. C6 was a theoretical worry that doesn't
+bite. **Cheap value path is now FULLY EXHAUSTED** (C4a + C6 both dead). Next moves are all
+expensive/external — see "Where that leaves us" below.
+
+---
+
+## ⚡ C4a REFUTED — don't build the farm-connectivity rebuild
 
 The cheap offline kill-test (`scripts/probe_value_head_c4.py`, commit c26e468) ran. A value CNN
 predicting tanh((p0−p1)/15) on Stage-B iter_01 self-play, BLIND vs +OWN (oracle terminal-ownership
@@ -21,9 +40,32 @@ approximation), **C4a — the ~½–1 day headline piece — will not lift the v
 
 Caveats: outcome-prediction proxy (not a direct beat-v2.7, which needs stored states); C4b (bag
 histogram, different info) untested; from-scratch CNN ≠ the 7M net. But the *representational-blindness
-premise* behind C4a is refuted. **Remaining cheap value lever: C6 only (de-saturated target, already
-built). Otherwise the value head won't cheaply beat v2.7 → +87 stands → pivot to measurement / a more
-fundamental change.** The sketch below is retained for the record (the plan that the probe just gated).
+premise* behind C4a is refuted. (C6, the other cheap lever, is also refuted — see above.) The sketch
+below is retained for the record (the plan the probes just gated out).
+
+## Where that leaves us (both cheap levers dead)
+
+The value head won't cheaply beat v2.7, and **+87-over-strong-amateur stands as the ceiling.** Every
+cheap lever is now exhausted: policy-iteration, value-blend, depth-vs-fixed-ref, C4a representation,
+C6 target. The remaining paths are all expensive or external:
+
+1. **Different value-TARGET source (untested, most promising of the hard options).** Every probe + the
+   training all used the **raw MC game outcome** as the value label — fundamentally noisy (one game's
+   result is high-variance), which is why outcome-corr tops out ~0.5. v2.7 doesn't predict the noisy
+   outcome; it's a low-variance heuristic *estimate*. A value head trained on a **lower-variance target**
+   — MCTS search value / n-step bootstrap (proper AlphaZero), or many-rollout-averaged position value,
+   or "predict v2.7 + a learned residual" — might finally beat v2.7. This is the hypothesis the cheap
+   probes did NOT address (they varied representation and target-scale, not the target's variance/source).
+2. **Bigger / different value architecture.** Less likely the bottleneck (a small CNN already hit 0.47),
+   but not ruled out.
+3. **Measurement (external).** No humans available now (deferred). Compute-only harder references
+   (heur@high-sims) make a stiffer yardstick but can't *prove* superhuman. Calibrates the ceiling; can't
+   raise it.
+4. **Accept ~strong-amateur+ and pivot** to the analyzer (Phase 5, the original prompt's win condition).
+
+Recommendation: if pursuing strength, **(1) the value-target-source change is the only untested lever
+with a real mechanism** — but it's a genuine build + retrain, not a cheap probe. Otherwise this is the
+honest stopping point for the cheap superhuman push.
 
 ---
 
