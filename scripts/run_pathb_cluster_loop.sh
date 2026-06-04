@@ -112,6 +112,9 @@ esac; }
 # Gates (gcmd/ccmd/vcmd) deliberately omit --value-blend → stay at 0.0 (comparable).
 blend_for_iter() {
   [ "${STAGE_B_BLEND:-0}" = "1" ] || { echo "0.0"; return; }
+  # STAGE_B_BLEND_CONST: fix λ at a constant for ALL iters (skip the ramp). Used by the
+  # compounding overnight run (λ=1.0 from iter 0). Unset → the ramp curve below.
+  if [ -n "${STAGE_B_BLEND_CONST:-}" ]; then echo "$STAGE_B_BLEND_CONST"; return; fi
   case $1 in
     0|1) echo "0.0";;    # warmup on the pure v2.7 leaf
     2)   echo "0.15";;
@@ -356,7 +359,7 @@ for ((N=START; N<ITERS; N++)); do
   for host in "${HOSTS[@]}"; do
     read -r w orchflags <<< "$(selfplay_mode "$host")"; outp=$OUT_LOCAL; warmp=$warm_from; anchorp=$WARM
     [ "$host" != "5800x" ] && { outp=$(remote_path "$OUT_LOCAL"); warmp=$(remote_path "$warm_from"); anchorp=$(remote_path "$WARM"); }
-    cmd="nice -n 19 env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-blend $BLEND --value-target score_diff --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
+    cmd="nice -n 19 env $ENVV $PY -u scripts/run_selfplay_iter.py --iter $N --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-blend $BLEND --value-target ${VALUE_TARGET:-score_diff} --workers $w $orchflags --batch-size 8 --checkpoint $warmp --anchor-fraction $ANCHOR_FRACTION --anchor-checkpoint $anchorp --output-root $outp --shared-claim --claim-host $host --seed-start 0"
     pidf="/tmp/pathb_pid_${host}_$NN"; rm -f "$pidf"
     launch_on_host "$host" "sp_${RUN}_$NN" "$cmd" "/tmp/pathb_sp_${host}_$NN.log" "$pidf"
     sleep 1; pid=$(cat "$pidf" 2>/dev/null)
