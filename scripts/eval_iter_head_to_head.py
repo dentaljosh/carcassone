@@ -50,6 +50,7 @@ from carcassonne_ai.evaluators import (
 )
 from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
+from carcassonne_ai.run_manifest import game_tag, write_manifest
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.remote_evaluators import (
@@ -658,6 +659,20 @@ def main(argv: list[str] | None = None) -> int:
         f"iter_{args.iter_idx:02d}_vs_{args.vs_iter:02d}"
     )
     eval_dir.mkdir(parents=True, exist_ok=True)
+
+    # self-describing run manifest (provenance: game/code_rev/leaf-env) — D21.
+    write_manifest(eval_dir, kind="eval_iter_head_to_head", game=game_tag(Game()),
+                   config={"new_checkpoint": str(args.new_checkpoint),
+                           "old_checkpoint": str(args.old_checkpoint),
+                           "iter": args.iter_idx, "vs_iter": args.vs_iter,
+                           "games": args.games, "sims": args.sims,
+                           "old_sims": args.old_sims or args.sims,
+                           "c_puct": args.c_puct, "paired": args.paired,
+                           "seed_start": args.seed_start,
+                           "new_leaf_variant": args.new_leaf_variant,
+                           "old_leaf_variant": args.old_leaf_variant,
+                           "new_leaf_value_blend": args.new_leaf_value_blend,
+                           "old_leaf_value_blend": args.old_leaf_value_blend})
 
     # Auto-cap removed 2026-05-09 (see run_selfplay_iter.py for rationale).
     # Note: head-to-head loads TWO networks per worker (2× GPU memory vs

@@ -1,0 +1,88 @@
+"""Self-describing run manifests + provenance stamps for eval/self-play runs.
+
+Closes REVIEW_LOG D21 ("no manifests"): every eval writes a `manifest.json` into its
+output dir capturing the *resolved* config + provenance (game ruleset, git code-rev,
+host, timestamp, relevant CARCASSONNE_V25_* leaf knobs). This is what lets a
+results.csv row be GENERATED from the manifest (see scripts/append_result_row.py)
+instead of hand-typed — so a row can never drift from the era/code that produced it
+(the +181.7-River vs +25.2-base conflation that motivated this).
+"""
+from __future__ import annotations
+
+import json
+import os
+import socket
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+# leaf/scoring knobs that change results and so belong in provenance
+_LEAF_ENV_KEYS = (
+    "CARCASSONNE_V25_CAP",
+    "CARCASSONNE_V25_DROP_THREE_OPEN",
+    "CARCASSONNE_V25_VALUE_BLEND",
+    "CARC_RUN",
+)
+
+
+def code_rev() -> str:
+    """git short hash of the working tree, or 'unknown' if git is unavailable."""
+    try:
+        repo = Path(__file__).resolve().parents[2]
+        out = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=5,
+        )
+        rev = out.stdout.strip()
+        if rev and out.returncode == 0:
+            # mark dirty trees so a row can't claim a clean commit it wasn't run at
+            dirty = subprocess.run(
+                ["git", "-C", str(repo), "status", "--porcelain"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+            return rev + ("-dirty" if dirty else "")
+    except Exception:
+        pass
+    return "unknown"
+
+
+def game_tag(tile_sets) -> str:
+    """'river' if THE_RIVER is in the ruleset, else 'base'. Accepts a Game, a tuple
+    of TileSet, or an iterable of names."""
+    if hasattr(tile_sets, "tile_sets"):  # a Game object
+        tile_sets = tile_sets.tile_sets
+    names = []
+    for t in tile_sets:
+        names.append(getattr(t, "name", str(t)).upper())
+    return "river" if any("RIVER" in n for n in names) else "base"
+
+
+def leaf_env() -> dict:
+    return {k: os.environ.get(k) for k in _LEAF_ENV_KEYS if os.environ.get(k) is not None}
+
+
+def write_manifest(out_dir, *, kind: str, game: str, config: dict,
+                   overwrite: bool = False) -> Path:
+    """Write <out_dir>/manifest.json with resolved config + provenance.
+
+    Skips if a manifest already exists (so racing multi-box --shared-claim workers
+    don't clobber each other) unless overwrite=True. Returns the manifest path.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    mpath = out_dir / "manifest.json"
+    if mpath.exists() and not overwrite:
+        return mpath
+    manifest = {
+        "kind": kind,
+        "game": game,
+        "code_rev": code_rev(),
+        "host": socket.gethostname(),
+        "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "leaf_env": leaf_env(),
+        "config": config,
+    }
+    tmp = out_dir / f".manifest.{os.getpid()}.tmp"
+    tmp.write_text(json.dumps(manifest, indent=2, default=str))
+    tmp.replace(mpath)  # atomic
+    return mpath

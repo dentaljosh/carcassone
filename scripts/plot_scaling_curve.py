@@ -51,7 +51,10 @@ def parse_cell(name: str):
     m = CELL_RE.search(name)
     if not m:
         return None
-    return int(m.group(1)), int(m.group(2)), int(m.group(3))  # net, heur, blend(x100-ish)
+    # blend dir suffix is bl with the dot stripped: "0"->0.0, "05"->0.5, "025"->0.25
+    bstr = m.group(3)
+    blend = 0.0 if bstr == "0" else float("0." + bstr[1:])
+    return int(m.group(1)), int(m.group(2)), blend  # net, heur, blend(float)
 
 
 def ascii_plot(points, xlabel, title, logx=True):
@@ -94,7 +97,7 @@ def main():
 
     print(f"{'net':>5} {'heur':>5} {'blend':>5} {'n':>4} {'wr':>6} {'elo':>8} {'sig':>5} {'s/game':>7}")
     for (net, heur, bl), st in sorted(rows):
-        print(f"{net:>5} {heur:>5} {bl/100:>5.2f} {st['n']:>4} {st['wr']:>6.3f} "
+        print(f"{net:>5} {heur:>5} {bl:>5.2f} {st['n']:>4} {st['wr']:>6.3f} "
               f"{st['elo']:>+8.1f} {st['elo_sig']:>5.0f} {st['avg_s']:>7.1f}")
 
     # Curve A: heur=200, blend=0, vary net
@@ -103,8 +106,12 @@ def main():
     ascii_plot(a, "sims", "Curve A — strength vs net test-time sims (heur fixed @200)")
     # Curve B: net=200, blend=0, vary heur
     b = [(heur, st['elo'], st['elo_sig']) for (net, heur, bl), st in rows
-         if net == 200 and bl == 0]
+         if net == 200 and bl == 0.0]
     ascii_plot(b, "heur", "Curve B — net@200 vs deeper-searching heuristic reference")
+    # Curve C: MATCHED net==heur, blend 0 — the real test-time scaling test
+    c = [(net, st['elo'], st['elo_sig']) for (net, heur, bl), st in rows
+         if net == heur and bl == 0.0]
+    ascii_plot(c, "sims", "Curve C — MATCHED net@S vs heur@S (the apples-to-apples scaling test)")
     # #1 probe: 200/200, vary blend
     pr = [(bl, st['elo'], st['elo_sig']) for (net, heur, bl), st in rows
           if net == 200 and heur == 200]
@@ -112,7 +119,7 @@ def main():
         print("\n  #1 value-at-play-time probe (net=200, heur=200):")
         for bl, elo, sig in sorted(pr):
             sg = f"±{sig:.0f}" if sig == sig else ""
-            print(f"    blend={bl/100:.2f}  elo={elo:+6.1f} {sg}")
+            print(f"    blend={bl:.2f}  elo={elo:+6.1f} {sg}")
 
 
 if __name__ == "__main__":

@@ -48,6 +48,7 @@ from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrap
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.run_manifest import game_tag, write_manifest
 from carcassonne_ai.selfplay import _bench_tick  # gated moves/s instrumentation (CARC_BENCH_TP)
 
 REPO = Path(__file__).resolve().parent.parent
@@ -267,6 +268,15 @@ def main(argv=None) -> int:
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
+
+    # self-describing run manifest (provenance: game/code_rev/leaf-env) — D21.
+    if not args.summary_only:
+        write_manifest(out, kind="eval_net_vs_heuristic", game=game_tag(Game()),
+                       config={"checkpoint": str(args.checkpoint), "n": args.n,
+                               "sims": args.sims, "heur_sims": heur_sims,
+                               "c_puct": args.c_puct, "paired": args.paired,
+                               "seed_start": args.seed_start, "opponent": "HeuristicMCTS",
+                               "new_var": "v2_7"})
 
     # color balance via _build_work (paired = each deck both colors)
     tasks = [(str(out), seed, net_player, args.sims, heur_sims, args.c_puct)
