@@ -1,5 +1,32 @@
 # The +87 ceiling and the C4/C6 value-head rebuild — sketch (2026-06-04)
 
+## ⚡ PROBE RESULT (2026-06-04 pm): C4a is REFUTED — don't build the farm-connectivity rebuild
+
+The cheap offline kill-test (`scripts/probe_value_head_c4.py`, commit c26e468) ran. A value CNN
+predicting tanh((p0−p1)/15) on Stage-B iter_01 self-play, BLIND vs +OWN (oracle terminal-ownership
+planes = strict upper bound on what live farm-connectivity C4a could give):
+
+```
+baseline (predict-mean) MSE 0.695
+BLIND  corr +0.469 ± 0.008   MSE 0.557
++OWN   corr +0.447 ± 0.050   MSE 0.568   <- oracle ownership does NOT help
+```
+
+With adequate capacity the blind encoding reaches corr 0.47 and **adding the oracle ownership planes
+gives NO improvement** (tied/worse, within noise). Across the two runs, fixing the model's capacity
+made BLIND jump 0.28→0.47 and *absorb* the gain ownership gave the under-capacity model → **a capable
+model already reads farm-relevant signal from the existing board encoding; explicit ownership/
+connectivity planes are redundant.** Since the oracle (terminal truth) is a ceiling on C4a (live
+approximation), **C4a — the ~½–1 day headline piece — will not lift the value head. DO NOT BUILD IT.**
+
+Caveats: outcome-prediction proxy (not a direct beat-v2.7, which needs stored states); C4b (bag
+histogram, different info) untested; from-scratch CNN ≠ the 7M net. But the *representational-blindness
+premise* behind C4a is refuted. **Remaining cheap value lever: C6 only (de-saturated target, already
+built). Otherwise the value head won't cheaply beat v2.7 → +87 stands → pivot to measurement / a more
+fundamental change.** The sketch below is retained for the record (the plan that the probe just gated).
+
+---
+
 ## What we proved today
 
 iter_01 (clean-data λ=0 policy retrain) = **+87 elo vs HeuristicMCTS@200** (n=400, confirmed). That
