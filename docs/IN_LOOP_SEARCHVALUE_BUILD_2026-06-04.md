@@ -23,7 +23,50 @@ can finally beat the heuristic.
   head can't beat its target → need **higher sims** so root.Q > v2.7; (2) **24 games underfits** → need
   production data scale. Both fixed by doing this in the production loop at sims≥200.
 
-## Build steps (concrete; files + functions scoped 2026-06-04)
+## AS-BUILT (2026-06-04, commits ffe823e + 5b21023 + 6f18ade) — cleaner than the plan below
+
+The plan assumed the value target was re-derived in `train_iter.py`. It is NOT — the value target
+is **baked into `ds.values` at GENERATION time** (selfplay.py), and the trainer just runs MSE on
+`values`. So `search_value` shipped as a **generation-side `--value-target` mode** that writes
+`root.Q` straight into `values_arr`. Nothing downstream changes — GameDataset stays a 6-array
+schema, the streaming dataset / trainer / loss are untouched, and there is **no `CARC_RECORD_SEARCHVALUE`
+env flag** (the `--value-target search_value` choice IS the trigger).
+
+1. **`src/carcassonne_ai/mcts.py`** — added `NeuralMCTS.root_value(board)`: returns `root.Q` (W/N from the
+   root's current-player POV) from the most recent search; re-searches if root absent. Mirrors
+   `root_visit_distribution`. `select_for_training` reads but never clears `_nodes`, so the root persists.
+2. **`src/carcassonne_ai/selfplay.py`** — `value_target="search_value"` records `float(mcts.root_value(board))`
+   per learner ply (in the same `is_learner_move` guard → index-aligned with `players_arr`), then sets
+   `values_arr = np.array(search_values_arr)`. **No per-ply z-flip** (root.Q is already POV-signed, unlike the
+   outcome targets). Length-mismatch guard raises loudly.
+3. **`scripts/run_selfplay_iter.py`** — added `search_value` to `--value-target` choices; `cfg["value_target"]`
+   already threads through to selfplay (no other change).
+4. **Cluster loop** — already passes `--value-target ${VALUE_TARGET:-score_diff}` into the per-host self-play
+   command (expanded locally, shipped to each box). **No loop edit.** Run it with `VALUE_TARGET=search_value`.
+5. **Tests** — `tests/test_selfplay.py` (search_value mode: matches root.Q, varies per position, deterministic,
+   differs from outcome) + `tests/test_neural_mcts_selfplay_extensions.py` (root_value accessor). 23 pass.
+
+### Gate harness (as-built)
+- **Gate A** = `scripts/probe_heldout_value_corr.py` — STREAMS held-out OUTCOME-target data (one .npz at a time
+  via `make_streaming_dataset` + DataLoader) and accumulates Pearson sufficient stats. ⚠️ The first cut
+  load-all-into-RAM **OOM'd the 31 GB 5800x at ~1200 games** — never load all; `--max-games` bounds it.
+  `--checkpoint A B …` evaluates multiple ckpts on the SAME batches → side-by-side table. **iter_01 baseline
+  measured first-hand: +0.289** on `stage_b/iter_05` (600 games), vs v2.7 ~0.4–0.65 → the overfitting signature.
+- **Gate B** = `scripts/eval_net_vs_heuristic.py` with `CARCASSONNE_V25_VALUE_BLEND=0.5` (+ `..._DROP_THREE_OPEN=1
+  ..._CAP=12`), `--sims 200 --heur-sims 200 --c-puct 3.0 --paired` (mirror the scaling-curve cell). iter_01
+  craters to **−123** at λ0.5; a head that stops cratering means the learned leaf is usable in search.
+
+### Run config used (the actual launch)
+`RUN=searchval_s200 WARM_SRC=stage_b/ckpt/iter_01.pt START=0 ITERS=1 GAMES=400 SIMS=200 VALUE_TARGET=search_value
+ANCHOR_FRACTION=0 STAGE_B_BLEND=0 HOSTS="5800x xeon laptop"` (value-loss-weight left at 1.0 to keep the A/B vs
+iter_01 clean — only the target source changes). Output ckpt → `searchval_s200/ckpt/iter_00.pt`.
+
+**Decide (step 7):** new head held-out corr ≥ ~0.40 (beats +0.289, reaches v2.7's floor) AND value-blend stops
+hurting → iterate/scale (more games, higher-sims root.Q). Flat/worse → lever bounded → measurement / Phase 5.
+
+---
+
+## Original plan (superseded by AS-BUILT above; kept for rationale)
 
 1. **Record root.Q in self-play.** In `src/carcassonne_ai/selfplay.py` (the per-ply record block ~L186–272,
    after `mcts.search(board)` ~L222): get the root node and append its Q (search value, current-player POV)
@@ -66,9 +109,7 @@ can finally beat the heuristic.
 - POV/sign: root.Q is current-player POV; the existing value pipeline is too — keep them aligned.
 
 ## Useful artifacts from 2026-06-04 (reusable)
+- `scripts/probe_heldout_value_corr.py` — the streaming held-out-corr gate (Gate A); multi-checkpoint table.
 - `scripts/gate2_value_head_searchvalue.py` — generates search-value data + trains/compares heads (the
   spawn + W=1 pattern; the orchestrator would make it fast).
 - `scripts/probe_value_head_c4.py`, `probe_value_target_c6.py` — the C4a/C6 kill-tests (both refuted).
-- Held-out value-head corr measurement (iter_01 = 0.79 train / 0.32 held-out): inline in the 2026-06-04
-  transcript; trivial to re-run (load ckpt, run value head on a held-out iter's npz boards/scalars,
-  corr with 15*atanh(values)).
