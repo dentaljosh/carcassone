@@ -6,6 +6,12 @@ v2.7-leaf ceiling). Superhuman stays the **north star** — we are NOT re-scopin
 Playbook (Joshua's framing, AlphaGo-style): **build the flywheel → put a non-lying odometer on it →
 let it climb → challenge a human LAST.**
 
+## PROGRESS (live)
+- ✅ **Step 1 BUILT** (commit `67fd90e`): `value_target="search_value_tree"` — `NeuralMCTS(record_boards=True)` + `interior_value_targets()` harvest interior (board→Q); selfplay emits value-only rows; new `GameDataset.aux_mask` (None→all-True back-compat) through save/load/rotate/augment/streaming-7-tuple; shared `masked_policy_ownership_loss` (policy+own on full rows, value on all). Full pytest green + plumbing smoke (6 games → 864 traj + 5746 interior rows; train_warmstart 1 epoch finite losses).
+- ⏳ **Step 1 VALIDATION running** (`RUN=searchval_tree`, 3 boxes synced to `12816ba`): 400-game search_value_tree (sims=200, warm iter_01, λ=0) → train → gate; then `/tmp/eval_svtree_lambdas.sh` evals the net as a pure-NN leaf at λ=1.0/0.5/0.0 vs HeuristicMCTS@200 n=100. **Decisive #:** trajectory-only head = −576 @ λ=1.0; does interior training escape the cliff?
+- ✅ **Odometer rung 1 BUILT** (commit `07ebda8`): `scripts/ladder_asymmetric.py` — asymmetric-compute v2.7 ladder → net's heuristic-equivalent search depth (out-of-lineage, non-saturating). 6 crossover-math tests pass. Not yet run.
+- ⏭ **Next:** read the λ=1.0 verdict → if it escapes the cliff, proceed to step 3 (value-into-leaf in-loop); regardless, run the ladder on iter_01 to anchor absolute strength. Remaining odometer: non-v2.7 opponents, deck-paired cross-play, oracle-regret. Then step 2 (global pooling).
+
 ## Why (the regroup that produced this)
 
 We spent the day characterizing and mostly closing the value-head-in-search lever, then got **four
