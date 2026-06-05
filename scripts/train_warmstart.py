@@ -97,6 +97,33 @@ def ownership_loss(
     return sq.sum() / denom
 
 
+def masked_policy_ownership_loss(
+    policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+):
+    """Policy CE + ownership MSE over FULL-TRAJECTORY rows only (aux_b True).
+
+    Flywheel step 1 (DECISIONS 2026-06-04): value-only tree-interior rows
+    (aux_b False) carry dummy zero policy / all-False mask / zero ownership that
+    would trip policy_cross_entropy's "rows sum to 1 / have a legal action"
+    validators, so they are subset OUT of these two heads here. The value MSE is
+    computed separately over the FULL batch (interior rows DO train the value).
+    If a batch is entirely value-only, both returned losses are an exact zero
+    (no policy/ownership gradient that step). Returns (pol_loss, own_loss)."""
+    aux = aux_b.bool()
+    if bool(aux.all()):
+        return (
+            policy_cross_entropy(policy_logits, policy_b, mask_b),
+            ownership_loss(own_pred, own_b, board_b),
+        )
+    if not bool(aux.any()):
+        z = policy_logits.new_zeros(())
+        return z, z
+    return (
+        policy_cross_entropy(policy_logits[aux], policy_b[aux], mask_b[aux]),
+        ownership_loss(own_pred[aux], own_b[aux], board_b[aux]),
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="train_warmstart")
     p.add_argument(
@@ -230,18 +257,22 @@ def main(argv: list[str] | None = None) -> int:
         train_own_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b, own_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
             mask_b = mask_b.to(device, non_blocking=True)
             own_b = own_b.to(device, non_blocking=True)
+            aux_b = aux_b.to(device, non_blocking=True)
             opt.zero_grad()
             policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
-            pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
+            # warmstart data is all full rows; the mask helper is a no-op there
+            # but keeps this trainer correct if ever pointed at flywheel data.
+            pol_loss, own_loss = masked_policy_ownership_loss(
+                policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+            )
             val_loss = F.mse_loss(value_pred, value_b)
-            own_loss = ownership_loss(own_pred, own_b, board_b)
             loss = pol_loss + val_loss + args.aux_weight * own_loss
             if not torch.isfinite(loss):
                 nan_skipped += 1
@@ -266,17 +297,21 @@ def main(argv: list[str] | None = None) -> int:
             val_own_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b, own_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
                     value_b = value_b.to(device, non_blocking=True)
                     mask_b = mask_b.to(device, non_blocking=True)
                     own_b = own_b.to(device, non_blocking=True)
+                    aux_b = aux_b.to(device, non_blocking=True)
                     policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
-                    val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
+                    v_pol_loss, v_own_loss = masked_policy_ownership_loss(
+                        policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+                    )
+                    val_pol_loss += v_pol_loss.item()
                     val_val_loss += F.mse_loss(value_pred, value_b).item()
-                    val_own_loss += ownership_loss(own_pred, own_b, board_b).item()
+                    val_own_loss += v_own_loss.item()
                     v_n += 1
             val_pol_loss /= max(v_n, 1)
             val_val_loss /= max(v_n, 1)

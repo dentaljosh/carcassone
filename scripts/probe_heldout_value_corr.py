@@ -150,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     mmin, mmax = math.inf, -math.inf
     n_sat = 0
     with torch.no_grad():
-        for board_b, scalar_b, _pol, value_b, _mask, _own in loader:
+        for board_b, scalar_b, _pol, value_b, _mask, _own, _aux in loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             tgt = value_b.flatten().double().numpy()

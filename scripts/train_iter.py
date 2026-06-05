@@ -51,7 +51,7 @@ from carcassonne_ai.warmstart import (
 
 # Reuse the same masked-policy CE used by warmstart training.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from train_warmstart import ownership_loss, policy_cross_entropy  # noqa: E402
+from train_warmstart import masked_policy_ownership_loss  # noqa: E402
 
 
 def _mean_policy_entropy(net, loader, device) -> float:
@@ -67,10 +67,15 @@ def _mean_policy_entropy(net, loader, device) -> float:
     total = 0.0
     n = 0
     with torch.no_grad():
-        for board_b, scalar_b, _policy_b, _value_b, mask_b, _own_b in loader:
-            board_b = board_b.to(device, non_blocking=True)
-            scalar_b = scalar_b.to(device, non_blocking=True)
-            mask_b = mask_b.to(device, non_blocking=True).bool()
+        for board_b, scalar_b, _policy_b, _value_b, mask_b, _own_b, aux_b in loader:
+            # Skip value-only rows (aux_mask=False): their masks are all-False so
+            # the masked softmax is degenerate. Entropy is a POLICY-head signal.
+            aux_b = aux_b.bool()
+            if not aux_b.any():
+                continue
+            board_b = board_b[aux_b].to(device, non_blocking=True)
+            scalar_b = scalar_b[aux_b].to(device, non_blocking=True)
+            mask_b = mask_b[aux_b].to(device, non_blocking=True).bool()
             logits, _, _ = net.forward_train(board_b, scalar_b)
             log_probs = F.log_softmax(logits.masked_fill(~mask_b, float("-inf")), dim=-1)
             p = log_probs.exp()
@@ -96,7 +101,9 @@ def _value_outcome_corr(net, loader, device):
     sx = sy = sxx = syy = sxy = 0.0
     n = 0
     with torch.no_grad():
-        for board_b, scalar_b, _policy_b, value_b, _mask_b, _own_b in loader:
+        # Value applies to ALL rows (incl. aux_mask=False interior rows, whose
+        # target is the node's search Q) → no aux subsetting here.
+        for board_b, scalar_b, _policy_b, value_b, _mask_b, _own_b, _aux_b in loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
@@ -371,18 +378,22 @@ def main(argv: list[str] | None = None) -> int:
         train_own_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b, own_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
             mask_b = mask_b.to(device, non_blocking=True)
             own_b = own_b.to(device, non_blocking=True)
+            aux_b = aux_b.to(device, non_blocking=True)
             optim.zero_grad(set_to_none=True)
             policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
-            pol_loss = policy_cross_entropy(policy_logits, policy_b, mask_b)
+            # Policy/ownership over full-trajectory rows only; value over all rows
+            # (interior value-only rows train the value head — flywheel step 1).
+            pol_loss, own_loss = masked_policy_ownership_loss(
+                policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+            )
             val_loss = F.mse_loss(value_pred, value_b)
-            own_loss = ownership_loss(own_pred, own_b, board_b)
             # G-T2 (round-2 audit): policy CE (O(2-6) over 2511 actions) dominates
             # value MSE (O(0.1-1)) ~5-10x in the unweighted sum, starving the value
             # head — the exact thing Stage B needs load-bearing. value_loss_weight
@@ -413,17 +424,21 @@ def main(argv: list[str] | None = None) -> int:
             val_own_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b, own_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
                     value_b = value_b.to(device, non_blocking=True)
                     mask_b = mask_b.to(device, non_blocking=True)
                     own_b = own_b.to(device, non_blocking=True)
+                    aux_b = aux_b.to(device, non_blocking=True)
                     policy_logits, value_pred, own_pred = net.forward_train(board_b, scalar_b)
-                    val_pol_loss += policy_cross_entropy(policy_logits, policy_b, mask_b).item()
+                    v_pol_loss, v_own_loss = masked_policy_ownership_loss(
+                        policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
+                    )
+                    val_pol_loss += v_pol_loss.item()
                     val_val_loss += F.mse_loss(value_pred, value_b).item()
-                    val_own_loss += ownership_loss(own_pred, own_b, board_b).item()
+                    val_own_loss += v_own_loss.item()
                     v_n += 1
             val_pol_loss /= max(v_n, 1)
             val_val_loss /= max(v_n, 1)

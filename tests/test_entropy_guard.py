@@ -36,7 +36,8 @@ def _entropy(logits: torch.Tensor, mask: torch.Tensor) -> float:
     policy = torch.zeros(b, a)
     value = torch.zeros(b)
     own = torch.zeros(b, 1, 1, 1)
-    loader = [(board, scalar, policy, value, mask, own)]
+    aux = torch.ones(b, dtype=torch.bool)  # all full rows
+    loader = [(board, scalar, policy, value, mask, own, aux)]
     return _mean_policy_entropy(_StubNet(logits), loader, torch.device("cpu"))
 
 
@@ -72,6 +73,24 @@ def test_healthy_policy_passes_floor():
     assert healthy > 0.5 * baseline
 
 
+def test_entropy_skips_value_only_rows():
+    # Flywheel step 1: a value-only interior row (aux=False, all-False mask)
+    # must be SKIPPED, not crash (its masked softmax is degenerate). Entropy
+    # then equals that of the single surviving full row (uniform → log a).
+    a = 4
+    logits = torch.zeros(2, a)
+    board = torch.zeros(2, 1, 1, 1)
+    scalar = torch.zeros(2, 10)
+    policy = torch.zeros(2, a)
+    value = torch.zeros(2)
+    own = torch.zeros(2, 1, 1, 1)
+    mask = torch.tensor([[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0]])
+    aux = torch.tensor([True, False])
+    loader = [(board, scalar, policy, value, mask, own, aux)]
+    ent = _mean_policy_entropy(_StubNet(logits), loader, torch.device("cpu"))
+    assert abs(ent - math.log(a)) < 1e-4
+
+
 class _ValueStub:
     """Returns a fixed value prediction; mimics CarcassonneNet.forward_train's
     (policy, value, ownership) tuple for the value-corr readout."""
@@ -94,7 +113,8 @@ def _corr(pred: torch.Tensor, target: torch.Tensor):
     policy = torch.zeros(b, 4)
     mask = torch.ones(b, 4)
     own = torch.zeros(b, 1, 1, 1)
-    loader = [(board, scalar, policy, target, mask, own)]
+    aux = torch.ones(b, dtype=torch.bool)
+    loader = [(board, scalar, policy, target, mask, own, aux)]
     return _value_outcome_corr(_ValueStub(pred), loader, torch.device("cpu"))
 
 

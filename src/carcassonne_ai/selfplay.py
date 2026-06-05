@@ -71,6 +71,8 @@ def play_one_selfplay_game(
     batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     virtual_loss: float = 1.0,
     value_target: str = "score_diff",
+    interior_min_visits: int = 8,
+    interior_max_per_move: int = 16,
     anchor_evaluator: Callable[[object], tuple[np.ndarray, float]] | None = None,
     anchor_batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     learner_player_idx: int = 0,
@@ -124,6 +126,20 @@ def play_one_selfplay_game(
                     POV), the overfitting fix (DECISIONS 2026-06-04): ~100× more
                     independent value labels than the one-per-game outcome z.
                     Requires recording root.Q per learner ply (done above).
+                    "search_value_tree" → search_value (root.Q trajectory rows)
+                    PLUS value-ONLY rows harvested from the SEARCH TREE INTERIOR
+                    (flywheel step 1, DECISIONS 2026-06-04): each well-visited
+                    interior node contributes (its board → its converged Q) so
+                    the value head sees the off-trajectory positions search
+                    actually queries — the fix for the −576 pure-NN-leaf cliff.
+                    Interior rows carry aux_mask=False (value-only; dummy
+                    policy/mask/ownership skipped by the policy/ownership losses).
+      interior_min_visits: search_value_tree only — keep an interior node as a
+                    value target only if its visit count N >= this (a converged
+                    Q, not N=1 noise). Default 8 (reasonable at sims≈200).
+      interior_max_per_move: search_value_tree only — cap on interior rows kept
+                    per move (top-N by visits), to bound dataset blow-up since
+                    the interior dwarfs the one trajectory row. Default 16.
       anchor_evaluator: if set, switches to anchor-fraction mode — the
                        learner (using `evaluator`) plays as
                        `learner_player_idx`; the anchor (using
@@ -155,6 +171,10 @@ def play_one_selfplay_game(
     # since the next root is a new state and the search semantics are
     # cleaner without stale subtree mass. (Same pattern as the warmstart
     # MCTS labeling path.) clear() also frees the legal-moves cache.
+    # search_value_tree harvests tree-interior boards → the learner's MCTS must
+    # store each expanded node's board (record_boards). Off for every other mode
+    # so eval / normal self-play keep the lean per-node footprint.
+    record_interior = value_target == "search_value_tree"
     learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -166,6 +186,7 @@ def play_one_selfplay_game(
         batch_size=batch_size,
         batch_evaluator=batch_evaluator,
         virtual_loss=virtual_loss,
+        record_boards=record_interior,
     )
 
     # Anchor-fraction mode: a second MCTS for the fixed opponent. No Dirichlet
@@ -197,10 +218,17 @@ def play_one_selfplay_game(
     masks_arr: list[np.ndarray] = []
     players_arr: list[int] = []  # current_player at each ply, for value sign
     offsets_arr: list = []  # board.offset per recorded ply, for ownership projection
-    # value_target="search_value" only: per-ply MCTS root.Q (current-player POV),
-    # the per-position search value used as the value target instead of the
-    # one-per-game outcome z (the overfitting fix, DECISIONS 2026-06-04).
+    # value_target="search_value"/"search_value_tree": per-ply MCTS root.Q
+    # (current-player POV), the per-position search value used as the value
+    # target instead of the one-per-game outcome z (overfitting fix, DECISIONS
+    # 2026-06-04).
     search_values_arr: list[float] = []
+    # value_target="search_value_tree" only: value-ONLY rows harvested from the
+    # SEARCH TREE INTERIOR (flywheel step 1). Already in current-player POV
+    # (encoding from node.player_to_move, paired with that node's Q) → no flip.
+    interior_boards_arr: list[np.ndarray] = []
+    interior_scalars_arr: list[np.ndarray] = []
+    interior_values_arr: list[float] = []
 
     # Track the pre-terminal board + the terminating action so we can rebuild a
     # meeple-intact terminal state for the ownership aux labels. (We can't read
@@ -282,12 +310,26 @@ def play_one_selfplay_game(
             masks_arr.append(mask.astype(bool))
             players_arr.append(cur_player)
             offsets_arr.append(board.offset)
-            if value_target == "search_value":
+            if value_target in ("search_value", "search_value_tree"):
                 # root.Q from the search we just ran (root still in mcts._nodes;
                 # select_for_training reads but never clears it). Already current-
                 # player POV → aligns with values_arr; no sign flip. Append in the
                 # SAME is_learner_move guard so it stays index-aligned with players_arr.
                 search_values_arr.append(float(mcts.root_value(board)))
+            if value_target == "search_value_tree":
+                # Harvest tree-INTERIOR (board, Q) value targets from the search
+                # we just ran (tree still live; next-iter clear() hasn't fired).
+                # These value-only rows are the off-trajectory positions the
+                # value head must see — the −576 distribution-mismatch fix.
+                for nb, nb_player, nb_q in mcts.interior_value_targets(
+                    board,
+                    min_visits=interior_min_visits,
+                    max_nodes=interior_max_per_move,
+                ):
+                    oi, si = game.get_canonical_form(nb, nb_player)
+                    interior_boards_arr.append(oi.astype(np.float32))
+                    interior_scalars_arr.append(si.astype(np.float32))
+                    interior_values_arr.append(float(nb_q))
 
         prev_board = board
         last_action = int(action)
@@ -312,7 +354,7 @@ def play_one_selfplay_game(
             f"self-play game did not terminate (ply={ply}, max_plies={max_plies})"
             f" — refusing to emit a dataset with mid-game value targets"
         )
-    if value_target == "search_value":
+    if value_target in ("search_value", "search_value_tree"):
         # Per-position MCTS search value (root.Q, current-player POV) recorded
         # per learner ply above. ~100× more independent value labels than the
         # one-per-game outcome z → directly attacks the value head's overfitting
@@ -320,7 +362,7 @@ def play_one_selfplay_game(
         # so no per-ply z-flip — unlike the outcome targets below.
         if len(search_values_arr) != len(players_arr):
             raise RuntimeError(
-                f"search_value mode: recorded {len(search_values_arr)} root.Q "
+                f"{value_target} mode: recorded {len(search_values_arr)} root.Q "
                 f"values but {len(players_arr)} learner plies — record-site / "
                 f"is_learner_move mismatch"
             )
@@ -340,7 +382,7 @@ def play_one_selfplay_game(
         else:
             raise ValueError(
                 "value_target must be 'score_diff', 'score_diff_wide', 'wl', "
-                f"or 'search_value', got {value_target!r}"
+                f"'search_value', or 'search_value_tree', got {value_target!r}"
             )
         values_arr = np.array(
             [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
@@ -385,11 +427,44 @@ def play_one_selfplay_game(
         ]
     )
 
+    boards_full = np.stack(boards_arr)
+    scalars_full = np.stack(scalars_arr)
+    policies_full = np.stack(policies_arr)
+    values_full = values_arr
+    masks_full = np.stack(masks_arr)
+    ownership_full = ownership_arr
+    aux_mask_full = np.ones(len(boards_arr), dtype=bool)  # trajectory rows = full
+
+    # search_value_tree: append the harvested tree-interior value-ONLY rows.
+    # Their boards/scalars are real (encoded from the interior node + its POV);
+    # policy/mask/ownership are dummy zeros carried only to keep the 6 arrays
+    # column-aligned — the trainer skips them via aux_mask=False. Value = node.Q.
+    if interior_boards_arr:
+        n_int = len(interior_boards_arr)
+        boards_full = np.concatenate([boards_full, np.stack(interior_boards_arr)])
+        scalars_full = np.concatenate([scalars_full, np.stack(interior_scalars_arr)])
+        policies_full = np.concatenate(
+            [policies_full, np.zeros((n_int, A), dtype=np.float32)]
+        )
+        values_full = np.concatenate(
+            [values_full, np.array(interior_values_arr, dtype=np.float32)]
+        )
+        masks_full = np.concatenate(
+            [masks_full, np.zeros((n_int, A), dtype=bool)]
+        )
+        ownership_full = np.concatenate(
+            [ownership_full, np.zeros((n_int, OWNERSHIP_PLANES, W, W), dtype=np.float32)]
+        )
+        aux_mask_full = np.concatenate(
+            [aux_mask_full, np.zeros(n_int, dtype=bool)]
+        )
+
     return GameDataset(
-        boards=np.stack(boards_arr),
-        scalars=np.stack(scalars_arr),
-        policies=np.stack(policies_arr),
-        values=values_arr,
-        valid_masks=np.stack(masks_arr),
-        ownership=ownership_arr,
+        boards=boards_full,
+        scalars=scalars_full,
+        policies=policies_full,
+        values=values_full,
+        valid_masks=masks_full,
+        ownership=ownership_full,
+        aux_mask=aux_mask_full,
     )

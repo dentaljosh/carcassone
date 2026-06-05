@@ -323,6 +323,8 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             batch_evaluator=batch_evaluator,
             virtual_loss=cfg["virtual_loss"],
             value_target=cfg["value_target"],
+            interior_min_visits=cfg["interior_min_visits"],
+            interior_max_per_move=cfg["interior_max_per_move"],
             anchor_evaluator=anchor_evaluator,
             anchor_batch_evaluator=anchor_batch_evaluator,
             learner_player_idx=learner_player_idx,
@@ -391,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--temp-threshold", type=int, default=15)
     p.add_argument(
         "--value-target",
-        choices=["score_diff", "score_diff_wide", "wl", "search_value"],
+        choices=["score_diff", "score_diff_wide", "wl", "search_value", "search_value_tree"],
         default="score_diff",
         help="Per-position value target encoding. 'score_diff' (default) = "
              "tanh((p0-p1)/15), the graded margin in the same currency as the "
@@ -405,7 +407,22 @@ def main(argv: list[str] | None = None) -> int:
              "the overfitting fix (DECISIONS 2026-06-04): ~100× more independent "
              "value labels than the one-per-game outcome z. Use at sims≥200 so "
              "root.Q exceeds v2.7; warm from iter_01 with --leaf-eval v2_5 "
-             "--value-blend 0.",
+             "--value-blend 0. "
+             "'search_value_tree' = search_value PLUS value-only rows harvested "
+             "from the search TREE INTERIOR (flywheel step 1, DECISIONS "
+             "2026-06-04) — the fix for the −576 pure-NN-leaf distribution "
+             "mismatch; the value head sees the off-trajectory positions search "
+             "actually queries (tune via --interior-min-visits/-max-per-move).",
+    )
+    p.add_argument(
+        "--interior-min-visits", type=int, default=8,
+        help="search_value_tree only: keep an interior node as a value target "
+             "only if its visit count N >= this (a converged Q, not N=1 noise).",
+    )
+    p.add_argument(
+        "--interior-max-per-move", type=int, default=16,
+        help="search_value_tree only: cap interior value-only rows kept per move "
+             "(top-N by visits), to bound dataset blow-up.",
     )
     p.add_argument(
         "--batch-size", type=int, default=1,
@@ -669,6 +686,8 @@ def main(argv: list[str] | None = None) -> int:
         "orchestrator": args.orchestrator,
         "leaf_eval": args.leaf_eval,
         "value_target": args.value_target,
+        "interior_min_visits": args.interior_min_visits,
+        "interior_max_per_move": args.interior_max_per_move,
         "shared_claim": args.shared_claim,
         "claim_stale_secs": args.claim_stale_secs,
         "claim_host": args.claim_host,

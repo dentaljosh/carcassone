@@ -327,6 +327,13 @@ class _NeuralNode:
     valid_actions: list[int] = field(default_factory=list)
     priors: dict[int, float] = field(default_factory=dict)
     leaf_value: float = 0.0  # network's value at this node (from leaf-player perspective)
+    # The board at this node, stored ONLY when the owning NeuralMCTS has
+    # record_boards=True (flywheel step 1, DECISIONS 2026-06-04). Lets self-play
+    # harvest tree-INTERIOR (board, Q) pairs as value targets so the value head
+    # sees the off-trajectory positions search actually visits — the fix for the
+    # −576 pure-NN-leaf distribution mismatch. None in the normal (eval) path so
+    # search keeps its small per-node footprint.
+    board: object = None
     expanded: bool = False
     N: int = 0
     W: float = 0.0  # total value from player_to_move's perspective
@@ -379,6 +386,7 @@ class NeuralMCTS:
         virtual_loss: float = 1.0,
         fair_chance: bool = False,
         fpu_reduction: float | None = None,
+        record_boards: bool = False,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -406,6 +414,11 @@ class NeuralMCTS:
         # is mis-scaled against the [-1,1] Q range, esp. once a raw net value
         # drives the leaf at Stage B). A/B'd via --new-fpu/--old-fpu.
         self.fpu_reduction = fpu_reduction
+        # record_boards: store each expanded node's board on the node so self-play
+        # can harvest tree-interior (board, Q) value targets (flywheel step 1,
+        # DECISIONS 2026-06-04). Default False → eval/anchor searches keep the
+        # lean per-node footprint; only the learner's self-play MCTS turns it on.
+        self.record_boards = bool(record_boards)
         self.rng = random.Random(seed)
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
@@ -584,6 +597,53 @@ class NeuralMCTS:
             root = self._nodes[root_key]
         return float(root.Q)
 
+    def interior_value_targets(
+        self,
+        root_board: Board,
+        *,
+        min_visits: int = 8,
+        max_nodes: int = 16,
+    ) -> list[tuple[object, int, float]]:
+        """Harvest (board, player_to_move, Q) value targets from the SEARCH
+        TREE INTERIOR — the off-trajectory positions the value head never sees
+        in plain self-play (flywheel step 1, DECISIONS 2026-06-04). These are
+        the fix for the −576 pure-NN-leaf cliff: the value was trained only on
+        played-trajectory positions, then queried at tree-interior nodes it
+        never saw. Training on (interior board → its converged search Q)
+        teaches the raw value to predict search outcomes at exactly the
+        positions search visits → bootstraps the value/leaf flywheel.
+
+        Requires the owning MCTS was constructed with record_boards=True (else
+        every node.board is None and this returns []). The search must already
+        have run for `root_board` (self-play calls this right after search()).
+
+        Selection:
+          - EXCLUDE the search root (already recorded as a full trajectory row
+            with policy+ownership) and terminal nodes (Q == terminal_value, no
+            learning signal beyond the outcome target).
+          - keep nodes with N >= min_visits (a well-converged Q, not N=1 noise);
+          - return the top `max_nodes` by visit count (bounds the per-move row
+            blow-up / dataset size — the interior dwarfs the one trajectory row).
+
+        Q is W/N from node.player_to_move's POV (same sign convention as
+        root.Q and the value targets), so pair it with
+        get_canonical_form(board, player_to_move) — no extra sign flip.
+        """
+        root_key = self.game.string_representation(root_board)
+        cands = [
+            node
+            for key, node in self._nodes.items()
+            if key != root_key
+            and not node.is_terminal
+            and node.board is not None
+            and node.N >= min_visits
+        ]
+        cands.sort(key=lambda n: n.N, reverse=True)
+        return [
+            (node.board, node.player_to_move, float(node.Q))
+            for node in cands[:max_nodes]
+        ]
+
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)
@@ -689,6 +749,12 @@ class NeuralMCTS:
         finite values clamp to [-1, 1]."""
         if node.expanded:
             return
+        # Capture the board for tree-interior value harvesting (flywheel step 1).
+        # Gated on record_boards so the eval path pays nothing. Stored before the
+        # terminal/no-legal early-returns are irrelevant — interior_value_targets
+        # filters terminals; non-terminal expanded nodes are exactly what we want.
+        if self.record_boards:
+            node.board = board
         if node.is_terminal:
             node.leaf_value = node.terminal_value
             node.expanded = True

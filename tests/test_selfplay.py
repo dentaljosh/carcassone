@@ -26,7 +26,8 @@ def _varied_evaluator(board) -> tuple[np.ndarray, float]:
 
 
 def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5,
-          value_target: str = "score_diff", evaluator=_uniform_evaluator):
+          value_target: str = "score_diff", evaluator=_uniform_evaluator,
+          interior_min_visits: int = 8, interior_max_per_move: int = 16):
     g = Game(enable_legal_moves_cache=True)
     return play_one_selfplay_game(
         game=g,
@@ -39,6 +40,8 @@ def _play(seed: int = 0, sims: int = 4, temp_threshold: int = 5,
         seed=seed,
         max_plies=400,
         value_target=value_target,
+        interior_min_visits=interior_min_visits,
+        interior_max_per_move=interior_max_per_move,
     )
 
 
@@ -156,6 +159,62 @@ def test_search_value_differs_from_outcome_target() -> None:
                evaluator=_varied_evaluator)
     assert len(sv.values) == len(sd.values)
     assert not np.allclose(sv.values, sd.values)
+
+
+# --- search_value_tree (flywheel step 1) -----------------------------------
+
+
+def test_search_value_tree_emits_interior_value_only_rows() -> None:
+    """search_value_tree = search_value (full trajectory rows) PLUS value-only
+    rows harvested from the search tree interior. Contract:
+      - more rows than plain search_value on the same seed (interior added);
+      - aux_mask=True trajectory rows EXACTLY reproduce the search_value run;
+      - aux_mask=False interior rows are value-only: zero policy, all-False mask,
+        zero ownership, finite value in [-1,1]; and the value head still trains
+        on them (their value is the node's search Q, not necessarily zero)."""
+    sv = _play(seed=3, sims=24, temp_threshold=3, value_target="search_value",
+               evaluator=_varied_evaluator)
+    tree = _play(seed=3, sims=24, temp_threshold=3,
+                 value_target="search_value_tree", evaluator=_varied_evaluator,
+                 interior_min_visits=2, interior_max_per_move=8)
+
+    aux = tree.aux_mask.astype(bool)
+    n_traj = int(aux.sum())
+    n_int = int((~aux).sum())
+    assert n_traj == len(sv.values), "trajectory rows must match search_value"
+    assert n_int > 0, "expected interior value-only rows at sims=24"
+    assert len(tree) == n_traj + n_int
+
+    # Trajectory rows (aux=True) reproduce the search_value run exactly.
+    assert np.array_equal(tree.values[aux], sv.values)
+    assert np.array_equal(tree.policies[aux], sv.policies)
+
+    # Interior rows (aux=False) are value-only with dummy other heads.
+    iv = tree.values[~aux]
+    assert np.all(np.isfinite(iv)) and np.all(np.abs(iv) <= 1.0)
+    assert np.all(tree.policies[~aux] == 0.0)
+    assert not np.any(tree.valid_masks[~aux])          # all-False masks
+    assert np.all(tree.ownership[~aux] == 0.0)
+
+
+def test_search_value_tree_roundtrips_aux_mask(tmp_path) -> None:
+    """The mixed aux_mask survives a GameDataset save/load roundtrip."""
+    from carcassonne_ai.warmstart import GameDataset
+    tree = _play(seed=4, sims=24, temp_threshold=3,
+                 value_target="search_value_tree", evaluator=_varied_evaluator,
+                 interior_min_visits=2, interior_max_per_move=8)
+    p = tmp_path / "seed_tree.npz"
+    tree.save(p)
+    r = GameDataset.load(p)
+    assert np.array_equal(r.aux_mask, tree.aux_mask)
+    assert not r.aux_mask.all(), "expected a mix of full + value-only rows"
+
+
+def test_search_value_tree_default_modes_are_all_full_rows() -> None:
+    """A non-tree mode produces an all-True aux_mask (every row full)."""
+    ds = _play(seed=1, sims=8, value_target="search_value",
+               evaluator=_varied_evaluator)
+    assert ds.aux_mask.all()
 
 
 def test_policy_targets_are_distributions_over_legal_actions() -> None:

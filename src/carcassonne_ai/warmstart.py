@@ -23,7 +23,7 @@ import math
 import os
 import random
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
 
@@ -53,6 +53,17 @@ class GameDataset:
     # Path B aux target: per-cell final feature ownership, current-player POV,
     # (N, OWNERSHIP_PLANES, W, W) float32 in {-1, 0, +1} (city/road/farm planes).
     ownership: np.ndarray
+    # (N,) bool — True = a full trajectory row (train policy + ownership + value);
+    # False = a value-ONLY row (flywheel step 1: a tree-interior position whose
+    # only label is its search Q — policies/valid_masks/ownership are dummy zeros
+    # and MUST be skipped by the policy/ownership losses). None on construction
+    # → __post_init__ fills all-True, so every existing call site and every old
+    # .npz (no aux_mask) behaves exactly as before.
+    aux_mask: np.ndarray | None = None
+
+    def __post_init__(self) -> None:
+        if self.aux_mask is None:
+            self.aux_mask = np.ones(self.boards.shape[0], dtype=bool)
 
     def save(self, path: Path) -> None:
         """Save to a private temp file then atomically rename onto `path`.
@@ -81,6 +92,7 @@ class GameDataset:
             values=self.values,
             valid_masks=self.valid_masks,
             ownership=self.ownership,
+            aux_mask=self.aux_mask,
         )
         partial.replace(path)
 
@@ -91,6 +103,8 @@ class GameDataset:
         # of surfacing as a bare BadZipFile with no filename attached.
         try:
             with np.load(path) as data:
+                # aux_mask absent in pre-flywheel .npz files → None lets
+                # __post_init__ default it all-True (every row is a full row).
                 return cls(
                     boards=data["boards"],
                     scalars=data["scalars"],
@@ -98,6 +112,9 @@ class GameDataset:
                     values=data["values"],
                     valid_masks=data["valid_masks"],
                     ownership=data["ownership"],
+                    aux_mask=(
+                        data["aux_mask"] if "aux_mask" in data.files else None
+                    ),
                 )
         except Exception as e:
             raise RuntimeError(
@@ -138,6 +155,7 @@ def rotate_dataset_90(ds: "GameDataset") -> "GameDataset":
         values=ds.values.copy(),
         valid_masks=msk,
         ownership=np.ascontiguousarray(np.rot90(ds.ownership, k=1, axes=(2, 3))),
+        aux_mask=ds.aux_mask.copy(),  # per-row, orientation-invariant
     )
 
 
@@ -159,6 +177,7 @@ def augment_with_rotations(ds: "GameDataset") -> "GameDataset":
         values=np.concatenate([r.values for r in rots], axis=0),
         valid_masks=np.concatenate([r.valid_masks for r in rots], axis=0),
         ownership=np.concatenate([r.ownership for r in rots], axis=0),
+        aux_mask=np.concatenate([r.aux_mask for r in rots], axis=0),
     )
 
 
@@ -500,7 +519,12 @@ def make_streaming_dataset(
     augment_rotations: bool = False,
 ):
     """Build a torch IterableDataset that streams (board, scalar, policy,
-    value, mask) tuples from the given .npz file list.
+    value, mask, ownership, aux_mask) tuples from the given .npz file list.
+
+    aux_mask (bool scalar per row): True = full trajectory row (train policy +
+    ownership + value); False = value-only tree-interior row (train value only —
+    the trainer must subset policy/ownership to aux_mask=True rows). Old .npz
+    files without aux_mask stream all-True (GameDataset.load defaults it).
 
     Worker sharding: when used with DataLoader(num_workers > 0), each worker
     sees a disjoint slice of the file list. File order is shuffled per-epoch
@@ -570,6 +594,7 @@ def make_streaming_dataset(
                         torch.tensor(ds.values[i], dtype=torch.float32),
                         torch.from_numpy(ds.valid_masks[i]),
                         torch.from_numpy(ds.ownership[i]),
+                        torch.tensor(bool(ds.aux_mask[i]), dtype=torch.bool),
                     )
 
     return StreamingWarmstartDataset()
