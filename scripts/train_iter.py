@@ -183,6 +183,30 @@ def _build_mixed_file_list(
     return list(buffer_files) + sampled
 
 
+def _stage_files_local(files: list[Path], stage_dir: Path) -> list[Path]:
+    """Copy `files` into a LOCAL dir; return the staged paths (order preserved).
+
+    Keeps the training read-path off slow/flaky 9p/drvfs or CIFS mounts. A 9p
+    (Windows drvfs) stall wedged an 822K-position train mid-epoch — GPU idle ~50
+    min, one CPU core spinning (2026-06-05). Streaming many small .npz from 9p is
+    the exact pathological pattern. Dedupes by source path (warmstart mix samples
+    with replacement) so a duplicated file_list entry copies the file only once.
+    """
+    import shutil
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    mapping: dict[str, Path] = {}
+    staged: list[Path] = []
+    for src in files:
+        key = str(src)
+        dst = mapping.get(key)
+        if dst is None:
+            dst = stage_dir / f"{len(mapping):06d}_{src.name}"
+            shutil.copy2(src, dst)
+            mapping[key] = dst
+        staged.append(dst)
+    return staged
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="train_iter")
     p.add_argument("--output-root", type=Path, required=True,
@@ -196,6 +220,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--augment-rotations", action="store_true",
                    help="C5 symmetry aug: expand each training file to its 4 board "
                         "rotations (4x label-correct data). Train set only; off by default.")
+    p.add_argument("--stage-local", type=str, default=None,
+                   help="Copy selected buffer/val .npz into this LOCAL dir before "
+                        "streaming, to keep the training read-path off slow 9p/drvfs "
+                        "or CIFS mounts. A 9p stall once wedged a train mid-epoch "
+                        "(GPU idle ~50min, 2026-06-05). Use e.g. /tmp/carc_stage_<run>; "
+                        "caller cleans it up afterward.")
     p.add_argument("--warmstart-mix-fraction", type=float, default=0.0,
                    help="Fraction of training samples from the warmstart "
                         "dataset (rest from self-play buffer). Plan: 1.0 "
@@ -267,6 +297,16 @@ def main(argv: list[str] | None = None) -> int:
     train_files, val_files = split_files_train_val(
         file_list, val_fraction=args.val_fraction, seed=args.seed
     )
+    # Stage the read-path onto local ext4 if asked — keeps streaming off slow
+    # 9p/drvfs/CIFS (a 9p stall wedged a train mid-epoch, 2026-06-05).
+    if args.stage_local:
+        stage_root = Path(args.stage_local)
+        train_files = _stage_files_local(train_files, stage_root / "train")
+        if val_files:
+            val_files = _stage_files_local(val_files, stage_root / "val")
+        print(f"  staged {len(train_files)} train + {len(val_files)} val files "
+              f"→ {stage_root} (local fs, off 9p/network)")
+        sys.stdout.flush()
     do_validation = len(val_files) > 0
     n_train = count_positions(train_files)
     n_val = count_positions(val_files) if do_validation else 0

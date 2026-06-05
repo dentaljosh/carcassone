@@ -380,12 +380,18 @@ for ((N=START; N<ITERS; N++)); do
   # G-T1/T2: LR schedule + value-loss weight. Defaults (none / 1.0) = current
   # behavior. For Stage B the value head is gradient-starved → set e.g.
   # VALUE_LOSS_WEIGHT=3 LR_SCHEDULE=cosine (Joshua tunes; sweep 1–5×).
+  # --stage-local: copy the buffer onto local ext4 before streaming. $OUT_LOCAL is
+  # on 9p/drvfs (the 5800x share) and a 9p stall wedged a train mid-epoch (GPU idle
+  # ~50min, 2026-06-05). Staging keeps the read-path off 9p; cleaned after train.
+  STAGE_DIR="/tmp/carc_stage_${RUN}_$NN"
   nice -n 19 env $ENVV $PY -u scripts/train_iter.py \
     --output-root "$OUT_LOCAL" --warmstart-root "$REPO/data/warmstart/heuristic_tau05" \
     --iter "$N" --window 10 --warmstart-mix-fraction 0.0 \
     --lr-schedule "${LR_SCHEDULE:-none}" --value-loss-weight "${VALUE_LOSS_WEIGHT:-1.0}" \
+    --stage-local "$STAGE_DIR" \
     --warm-from "$warm_from" --output "$CKPT_LOCAL/iter_$NN.pt" --epochs 3
   trc=$?
+  rm -rf "$STAGE_DIR" 2>/dev/null || true
   if [ $trc -ne 0 ]; then echo "TRAIN exited $trc (entropy collapse / NaN?) — HALTING loop at iter $N"; exit $trc; fi
 
   echo "########## ITER $N: GATE vs HeuristicMCTS (G-S3 out-of-lineage, n=$GATE_GAMES paired, c=$GATE_CPUCT, 3-box --shared-claim) @ $(date) ##########"
