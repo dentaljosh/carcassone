@@ -113,7 +113,9 @@ def _worker_init(checkpoint: str, shared_claim: bool = False,
     ns = int(ck.get("n_scalar_features", 10))
     _worker_include_farm = ns > 10
     net = CarcassonneNet(n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
-                         n_scalar_features=ns).to(_worker_device)
+                         n_scalar_features=ns,
+                         value_global_pool=bool(ck.get("value_global_pool", False))
+                         ).to(_worker_device)
     net.load_state_dict(ck["model_state"])
     net.train(False)
     _worker_net = net

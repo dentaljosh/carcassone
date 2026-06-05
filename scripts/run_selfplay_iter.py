@@ -165,6 +165,7 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         n_filters=ckpt["n_filters"],
         n_blocks=ckpt["n_blocks"],
         n_scalar_features=int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
+        value_global_pool=bool(ckpt.get("value_global_pool", False)),
     ).to(_worker_device)
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
@@ -181,6 +182,7 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
             n_filters=a_ckpt["n_filters"],
             n_blocks=a_ckpt["n_blocks"],
             n_scalar_features=int(a_ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
+            value_global_pool=bool(a_ckpt.get("value_global_pool", False)),
         ).to(_worker_device)
         a_net.load_state_dict(a_ckpt["model_state"])
         a_net.train(False)

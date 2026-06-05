@@ -139,6 +139,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--filters", type=int, default=96)
     p.add_argument("--blocks", type=int, default=6)
     p.add_argument(
+        "--global-pool", action="store_true",
+        help="Flywheel step 2: feed a board-wide global-pool summary (trunk "
+             "mean+max) into the value head. The choice is saved in the "
+             "checkpoint (value_global_pool) and propagates to train_iter/eval.")
+    p.add_argument(
         "--include-farm-scalars",
         action="store_true",
         help="Path B Step E: train a 12-scalar net (10 base + 2 farm-control). "
@@ -226,11 +231,13 @@ def main(argv: list[str] | None = None) -> int:
     from carcassonne_ai.features import N_FARM_SCALARS, N_SCALAR_FEATURES
     n_scalar_features = N_SCALAR_FEATURES + (N_FARM_SCALARS if args.include_farm_scalars else 0)
     net = CarcassonneNet(
-        n_filters=args.filters, n_blocks=args.blocks, n_scalar_features=n_scalar_features
+        n_filters=args.filters, n_blocks=args.blocks, n_scalar_features=n_scalar_features,
+        value_global_pool=args.global_pool,
     ).to(device)
     print(
         f"  net params: {net.param_count():,}  (filters={args.filters}, "
-        f"blocks={args.blocks}, scalars={n_scalar_features})"
+        f"blocks={args.blocks}, scalars={n_scalar_features}, "
+        f"global_pool={args.global_pool})"
     )
 
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -347,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
                     "n_filters": args.filters,
                     "n_blocks": args.blocks,
                     "n_scalar_features": n_scalar_features,
+                    "value_global_pool": args.global_pool,
                     "epoch": epoch,
                     "val_pol_loss": val_pol_loss,
                     "val_val_loss": val_val_loss,
@@ -361,6 +369,7 @@ def main(argv: list[str] | None = None) -> int:
             "n_filters": args.filters,
             "n_blocks": args.blocks,
             "n_scalar_features": n_scalar_features,
+            "value_global_pool": args.global_pool,
             "data_root": str(args.data_root),
         },
         args.output,

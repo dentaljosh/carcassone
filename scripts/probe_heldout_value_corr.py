@@ -128,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
             n_filters=int(ck["n_filters"]),
             n_blocks=int(ck["n_blocks"]),
             n_scalar_features=int(ck.get("n_scalar_features", N_SCALAR_FEATURES)),
+            value_global_pool=bool(ck.get("value_global_pool", False)),
         ).to(device)
         net.load_state_dict(ck["model_state"])
         net.train(False)

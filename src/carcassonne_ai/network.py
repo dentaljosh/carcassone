@@ -74,11 +74,20 @@ class CarcassonneNet(nn.Module):
         value_project_channels: int = DEFAULT_VALUE_PROJECT_CHANNELS,
         value_hidden: int = DEFAULT_VALUE_HIDDEN,
         n_ownership_planes: int = DEFAULT_OWNERSHIP_PLANES,
+        value_global_pool: bool = False,
     ):
         super().__init__()
         self.window_size = window_size
         self.action_size = compute_action_size(window_size)
         self.n_ownership_planes = n_ownership_planes
+        # Flywheel step 2 (DECISIONS 2026-06-05): feed a board-WIDE summary
+        # (global mean+max over the trunk's spatial dims) into the value head.
+        # The 1×1-project→flatten value head has a tiny receptive field and can't
+        # integrate board-global quantities (total farm control, tiles-left,
+        # meeple supply) — exactly what a usable value leaf needs. KataGo-style
+        # global pooling injects cat[trunk.mean, trunk.amax] (2·n_filters) into
+        # value_fc1. Default OFF so every existing checkpoint/arch is unchanged.
+        self.value_global_pool = bool(value_global_pool)
 
         self.stem = nn.Sequential(
             nn.Conv2d(n_input_channels, n_filters, kernel_size=3, padding=1, bias=False),
@@ -103,7 +112,10 @@ class CarcassonneNet(nn.Module):
             nn.ReLU(inplace=True),
         )
         value_flat_dim = value_project_channels * window_size * window_size
-        self.value_fc1 = nn.Linear(value_flat_dim + n_scalar_features, value_hidden)
+        value_in = value_flat_dim + n_scalar_features
+        if self.value_global_pool:
+            value_in += 2 * n_filters  # + global mean & max over the trunk
+        self.value_fc1 = nn.Linear(value_in, value_hidden)
         self.value_fc2 = nn.Linear(value_hidden, 1)
 
         # Path B auxiliary head: per-cell final feature ownership (city/road/farm),
@@ -112,6 +124,22 @@ class CarcassonneNet(nn.Module):
         # KataGo-style representation pressure. TRAINING-ONLY: computed in
         # forward_train, never in forward (inference skips it for speed).
         self.ownership_head = nn.Conv2d(n_filters, n_ownership_planes, kernel_size=1)
+
+    def _value_from_trunk(
+        self, x: torch.Tensor, scalars: torch.Tensor
+    ) -> torch.Tensor:
+        """Value head, shared by forward / forward_train so they never diverge.
+        x is the trunk output (B, n_filters, W, W). Optionally concatenates a
+        board-wide global-pool summary (mean + max over the spatial dims) before
+        value_fc1 (flywheel step 2)."""
+        v = self.value_project(x).flatten(start_dim=1)
+        if self.value_global_pool:
+            g = torch.cat([x.mean(dim=(2, 3)), x.amax(dim=(2, 3))], dim=1)
+            v = torch.cat([v, scalars, g], dim=1)
+        else:
+            v = torch.cat([v, scalars], dim=1)
+        v = F.relu(self.value_fc1(v))
+        return torch.tanh(self.value_fc2(v)).squeeze(-1)
 
     def forward(
         self, board: torch.Tensor, scalars: torch.Tensor
@@ -129,10 +157,7 @@ class CarcassonneNet(nn.Module):
         p = torch.cat([p, scalars], dim=1)
         policy_logits = self.policy_fc(p)
 
-        v = self.value_project(x).flatten(start_dim=1)
-        v = torch.cat([v, scalars], dim=1)
-        v = F.relu(self.value_fc1(v))
-        value = torch.tanh(self.value_fc2(v)).squeeze(-1)
+        value = self._value_from_trunk(x, scalars)
 
         return policy_logits, value
 
@@ -152,10 +177,7 @@ class CarcassonneNet(nn.Module):
         p = torch.cat([p, scalars], dim=1)
         policy_logits = self.policy_fc(p)
 
-        v = self.value_project(x).flatten(start_dim=1)
-        v = torch.cat([v, scalars], dim=1)
-        v = F.relu(self.value_fc1(v))
-        value = torch.tanh(self.value_fc2(v)).squeeze(-1)
+        value = self._value_from_trunk(x, scalars)
 
         ownership = torch.tanh(self.ownership_head(x))
 

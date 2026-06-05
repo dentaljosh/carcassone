@@ -232,6 +232,14 @@ def main(argv: list[str] | None = None) -> int:
                         "at iter 0, 0.7 at iter 1, 0.4 at iter 2, 0.0 from iter 3.")
     p.add_argument("--warm-from", type=Path, required=True,
                    help="Checkpoint to initialize the network from.")
+    p.add_argument("--global-pool", action="store_true",
+                   help="Flywheel step 2: build a global-pool value head (UPGRADES "
+                        "the arch even from a non-pool warm-from). Pair with "
+                        "--warm-value-fresh when the warm-from lacks global pool.")
+    p.add_argument("--warm-value-fresh", action="store_true",
+                   help="Partial warm: load stem/trunk/policy/ownership from "
+                        "--warm-from but re-init the value head (use when the value "
+                        "arch changed, e.g. --global-pool from a non-pool checkpoint).")
     p.add_argument("--output", type=Path, required=True,
                    help="Output checkpoint path (e.g. checkpoints/selfplay/iter_00.pt).")
     p.add_argument("--epochs", type=int, default=3)
@@ -366,13 +374,27 @@ def main(argv: list[str] | None = None) -> int:
     # self-play .npz this trains on must carry matching-width scalars (i.e.
     # run_selfplay_iter used Game(include_farm_scalars=...) consistently).
     n_scalar_features = int(ckpt.get("n_scalar_features", 10))
+    # flywheel step 2: --global-pool UPGRADES the value arch (adds the board-wide
+    # global-pool summary) even when warming from a non-pool checkpoint; the
+    # checkpoint's own flag is the default for plain continuation.
+    value_global_pool = bool(ckpt.get("value_global_pool", False)) or args.global_pool
     net = CarcassonneNet(
-        n_filters=n_filters, n_blocks=n_blocks, n_scalar_features=n_scalar_features
+        n_filters=n_filters, n_blocks=n_blocks, n_scalar_features=n_scalar_features,
+        value_global_pool=value_global_pool,
     ).to(device)
-    net.load_state_dict(ckpt["model_state"])
-    print(f"  warm-started from {args.warm_from} "
-          f"(filters={n_filters}, blocks={n_blocks}, "
-          f"params={net.param_count():,})")
+    if args.warm_value_fresh:
+        # Partial warm: load stem/trunk/policy/ownership from the warm-from net,
+        # but leave the value head (value_fc*) at its fresh init — used when the
+        # value ARCHITECTURE changed (global pool) so its shapes don't match.
+        # Isolates the arch change: strong warm policy/trunk, value head retrained.
+        sd = {k: v for k, v in ckpt["model_state"].items() if not k.startswith("value_fc")}
+        net.load_state_dict(sd, strict=False)
+        print(f"  WARM trunk+policy from {args.warm_from}; value head RE-INIT "
+              f"(arch change: global_pool={value_global_pool})")
+    else:
+        net.load_state_dict(ckpt["model_state"])
+    print(f"  net (filters={n_filters}, blocks={n_blocks}, "
+          f"global_pool={value_global_pool}, params={net.param_count():,})")
 
     # Path B entropy-floor collapse guard: the baseline is the WARMSTART net's
     # initial policy entropy — measured once (at iter 0, when warm_from IS the
@@ -547,6 +569,7 @@ def main(argv: list[str] | None = None) -> int:
             "n_filters": n_filters,
             "n_blocks": n_blocks,
             "n_scalar_features": n_scalar_features,
+            "value_global_pool": value_global_pool,
             "iter": args.iter_idx,
             "epochs": args.epochs,
             # Carry the fixed baseline forward so every iter compares against the
