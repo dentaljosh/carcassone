@@ -2,7 +2,12 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-04 evening) — 🟢 CLUSTER IDLE. REGROUP DONE. ⏭ NEXT ACTION = **build the in-loop value FLYWHEEL** ([docs/INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md](docs/INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md)).
+## Right now (2026-06-04 late) — 🟢 CLUSTER IDLE. FLYWHEEL **step 1 BUILT + tested** (commit `67fd90e`). ⏭ NEXT = **VALIDATE step 1** (does interior-trained value beat the −576 cliff at λ=1.0?) — a compute run (generate→train→eval), ask machine + ETA first.
+
+**✅ FLYWHEEL STEP 1 BUILT (2026-06-04, commit `67fd90e`):** `value_target="search_value_tree"` — value now learns the **search TREE INTERIOR** (the −576 distribution-mismatch fix). `NeuralMCTS(record_boards=True)` + `interior_value_targets()` harvest (board→converged Q) from visited interior nodes; selfplay appends them as **value-ONLY rows** (new per-row `GameDataset.aux_mask`: None→all-True, back-compat; carried through save/load/rotate/augment/streaming-7-tuple); `masked_policy_ownership_loss` trains policy+ownership on full rows only, value on all rows. **Full pytest green** (+ `test_flywheel_loss_masking.py`, interior-target + search_value_tree row tests). **Plumbing smoke (6 games, sims=50, real iter_01):** 864 trajectory + **5746 interior** rows (6.7×), train_warmstart 1 epoch finite losses — masked loss correctly skips interior rows. **NEXT (validation):** generate a real `search_value_tree` set → train (warm iter_01) → eval the net as a **pure-NN leaf (λ=1.0)** vs HeuristicMCTS; success = no longer −576 (the cliff was the premise; this tests whether interior targets fix it). Then step 4 odometer (parallel), step 2 global pooling, step 3 value-into-leaf-in-loop.
+
+---
+_(below: the regroup that produced the flywheel decision — context for the build)_
 
 **Day's result (search_value lever, fully characterized):** value-head overfitting FIXED (held-out corr **0.289 outcome head → 0.464 search-value head**, reaches v2.7's range), policy intact (+96.2 elo). BUT sims 200→400 targets are FLAT (0.464→0.467), and value-as-leaf is a cliff: blend **λ0=+96 → λ0.5=−37 → λ1.0(pure NN leaf)=−576**.
 
