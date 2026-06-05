@@ -53,6 +53,9 @@ def _dir_record(d: Path) -> tuple[int, int, int, float]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--baseline-l0", type=float, default=74.0,
+                    help="Fallback policy-only λ0 elo for the marginal when a "
+                         "config's own λ0 eval is incomplete (rank_data α=0 gate = +74).")
     args = ap.parse_args()
 
     pat = re.compile(r"^eval_(.+)_b(\d+)$")
@@ -73,33 +76,50 @@ def main() -> int:
 
     lam_order = [("0", "λ0"), ("05", "λ0.5"), ("10", "λ1.0")]
     print(f"\n=== ranking-loss sweep: {args.out} ===")
-    print("(SUCCESS = λ0.5 >= 0; prior failures: searchval -24, GP -38, mimic-v2.7 -38)\n")
-    print(f"  {'config':<14} " + "  ".join(f"{lbl:>16}" for _, lbl in lam_order)
-          + f"  {'done':>5}")
-    print(f"  {'-'*14} " + "  ".join("-" * 16 for _ in lam_order) + "  -----")
+    print("READ THE *MARGINAL* (λ0.5 − λ0), NOT absolute λ0.5: absolute λ0.5 is")
+    print("confounded by the policy baseline λ0 (~+70 here). The value head is an")
+    print(f"ASSET only if MARGINAL >= ~0. Fallback baseline λ0 = +{args.baseline_l0:.0f}")
+    print("(use a config's own λ0 when its eval is complete, n>=150).")
+    print("Prior MSE heads' marginal: searchval −80, GP −94 (all big-negative).\n")
+    print(f"  {'config':<12} " + "  ".join(f"{lbl:>15}" for _, lbl in lam_order)
+          + f"  {'MARGINAL(λ.5−λ0)':>17}  {'done':>4}")
+    print(f"  {'-'*12} " + "  ".join("-" * 15 for _ in lam_order) + f"  {'-'*17}  ----")
     best = None
     for tag in sorted(configs):
         cells = []
-        l05 = None
+        elos = {}
         for lt, _lbl in lam_order:
             rec = configs[tag].get(lt)
             if rec is None:
-                cells.append(f"{'-':>16}")
+                cells.append(f"{'-':>15}")
                 continue
             w, dd, n, _ = rec
             elo, sig = _elo(w, dd, n)
-            cells.append(f"{elo:>+8.1f}±{sig:>4.0f}/{n:<3}" if n else f"{'-':>16}")
-            if lt == "05" and n:
-                l05 = elo
+            cells.append(f"{elo:>+7.1f}±{sig:>3.0f}/{n:<3}" if n else f"{'-':>15}")
+            if n:
+                elos[lt] = (elo, n)
+        # marginal = λ0.5 − (own λ0 if complete else baseline)
+        marg = mtxt = None
+        if "05" in elos:
+            l05 = elos["05"][0]
+            l0n = elos.get("0")
+            base = l0n[0] if (l0n and l0n[1] >= 150) else args.baseline_l0
+            src = "own" if (l0n and l0n[1] >= 150) else "base"
+            marg = l05 - base
+            mtxt = f"{marg:>+8.1f} ({src})"
         done = (args.out / "done" / tag).exists()
-        print(f"  {tag:<14} " + "  ".join(cells) + f"  {'yes' if done else 'no':>5}")
-        if l05 is not None and (best is None or l05 > best[1]):
-            best = (tag, l05)
+        print(f"  {tag:<12} " + "  ".join(cells)
+              + f"  {(mtxt or '-'):>17}  {'yes' if done else 'no':>4}")
+        if marg is not None and (best is None or marg > best[1]):
+            best = (tag, marg)
 
     print()
     if best is not None:
-        verdict = "✅ CLEARS the gate" if best[1] >= 0 else "✗ still < 0 (gate unmet)"
-        print(f"  best λ0.5: {best[0]} = {best[1]:+.1f}  -> {verdict}")
+        verdict = ("✅ value is an ASSET (marginal >= 0)" if best[1] >= 0
+                   else "✗ value still HURTS (marginal < 0) — gate unmet")
+        print(f"  best MARGINAL: {best[0]} = {best[1]:+.1f}  -> {verdict}")
+        print("  (also note λ1.0 vs prior −576/−604: smaller crater = ranking loss")
+        print("   improved leaf quality even if marginal still < 0.)")
     return 0
 
 
