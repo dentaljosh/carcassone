@@ -2,7 +2,9 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-05 pm) — 🟢 CLUSTER IDLE. FLYWHEEL **steps 1 & 2 BOTH FAIL the value-as-leaf gate.** ⏭ DECISION (Joshua) = **attack the value LOSS (decision-ranking)**. NEXT ACTION = build STEP A (offline decision-ranking probe) per [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md).
+## Right now (2026-06-05 pm) — 🟢 CLUSTER IDLE. **STEP A (decision-ranking probe) ✅ CONFIRMS the value LOSS is the problem.** ⏭ NEXT ACTION = build STEP B (sibling-ranking-loss retrain) per [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md) (full build plumbing in "NEXT action — STEP B build").
+
+**✅ STEP A RESULT (`98364bd`, `scripts/probe_decision_ranking.py`, n=120 nodes, deep oracle_sims=400, mean k=13.8):** the corr-0.84 value head ranks sibling moves at **~chance** — Kendall-τ vs the deep v2.7-leaf search-Q oracle **+0.081±0.023** (≈22 SE below v2.7's **+0.579±0.024**); top-1 0.15 vs 0.44; oracle regret **1.92 pts vs 0.62 pts** (net's regret 0.0675 tanh ≈ random 0.0794). The two rankers barely agree (τ=0.10). → **a 0.84-outcome-corr value has near-zero local move-discrimination; the loss optimizes the wrong objective.** (`/mnt/c/carc-shared/decision_ranking_svtree/summary.json`.) ⚠️ The 1-ply gap (1.9 vs 0.6 pts) is smaller than the λ1.0=−576 crater → that crater is also compounding-at-depth; **STEP B targets the λ0.5≥0 gate**, not necessarily λ1.0.
 
 **✅ VERDICT (TRIPLY confirmed): a 0.84-outcome-corr value is NOT a usable MCTS leaf** — not fixed by interior data (step 1) or board-wide context (step 2). λ-curve vs HeuristicMCTS@200 (n=100 paired), `results.csv: searchval_tree*`:
 

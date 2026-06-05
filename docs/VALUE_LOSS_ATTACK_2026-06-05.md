@@ -46,6 +46,42 @@ Confirm the diagnosis before any retrain (the C4a/C6 cheap-probe discipline).
   If value-net ranking is actually GOOD → the leaf failure is elsewhere; rethink
   before spending the retrain.
 
+#### STEP A — RESULT (2026-06-05): ✅ CONFIRMED, even starker than predicted
+Built `scripts/probe_decision_ranking.py` (parallel CPU; net on CPU per worker
+→ no fork+CUDA crash). On-distribution decision positions (real v2.7-leaf
+self-play), each legal move's child scored 3 ways from the decision-maker's POV;
+**oracle = a deep `oracle_sims=400` v2.7-leaf search from each child** (the
+move's converged value). `searchval_tree/ckpt/iter_00.pt`, **n=120 nodes, mean
+k=13.8** (`/mnt/c/carc-shared/decision_ranking_svtree/summary.json`):
+
+| ranker | Kendall-τ vs oracle | top-1 = oracle-best | oracle regret (pts) |
+|---|---|---|---|
+| **value-net (corr 0.84)** | **+0.081 ± 0.023** | 0.150 | **1.92** |
+| **v2.7** | **+0.579 ± 0.024** | 0.442 | **0.62** |
+| random baseline | ~0 | ~0.07 (1/k) | (0.079 tanh) |
+
+The corr-0.84 value head ranks sibling moves at **essentially chance** — τ=0.08
+(≈22 SE below v2.7), top-1 barely above 1/k, and its oracle regret (0.0675 tanh)
+is **barely better than picking at random** (0.0794). v2.7 ranks them well
+(τ=0.58, 3× lower regret). The two rankers barely agree (τ_net,v2.7 = 0.10).
+**→ a 0.84-outcome-corr value has near-ZERO local move-discrimination. The LOSS
+is the problem; corr is definitively the wrong gauge.**
+
+Methodology notes that mattered: (a) **oracle DEPTH is load-bearing** — a shallow
+oracle (sims=60) ≈ 1-ply v2.7 (circular) and *understated* the gap (net τ 0.48);
+deepening to 400 collapsed net τ → 0.08 while v2.7 held ~0.58. (b) the v2.7
+column is mildly inflated by construction (oracle uses the v2.7 leaf), but the
+DECISIVE signal — net regret ≈ random, net τ ≈ 0 — is construction-independent,
+and the oracle-Q is literally what `search_value_tree` *trained* the head on.
+
+**⚠️ Caveat carried into STEP B:** the 1-ply regret gap (1.9 vs 0.6 pts) is real
+but *smaller* than the λ1.0 = −576 crater → that crater is ALSO error-compounding
+at depth + off-distribution (search drives into the net's blind spots), which a
+1-ply probe can't capture. So **STEP B's realistic target is the λ0.5 ≥ 0 gate**
+(where v2.7 still anchors local consistency at 50%), NOT necessarily fixing λ1.0.
+A value that ranks siblings like v2.7/deep-search should move λ0.5 across 0; the
+pure-NN-leaf cliff is a separate (flywheel) problem.
+
 ### STEP B — ranking-loss retrain (only if A confirms)
 Add a **sibling-ranking loss**: train the value so its ordering of a node's
 children matches the search-Q ordering. Concretely (pick/compose):
@@ -70,7 +106,34 @@ Then the learned value genuinely can't beat the v2.7 leaf with our resources
 fundamentally different approach (e.g. learn a *better hand-feature* leaf, or
 accept ~strong-amateur+ and revisit the goal). Record honestly.
 
-## FIRST action (post-compaction)
-Build STEP A (the offline decision-ranking probe): the sibling-set harvest +
-the τ/regret comparison (value-net vs v2.7 vs search-Q oracle). It's the cheap
-gate that tells us if the loss is really the problem before any retrain.
+## NEXT action — STEP A is ✅ DONE & CONFIRMED → build STEP B
+STEP A (`scripts/probe_decision_ranking.py`, committed `98364bd`) decisively
+confirmed the diagnosis (value-net sibling-ranking τ=0.08 ≈ chance vs v2.7 0.58;
+see "STEP A — RESULT" above). The cheap gate passed → the value LOSS is the
+problem.
+
+**STEP B build (the ranking-loss retrain) — concrete plumbing:**
+1. **Sibling-set harvest in self-play** (the main cost). New MCTS method
+   `interior_sibling_groups(root_board, *, min_parent_visits, min_child_visits,
+   max_groups)` → for each well-visited interior PARENT (board recorded via
+   `record_boards`), emit its visited children as a group: `(child_board,
+   child_player, child_Q)` with child_Q flipped to the PARENT's POV
+   (`child.Q if child.player_to_move==parent.player_to_move else -child.Q`).
+   `selfplay.py` accumulates these as value-only rows tagged with a `group_id`
+   (contiguous per node); add `group_id: np.ndarray|None` to `GameDataset`
+   (mirrors the `aux_mask` add) + npz save/load + `make_streaming_dataset` 8th
+   tuple element. Group rows are aux_mask=False (value-only; no policy/ownership).
+2. **Listwise ranking loss** within groups (the doc's primary): segment-softmax
+   over each group's child value outputs → cross-entropy vs the softmax of the
+   group's child search-Q (a temperature τ_rank to tune). Implement via a
+   batch collate that keeps whole groups together (pack "N groups/batch"; segment
+   the loss by `group_id` offsets) — avoids the centered-MSE's loss-of-absolute-
+   scale problem. **Multi-task:** keep the existing value-MSE (absolute scale for
+   backup) + α·listwise term; sweep α. (Pairwise-margin is the fallback if
+   listwise is finicky.)
+3. **Re-eval the λ-curve** vs HeuristicMCTS@200, n≥100 paired. **SUCCESS = λ0.5 ≥ 0.**
+   Cheaper de-risk first: a value head trained to *mimic v2.7* (target =
+   tanh(vs2/15)) should recover τ≈0.58 + λ0.5≥0 — proves the head CAN represent a
+   good ranker before spending the full in-loop ranking harvest (needs v2.7 target
+   stored at gen time; simpler than sibling grouping).
+⚠️ remotes are STALE (`e4a77ed`) — bundle-sync before any 3-box harvest run.
