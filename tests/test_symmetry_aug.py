@@ -311,8 +311,9 @@ def test_streaming_augment_flag_quadruples_rows(tmp_path):
                                       augment_rotations=True))
     assert len(base) == 4          # original rows
     assert len(aug) == 16          # 4 rotations x 4 rows
-    # each yielded item is the 7-tuple (board, scalar, policy, value, mask, own, aux)
-    assert len(aug[0]) == 7
+    # each yielded item is the 8-tuple (board, scalar, policy, value, mask, own,
+    # aux, group_id)
+    assert len(aug[0]) == 8
 
 
 def test_real_board_structural_preservation():

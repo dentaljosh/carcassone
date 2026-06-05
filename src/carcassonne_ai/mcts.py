@@ -644,6 +644,58 @@ class NeuralMCTS:
             for node in cands[:max_nodes]
         ]
 
+    def interior_sibling_groups(
+        self,
+        root_board: Board,
+        *,
+        min_parent_visits: int = 16,
+        min_child_visits: int = 3,
+        max_groups: int = 6,
+        max_children: int = 8,
+    ) -> list[list[tuple[object, int, float]]]:
+        """Harvest SIBLING GROUPS from the search tree for the ranking loss
+        (STEP B.1, DECISIONS 2026-06-05 pm-3). For each well-visited interior
+        PARENT node, return its visited children as a group:
+        `[(child_board, child_player_to_move, child_Q)]` with child_Q in the
+        child's OWN POV.
+
+        Why this works: STEP A/B.0 showed an MSE-trained value head ranks
+        sibling moves at CHANCE (τ≈0.08) even when it fits the target globally
+        (corr 0.86) — MSE optimizes global calibration, not local ordering. A
+        listwise ranking loss over these groups trains the head to ORDER a node's
+        children by their search Q — the local discrimination a leaf needs. All
+        children of a node share one player-to-move (Carcassonne splits tile vs
+        meeple actions), so own-POV Q IS the ordering the leaf must reproduce
+        (no per-child flip), and the head's group outputs are directly comparable.
+
+        Requires record_boards=True. Selection: parent expanded, non-terminal,
+        board recorded, N≥min_parent_visits; children (deduped) non-terminal,
+        board recorded, N≥min_child_visits; a group needs ≥2 such children. Top
+        max_groups parents by N; top max_children by N within each group.
+        """
+        scored: list[tuple[int, list[tuple[object, int, float]]]] = []
+        for node in self._nodes.values():
+            if (not node.expanded) or node.is_terminal or node.board is None:
+                continue
+            if node.N < min_parent_visits:
+                continue
+            kids: list[tuple[int, object, int, float]] = []
+            for _a, child in self._deduped_children(node):
+                if (
+                    child.board is None
+                    or child.is_terminal
+                    or child.N < min_child_visits
+                ):
+                    continue
+                kids.append((child.N, child.board, child.player_to_move, float(child.Q)))
+            if len(kids) < 2:
+                continue
+            kids.sort(key=lambda t: t[0], reverse=True)
+            kids = kids[:max_children]
+            scored.append((node.N, [(b, p, q) for (_n, b, p, q) in kids]))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        return [g for (_n, g) in scored[:max_groups]]
+
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)

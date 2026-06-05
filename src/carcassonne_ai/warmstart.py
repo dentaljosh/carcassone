@@ -60,10 +60,19 @@ class GameDataset:
     # → __post_init__ fills all-True, so every existing call site and every old
     # .npz (no aux_mask) behaves exactly as before.
     aux_mask: np.ndarray | None = None
+    # (N,) int64 — sibling-ranking group id (STEP B.1, DECISIONS 2026-06-05 pm-3).
+    # -1 = not in a ranking group (trajectory rows + ungrouped interior rows);
+    # >=0 = a value-only row that is one CHILD of a parent node, sharing its id
+    # with its siblings so the trainer's listwise loss orders the group by search
+    # Q. group_id is globally unique (seed*100000+counter). None on construction /
+    # old .npz → __post_init__ fills all -1 (no ranking rows → ranking loss is 0).
+    group_id: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         if self.aux_mask is None:
             self.aux_mask = np.ones(self.boards.shape[0], dtype=bool)
+        if self.group_id is None:
+            self.group_id = np.full(self.boards.shape[0], -1, dtype=np.int64)
 
     def save(self, path: Path) -> None:
         """Save to a private temp file then atomically rename onto `path`.
@@ -93,6 +102,7 @@ class GameDataset:
             valid_masks=self.valid_masks,
             ownership=self.ownership,
             aux_mask=self.aux_mask,
+            group_id=self.group_id,
         )
         partial.replace(path)
 
@@ -114,6 +124,9 @@ class GameDataset:
                     ownership=data["ownership"],
                     aux_mask=(
                         data["aux_mask"] if "aux_mask" in data.files else None
+                    ),
+                    group_id=(
+                        data["group_id"] if "group_id" in data.files else None
                     ),
                 )
         except Exception as e:
@@ -156,6 +169,7 @@ def rotate_dataset_90(ds: "GameDataset") -> "GameDataset":
         valid_masks=msk,
         ownership=np.ascontiguousarray(np.rot90(ds.ownership, k=1, axes=(2, 3))),
         aux_mask=ds.aux_mask.copy(),  # per-row, orientation-invariant
+        group_id=ds.group_id.copy(),  # per-row id, orientation-invariant
     )
 
 
@@ -178,6 +192,7 @@ def augment_with_rotations(ds: "GameDataset") -> "GameDataset":
         valid_masks=np.concatenate([r.valid_masks for r in rots], axis=0),
         ownership=np.concatenate([r.ownership for r in rots], axis=0),
         aux_mask=np.concatenate([r.aux_mask for r in rots], axis=0),
+        group_id=np.concatenate([r.group_id for r in rots], axis=0),
     )
 
 
@@ -595,6 +610,7 @@ def make_streaming_dataset(
                         torch.from_numpy(ds.valid_masks[i]),
                         torch.from_numpy(ds.ownership[i]),
                         torch.tensor(bool(ds.aux_mask[i]), dtype=torch.bool),
+                        torch.tensor(int(ds.group_id[i]), dtype=torch.int64),
                     )
 
     return StreamingWarmstartDataset()

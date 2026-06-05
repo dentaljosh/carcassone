@@ -184,7 +184,7 @@ def play_one_selfplay_game(
     # search_value_tree harvests tree-interior boards → the learner's MCTS must
     # store each expanded node's board (record_boards). Off for every other mode
     # so eval / normal self-play keep the lean per-node footprint.
-    record_interior = value_target in ("search_value_tree", "v2_7")
+    record_interior = value_target in ("search_value_tree", "v2_7", "search_value_rank")
     learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -239,6 +239,15 @@ def play_one_selfplay_game(
     interior_boards_arr: list[np.ndarray] = []
     interior_scalars_arr: list[np.ndarray] = []
     interior_values_arr: list[float] = []
+    # value_target="search_value_rank" only (STEP B.1): per-interior-row group id
+    # linking SIBLINGS (children of one parent node) so the trainer's listwise
+    # ranking loss can order each group by its search Q. -1 = not in a ranking
+    # group (trajectory rows + the search_value_tree/v2_7 ungrouped interior rows).
+    # group_id = seed*100000 + counter → globally unique across games/files (so a
+    # mixed-file batch never merges two games' groups). Carcassonne games have far
+    # fewer than 100k groups.
+    interior_group_arr: list[int] = []
+    next_group_id = int(seed) * 100000
 
     # Track the pre-terminal board + the terminating action so we can rebuild a
     # meeple-intact terminal state for the ownership aux labels. (We can't read
@@ -320,7 +329,9 @@ def play_one_selfplay_game(
             masks_arr.append(mask.astype(bool))
             players_arr.append(cur_player)
             offsets_arr.append(board.offset)
-            if value_target in ("search_value", "search_value_tree"):
+            if value_target in (
+                "search_value", "search_value_tree", "search_value_rank"
+            ):
                 # root.Q from the search we just ran (root still in mcts._nodes;
                 # select_for_training reads but never clears it). Already current-
                 # player POV → aligns with values_arr; no sign flip. Append in the
@@ -354,6 +365,28 @@ def play_one_selfplay_game(
                         )
                     else:
                         interior_values_arr.append(float(nb_q))
+                    interior_group_arr.append(-1)  # ungrouped
+            elif value_target == "search_value_rank":
+                # STEP B.1 (the ranking loss): harvest SIBLING GROUPS — each
+                # well-visited parent's children, tagged with a shared group_id —
+                # so train_iter's listwise loss orders each group by its search Q.
+                # min_parent_visits ties to interior_min_visits (a parent at least
+                # as visited as a kept child); max_children = interior_max_per_move.
+                for grp in mcts.interior_sibling_groups(
+                    board,
+                    min_parent_visits=max(8, 2 * interior_min_visits),
+                    min_child_visits=interior_min_visits,
+                    max_groups=6,
+                    max_children=interior_max_per_move,
+                ):
+                    gid = next_group_id
+                    next_group_id += 1
+                    for nb, nb_player, nb_q in grp:
+                        oi, si = game.get_canonical_form(nb, nb_player)
+                        interior_boards_arr.append(oi.astype(np.float32))
+                        interior_scalars_arr.append(si.astype(np.float32))
+                        interior_values_arr.append(float(nb_q))
+                        interior_group_arr.append(gid)
 
         prev_board = board
         last_action = int(action)
@@ -378,7 +411,9 @@ def play_one_selfplay_game(
             f"self-play game did not terminate (ply={ply}, max_plies={max_plies})"
             f" — refusing to emit a dataset with mid-game value targets"
         )
-    if value_target in ("search_value", "search_value_tree", "v2_7"):
+    if value_target in (
+        "search_value", "search_value_tree", "v2_7", "search_value_rank"
+    ):
         # Per-position value target recorded per learner ply above — MCTS root.Q
         # (search_value*) or the v2.7 leaf value (v2_7). ~100× more independent
         # labels than the one-per-game outcome z → directly attacks the value
@@ -406,8 +441,8 @@ def play_one_selfplay_game(
         else:
             raise ValueError(
                 "value_target must be 'score_diff', 'score_diff_wide', 'wl', "
-                f"'search_value', 'search_value_tree', or 'v2_7', got "
-                f"{value_target!r}"
+                f"'search_value', 'search_value_tree', 'v2_7', or "
+                f"'search_value_rank', got {value_target!r}"
             )
         values_arr = np.array(
             [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32
@@ -459,6 +494,8 @@ def play_one_selfplay_game(
     masks_full = np.stack(masks_arr)
     ownership_full = ownership_arr
     aux_mask_full = np.ones(len(boards_arr), dtype=bool)  # trajectory rows = full
+    # group_id (STEP B.1): trajectory rows are never in a ranking group → -1.
+    group_id_full = np.full(len(boards_arr), -1, dtype=np.int64)
 
     # search_value_tree: append the harvested tree-interior value-ONLY rows.
     # Their boards/scalars are real (encoded from the interior node + its POV);
@@ -483,6 +520,9 @@ def play_one_selfplay_game(
         aux_mask_full = np.concatenate(
             [aux_mask_full, np.zeros(n_int, dtype=bool)]
         )
+        group_id_full = np.concatenate(
+            [group_id_full, np.array(interior_group_arr, dtype=np.int64)]
+        )
 
     return GameDataset(
         boards=boards_full,
@@ -492,4 +532,5 @@ def play_one_selfplay_game(
         valid_masks=masks_full,
         ownership=ownership_full,
         aux_mask=aux_mask_full,
+        group_id=group_id_full,
     )

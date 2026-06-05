@@ -267,6 +267,65 @@ def test_v2_7_differs_from_search_value_and_outcome() -> None:
     assert not np.allclose(v27.values[aux], sv.values)
 
 
+# --- search_value_rank (STEP B.1: sibling-ranking groups) -------------------
+
+
+def test_search_value_rank_emits_sibling_groups() -> None:
+    """search_value_rank = search_value trajectory rows + value-only interior
+    rows tagged with a group_id linking SIBLINGS. Contract:
+      - trajectory rows: aux=True, group_id=-1;
+      - group rows: aux=False, group_id>=0, and each present group has >=2 members
+        (a parent's children) — the listwise loss needs >=2 to rank;
+      - group_ids are globally offset by seed (seed*100000+).
+    """
+    ds = _play(seed=7, sims=32, temp_threshold=3, value_target="search_value_rank",
+               evaluator=_varied_evaluator, interior_min_visits=2,
+               interior_max_per_move=6)
+    aux = ds.aux_mask.astype(bool)
+    gid = ds.group_id
+    # trajectory rows: full + ungrouped
+    assert np.all(gid[aux] == -1)
+    grouped = gid[~aux]
+    assert grouped.size > 0, "expected sibling-group interior rows at sims=32"
+    assert np.all(grouped >= 0), "interior group rows must have group_id>=0"
+    # each present group has >=2 members
+    uniq, counts = np.unique(grouped, return_counts=True)
+    assert np.all(counts >= 2), f"every group needs >=2 siblings, got {counts}"
+    # seed offset applied (group ids are large, seed*100000+)
+    assert uniq.min() >= 7 * 100000
+
+
+def test_search_value_rank_group_ids_unique_per_game() -> None:
+    """Two different seeds → disjoint group_id ranges (so a mixed-file batch
+    never merges two games' groups)."""
+    a = _play(seed=1, sims=32, temp_threshold=3, value_target="search_value_rank",
+              evaluator=_varied_evaluator, interior_min_visits=2,
+              interior_max_per_move=6)
+    b = _play(seed=2, sims=32, temp_threshold=3, value_target="search_value_rank",
+              evaluator=_varied_evaluator, interior_min_visits=2,
+              interior_max_per_move=6)
+    ga = set(int(x) for x in a.group_id if x >= 0)
+    gb = set(int(x) for x in b.group_id if x >= 0)
+    assert ga and gb and ga.isdisjoint(gb)
+
+
+def test_listwise_ranking_loss_orders_siblings() -> None:
+    """The listwise loss is ~0 when predictions already order siblings like the
+    targets, and large when reversed; 0 when no group has >=2 members."""
+    import torch
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
+    from train_iter import listwise_ranking_loss
+
+    grp = torch.tensor([5, 5, 5, -1], dtype=torch.int64)
+    tgt = torch.tensor([0.9, 0.0, -0.9, 0.5])
+    good = listwise_ranking_loss(tgt.clone(), tgt, grp, 0.2)   # pred==target
+    bad = listwise_ranking_loss(-tgt, tgt, grp, 0.2)            # reversed
+    assert good.item() < bad.item()
+    none = listwise_ranking_loss(tgt, tgt, torch.tensor([-1, -1, -1, -1]), 0.2)
+    assert none.item() == 0.0
+
+
 def test_policy_targets_are_distributions_over_legal_actions() -> None:
     """Each policy row sums to ~1.0 and has zero mass on invalid actions.
 

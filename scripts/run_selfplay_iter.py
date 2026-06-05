@@ -396,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--value-target",
         choices=["score_diff", "score_diff_wide", "wl", "search_value",
-                 "search_value_tree", "v2_7"],
+                 "search_value_tree", "v2_7", "search_value_rank"],
         default="score_diff",
         help="Per-position value target encoding. 'score_diff' (default) = "
              "tanh((p0-p1)/15), the graded margin in the same currency as the "

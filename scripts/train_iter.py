@@ -54,6 +54,41 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from train_warmstart import masked_policy_ownership_loss  # noqa: E402
 
 
+def listwise_ranking_loss(value_pred, value_b, group_b, temp: float):
+    """Listwise sibling-ranking loss (STEP B.1, DECISIONS 2026-06-05 pm-3).
+
+    Within each ranking group (rows sharing group_id >= 0 = the children of one
+    search-tree node), match softmax(value_pred/temp) to softmax(search_Q/temp)
+    via cross-entropy — training the value head to ORDER a node's children by
+    their search Q. This directly optimizes the LOCAL discrimination that MSE
+    cannot (STEP A/B.0: MSE heads rank siblings at chance, τ≈0.08, even fit to
+    the optimal target). Returns a 0 scalar if no group with >=2 members is in
+    the batch (so it's a no-op on non-ranking data / when --rank-weight 0).
+
+    Groups are kept contiguous in the stream (train_iter sets
+    shuffle_within_file=False when ranking is on), so a group's children almost
+    always co-occur in one batch; a group split across a batch boundary just
+    contributes a partial (still-valid) ranking signal. O(#groups) Python loop —
+    cheap vs the forward pass (~tens of groups/batch)."""
+    from collections import defaultdict
+    gids = group_b.tolist()
+    buckets: dict[int, list[int]] = defaultdict(list)
+    for i, gid in enumerate(gids):
+        if gid >= 0:
+            buckets[gid].append(i)
+    losses = []
+    for idxs in buckets.values():
+        if len(idxs) < 2:
+            continue
+        idx = torch.tensor(idxs, device=value_pred.device)
+        logp = F.log_softmax(value_pred[idx] / temp, dim=0)
+        tgt = F.softmax(value_b[idx] / temp, dim=0)
+        losses.append(-(tgt * logp).sum())
+    if not losses:
+        return value_pred.new_zeros(())
+    return torch.stack(losses).mean()
+
+
 def _mean_policy_entropy(net, loader, device) -> float:
     """Mean entropy (nats) of the masked-softmax policy head over `loader`.
 
@@ -67,7 +102,7 @@ def _mean_policy_entropy(net, loader, device) -> float:
     total = 0.0
     n = 0
     with torch.no_grad():
-        for board_b, scalar_b, _policy_b, _value_b, mask_b, _own_b, aux_b in loader:
+        for board_b, scalar_b, _policy_b, _value_b, mask_b, _own_b, aux_b, _grp_b in loader:
             # Skip value-only rows (aux_mask=False): their masks are all-False so
             # the masked softmax is degenerate. Entropy is a POLICY-head signal.
             aux_b = aux_b.bool()
@@ -103,7 +138,7 @@ def _value_outcome_corr(net, loader, device):
     with torch.no_grad():
         # Value applies to ALL rows (incl. aux_mask=False interior rows, whose
         # target is the node's search Q) → no aux subsetting here.
-        for board_b, scalar_b, _policy_b, value_b, _mask_b, _own_b, _aux_b in loader:
+        for board_b, scalar_b, _policy_b, value_b, _mask_b, _own_b, _aux_b, _grp_b in loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             value_b = value_b.to(device, non_blocking=True)
@@ -265,6 +300,19 @@ def main(argv: list[str] | None = None) -> int:
         default=0.15,
         help="Path B ownership aux-loss weight (added to policy CE + value MSE).",
     )
+    p.add_argument(
+        "--rank-weight", type=float, default=0.0,
+        help="STEP B.1 listwise sibling-ranking loss weight (alpha). 0 = off "
+             "(prior behavior). >0 trains the value head to ORDER each search "
+             "node's children by their search Q (needs --value-target "
+             "search_value_rank data with group_id). Sets shuffle_within_file="
+             "False so groups stay batch-contiguous. Sweep 0.5-3.",
+    )
+    p.add_argument(
+        "--rank-temp", type=float, default=0.2,
+        help="Softmax temperature for the ranking loss (both pred and target "
+             "logits divided by it). Lower = sharper ordering target. Sweep 0.1-0.3.",
+    )
     p.add_argument("--val-fraction", type=float, default=0.05)
     p.add_argument("--num-workers", type=int, default=2)
     p.add_argument("--seed", type=int, default=0)
@@ -331,10 +379,13 @@ def main(argv: list[str] | None = None) -> int:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  device: {device}")
 
+    # Ranking loss (STEP B.1) needs a group's children in the SAME batch →
+    # keep them contiguous (no within-file shuffle). Files still shuffle across
+    # epochs, and groups never span files, so this barely affects mixing.
     train_ds = make_streaming_dataset(
         train_files,
         shuffle_files_each_epoch=True,
-        shuffle_within_file=True,
+        shuffle_within_file=(args.rank_weight == 0.0),
         seed=args.seed,
         augment_rotations=args.augment_rotations,
     )
@@ -438,9 +489,10 @@ def main(argv: list[str] | None = None) -> int:
         train_pol_loss = 0.0
         train_val_loss = 0.0
         train_own_loss = 0.0
+        train_rank_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
@@ -456,12 +508,26 @@ def main(argv: list[str] | None = None) -> int:
                 policy_logits, policy_b, mask_b, own_pred, own_b, board_b, aux_b
             )
             val_loss = F.mse_loss(value_pred, value_b)
+            # STEP B.1: listwise sibling-ranking loss (0 unless --rank-weight>0 AND
+            # the batch has groups). Trains the value head to ORDER each node's
+            # children by search Q — the local discrimination MSE misses.
+            if args.rank_weight > 0.0:
+                rank_loss = listwise_ranking_loss(
+                    value_pred, value_b, group_b, args.rank_temp
+                )
+            else:
+                rank_loss = value_pred.new_zeros(())
             # G-T2 (round-2 audit): policy CE (O(2-6) over 2511 actions) dominates
             # value MSE (O(0.1-1)) ~5-10x in the unweighted sum, starving the value
             # head — the exact thing Stage B needs load-bearing. value_loss_weight
             # defaults to 1.0 (prior behavior); sweep it up (1-5x) at Stage B,
             # especially with score_diff_wide which shrinks the value-target scale.
-            loss = pol_loss + args.value_loss_weight * val_loss + args.aux_weight * own_loss
+            loss = (
+                pol_loss
+                + args.value_loss_weight * val_loss
+                + args.aux_weight * own_loss
+                + args.rank_weight * rank_loss
+            )
             if not torch.isfinite(loss):
                 # zero_grad already ran above this batch, so skipping here
                 # leaves no stale gradient to leak into the next batch's step.
@@ -472,21 +538,24 @@ def main(argv: list[str] | None = None) -> int:
             train_pol_loss += pol_loss.item()
             train_val_loss += val_loss.item()
             train_own_loss += own_loss.item()
+            train_rank_loss += float(rank_loss.item())
             n_batches += 1
         if nan_skipped:
             print(f"  [warn] skipped {nan_skipped} NaN-loss batch(es) this epoch")
         train_pol_loss /= max(n_batches, 1)
         train_val_loss /= max(n_batches, 1)
         train_own_loss /= max(n_batches, 1)
+        train_rank_loss /= max(n_batches, 1)
 
         if do_validation:
             net.train(False)
             val_pol_loss = 0.0
             val_val_loss = 0.0
             val_own_loss = 0.0
+            val_rank_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
@@ -501,14 +570,22 @@ def main(argv: list[str] | None = None) -> int:
                     val_pol_loss += v_pol_loss.item()
                     val_val_loss += F.mse_loss(value_pred, value_b).item()
                     val_own_loss += v_own_loss.item()
+                    if args.rank_weight > 0.0:
+                        val_rank_loss += float(
+                            listwise_ranking_loss(
+                                value_pred, value_b, group_b, args.rank_temp
+                            ).item()
+                        )
                     v_n += 1
             val_pol_loss /= max(v_n, 1)
             val_val_loss /= max(v_n, 1)
             val_own_loss /= max(v_n, 1)
+            val_rank_loss /= max(v_n, 1)
         else:
             val_pol_loss = float("nan")
             val_val_loss = float("nan")
             val_own_loss = float("nan")
+            val_rank_loss = float("nan")
 
         elapsed = time.perf_counter() - t0
         epoch_metric = {
@@ -518,21 +595,27 @@ def main(argv: list[str] | None = None) -> int:
             "train_pol_loss": round(train_pol_loss, 4),
             "train_val_loss": round(train_val_loss, 4),
             "train_own_loss": round(train_own_loss, 4),
+            "train_rank_loss": round(train_rank_loss, 4),
             "val_pol_loss": round(val_pol_loss, 4) if do_validation else None,
             "val_val_loss": round(val_val_loss, 4) if do_validation else None,
             "val_own_loss": round(val_own_loss, 4) if do_validation else None,
+            "val_rank_loss": round(val_rank_loss, 4) if do_validation else None,
         }
         metrics["epochs"].append(epoch_metric)
+        rank_str = (
+            f" rank={train_rank_loss:.4f}" + (f"/{val_rank_loss:.4f}" if do_validation else "")
+            if args.rank_weight > 0.0 else ""
+        )
         if do_validation:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
                 f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  "
-                f"val pol/val/own={val_pol_loss:.3f}/{val_val_loss:.4f}/{val_own_loss:.4f}"
+                f"val pol/val/own={val_pol_loss:.3f}/{val_val_loss:.4f}/{val_own_loss:.4f}{rank_str}"
             )
         else:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
-                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}  (no val)"
+                f"train pol/val/own={train_pol_loss:.3f}/{train_val_loss:.4f}/{train_own_loss:.4f}{rank_str}  (no val)"
             )
         sys.stdout.flush()
         if sched is not None:

@@ -264,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
         train_own_loss = 0.0
         n_batches = 0
         nan_skipped = 0
-        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in train_loader:
+        for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, _group_b in train_loader:
             board_b = board_b.to(device, non_blocking=True)
             scalar_b = scalar_b.to(device, non_blocking=True)
             policy_b = policy_b.to(device, non_blocking=True)
@@ -304,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
             val_own_loss = 0.0
             v_n = 0
             with torch.no_grad():
-                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b in val_loader:
+                for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, _group_b in val_loader:
                     board_b = board_b.to(device, non_blocking=True)
                     scalar_b = scalar_b.to(device, non_blocking=True)
                     policy_b = policy_b.to(device, non_blocking=True)
