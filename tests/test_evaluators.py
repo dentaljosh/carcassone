@@ -170,3 +170,54 @@ def test_v25_batch_value_wrapper_blend() -> None:
     assert np.allclose(v1, V_NN, atol=1e-6)
     v_mid = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.5))(boards)[1]
     assert np.allclose(v_mid, 0.5 * h + 0.5 * V_NN, atol=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# v2.5 leaf wrapper — RESIDUAL mode (Lever 1, 2026-06-05)
+# ---------------------------------------------------------------------------
+
+
+def test_v25_value_wrapper_residual_mode_and_clip() -> None:
+    """residual_scale>0 → leaf = clip(h + scale·v_nn, ±1). It takes precedence
+    over value_blend, and a large residual is clipped to the tanh range."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    base = lambda b: (np.zeros(A, dtype=np.float32), 0.4)  # noqa: E731
+
+    h = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(board)[1]
+    # scale=0.5, small residual stays in range → exact h + 0.5·0.4.
+    r = make_v25_value_wrapper(base, replace(DEFAULT_CONFIG, residual_scale=0.5))(board)[1]
+    assert abs(r - max(-1.0, min(1.0, h + 0.5 * 0.4))) < 1e-6
+    # residual takes precedence over a set value_blend.
+    rb = make_v25_value_wrapper(
+        base, replace(DEFAULT_CONFIG, residual_scale=0.5, value_blend=0.9)
+    )(board)[1]
+    assert abs(rb - r) < 1e-6
+    # huge residual → clipped to ±1.
+    base_hi = lambda b: (np.zeros(A, dtype=np.float32), 5.0)  # noqa: E731
+    assert make_v25_value_wrapper(base_hi, replace(DEFAULT_CONFIG, residual_scale=1.0))(board)[1] == 1.0
+    base_lo = lambda b: (np.zeros(A, dtype=np.float32), -5.0)  # noqa: E731
+    assert make_v25_value_wrapper(base_lo, replace(DEFAULT_CONFIG, residual_scale=1.0))(board)[1] == -1.0
+
+
+def test_v25_batch_value_wrapper_residual_mode_and_clip() -> None:
+    """Batched residual wrapper matches the single wrapper + clips per-board."""
+    from dataclasses import replace
+
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+    g, board = _board_with_branching()
+    A = action_size(board.offset.size)
+    boards = [board, board]
+    base = lambda bs: (  # noqa: E731
+        np.zeros((len(bs), A), dtype=np.float32),
+        np.array([0.4, 5.0], dtype=np.float32),
+    )
+    h = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, value_blend=0.0))(boards)[1]
+    r = make_v25_batch_value_wrapper(base, replace(DEFAULT_CONFIG, residual_scale=0.5))(boards)[1]
+    assert abs(r[0] - max(-1.0, min(1.0, float(h[0]) + 0.5 * 0.4))) < 1e-6
+    assert r[1] == 1.0  # h + 0.5·5.0 > 1 → clipped to +1

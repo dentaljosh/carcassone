@@ -184,7 +184,9 @@ def play_one_selfplay_game(
     # search_value_tree harvests tree-interior boards → the learner's MCTS must
     # store each expanded node's board (record_boards). Off for every other mode
     # so eval / normal self-play keep the lean per-node footprint.
-    record_interior = value_target in ("search_value_tree", "v2_7", "search_value_rank")
+    record_interior = value_target in (
+        "search_value_tree", "v2_7", "search_value_rank", "residual"
+    )
     learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -344,7 +346,17 @@ def play_one_selfplay_game(
                 # REPRESENT v2.7's sibling-ranking under MSE (STEP A: the outcome/
                 # search-Q head ranks siblings at ~chance, τ=0.08, vs v2.7's 0.58).
                 search_values_arr.append(_v27_leaf_value(board.state, cur_player))
-            if value_target in ("search_value_tree", "v2_7"):
+            elif value_target == "residual":
+                # Lever 1 (DECISIONS 2026-06-05): the head predicts the RESIDUAL
+                # Δ = search-Q − v2.7 leaf value (both current-player POV). At leaf
+                # time the wrapper computes tanh(vs2/15) + scale·Δ, so the value
+                # inherits v2.7's sibling-ranking and only nudges it where the deep
+                # search disagrees with the heuristic.
+                search_values_arr.append(
+                    float(mcts.root_value(board))
+                    - _v27_leaf_value(board.state, cur_player)
+                )
+            if value_target in ("search_value_tree", "v2_7", "residual"):
                 # Harvest tree-INTERIOR value targets from the search we just ran
                 # (tree still live; next-iter clear() hasn't fired) — the
                 # off-trajectory positions search actually queries. search_value_tree
@@ -362,6 +374,12 @@ def play_one_selfplay_game(
                     if value_target == "v2_7":
                         interior_values_arr.append(
                             _v27_leaf_value(nb.state, nb_player)
+                        )
+                    elif value_target == "residual":
+                        # Δ = search-Q − v2.7 leaf value at this interior node
+                        # (Lever 1; same residual target as the trajectory rows).
+                        interior_values_arr.append(
+                            float(nb_q) - _v27_leaf_value(nb.state, nb_player)
                         )
                     else:
                         interior_values_arr.append(float(nb_q))
@@ -412,7 +430,7 @@ def play_one_selfplay_game(
             f" — refusing to emit a dataset with mid-game value targets"
         )
     if value_target in (
-        "search_value", "search_value_tree", "v2_7", "search_value_rank"
+        "search_value", "search_value_tree", "v2_7", "search_value_rank", "residual"
     ):
         # Per-position value target recorded per learner ply above — MCTS root.Q
         # (search_value*) or the v2.7 leaf value (v2_7). ~100× more independent
@@ -441,8 +459,8 @@ def play_one_selfplay_game(
         else:
             raise ValueError(
                 "value_target must be 'score_diff', 'score_diff_wide', 'wl', "
-                f"'search_value', 'search_value_tree', 'v2_7', or "
-                f"'search_value_rank', got {value_target!r}"
+                f"'search_value', 'search_value_tree', 'v2_7', "
+                f"'search_value_rank', or 'residual', got {value_target!r}"
             )
         values_arr = np.array(
             [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32

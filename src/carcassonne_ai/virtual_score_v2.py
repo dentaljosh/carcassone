@@ -78,6 +78,13 @@ class LeafConfig:
         into the leaf value — `leaf = (1-λ)·tanh(vs2/15) + λ·v_nn` (Option 2,
         2026-05-17). 0.0 = pure heuristic leaf (v2.7 production). Read by
         `evaluators.make_v25_value_wrapper`, not by `virtual_score_v2` itself.
+      residual_scale: if > 0, the leaf wrapper treats the network value head as a
+        RESIDUAL on top of v2.7 — `leaf = clip(tanh(vs2/15) + scale·v_nn, ±1)`
+        (Lever 1, 2026-06-05). The head is trained (value_target="residual") to
+        predict Δ = search-Q − tanh(vs2/15); the leaf inherits v2.7's local
+        sibling-ranking BY CONSTRUCTION and corrects it where Δ has signal. Takes
+        precedence over value_blend when both > 0. Read by the leaf wrapper, not
+        by `virtual_score_v2` itself.
     """
     closure_p: dict[int, float]
     bonus_cap: float
@@ -86,6 +93,7 @@ class LeafConfig:
     tile_counting_closure: bool = False
     closure_continuous_slack: float = 0.0
     value_blend: float = 0.0
+    residual_scale: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -111,6 +119,7 @@ def _config_from_env() -> LeafConfig:
         opp_bonus_cap=float(os.environ.get("CARCASSONNE_V25_OPP_CAP", str(bonus_cap))),
         meeple_k=float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0")),
         value_blend=float(os.environ.get("CARCASSONNE_V25_VALUE_BLEND", "0.0")),
+        residual_scale=float(os.environ.get("CARCASSONNE_V25_RESIDUAL_SCALE", "0.0")),
         tile_counting_closure=(os.environ.get("CARCASSONNE_V25_TILE_COUNTING") == "1"),
         closure_continuous_slack=float(os.environ.get("CARCASSONNE_V25_CLOSURE_SLACK", "0.0")),
     )

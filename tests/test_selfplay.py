@@ -326,6 +326,48 @@ def test_listwise_ranking_loss_orders_siblings() -> None:
     assert none.item() == 0.0
 
 
+# --- residual (Lever 1: head predicts Δ = search-Q − v2.7 leaf) -------------
+
+
+def test_residual_target_equals_searchQ_minus_v27() -> None:
+    """value_target='residual' → each trajectory row's value is exactly
+    (search root.Q) − (v2.7 leaf value) at that position. Verify against a
+    search_value run (root.Q) and a v2_7 run (v2.7 leaf) on the SAME seeded
+    game — the three share an identical trajectory, so per-row:
+        residual_traj == search_value − v2_7_traj.
+    """
+    res = _play(seed=11, sims=8, temp_threshold=3, value_target="residual",
+                evaluator=_varied_evaluator, interior_min_visits=2,
+                interior_max_per_move=8)
+    sv = _play(seed=11, sims=8, temp_threshold=3, value_target="search_value",
+               evaluator=_varied_evaluator)
+    v27 = _play(seed=11, sims=8, temp_threshold=3, value_target="v2_7",
+                evaluator=_varied_evaluator, interior_min_visits=2,
+                interior_max_per_move=8)
+    res_traj = res.values[res.aux_mask.astype(bool)]
+    v27_traj = v27.values[v27.aux_mask.astype(bool)]
+    assert len(res_traj) == len(sv.values) == len(v27_traj)
+    assert np.allclose(res_traj, sv.values - v27_traj, atol=1e-6), (
+        "residual trajectory targets must equal search_value − v2_7"
+    )
+
+
+def test_residual_emits_ungrouped_interior_rows() -> None:
+    """residual (like search_value_tree) emits value-only interior rows tagged
+    group_id=-1 (it trains with plain MSE, not the ranking loss). Residuals can
+    span [-2, 2] (Q − v2.7, each in [-1,1]); just require finite + in range."""
+    ds = _play(seed=3, sims=24, temp_threshold=3, value_target="residual",
+               evaluator=_varied_evaluator, interior_min_visits=2,
+               interior_max_per_move=8)
+    aux = ds.aux_mask.astype(bool)
+    assert int((~aux).sum()) > 0, "expected interior rows at sims=24"
+    assert np.all(ds.group_id == -1), "residual interior rows are ungrouped"
+    iv = ds.values[~aux]
+    assert np.all(np.isfinite(iv)) and np.all(np.abs(iv) <= 2.0)
+    assert np.all(ds.policies[~aux] == 0.0)
+    assert not np.any(ds.valid_masks[~aux])
+
+
 def test_policy_targets_are_distributions_over_legal_actions() -> None:
     """Each policy row sums to ~1.0 and has zero mass on invalid actions.
 

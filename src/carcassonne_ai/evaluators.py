@@ -152,6 +152,7 @@ def make_v25_value_wrapper(
 
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
+    resid = eff_cfg.residual_scale
 
     def wrapped(board: Board) -> tuple[np.ndarray, float]:
         st = board.state
@@ -182,6 +183,11 @@ def make_v25_value_wrapper(
                     del st._city_cache
                 except AttributeError:
                     pass
+        if resid > 0.0:
+            # Lever 1: network value head is a RESIDUAL on the v2.7 leaf. Clip to
+            # the tanh range so a large Δ can't push the leaf out of [-1, 1].
+            leaf = h + resid * float(v_nn)
+            return priors, max(-1.0, min(1.0, leaf))
         if blend > 0.0:
             return priors, (1.0 - blend) * h + blend * float(v_nn)
         return priors, h
@@ -204,6 +210,7 @@ def make_v25_batch_value_wrapper(
 
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
+    resid = eff_cfg.residual_scale
 
     def wrapped_batch(boards: list[Board]) -> tuple[np.ndarray, np.ndarray]:
         if not boards:
@@ -245,6 +252,10 @@ def make_v25_batch_value_wrapper(
                         del st._city_cache
                     except AttributeError:
                         pass
+        if resid > 0.0:
+            # Lever 1: residual leaf — clip to the tanh range (see single wrapper).
+            leaf = h + resid * values_nn.astype(np.float32)
+            return priors, np.clip(leaf, -1.0, 1.0)
         if blend > 0.0:
             return priors, (1.0 - blend) * h + blend * values_nn.astype(np.float32)
         return priors, h
