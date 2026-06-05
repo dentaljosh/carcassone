@@ -170,3 +170,60 @@ by own-POV Q matches leaf use. The real work is the **batch-grouped listwise
 loss** in train_iter (keep whole groups in a batch; segment-softmax by group_id).
 ⚠️ remotes were synced to `a7691e4` for STEP B.0; re-bundle-sync after new commits
 before any 3-box harvest run.
+
+## STEP B.1 — RESULT (2026-06-05 Shabbos sweep): helps but INSUFFICIENT
+Built (`369677f`) + swept (`88a5b5e`, `scripts/rank_sweep.sh` over α∈{.5,1,3}×τ∈{.1,.3},
+each train + λ-curve n=200 vs HeuristicMCTS@200; output `/mnt/c/carc-shared/rank_sweep`,
+verdict via `scripts/rank_sweep_summary.py`). **Read the MARGINAL (λ0.5 − λ0), not
+absolute λ0.5** — absolute is confounded by the policy baseline (λ0 ≈ +70 here;
+the rank_data α=0 baseline gated +74). The value head is an ASSET only if
+marginal ≥ ~0.
+
+| head/config | λ0 | λ0.5 | **marginal** | note |
+|---|---|---|---|---|
+| searchval (MSE) | +56 | −24 | **−80** | step-1 |
+| GP (MSE) | +56 | −38 | **−94** | step-2 |
+| **a05t01 (rank α=.5)** | +64 | +6.9 | **−67** | only COMPLETE config |
+| a10t01 / a30t03 (rank) | +63/+69 | partial+noisy | (TBD) | n<80, swinging |
+
+**Verdict: the ranking loss HELPS (best marginal −67 beats pure-MSE −80/−94; the
+λ1.0 pure-NN-leaf crater shrank to −356 vs −576/−604) but does NOT make the value
+an asset** — no config reached marginal ≥ 0. (⚠️ an early "+6.9 clears the gate"
+call was RETRACTED — within noise of 0 AND policy-confounded; the marginal is what
+matters.) Final numbers when the sweep's n=200 evals complete (~4-5am).
+
+## NEXT — the 4-lever auto-sequencer (Joshua, 2026-06-05 pm)
+The ranking-loss sweep tuned ONE lever (α×τ of the listwise loss). It helped but
+fell short → **design all 4 genuinely-different levers and wire them to run
+SEQUENTIALLY + automatically** (a multi-lever runner: gen→train→λ-curve per lever,
+judged on the **marginal λ0.5−λ0 ≥ 0** gate, early-stop on a winner, resumable like
+`rank_sweep.sh`). Levers:
+
+1. **predict-v2.7 + residual.** Value head outputs a residual Δ; the leaf uses
+   `v2.7 + Δ` → inherits v2.7's local consistency BY CONSTRUCTION (so it ranks
+   siblings ≥ v2.7) and can exceed it via Δ. Build: a new leaf mode in
+   `evaluators.make_v25_value_wrapper` (`leaf = tanh(vs2/15) + scale·v_nn` instead
+   of a blend), and a Δ target = (search-Q − v2.7) at each position (store v2.7 at
+   gen time, like the `v2_7` mode; train value-MSE on the residual). Cheapest /
+   most likely to clear the gate.
+2. **per-node-centered targets.** Subtract the node-mean child-Q from each group
+   row's target → the value fits RELATIVE sibling differences directly. Reuse the
+   `group_id` harvest (group_id → node membership → node mean). Multi-task with the
+   absolute-Q MSE so backup keeps a sane scale. A different loss than listwise.
+3. **in-loop flywheel.** Take the best value net (from levers 1-3) and use it as a
+   λ-leaf (e.g. λ=0.5) in NEW self-play, retrain on that self-play's search data,
+   ITERATE — value+search co-adapt (KataGo; the regroup's #1 rec; the one thing the
+   one-shot sweep can't test). `STAGE_B_BLEND`/`STAGE_B_BLEND_CONST` in
+   `run_pathb_cluster_loop.sh` already do value-blend-in-self-play; wire the
+   value_target + a keep-best-on-marginal gate.
+4. **measurement / accept the ceiling.** If 1-3 all fail, the v2.7-leaf ceiling is
+   real (now ~6× confirmed) → build the non-saturated odometer (asymmetric-compute
+   ladder `scripts/ladder_asymmetric.py` = rung 1; + diverse non-v2.7 opponents +
+   deck-paired cross-play) to measure absolute strength, OR pursue a fundamentally
+   different leaf (better hand-features), OR accept ~strong-human and revisit the
+   goal. (Not an auto-run experiment like 1-3; a branch/decision.)
+
+**Sequencer design (to flesh out post-compaction):** one driver that runs levers
+1→2→3 as stages (each = its own gen [if needed] + train + λ-curve), writes
+results.csv + manifests, gates each on marginal≥0, and stops/flags when one clears
+(then hand to the flywheel). Lever 4 is the fallback branch if all fall short.
