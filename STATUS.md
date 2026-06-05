@@ -2,16 +2,20 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-05) — 🟢 CLUSTER IDLE. FLYWHEEL **step 1 BUILT + VALIDATED → one-shot insufficient.** ⏭ NEXT = **DECISION: step 2 (global pooling) vs step 3 (iterated ramp)** — recommending step 2 first (awaiting Joshua).
+## Right now (2026-06-05 pm) — 🟢 CLUSTER IDLE. FLYWHEEL **steps 1 & 2 BOTH FAIL the value-as-leaf gate.** ⏭ DECISION (Joshua) = **attack the value LOSS (decision-ranking)**. NEXT ACTION = build STEP A (offline decision-ranking probe) per [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md).
 
-**✅ STEP 1 VERDICT (2026-06-05, see DECISIONS 2026-06-05 + `results.csv: searchval_tree_iter00_blend{00,05,10}_*`):** Built `search_value_tree` (value learns the MCTS **tree interior**; `67fd90e`) — full pytest green, plumbing-validated. Ran the 400-game validation (warm iter_01, 3 epochs). The interior-trained net:
-- held-out value↔search-Q corr **0.84** (vs trajectory head 0.46) — value DID learn the interior ✓
-- **λ-curve vs HeuristicMCTS@200 (n=100 paired): λ0=+56 ±35 → λ0.5=−24 ±35 → λ1.0=crater (0/14).**
-- **One-shot interior training did NOT make the value usable as a search leaf** — value-in-leaf still degrades strength monotonically, same shape as the trajectory head (+96→−37→−576), all within ~1σ. Corr nearly doubled but search usefulness didn't move → **value↔Q corr is the WRONG gauge (3rd confirmation).** Mechanism: value learned the *v2.7-guided* interior; blending shifts the distribution again (KataGo needs MANY in-loop iters, not one).
+**✅ VERDICT (TRIPLY confirmed): a 0.84-outcome-corr value is NOT a usable MCTS leaf** — not fixed by interior data (step 1) or board-wide context (step 2). λ-curve vs HeuristicMCTS@200 (n=100 paired), `results.csv: searchval_tree*`:
 
-**⏭ NEXT LEVER (recommendation, pending Joshua):** the cheap one-shot test is exhausted; both remaining levers are expensive. **Step 2 (global pooling) FIRST** — a one-shot value-architecture upgrade (`cat[trunk.mean,trunk.amax]` → value head; the 6×96 conv+flatten can't integrate board-wide farm/meeple state) is cheap to test (retrain once, re-measure λ). Only commit to **step 3 (full iterated λ-ramp)** once a net clears λ=0.5≥0. Cost of step 2 = a warmstart retrain from scratch (value_fc1 input dim changes). Net for the validation is at `/mnt/c/carc-shared/searchval_tree/ckpt/iter_00.pt`.
+| net | corr | λ0 | λ0.5 | λ1.0 |
+|---|---|---|---|---|
+| search_value_tree (interior, `67fd90e`) | 0.84 | +56 | −24 | −576 |
+| + global pooling (step 2, `e4a77ed`) | 0.84 | ~+56 | −38 | −552 |
 
-**🔧 Side wins this session:** (a) **9p training-stall fix** (`train_iter --stage-local` → copy buffer to ext4 before streaming; wired into the loop; `47fd796`) — a drvfs/9p stall had wedged the validation train mid-epoch (GPU idle ~50min); (b) **Xeon direct-WSL-ssh LIVE** (`ee0c090`) — `ssh xeon-wsl "a && b | c"` works like the laptop (sshd:2222 + portproxy; cmd.exe hop gone; `ssh xeon`:22 still the fallback; after a Xeon reboot run `scripts/xeon/refresh_xeon_wsl_proxy.sh`); (c) **odometer rung 1** `scripts/ladder_asymmetric.py` (asymmetric v2.7 ladder, `07ebda8`).
+corr tripled vs the original outcome head (0.29) while value-in-leaf stayed a ~80–120-elo liability → **value↔Q corr is the WRONG gauge** (now demonstrated deep, not fixable by data/arch).
+
+**⏭ DECISION = ATTACK THE VALUE LOSS** (full plan: [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md)). Hypothesis: a leaf must RANK sibling moves (relative), not predict the absolute outcome; outcome/Q-MSE optimizes the wrong thing (v2.7 corr 0.61 but locally consistent → good leaf). **NEXT ACTION = STEP A (cheap gate, ~1-2hr, NO training):** offline decision-ranking probe — harvest decision nodes' sibling sets `(child board, search-Q oracle, v2.7 value)`, compare value-net vs v2.7 vs search-Q rankings (Kendall-τ / oracle-regret). Predict value-net τ LOW despite corr 0.84, v2.7 τ HIGH → confirms the loss is the problem → STEP B (ranking-loss retrain; success = λ0.5≥0). Step 3 (iterated ramp) DEFERRED (gate λ0.5≥0 unmet). Nets on share: `searchval_tree/ckpt/iter_00.pt` (interior), GP net at `/tmp/svtree_gp/ckpt/iter_00.pt` (local; copy to share if needed).
+
+**🔧 Infra wins (this session):** (a) **9p training-stall fix** (`train_iter --stage-local`; `47fd796`) — drvfs/9p wedged a train mid-epoch; (b) **Xeon direct-WSL-ssh LIVE** (`ee0c090`) — `ssh xeon-wsl "a && b | c"` works like the laptop (sshd:2222 + portproxy; cmd.exe hop GONE; `ssh xeon`:22 fallback; after a Xeon reboot run `scripts/xeon/refresh_xeon_wsl_proxy.sh`; ⚠️ detached launches over xeon-wsl need `setsid … </dev/null &`, NOT `& disown`); (c) **odometer rung 1** `scripts/ladder_asymmetric.py` (`07ebda8`).
 
 ---
 _(below: the regroup that produced the flywheel decision — context for the build)_
