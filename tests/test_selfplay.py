@@ -326,6 +326,29 @@ def test_listwise_ranking_loss_orders_siblings() -> None:
     assert none.item() == 0.0
 
 
+def test_centered_group_mse_offset_invariant_and_orders() -> None:
+    """The Lever 2 centered MSE: 0 when pred matches target up to a per-group
+    CONSTANT (centering removes absolute level), and large when reversed; 0 when
+    no group has >=2 members."""
+    import torch
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
+    from train_iter import centered_group_mse
+
+    grp = torch.tensor([5, 5, 5, -1], dtype=torch.int64)
+    tgt = torch.tensor([0.9, 0.0, -0.9, 0.5])
+    exact = centered_group_mse(tgt.clone(), tgt, grp)
+    assert exact.item() < 1e-6
+    # a per-group constant offset is FREE (absolute level doesn't matter).
+    offset = centered_group_mse(tgt + 0.37, tgt, grp)
+    assert offset.item() < 1e-6
+    # reversed ordering → large.
+    bad = centered_group_mse(-tgt, tgt, grp)
+    assert bad.item() > exact.item() + 0.1
+    none = centered_group_mse(tgt, tgt, torch.tensor([-1, -1, -1, -1]))
+    assert none.item() == 0.0
+
+
 # --- residual (Lever 1: head predicts Δ = search-Q − v2.7 leaf) -------------
 
 

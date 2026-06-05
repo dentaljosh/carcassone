@@ -89,6 +89,37 @@ def listwise_ranking_loss(value_pred, value_b, group_b, temp: float):
     return torch.stack(losses).mean()
 
 
+def centered_group_mse(value_pred, value_b, group_b):
+    """Per-node-centered MSE (Lever 2, DECISIONS 2026-06-05).
+
+    Within each group (rows sharing group_id >= 0 = one search node's children),
+    subtract the group MEAN from BOTH prediction and target, then MSE on the
+    centered residuals. This fits the WITHIN-node relative sibling-Q differences
+    — the local discrimination that decides a move — WITHOUT constraining the
+    absolute level (the plain value-MSE keeps that sane, so the two are
+    multi-tasked). A regression objective for the same goal the listwise loss
+    targets with a ranking objective; a genuinely different lever. Returns a 0
+    scalar if no group with >=2 members is in the batch (no-op on --center-weight
+    0 / non-group data). O(#groups) Python loop, cheap vs the forward pass."""
+    from collections import defaultdict
+    gids = group_b.tolist()
+    buckets: dict[int, list[int]] = defaultdict(list)
+    for i, gid in enumerate(gids):
+        if gid >= 0:
+            buckets[gid].append(i)
+    losses = []
+    for idxs in buckets.values():
+        if len(idxs) < 2:
+            continue
+        idx = torch.tensor(idxs, device=value_pred.device)
+        p = value_pred[idx]
+        t = value_b[idx]
+        losses.append(F.mse_loss(p - p.mean(), t - t.mean()))
+    if not losses:
+        return value_pred.new_zeros(())
+    return torch.stack(losses).mean()
+
+
 def _mean_policy_entropy(net, loader, device) -> float:
     """Mean entropy (nats) of the masked-softmax policy head over `loader`.
 
@@ -313,6 +344,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Softmax temperature for the ranking loss (both pred and target "
              "logits divided by it). Lower = sharper ordering target. Sweep 0.1-0.3.",
     )
+    p.add_argument(
+        "--center-weight", type=float, default=0.0,
+        help="Lever 2 per-node-centered MSE weight (beta). 0 = off. >0 adds a "
+             "multi-task term fitting the WITHIN-node relative sibling-Q "
+             "differences (group mean subtracted from pred+target) — trains "
+             "local discrimination while the plain value-MSE keeps absolute "
+             "scale. Needs --value-target search_value_rank data (group_id); "
+             "like --rank-weight it sets shuffle_within_file=False. Sweep 0.5-3.",
+    )
     p.add_argument("--val-fraction", type=float, default=0.05)
     p.add_argument("--num-workers", type=int, default=2)
     p.add_argument("--seed", type=int, default=0)
@@ -379,13 +419,15 @@ def main(argv: list[str] | None = None) -> int:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  device: {device}")
 
-    # Ranking loss (STEP B.1) needs a group's children in the SAME batch →
-    # keep them contiguous (no within-file shuffle). Files still shuffle across
-    # epochs, and groups never span files, so this barely affects mixing.
+    # Ranking loss (STEP B.1) and the centered MSE (Lever 2) both need a group's
+    # children in the SAME batch → keep them contiguous (no within-file shuffle)
+    # when either is on. Files still shuffle across epochs, and groups never span
+    # files, so this barely affects mixing.
+    group_loss_on = args.rank_weight > 0.0 or args.center_weight > 0.0
     train_ds = make_streaming_dataset(
         train_files,
         shuffle_files_each_epoch=True,
-        shuffle_within_file=(args.rank_weight == 0.0),
+        shuffle_within_file=(not group_loss_on),
         seed=args.seed,
         augment_rotations=args.augment_rotations,
     )
@@ -490,6 +532,7 @@ def main(argv: list[str] | None = None) -> int:
         train_val_loss = 0.0
         train_own_loss = 0.0
         train_rank_loss = 0.0
+        train_center_loss = 0.0
         n_batches = 0
         nan_skipped = 0
         for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in train_loader:
@@ -517,6 +560,12 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 rank_loss = value_pred.new_zeros(())
+            # Lever 2: per-node-centered MSE (0 unless --center-weight>0 AND the
+            # batch has groups). Fits within-node relative sibling-Q differences.
+            if args.center_weight > 0.0:
+                center_loss = centered_group_mse(value_pred, value_b, group_b)
+            else:
+                center_loss = value_pred.new_zeros(())
             # G-T2 (round-2 audit): policy CE (O(2-6) over 2511 actions) dominates
             # value MSE (O(0.1-1)) ~5-10x in the unweighted sum, starving the value
             # head — the exact thing Stage B needs load-bearing. value_loss_weight
@@ -527,6 +576,7 @@ def main(argv: list[str] | None = None) -> int:
                 + args.value_loss_weight * val_loss
                 + args.aux_weight * own_loss
                 + args.rank_weight * rank_loss
+                + args.center_weight * center_loss
             )
             if not torch.isfinite(loss):
                 # zero_grad already ran above this batch, so skipping here
@@ -539,6 +589,7 @@ def main(argv: list[str] | None = None) -> int:
             train_val_loss += val_loss.item()
             train_own_loss += own_loss.item()
             train_rank_loss += float(rank_loss.item())
+            train_center_loss += float(center_loss.item())
             n_batches += 1
         if nan_skipped:
             print(f"  [warn] skipped {nan_skipped} NaN-loss batch(es) this epoch")
@@ -546,6 +597,7 @@ def main(argv: list[str] | None = None) -> int:
         train_val_loss /= max(n_batches, 1)
         train_own_loss /= max(n_batches, 1)
         train_rank_loss /= max(n_batches, 1)
+        train_center_loss /= max(n_batches, 1)
 
         if do_validation:
             net.train(False)
@@ -596,6 +648,7 @@ def main(argv: list[str] | None = None) -> int:
             "train_val_loss": round(train_val_loss, 4),
             "train_own_loss": round(train_own_loss, 4),
             "train_rank_loss": round(train_rank_loss, 4),
+            "train_center_loss": round(train_center_loss, 4),
             "val_pol_loss": round(val_pol_loss, 4) if do_validation else None,
             "val_val_loss": round(val_val_loss, 4) if do_validation else None,
             "val_own_loss": round(val_own_loss, 4) if do_validation else None,
@@ -606,6 +659,8 @@ def main(argv: list[str] | None = None) -> int:
             f" rank={train_rank_loss:.4f}" + (f"/{val_rank_loss:.4f}" if do_validation else "")
             if args.rank_weight > 0.0 else ""
         )
+        if args.center_weight > 0.0:
+            rank_str += f" center={train_center_loss:.4f}"
         if do_validation:
             print(
                 f"  epoch {epoch+1:2d}/{args.epochs} ({elapsed:.1f}s, {n_batches} batches)  "
