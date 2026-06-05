@@ -5,6 +5,25 @@ mangling, no `wsl -d … -- bash -lc` wrapper, no stage_launcher chicken-egg.
 Root cause of all Xeon friction: `ssh xeon` lands in **Windows cmd.exe**, which
 eats every `&& | ; > ||` and inner quote before bash sees it.
 
+## ✅ AS-EXECUTED (2026-06-05) — LIVE
+`ssh xeon-wsl "echo OK && hostname && uname -r && whoami"` → `OK / VATECH-PC /
+6.6.114.1-microsoft-standard-WSL2 / doctor`. **The cmd.exe hop is gone; operators
+work.** What was done:
+- **PART 1** ran (`scripts/xeon/xeon_wsl_sshd_setup.sh` via the share): sshd in
+  WSL on **:2222**, key-only, 5800x pubkey added, `ssh.service` enabled+active.
+- **PART 2 = portproxy (NOT mirrored)** — lower risk, no `wsl --shutdown`, no CIFS
+  disruption: `netsh advfirewall … localport=2222` + `netsh interface portproxy
+  add v4tov4 listenport=2222 connectaddress=<WSL_IP> connectport=2222`.
+- **PART 3**: `Host xeon-wsl` added to 5800x `~/.ssh/config` (:2222, user doctor).
+- **Fallback intact:** Windows sshd still on :22, so `ssh xeon` always works.
+- **⚠️ Portproxy is pinned to the current WSL NAT IP** → after a Xeon WSL
+  restart/reboot run **`scripts/xeon/refresh_xeon_wsl_proxy.sh`** (from the 5800x)
+  to re-point it. Zero-maintenance alternative: switch to `networkingMode=mirrored`
+  (one `wsl --shutdown`) — the mirrored runbook below is still the upgrade path.
+
+---
+### Original plan (mirrored variant — kept as the optional permanent upgrade)
+
 ## Recon (done 2026-06-04)
 - WSL 2.7.3.0, kernel 6.6.114, **systemd running**, default user `doctor`.
 - **openssh-server NOT installed** in WSL (no sshd/sshd_config).
