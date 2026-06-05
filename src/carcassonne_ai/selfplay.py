@@ -35,6 +35,16 @@ from .mcts import NeuralMCTS
 from .warmstart import GameDataset
 
 
+def _v27_leaf_value(state, player: int) -> float:
+    """v2.7 heuristic leaf value at `state` from `player`'s POV, in [-1, 1] —
+    `tanh(virtual_score_v2(state, player) / 15)`, the SAME currency as the
+    leaf wrapper's value (evaluators.make_v25_value_wrapper). The target for the
+    `value_target="v2_7"` mimic-v2.7 diagnostic (STEP B.0). DEFAULT_CONFIG honors
+    the CARCASSONNE_V25_* env (production v2.7 = DROP_THREE_OPEN, CAP=12)."""
+    from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+    return float(np.tanh(virtual_score_v2(state, player, DEFAULT_CONFIG) / 15.0))
+
+
 # --- throughput-bench instrumentation (gated; zero-cost unless CARC_BENCH_TP set) ---
 _BENCH_TP = os.environ.get("CARC_BENCH_TP")
 _bench_moves = 0
@@ -174,7 +184,7 @@ def play_one_selfplay_game(
     # search_value_tree harvests tree-interior boards → the learner's MCTS must
     # store each expanded node's board (record_boards). Off for every other mode
     # so eval / normal self-play keep the lean per-node footprint.
-    record_interior = value_target == "search_value_tree"
+    record_interior = value_target in ("search_value_tree", "v2_7")
     learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -316,11 +326,20 @@ def play_one_selfplay_game(
                 # player POV → aligns with values_arr; no sign flip. Append in the
                 # SAME is_learner_move guard so it stays index-aligned with players_arr.
                 search_values_arr.append(float(mcts.root_value(board)))
-            if value_target == "search_value_tree":
-                # Harvest tree-INTERIOR (board, Q) value targets from the search
-                # we just ran (tree still live; next-iter clear() hasn't fired).
-                # These value-only rows are the off-trajectory positions the
-                # value head must see — the −576 distribution-mismatch fix.
+            elif value_target == "v2_7":
+                # mimic-v2.7 diagnostic (STEP B.0, DECISIONS 2026-06-05 pm-2): the
+                # target is the v2.7 LEAF VALUE at this position (current-player
+                # POV), NOT the outcome/search-Q. Tests whether a 7M head can even
+                # REPRESENT v2.7's sibling-ranking under MSE (STEP A: the outcome/
+                # search-Q head ranks siblings at ~chance, τ=0.08, vs v2.7's 0.58).
+                search_values_arr.append(_v27_leaf_value(board.state, cur_player))
+            if value_target in ("search_value_tree", "v2_7"):
+                # Harvest tree-INTERIOR value targets from the search we just ran
+                # (tree still live; next-iter clear() hasn't fired) — the
+                # off-trajectory positions search actually queries. search_value_tree
+                # uses the node's converged Q; v2_7 uses the v2.7 leaf value at the
+                # node (so the mimic-v2.7 head also sees v2.7-at-interior, matching
+                # how the leaf is used during search).
                 for nb, nb_player, nb_q in mcts.interior_value_targets(
                     board,
                     min_visits=interior_min_visits,
@@ -329,7 +348,12 @@ def play_one_selfplay_game(
                     oi, si = game.get_canonical_form(nb, nb_player)
                     interior_boards_arr.append(oi.astype(np.float32))
                     interior_scalars_arr.append(si.astype(np.float32))
-                    interior_values_arr.append(float(nb_q))
+                    if value_target == "v2_7":
+                        interior_values_arr.append(
+                            _v27_leaf_value(nb.state, nb_player)
+                        )
+                    else:
+                        interior_values_arr.append(float(nb_q))
 
         prev_board = board
         last_action = int(action)
@@ -354,16 +378,16 @@ def play_one_selfplay_game(
             f"self-play game did not terminate (ply={ply}, max_plies={max_plies})"
             f" — refusing to emit a dataset with mid-game value targets"
         )
-    if value_target in ("search_value", "search_value_tree"):
-        # Per-position MCTS search value (root.Q, current-player POV) recorded
-        # per learner ply above. ~100× more independent value labels than the
-        # one-per-game outcome z → directly attacks the value head's overfitting
-        # (0.79 train → 0.32 held-out; DECISIONS 2026-06-04). Already POV-signed,
-        # so no per-ply z-flip — unlike the outcome targets below.
+    if value_target in ("search_value", "search_value_tree", "v2_7"):
+        # Per-position value target recorded per learner ply above — MCTS root.Q
+        # (search_value*) or the v2.7 leaf value (v2_7). ~100× more independent
+        # labels than the one-per-game outcome z → directly attacks the value
+        # head's overfitting (0.79 train → 0.32 held-out; DECISIONS 2026-06-04).
+        # Already current-player-POV-signed, so no per-ply z-flip.
         if len(search_values_arr) != len(players_arr):
             raise RuntimeError(
-                f"{value_target} mode: recorded {len(search_values_arr)} root.Q "
-                f"values but {len(players_arr)} learner plies — record-site / "
+                f"{value_target} mode: recorded {len(search_values_arr)} value "
+                f"targets but {len(players_arr)} learner plies — record-site / "
                 f"is_learner_move mismatch"
             )
         values_arr = np.array(search_values_arr, dtype=np.float32)
@@ -382,7 +406,8 @@ def play_one_selfplay_game(
         else:
             raise ValueError(
                 "value_target must be 'score_diff', 'score_diff_wide', 'wl', "
-                f"'search_value', or 'search_value_tree', got {value_target!r}"
+                f"'search_value', 'search_value_tree', or 'v2_7', got "
+                f"{value_target!r}"
             )
         values_arr = np.array(
             [z_p0 if p == 0 else -z_p0 for p in players_arr], dtype=np.float32

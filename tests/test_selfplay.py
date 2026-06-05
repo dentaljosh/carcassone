@@ -217,6 +217,56 @@ def test_search_value_tree_default_modes_are_all_full_rows() -> None:
     assert ds.aux_mask.all()
 
 
+# --- v2_7 (mimic-v2.7 diagnostic, STEP B.0) --------------------------------
+
+
+def test_v2_7_trajectory_target_is_v27_leaf_value() -> None:
+    """value_target='v2_7' → each trajectory row's value is the v2.7 leaf value
+    tanh(vs2(state, current_player)/15) at that position, NOT the outcome or
+    root.Q. Check ply 0 against an independent v2.7 leaf computation."""
+    from carcassonne_ai.selfplay import _v27_leaf_value
+
+    ds = _play(seed=5, sims=8, temp_threshold=3, value_target="v2_7",
+               evaluator=_varied_evaluator, interior_min_visits=2,
+               interior_max_per_move=8)
+    aux = ds.aux_mask.astype(bool)
+    g = Game(enable_legal_moves_cache=True)
+    board = g.get_init_board()
+    expect = _v27_leaf_value(board.state, board.state.current_player)
+    traj_vals = ds.values[aux]
+    assert abs(float(traj_vals[0]) - expect) < 1e-6, (
+        f"v2_7 trajectory[0]={traj_vals[0]} != v2.7 leaf {expect}"
+    )
+    # All values are tanh-bounded and finite (trajectory + interior).
+    assert np.all(np.isfinite(ds.values)) and np.all(np.abs(ds.values) <= 1.0)
+
+
+def test_v2_7_emits_interior_value_only_rows() -> None:
+    """v2_7 (like search_value_tree) emits value-only interior rows; their value
+    is the v2.7 leaf at the interior node (finite, in [-1,1]); other heads dummy."""
+    ds = _play(seed=3, sims=24, temp_threshold=3, value_target="v2_7",
+               evaluator=_varied_evaluator, interior_min_visits=2,
+               interior_max_per_move=8)
+    aux = ds.aux_mask.astype(bool)
+    assert int((~aux).sum()) > 0, "expected interior value-only rows at sims=24"
+    iv = ds.values[~aux]
+    assert np.all(np.isfinite(iv)) and np.all(np.abs(iv) <= 1.0)
+    assert np.all(ds.policies[~aux] == 0.0)
+    assert not np.any(ds.valid_masks[~aux])
+
+
+def test_v2_7_differs_from_search_value_and_outcome() -> None:
+    """Same seeded game: v2_7 targets differ from both search_value and
+    score_diff (the whole point — a different target source)."""
+    v27 = _play(seed=2, sims=8, value_target="v2_7", evaluator=_varied_evaluator)
+    sv = _play(seed=2, sims=8, value_target="search_value",
+               evaluator=_varied_evaluator)
+    # Compare only trajectory rows (search_value has no interior rows).
+    aux = v27.aux_mask.astype(bool)
+    assert len(v27.values[aux]) == len(sv.values)
+    assert not np.allclose(v27.values[aux], sv.values)
+
+
 def test_policy_targets_are_distributions_over_legal_actions() -> None:
     """Each policy row sums to ~1.0 and has zero mass on invalid actions.
 

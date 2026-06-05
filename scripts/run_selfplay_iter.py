@@ -395,7 +395,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--temp-threshold", type=int, default=15)
     p.add_argument(
         "--value-target",
-        choices=["score_diff", "score_diff_wide", "wl", "search_value", "search_value_tree"],
+        choices=["score_diff", "score_diff_wide", "wl", "search_value",
+                 "search_value_tree", "v2_7"],
         default="score_diff",
         help="Per-position value target encoding. 'score_diff' (default) = "
              "tanh((p0-p1)/15), the graded margin in the same currency as the "
@@ -414,7 +415,12 @@ def main(argv: list[str] | None = None) -> int:
              "from the search TREE INTERIOR (flywheel step 1, DECISIONS "
              "2026-06-04) — the fix for the −576 pure-NN-leaf distribution "
              "mismatch; the value head sees the off-trajectory positions search "
-             "actually queries (tune via --interior-min-visits/-max-per-move).",
+             "actually queries (tune via --interior-min-visits/-max-per-move). "
+             "'v2_7' = MIMIC-V2.7 diagnostic (STEP B.0, DECISIONS 2026-06-05 "
+             "pm-2): target = the v2.7 leaf value tanh(vs2/15) at each trajectory "
+             "+ interior position (NOT outcome/Q). Tests whether a 7M head can "
+             "represent v2.7's sibling-ranking under MSE (STEP A: the search-Q "
+             "head ranks siblings at ~chance τ=0.08 vs v2.7's 0.58).",
     )
     p.add_argument(
         "--interior-min-visits", type=int, default=8,
