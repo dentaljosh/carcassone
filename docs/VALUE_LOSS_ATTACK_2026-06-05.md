@@ -106,13 +106,38 @@ Then the learned value genuinely can't beat the v2.7 leaf with our resources
 fundamentally different approach (e.g. learn a *better hand-feature* leaf, or
 accept ~strong-amateur+ and revisit the goal). Record honestly.
 
-## NEXT action — STEP A is ✅ DONE & CONFIRMED → build STEP B
-STEP A (`scripts/probe_decision_ranking.py`, committed `98364bd`) decisively
-confirmed the diagnosis (value-net sibling-ranking τ=0.08 ≈ chance vs v2.7 0.58;
-see "STEP A — RESULT" above). The cheap gate passed → the value LOSS is the
-problem.
+## STEP B.0 — mimic-v2.7 RESULT (2026-06-05): the de-risk that became the proof
+Before the full ranking-loss plumbing, the cheap de-risk (`value_target=v2_7`,
+commit `a7691e4`): train a head to predict the **v2.7 LEAF VALUE** tanh(vs2/15) —
+the OPTIMAL target (v2.7 itself ranks siblings at τ=0.60). If MSE-on-v2.7
+recovers τ + clears λ0.5, the original problem was the *target*; if it ALSO ranks
+at chance, the problem is the *loss form*. 3-box gen (400 games, warm iter_01,
+vlw=1.0) → train → re-probe + λ-curve (`mimic_v27/`, results.csv `mimic_v27_*`):
 
-**STEP B build (the ranking-loss retrain) — concrete plumbing:**
+| head | trained on | global fit | **sibling τ** | λ0 | λ0.5 | λ1.0 |
+|---|---|---|---|---|---|---|
+| searchval_tree | deep search-Q | corr 0.84 | 0.081 | +56 | −24 | −576 |
+| **mimic-v2.7** | **v2.7 leaf value** | **corr 0.86** | **0.088** | +3.5* | **−38** | **−604** |
+| v2.7 (reference) | — | — | 0.598 | — | — | — |
+
+**The head fit v2.7 globally (corr 0.86) yet ranks siblings at τ=0.088 — chance,
+identical to the search-Q head, and barely agrees with v2.7 it was trained to
+copy (τ_net,v2.7=0.14).** Same λ-curve failure (λ0.5=−38, λ1.0 craters). (*λ0
++3.5 is the n=100 gate at seed 500000, ~1.5σ below searchval's +56 — noise; the
+games are near-identical across runs. The decisive, low-noise signal is τ.)
+
+**VERDICT (the proof): MSE regression cannot produce a sibling-ranker REGARDLESS
+of target.** Even handed the optimal target it fits global variance but ranks
+locally at chance — the within-node Q differences that decide a move are swamped
+by the head's approximation error. → **the LOSS FORM is the problem, not the
+target → the ranking loss (STEP B.1) is MANDATORY, not optional.** (Quadruply
+confirms value-as-leaf failure; first to isolate the cause to the loss form.)
+
+## NEXT action — STEP A ✅ + STEP B.0 ✅ → build STEP B.1 (the ranking loss)
+STEP A confirmed the value head ranks at chance; STEP B.0 proved MSE can't fix it
+on ANY target. The ranking loss is now the designated (and last clean) lever.
+
+**STEP B.1 build (the ranking-loss retrain) — concrete plumbing:**
 1. **Sibling-set harvest in self-play** (the main cost). New MCTS method
    `interior_sibling_groups(root_board, *, min_parent_visits, min_child_visits,
    max_groups)` → for each well-visited interior PARENT (board recorded via
@@ -132,8 +157,16 @@ problem.
    backup) + α·listwise term; sweep α. (Pairwise-margin is the fallback if
    listwise is finicky.)
 3. **Re-eval the λ-curve** vs HeuristicMCTS@200, n≥100 paired. **SUCCESS = λ0.5 ≥ 0.**
-   Cheaper de-risk first: a value head trained to *mimic v2.7* (target =
-   tanh(vs2/15)) should recover τ≈0.58 + λ0.5≥0 — proves the head CAN represent a
-   good ranker before spending the full in-loop ranking harvest (needs v2.7 target
-   stored at gen time; simpler than sibling grouping).
-⚠️ remotes are STALE (`e4a77ed`) — bundle-sync before any 3-box harvest run.
+   (The mimic-v2.7 de-risk above is the control: MSE on the optimal target gave
+   τ=chance, so any τ-recovery from the ranking loss is attributable to the loss
+   form. If the ranking loss ALSO leaves τ low / λ0.5<0 → "If this ALSO fails".)
+
+Design note (resolved 2026-06-05): all of a node's children share one
+current_player (Carcassonne splits tile vs meeple actions → a node's legal moves
+are one phase), so the harvest is the **existing search_value_tree interior
+harvest + a `group_id` tag** (encode child from its own POV, target = own-POV Q,
+value-only row); head outputs within a group are directly comparable and ranking
+by own-POV Q matches leaf use. The real work is the **batch-grouped listwise
+loss** in train_iter (keep whole groups in a batch; segment-softmax by group_id).
+⚠️ remotes were synced to `a7691e4` for STEP B.0; re-bundle-sync after new commits
+before any 3-box harvest run.

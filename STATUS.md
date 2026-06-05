@@ -2,9 +2,19 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-05 pm) — 🟢 CLUSTER IDLE. **STEP A (decision-ranking probe) ✅ CONFIRMS the value LOSS is the problem.** ⏭ NEXT ACTION = build STEP B (sibling-ranking-loss retrain) per [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md) (full build plumbing in "NEXT action — STEP B build").
+## Right now (2026-06-05 pm) — 🟢 CLUSTER IDLE. **STEP A ✅ + STEP B.0 (mimic-v2.7) ✅ → the value LOSS FORM is the problem (proven). NEXT = build STEP B.1 (ranking loss).** Plan + plumbing: [docs/VALUE_LOSS_ATTACK_2026-06-05.md](docs/VALUE_LOSS_ATTACK_2026-06-05.md) ("STEP B.1 build"). ⏭ This is the LAST clean lever before "v2.7-leaf ceiling is real" — worth a Joshua checkpoint (multi-hour build).
 
-**✅ STEP A RESULT (`98364bd`, `scripts/probe_decision_ranking.py`, n=120 nodes, deep oracle_sims=400, mean k=13.8):** the corr-0.84 value head ranks sibling moves at **~chance** — Kendall-τ vs the deep v2.7-leaf search-Q oracle **+0.081±0.023** (≈22 SE below v2.7's **+0.579±0.024**); top-1 0.15 vs 0.44; oracle regret **1.92 pts vs 0.62 pts** (net's regret 0.0675 tanh ≈ random 0.0794). The two rankers barely agree (τ=0.10). → **a 0.84-outcome-corr value has near-zero local move-discrimination; the loss optimizes the wrong objective.** (`/mnt/c/carc-shared/decision_ranking_svtree/summary.json`.) ⚠️ The 1-ply gap (1.9 vs 0.6 pts) is smaller than the λ1.0=−576 crater → that crater is also compounding-at-depth; **STEP B targets the λ0.5≥0 gate**, not necessarily λ1.0.
+**✅ STEP A (`98364bd`, n=120, oracle_sims=400):** corr-0.84 value head ranks siblings at ~chance — Kendall-τ **+0.081±0.023** vs v2.7 **+0.579**; regret 1.92 vs 0.62 pts (≈ random). → near-zero local move-discrimination.
+
+**✅ STEP B.0 — mimic-v2.7 (`a7691e4`, value_target=v2_7: train the head to predict the v2.7 LEAF VALUE — the OPTIMAL target):** the head fit v2.7 globally (corr **0.86**) yet still ranks siblings at **τ=0.088** (= chance, = the search-Q head; barely agrees with v2.7 it copied, τ=0.14). λ-curve vs HeuristicMCTS@200 n=100: **λ0=+3.5\*, λ0.5=−38, λ1.0=−604** (`results.csv: mimic_v27_*`). → **MSE regression cannot produce a sibling-ranker REGARDLESS of target — the LOSS FORM is the problem, not the target.** (\*λ0 is a noisy n=100 gate; τ is the low-noise signal.)
+
+| head | trained on | global fit | sibling τ | λ0 | λ0.5 | λ1.0 |
+|---|---|---|---|---|---|---|
+| searchval_tree | deep search-Q | corr 0.84 | 0.081 | +56 | −24 | −576 |
+| mimic-v2.7 | v2.7 leaf value | corr 0.86 | 0.088 | +3.5 | −38 | −604 |
+| v2.7 (ref) | — | — | 0.598 | — | — | — |
+
+**⏭ STEP B.1 (ranking loss):** sibling-set harvest (= search_value_tree interior harvest + `group_id`; resolved: a node's children share one POV) + **batch-grouped listwise loss** (segment-softmax of head outputs vs own-POV search-Q within each group) + value-MSE for scale. SUCCESS = λ0.5≥0. If this ALSO fails → v2.7-leaf ceiling is real (5× confirmed) → pivot to measurement / different approach.
 
 **✅ VERDICT (TRIPLY confirmed): a 0.84-outcome-corr value is NOT a usable MCTS leaf** — not fixed by interior data (step 1) or board-wide context (step 2). λ-curve vs HeuristicMCTS@200 (n=100 paired), `results.csv: searchval_tree*`:
 
