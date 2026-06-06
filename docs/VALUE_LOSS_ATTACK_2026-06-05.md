@@ -258,6 +258,16 @@ The B.1 ranking-loss sweep's final verdict: **value still HURTS** — best margi
   `run_pathb_cluster_loop STAGE_B_BLEND` seeded with the winning net+value_target —
   guarded OFF by default (a multi-hour 3-box run wants a human OK on the marginal).
   If no lever clears → it flags the Lever 4 measurement / accept-ceiling decision.
+  ⚠️ **Known gap — the printed l1 flywheel command is mechanism-mismatched:** for
+  Lever 2 (centered, value head ≈ Q) `STAGE_B_BLEND=1` (the value_blend ramp) is
+  correct, but Lever 1's head predicts Δ and its leaf is `v2.7 + scale·Δ` — the
+  residual mode, NOT the blend. `run_pathb_cluster_loop` only ramps `--value-blend`,
+  so an l1 flywheel needs self-play run with `CARCASSONNE_V25_RESIDUAL_SCALE` set
+  (residual leaf takes precedence over blend) + `value_target=residual`, and the
+  per-iter gate (currently value_blend=0) wouldn't capture the residual leaf's
+  contribution. So if **Lever 1** wins, wire the residual-scale-in-self-play path
+  before flywheeling (hand-craft the launch); the printed STAGE_B_BLEND line is a
+  placeholder for l1. l2's printed command is correct as-is.
 
 **To run** (when the cluster frees — the B.1 sweep holds it ~till it finishes):
 `SHARE=/mnt/c/carc-shared nohup nice -n 19 bash scripts/lever_sequencer.sh >
