@@ -227,3 +227,41 @@ judged on the **marginal λ0.5−λ0 ≥ 0** gate, early-stop on a winner, resum
 1→2→3 as stages (each = its own gen [if needed] + train + λ-curve), writes
 results.csv + manifests, gates each on marginal≥0, and stops/flags when one clears
 (then hand to the flywheel). Lever 4 is the fallback branch if all fall short.
+
+## BUILT (2026-06-05): all 4 levers + the auto-sequencer
+The B.1 ranking-loss sweep's final verdict: **value still HURTS** — best marginal
+≈ −51 (a10t01), every config negative; the a30t03 "+12.4 @ n=48" spike decayed to
+−88 @ n=88 (the predicted noise-decay). So all 4 levers were built:
+
+- **Lever 1 — predict-v2.7 + residual** (`44100a9`). `LeafConfig.residual_scale` +
+  `CARCASSONNE_V25_RESIDUAL_SCALE`; both leaf wrappers do `clip(tanh(vs2/15) +
+  scale·v_nn, ±1)` (precedence over blend). `selfplay value_target="residual"`:
+  trajectory + interior rows store Δ = root.Q − v2.7 leaf value (ungrouped, plain
+  MSE). Eval needs no change — the wrapper reads the env-built DEFAULT_CONFIG, so
+  the scale-curve is driven by the env var (mirrors the blend λ-curve). The leaf
+  inherits v2.7's sibling-ranking BY CONSTRUCTION → its marginal can't crater like
+  pure-NN-leaf; **highest-EV / most-likely to clear the gate.**
+- **Lever 2 — per-node-centered MSE** (`d2a6a53`). `train_iter --center-weight β`:
+  `centered_group_mse` subtracts the group mean from BOTH pred and target then MSEs
+  the residuals — fits within-node relative sibling-Q differences while the plain
+  value-MSE keeps absolute scale (multi-task). **Reuses the existing rank_data
+  group_id harvest → NO new gen.** A regression objective for the same goal B.1's
+  listwise ranking loss attacks.
+- **Sequencer + summary** (`2340842`). `scripts/lever_sequencer.sh`: self-contained,
+  single-box, RESUMABLE (per-stage `.done`; eval self-caches). L1 = residual gen
+  (`GEN_GAMES`, default 300) + train + scale-curve {0,0.25,0.5}; L2 = retrain
+  rank_data --center-weight + λ-curve {0,0.5,1.0}. `scripts/lever_summary.py`
+  reports each lever's **marginal ± σ + z** (a low-n point ≥0 is NOT a win) and
+  writes `VERDICT.txt` (WINNER=l1|l2|none).
+- **Lever 3 (flywheel) hand-off** + **Lever 4 branch** are the sequencer's final
+  stage: on a CONFIDENT winner it prints (or with `FLYWHEEL_ON_WIN=1` launches)
+  `run_pathb_cluster_loop STAGE_B_BLEND` seeded with the winning net+value_target —
+  guarded OFF by default (a multi-hour 3-box run wants a human OK on the marginal).
+  If no lever clears → it flags the Lever 4 measurement / accept-ceiling decision.
+
+**To run** (when the cluster frees — the B.1 sweep holds it ~till it finishes):
+`SHARE=/mnt/c/carc-shared nohup nice -n 19 bash scripts/lever_sequencer.sh >
+/tmp/lever_seq.log 2>&1 & disown`. Prereqs verified present: WARM
+`stage_b/ckpt/iter_01.pt`, `rank_data/iter_00`, `data/warmstart/heuristic_tau05`.
+Rough ETA single-box 5800x: L1 gen ~35m + L1 train ~22m + L1 eval ~15m + L2 train
+~22m + L2 eval ~15m ≈ **~1h50m**.
