@@ -25,6 +25,7 @@ Full original spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md). Phase st
 | [docs/PHASE1_BUILD_SPEC_2026-06-02.md](docs/PHASE1_BUILD_SPEC_2026-06-02.md) | Concrete staged build (A→B→C, cheapest-informative-first) executing the correction plan |
 | [experiments/results.csv](experiments/results.csv) | **Source of truth for experiment numbers** (elo/wr). STATUS/EXPERIMENTS/DECISIONS cite it; don't carry authoritative numbers that drift from it. |
 | [REVIEW_LOG.md](REVIEW_LOG.md) | Multi-agent code-review findings: fixes applied (F-numbers) and deliberately deferred items (D-numbers) with rationale |
+| [clean_eval/CLEAN_EVAL_AUDIT.md](clean_eval/CLEAN_EVAL_AUDIT.md) | **The trustworthy-ruler audit (2026-06-07).** Runtime-verified evaluator provenance (`src/carcassonne_ai/eval_provenance.py`, R1/R7 guards) + 11 semantic contracts + 5 clean reruns re-judging every old vs-HeuristicMCTS claim. Use this ruler for any new strength eval; absolutes are NOT blanket-discountable (the leaf effect is non-transitive). |
 | Git log | What each commit did and why |
 | Auto-memory at `~/.claude/projects/-home-doctor-projects-carcassone/memory/` | Workflow feedback (parallelism rules, ETA discipline, hot-path profiling) |
 
