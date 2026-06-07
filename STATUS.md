@@ -2,7 +2,18 @@
 
 > Update this file whenever the active branch, running task, or immediate next step changes. A fresh Claude thread reading [CLAUDE.md](CLAUDE.md) → here should take over without missing a beat. **Current state only.** Historical narrative lives in [DECISIONS.md](DECISIONS.md) (dated entries) + git log — do NOT re-stack old "Right now" blocks here; that's what DECISIONS is for.
 
-## Right now (2026-06-07 pm) — ODOMETER PASSED: the residual gain is REAL (survives out-of-lineage), modest (~doubles heur-equiv depth 325→588), ceiling RAISED not broken. ⏭ NEXT = Joshua's call: accept+fold-in+reassess goal, OR push harder (higher-capacity leaf / careful flywheel).
+## Right now (2026-06-07 pm) — BUILDING A TRUSTWORTHY EVAL RULER (no training). Two outside reviews of `outside_review/` said: repair measurement+provenance before any more training. Phases 1+2 DONE & committed (`1973fc1`); Phase 3 clean reruns RUNNING on all 3 boxes.
+
+**Clean-eval ruler (active priority, 2026-06-07 pm).** Trigger = R1 (the yardstick `HeuristicMCTS` ran the **v1** leaf while the agent ran **v2.7**; the headline Stage-B iter_01 +86.9 → **+48.1** at a matched leaf, `d472d10`). The reviews want this class of defect impossible to miss.
+- **Phase 1 ✅ (committed `677dd3e`):** `src/carcassonne_ai/eval_provenance.py` — runtime-verified provenance (`assert_provenance_consistent` fails if a side CLAIMS v2.7 but ran v1 (R1), or sets residual_scale>0 but the residual path never fired (R7)); `EvaluatorSpec` (full both-sides config), deck hashes, `EVAL_SEED_FLOOR=1e9` namespace guard. `_V25Wrapped`+HeuristicMCTS expose live leaf-path counters. `EVALUATOR_SCHEMA.json`. All 4 eval scripts hardened (`--seed-start 1e9`+guard, deck_hash, evaluator manifest block, `eval_net_vs_heuristic --residual-scale/--provenance-smoke`; `eval_iter_head_to_head` R7 fix `_value_head_needed`). `verify_evaluator_provenance.py` passes (v1-only/v2.7-only/residual-fired + manifest diff).
+- **Phase 2 ✅:** `tests/test_semantic_eval_contracts.py` (11 contracts) + `tests/test_eval_provenance.py` (incl negative tests) = **35/35 green; full suite green**. `gen_semantic_test_report.py` → `clean_eval/SEMANTIC_TEST_REPORT.md`.
+- **Phase 3 ⏳ RUNNING (3-box, `--shared-claim`, `run_clean_eval_reruns.sh`, W=14/10/20):** 5 eval-only reruns, n=400 paired, seed 1e9, sims=200, matched v2.7 opp (CAP=12): (1) heur-v2.7-vs-v1 leaf gap, (2) iter_11, (3) Stage-B iter_01, (4) residual scale 0-vs-0.25 marginal, (5) residual absolute. Out: `/mnt/c/carc-shared/clean_eval_runs/`. Aggregator `summarize_clean_eval.py` → `CLEAN_RESULTS.csv`; `CLEAN_EVAL_AUDIT.md` classifies every old claim (survives/directional/inconclusive/invalidated/not-reproducible) — filled on convergence.
+- **⏭ NEXT:** on convergence, fill the audit + CLEAN_RESULTS.csv, append clean rows to `results.csv`, commit. THEN return to the strength question (below) on a trustworthy ruler.
+
+---
+_(below: the prior active block — the residual/odometer investigation, now paused behind the ruler repair)_
+
+### (paused) ODOMETER PASSED: the residual gain is REAL (survives out-of-lineage), modest (~doubles heur-equiv depth 325→588), ceiling RAISED not broken.
 
 **Where the value-head investigation landed.** After ~7 confirmations a learned value HURTS as a search leaf, **Lever 1 (predict-v2.7 + residual)** made it an ASSET for the first time: head predicts Δ=search-Q−tanh(vs2/15); leaf = `clip(v2.7 + scale·Δ, ±1)` (`CARCASSONNE_V25_RESIDUAL_SCALE`, `value_target="residual"`; commit `44100a9`). It inherits v2.7's sibling-ranking BY CONSTRUCTION and nudges where deep search disagrees. **Marginal (scale0.25 − scale0) ROBUSTLY ~+45 across 4 measurements:** seed700k +68, seed800k +36, seed900k +41, flywheel-iter2 gate +47 → pooled ~**+45 elo** (the screen's +68 was a high draw; honest effect ~+40-45). **Lever 2 (centered MSE, `d2a6a53`) FAILED** (marginal −62).
 
