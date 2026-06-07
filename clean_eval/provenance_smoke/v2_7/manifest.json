@@ -1,0 +1,120 @@
+{
+  "kind": "provenance_smoke",
+  "game": "base",
+  "code_rev": "328594e-dirty",
+  "host": "Doctor",
+  "utc": "2026-06-07T18:57:52+00:00",
+  "leaf_env": {},
+  "config": {
+    "checkpoint": "/home/doctor/projects/carcassone/checkpoints/warmstart_canonical.pt",
+    "sims": 8,
+    "heur_leaf": "v2_7"
+  },
+  "evaluator": {
+    "schema": "carcassonne-evaluator-provenance/v1",
+    "kind": "provenance_smoke",
+    "code_commit": "328594efd5cc1d3d2ea95a4de8db741be0f5d090",
+    "dirty": true,
+    "argv": [
+      "heur_leaf=v2_7"
+    ],
+    "sides": [
+      {
+        "side": "A_net",
+        "agent_class": "NeuralMCTS",
+        "search_impl": "NeuralMCTS",
+        "leaf_name": "v2_7",
+        "leaf_version": "2.7",
+        "policy_source": "network",
+        "sims": 8,
+        "c_puct": 3.0,
+        "fpu": null,
+        "residual_scale": 0.0,
+        "value_blend": 0.0,
+        "cap": 5.0,
+        "opp_cap": 5.0,
+        "drop_three_open": false,
+        "closure_schedule": {
+          "1": 0.5,
+          "2": 0.2,
+          "3": 0.05
+        },
+        "checkpoint_path": "/home/doctor/projects/carcassone/checkpoints/warmstart_canonical.pt",
+        "checkpoint_sha256": "d85c3acbcf0c48797b15235aca326f56c6ad00c9464332086db12a6f6c4ff1fe",
+        "code_commit": "328594efd5cc1d3d2ea95a4de8db741be0f5d090",
+        "dirty": true,
+        "seed_range": [
+          1000000000,
+          1000000001
+        ],
+        "paired": true,
+        "eval_script": "verify_evaluator_provenance.py",
+        "argv": null
+      },
+      {
+        "side": "B_heur",
+        "agent_class": "HeuristicMCTS",
+        "search_impl": "HeuristicMCTS",
+        "leaf_name": "v2_7",
+        "leaf_version": "2.7",
+        "policy_source": "none",
+        "sims": 8,
+        "c_puct": 3.0,
+        "fpu": null,
+        "residual_scale": 0.0,
+        "value_blend": 0.0,
+        "cap": 5.0,
+        "opp_cap": 5.0,
+        "drop_three_open": false,
+        "closure_schedule": {
+          "1": 0.5,
+          "2": 0.2,
+          "3": 0.05
+        },
+        "checkpoint_path": null,
+        "checkpoint_sha256": null,
+        "code_commit": "328594efd5cc1d3d2ea95a4de8db741be0f5d090",
+        "dirty": true,
+        "seed_range": [
+          1000000000,
+          1000000001
+        ],
+        "paired": true,
+        "eval_script": "verify_evaluator_provenance.py",
+        "argv": null
+      }
+    ],
+    "runtime_verified": {
+      "ok": true,
+      "checked": [
+        {
+          "side": "A_net",
+          "leaf": "v2_7",
+          "v25_calls": 618,
+          "resid_path": 0,
+          "blend_path": 0,
+          "net_value_path": 0
+        },
+        {
+          "side": "B_heur",
+          "leaf": "v2_7",
+          "v1_calls": 0,
+          "v2_7_calls": 568
+        }
+      ],
+      "counters": {
+        "A_net": {
+          "v25_calls": 618,
+          "resid_path": 0,
+          "blend_path": 0,
+          "plain_path": 618,
+          "net_value_path": 0
+        },
+        "B_heur": {
+          "v1_calls": 0,
+          "v2_7_calls": 568
+        }
+      }
+    }
+  }
+}

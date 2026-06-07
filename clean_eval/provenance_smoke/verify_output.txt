@@ -1,0 +1,15 @@
+verify_evaluator_provenance @ device=cuda sims=8 ckpt=warmstart_canonical.pt sha=d85c3acbcf0c
+[v1 opponent]  heur counters={'v1_calls': 568, 'v2_7_calls': 0}  -> v1-only VERIFIED
+[v2_7 opponent] heur counters={'v1_calls': 0, 'v2_7_calls': 568}  -> v2_7-only VERIFIED
+[residual 0.25] net counters={'v25_calls': 608, 'resid_path': 608, 'blend_path': 0, 'plain_path': 0, 'net_value_path': 608}  -> residual path VERIFIED
+
+matched-opponent manifest diff (v1 vs v2_7 opponent):
+  B_heur.cap: v1=None  v2_7=5.0
+  B_heur.closure_schedule: v1=None  v2_7={'1': 0.5, '2': 0.2, '3': 0.05}
+  B_heur.drop_three_open: v1=None  v2_7=False
+  B_heur.leaf_name: v1='v1'  v2_7='v2_7'
+  B_heur.leaf_version: v1='1.0'  v2_7='2.7'
+  B_heur.opp_cap: v1=None  v2_7=5.0
+
+NET side identical: True | HEUR side differs only in leaf-describing fields: True (diffs: ['cap', 'closure_schedule', 'drop_three_open', 'leaf_name', 'leaf_version', 'opp_cap'])
+RESULT: PASS — leaf isolated, all runtime assertions held

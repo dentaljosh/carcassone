@@ -1,0 +1,328 @@
+{
+  "summary": {
+    "total": 35,
+    "passed": 35,
+    "skipped": 0,
+    "failed": 0,
+    "pytest_returncode": 0,
+    "code_rev": "328594e",
+    "all_green": true
+  },
+  "cases": [
+    {
+      "test": "test_c1_higher_score_maps_to_positive_value",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c1",
+      "title": "Higher final score \u2192 positive value for that player",
+      "status": "passed",
+      "time_s": 0.063,
+      "message": ""
+    },
+    {
+      "test": "test_c2_value_is_antisymmetric",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c2",
+      "title": "Value antisymmetry AND winner-sign mapping (independent)",
+      "status": "passed",
+      "time_s": 0.422,
+      "message": ""
+    },
+    {
+      "test": "test_c2_winner_sign_mapping_independent_of_antisymmetry",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c2",
+      "title": "Value antisymmetry AND winner-sign mapping (independent)",
+      "status": "passed",
+      "time_s": 0.054,
+      "message": ""
+    },
+    {
+      "test": "test_c3_tie_pays_all_tied_owners",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c3",
+      "title": "Tied-feature scoring pays all tied owners full",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_c3_tie_distribution_credits_both_scores",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c3",
+      "title": "Tied-feature scoring pays all tied owners full",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_c4_farm_points_match_deduped_reference",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c4",
+      "title": "Farm scoring matches deduped reference",
+      "status": "passed",
+      "time_s": 0.064,
+      "message": ""
+    },
+    {
+      "test": "test_c5_tile_to_meeple_keeps_acting_player",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c5",
+      "title": "tile\u2192meeple transition keeps the acting player",
+      "status": "passed",
+      "time_s": 0.04,
+      "message": ""
+    },
+    {
+      "test": "test_c6_meeple_to_tile_advances_acting_player",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c6",
+      "title": "meeple\u2192tile transition advances the acting player",
+      "status": "passed",
+      "time_s": 0.039,
+      "message": ""
+    },
+    {
+      "test": "test_c7_fpu_stored_and_reorders_search",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c7",
+      "title": "FPU stored + reorders search (perspective penalty)",
+      "status": "passed",
+      "time_s": 0.022,
+      "message": ""
+    },
+    {
+      "test": "test_c8_equivalent_actions_exist_and_visits_dedup",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c8",
+      "title": "Equivalent-action aliases + visit-mass de-dup (C2)",
+      "status": "passed",
+      "time_s": 0.013,
+      "message": ""
+    },
+    {
+      "test": "test_c9_selfplay_policy_survives_save_and_streaming_load",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c9",
+      "title": "visit \u2192 replay .npz \u2192 streaming trainer-load round trip",
+      "status": "passed",
+      "time_s": 2.054,
+      "message": ""
+    },
+    {
+      "test": "test_c10_legal_mask_shape_and_applicability",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c10",
+      "title": "Legal mask shape + policy-index alignment",
+      "status": "passed",
+      "time_s": 0.015,
+      "message": ""
+    },
+    {
+      "test": "test_c11_real_checkpoint_residual_leaf_actually_runs",
+      "classname": "tests.test_semantic_eval_contracts",
+      "contract": "c11",
+      "title": "Real checkpoint: v2.7 residual leaf actually executes",
+      "status": "passed",
+      "time_s": 0.921,
+      "message": ""
+    },
+    {
+      "test": "test_sha256_file_missing_returns_none",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.002,
+      "message": ""
+    },
+    {
+      "test": "test_sha256_file_matches_hashlib",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.001,
+      "message": ""
+    },
+    {
+      "test": "test_git_commit_and_dirty_shape",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.007,
+      "message": ""
+    },
+    {
+      "test": "test_deck_hash_deterministic_and_seed_sensitive",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.001,
+      "message": ""
+    },
+    {
+      "test": "test_seed_guard_rejects_selfplay_namespace",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_seed_guard_accepts_clean_floor",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_claims_v2_7_but_ran_v1_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_claims_v1_but_ran_v2_7_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_matched_v2_7_passes",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_residual_set_but_never_fired_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_residual_fired_passes",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_pure_v2_7_with_value_leak_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_pure_v2_7_clean_passes",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_blend_set_but_never_blended_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_v2_7_neural_but_leaf_never_ran_raises",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_missing_counters_for_side_is_not_a_contradiction",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_build_eval_provenance_structure",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.007,
+      "message": ""
+    },
+    {
+      "test": "test_validate_evaluator_block_never_raises_on_missing_dep",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.007,
+      "message": ""
+    },
+    {
+      "test": "test_spec_from_heuristic_mcts_reads_leaf",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.006,
+      "message": ""
+    },
+    {
+      "test": "test_spec_from_neural_mcts_reads_leaf_cfg",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.007,
+      "message": ""
+    },
+    {
+      "test": "test_v25_wrapped_counters_increment_on_call",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    },
+    {
+      "test": "test_v25_wrapped_residual_counter_increments",
+      "classname": "tests.test_eval_provenance",
+      "contract": "",
+      "title": "",
+      "status": "passed",
+      "time_s": 0.0,
+      "message": ""
+    }
+  ]
+}
