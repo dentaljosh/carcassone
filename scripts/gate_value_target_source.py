@@ -89,8 +89,15 @@ def main():
     ap.add_argument("--sims", type=int, default=200)
     ap.add_argument("--c-puct", type=float, default=3.0)
     ap.add_argument("--workers", type=int, default=14)
-    ap.add_argument("--seed-start", type=int, default=900000)
+    ap.add_argument("--seed-start", type=int, default=1_000_000_000,
+                    help="Deck seed base. Default 1e9 keeps decks above the self-play "
+                         "namespace (outside-review A9). Sub-floor needs --allow-selfplay-seeds.")
+    ap.add_argument("--allow-selfplay-seeds", action="store_true",
+                    help="bypass the clean-eval seed-floor guard (taints train/test).")
     a = ap.parse_args()
+    if not a.allow_selfplay_seeds:
+        from carcassonne_ai import eval_provenance as ep
+        ep.assert_clean_eval_seed_range(a.seed_start, a.games)
     seeds = list(range(a.seed_start, a.seed_start + a.games))
     print(f"generating {a.games} games (sims={a.sims}, W={a.workers}) ...")
     recs = []

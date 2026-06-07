@@ -122,13 +122,23 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=14)
     ap.add_argument("--paired", action="store_true",
                     help="Deck-pairing (each deck both colors) — ~halves variance.")
-    ap.add_argument("--seed-start", type=int, default=800000)
+    ap.add_argument("--seed-start", type=int, default=1_000_000_000,
+                    help="Deck seed base. Default 1e9 keeps decks above the self-play "
+                         "namespace (iter*10_000+game) — old 800k floor collided with "
+                         "trained-on decks at iter>=80 (outside-review A9). Sub-floor "
+                         "needs --allow-selfplay-seeds.")
+    ap.add_argument("--allow-selfplay-seeds", action="store_true",
+                    help="bypass the clean-eval seed-floor guard (taints train/test).")
     ap.add_argument("--out-root", type=str, required=True)
     ap.add_argument("--out-subdir", type=str, required=True)
     ap.add_argument("--shared-claim", action="store_true",
                     help="3-box work-stealing (launch this on each box, same out-root).")
     ap.add_argument("--claim-host", type=str, default="local")
     args = ap.parse_args(argv)
+
+    if not args.allow_selfplay_seeds:
+        from carcassonne_ai import eval_provenance as ep
+        ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
     rungs = [int(x) for x in args.heur_rungs.split(",") if x.strip()]
     results = [run_rung(args, h) for h in rungs]

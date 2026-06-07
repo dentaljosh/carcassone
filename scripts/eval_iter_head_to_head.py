@@ -30,6 +30,8 @@ import numpy as np
 import torch
 
 from carcassonne_ai.claim import try_claim as _try_claim
+from carcassonne_ai import eval_provenance as ep
+from carcassonne_ai.eval_provenance import deck_hash
 from carcassonne_ai.elo import update_pair
 from carcassonne_ai.eval_server import (
     ServerHandles,
@@ -74,6 +76,7 @@ class GameResult:
     drew: bool
     elapsed_s: float
     moves: int
+    deck_hash: str = ""        # 16-hex deck identity (default keeps old JSON loadable)
 
 
 # Per-worker globals — both checkpoints loaded once per process in the
@@ -247,6 +250,47 @@ def _effective_blend(leaf_cfg) -> float:
     return leaf_cfg.value_blend if leaf_cfg is not None else DEFAULT_CONFIG.value_blend
 
 
+def _value_head_needed(leaf_cfg) -> bool:
+    """True if a side CONSUMES the NN value head: value_blend>0 (Option-2 blend)
+    OR residual_scale>0 (Lever-1 residual). The server/leaf must then compute the
+    value head for that side.
+
+    R7 fix (outside-review 2026-06-07): the policy_only decision used to key on
+    `_effective_blend(...) == 0.0`, which only saw `value_blend` — a residual eval
+    (residual_scale>0, value_blend=0) was misclassified as 'no value head needed',
+    so the server ran policy_only and the residual leaf silently fell back to
+    pure v2.7 with v_nn=0. Counting residual_scale here closes that."""
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    cfg = leaf_cfg if leaf_cfg is not None else DEFAULT_CONFIG
+    return cfg.value_blend > 0.0 or cfg.residual_scale > 0.0
+
+
+def _h2h_side_spec(side, ckpt, leaf_cfg, *, leaf_eval, sims, c_puct, fpu,
+                   paired, seed_range, argv):
+    """Declared EvaluatorSpec for one NeuralMCTS side of a head-to-head, built
+    from the resolved per-side LeafConfig (records the cap/fpu/per-side-c_puct
+    that the manifest used to drop). leaf_eval='nn' = raw net value head leaf;
+    otherwise the v2.7 wrapper."""
+    sched = getattr(leaf_cfg, "closure_p", None) if leaf_cfg is not None else None
+    drop3 = isinstance(sched, dict) and 3 not in sched and set(sched) == {1, 2}
+    rs = float(getattr(leaf_cfg, "residual_scale", 0.0) or 0.0) if leaf_cfg is not None else 0.0
+    vb = float(getattr(leaf_cfg, "value_blend", 0.0) or 0.0) if leaf_cfg is not None else 0.0
+    leaf_name = "nn" if leaf_eval == "nn" else "v2_7"
+    commit, dirty = ep.git_commit_and_dirty()
+    return ep.EvaluatorSpec(
+        side=side, agent_class="NeuralMCTS", search_impl="NeuralMCTS",
+        leaf_name=leaf_name, leaf_version=("2.7" if leaf_name == "v2_7" else None),
+        policy_source="network", sims=sims, c_puct=c_puct, fpu=fpu,
+        residual_scale=rs, value_blend=vb,
+        cap=getattr(leaf_cfg, "bonus_cap", None) if leaf_cfg is not None else None,
+        opp_cap=getattr(leaf_cfg, "opp_bonus_cap", None) if leaf_cfg is not None else None,
+        drop_three_open=(drop3 if leaf_cfg is not None else None),
+        closure_schedule=(dict(sched) if isinstance(sched, dict) else None),
+        checkpoint_path=str(ckpt), checkpoint_sha256=ep.sha256_file(ckpt),
+        code_commit=commit, dirty=dirty, seed_range=seed_range, paired=paired,
+        eval_script="eval_iter_head_to_head.py", argv=argv)
+
+
 def _worker_init(
     new_path: str, old_path: str, sims: int, c_puct: float, eval_dir: str,
     batch_size: int, virtual_loss: float, use_fp16: bool = False,
@@ -368,11 +412,12 @@ def _play_one(args: tuple[int, int]) -> GameResult | None:
             )
     else:
         assert _worker_new is not None and _worker_old is not None
-        # value_blend > 0 on either side needs the NN value head computed.
+        # A side that consumes the NN value head (value_blend>0 OR residual_scale>0)
+        # needs it computed — R7: residual was previously misclassified policy_only.
         use_policy_only = (
             _worker_leaf_eval != "nn"
-            and _effective_blend(_worker_new_leaf_cfg) == 0.0
-            and _effective_blend(_worker_old_leaf_cfg) == 0.0
+            and not _value_head_needed(_worker_new_leaf_cfg)
+            and not _value_head_needed(_worker_old_leaf_cfg)
         )
         single_factory = (
             make_single_evaluator_policy_only if use_policy_only
@@ -424,6 +469,7 @@ def _play_one(args: tuple[int, int]) -> GameResult | None:
     )
 
     board = game_new.get_init_board()
+    dh = deck_hash(board)  # deck identity BEFORE any tile is drawn
     moves = 0
     t0 = time.perf_counter()
     while game_new.get_game_ended(board, 0) == 0.0:
@@ -443,7 +489,7 @@ def _play_one(args: tuple[int, int]) -> GameResult | None:
         seed=seed, new_player=new_player, sims=_worker_sims,
         score_p0=s0, score_p1=s1, diff=diff,
         won_by_new=(diff > 0), drew=(diff == 0),
-        elapsed_s=time.perf_counter() - t0, moves=moves,
+        elapsed_s=time.perf_counter() - t0, moves=moves, deck_hash=dh,
     )
     _save(_worker_eval_dir, result)
     return result
@@ -660,19 +706,55 @@ def main(argv: list[str] | None = None) -> int:
     )
     eval_dir.mkdir(parents=True, exist_ok=True)
 
-    # self-describing run manifest (provenance: game/code_rev/leaf-env) — D21.
+    # Resolve per-side leaf configs up-front so the manifest can record the FULL
+    # effective config (cap/value-blend/residual) — previously dropped (R1/R7).
+    new_leaf_cfg = _apply_leaf_cap(
+        _apply_value_blend(_leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend),
+        args.new_leaf_cap)
+    old_leaf_cfg = _apply_leaf_cap(
+        _apply_value_blend(_leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend),
+        args.old_leaf_cap)
+
+    _eff_old_sims = args.old_sims or args.sims
+    _eff_new_c = args.new_c_puct if args.new_c_puct is not None else args.c_puct
+    _eff_old_c = args.old_c_puct if args.old_c_puct is not None else args.c_puct
+    _seed_range = [args.seed_start,
+                   args.seed_start + (args.games // 2 if args.paired else args.games)]
+
+    # NOTE: no hard seed-floor guard here — this harness is also invoked by
+    # in-training anchor gates that legitimately reuse self-play decks. The
+    # default --seed-start is already 1e9 (G-M6); clean reruns pass 1e9+.
+
+    _new_spec = _h2h_side_spec("A_new", args.new_checkpoint, new_leaf_cfg,
+                               leaf_eval=args.leaf_eval, sims=args.sims, c_puct=_eff_new_c,
+                               fpu=args.new_fpu, paired=args.paired, seed_range=_seed_range,
+                               argv=sys.argv[1:])
+    _old_spec = _h2h_side_spec("B_old", args.old_checkpoint, old_leaf_cfg,
+                               leaf_eval=args.leaf_eval, sims=_eff_old_sims, c_puct=_eff_old_c,
+                               fpu=args.old_fpu, paired=args.paired, seed_range=_seed_range,
+                               argv=sys.argv[1:])
+    _ev_block = ep.build_eval_provenance([_new_spec, _old_spec],
+                                         kind="eval_iter_head_to_head", argv=sys.argv[1:])
+
+    # self-describing run manifest (provenance: game/code_rev/leaf-env + the
+    # both-sides evaluator block with the dropped cap/fpu/per-side-c_puct) — D21 + R1/R7.
     write_manifest(eval_dir, kind="eval_iter_head_to_head", game=game_tag(Game()),
                    config={"new_checkpoint": str(args.new_checkpoint),
                            "old_checkpoint": str(args.old_checkpoint),
                            "iter": args.iter_idx, "vs_iter": args.vs_iter,
                            "games": args.games, "sims": args.sims,
-                           "old_sims": args.old_sims or args.sims,
-                           "c_puct": args.c_puct, "paired": args.paired,
-                           "seed_start": args.seed_start,
+                           "old_sims": _eff_old_sims,
+                           "c_puct": args.c_puct,
+                           "new_c_puct": _eff_new_c, "old_c_puct": _eff_old_c,
+                           "new_fpu": args.new_fpu, "old_fpu": args.old_fpu,
+                           "new_leaf_cap": args.new_leaf_cap, "old_leaf_cap": args.old_leaf_cap,
+                           "paired": args.paired,
+                           "seed_start": args.seed_start, "leaf_eval": args.leaf_eval,
                            "new_leaf_variant": args.new_leaf_variant,
                            "old_leaf_variant": args.old_leaf_variant,
                            "new_leaf_value_blend": args.new_leaf_value_blend,
-                           "old_leaf_value_blend": args.old_leaf_value_blend})
+                           "old_leaf_value_blend": args.old_leaf_value_blend},
+                   evaluator=_ev_block)
 
     # Auto-cap removed 2026-05-09 (see run_selfplay_iter.py for rationale).
     # Note: head-to-head loads TWO networks per worker (2× GPU memory vs
@@ -698,18 +780,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     sys.stdout.flush()
 
-    new_leaf_cfg = _apply_leaf_cap(
-        _apply_value_blend(
-            _leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend
-        ),
-        args.new_leaf_cap,
-    )
-    old_leaf_cfg = _apply_leaf_cap(
-        _apply_value_blend(
-            _leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend
-        ),
-        args.old_leaf_cap,
-    )
+    # (new_leaf_cfg / old_leaf_cfg were resolved above for the manifest.)
 
     t0 = time.perf_counter()
     ctx = mp.get_context("spawn")
@@ -737,7 +808,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
-            policy_only=(args.leaf_eval != "nn" and _effective_blend(new_leaf_cfg) == 0.0),
+            policy_only=(args.leaf_eval != "nn" and not _value_head_needed(new_leaf_cfg)),
         )
         old_pool = start_server_pool(
             checkpoint_path=str(args.old_checkpoint),
@@ -746,7 +817,7 @@ def main(argv: list[str] | None = None) -> int:
             max_batch=args.orch_max_batch,
             batch_timeout_ms=args.orch_batch_timeout_ms,
             use_fp16=args.fp16,
-            policy_only=(args.leaf_eval != "nn" and _effective_blend(old_leaf_cfg) == 0.0),
+            policy_only=(args.leaf_eval != "nn" and not _value_head_needed(old_leaf_cfg)),
         )
         id_q = ctx.Queue()
         for w in range(n_workers):

@@ -16,11 +16,19 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-# leaf/scoring knobs that change results and so belong in provenance
+# leaf/scoring knobs that change results and so belong in provenance.
+# (Expanded 2026-06-07 for the clean-eval audit: RESIDUAL_SCALE/OPP_CAP/etc. were
+# silent before, so a residual run left no env trace — see outside-review R1/R7.)
 _LEAF_ENV_KEYS = (
     "CARCASSONNE_V25_CAP",
     "CARCASSONNE_V25_DROP_THREE_OPEN",
     "CARCASSONNE_V25_VALUE_BLEND",
+    "CARCASSONNE_V25_RESIDUAL_SCALE",
+    "CARCASSONNE_V25_OPP_CAP",
+    "CARCASSONNE_V25_MEEPLE_K",
+    "CARCASSONNE_V25_TILE_COUNTING",
+    "CARCASSONNE_V25_CLOSURE_SLACK",
+    "CARCASSONNE_V25_ONE_OPEN_ONLY",
     "CARC_RUN",
 )
 
@@ -62,11 +70,16 @@ def leaf_env() -> dict:
 
 
 def write_manifest(out_dir, *, kind: str, game: str, config: dict,
-                   overwrite: bool = False) -> Path:
+                   overwrite: bool = False, evaluator: dict | None = None) -> Path:
     """Write <out_dir>/manifest.json with resolved config + provenance.
 
     Skips if a manifest already exists (so racing multi-box --shared-claim workers
     don't clobber each other) unless overwrite=True. Returns the manifest path.
+
+    `evaluator` (optional): the structured both-sides provenance block from
+    `eval_provenance.build_eval_provenance` (checkpoint SHA256, full commit, argv,
+    per-side leaf/value config, runtime-verified counters). Stored verbatim under
+    manifest["evaluator"]. Absent for legacy callers (back-compat).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +95,8 @@ def write_manifest(out_dir, *, kind: str, game: str, config: dict,
         "leaf_env": leaf_env(),
         "config": config,
     }
+    if evaluator is not None:
+        manifest["evaluator"] = evaluator
     tmp = out_dir / f".manifest.{os.getpid()}.tmp"
     tmp.write_text(json.dumps(manifest, indent=2, default=str))
     tmp.replace(mpath)  # atomic

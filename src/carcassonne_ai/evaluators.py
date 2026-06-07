@@ -27,6 +27,61 @@ from .game_wrapper import Board, Game
 from .network import CarcassonneNet
 
 
+class _RuntimeCounters:
+    """Per-process leaf-path call counts for RUNTIME provenance verification.
+
+    Lets an eval assert that the leaf/value path it CLAIMS to use is the one
+    that actually executed at runtime — not merely the one a label says
+    (outside-review findings R1: opponent ran v1 while the manifest implied
+    v2.7; R7: a residual eval silently fell back to pure v2.7). The counters
+    live on the wrapper instance, so they are complete only within the process
+    that owns it — aggregate them via a single-process smoke, not across a Pool.
+    """
+    __slots__ = ("v25_calls", "resid_path", "blend_path", "plain_path")
+
+    def __init__(self):
+        self.v25_calls = 0
+        self.resid_path = 0   # net-value RESIDUAL branch executed
+        self.blend_path = 0   # net-value BLEND branch executed
+        self.plain_path = 0   # pure v2.7 leaf (net value NOT consumed)
+
+    @property
+    def net_value_path(self) -> int:
+        return self.resid_path + self.blend_path
+
+    def as_dict(self) -> dict:
+        return {
+            "v25_calls": self.v25_calls,
+            "resid_path": self.resid_path,
+            "blend_path": self.blend_path,
+            "plain_path": self.plain_path,
+            "net_value_path": self.net_value_path,
+        }
+
+
+class _V25Wrapped:
+    """Callable `(priors, value)` evaluator wrapping the v2.7-leaf logic, which
+    ALSO exposes `.leaf_cfg` (the resolved LeafConfig) and `.counters`
+    (`_RuntimeCounters`) for provenance introspection. Behaves identically to
+    the bare closure it replaces — `__call__` returns the same 2-tuple — so it
+    is a drop-in for any NeuralMCTS evaluator slot."""
+    leaf_name = "v2_7"
+    is_batch = False
+
+    def __init__(self, fn, leaf_cfg, counters: "_RuntimeCounters"):
+        self._fn = fn
+        self.leaf_cfg = leaf_cfg
+        self.counters = counters
+
+    def __call__(self, x):
+        return self._fn(x)
+
+
+class _V25BatchWrapped(_V25Wrapped):
+    """Batch twin of `_V25Wrapped` (`__call__` takes a `list[Board]`)."""
+    is_batch = True
+
+
 def _autocast_ctx(device: torch.device, use_fp16: bool):
     """Return an autocast context manager that's a no-op on CPU or when
     fp16 is disabled. fp16 cuts forward latency ~1.5-2× on RTX 30/40/Blackwell
@@ -86,6 +141,7 @@ def make_single_evaluator_policy_only(
             mask_t = torch.from_numpy(mask.copy()).unsqueeze(0).bool().to(device)
             probs = net.policy_softmax_with_mask(logits, mask_t)
         return probs[0].float().cpu().numpy(), 0.0
+    evaluator.policy_only = True  # value head NOT computed (sentinel 0.0)
     return evaluator
 
 
@@ -121,6 +177,7 @@ def make_batch_evaluator_policy_only(
             probs = net.policy_softmax_with_mask(logits, masks_t)
         values = np.zeros(len(boards), dtype=np.float32)
         return probs.float().cpu().numpy(), values
+    batch_evaluator.policy_only = True  # value head NOT computed (zeros)
     return batch_evaluator
 
 
@@ -153,6 +210,7 @@ def make_v25_value_wrapper(
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
     resid = eff_cfg.residual_scale
+    counters = _RuntimeCounters()
 
     def wrapped(board: Board) -> tuple[np.ndarray, float]:
         st = board.state
@@ -183,16 +241,20 @@ def make_v25_value_wrapper(
                     del st._city_cache
                 except AttributeError:
                     pass
+        counters.v25_calls += 1
         if resid > 0.0:
             # Lever 1: network value head is a RESIDUAL on the v2.7 leaf. Clip to
             # the tanh range so a large Δ can't push the leaf out of [-1, 1].
+            counters.resid_path += 1
             leaf = h + resid * float(v_nn)
             return priors, max(-1.0, min(1.0, leaf))
         if blend > 0.0:
+            counters.blend_path += 1
             return priors, (1.0 - blend) * h + blend * float(v_nn)
+        counters.plain_path += 1
         return priors, h
 
-    return wrapped
+    return _V25Wrapped(wrapped, eff_cfg, counters)
 
 
 def make_v25_batch_value_wrapper(
@@ -211,6 +273,7 @@ def make_v25_batch_value_wrapper(
     eff_cfg = cfg if cfg is not None else DEFAULT_CONFIG
     blend = eff_cfg.value_blend
     resid = eff_cfg.residual_scale
+    counters = _RuntimeCounters()
 
     def wrapped_batch(boards: list[Board]) -> tuple[np.ndarray, np.ndarray]:
         if not boards:
@@ -252,15 +315,19 @@ def make_v25_batch_value_wrapper(
                         del st._city_cache
                     except AttributeError:
                         pass
+        counters.v25_calls += len(boards)
         if resid > 0.0:
             # Lever 1: residual leaf — clip to the tanh range (see single wrapper).
+            counters.resid_path += len(boards)
             leaf = h + resid * values_nn.astype(np.float32)
             return priors, np.clip(leaf, -1.0, 1.0)
         if blend > 0.0:
+            counters.blend_path += len(boards)
             return priors, (1.0 - blend) * h + blend * values_nn.astype(np.float32)
+        counters.plain_path += len(boards)
         return priors, h
 
-    return wrapped_batch
+    return _V25BatchWrapped(wrapped_batch, eff_cfg, counters)
 
 
 def make_batch_evaluator(

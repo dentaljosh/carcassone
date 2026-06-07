@@ -310,6 +310,20 @@ class HeuristicMCTS(MCTS):
         if heur_leaf not in ("v1", "v2_7"):
             raise ValueError(f"heur_leaf must be 'v1' or 'v2_7'; got {heur_leaf!r}")
         self._heur_leaf = heur_leaf
+        # Runtime provenance counters — let an eval ASSERT which leaf actually
+        # ran (outside-review R1: the opponent ran v1 while labels implied v2.7).
+        self._v1_calls = 0
+        self._v2_7_calls = 0
+
+    @property
+    def leaf_name(self) -> str:
+        """Which leaf this opponent uses: 'v1' (base virtual_score) or 'v2_7'."""
+        return self._heur_leaf
+
+    @property
+    def counters(self) -> dict:
+        """Runtime leaf-path call counts for provenance verification."""
+        return {"v1_calls": self._v1_calls, "v2_7_calls": self._v2_7_calls}
 
     def _rollout(self, board: Board) -> float:
         leaf_player = board.state.current_player
@@ -319,8 +333,10 @@ class HeuristicMCTS(MCTS):
         if self._heur_leaf == "v2_7":
             from .virtual_score_v2 import virtual_score_v2
             diff = virtual_score_v2(board.state, leaf_player)
+            self._v2_7_calls += 1
         else:
             diff = virtual_score_estimate(board, leaf_player)
+            self._v1_calls += 1
         return math.tanh(diff / HEURISTIC_VALUE_NORM)
 
 

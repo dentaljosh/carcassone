@@ -34,6 +34,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import socket
@@ -49,12 +50,15 @@ import numpy as np
 import torch
 
 from carcassonne_ai.claim import try_claim as _try_claim
+from carcassonne_ai import eval_provenance as ep
 from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrapper
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.run_manifest import game_tag, write_manifest
 from carcassonne_ai.selfplay import _bench_tick  # gated moves/s instrumentation (CARC_BENCH_TP)
+from carcassonne_ai.eval_provenance import deck_hash
+from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 
 REPO = Path(__file__).resolve().parent.parent
 EVAL_ROOT = REPO / "data" / "ladder"
@@ -65,6 +69,10 @@ _worker_include_farm = False
 # Leaf the HeuristicMCTS opponent uses: "v1" (legacy default) or "v2_7" (match the
 # agent's leaf so the eval isolates the policy — outside-review finding R1).
 _worker_heur_leaf: str = "v1"
+# Residual scale override (None = use DEFAULT_CONFIG / env; a float forces the
+# leaf wrapper's residual_scale, e.g. 0.0 for the pure-v2.7 control or 0.25 for
+# the residual cell). Plumbed through for Phase-3 #4/#5.
+_worker_residual_scale: float | None = None
 # Work-stealing claim (only used with --shared-claim). Mirrors eval_iter_head_to_head.
 _worker_shared_claim: bool = False
 _worker_claim_host: str = ""
@@ -85,6 +93,7 @@ class GameResult:
     drew: bool
     elapsed_s: float
     moves: int
+    deck_hash: str = ""        # 16-hex deck identity (default keeps old JSON loadable)
 
 
 def _result_path(out: Path, sims: int, heur_sims: int, c_puct: float,
@@ -111,13 +120,15 @@ def _save(p: Path, r: GameResult):
 
 def _worker_init(checkpoint: str, shared_claim: bool = False,
                  claim_host: str = "", claim_stale_secs: int = 5400,
-                 heur_leaf: str = "v1"):
+                 heur_leaf: str = "v1", residual_scale: float | None = None):
     global _worker_net, _worker_device, _worker_include_farm, _worker_heur_leaf
     global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
+    global _worker_residual_scale
     _worker_shared_claim = shared_claim
     _worker_claim_host = claim_host
     _worker_claim_stale_secs = claim_stale_secs
     _worker_heur_leaf = heur_leaf
+    _worker_residual_scale = residual_scale
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(checkpoint, map_location=_worker_device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
@@ -153,10 +164,18 @@ def _play_one(args) -> GameResult:
 
     game = Game(enable_legal_moves_cache=True, include_farm_scalars=_worker_include_farm)
     board = game.get_init_board()
+    dh = deck_hash(board)  # capture the deck identity BEFORE any tile is drawn
 
     # Neural side = PRODUCTION play config: net priors + v2.7 leaf value.
     base = make_single_evaluator(_worker_net, _worker_device, game)
-    leaf_eval = make_v25_value_wrapper(base)  # priors from net, value from v2.7
+    # residual_scale override: None = DEFAULT_CONFIG/env; a float forces it (0.0 =
+    # pure-v2.7 control, 0.25 = residual cell). dataclasses.replace keeps all other
+    # v2.7 knobs (cap/drop-three-open) identical so only the value path changes.
+    if _worker_residual_scale is None:
+        leaf_eval = make_v25_value_wrapper(base)  # priors from net, value from v2.7
+    else:
+        cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=float(_worker_residual_scale))
+        leaf_eval = make_v25_value_wrapper(base, cfg)
     net_mcts = NeuralMCTS(game=game, evaluator=leaf_eval, simulations=sims,
                           seed=seed, c_puct=c_puct)
 
@@ -188,6 +207,7 @@ def _play_one(args) -> GameResult:
         seed=seed, net_player=net_player, sims=sims, heur_sims=heur_sims,
         c_puct=c_puct, score_p0=int(s0), score_p1=int(s1), diff=int(diff),
         won_by_net=(diff > 0), drew=(diff == 0), elapsed_s=elapsed, moves=moves,
+        deck_hash=dh,
     )
     _save(p, r)
     return r
@@ -245,6 +265,100 @@ def _build_work(seed_start: int, n: int, paired: bool):
     return work
 
 
+def _load_net(checkpoint, device):
+    """Load a checkpoint into a CarcassonneNet on `device`. Returns (net, include_farm)."""
+    ck = torch.load(checkpoint, map_location=device, weights_only=False)
+    ns = int(ck.get("n_scalar_features", 10))
+    net = CarcassonneNet(n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+                         n_scalar_features=ns,
+                         value_global_pool=bool(ck.get("value_global_pool", False))
+                         ).to(device)
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+    return net, ns > 10
+
+
+def _make_matchup(net, device, game, heur_game, *, seed, sims, heur_sims, c_puct,
+                  heur_leaf, residual_scale, include_farm=False):
+    """Build the (NeuralMCTS, HeuristicMCTS, leaf_eval) triple used by both the
+    Pool worker logic and the single-process provenance smoke. `leaf_eval` is the
+    `_V25Wrapped` whose `.counters` the smoke reads to prove the leaf path ran."""
+    base = make_single_evaluator(net, device, game)
+    if residual_scale is None:
+        leaf_eval = make_v25_value_wrapper(base)
+    else:
+        cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=float(residual_scale))
+        leaf_eval = make_v25_value_wrapper(base, cfg)
+    net_mcts = NeuralMCTS(game=game, evaluator=leaf_eval, simulations=sims,
+                          seed=seed, c_puct=c_puct)
+    heur_mcts = HeuristicMCTS(game=heur_game, simulations=heur_sims, seed=seed + 1,
+                              heur_leaf=heur_leaf)
+    return net_mcts, heur_mcts, leaf_eval
+
+
+def _both_specs(net_mcts, heur_mcts, *, checkpoint, sims, heur_sims, paired,
+                seed_range, argv):
+    """Both-sides EvaluatorSpecs read from the LIVE MCTS objects (R1: record the
+    actual leaf invoked, not a label)."""
+    nspec = ep.spec_from_neural_mcts(
+        net_mcts, side="A_net", checkpoint_path=str(checkpoint), sims=sims,
+        paired=paired, seed_range=seed_range,
+        eval_script="eval_net_vs_heuristic.py", argv=argv)
+    hspec = ep.spec_from_heuristic_mcts(
+        heur_mcts, side="B_heur", sims=heur_sims, paired=paired,
+        seed_range=seed_range, eval_script="eval_net_vs_heuristic.py", argv=argv)
+    return nspec, hspec
+
+
+def _provenance_smoke(args, heur_sims, seed_range, out) -> int:
+    """Single-process runtime proof. Plays one game per seat, reads the live
+    leaf-path counters off both sides, asserts the claimed leaf/value path
+    actually executed, and writes a manifest stamped runtime_verified.ok=true."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net, include_farm = _load_net(args.checkpoint, device)
+    print(f"[provenance-smoke] device={device} heur_leaf={args.heur_leaf} "
+          f"residual_scale={args.residual_scale} sims={args.sims}/{heur_sims}")
+    # Persistent objects so counters accumulate across both seats.
+    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm)
+    heur_game = Game(enable_legal_moves_cache=True)
+    net_mcts, heur_mcts, leaf_eval = _make_matchup(
+        net, device, game, heur_game, seed=seed_range[0], sims=args.sims,
+        heur_sims=heur_sims, c_puct=args.c_puct, heur_leaf=args.heur_leaf,
+        residual_scale=args.residual_scale, include_farm=include_farm)
+    import random
+    for net_player in (0, 1):
+        random.seed(seed_range[0])
+        board = game.get_init_board()
+        while game.get_game_ended(board, 0) == 0.0:
+            cur = board.state.current_player
+            if cur == net_player:
+                net_mcts.clear(); action = net_mcts.best_action(board)
+            else:
+                heur_mcts.clear(); action = heur_mcts.best_action(board)
+            board, _ = game.get_next_state(board, action)
+    counters_by_side = {"A_net": leaf_eval.counters.as_dict(),
+                        "B_heur": heur_mcts.counters}
+    nspec, hspec = _both_specs(net_mcts, heur_mcts, checkpoint=args.checkpoint,
+                               sims=args.sims, heur_sims=heur_sims, paired=args.paired,
+                               seed_range=seed_range, argv=sys.argv[1:])
+    verdict = ep.assert_provenance_consistent([nspec, hspec], counters_by_side)
+    print("[provenance-smoke] counters:", json.dumps(counters_by_side))
+    print("[provenance-smoke] OK — claimed leaf/value paths verified at runtime")
+    block = ep.build_eval_provenance([nspec, hspec], kind="eval_net_vs_heuristic",
+                                     argv=sys.argv[1:], runtime_verified=verdict)
+    mpath = write_manifest(out, kind="eval_net_vs_heuristic", game=game_tag(Game()),
+                           config={"checkpoint": str(args.checkpoint), "n": args.n,
+                                   "sims": args.sims, "heur_sims": heur_sims,
+                                   "c_puct": args.c_puct, "paired": args.paired,
+                                   "seed_start": args.seed_start, "opponent": "HeuristicMCTS",
+                                   "heur_leaf": args.heur_leaf, "new_var": "v2_7",
+                                   "residual_scale": args.residual_scale,
+                                   "provenance_smoke": True},
+                           evaluator=block, overwrite=True)
+    print(f"[provenance-smoke] manifest with runtime_verified -> {mpath}")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="eval_net_vs_heuristic")
     ap.add_argument("--checkpoint", type=Path, required=True)
@@ -254,7 +368,22 @@ def main(argv=None) -> int:
                     help="HeuristicMCTS sims (default = --sims, i.e. matched compute)")
     ap.add_argument("--c-puct", type=float, default=3.0)
     ap.add_argument("--workers", type=int, default=None)
-    ap.add_argument("--seed-start", type=int, default=600000)
+    ap.add_argument("--seed-start", type=int, default=ep.EVAL_SEED_FLOOR,
+                    help="first deck seed. Defaults to the clean-eval floor (1e9) so decks "
+                         "never overlap the self-play namespace (outside-review A9). A value "
+                         "below the floor is rejected unless --allow-selfplay-seeds.")
+    ap.add_argument("--residual-scale", type=float, default=None,
+                    help="override the leaf wrapper's residual_scale (None=use DEFAULT_CONFIG/env). "
+                         "0.0 = pure-v2.7 control; e.g. 0.25 = residual cell (Phase-3 #4/#5). "
+                         "All other v2.7 knobs (cap/drop-three-open) stay identical.")
+    ap.add_argument("--allow-selfplay-seeds", action="store_true",
+                    help="bypass the clean-eval seed-floor guard (only to intentionally "
+                         "reproduce an OLD run's deck namespace; taints train/test separation).")
+    ap.add_argument("--provenance-smoke", action="store_true",
+                    help="single-process runtime proof: play 1-2 games, read the live leaf-path "
+                         "counters, assert the CLAIMED leaf/value path actually executed "
+                         "(assert_provenance_consistent), stamp runtime_verified into the manifest, "
+                         "and exit. Run this BEFORE the real Pool eval (R1/R7 guard).")
     ap.add_argument("--out-subdir", type=str, default=None,
                     help="subdir under the out-root (default: derived from ckpt name)")
     ap.add_argument("--out-root", type=str, default=None,
@@ -283,22 +412,51 @@ def main(argv=None) -> int:
         ap.error("--paired requires an even --n (n/2 decks x 2 colors)")
 
     heur_sims = args.heur_sims if args.heur_sims is not None else args.sims
+    seed_range = [args.seed_start, args.seed_start + (args.n // 2 if args.paired else args.n)]
+
+    # Clean-eval seed-floor guard (A9): a serious eval must draw decks from above
+    # the self-play namespace so it can never replay a trained-on deck. Hard error
+    # unless the user explicitly opts into the old namespace.
+    if not args.summary_only and not args.allow_selfplay_seeds:
+        ep.assert_clean_eval_seed_range(args.seed_start, args.n)
+
     # Include heur_leaf in the default subdir so a v2_7 run never collides with / resumes
     # from a cached v1 run at the same ckpt/sims/c (they are different opponents).
     _hl_tag = "" if args.heur_leaf == "v1" else f"_heur{args.heur_leaf}"
-    sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}{_hl_tag}"
+    _rs_tag = "" if args.residual_scale is None else f"_rs{str(args.residual_scale).replace('.', '')}"
+    sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}{_hl_tag}{_rs_tag}"
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
 
-    # self-describing run manifest (provenance: game/code_rev/leaf-env) — D21.
+    # Runtime provenance proof (single process) — verify the claimed leaf/value
+    # path actually executes, then exit. Run BEFORE the real Pool eval.
+    if args.provenance_smoke:
+        return _provenance_smoke(args, heur_sims, seed_range, out)
+
+    # self-describing run manifest (provenance: game/code_rev/leaf-env + the
+    # both-sides evaluator block read off live MCTS objects) — D21 + R1/R7.
     if not args.summary_only:
+        device_cpu = torch.device("cpu")  # CPU keeps the parent CUDA-clean before fork
+        _net, _farm = _load_net(args.checkpoint, device_cpu)
+        _g, _hg = Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True)
+        _nm, _hm, _ = _make_matchup(_net, device_cpu, _g, _hg, seed=args.seed_start,
+                                    sims=args.sims, heur_sims=heur_sims, c_puct=args.c_puct,
+                                    heur_leaf=args.heur_leaf, residual_scale=args.residual_scale)
+        _nspec, _hspec = _both_specs(_nm, _hm, checkpoint=args.checkpoint, sims=args.sims,
+                                     heur_sims=heur_sims, paired=args.paired,
+                                     seed_range=seed_range, argv=sys.argv[1:])
+        _block = ep.build_eval_provenance([_nspec, _hspec], kind="eval_net_vs_heuristic",
+                                          argv=sys.argv[1:], runtime_verified=None)
+        del _net, _nm, _hm  # free before the Pool fork
         write_manifest(out, kind="eval_net_vs_heuristic", game=game_tag(Game()),
                        config={"checkpoint": str(args.checkpoint), "n": args.n,
                                "sims": args.sims, "heur_sims": heur_sims,
                                "c_puct": args.c_puct, "paired": args.paired,
                                "seed_start": args.seed_start, "opponent": "HeuristicMCTS",
-                               "heur_leaf": args.heur_leaf, "new_var": "v2_7"})
+                               "heur_leaf": args.heur_leaf, "new_var": "v2_7",
+                               "residual_scale": args.residual_scale},
+                       evaluator=_block)
 
     # color balance via _build_work (paired = each deck both colors)
     tasks = [(str(out), seed, net_player, args.sims, heur_sims, args.c_puct)
@@ -325,7 +483,7 @@ def main(argv=None) -> int:
         with Pool(processes=workers, initializer=_worker_init,
                   initargs=(str(args.checkpoint), args.shared_claim,
                             args.claim_host, args.claim_stale_secs,
-                            args.heur_leaf)) as pool:
+                            args.heur_leaf, args.residual_scale)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
