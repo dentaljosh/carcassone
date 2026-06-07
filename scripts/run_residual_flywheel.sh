@@ -74,28 +74,67 @@ print(f"{elo:.1f} {sig:.1f} {n}")
 PY
 }
 
-# run the scale-curve gate (scale0 + scaleSCALE) FANNED across all 3 boxes via
-# shared-claim (the eval is slow single-box: ~3 g/min on the 5800x with per-worker
-# CUDA thrash; the 24-thread laptop + xeon ~3× it). $1=ckpt(5800x path) $2=label
-# -> echoes scale0.25 elo.
+# Remove STRANDED claims (a .claim with no .json = the claiming worker died, e.g. a
+# killed/crashed eval) so those seeds can be re-claimed. Without this the gate count
+# never reaches N_GATE and the wait loop spins forever (the shared-claim orphan-stall
+# / 556-600 bug). $1=dir $2=only-if-older-than-min (0 = all; in-loop uses 4 to spare
+# genuinely in-flight claims).
+_clean_stranded() {   # $1=dir $2=output-ext(json|npz) $3=only-if-older-than-min (0=all)
+  local dir="$1" ext="$2" age="${3:-0}" c
+  if [ "$age" = "0" ]; then
+    for c in "$dir"/*.claim; do [ -e "$c" ] || continue; [ -e "${c%.claim}.$ext" ] || rm -f "$c"; done
+  else
+    while IFS= read -r c; do [ -e "${c%.claim}.$ext" ] || rm -f "$c"; done \
+      < <(find "$dir" -name '*.claim' -mmin +"$age" 2>/dev/null)
+  fi
+}
+
+# Launch the 3-box shared-claim eval for one (scale, subdir). $1=s $2=sub $3=rckpt $4=ckpt
+_gate_launch() {
+  local s="$1" sub="$2" rckpt="$3" ckpt="$4"
+  nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
+    --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
+    --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
+    --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
+  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
+}
+
+# Scale-curve gate (scale0 + scaleSCALE) fanned 3-box (~3× single-box: the eval is
+# CPU-bound on the v2.7 leaf + per-worker GPU thrash). Self-heals the orphan-stall.
+# $1=ckpt(5800x path) $2=label -> echoes scale0.25 elo.
 run_gate() {
-  local ckpt="$1" label="$2" s tag sub dir rckpt
+  local ckpt="$1" label="$2" s tag sub dir rckpt last stall cur
   rckpt=${ckpt/$SHARE_LOCAL/$SHARE_REMOTE}   # translate to remotes' mount
   for s in 0 $SCALE; do
-    tag=$(knob_tag "$s"); sub="${label}_s${tag}"; dir="$OUT/gate/$sub"
+    tag=$(knob_tag "$s"); sub="${label}_s${tag}"; dir="$OUT/gate/$sub"; mkdir -p "$dir"
     if [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; then
-      nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
-        --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
-        --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
-        --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
-      ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
-      ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
-      while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; do sleep 30; done
+      _clean_stranded "$dir" json 0      # pre-launch: free any stranded claims (resume after kill/crash)
+      _gate_launch "$s" "$sub" "$rckpt" "$ckpt"
+      last=-1; stall=0
+      while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; do
+        sleep 30
+        cur=$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)
+        if [ "$cur" -eq "$last" ]; then stall=$((stall+1)); else stall=0; last=$cur; fi
+        if [ "$stall" -ge 12 ]; then      # ~6min no new game (>1 game-time) = workers died → heal
+          echo "  [gate $sub] STALLED at $cur/$N_GATE — self-heal: clean stale claims + relaunch" >&2
+          _clean_stranded "$dir" json 4; _gate_launch "$s" "$sub" "$rckpt" "$ckpt"; stall=0
+        fi
+      done
     fi
   done
   local s0 s25; s0=$(gate_elo "$OUT/gate/${label}_s0"); s25=$(gate_elo "$OUT/gate/${label}_s$(knob_tag $SCALE)")
   echo "  [gate $label] scale0=$s0 | scale$SCALE=$s25  (marginal=$(echo "$s25 $s0" | awk '{printf "%+.1f",$1-$4}'))" >&2
   echo "$s25" | awk '{print $1}'
+}
+
+# Launch the 3-box residual self-play gen for iter $1 (work-stealing into iter${1}_data).
+_gen_launch() {
+  local it="$1"
+  SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=14 WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS \
+    nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw_gen5800x_$it.log 2>&1 & disown
+  ssh -o ConnectTimeout=20 laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=14 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genlaptop_$it.log 2>&1 </dev/null &" || echo "[it$it] laptop launch rc=$?"
+  ssh -o ConnectTimeout=20 xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=10 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genxeon_$it.log 2>&1 </dev/null &" || echo "[it$it] xeon launch rc=$?"
 }
 
 # --- iter0 baseline at the gate seed (clean climb reference) ---
@@ -119,15 +158,21 @@ for it in $(seq $START $ITERS); do
   DATA=$OUT/iter${it}_data; CKPT=$OUT/ckpt/iter${it}.pt
   cp "$OUT/best.pt" "$OUT/warm.pt"
 
-  # --- 3-box residual self-play (work-stealing) ---
+  # --- 3-box residual self-play (work-stealing), self-healing the orphan-stall ---
   if [ ! -f "$OUT/done/gen$it" ]; then
     echo "[it$it] launch 3-box residual gen @ $(date)"
-    SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=14 WARM=$OUT/warm.pt OUT=$DATA SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS \
-      nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw_gen5800x_$it.log 2>&1 & disown
-    ssh -o ConnectTimeout=20 laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=14 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genlaptop_$it.log 2>&1 </dev/null &" || echo "[it$it] laptop launch rc=$?"
-    ssh -o ConnectTimeout=20 xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=10 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genxeon_$it.log 2>&1 </dev/null &" || echo "[it$it] xeon launch rc=$?"
-    # wait for GAMES npz (poll local share)
-    while [ "$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)" -lt "$GAMES" ]; do sleep 60; done
+    mkdir -p "$DATA/iter_00"; _clean_stranded "$DATA/iter_00" npz 0   # resume: free stranded claims
+    _gen_launch "$it"
+    glast=-1; gstall=0
+    while [ "$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)" -lt "$GAMES" ]; do
+      sleep 60
+      gcur=$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)
+      if [ "$gcur" -eq "$glast" ]; then gstall=$((gstall+1)); else gstall=0; glast=$gcur; fi
+      if [ "$gstall" -ge 6 ]; then        # ~6min no new npz = gen workers died → heal
+        echo "[it$it] gen STALLED at $gcur/$GAMES — self-heal: clean stale claims + relaunch" >&2
+        _clean_stranded "$DATA/iter_00" npz 4; _gen_launch "$it"; gstall=0
+      fi
+    done
     echo "[it$it] gen complete ($(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l) npz) @ $(date)"
     date > "$OUT/done/gen$it"
   else
