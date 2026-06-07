@@ -41,37 +41,78 @@ provenance**. Raw per-game JSON + full manifests under
 | 4 | residual net scale 0 vs 0.25 | the value-head MARGINAL |
 | 5 | residual net scale 0.25 vs v2.7 | residual ABSOLUTE (shares #4's cell) |
 
-_Numbers below are filled from `CLEAN_RESULTS.csv` once the reruns converge._
+### Clean numbers (from `CLEAN_RESULTS.csv`, all at commit `1973fc1`, dirty=False, provenance recorded)
+
+| # | Cell (A vs B) | n (decks) | W/L/D | wr | **elo ± σ** | z | avg_diff | verdict at n=400 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | heur-**v2.7** vs heur-**v1** (pure leaf) | 400 (200) | 181/209/10 | 0.465 | **−24.4 ± 16.5** | 1.5 | −1.9 | inconclusive (leans v2.7-WEAKER) |
+| 2 | **iter_11** vs matched v2.7 | 400 (200) | 248/147/5 | 0.626 | **+89.7 ± 17.2** | 5.2 | +5.0 | **resolved (strong)** |
+| 3 | **Stage-B iter_01** vs matched v2.7 | 400 (200) | 216/176/8 | 0.550 | **+34.9 ± 17.8** | 2.0 | +2.2 | resolved (marginal, ~2σ) |
+| 4a | **residual** scale-0 vs v2.7 | 400 (200) | 231/167/2 | 0.580 | **+56.1 ± 16.6** | 3.4 | +3.5 | **resolved** |
+| 5 | **residual** scale-0.25 vs v2.7 | 400 (200) | 242/148/10 | 0.618 | **+83.2 ± 16.9** | 4.9 | +5.3 | **resolved** |
+
+**Residual value-head MARGINAL** (scale-0.25 − scale-0, deck-paired over 200 decks):
+**Δwr = +0.0375 (SE 0.0289, z = 1.30) ≈ +26 elo ± 20 → INCONCLUSIVE at n=400.**
+
+> ⚠ **Two contradictions resolved before declaring** (per results-discipline):
+> 1. The **pure leaf gap is NEGATIVE** (v2.7 −24.4 vs v1), not the **+39 inflation** implied by R1's
+>    `+86.9 (v1 opp) → +48.1 (v2.7 opp)`. These measure different things: −24.4 is **leaf-vs-leaf
+>    pure search**; the +38.8 was an **agent-vs-opponent margin shift**, which folds in policy
+>    interaction. They are reconciled by **non-transitivity** (next point), not by a fixed leaf discount.
+> 2. The opponent-leaf change moves **different nets in OPPOSITE directions**: iter_11 went
+>    `+25.2 (v1) → +89.7 (v2.7)` (v2.7 *easier*), while Stage-B iter_01 went `+86.9 (v1) → +34.9 (v2.7)`
+>    (v2.7 *harder*). So there is **no universal "discount vs-HeuristicMCTS absolutes by ~45%"** — the
+>    leaf effect is **agent-specific and sign-varying**. (Caveat: the old v1-opponent numbers are
+>    themselves on the contaminated ruler; a clean net-vs-**v1** rerun is the proposed top-up to make the
+>    non-transitivity fully clean.)
 
 ---
 
 ## Claim-by-claim classification
 
-<!-- FILLED ON CONVERGENCE. Template rows below carry the OLD number + the cell
-     that re-judges it; the clean number + class are written after aggregation. -->
-
 | # | Old claim (source) | Old number | Clean number | Class | Note |
 |---|---|---|---|---|---|
-| A | Stage-B iter_01 vs HeuristicMCTS (results.csv, A8) | +86.9 (v1 opp) | _#3_ | _tbd_ | already corrected to +48.1 at v2.7 leaf (`d472d10`); #3 re-confirms on the clean ruler |
-| B | iter_11 vs HeuristicMCTS base, s200 (A1) | +25.2 / 1.45σ | _#2_ | _tbd_ | was z=1.45 = inconclusive even when reported |
-| C | iter_11 vs HeuristicMCTS s800 (Phase-4 notes) | +56.7 | _n/a (s200 rerun)_ | _tbd_ | clean s200 #2 informs; s800 not re-run this pass |
-| D | iter_11 +181.7 / 9.2σ (River+buggy, A1) | +181.7 | _superseded_ | **invalidated** | River+farm-bug artifact; base-only already collapsed it to +25.2 |
-| E | residual value-head marginal (lever-1, A6) | +46.5 pooled (z≈2.29) | _#4 marginal_ | _tbd_ | clean deck-paired Δ from #4; R7 now guarantees the value path fired |
-| F | residual absolute vs yardstick | (various) | _#5_ | _tbd_ | absolute read of the scale-0.25 cell |
-| G | the v1→v2.7 leaf gap itself (R1) | ~+39 (implied) | _#1_ | _tbd_ | measured DIRECTLY, leaf-vs-leaf, no net |
-| H | c=3.0 = +47.2 / 2.8σ (A6) | +47.2 → +18.5 (n=1600) | _not re-run_ | **directionally survives** | already known noise spike → +18.5; not a Phase-3 cell |
-| I | value-as-leaf cliff λ=0.5≈−24..−38, λ=1.0≈−552..−604 (A2) | large negative | _not re-run_ | **survives (qualitative)** | not a Phase-3 cell; the cliff is a separate, consistently-reproduced finding |
-| J | odometer 588/325 crossover | — | _not re-run_ | **carry-forward** | not in the Phase-3 set; flagged for a later clean pass |
+| A | Stage-B iter_01 vs HeuristicMCTS (A8) | +86.9 (v1) → +48.1 (v2.7, 700k) | **+34.9 ± 17.8** (#3) | **directionally survives (magnitude down)** | the learned-policy edge is REAL (~2σ) but ~40% of the +86.9 v1-headline; consistent with the +48.1 correction within noise. The matched-leaf correction stands. |
+| B | iter_11 vs HeuristicMCTS base s200 (A1) | +25.2 / z=1.45 (v1, inconclusive) | **+89.7 ± 17.2** (#2) | **survives — strengthened** | vs the MATCHED v2.7 yardstick the edge is large + strongly significant (z=5.2). The old +25.2 was vs v1 AND inconclusive; the clean matched number is the trustworthy one. |
+| C | iter_11 vs HeuristicMCTS s800 | +56.7 | not re-run (s200 pass) | **carry-forward** | s800 plane not in this pass; #2 (s200, +89.7) is the clean matched-depth anchor. |
+| D | iter_11 +181.7 / 9.2σ (River+buggy, A1) | +181.7 | superseded by #2 | **invalidated** | River + farm-bug artifact; base-only clean is +89.7 vs the matched yardstick, nowhere near +181.7. |
+| E | residual value-head marginal (lever-1, A6) | +46.5 pooled (z≈2.29) | **+26 ± 20 / z=1.30** (#4 marginal) | **inconclusive (not cleanly reproduced)** | on the repaired ruler (R7 now GUARANTEES the residual path fired) the deck-paired marginal is smaller and not resolved at n=400. Propose top-up (see below). The old "+45 robust" does not survive as a clean verdict. |
+| F | residual absolute vs yardstick | (various) | **+83.2 ± 16.9** (#5) abs; **+56.1** (#4a) policy-only | **survives (absolute)** | the residual net beats the matched v2.7 yardstick strongly; its scale-0 (policy-only) is already +56.1, scale-0.25 +83.2. |
+| G | the v1→v2.7 leaf gap (R1) | ~+39 (implied inflation) | **−24.4 ± 16.5** (#1) | **invalidated (as stated) / reframed** | the PURE leaf gap is NEGATIVE (v2.7 weaker, z=1.5 inconclusive). The "+39 universal discount" is not supported; the leaf effect is non-transitive (see box above). |
+| H | c=3.0 = +47.2 / 2.8σ (A6) | +47.2 → +18.5 (n=1600) | not re-run | **directionally survives** | already a known noise spike corrected to +18.5; not a Phase-3 cell. |
+| I | value-as-leaf cliff λ0.5≈−24..−38, λ1.0≈−552..−604 (A2) | large negative | not re-run | **survives (qualitative)** | a separate, repeatedly-reproduced finding; not a Phase-3 cell. |
+| J | odometer 588/325 crossover | — | not re-run | **carry-forward** | not in the Phase-3 set; flagged for a later clean pass on the repaired ruler. |
 
-### Power discipline
-Per the project's own n-thresholds (n=400 paired ≈ ±12 elo for ~35-elo effects):
-any clean effect in **[20, 35] elo** is reported as **inconclusive at n=400** with
-the σ and the n needed for a verdict (~700–1500 paired), not called success/failure.
+### Power discipline (applied)
+n=400 paired ≈ ±16–18 elo here, so a verdict needs ≥ ~35 elo (2σ). Cells **#2/#4a/#5** clear it
+(resolved); **#3** sits right at 2σ (real but marginal); **#1** (−24.4, z=1.5) and the **residual
+marginal** (+26, z=1.30) are **inconclusive** — both in the gray zone. **Proposed top-ups** (deck-paired,
+clean): to resolve the residual value-head marginal (~+26 elo) and the leaf gap (~−24 elo) at 2σ needs
+**≈ n=900–1500 paired** each. Do NOT pool these screens into a confirmatory claim.
 
 ---
 
 ## What changes in the strategic narrative
 
-<!-- FILLED ON CONVERGENCE: a short paragraph on whether the learned policy edge
-     survives the matched-leaf correction (expected: real but ~half the headline),
-     and whether the residual value head shows a real marginal (R7-guaranteed). -->
+1. **The learned policy edge is REAL on a trustworthy ruler.** Every net beats the *matched-leaf*
+   v2.7 yardstick: iter_11 **+89.7**, Stage-B iter_01 **+34.9**, residual **+56–83**. The central
+   worry — "our results are all based on a lie" — is **not** the story: the policy advantage survives
+   the R1 correction. It is *real*, just **in-ecosystem** (vs our own HeuristicMCTS), and **net-specific
+   in magnitude**.
+2. **The "leaf gap = universal +45% inflation" framing is OVERTURNED.** The pure v2.7 leaf is *weaker*
+   than v1 in standalone search (−24.4), and the opponent-leaf change moves different nets in opposite
+   directions. So the earlier guidance ("mentally discount every vs-HeuristicMCTS absolute ~45%") was
+   itself an over-generalization. Absolutes must be re-measured per-net at a matched leaf, which is now
+   exactly what the repaired ruler does — not blanket-discounted.
+3. **The residual value head is NOT a clean win on the repaired ruler.** With R7 closed (the residual
+   path is now runtime-guaranteed to fire), the value-head marginal drops to **+26 ± 20 (z=1.30,
+   inconclusive)** from the old "+45 robust." The residual net is strong *as a whole* (+83.2), but how
+   much of that is the value head vs the policy is **unresolved at n=400** — a top-up is required before
+   any production fold-in. This is the single most consequential downgrade from the clean pass.
+4. **The ruler itself is now trustworthy.** Provenance is runtime-verified (R1/R7 guards), seeds are in
+   the clean 1e9 namespace with deck hashes, manifests record both sides' full config, and 11 semantic
+   contracts + the provenance suite are green. Future strength claims rest on this, not on
+   dirname archaeology.
+
+_Source of every number: `clean_eval/CLEAN_RESULTS.csv` + per-cell `manifest.json` under
+`/mnt/c/carc-shared/clean_eval_runs/`. No training was performed in this task._
