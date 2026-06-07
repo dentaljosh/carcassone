@@ -1,0 +1,22 @@
+{
+  "kind": "eval_net_vs_heuristic",
+  "game": "base",
+  "code_rev": "484dcfa3",
+  "host": "VATECH-PC",
+  "utc": "2026-06-07T13:03:34+00:00",
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1"
+  },
+  "config": {
+    "checkpoint": "/mnt/carc-shared/lever_seq/ckpt/residual.pt",
+    "n": 120,
+    "sims": 200,
+    "heur_sims": 800,
+    "c_puct": 3.0,
+    "paired": true,
+    "seed_start": 950000,
+    "opponent": "HeuristicMCTS",
+    "new_var": "v2_7"
+  }
+}
