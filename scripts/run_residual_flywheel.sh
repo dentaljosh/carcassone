@@ -29,6 +29,13 @@ WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
 ITERS=${ITERS:-3}; N_GATE=${N_GATE:-300}; START=${START:-1}
 GATE_SEED=900000
+# Overnight controls: KEEP_MARGIN = elo a new iter must beat best by to be kept
+# (gate noise ~±21 at n=300, so default +12 ≈ 0.6σ — modest). DURATION_HOURS>0 =
+# wall-clock budget; the loop won't START a new iter past start+DURATION_HOURS
+# (last iter may overrun ~2h). 0 = no deadline (iter-count/plateau limited).
+KEEP_MARGIN=${KEEP_MARGIN:-12}; DURATION_HOURS=${DURATION_HOURS:-0}
+START_EPOCH=$(date +%s)
+DEADLINE=0; [ "$DURATION_HOURS" != "0" ] && DEADLINE=$(awk -v s=$START_EPOCH -v h=$DURATION_HOURS 'BEGIN{printf "%d", s+h*3600}')
 # iter0 = the confirmed residual net (Lever 1 winner).
 ITER0_CKPT=$SHARE_LOCAL/lever_seq/ckpt/residual.pt
 
@@ -105,6 +112,9 @@ fi
 
 flat=0
 for it in $(seq $START $ITERS); do
+  if [ "$DEADLINE" -gt 0 ] && [ "$(date +%s)" -ge "$DEADLINE" ]; then
+    echo "=== DEADLINE reached ($DURATION_HOURS h) — not starting iter $it; winding down ==="; break
+  fi
   echo ""; echo "########## FLYWHEEL ITER $it @ $(date) (warm from best, elo=$BEST_ELO) ##########"
   DATA=$OUT/iter${it}_data; CKPT=$OUT/ckpt/iter${it}.pt
   cp "$OUT/best.pt" "$OUT/warm.pt"
@@ -138,7 +148,7 @@ for it in $(seq $START $ITERS); do
   # --- gate + keep-best ---
   ELO=$(run_gate "$CKPT" "iter$it")
   echo "[it$it] scale$SCALE elo = $ELO  (best so far = $BEST_ELO)"
-  improved=$(echo "$ELO $BEST_ELO" | awk '{print ($1 > $2 + 10) ? 1 : 0}')   # +10 elo margin
+  improved=$(echo "$ELO $BEST_ELO" | awk -v m=$KEEP_MARGIN '{print ($1 > $2 + m) ? 1 : 0}')
   if [ "$improved" = "1" ]; then
     cp "$CKPT" "$OUT/best.pt"; BEST_ELO=$ELO; echo "$BEST_ELO" > "$OUT/best_elo.txt"; flat=0
     echo "[it$it] ✅ NEW BEST (climbed to $ELO) — flywheel is compounding"
