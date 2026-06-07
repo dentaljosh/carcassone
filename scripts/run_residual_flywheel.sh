@@ -40,6 +40,11 @@ echo "=== residual FLYWHEEL @ $(date): ITERS=$START..$ITERS SCALE=$SCALE GAMES=$
 # Fresh bundle so remotes run the residual-scale-in-selfplay fix (>= 1d5ae26).
 git bundle create $SHARE_LOCAL/code_sync/carc_stage-b-wiring.bundle stage-b-wiring >/dev/null 2>&1
 echo "  bundle tip: $(git rev-parse --short stage-b-wiring)"
+# Sync remotes ONCE up front (the iter0 gate fans across boxes BEFORE any gen, so
+# they need the residual code now — gen_flywheel.sh re-syncs but runs later).
+echo "  syncing remotes to bundle…"
+ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  laptop synced" || echo "  laptop sync FAILED (gate fan may run stale)"
+ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  xeon synced" || echo "  xeon sync FAILED (gate fan may run stale)"
 
 knob_tag() { echo "$1" | sed 's/\.//'; }
 
@@ -62,17 +67,23 @@ print(f"{elo:.1f} {sig:.1f} {n}")
 PY
 }
 
-# run the scale-curve gate (scale0 + scaleSCALE) for a checkpoint into $OUT/gate/<label>_s*.
-# $1=ckpt $2=label  -> echoes scale0.25 elo
+# run the scale-curve gate (scale0 + scaleSCALE) FANNED across all 3 boxes via
+# shared-claim (the eval is slow single-box: ~3 g/min on the 5800x with per-worker
+# CUDA thrash; the 24-thread laptop + xeon ~3× it). $1=ckpt(5800x path) $2=label
+# -> echoes scale0.25 elo.
 run_gate() {
-  local ckpt="$1" label="$2" s tag sub
+  local ckpt="$1" label="$2" s tag sub dir rckpt
+  rckpt=${ckpt/$SHARE_LOCAL/$SHARE_REMOTE}   # translate to remotes' mount
   for s in 0 $SCALE; do
-    tag=$(knob_tag "$s"); sub="$OUT/gate/${label}_s${tag}"
-    if [ ! -d "$sub" ] || [ "$(ls "$sub"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; then
+    tag=$(knob_tag "$s"); sub="${label}_s${tag}"; dir="$OUT/gate/$sub"
+    if [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; then
       nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
         --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
-        --workers 14 --out-root "$OUT/gate" --out-subdir "${label}_s${tag}" \
-        --seed-start "$GATE_SEED" --paired >/dev/null 2>&1 || true
+        --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
+        --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
+      ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
+      ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
+      while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; do sleep 30; done
     fi
   done
   local s0 s25; s0=$(gate_elo "$OUT/gate/${label}_s0"); s25=$(gate_elo "$OUT/gate/${label}_s$(knob_tag $SCALE)")
