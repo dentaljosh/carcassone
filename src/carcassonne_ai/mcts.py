@@ -282,12 +282,22 @@ HEURISTIC_VALUE_NORM = 15.0  # matches warmstart value-head target normalization
 
 
 class HeuristicMCTS(MCTS):
-    """Vanilla MCTS structure with virtual_score replacing the random rollout.
+    """Vanilla MCTS structure with a virtual_score leaf replacing the random rollout.
 
     Tier-1 (RuleBasedPlayer) picks the action that maximizes virtual_score one
-    ply ahead. HeuristicMCTS uses the same scoring function as the *leaf
-    evaluator* and adds UCT search on top, so a simulation can look multiple
-    plies deep and weigh tradeoffs that 1-ply argmax misses.
+    ply ahead. HeuristicMCTS adds UCT search on top, so a simulation can look
+    multiple plies deep and weigh tradeoffs that 1-ply argmax misses.
+
+    ``heur_leaf`` selects which leaf the rollout-replacement uses:
+      - ``"v1"`` (DEFAULT, legacy): base ``virtual_score`` (engine end-of-game
+        scoring of the current board). This is the historical reference-ladder
+        opponent — keep it the default so prior ladder numbers stay comparable.
+      - ``"v2_7"``: ``virtual_score_v2`` with the env-built DEFAULT_CONFIG
+        (cap/drop-three-open from CARCASSONNE_V25_*). Use this to MATCH the leaf
+        the neural agent plays with (make_v25_value_wrapper), so a net-vs-heur
+        eval isolates the learned policy instead of confounding it with the
+        v2.7-vs-v1 leaf gap. (See the 2026-06-07 outside-review finding R1: the
+        ladder opponent had been running v1 while the agent ran v2.7.)
 
     Leaf values are normalized to [-1, +1] via tanh(diff / HEURISTIC_VALUE_NORM)
     so the UCT exploration term is on a comparable scale to the exploit term —
@@ -295,12 +305,22 @@ class HeuristicMCTS(MCTS):
     Terminal leaves return the engine's signed terminal value unchanged.
     """
 
+    def __init__(self, *args, heur_leaf: str = "v1", **kwargs):
+        super().__init__(*args, **kwargs)
+        if heur_leaf not in ("v1", "v2_7"):
+            raise ValueError(f"heur_leaf must be 'v1' or 'v2_7'; got {heur_leaf!r}")
+        self._heur_leaf = heur_leaf
+
     def _rollout(self, board: Board) -> float:
         leaf_player = board.state.current_player
         v = self.game.get_game_ended(board, leaf_player)
         if v != 0.0:
             return v
-        diff = virtual_score_estimate(board, leaf_player)
+        if self._heur_leaf == "v2_7":
+            from .virtual_score_v2 import virtual_score_v2
+            diff = virtual_score_v2(board.state, leaf_player)
+        else:
+            diff = virtual_score_estimate(board, leaf_player)
         return math.tanh(diff / HEURISTIC_VALUE_NORM)
 
 

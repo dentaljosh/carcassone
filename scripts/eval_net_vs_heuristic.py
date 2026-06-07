@@ -3,21 +3,26 @@
 The project's measurement wall: Tier-1 (1-ply heuristic) is saturated, and
 self-anchored elo (iter_N vs warm/prev) can climb while absolute strength
 regresses. We need an opponent that is (a) strong, (b) NOT saturated, (c) gives
-an absolute-ish read. **HeuristicMCTS** = the v2.7 leaf + UCT search (mcts.py) —
-the same leaf our bot uses, but with NO learned policy. So:
+an absolute-ish read. **HeuristicMCTS** = a virtual_score leaf + UCT search
+(mcts.py), with NO learned policy. So:
 
-    NeuralMCTS(net priors + v2.7 leaf value)  vs  HeuristicMCTS(v2.7 leaf)
+    NeuralMCTS(net priors + v2.7 leaf value)  vs  HeuristicMCTS(--heur-leaf)
     at MATCHED sims.
 
-This isolates exactly ONE thing: does the LEARNED POLICY add strength over pure
-heuristic search at equal compute? If yes, the net is doing real work raw search
-can't. This is the yardstick we'll trust going forward (and the first rung of the
-'beat loser runs -> beat Joshua -> beat pros' ladder).
+This isolates the LEARNED POLICY's contribution over pure heuristic search at
+equal compute — BUT ONLY IF both sides use the SAME leaf.
+
+⚠ R1 (outside-review 2026-06-07): HeuristicMCTS historically ran the **v1** leaf
+(base virtual_score) by default, while the neural side runs **v2.7**
+(make_v25_value_wrapper). So the legacy default did NOT hold the leaf fixed — its
+margin confounded the learned policy with the v2.7-vs-v1 leaf gap. Pass
+``--heur-leaf v2_7`` to give the opponent the matching v2.7 leaf and measure the
+policy alone. The default stays ``v1`` so prior ladder numbers remain comparable;
+new isolating runs should pass ``--heur-leaf v2_7``.
 
 IMPORTANT: the neural side uses the PRODUCTION play config — net priors + v2.7
 leaf value (make_v25_value_wrapper) — NOT the raw net value head (which Step 9
-showed is a bad search leaf). We are measuring the policy, with the leaf both
-sides share.
+showed is a bad search leaf).
 
 Per-game JSON checkpoint (resumable), multiprocessing pool. Mirror
 play_mcts_vs_random / eval_neural_mcts_vs_vanilla conventions.
@@ -57,6 +62,9 @@ EVAL_ROOT = REPO / "data" / "ladder"
 _worker_net = None
 _worker_device = None
 _worker_include_farm = False
+# Leaf the HeuristicMCTS opponent uses: "v1" (legacy default) or "v2_7" (match the
+# agent's leaf so the eval isolates the policy — outside-review finding R1).
+_worker_heur_leaf: str = "v1"
 # Work-stealing claim (only used with --shared-claim). Mirrors eval_iter_head_to_head.
 _worker_shared_claim: bool = False
 _worker_claim_host: str = ""
@@ -102,12 +110,14 @@ def _save(p: Path, r: GameResult):
 
 
 def _worker_init(checkpoint: str, shared_claim: bool = False,
-                 claim_host: str = "", claim_stale_secs: int = 5400):
-    global _worker_net, _worker_device, _worker_include_farm
+                 claim_host: str = "", claim_stale_secs: int = 5400,
+                 heur_leaf: str = "v1"):
+    global _worker_net, _worker_device, _worker_include_farm, _worker_heur_leaf
     global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
     _worker_shared_claim = shared_claim
     _worker_claim_host = claim_host
     _worker_claim_stale_secs = claim_stale_secs
+    _worker_heur_leaf = heur_leaf
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(checkpoint, map_location=_worker_device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
@@ -150,10 +160,12 @@ def _play_one(args) -> GameResult:
     net_mcts = NeuralMCTS(game=game, evaluator=leaf_eval, simulations=sims,
                           seed=seed, c_puct=c_puct)
 
-    # Heuristic side = v2.7 leaf + UCT, NO learned policy. Its own game so its
-    # legal-cache doesn't poison the neural side.
+    # Heuristic side = UCT + a virtual_score leaf, NO learned policy. Its own game
+    # so its legal-cache doesn't poison the neural side. The leaf is `_worker_heur_leaf`:
+    # "v1" (legacy default) or "v2_7" to MATCH the neural side's leaf (isolates the policy).
     heur_game = Game(enable_legal_moves_cache=True)
-    heur_mcts = HeuristicMCTS(game=heur_game, simulations=heur_sims, seed=seed + 1)
+    heur_mcts = HeuristicMCTS(game=heur_game, simulations=heur_sims, seed=seed + 1,
+                              heur_leaf=_worker_heur_leaf)
 
     t0 = time.perf_counter()
     moves = 0
@@ -260,13 +272,21 @@ def main(argv=None) -> int:
                     help="a .claim older than this is re-claimable (default 90 min).")
     ap.add_argument("--claim-host", type=str, default=socket.gethostname(),
                     help="identity written into the claim body (host:pid:ts).")
+    ap.add_argument("--heur-leaf", choices=["v1", "v2_7"], default="v1",
+                    help="leaf the HeuristicMCTS opponent uses. 'v1' (default) = legacy "
+                         "base virtual_score (keeps prior ladder numbers comparable). "
+                         "'v2_7' = match the agent's leaf so the eval isolates the learned "
+                         "policy instead of confounding it with the v2.7-vs-v1 leaf gap (R1).")
     ap.add_argument("--summary-only", action="store_true")
     args = ap.parse_args(argv)
     if args.paired and args.n % 2 != 0:
         ap.error("--paired requires an even --n (n/2 decks x 2 colors)")
 
     heur_sims = args.heur_sims if args.heur_sims is not None else args.sims
-    sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}"
+    # Include heur_leaf in the default subdir so a v2_7 run never collides with / resumes
+    # from a cached v1 run at the same ckpt/sims/c (they are different opponents).
+    _hl_tag = "" if args.heur_leaf == "v1" else f"_heur{args.heur_leaf}"
+    sub = args.out_subdir or f"{args.checkpoint.stem}_s{args.sims}_h{heur_sims}_c{str(args.c_puct).replace('.', '')}{_hl_tag}"
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
@@ -278,7 +298,7 @@ def main(argv=None) -> int:
                                "sims": args.sims, "heur_sims": heur_sims,
                                "c_puct": args.c_puct, "paired": args.paired,
                                "seed_start": args.seed_start, "opponent": "HeuristicMCTS",
-                               "new_var": "v2_7"})
+                               "heur_leaf": args.heur_leaf, "new_var": "v2_7"})
 
     # color balance via _build_work (paired = each deck both colors)
     tasks = [(str(out), seed, net_player, args.sims, heur_sims, args.c_puct)
@@ -304,7 +324,8 @@ def main(argv=None) -> int:
         t0 = time.perf_counter()
         with Pool(processes=workers, initializer=_worker_init,
                   initargs=(str(args.checkpoint), args.shared_claim,
-                            args.claim_host, args.claim_stale_secs)) as pool:
+                            args.claim_host, args.claim_stale_secs,
+                            args.heur_leaf)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
