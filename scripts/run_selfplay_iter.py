@@ -253,9 +253,14 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         makes the wrapper discard any NN value, so the anchor stays pure v2.7
         even on the orchestrator path (where the server may still compute it)."""
         eff_blend = cfg.get("value_blend", 0.0) if blend is None else blend
+        # Residual leaf (Lever 1/3): the anchor (blend explicitly passed) always
+        # plays pure v2.7, so its residual is 0 too; the learner (blend is None)
+        # uses the cfg residual_scale.
+        eff_resid = cfg.get("residual_scale", 0.0) if blend is None else 0.0
         # Skip the value-head forward only when the v2_5 leaf fully overrides the
-        # value (blend == 0). blend > 0 needs the NN value head computed.
-        po = (cfg.get("leaf_eval", "nn") != "nn" and eff_blend == 0.0)
+        # value (blend == 0 AND residual == 0). blend>0 or residual>0 need the NN
+        # value head computed.
+        po = (cfg.get("leaf_eval", "nn") != "nn" and eff_blend == 0.0 and eff_resid == 0.0)
         if cfg.get("orchestrator"):
             assert handles is not None
             ev = make_remote_single_evaluator(handles, game)
@@ -286,7 +291,9 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             # G-S1: per-iter value_blend overrides import-time DEFAULT_CONFIG so the
             # ramp reaches the worker leaf. Other LeafConfig fields (cap, etc.) still
             # come from env via DEFAULT_CONFIG.
-            leaf_cfg = dataclasses.replace(DEFAULT_CONFIG, value_blend=eff_blend)
+            leaf_cfg = dataclasses.replace(
+                DEFAULT_CONFIG, value_blend=eff_blend, residual_scale=eff_resid
+            )
             ev = make_v25_value_wrapper(ev, cfg=leaf_cfg)
             if bev is not None:
                 bev = make_v25_batch_value_wrapper(bev, cfg=leaf_cfg)
@@ -505,6 +512,15 @@ def main(argv: list[str] | None = None) -> int:
              "run_pathb_cluster_loop.sh blend_for_iter(). Requires --leaf-eval v2_5.",
     )
     p.add_argument(
+        "--residual-scale", type=float, default=0.0,
+        help="Lever 1/3 (residual flywheel): use the NN value head as a RESIDUAL "
+             "on the v2.7 leaf in self-play — leaf = clip(tanh(vs2/15) + scale*v_nn, "
+             "±1). >0 keeps the value head ACTIVE (NOT policy-only) even with "
+             "--value-blend 0, and takes precedence over the blend. Pair with "
+             "--value-target residual so the head retrains on the co-adapted "
+             "search distribution. Requires --leaf-eval v2_5.",
+    )
+    p.add_argument(
         "--shared-claim", action="store_true",
         help="Work-stealing mode. Before playing a seed, atomically claim it "
              "via an O_EXCL `seed_NNNNNN.claim` sidecar file. Lets multiple "
@@ -702,6 +718,7 @@ def main(argv: list[str] | None = None) -> int:
         "anchor_checkpoint": str(args.anchor_checkpoint) if args.anchor_checkpoint else None,
         "anchor_fraction": float(args.anchor_fraction),
         "value_blend": float(args.value_blend),
+        "residual_scale": float(args.residual_scale),
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -768,7 +785,8 @@ def main(argv: list[str] | None = None) -> int:
                 max_batch=args.orch_max_batch,
                 batch_timeout_ms=args.orch_batch_timeout_ms,
                 use_fp16=args.fp16,
-                policy_only=(args.leaf_eval != "nn" and args.value_blend == 0.0),
+                policy_only=(args.leaf_eval != "nn" and args.value_blend == 0.0
+                            and args.residual_scale == 0.0),
             )
             id_q = ctx.Queue()
             for w in range(n_workers):
