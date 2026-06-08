@@ -20,8 +20,11 @@ SHARE_REMOTE=/mnt/carc-shared
 REPO_LOCAL=/home/doctor/projects/carcassone
 REPO_XEON=/home/doctor/projects/carcassone
 REPO_LAPTOP=/home/pop/carcassone
-OUT=$SHARE_LOCAL/flywheel_residual
-OUTR=$SHARE_REMOTE/flywheel_residual
+# FLYWHEEL_TAG lets a fresh attempt write to its own dir (so it does NOT resume the
+# prior null run's iterN_data / done markers). Default = the original dir.
+FLYWHEEL_TAG=${FLYWHEEL_TAG:-flywheel_residual}
+OUT=$SHARE_LOCAL/$FLYWHEEL_TAG
+OUTR=$SHARE_REMOTE/$FLYWHEEL_TAG
 PY=$REPO_LOCAL/.venv/bin/python
 ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12"
 WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
@@ -42,7 +45,7 @@ ITER0_CKPT=$SHARE_LOCAL/lever_seq/ckpt/residual.pt
 mkdir -p $OUT/ckpt $OUT/done $OUT/gate
 cd $REPO_LOCAL || { echo "FATAL: cannot cd $REPO_LOCAL" >&2; exit 1; }
 [ -f "$ITER0_CKPT" ] || { echo "FATAL: iter0 residual ckpt missing: $ITER0_CKPT" >&2; exit 1; }
-echo "=== residual FLYWHEEL @ $(date): ITERS=$START..$ITERS SCALE=$SCALE GAMES=$GAMES N_GATE=$N_GATE ==="
+echo "=== residual FLYWHEEL @ $(date): TAG=$FLYWHEEL_TAG ITERS=$START..$ITERS SCALE=$SCALE GAMES=$GAMES N_GATE=$N_GATE VLW=${VLW:-1.0} KEEP_MARGIN=$KEEP_MARGIN ==="
 
 # Fresh bundle so remotes run the residual-scale-in-selfplay fix (>= 1d5ae26).
 git bundle create $SHARE_LOCAL/code_sync/carc_stage-b-wiring.bundle stage-b-wiring >/dev/null 2>&1
@@ -96,8 +99,8 @@ _gate_launch() {
     --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
     --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
     --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
-  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
-  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $SHARE_REMOTE/flywheel_residual/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
 }
 
 # Scale-curve gate (scale0 + scaleSCALE) fanned 3-box (~3× single-box: the eval is
@@ -184,7 +187,7 @@ for it in $(seq $START $ITERS); do
     echo "[it$it] train @ $(date)"
     nice -n 19 env $ENVV $PY -u scripts/train_iter.py \
       --output-root "$DATA" --warmstart-root "$WARMSTART_ROOT" \
-      --iter 0 --window 10 --warmstart-mix-fraction 0.0 --value-loss-weight 1.0 \
+      --iter 0 --window 10 --warmstart-mix-fraction 0.0 --value-loss-weight ${VLW:-1.0} \
       --stage-local "/tmp/fw_stage_$it" --warm-from "$OUT/warm.pt" --output "$CKPT" --epochs 3 \
       --prov-value-target residual --prov-selfplay-leaf "v2_7+residual${SCALE}" \
       --prov-seed-range "0-$((GAMES-1))" --prov-run-tag "flywheel_residual_it${it}"
