@@ -64,7 +64,9 @@ def crossover_heur_sims(rungs: list[tuple[int, float]]) -> tuple[float, str]:
 
 def run_rung(args, heur_sims: int) -> dict:
     """Run one eval_net_vs_heuristic rung as a subprocess; parse the summary."""
-    sub = f"{args.out_subdir}/h{heur_sims}"
+    # Fold the heur leaf into the dir so a v2_7 rung can never cache-hit stale v1 JSONs
+    # at the same ckpt/sims/c/seed (the explicit --out-subdir bypasses eval's _hl_tag guard).
+    sub = f"{args.out_subdir}/{args.heur_leaf}/h{heur_sims}"
     cmd = [
         PY, "-u", "scripts/eval_net_vs_heuristic.py",
         "--checkpoint", str(args.checkpoint),

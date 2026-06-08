@@ -528,3 +528,23 @@ hang the live script has no internal backstop for.
 
 Impact note: D-S3's duplicate is low practical impact (deterministic eval → identical overwrite). D-S1 (silent
 hang) is the highest-impact deferred item — mitigated by the watchdog until the restart fix lands.
+
+---
+
+## Iteration — 2026-06-08 (overnight) — round-3 CORE audit (MCTS / leaf / model / round-trip)
+
+Deeper audit of the algorithmic core (the wiring rounds skipped it). 3 confirmed, all LOW
+severity, but one is a strategic insight. Hand-verified separately: warm-from does a FULL
+`load_state_dict` (value/residual head preserved, NO per-iter reinit) → compounding is
+mechanically intact; iter1's +106.6 climb is real.
+
+### Fixed
+| # | File | Bug | Fix | Commit |
+|---|---|---|---|---|
+| F-R3 | `ladder_asymmetric.py:67` run_rung | explicit `--out-subdir` bypasses eval's `_hl_tag` v1/v2_7 cache-collision guard → a v2_7 ladder rerun could cache-hit stale v1 JSONs at the same ckpt/sims/c/seed (re-introducing the leaf confound). Reachable for the proposed seed-950k reconciliation if run with `--allow-selfplay-seeds` against the old dir. | fold heur_leaf into the subdir (`out_subdir/{leaf}/h{sims}`) so v1 and v2_7 never share a dir | (this commit) |
+
+### Strategic / Deferred (NOT applied to the live run)
+| # | File:line | Finding | Disposition |
+|---|---|---|---|
+| **S-R3-1** | `selfplay.py:355-357` (target) / `network.py` value tanh / `train_iter.py:556` (MSE) | **Residual target Δ = root.Q − h ∈ [−2,+2] but the value head is tanh-bounded to [−1,+1].** For the high-signal positions (`|Δ|>1`, where search and v2.7 strongly disagree) the head saturates → vanishing gradient → the **most informative residuals are systematically under-learned**, and the leaf can only ever nudge ±scale. Self-consistent (does NOT bias any strength CLAIM) but a concrete structural CAP on what the residual can learn → a candidate mechanism for CL-004 being *modest* and a limit on CL-011 compounding (distinct from CL-008 gradient-starvation). | **Lever for attempt #2** (do NOT alter the live experiment): clip the residual target to [−1,1] before training, OR give the residual head a linear (unbounded) output, OR scale Δ into the head's range. Surface to Joshua. |
+| D-R3-2 | `train_iter.py:157-193, 694-700` | value↔outcome corr diagnostic is residual-vs-residual in residual mode but printed against the 0.61 value-vs-OUTCOME ruler (the live +0.51 reading looks like underperformance but is a category error) | cosmetic; relabel/branch the printout on value_target (re-confirm of round-2 #3) |
