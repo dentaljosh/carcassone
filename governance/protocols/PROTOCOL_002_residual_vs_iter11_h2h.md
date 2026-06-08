@@ -27,10 +27,17 @@
 
 ---
 
-## RESULT (PENDING — not yet launched)
+## RESULT (2026-06-08 02:48 EDT — auto-chain; independently re-tallied)
 
 | metric | value | z | verdict |
 |---|---|---|---|
-| head-to-head elo (residual − iter_11), n=400 paired | _pending_ | _pending_ | _pending_ |
+| head-to-head elo (residual − iter_11), n=400 paired | +29.6 ± 16.7 | 1.77 | in (1.3, 2) band → escalated |
+| head-to-head elo (residual − iter_11), **n=1500 paired** | **+34.2 ± 8.5** | **4.00** | **residual_wins** |
 
-**Top-up fired?** _pending_. **Verdict:** _pending_ → CL-002 / CL-005 transition per the thresholds above.
+**Top-up fired?** YES — n=400 z=1.77 landed in the pre-registered (1.3, 2) escalation band → auto-escalated to n=1500 (no peeking; the rule was fixed in advance). **Verdict: `residual_wins`** — z=4.00 clears the ≥2σ bar 2× over; the point estimate **+34.2** sits right at the pre-registered +35-elo success threshold (well within ±8.5). W/D/L = **815/17/668 over 750 decks**; avg score margin **+0.41 pts/game** — a thin *win-rate* edge (wr 0.527), not domination. Independently re-tallied from the raw JSON — exact match to the orchestrator's number (no trust required).
+
+**Transitions:**
+- **CL-002** (*iter_11 is the strongest established policy*) — its named falsifier ("a head-to-head in which the residual net wins beyond noise") FIRED → **Disfavored**. The residual net is the stronger agent.
+- **CL-017** (new) — *residual net @0.25 is the strongest established agent* → **Supported** (in-ecosystem; +34.2/z=4.0 direct, n=1500).
+- **CL-005** (*residual → production*) — the agent-comparison gate **PASSES**, but production fold-in stays **FORBIDDEN** until the clean-seed **out-of-lineage** check (per "what each outcome FORBIDS"). That odometer is now being produced by the flywheel's iter0 odometer (best vs heur@800-v2.7, clean seed 1.5e9) → resolve CL-005 from `flywheel_residual_v2/odometer.csv`.
+- Result row: `results.csv: cleaneval_h2h_residual_rs025_vs_iter11_s200_n1500`.
