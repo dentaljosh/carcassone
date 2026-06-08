@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import multiprocessing as mp
+import os
 import socket
 import sys
 import time
@@ -167,7 +168,8 @@ def _save(eval_dir: str, result: GameResult) -> None:
         eval_dir, result.sims, _worker_old_sims, result.seed, result.new_player
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.stem + ".partial.json")
+    # dot-prefixed + host/pid-unique temp (no glob-count, no cross-box collision). Shell-audit #3/#10.
+    tmp = path.with_name(f".{path.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
     with tmp.open("w") as fh:
         json.dump(asdict(result), fh)
     tmp.replace(path)

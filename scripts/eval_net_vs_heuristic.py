@@ -113,7 +113,10 @@ def _try_load(p: Path):
 
 def _save(p: Path, r: GameResult):
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_name(p.stem + ".partial.json")
+    # dot-prefixed (so *seed*.json globs in the flywheel wait-loops/gate_elo never count it)
+    # + host/pid-unique (so two boxes replaying the same seed after an orphan-stall heal can't
+    # corrupt a shared temp). Mirrors warmstart.py's .npz pattern. Shell-audit w3gbnte6z #3/#7.
+    tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
     json.dump(asdict(r), open(tmp, "w"))
     tmp.replace(p)
 
