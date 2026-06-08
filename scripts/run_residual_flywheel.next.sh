@@ -271,20 +271,27 @@ for it in $(seq $START $ITERS); do
   ELO=$(run_gate "$CKPT" "iter$it")
   echo "[it$it] scale$SCALE elo = $ELO  (best so far = $BEST_ELO)"
   improved=$(awk -v e="$ELO" -v b="$BEST_ELO" -v m="$KEEP_MARGIN" 'BEGIN{el=tolower(e);bl=tolower(b); if(e==""||b==""||el~/nan|inf/||bl~/nan|inf/){print 0;exit} print (e+0>b+0+m+0)?1:0}')
+  PLATEAU=0
   if [ "$improved" = "1" ]; then
     cp "$CKPT" "$OUT/best.pt"; BEST_ELO=$ELO; echo "$BEST_ELO" > "$OUT/best_elo.txt"; flat=0
     echo "[it$it] ✅ NEW BEST (climbed to $ELO) — flywheel is compounding"
   else
     flat=$((flat+1))
     echo "[it$it] ✗ no climb (flat=$flat/2); best stays $BEST_ELO"
-    if [ "$flat" -ge 2 ]; then echo "[it$it] PLATEAU (2 flat iters) — stopping the flywheel" >&2; break; fi
+    [ "$flat" -ge 2 ] && PLATEAU=1
   fi
 
-  # --- out-of-lineage odometer every ODO_EVERY iters (LOGGED, not gated) ---
-  if [ "$ODO_EVERY" -gt 0 ] && [ $(( it % ODO_EVERY )) -eq 0 ]; then
+  # --- out-of-lineage odometer: on the ODO_EVERY cadence, OR on ANY terminal iter
+  # (plateau or last) so the final out-of-lineage signal is NEVER lost. D-S7: the old
+  # plateau `break` lived in the else-branch above and fired BEFORE this block, so the
+  # iter3 odometer was SKIPPED on the 2026-06-08 plateau run (recovered manually via
+  # scripts/odo_oneshot.sh). Break now happens AFTER the odometer. ---
+  if [ "$ODO_EVERY" -gt 0 ] && { [ $(( it % ODO_EVERY )) -eq 0 ] || [ "$PLATEAU" = "1" ] || [ "$it" -ge "$ITERS" ]; }; then
     echo "[it$it] === out-of-lineage odometer: best vs heur@${ODO_HEUR_SIMS} (clean seed $ODO_SEED, n=$ODO_N) @ $(date) ==="
     run_odometer "$OUT/best.pt" "$it"
   fi
+
+  if [ "$PLATEAU" = "1" ]; then echo "[it$it] PLATEAU (2 flat iters) — stopping the flywheel" >&2; break; fi
 done
 
 echo ""; echo "=== FLYWHEEL DONE @ $(date): best scale$SCALE elo = $BEST_ELO (iter0 baseline was the residual net's +68) ==="

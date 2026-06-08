@@ -14,6 +14,7 @@ copy. Apply at the next flywheel launch.
 | **D-S2** | `_kill_pool` reaps the prior pool on all 3 boxes (`pkill -f eval_net_vs_heuristic` / `run_selfplay_iter`) **before** each heal relaunch → no orphan-worker accumulation (the ~56-proc pileup) | all 3 heals |
 | **D-S3** | `_clean_stranded` in-loop age **4min → 30min** → the heal can't delete a slow-but-alive worker's claim → no duplicate-played seeds | all 3 heals |
 | **D-S6** | `cp best.pt warm.pt` now **fails loudly** (`[ -s best.pt ]` guard + `|| exit 1`) instead of silently warming from nothing (`set -e` is off) | per-iter warm staging |
+| **D-S7** | **plateau `break` ran BEFORE the odometer block** → the terminal iter's out-of-lineage odometer was **SKIPPED** (the 2026-06-08 iter3 miss; recovered manually via `scripts/odo_oneshot.sh`). Fixed: the `break` now happens **after** the odometer, and the odometer fires on **any terminal iter** (plateau OR last), not just the `ODO_EVERY` cadence — so the final out-of-lineage signal is never lost. | iter-loop tail |
 | D-S4 | (ssh rc=255 box-drop) — **partially** covered: the heal's `_kill_pool`+relaunch re-adds a dropped box on the next stall. A dedicated launch-retry wrapper is a further improvement, not included (low impact: work-stealing + heal recover it). | — |
 
 ## How to apply (at restart, after the current run's processes are gone)
