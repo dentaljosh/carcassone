@@ -2,8 +2,8 @@
 
 > **Primary track DECIDED 2026-06-08 (Joshua): P-B — Track B (genuine self-improvement) is primary;
 > "superhuman vs humans" is DEFERRED/aspirational** (no measurement path exists yet, so it is not a
-> near-term success criterion). Numeric go/no-go thresholds below are now **`PROPOSED` defaults** —
-> defensible from our n-discipline + compute reality, but **Joshua edits/ratifies before they bind.**
+> near-term success criterion). Numeric go/no-go thresholds below were **RATIFIED by Joshua on 2026-06-08**
+> (they now bind; revisit if one proves wrong in practice).
 > This charter sits in the **DECISIONS** layer of the governance spine (see `governance/README.md`). It
 > points to live context rather than restating it: [`CLAUDE.md`](CLAUDE.md) (goal change + two structural
 > blockers), [`docs/ORIGINAL_PROMPT.md`](docs/ORIGINAL_PROMPT.md) (the original analyzer win-condition this
@@ -77,7 +77,7 @@ measurement → then a structural leaf/architecture change) come **before** any 
 
 **Track B (PRIMARY, research).** A learned component that exceeds the v2.7 leaf such that strength **compounds
 across iterations out-of-lineage** — a non-regressing climb beyond the noise band (the falsifier on CL-011).
-> **PROPOSED (Joshua to ratify)** — Track-B "demonstrated" bar:
+> **RATIFIED (Joshua, 2026-06-08)** — Track-B "demonstrated" bar:
 > **≥3 consecutive self-improvement iterations**, each adding **≥ +15 elo out-of-lineage** vs a FIXED reference
 > rung (heur@800; see ladder), **cumulative ≥ +45 elo** over the iter-0 baseline, with **no single-iteration
 > regression beyond the gate noise** (gate at **n ≥ 400 paired** → ±17 elo, so "no regression" = no iter drops
@@ -87,7 +87,7 @@ across iterations out-of-lineage** — a non-regressing climb beyond the noise b
 **Track A (fallback/production).** A learned-policy + v2.7 agent that beats a matched yardstick **out-of-lineage**
 (not just in-ecosystem). Today CL-001 is only *Supported* (in-ecosystem); the out-of-lineage win does not exist
 (the net loses to heur@800 by −29, heur@3200 by −38 on the odometer).
-> **PROPOSED (Joshua to ratify)** — Track-A "ship" bar: **beats heur@800 out-of-lineage by ≥ +30 elo at
+> **RATIFIED (Joshua, 2026-06-08)** — Track-A "ship" bar: **beats heur@800 out-of-lineage by ≥ +30 elo at
 > n = 400 paired** (≈2σ; heur@800 is 4× our search depth, never-gated, out-of-lineage). Tighten to n=600–800 if
 > a ship decision is imminent. **Currently UNMET.**
 
@@ -123,7 +123,7 @@ The single highest-leverage area. Rungs, weakest→strongest:
    bar. Candidates when revisited: recorded expert games, a recruited strong player, or an external bot of known
    human-relative strength.
 
-> **PROPOSED (Joshua to ratify)** — gating reference = heur@800 out-of-lineage at n≥400 paired (rung 2).
+> **RATIFIED (Joshua, 2026-06-08)** — gating reference = heur@800 out-of-lineage at n≥400 paired (rung 2).
 > Rung 3 (human anchor) intentionally deferred. Out-of-lineage rung 2 EXISTS, so Track-B progress IS measurable
 > now even with superhuman deferred — this is what makes the P-B decision actionable rather than blocked.
 
@@ -152,7 +152,7 @@ Fall back to Track A as primary if, within the budget below, **any** of:
 - **No compounding** — a multi-iter run shows no non-regressing out-of-lineage climb beyond noise (CL-011 stays
   *Disfavored* or worsens).
 
-> **PROPOSED (Joshua to ratify)** — Track-B budget before pivot: **≤2 funded structural attempts** (e.g. a
+> **RATIFIED (Joshua, 2026-06-08)** — Track-B budget before pivot: **≤2 funded structural attempts** (e.g. a
 > retuned in-loop flywheel, then a higher-capacity-leaf redesign), **each ≤ ~7 days wall-clock on the 3-box
 > cluster**; if neither clears the Track-B "demonstrated" bar, pivot to Track A primary. (Compute reality: 3 GPUs,
 > a flywheel iteration is ~hours-to-a-day of gen+train+gate — 7 days allows ~3–5 iters per attempt, enough to
@@ -166,7 +166,7 @@ Fall back to Track A as primary if, within the budget below, **any** of:
   Track-B bar but the measurement ladder is sound.
 - **Abandon Track B (narrow to the analyzer):** if the redesign attempt also fails to break the leaf ceiling
   within its budget, narrow the *project* goal back to the original analyzer (Phase 5) win-condition.
-> **PROPOSED (Joshua to ratify)** — redesign budget: **1 structural-redesign attempt, ≤ ~10 days wall-clock**,
+> **RATIFIED (Joshua, 2026-06-08)** — redesign budget: **1 structural-redesign attempt, ≤ ~10 days wall-clock**,
 > only after cheap levers are exhausted. **Abandonment trigger:** that redesign completes its budget with CL-010
 > still *Supported* AND CL-011 still *Disfavored* (no learned component beats heur@800 out-of-lineage, no
 > compounding) → end the superhuman pursuit, resume the analyzer. Per DECISIONS 2026-05-28 this is reversible and
@@ -206,5 +206,5 @@ CL-011) is real and is precisely what the pivot/abandonment budgets bound.
 ---
 
 *Governance spine: [`governance/README.md`](governance/README.md). Open claims:
-[`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv). Strategic thresholds above are `PROPOSED` —
-Joshua edits/ratifies before they bind.*
+[`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv). Strategic thresholds above were
+RATIFIED by Joshua on 2026-06-08 (they bind; revisit if one proves wrong).*
