@@ -1,18 +1,21 @@
 # PROJECT CHARTER — Carcassonne AI
 
-> **Strategic thresholds marked `TBD-Joshua` require Joshua's ratification before they bind.** This charter
-> sits in the **DECISIONS** layer of the governance spine (see `governance/README.md`). It points to the
-> live context rather than restating it: read [`CLAUDE.md`](CLAUDE.md) (goal change + the two structural
+> **Primary track DECIDED 2026-06-08 (Joshua): P-B — Track B (genuine self-improvement) is primary;
+> "superhuman vs humans" is DEFERRED/aspirational** (no measurement path exists yet, so it is not a
+> near-term success criterion). Numeric go/no-go thresholds below are now **`PROPOSED` defaults** —
+> defensible from our n-discipline + compute reality, but **Joshua edits/ratifies before they bind.**
+> This charter sits in the **DECISIONS** layer of the governance spine (see `governance/README.md`). It
+> points to live context rather than restating it: [`CLAUDE.md`](CLAUDE.md) (goal change + two structural
 > blockers), [`docs/ORIGINAL_PROMPT.md`](docs/ORIGINAL_PROMPT.md) (the original analyzer win-condition this
-> goal now overrides), and [`DECISIONS.md`](DECISIONS.md) 2026-05-28 "Goal change". Claim ids below resolve
-> in [`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv).
+> goal overrides), [`DECISIONS.md`](DECISIONS.md) 2026-05-28 "Goal change" + 2026-06-08 "Track decision".
+> Claim ids resolve in [`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv).
 
 ---
 
 ## The two tracks (do NOT silently merge them)
 
-This project currently contains two distinct efforts that are easy to conflate. The charter's first job is
-to keep them apart; its second is to flag that **which one is primary is currently unresolved** (below).
+This project contains two distinct efforts that are easy to conflate. The charter's first job is to keep
+them apart; its second (now done) was to declare which is primary.
 
 **Track A — Strong verifiable agent (production-oriented).**
 Strongest learned **policy** wrapped around the hand-crafted **v2.7 `virtual_score`** search leaf. The agent
@@ -21,39 +24,39 @@ head). This is **where the current validated gains live**: iter_11 **+89.7** elo
 elo, both *in-ecosystem* vs our own matched-leaf HeuristicMCTS yardstick (CL-001, CL-002). Production-oriented:
 ship the strongest thing we can *verify*, even if its strength is heuristic-bounded.
 
-**Track B — Genuine self-improvement (research-oriented).**
+**Track B — Genuine self-improvement (research-oriented). ← PRIMARY (2026-06-08).**
 A **learned value** that participates in AND improves the search teacher — an AlphaZero/KataGo-style climbing
 curve where strength compounds across iterations because the learned component *exceeds* the heuristic leaf.
 **Current status: NOT demonstrated.** Blocked by the two structural walls from `CLAUDE.md`:
-1. **Measurement** — no strong, non-saturated, out-of-lineage / human-anchored reference exists yet (Tier-1 is
-   saturated; self-anchored elo can climb while absolute strength regresses). We cannot currently tell whether
-   we are approaching the goal.
+1. **Measurement** — no strong, non-saturated, *human-anchored* reference exists (Tier-1 saturated; self-anchored
+   elo can climb while absolute strength regresses). **Partial relief:** an *out-of-lineage* gauge now exists (the
+   asymmetric ladder `scripts/ladder_asymmetric.py`, heur@{200,800,3200}); the *human* anchor does not (deferred).
 2. **Leaf ceiling** — the v2.7 leaf caps learned strength near strong-human *by construction* (CL-010); the
    learned components do not yet exceed it.
    Plus: the Lever-3 residual flywheel was **NULL for compounding** (CL-011 *Disfavored*) — iter0 best, iter1
-   regressed, iter2 tied within noise. No demonstrated AlphaZero flywheel.
+   regressed, iter2 tied within noise. **Flipping CL-011 is the primary objective's falsifier (see below).**
 
 Track A can succeed (ship a strong heuristic-bounded agent) while Track B remains entirely undemonstrated.
 They are not the same project and must not be reported as one.
 
 ---
 
-## Primary objective — CURRENTLY AMBIGUOUS (this charter exists to force the choice)
+## Primary objective — DECIDED: P-B (Track B primary), superhuman DEFERRED
 
-The goal of record (CLAUDE.md / DECISIONS 2026-05-28) is **genuinely superhuman 2p Base+Farmers play**, which
-is fundamentally a **Track B** ambition (superhuman *requires* learned components to beat the heuristic). But
-**all currently validated progress is Track A** (heuristic-bounded, in-ecosystem). The project is implicitly
-straddling both with no declared primary.
+**Decision (Joshua, 2026-06-08):** Track B — genuine self-improvement — is the **primary objective**.
+The ultimate "beat strong/expert humans, aspirationally the world champion" goal is **kept but DEFERRED**:
+it is currently **unmeasurable** (no human/out-of-lineage-strength anchor), so it is the *aspirational north
+star*, **not** a near-term success bar.
 
-**Recommendation:** Joshua picks one as primary for the next epoch. The honest options:
-- **(P-A) Primary = Track A**, demote superhuman to aspirational. Ship/verify the strongest heuristic-bounded
-  agent; treat the analyzer (Phase 5) as a near-term deliverable on top of it.
-- **(P-B) Primary = Track B**, accept it is research-grade and months-to-maybe-unreachable; fund the two
-  unblocks (measurement ladder, then a structural leaf/architecture change) before any more strength tuning.
-- **(P-split) Both, sequenced** — Track A ships now; Track B is a gated research bet that must clear the
-  measurement unblock before compute is committed.
+**Operational consequence — the near-term Track-B objective is MEASURABLE today:** demonstrate a genuine
+**out-of-lineage climbing curve** — strength that compounds across self-improvement iterations on the
+asymmetric ladder (the gauge we already have). In one line: **flip CL-011 from *Disfavored* to *Supported***.
+Superhuman-vs-humans is promoted from aspiration to active goal *only after* the human-anchor rung (below) is
+built. Until then we do not claim, target, or measure "superhuman."
 
-> `TBD-Joshua` — **which track is primary** for the coming epoch (P-A / P-B / P-split).
+This means the project explicitly accepts (per Joshua) that Track B is **research-grade and
+months-to-maybe-unreachable** with 3 GPUs ≪ known superhuman recipes; the two unblocks (sound out-of-lineage
+measurement → then a structural leaf/architecture change) come **before** any more eval-config strength tuning.
 
 ---
 
@@ -61,98 +64,113 @@ straddling both with no declared primary.
 
 - Does the residual value-head marginal add *real* strength, or is it noise? (**CL-004** — PROTOCOL_001 running.)
 - Should residual scale 0.25 go to production? (**CL-005** — *Untested*; gated entirely on CL-004.)
-- Is the value head gradient-starved on the shared trunk? (**CL-008** — *Provisional*, never directly measured.)
+- Is the value head gradient-starved on the shared trunk? (**CL-008** — *Provisional*, never directly measured;
+  a Phase-B observability probe. Directly relevant to Track B: it's a candidate *mechanism* for the flywheel null.)
 - Can any learned component beat the v2.7 leaf standalone at matched sims? (CL-006 / CL-010.)
 - The downstream prize from the original prompt: the **analyzer (Phase 5)** and **heuristic research (Phase 6)**
-  — explicitly deferred behind strength milestones (DECISIONS 2026-05-28), not abandoned.
+  — deferred behind strength milestones (DECISIONS 2026-05-28), not abandoned; the Track-B abandonment path
+  (below) narrows back to exactly this.
 
 ---
 
 ## Success criteria — per track
 
-**Track A (production).** A learned-policy + v2.7 agent that beats the matched v2.7 yardstick **out-of-lineage**
-(not just in-ecosystem), at margin and n `TBD-Joshua`, with a clean-ruler manifest. Aspirationally: competitive
-with expert humans. Today CL-001 is only *Supported* (in-ecosystem); the out-of-lineage rung does not exist yet.
-> `TBD-Joshua` — Track-A "ship" bar: out-of-lineage elo margin + n (e.g. +___ elo at n=___ paired).
+**Track B (PRIMARY, research).** A learned component that exceeds the v2.7 leaf such that strength **compounds
+across iterations out-of-lineage** — a non-regressing climb beyond the noise band (the falsifier on CL-011).
+> **PROPOSED (Joshua to ratify)** — Track-B "demonstrated" bar:
+> **≥3 consecutive self-improvement iterations**, each adding **≥ +15 elo out-of-lineage** vs a FIXED reference
+> rung (heur@800; see ladder), **cumulative ≥ +45 elo** over the iter-0 baseline, with **no single-iteration
+> regression beyond the gate noise** (gate at **n ≥ 400 paired** → ±17 elo, so "no regression" = no iter drops
+> > ~20 elo). Rationale: this clears the odometer's ~1-doubling-of-depth, exceeds the ±21 gate noise that hid
+> the flywheel null, and rules out the iter1 −50 / iter2-tied pattern we actually saw. Measured on the clean ruler.
 
-**Track B (research).** A learned component that exceeds the v2.7 leaf such that strength **compounds across
-iterations out-of-lineage** — a monotone climb beyond the noise band over ≥3 iterations (the falsifier on
-CL-011). This is the AlphaZero/KataGo signature.
-> `TBD-Joshua` — Track-B "demonstrated" bar: # iterations, per-iter out-of-lineage elo gain, noise margin.
-
----
-
-## Operational definition of "superhuman" — and why it is currently UNFALSIFIABLE
-
-"Superhuman" must be defined against a measurable referent or it cannot be claimed, won, or disproven. Proposed
-skeleton (every number `TBD-Joshua`):
-
-- **Against whom:** a strong/expert human reference, aspirationally the world champion. `TBD-Joshua` — name the
-  reference opponent(s) and their accepted strength.
-- **Format:** 2-player, **Base + Farmers**, no River (locked scope, DECISIONS 2026-06-02).
-- **Margin:** win-rate / elo edge `TBD-Joshua` over that reference (e.g. ≥___% across ≥___ games).
-- **Measured how:** a clean-ruler eval (runtime-verified provenance, 1e9 seeds, deck hashes, matched leaf;
-  see `clean_eval/CLEAN_EVAL_AUDIT.md`) against the reference rung.
-
-> **⚠️ BLOCKER — "superhuman" is currently UNFALSIFIABLE as stated.** The measuring ladder does **not yet
-> exist**: there is no out-of-lineage rung and no human/expert anchor (structural blocker #1). Until the ladder
-> below is built, any "superhuman" claim is unprovable *and* undisprovable. Building the ladder is the
-> precondition for the goal to even be evaluable.
+**Track A (fallback/production).** A learned-policy + v2.7 agent that beats a matched yardstick **out-of-lineage**
+(not just in-ecosystem). Today CL-001 is only *Supported* (in-ecosystem); the out-of-lineage win does not exist
+(the net loses to heur@800 by −29, heur@3200 by −38 on the odometer).
+> **PROPOSED (Joshua to ratify)** — Track-A "ship" bar: **beats heur@800 out-of-lineage by ≥ +30 elo at
+> n = 400 paired** (≈2σ; heur@800 is 4× our search depth, never-gated, out-of-lineage). Tighten to n=600–800 if
+> a ship decision is imminent. **Currently UNMET.**
 
 ---
 
-## The benchmark ladder we still need (the measurement unblock)
+## Operational definition of "superhuman" — DEFERRED (kept aspirational)
 
-The single highest-leverage missing artifact. Rungs, weakest→strongest:
+> **DECISION (Joshua, 2026-06-08): DEFER.** "Superhuman" is kept as the aspirational north star but is **NOT a
+> near-term success criterion** and **NOT currently measured**, because no human/out-of-lineage-strength anchor
+> exists (structural blocker #1). Setting a binding referent/margin is **deferred until the human-anchor rung
+> (below) is built.** Until then any "superhuman" claim is unprovable *and* undisprovable — so we don't make one.
 
-1. **In-ecosystem (have it):** matched-leaf HeuristicMCTS — the current clean ruler. *Same lineage / same leaf
-   family* → cannot certify out-of-lineage strength.
-2. **Out-of-lineage search rung (MISSING):** a strong reference outside our training lineage — e.g. high-sim
-   vanilla MCTS / the Ameneyro-2020 baseline, or heur@high-sims as an absolute yardstick (CL-010's odometer).
-3. **Human / expert anchor (MISSING):** the one rung that makes "superhuman" meaningful. Source `TBD-Joshua`
-   (recorded expert games, a recruited strong player, or an external bot of known human-relative strength).
+Skeleton to be completed *when* the anchor exists (do NOT fill until then):
+- **Against whom:** a strong/expert human reference, aspirationally the world champion. *DEFERRED — name when rung 3 exists.*
+- **Format:** 2-player, **Base + Farmers**, no River (locked scope, DECISIONS 2026-06-02). *(this one is fixed)*
+- **Margin:** win-rate / elo edge over that reference. *DEFERRED.*
+- **Measured how:** clean-ruler eval (runtime-verified provenance, 1e9 seeds, deck hashes, matched leaf) vs the anchor rung.
 
-> `TBD-Joshua` — ladder rung definitions (which engines/opponents, at what sims) and the human-anchor source.
-> Until rung 2 exists, in-ecosystem gains (CL-001/002) cannot be promoted past *Supported*.
+---
+
+## The benchmark ladder (the measurement unblock)
+
+The single highest-leverage area. Rungs, weakest→strongest:
+
+1. **In-ecosystem (HAVE):** matched-leaf HeuristicMCTS@200 — the current clean ruler. Same lineage / same leaf
+   family → cannot certify out-of-lineage strength. (CL-001/002 are pinned here → capped at *Supported*.)
+2. **Out-of-lineage search rung (HAVE, as of 2026-06-07):** the asymmetric ladder `scripts/ladder_asymmetric.py`
+   — heur@{200, 800, 3200} as absolute yardsticks (CL-010's odometer). **PROPOSED:** the **fixed Track-B gating
+   reference = heur@800** (4× our depth, never-gated, out-of-lineage). This is the rung the climbing-curve bar
+   above is measured against.
+3. **Human / expert anchor (MISSING — DEFERRED):** the rung that makes "superhuman" meaningful. **DEFERRED per
+   Joshua (2026-06-08)** — keep aspirational; do not source a referent until Track B clears its out-of-lineage
+   bar. Candidates when revisited: recorded expert games, a recruited strong player, or an external bot of known
+   human-relative strength.
+
+> **PROPOSED (Joshua to ratify)** — gating reference = heur@800 out-of-lineage at n≥400 paired (rung 2).
+> Rung 3 (human anchor) intentionally deferred. Out-of-lineage rung 2 EXISTS, so Track-B progress IS measurable
+> now even with superhuman deferred — this is what makes the P-B decision actionable rather than blocked.
 
 ---
 
 ## Production-agent vs research-agent criteria
 
-| | **Production agent (Track A)** | **Research agent (Track B)** |
+| | **Production agent (Track A)** | **Research agent (Track B) ← primary** |
 |---|---|---|
 | Goal | strongest *verifiable* play, shippable | demonstrate genuine self-improvement |
 | Leaf | v2.7 heuristic is fine (and expected) | learned component must *beat* v2.7 |
-| Bar | out-of-lineage win vs matched yardstick | monotone out-of-lineage climb across iters |
-| Anchor | clean ruler; human anchor aspirational | human/out-of-lineage anchor is mandatory |
-| Failure | loses to v2.7 out-of-lineage | strength does not compound (CL-011 today) |
+| Bar | out-of-lineage win vs matched yardstick (+30 @ heur@800, proposed) | non-regressing out-of-lineage climb across ≥3 iters (proposed) |
+| Anchor | clean ruler; human anchor aspirational | out-of-lineage rung 2 mandatory; human anchor deferred |
+| Failure | loses to v2.7 out-of-lineage (today) | strength does not compound (CL-011 *Disfavored* today) |
 
 A Track-A win does **not** imply a Track-B win. Heuristic-bounded strength is allowed for production; it is
-disqualifying for the research claim.
+disqualifying for the (primary) research claim.
 
 ---
 
 ## Pivot conditions — Track B → Track A
 
-Fall back to Track A as primary if, after a `TBD-Joshua`-bounded compute/time budget, **any** of:
-- The measurement unblock fails — no out-of-lineage ladder can distinguish real gains from lineage overfit.
-- The leaf ceiling holds — no learned component beats heur out-of-lineage (CL-010 stays *Supported*; CL-006).
-- No compounding — a multi-iter run shows no monotone out-of-lineage climb beyond noise (CL-011 stays
+Fall back to Track A as primary if, within the budget below, **any** of:
+- **Measurement fails** — the out-of-lineage ladder cannot distinguish real gains from lineage overfit.
+- **Leaf ceiling holds** — no learned component beats heur@800 out-of-lineage (CL-010 stays *Supported*; CL-006).
+- **No compounding** — a multi-iter run shows no non-regressing out-of-lineage climb beyond noise (CL-011 stays
   *Disfavored* or worsens).
 
-> `TBD-Joshua` — the Track-B compute/time budget that triggers the pivot, and the # of failed iterations.
+> **PROPOSED (Joshua to ratify)** — Track-B budget before pivot: **≤2 funded structural attempts** (e.g. a
+> retuned in-loop flywheel, then a higher-capacity-leaf redesign), **each ≤ ~7 days wall-clock on the 3-box
+> cluster**; if neither clears the Track-B "demonstrated" bar, pivot to Track A primary. (Compute reality: 3 GPUs,
+> a flywheel iteration is ~hours-to-a-day of gen+train+gate — 7 days allows ~3–5 iters per attempt, enough to
+> see a curve or its absence.)
 
 ## Abandonment / redesign criteria
 
-- **Redesign (not abandon):** the leaf-ceiling and flywheel-null findings *already* point at a structural
-  redesign (KataGo-style domain planes + auxiliary heads + value-head-in-loop + scale, from a fresh warmstart)
-  rather than more eval-config tuning. Trigger a redesign — not continued tuning — when Track B fails the
-  pivot conditions but the measurement ladder is sound.
-- **Abandon Track B (narrow to the analyzer):** if redesign also fails to break the leaf ceiling within a
-  `TBD-Joshua` budget, narrow the *project* goal back to the original analyzer (Phase 5) win-condition. Per
-  DECISIONS 2026-05-28 this is reversible and loses no analyzer work — only defers it.
-
-> `TBD-Joshua` — the redesign budget and the abandonment trigger (what evidence ends the superhuman pursuit).
+- **Redesign (not abandon):** the leaf-ceiling + flywheel-null findings already point at a *structural* redesign
+  (KataGo-style domain planes + auxiliary heads + value-head-in-loop + scale, from a fresh warmstart) rather than
+  more eval-config tuning. Trigger a redesign — not continued tuning — when the *first* funded attempt fails the
+  Track-B bar but the measurement ladder is sound.
+- **Abandon Track B (narrow to the analyzer):** if the redesign attempt also fails to break the leaf ceiling
+  within its budget, narrow the *project* goal back to the original analyzer (Phase 5) win-condition.
+> **PROPOSED (Joshua to ratify)** — redesign budget: **1 structural-redesign attempt, ≤ ~10 days wall-clock**,
+> only after cheap levers are exhausted. **Abandonment trigger:** that redesign completes its budget with CL-010
+> still *Supported* AND CL-011 still *Disfavored* (no learned component beats heur@800 out-of-lineage, no
+> compounding) → end the superhuman pursuit, resume the analyzer. Per DECISIONS 2026-05-28 this is reversible and
+> loses no analyzer work — only defers it.
 
 ---
 
@@ -160,33 +178,33 @@ Fall back to Track A as primary if, after a `TBD-Joshua`-bounded compute/time bu
 
 Live, unresolved claims gating these decisions — see [`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv):
 
+- **CL-011** — AlphaZero flywheel / compounding self-improvement? *Disfavored* — **THE primary objective's
+  falsifier.** The whole P-B bet is: can we flip this to *Supported* on the out-of-lineage ladder?
 - **CL-004** — residual value-head marginal real ≥2σ? *Inconclusive* — PROTOCOL_001 top-up running now.
-- **CL-005** — residual scale 0.25 to production? *Untested* — gated on CL-004.
-- **CL-008** — value head gradient-starved? *Provisional* — never directly measured (a Phase-B probe).
-- **CL-011** — AlphaZero flywheel / compounding self-improvement? *Disfavored* — the core Track-B blocker.
-- Context for the above: CL-001/002 (in-ecosystem strength, *Supported*), CL-010 (fixed-teacher ceiling),
-  CL-012 (historical unmatched-leaf elos *Invalidated* — do not compare old numbers to clean-ruler numbers).
+- **CL-005** — residual scale 0.25 to production? *Untested* — gated on CL-004 (a Track-A production question).
+- **CL-008** — value head gradient-starved? *Provisional* — never directly measured; a candidate *mechanism* for
+  the CL-011 null, so a Phase-B observability probe is on the Track-B critical path.
+- Context: CL-001/002 (in-ecosystem strength, *Supported*), CL-010 (fixed-teacher ceiling, *Supported*),
+  CL-012 (historical unmatched-leaf elos *Invalidated* — never compare old numbers to clean-ruler numbers).
 
 ---
 
-## Doc-conflict flag (surfaced, not papered over)
+## Doc-conflict flag (surfaced; now partly resolved by the P-B decision)
 
-`CLAUDE.md` (top) and `docs/ORIGINAL_PROMPT.md` **directly conflict on the goal**, and the conflict is
-load-bearing — not stylistic:
+`CLAUDE.md` (top) and `docs/ORIGINAL_PROMPT.md` conflict on the goal, load-bearingly:
 
 - **ORIGINAL_PROMPT.md** (§"Project framing", verbatim): *"This is **not** a 'build superhuman Carcassonne AI'
-  project… We're not going to either,"* and *"The win condition is **(4)** [the analyzer], not raw playing
-  strength."*
-- **CLAUDE.md / DECISIONS 2026-05-28** reverse this: superhuman strength is **primary**; the analyzer is
-  **downstream**.
+  project… We're not going to either,"* and *"The win condition is **(4)** [the analyzer], not raw playing strength."*
+- **CLAUDE.md / DECISIONS 2026-05-28** reverse this: superhuman strength is **primary**; the analyzer is **downstream**.
 
-CLAUDE.md flags the override explicitly, so the *intent* is clear (the 2026-05-28 change wins). The unresolved
-residue is that the override points at **Track B** (superhuman ⇒ learned > heuristic), while all delivered
-progress is **Track A** — and the original prompt's analyzer goal is a third, still-deferred target. This
-charter does not resolve that tension; it makes it explicit and hands the primary-objective decision to Joshua
-(the `TBD-Joshua` at the top).
+**Resolution status:** the 2026-05-28 override wins, and the 2026-06-08 P-B decision affirms Track B (the
+superhuman direction) as primary — **with the honest caveat that all *delivered* progress is Track A** and the
+superhuman *measurement* is deferred. The original prompt's analyzer goal is the explicit **abandonment landing
+zone** (above), not a competing live target. The residual tension (primary bet = the currently-*Disfavored*
+CL-011) is real and is precisely what the pivot/abandonment budgets bound.
 
 ---
 
 *Governance spine: [`governance/README.md`](governance/README.md). Open claims:
-[`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv).*
+[`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv). Strategic thresholds above are `PROPOSED` —
+Joshua edits/ratifies before they bind.*
