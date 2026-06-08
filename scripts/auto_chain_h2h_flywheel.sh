@@ -28,7 +28,7 @@ FW_TAG=flywheel_residual_v2     # fresh dir → does NOT resume the prior null r
 FW_NGATE=400                    # charter-ratified gate n (was 300; ±21→±17 noise)
 FW_KEEP=15                      # KEEP_MARGIN = the charter's +15-elo/iter climb bar
 FW_VLW=1.5                      # value-loss-weight 1.5 (was 1.0): attacks CL-008 (value gradient-starvation), the cited null mechanism
-FW_SCALE=0.25; FW_GAMES=400; FW_SIMS=200; FW_ITERS=3
+FW_SCALE=0.25; FW_GAMES=400; FW_SIMS=200; FW_ITERS=12   # 12 iters, no wall-clock cap (Joshua 2026-06-08); plateau-stop still guards a dead recipe
 
 ts(){ date '+%Y-%m-%d %H:%M:%S %Z'; }
 say(){ echo "[$(ts)] $*"; }

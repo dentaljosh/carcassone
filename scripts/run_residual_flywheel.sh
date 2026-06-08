@@ -31,6 +31,9 @@ WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 
 SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
 ITERS=${ITERS:-3}; N_GATE=${N_GATE:-300}; START=${START:-1}
+# Late ITERS override: a control file at $OUT/ITERS_OVERRIDE wins over the passed env, so a
+# long-running launcher's baked-in ITERS can be changed before the flywheel reaches its loop.
+[ -f "$OUT/ITERS_OVERRIDE" ] && ITERS=$(tr -dc 0-9 < "$OUT/ITERS_OVERRIDE" 2>/dev/null)
 GATE_SEED=900000
 # Overnight controls: KEEP_MARGIN = elo a new iter must beat best by to be kept
 # (gate noise ~±21 at n=300, so default +12 ≈ 0.6σ — modest). DURATION_HOURS>0 =
