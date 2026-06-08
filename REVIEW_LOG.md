@@ -492,3 +492,39 @@ C1 farm-dedup and C2 NeuralMCTS target/action-path fixes are real; value sign/sc
 **Final call (auditor, CONCUR):** let the live run finish as an EXPLORATORY screen; do NOT use it as
 the Stage-C kill/go gate. Strong positive → re-measure n≥400 paired (ideally also sims=800); a null is
 uninterpretable against the broader correction plan.
+
+---
+
+## Iteration — 2026-06-08 (overnight) — shell + eval failure-mode audits (2 parallel workflows)
+
+Two adversarially-verified multi-agent workflows while the Track-B flywheel ran live:
+round-2 training-pipeline review (`woqcib2o7`, 10 confirmed) + shell-eval failure-mode
+audit (`w3gbnte6z`, 20 confirmed). The **live `run_residual_flywheel.sh` was NOT hot-edited**
+(editing a running bash script corrupts its execution), so fixes split into "applied now
+(result-neutral)" vs "deferred to restart / attempt #2".
+
+### Fixed (safe, result-neutral)
+
+| # | File | Bug | Fix | Commit |
+|---|---|---|---|---|
+| F-S1 | `ladder_asymmetric.py` run_rung | never passed `--heur-leaf` → silent **v1** opponent = the bogus −29 heur@800 odometer (R1-redux); the matched-v2_7 number is +52.5 | added `--heur-leaf` (default v2_7) + pass it | `e3a8f2a` |
+| F-S2 | `eval_net_vs_heuristic.py:116`, `eval_iter_head_to_head.py:170` | partial temp `<stem>.partial.json` not dot-hidden (glob-counted by gate_elo/wait-loops) AND not host/pid-unique (cross-box replay corrupts a shared temp) | `.<stem>.<host>.<pid>.partial.json` (mirrors warmstart npz) — fixes audit #3/7/10/11/14/16/20 | `236f582` |
+| F-S3 | `gen_flywheel.sh` (share) | remote `git fetch/reset` had no rc guard → a sync failure runs self-play on STALE code | `exit 1` on sync failure (refuse stale code) — audit #17 | share-only |
+| F-S4 | `gen_flywheel.sh` (share) | local 5800x `git reset --hard` clobbered post-launch doc commits | skip reset when `HOST=5800x` | share-only |
+
+External mitigation for the no-deadline hang (audit #1/#2): a **hang-watchdog Monitor** (`bhwr9svsg`)
+alerts on >2h file-activity stall / flywheel death / share-not-writable — catches the permanent-failure
+hang the live script has no internal backstop for.
+
+### Deferred (real; apply on the next flywheel restart / attempt #2 — `run_residual_flywheel.sh` not hot-editable)
+
+| # | File:line | Finding | Action |
+|---|---|---|---|
+| D-S1 | `run_residual_flywheel.sh` wait-loops 128/166/219 | NO per-loop wall-clock / max-heal backstop → a permanent failure (share gone, all boxes dead, disk full) hangs forever; the `DEADLINE` guard is dead (DURATION_HOURS unset by the auto-chain) | add a per-loop deadline + heal-count cap that exits non-zero; gate each heal on a share-writable probe. (watchdog mitigates externally for now) |
+| D-S2 | `run_residual_flywheel.sh` heal 132/170/223 | heal relaunches the pool WITHOUT pkill'ing the prior one → orphaned mp spawn-workers accumulate across heals (oversubscription) | mirror `auto_chain`'s pkill-before-relaunch |
+| D-S3 | `run_residual_flywheel.sh` `_clean_stranded` age=4 | 4-min age < a game (esp. heur@800) → heal can delete a slow-but-ALIVE worker's claim → duplicate-played seed | raise to ~90min (claim-staleness contract) or add cross-box liveness check |
+| D-S4 | `run_residual_flywheel.sh` ssh launches 112/152/186 | ssh rc=255 (Tailscale jitter) silently drops a box for the whole iter (no retry) | add a 1–2× retry on the remote launches |
+| D-S5 | `eval_iter_head_to_head.py` `_result_path` 116 | h2h cache key omits c_puct/residual_scale/value_blend/leaf_eval → a config change into the same `--output-root` silently reuses wrong cached games | latent (h2h done); add config to the result-path key before any reuse |
+
+Impact note: D-S3's duplicate is low practical impact (deterministic eval → identical overwrite). D-S1 (silent
+hang) is the highest-impact deferred item — mitigated by the watchdog until the restart fix lands.
