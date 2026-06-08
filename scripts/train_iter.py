@@ -41,6 +41,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.train_provenance import add_provenance_args, build_training_provenance
 from carcassonne_ai.warmstart import (
     GameDataset,
     count_positions,
@@ -366,7 +367,9 @@ def main(argv: list[str] | None = None) -> int:
         "the checkpoint so every iter compares to the same fixed reference. "
         "0.0 disables the guard.",
     )
+    add_provenance_args(p)
     args = p.parse_args(argv)
+    _argv = argv if argv is not None else sys.argv[1:]
 
     # Seed every RNG that affects training so two runs with the same --seed
     # produce the same checkpoint. (split_files_train_val / _build_mixed_file_list
@@ -700,6 +703,38 @@ def main(argv: list[str] | None = None) -> int:
     # OOM / power-loss mid-write can't leave a truncated .pt that the next iter's
     # bare torch.load picks up (resume guards check exists() only) and crashes the
     # loop. Mirrors warmstart.py's temp-then-replace idiom.
+    # Phase-B provenance stamp: capture this checkpoint's lineage (code commit,
+    # parent ckpt + sha, exact train command, dataset fingerprint + replay iters,
+    # loss weights, arch) so it is never `unknown@train`. Mirrors the
+    # governance/CHECKPOINT_LINEAGE.csv columns. Pure metadata.
+    _prov = build_training_provenance(
+        out_path=args.output,
+        warm_from=args.warm_from,
+        file_list=file_list,
+        buffer_files=buffer_files,
+        n_filters=n_filters,
+        n_blocks=n_blocks,
+        value_global_pool=value_global_pool,
+        n_scalar_features=n_scalar_features,
+        iter_idx=args.iter_idx,
+        argv=_argv,
+        loss_weights={
+            "value": args.value_loss_weight,
+            "aux": args.aux_weight,
+            "rank": args.rank_weight,
+            "center": args.center_weight,
+            "lr": args.lr,
+            "weight_decay": args.weight_decay,
+            "lr_schedule": args.lr_schedule,
+        },
+        aux_heads=["ownership"] if args.aux_weight > 0 else [],
+        value_target=args.prov_value_target,
+        selfplay_leaf=args.prov_selfplay_leaf,
+        selfplay_seed_range=args.prov_seed_range,
+        run_tag=args.prov_run_tag,
+    )
+    metrics["provenance"] = _prov
+
     _tmp_output = args.output.with_name(args.output.stem + ".partial.pt")
     torch.save(
         {
@@ -714,6 +749,7 @@ def main(argv: list[str] | None = None) -> int:
             # original warmstart net, not its immediate warm-from.
             "baseline_policy_entropy": baseline_entropy,
             "policy_entropy": trained_entropy,
+            "provenance": _prov,
         },
         _tmp_output,
     )

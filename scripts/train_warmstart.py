@@ -29,6 +29,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from carcassonne_ai.network import CarcassonneNet
+from carcassonne_ai.train_provenance import add_provenance_args, build_training_provenance
 from carcassonne_ai.warmstart import (
     count_positions,
     iter_game_dataset_files,
@@ -168,7 +169,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--seed", type=int, default=0)
+    add_provenance_args(p)
     args = p.parse_args(argv)
+    _argv = argv if argv is not None else sys.argv[1:]
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -251,6 +254,27 @@ def main(argv: list[str] | None = None) -> int:
     best_val = math.inf
     best_path = args.output.with_suffix(".best.pt")
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    # Phase-B provenance stamp (warmstart is the lineage ROOT — trains from
+    # scratch on the heuristic corpus; no parent ckpt). Pure metadata.
+    _prov = build_training_provenance(
+        out_path=args.output,
+        warm_from=None,
+        file_list=list(train_files) + list(val_files),
+        buffer_files=[],
+        n_filters=args.filters,
+        n_blocks=args.blocks,
+        value_global_pool=args.global_pool,
+        n_scalar_features=n_scalar_features,
+        iter_idx=-1,
+        argv=_argv,
+        loss_weights={"lr": args.lr, "weight_decay": getattr(args, "weight_decay", None),
+                      "value": getattr(args, "value_loss_weight", 1.0)},
+        aux_heads=["ownership"],
+        value_target=args.prov_value_target or "heuristic_warmstart",
+        selfplay_leaf=args.prov_selfplay_leaf or "n/a (warmstart corpus)",
+        selfplay_seed_range=args.prov_seed_range,
+        run_tag=args.prov_run_tag or "warmstart",
+    )
     do_validation = n_val > 0
     if not do_validation:
         print("  --val-fraction == 0.0: skipping validation + best-by-val checkpoint")
@@ -359,6 +383,7 @@ def main(argv: list[str] | None = None) -> int:
                     "val_pol_loss": val_pol_loss,
                     "val_val_loss": val_val_loss,
                     "data_root": str(args.data_root),
+                    "provenance": _prov,
                 },
                 best_path,
             )
@@ -371,6 +396,7 @@ def main(argv: list[str] | None = None) -> int:
             "n_scalar_features": n_scalar_features,
             "value_global_pool": args.global_pool,
             "data_root": str(args.data_root),
+            "provenance": _prov,
         },
         args.output,
     )

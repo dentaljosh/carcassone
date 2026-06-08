@@ -44,6 +44,7 @@ the ledger.
 | `governance/CHECKPOINT_LINEAGE.csv` | Interpretation | per-checkpoint provenance (sha256, parent, code commit, train config, associated clean evals, status) |
 | `governance/CHECKPOINT_LINEAGE_SCHEMA.json` | Interpretation | column schema for the lineage registry |
 | `governance/EVIDENCE_EPOCHS.md` | Interpretation | the 7 fixed evidence epochs (E0–E6) — which raw eras are trustworthy and what each invalidates |
+| `governance/TRAINING_OBSERVABILITY_SPEC.md` | Interpretation | Phase-B telemetry spec: the checkpoint-provenance stamp (DONE) + prioritized have/cheap/needs-engineering metrics; gates the next training run |
 | `governance/PROTOCOL_TEMPLATE.md` | (template) | blank pre-registration template for an experiment protocol |
 | `governance/protocols/` | Interpretation | pre-registered experiment protocols (e.g. `PROTOCOL_001_residual_marginal_topup.md`) |
 | `PROJECT_CHARTER.md` (repo root) | Decisions | the two tracks, goals, success criteria, pivot/abandonment conditions |
