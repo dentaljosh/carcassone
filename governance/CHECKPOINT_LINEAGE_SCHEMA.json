@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carcassone.local/governance/CHECKPOINT_LINEAGE_SCHEMA.json",
+  "title": "Checkpoint lineage row",
+  "description": "One row of governance/CHECKPOINT_LINEAGE.csv. INTERPRETATION layer of the 3-layer spine (see governance/README.md): ckpt provenance derived from on-disk hashes/metadata + DECISIONS.md/STATUS.md/launcher scripts. Many provenance fields were NEVER persisted at train time and are unrecoverable from docs; those carry the literal sentinel 'unknown@train' (a key Phase-B-instrumentation gap, NOT a missing value). Epoch IDs reference governance/EVIDENCE_EPOCHS.md.",
+  "type": "object",
+  "properties": {
+    "ckpt_id": {
+      "type": "string",
+      "description": "Short stable id for the checkpoint (e.g. iter_11, stage_b_iter_01, residual)."
+    },
+    "path": {
+      "type": "string",
+      "description": "Absolute path on disk (local checkpoints/ or the CIFS share /mnt/c/carc-shared/)."
+    },
+    "exists": {
+      "type": "boolean",
+      "description": "Whether the .pt was present on disk at registry-build time (2026-06-07)."
+    },
+    "sha256": {
+      "description": "Full 64-hex sha256sum of the .pt if it exists, else 'MISSING'.",
+      "oneOf": [
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        { "type": "string", "const": "MISSING" }
+      ]
+    },
+    "parent_ckpt": {
+      "type": "string",
+      "description": "warm-from checkpoint id/path. RECOVERED from per-iter metrics.json warm_from / launcher WARM default / DECISIONS. 'none' = trained from scratch on warmstart data."
+    },
+    "code_commit": {
+      "type": "string",
+      "description": "Best-effort git commit the training code ran at. NOT persisted in the ckpt dict; 'unknown@train' unless pinned by a DECISIONS entry or launcher commit."
+    },
+    "dirty": {
+      "type": "string",
+      "description": "Whether the working tree was dirty at train time. Never persisted -> 'unknown@train'.",
+      "enum": ["true", "false", "unknown@train"]
+    },
+    "arch": {
+      "type": "string",
+      "description": "Architecture summary from the ckpt metadata dict: n_filters x n_blocks, value_global_pool, n_scalar_features. Fields absent from older ckpt dicts are 'unknown@train' inside the string."
+    },
+    "ruleset": {
+      "type": "string",
+      "description": "Rule scope of the TRAINING self-play. 'river+base' (pre-2026-06-02 lineage) or 'base-only' (post river-drop). Recovered from DECISIONS 2026-06-02 + lineage dates."
+    },
+    "known_bug_epoch": {
+      "type": "string",
+      "description": "Comma-joined evidence-epoch IDs whose fix the checkpoint's TRAINING predates (it carries that defect). E.g. a ckpt trained before 2026-05-29 carries E1-farmbug. See governance/EVIDENCE_EPOCHS.md. 'none-known' if trained after all data-side fixes."
+    },
+    "train_command": {
+      "type": "string",
+      "description": "Best-effort. Full CLI never persisted; recovered launcher + key knobs (sims, c_puct, cap, games, epochs) where derivable, else 'unknown@train'."
+    },
+    "seed_ranges": {
+      "type": "string",
+      "description": "Self-play seed range(s). Not persisted in the ckpt -> 'unknown@train' unless a DECISIONS/STATUS note pins it."
+    },
+    "dataset_files_hashes": {
+      "type": "string",
+      "description": "Hashes of the self-play .npz training set. NEVER persisted -> 'unknown@train' (a Phase-B instrumentation gap)."
+    },
+    "replay_iters": {
+      "type": "string",
+      "description": "Replay-buffer window (which prior iters' data were mixed in). Recovered from metrics.json window/buffer_files where present, else 'unknown@train'."
+    },
+    "policy_target": {
+      "type": "string",
+      "description": "Policy training target (MCTS visit distribution). Best-effort; 'unknown@train' if not recoverable."
+    },
+    "value_target": {
+      "type": "string",
+      "description": "Value training target: wl | score_diff | search_value | residual. Recovered from DECISIONS/STATUS/launcher; 'unknown@train' otherwise."
+    },
+    "loss_weights": {
+      "type": "string",
+      "description": "policy/value/own loss weights. Partly recoverable (value_loss_weight from launchers); 'unknown@train' for the rest."
+    },
+    "aux_heads": {
+      "type": "string",
+      "description": "Auxiliary heads (e.g. ownership). Best-effort from arch metadata; 'unknown@train' if unclear."
+    },
+    "selfplay_leaf": {
+      "type": "string",
+      "description": "Leaf evaluator used during the self-play that generated this ckpt's training data: v1 | v2_7 | v2_7+residual. Recovered from DECISIONS; 'unknown@train' for ambiguous eras."
+    },
+    "residual_or_value_active": {
+      "type": "string",
+      "description": "Whether a learned value head / residual was active in the self-play leaf (value-blend lambda or residual_scale > 0). Recovered from DECISIONS/STATUS."
+    },
+    "gating_result": {
+      "type": "string",
+      "description": "The gate/eval result that promoted this ckpt (elo vs reference). Best-effort from DECISIONS/results.csv; 'unknown@train' if never gated as a unit."
+    },
+    "associated_clean_evals": {
+      "type": "string",
+      "description": "cleaneval_* exp_ids in experiments/results.csv that measured this ckpt on the clean ruler. 'none' if not clean-evaluated."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "historical", "superseded", "quarantined"],
+      "description": "active = a current candidate; historical = a real prior champion kept for reference; superseded = replaced by a strictly-better ckpt; quarantined = epoch-invalid, do not use for strength claims."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-text caveats: epoch membership, lineage role, why this status."
+    }
+  },
+  "required": [
+    "ckpt_id", "path", "exists", "sha256", "parent_ckpt", "code_commit", "dirty",
+    "arch", "ruleset", "known_bug_epoch", "train_command", "seed_ranges",
+    "dataset_files_hashes", "replay_iters", "policy_target", "value_target",
+    "loss_weights", "aux_heads", "selfplay_leaf", "residual_or_value_active",
+    "gating_result", "associated_clean_evals", "status", "notes"
+  ],
+  "additionalProperties": false,
+  "x-best-effort-may-be-unknown-at-train": [
+    "code_commit", "dirty", "parent_ckpt", "train_command", "seed_ranges",
+    "dataset_files_hashes", "replay_iters", "policy_target", "value_target",
+    "loss_weights", "aux_heads", "selfplay_leaf", "gating_result"
+  ],
+  "x-always-recoverable": ["ckpt_id", "path", "exists", "sha256", "arch", "status"]
+}

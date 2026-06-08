@@ -1,3 +1,5 @@
+> ⚠️ **SUPERSEDED as the claim source by [`governance/CLAIM_REGISTRY.csv`](governance/CLAIM_REGISTRY.csv) (2026-06-07).** Kept for historical narrative; new claims go in the registry, not here. The open-questions / ablation queue below stays live here. See [`governance/README.md`](governance/README.md) for the raw → interpretation → decisions spine.
+
 # Experiments — open ablation roadmap
 
 A living priority queue of ablations toward superhuman play. **Not exhaustive** — meant to prevent drift, not to predict everything. Each row is one knob, not a recipe combo. Rewrite priorities when a finding invalidates a downstream question.

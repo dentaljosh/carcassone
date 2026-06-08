@@ -7,6 +7,12 @@ implementation bugs, invalid assumptions, misleading measurements, and dead ends
 
 Assembled 2026-06-07 at repo HEAD **`fd9952e`** (branch `stage-b-wiring`).
 
+> **Note:** this bundle is a **frozen snapshot** assembled at a fixed commit. The
+> **LIVE** governance layer now lives in [`../governance/`](../governance/README.md)
+> (claim registry, checkpoint lineage, evidence epochs, protocols) — use that for
+> any current/ongoing work. `EXPERIMENT_LEDGER.csv` here is a derived, point-in-time
+> view; the canonical raw ledger is `experiments/results.csv`.
+
 ## Start here
 1. **`OUTSIDE_REVIEW.md`** — the main document (15 sections). Read top to bottom; §1 orients, §11 is the high-risk code, §14 is what we want you to answer.
 
