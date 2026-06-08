@@ -1,5 +1,11 @@
 # CLEAN_EVAL_AUDIT — old headline claims re-judged on the repaired ruler
 
+> **⚠️ UPDATE 2026-06-08 — the n=1200 top-up (PROTOCOL_001) resolved the two open items, and one REVERSES a Phase-3 read:**
+> 1. **Residual value-head marginal RESOLVED POSITIVE:** +37.6 elo / z=2.98 at n=1200 (was +26/z=1.30 "inconclusive" at n=400 — underpowered, not wrong). The old "+45 robust" largely survives clean. **CL-004 → Supported.**
+> 2. **Non-transitivity OVERTURNED:** clean net-vs-v1 cells give iter_11 +35.7 / Stage-B +24.4 (old Stage-B-vs-v1 +86.9 was a 62-elo contamination inflation). Clean Δ(v2.7−v1) is **same-sign for both nets** (iter_11 +54, Stage-B +10) — NOT sign-varying. The "leaf effect is non-transitive" reframe was a contamination artifact → **CL-016 Disfavored; CL-012 strengthened.** What stands: no single universal discount (magnitudes differ per net), and old unmatched-leaf absolutes are not comparable to clean ones.
+>
+> Body below is the original Phase-3 (n=400) read, with the two superseded spots marked inline. Numbers: `CLEAN_RESULTS.csv` (7 rows), `governance/CLAIM_REGISTRY.csv`, `governance/protocols/PROTOCOL_001_*` (RESULT).
+
 This audit re-evaluates the project's headline strength claims on the
 **provenance-verified** evaluation ruler built in Phases 1–2 (runtime-asserted
 leaf identity, clean 1e9 seed namespace + deck hashes, full both-sides manifests,
@@ -51,20 +57,25 @@ provenance**. Raw per-game JSON + full manifests under
 | 4a | **residual** scale-0 vs v2.7 | 400 (200) | 231/167/2 | 0.580 | **+56.1 ± 16.6** | 3.4 | +3.5 | **resolved** |
 | 5 | **residual** scale-0.25 vs v2.7 | 400 (200) | 242/148/10 | 0.618 | **+83.2 ± 16.9** | 4.9 | +5.3 | **resolved** |
 
-**Residual value-head MARGINAL** (scale-0.25 − scale-0, deck-paired over 200 decks):
-**Δwr = +0.0375 (SE 0.0289, z = 1.30) ≈ +26 elo ± 20 → INCONCLUSIVE at n=400.**
+**Residual value-head MARGINAL** (scale-0.25 − scale-0, deck-paired):
+- **[n=400 screen]** Δwr = +0.0375 (SE 0.0289, z = 1.30) → inconclusive.
+- **✅ [n=1200 top-up — PROTOCOL_001, 2026-06-08]** Δwr = **+0.0512 (SE 0.0172, z = 2.98) ≈ +37.6 elo → RESOLVED:** the value head adds real strength (**CL-004 → Supported**). The n=400 read below was UNDERPOWERED, not wrong; the old "+45 robust" largely survives clean. (Production fold-in still gated — CL-005 — on a head-to-head + clean out-of-lineage check.)
 
 > ⚠ **Two contradictions resolved before declaring** (per results-discipline):
 > 1. The **pure leaf gap is NEGATIVE** (v2.7 −24.4 vs v1), not the **+39 inflation** implied by R1's
 >    `+86.9 (v1 opp) → +48.1 (v2.7 opp)`. These measure different things: −24.4 is **leaf-vs-leaf
 >    pure search**; the +38.8 was an **agent-vs-opponent margin shift**, which folds in policy
 >    interaction. They are reconciled by **non-transitivity** (next point), not by a fixed leaf discount.
-> 2. The opponent-leaf change moves **different nets in OPPOSITE directions**: iter_11 went
->    `+25.2 (v1) → +89.7 (v2.7)` (v2.7 *easier*), while Stage-B iter_01 went `+86.9 (v1) → +34.9 (v2.7)`
->    (v2.7 *harder*). So there is **no universal "discount vs-HeuristicMCTS absolutes by ~45%"** — the
->    leaf effect is **agent-specific and sign-varying**. (Caveat: the old v1-opponent numbers are
->    themselves on the contaminated ruler; a clean net-vs-**v1** rerun is the proposed top-up to make the
->    non-transitivity fully clean.)
+> 2. ⚠️ **[SUPERSEDED 2026-06-08 — non-transitivity OVERTURNED; the caveat below was right.]** This box
+>    originally read non-transitivity from `iter_11 +25.2(v1)→+89.7(v2.7)` (v2.7 easier) vs
+>    `Stage-B +86.9(v1)→+34.9(v2.7)` (v2.7 *harder*) — but those v1 numbers were CONTAMINATED. The clean
+>    net-vs-v1 top-up (PROTOCOL_001) gives **iter_11 v1 = +35.7, Stage-B v1 = +24.4** (the old Stage-B
+>    +86.9 was a **62-elo inflation**). Clean Δ(v2.7−v1): iter_11 **+54 (z=2.29)**, Stage-B **+10 (z=0.46,
+>    n.s.)** — **SAME sign for both**. So the leaf effect is **NOT sign-varying / non-transitive**; both
+>    nets simply beat the **weaker v2.7-leaf opponent** (corroborating r1's −24.4) by more than the v1
+>    opponent, by a net-specific magnitude. There is still no single universal discount (magnitudes
+>    differ), but the dramatic sign-flip framing was a contamination artifact. → **CL-016 *Disfavored*,
+>    CL-012 *strengthened***.
 
 ---
 

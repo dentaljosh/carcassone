@@ -84,22 +84,29 @@ Marginal `< 2σ` at n=1200 (→ 1500 after the one-shot top-up) → **CL-004 →
 
 ---
 
-## RESULT (PENDING — run in flight, ~ETA 02:30 UTC 2026-06-08)
-
-Fill ONLY this section at completion. Do not edit the hypothesis/thresholds above. Record the primary metric with z, which threshold was met, and the CL-004/CL-005 (and CL-012) status transitions.
+## RESULT (COMPLETE — 2026-06-08, all cells at target n; commit `4d43c79`)
 
 | cell | run dir | design | metric | value | z | notes |
 |---|---|---|---|---|---|---|
-| r4 — residual scale 0 | `r4_residual_rs0_*` | n=1200 paired, vs matched v2.7 | absolute elo | _pending_ | — | residual baseline |
-| r5 — residual scale 0.25 | `r5_residual_rs025_*` | n=1200 paired, vs matched v2.7 | absolute elo | _pending_ | — | residual treatment |
-| **marginal (r5 − r4)** | — | deck-paired Δ | **elo ± σ (z)** | _pending_ | _pending_ | primary metric → CL-004 verdict |
-| t1 — iter_11 × {v1, v2.7} | `t1_iter11_vs_heurv1_*` | n=400 paired | v1↔v2.7 gap (elo) | _pending_ | — | non-transitivity → CL-012 |
-| t2 — Stage-B iter_01 × {v1, v2.7} | `t2_stageb_iter01_vs_heurv1_*` | n=400 paired | v1↔v2.7 gap (elo) | _pending_ | — | non-transitivity → CL-012 |
+| r4 — residual scale 0 | `r4_residual_rs0_*` | n=1200 paired, vs matched v2.7 | absolute elo | **+62.0 ± 10** | 6.2 | residual baseline (policy only) |
+| r5 — residual scale 0.25 | `r5_residual_rs025_*` | n=1200 paired, vs matched v2.7 | absolute elo | **+99.6 ± 10** | 10.0 | residual treatment (value head ON) |
+| **marginal (r5 − r4)** | — | deck-paired Δ (n=1200) | **Δwr / elo (z)** | **+0.0512 wr ≈ +37.6 elo** | **2.98** | **primary → CL-004 PASS** |
+| t1 — iter_11 vs heur-v1 | `t1_iter11_vs_heurv1_*` | n=400 paired | absolute elo | **+35.7 ± 17** | 2.1 | clean v1 (old contaminated: +25.2) |
+| t2 — Stage-B iter_01 vs heur-v1 | `t2_stageb_iter01_vs_heurv1_*` | n=400 paired | absolute elo | **+24.4 ± 17** | 1.4 | clean v1 (old contaminated: **+86.9**) |
 
-**Top-up fired?** _pending_ (yes/no — only if 1.3 < z < 2 at n=1200).
+**Top-up fired?** No — the marginal cleared 2σ at the pre-registered n=1200 (z=2.98 > 2), so the n→1500 escalation was not triggered.
 
-**Verdict:** _pending_ →
-- if marginal ≥ +35 elo / 2σ: CL-004 → **Supported**, CL-005 → **live production-gate question** (still FORBIDS auto-fold-in; out-of-lineage check required).
-- if marginal < 2σ: CL-004 → **Disfavored / Inconclusive-capped**, CL-005 → **stays Untested**.
+**Primary verdict — residual value-head marginal:** **+37.6 elo, z=2.98 ≥ 2σ → SUCCESS.** Per the pre-registered rule:
+- **CL-004 → Supported** (the residual value head adds real strength; the old "+45 robust" largely survives clean at +37.6, just properly powered — the n=400 screen at z=1.30 was underpowered, not wrong).
+- **CL-005 → live production-gate question** (no longer auto-dropped). Per the pre-registered FORBIDS, this still does NOT license auto-fold-in: a clean **out-of-lineage** check is required (the 2026-06-07 odometer validated it out-of-lineage but at seed 950k, which is in the E4 overlap namespace — a clean-seed odometer rerun is the rigorous final gate). Joshua chose a **residual@0.25-vs-iter_11 head-to-head** (PROTOCOL_002) to crown the production agent + resolve CL-002/CL-005.
 
-**Final summaries:** _pending_ (link `scripts/summarize_clean_eval.py` / `scripts/analyze_nontransitivity.py` output + `clean_eval/CLEAN_RESULTS.csv` rows).
+**Secondary verdict — non-transitivity: OVERTURNED on the clean ruler.** Clean 2×2:
+
+| net | vs heur-v1 (clean) | vs heur-v2.7 (clean) | Δ(v2.7−v1) | old contaminated v1 |
+|---|---|---|---|---|
+| iter_11 | +35.7 | +89.7 | **+54 elo (z=2.29)** | +25.2 |
+| Stage-B iter_01 | **+24.4** | +34.9 | +10 elo (z=0.46, n.s.) | **+86.9** |
+
+`analyze_nontransitivity.py` verdict: **SAME sign for both nets** → non-transitivity NOT supported. The earlier "sign-varying / Stage-B finds v2.7 harder" reframe was an **artifact of the contaminated Stage-B-vs-v1 (+86.9)** — clean it is **+24.4** (a 62-elo contamination gap). Coherently, **both** nets beat the v2.7-leaf opponent by more than the v1-leaf opponent (net-specific magnitude: iter_11 +54, Stage-B +10) because **v2.7 is the weaker standalone opponent leaf** (corroborates r1's −24.4). So absolutes don't sign-flip per-net; they were just unevenly *inflated* in the contaminated era. → **CL-012 STRENGTHENED** (old unmatched-leaf numbers incomparable — Stage-B-vs-v1 +86.9→+24.4 is the sharpest single example); **the non-transitivity reframe is Disfavored** (new CL-016).
+
+**Final summaries:** `clean_eval/CLEAN_RESULTS.csv` (7 rows), `clean_eval/CLEAN_EVAL_AUDIT.md`, `experiments/results.csv: cleaneval_{r4,r5}_n1200, cleaneval_t1, cleaneval_t2`. Marginal: `scripts/summarize_clean_eval.py`; 2×2: `scripts/analyze_nontransitivity.py`.
