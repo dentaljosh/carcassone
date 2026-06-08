@@ -25,7 +25,7 @@ SUBDIR=iter11_s${SIMS}_h${SIMS}_c30
 OUTROOT_LOCAL=$SHARE_LOCAL/ladder_highsim
 OUTROOT_REMOTE=$SHARE_REMOTE/ladder_highsim
 NTOTAL=${NTOTAL:-800}
-SB=${SB:-800000}
+SB=${SB:-1000000000}   # clean-eval floor 1e9 (eval_net_vs_heuristic hard-errors on seed<1e9)
 POLL=120
 
 # disjoint shards proportional to throughput (5800x .40 / laptop .35 / xeon .25)

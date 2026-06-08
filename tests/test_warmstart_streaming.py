@@ -107,6 +107,31 @@ def test_split_files_train_val_no_leak(synthetic_files: list[Path]) -> None:
     assert len(val) == 2  # 40% of 5 = 2 (rounded)
 
 
+def test_split_files_train_val_no_leak_with_duplicates() -> None:
+    """D-R4-1 regression: warmstart oversampling passes the same .npz MANY times
+    (with replacement), so the file list has duplicate paths. The split must route
+    EVERY occurrence of a game to one side — a duplicated path must never straddle
+    train/val and leak positions across the boundary. val holds one occurrence of
+    each held-out game; all duplicates inflate only the TRAIN side."""
+    files = [
+        Path("a.npz"), Path("a.npz"), Path("a.npz"),  # oversampled x3
+        Path("b.npz"),
+        Path("c.npz"), Path("c.npz"),                 # oversampled x2
+        Path("d.npz"), Path("e.npz"),
+    ]
+    # sweep several seeds so the assertion holds regardless of which games are held out
+    for seed in range(8):
+        train, val = split_files_train_val(files, val_fraction=0.4, seed=seed)
+        assert set(train).isdisjoint(set(val)), f"leak @ seed {seed}: {set(train) & set(val)}"
+        assert len(val) == len(set(val)), f"val has duplicate occurrences @ seed {seed}"
+        assert set(train) | set(val) == set(files), f"a game vanished @ seed {seed}"
+        for p in set(val):
+            assert p not in set(train), f"val game {p} also in train @ seed {seed}"
+        for p in set(train):
+            # every occurrence of a train-side game is preserved (oversampling intact)
+            assert train.count(p) == files.count(p), f"dropped a {p} dup @ seed {seed}"
+
+
 def test_split_files_deterministic(synthetic_files: list[Path]) -> None:
     a = split_files_train_val(synthetic_files, val_fraction=0.4, seed=42)
     b = split_files_train_val(synthetic_files, val_fraction=0.4, seed=42)

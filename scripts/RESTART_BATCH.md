@@ -1,44 +1,48 @@
-# Flywheel RESTART BATCH — deferred robustness fixes (apply when `flywheel_residual_v2` ends)
+# Flywheel RESTART BATCH — ✅ APPLIED 2026-06-08 (live in `run_residual_flywheel.sh`)
 
-These fixes could NOT be applied to the **live** `run_residual_flywheel.sh` (editing a running
-bash script corrupts its execution — bash re-reads by byte offset). They're staged in a verified
-copy. Apply at the next flywheel launch.
+> **STATUS: APPLIED.** The flywheel ended (plateau), so the whole batch was swapped into the
+> live `run_residual_flywheel.sh` and committed (`next.sh` removed). All seven D-S items below
+> are now live (`bash -n` clean). Kept as the record of what changed + why. Earlier these could
+> NOT be hot-applied (editing a running bash script corrupts its byte-offset execution).
 
-## What's ready
-**`scripts/run_residual_flywheel.next.sh`** = the live script + the 4 robustness fixes below
-(`bash -n` clean; 43 lines changed vs live). Sources: shell-audit `w3gbnte6z`, round-4 `wconmb57r`.
+| id | fix | where | status |
+|---|---|---|---|
+| **D-S1** | per-loop **heal cap** (`HEAL_CAP=8`, env-overridable) → a no-progress loop exits **1 loud** instead of hanging forever; + a `_share_writable` probe so a heal backs off when the share is gone instead of relaunch-storming | all 3 wait loops (gate/odo/gen) | ✅ live |
+| **D-S2** | `_kill_pool` reaps the prior pool on all 3 boxes (`pkill -f eval_net_vs_heuristic` / `run_selfplay_iter`) **before** each heal relaunch → no orphan-worker accumulation (the ~56-proc pileup) | all 3 heals | ✅ live |
+| **D-S3** | `_clean_stranded` in-loop age **4min → 30min** → the heal can't delete a slow-but-alive worker's claim → no duplicate-played seeds | all 3 heals | ✅ live |
+| **D-S6** | `cp best.pt warm.pt` now **fails loudly** (`[ -s best.pt ]` guard + `|| exit 1`) instead of silently warming from nothing (`set -e` is off) | per-iter warm staging | ✅ live |
+| **D-S7** | **plateau `break` ran BEFORE the odometer block** → the terminal iter's out-of-lineage odometer was **SKIPPED** (the 2026-06-08 iter3 miss; recovered manually via `scripts/odo_oneshot.sh`). Fixed: the `break` now happens **after** the odometer, and the odometer fires on **any terminal iter** (plateau OR last), not just the `ODO_EVERY` cadence — so the final out-of-lineage signal is never lost. | iter-loop tail | ✅ live |
+| **D-S4** | ssh rc=255 box-drop now **retries** via the `_ssh_bg` wrapper (3 tries on a 255, then yields the box for that iter; the heal still re-adds it on the next stall). All 6 remote launches (gate/odo/gen × laptop/xeon) route through it. | remote launches | ✅ live |
 
-| id | fix | where |
-|---|---|---|
-| **D-S1** | per-loop **heal cap** (`HEAL_CAP=8`, env-overridable) → a no-progress loop exits **1 loud** instead of hanging forever; + a `_share_writable` probe so a heal backs off when the share is gone instead of relaunch-storming | all 3 wait loops (gate/odo/gen) |
-| **D-S2** | `_kill_pool` reaps the prior pool on all 3 boxes (`pkill -f eval_net_vs_heuristic` / `run_selfplay_iter`) **before** each heal relaunch → no orphan-worker accumulation (the ~56-proc pileup) | all 3 heals |
-| **D-S3** | `_clean_stranded` in-loop age **4min → 30min** → the heal can't delete a slow-but-alive worker's claim → no duplicate-played seeds | all 3 heals |
-| **D-S6** | `cp best.pt warm.pt` now **fails loudly** (`[ -s best.pt ]` guard + `|| exit 1`) instead of silently warming from nothing (`set -e` is off) | per-iter warm staging |
-| **D-S7** | **plateau `break` ran BEFORE the odometer block** → the terminal iter's out-of-lineage odometer was **SKIPPED** (the 2026-06-08 iter3 miss; recovered manually via `scripts/odo_oneshot.sh`). Fixed: the `break` now happens **after** the odometer, and the odometer fires on **any terminal iter** (plateau OR last), not just the `ODO_EVERY` cadence — so the final out-of-lineage signal is never lost. | iter-loop tail |
-| D-S4 | (ssh rc=255 box-drop) — **partially** covered: the heal's `_kill_pool`+relaunch re-adds a dropped box on the next stall. A dedicated launch-retry wrapper is a further improvement, not included (low impact: work-stealing + heal recover it). | — |
+## ✅ FIXED 2026-06-08 (the "fix all outstanding bugs" pass)
+- **D-R4-1 — train/val LEAK (`warmstart.py` `split_files_train_val`)** ✅ — split now by **unique**
+  path: val gets one occurrence of each held-out game, ALL occurrences (incl. oversampled dupes) of
+  train-side games go to train, val-side games are fully excluded from train. **Byte-identical for
+  duplicate-free input** (mix=0.0, all current training), so result-neutral; only the mix>0 leak path
+  changes. Unit-verified (no leak, val de-duped).
+- **D-R4-2 — `auto_chain_h2h_flywheel.sh` count()/tally()** ✅ — both now scope to the clean
+  namespace (seed ≥1e9, 10+-digit) so a stray pre-1e9 / different-run file can't end `wait_h2h` early.
+- **D-S5 — `eval_iter_head_to_head.py` leaf-config cache collision** ✅ — a `.leafconfig.json` stamp in
+  `eval_dir` + a startup HARD-FAIL on mismatch (reusing a dir with a changed leaf now errors instead of
+  silently loading the prior config's cached games). No filename/path change → all caches & the
+  hardcoded `H2H_DIR` preserved.
+- **D-R3-2 — `train_iter.py` corr printout** ✅ — relabelled in residual mode (value↔target, NOT the
+  0.61 value-vs-outcome ruler).
+- **Launcher pre-1e9 seeds** ✅ — `run_pathb_cluster_loop` (GATE_SEED), `scaling_curve`, `ladder_highsim`
+  (SB), `rank_sweep`, `lever_sequencer` bumped to the 1e9 floor so a reuse no longer hangs the guard.
 
-## How to apply (at restart, after the current run's processes are gone)
-```bash
-cd /home/doctor/projects/carcassone
-bash -n scripts/run_residual_flywheel.next.sh          # sanity
-cp scripts/run_residual_flywheel.next.sh scripts/run_residual_flywheel.sh
-rm scripts/run_residual_flywheel.next.sh
-git add scripts/run_residual_flywheel.sh && git commit -m "flywheel: apply restart-batch robustness (D-S1/2/3/6)"
-git bundle create /mnt/c/carc-shared/code_sync/carc_stage-b-wiring.bundle stage-b-wiring   # so remotes get it
-```
+## HELD — leaf-eval / encoding changes (NOT mechanically fixable; need a decision)
+- **D16 — `virtual_score_v2.py` `_close_prob(0)`** (board-edge unfinished city with 0 in-bounds open
+  positions gets a 100% closure bonus): a **real** bug, but the fix changes the **v2.7 leaf**, which is
+  BOTH production AND the clean-eval ruler → it would invalidate every banked clean-eval number and needs
+  a **cap re-sweep**. Fold into the attempt-#2 leaf work (where the re-sweep happens anyway), not standalone.
+- **D2 — TILES vs MEEPLES tile-encoding mismatch**: changing the network input encoding **invalidates
+  ALL checkpoints + self-play data** → a full re-encode + retrain. Joshua's call.
+- **D3 — `bonus_cap`/`opp_bonus_cap` antisymmetry**: NOT a bug — `opp_bonus_cap` defaults to `bonus_cap`
+  (equal in production, antisymmetry holds); the asymmetric-cap path that "breaks" it is the intentional
+  denial-strengthening feature. No fix.
 
-## Also apply before any **mix>0** retrain (NOT needed for the flywheel — it runs mix=0.0)
-- **D-R4-1 — train/val LEAK (`src/carcassonne_ai/warmstart.py` `split_files_train_val`):**
-  `_build_mixed_file_list` (`train_iter.py:~249`) samples warmstart files **with replacement**, and
-  the split partitions by **list index**, so a duplicated path can land in BOTH train and val →
-  leaks → inflates the val value-outcome corr (the "trustworthy" per-iter signal). **Fix:** assign
-  each **unique** path to train xor val first, then expand with-replacement duplicates into the
-  **train** side only. (Result-neutral at mix=0.0, so the live flywheel is unaffected.)
-- **D-R4-2 — `auto_chain_h2h_flywheel.sh` count()/tally()** glob the whole eval dir with no
-  seed-range filter (a pre-existing larger run in the same dir could end `wait_h2h` early). Latent
-  (orchestrator already exited). Scope to the target's seed range before reusing that script.
-
-## NOT in this batch — research decisions for attempt #2 (your call, not mechanical fixes)
+## Research decisions for attempt #2 (your call, not mechanical fixes)
 - **S-R3-1** (the big one): residual target Δ∈[−2,2] vs tanh value head [−1,1] → high-|Δ| positions
   under-learned. Lever: clip the target to [−1,1], or a linear residual head.
 - **Deck diversity:** every flywheel iter reuses seeds 0–399 → vary per iter (`--seed-start $((it*GAMES))`).

@@ -70,7 +70,7 @@ run_eval() {
   nice -n 19 env $ENVV "$env_name=$knob" $PY -u scripts/eval_net_vs_heuristic.py \
     --checkpoint "$ckpt" --n "$N" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
     --workers "$WORKERS" --out-root "$OUT" --out-subdir "$sub" \
-    --seed-start 700000 --paired
+    --seed-start 1000000000 --paired
   return $?
 }
 

@@ -76,7 +76,7 @@ for spec in $CONFIGS; do
     nice -n 19 env $ENVV CARCASSONNE_V25_VALUE_BLEND="$lam" $PY -u scripts/eval_net_vs_heuristic.py \
       --checkpoint "$ckpt" --n "$N" --sims 200 --heur-sims 200 --c-puct 3.0 \
       --workers "$WORKERS" --out-root "$OUT" --out-subdir "$sub" \
-      --seed-start 700000 --paired
+      --seed-start 1000000000 --paired
     [ $? -ne 0 ] && { echo "[$tag] eval lambda=$lam FAILED" >&2; eval_ok=0; }
   done
 

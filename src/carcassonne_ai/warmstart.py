@@ -511,17 +511,27 @@ def split_files_train_val(
     n = len(files)
     if n == 0:
         return [], []
+    # D-R4-1: split by UNIQUE path so a duplicated game (warmstart oversampling in
+    # _build_mixed_file_list passes the same .npz many times, WITH replacement) can
+    # NEVER straddle the train/val boundary and leak positions across it. `val` gets
+    # exactly ONE occurrence of each val-side game (clean, un-reweighted); ALL
+    # occurrences of train-side games — including the oversampled duplicates — go to
+    # train, and val-side games are fully excluded from train. For a duplicate-free
+    # list (the common case incl. mix=0.0) this is byte-identical to the old split:
+    # same RNG draw, same n_val, same partition.
+    unique = list(dict.fromkeys(files))  # de-dup, first-seen order preserved
+    u = len(unique)
     rng = random.Random(seed)
-    perm = list(range(n))
+    perm = list(range(u))
     rng.shuffle(perm)
-    if val_fraction == 0.0 or n < 2:
+    if val_fraction == 0.0 or u < 2:
         n_val = 0
     else:
-        n_val = max(1, int(round(n * val_fraction)))
-        n_val = min(n_val, n - 1)  # never empty the train split
-    val_idx = set(perm[:n_val])
-    train = [f for i, f in enumerate(files) if i not in val_idx]
-    val = [f for i, f in enumerate(files) if i in val_idx]
+        n_val = max(1, int(round(u * val_fraction)))
+        n_val = min(n_val, u - 1)  # never empty the train split
+    val_paths = {unique[i] for i in perm[:n_val]}
+    val = [p for p in unique if p in val_paths]       # one occurrence each, held out
+    train = [f for f in files if f not in val_paths]  # all train occurrences (incl. dupes)
     return train, val
 
 

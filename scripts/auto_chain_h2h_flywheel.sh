@@ -33,7 +33,9 @@ FW_SCALE=0.25; FW_GAMES=400; FW_SIMS=200; FW_ITERS=12   # 12 iters, no wall-cloc
 ts(){ date '+%Y-%m-%d %H:%M:%S %Z'; }
 say(){ echo "[$(ts)] $*"; }
 
-count(){ find "$H2H_DIR" -maxdepth 1 -name '*seed*.json' ! -name '*.partial.json' 2>/dev/null | wc -l; }
+# D-R4-2: count only clean-namespace (>=1e9 = 10+-digit) seeds so a stray pre-1e9
+# file (or a different run sharing the dir) can't end wait_h2h early.
+count(){ find "$H2H_DIR" -maxdepth 1 -name '*seed*.json' ! -name '*.partial.json' 2>/dev/null | grep -cE 'seed[0-9]{10,}_' || true; }
 
 clean_stranded(){   # free .claim with no .json (shared-claim orphan-stall heal)
   local c
@@ -76,6 +78,7 @@ for jf in glob.glob(f"{d}/*seed*.json"):
     try: r=json.load(open(jf))
     except Exception: continue
     s=r.get("seed"); seat=r.get("new_player")
+    if s is None or s < 1000000000: continue   # D-R4-2: clean-namespace seeds only
     v=0.5 if r.get("drew") else (1.0 if r.get("won_by_new") else 0.0)
     by[s][seat]=v
 decks=[sum(v.values())/len(v) for v in by.values() if v]     # per-deck mean over seats

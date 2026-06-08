@@ -584,3 +584,24 @@ mechanically intact; iter1's +106.6 climb is real.
 | # | File:line | Finding | Disposition |
 |---|---|---|---|
 | D-S5 (re-confirm) | `eval_iter_head_to_head.py:117-129, 730-733` | the h2h game cache key (`_result_path` + `eval_dir`) omits ALL leaf-config params (`--leaf-eval/-variant/-value-blend/-residual-scale/-cap`), not just the c_puct/scale/blend originally noted → a rerun under a changed leaf into the same `--output-root/--iter/--vs-iter` silently reuses the prior config's cached games. R5 adds: `eval_dir` (not just the filename) needs the leaf-config discriminator; mirror the existing `o<old_sims>` tag. | latent (h2h runs done, used fresh dirs). **Fix before reusing `eval_iter_head_to_head` with a changed leaf config into an existing dir.** |
+
+---
+
+## Iteration — 2026-06-08 (pm-2) — "FIX ALL OUTSTANDING BUGS" pass (Joshua)
+
+Cleared the entire safe/mechanical backlog. `pytest tests/ -q` green before and after; every shell script `bash -n` clean. The leaf-eval/encoding three (D2/D16/D3) are deliberately **held** — they aren't mechanically shippable (see bottom).
+
+### Fixed + verified
+| # | File | Fix |
+|---|---|---|
+| **D-R4-1** | `warmstart.py` `split_files_train_val` | split by **unique** path → no train/val leak from warmstart oversampling. **Byte-identical for duplicate-free input** (mix=0.0 = all current training) — unit-verified neutral + leak-free. |
+| **D-R3-2** | `train_iter.py` corr printout | branch on `prov_value_target`: residual mode prints "value↔target (residual-vs-residual, NOT the 0.61 ruler)". Cosmetic. |
+| **D-S5** | `eval_iter_head_to_head.py` | `.leafconfig.json` stamp in `eval_dir` + startup HARD-FAIL on a leaf/eval-config mismatch → a dir reused with a changed leaf errors instead of silently serving the prior config's cached games. No path/filename change (caches + the hardcoded auto-chain `H2H_DIR` preserved). |
+| **D-S1/2/3/6/7 + D-S4** | `run_residual_flywheel.sh` | **restart batch applied** (flywheel had ended): heal-cap+share-probe (D-S1), kill-pool-before-relaunch (D-S2), claim-age 4→30min (D-S3), best.pt fail-loud (D-S6), odometer-before-plateau-break (D-S7), **+ NEW `_ssh_bg` retry-on-rc255 wrapper on all 6 remote launches (D-S4)**. `next.sh` swapped in and removed. |
+| **D-R4-2** | `auto_chain_h2h_flywheel.sh` | count()/tally() scope to clean-namespace seeds (≥1e9) so a stray pre-1e9/other-run file can't end `wait_h2h` early. |
+| **pre-1e9 launchers** | `run_pathb_cluster_loop` (GATE_SEED), `scaling_curve`, `ladder_highsim` (SB), `rank_sweep`, `lever_sequencer` | eval `--seed-start` defaults bumped to the 1e9 floor → a reuse no longer hard-errors/hangs on the clean-seed guard. (eval_iter_head_to_head's unguarded 900000 anchor seed + self-play seed 0 left intact.) |
+
+### HELD — leaf-eval / encoding (not mechanically fixable)
+- **D16** (`_close_prob(0)` board-edge 100% bonus) — REAL bug, but changes the v2.7 leaf = ruler+production → invalidates banked clean-eval numbers + needs a cap re-sweep. Fold into the attempt-#2 leaf work.
+- **D2** (TILES/MEEPLES encoding) — invalidates ALL checkpoints + self-play data → re-encode + retrain. Joshua's call.
+- **D3** (`bonus_cap`/`opp_bonus_cap`) — **NOT a bug**: caps are equal in production (antisymmetry holds); asymmetric caps are an intentional denial-strengthening feature.

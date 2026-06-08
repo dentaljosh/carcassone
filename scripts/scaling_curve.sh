@@ -41,11 +41,11 @@ run_cell() {
   nice -n 19 env $BASEENV $blendenv $PY -u scripts/eval_net_vs_heuristic.py \
     --checkpoint "$CKPT" --n "$N" --sims "$ns" --heur-sims "$hs" --c-puct "$CPUCT" \
     --workers "$W" --out-root "$OUTROOT" --out-subdir "$sub" \
-    --seed-start 700000 --paired --shared-claim --claim-host "$HOST" >> "$LOG" 2>&1
+    --seed-start 1000000000 --paired --shared-claim --claim-host "$HOST" >> "$LOG" 2>&1
   # authoritative pooled summary over all json (sees other boxes too)
   nice -n 19 env $BASEENV $blendenv $PY -u scripts/eval_net_vs_heuristic.py \
     --checkpoint "$CKPT" --n "$N" --sims "$ns" --heur-sims "$hs" \
-    --out-root "$OUTROOT" --out-subdir "$sub" --seed-start 700000 --paired \
+    --out-root "$OUTROOT" --out-subdir "$sub" --seed-start 1000000000 --paired \
     --summary-only 2>>"$LOG" | grep -E 'ELO|wr|win' >> "$LOG"
   echo "--- cell done $(date +%H:%M:%S) ---" >> "$LOG"
 }

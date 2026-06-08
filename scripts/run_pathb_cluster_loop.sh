@@ -78,7 +78,7 @@ GATE_GAMES="${GATE_GAMES:-200}"             # per-iter gate n (paired) vs Heuris
 GATE_CPUCT="${GATE_CPUCT:-3.0}"             # match production/ladder c=3.0
 KEEP_MARGIN_ELO="${KEEP_MARGIN_ELO:-10}"    # adopt iter as new best iff elo >= best_elo + this
 SEED_ELO="${SEED_ELO:-25.2}"                # iter_11 elo vs heuristic @ sims=200 (re-baseline n=400)
-GATE_SEED="${GATE_SEED:-500000}"            # gate seed-start (per-iter dirs avoid file collision)
+GATE_SEED="${GATE_SEED:-1000000000}"        # gate seed-start: clean-eval floor 1e9 (eval_net_vs_heuristic HARD-ERRORS on seed<1e9)
 read -r -a HOSTS <<< "${HOSTS:-5800x xeon laptop}"
 PY=.venv/bin/python
 # CARC_RUN tags every worker (incl mp-spawn + orphans) with this run's name — read back

@@ -694,10 +694,20 @@ def main(argv: list[str] | None = None) -> int:
     value_corr = _value_outcome_corr(net, val_loader, device) if do_validation else None
     if value_corr is not None:
         metrics["value_outcome_corr"] = round(value_corr, 4)
-        print(
-            f"  value↔outcome corr = {value_corr:+.4f}  "
-            f"(target: beat heuristic 0.61; old data-starved NN was 0.18)"
-        )
+        # D-R3-2: in residual mode the head predicts the residual Δ, so this corr is
+        # residual-prediction-vs-residual-target — NOT comparable to the 0.61
+        # value-vs-OUTCOME ruler (printing it against 0.61 made the live ~+0.51 look
+        # like underperformance; it's a different quantity).
+        if getattr(args, "prov_value_target", "") == "residual":
+            print(
+                f"  value↔target corr = {value_corr:+.4f}  "
+                f"(residual-vs-residual — NOT the 0.61 value-vs-OUTCOME ruler; track iter-over-iter)"
+            )
+        else:
+            print(
+                f"  value↔outcome corr = {value_corr:+.4f}  "
+                f"(target: beat heuristic 0.61; old data-starved NN was 0.18)"
+            )
 
     # Atomic save (review R2-L1): write a temp file then rename, so a SIGKILL /
     # OOM / power-loss mid-write can't leave a truncated .pt that the next iter's

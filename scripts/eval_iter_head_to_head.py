@@ -758,6 +758,43 @@ def main(argv: list[str] | None = None) -> int:
     # in-training anchor gates that legitimately reuse self-play decks. The
     # default --seed-start is already 1e9 (G-M6); clean reruns pass 1e9+.
 
+    # D-S5: stamp the leaf/eval config into eval_dir and HARD-FAIL on a mismatch.
+    # The game cache key (_result_path) encodes only sims/old_sims/seed/player — NOT
+    # the leaf config — so reusing the same --output-root/--iter/--vs-iter with a
+    # CHANGED leaf (variant / value-blend / residual-scale / cap, or c_puct) would
+    # silently load the prior config's cached games as hits and report a WRONG elo
+    # (the exact silent-contamination class this project exists to kill). This makes
+    # that impossible without touching the filename scheme (preserves all caches).
+    import json as _json
+    _leaf_stamp = {
+        "leaf_eval": args.leaf_eval,
+        "sims": args.sims, "old_sims": _eff_old_sims,
+        "new_c": _eff_new_c, "old_c": _eff_old_c,
+        "new": [args.new_leaf_variant, args.new_leaf_value_blend,
+                args.new_leaf_residual_scale, args.new_leaf_cap],
+        "old": [args.old_leaf_variant, args.old_leaf_value_blend,
+                args.old_leaf_residual_scale, args.old_leaf_cap],
+    }
+    _stamp_path = eval_dir / ".leafconfig.json"
+    if _stamp_path.exists():
+        try:
+            _prev = _json.loads(_stamp_path.read_text())
+        except Exception:
+            _prev = None
+        if _prev is not None and _prev != _leaf_stamp:
+            raise SystemExit(
+                f"FATAL (D-S5): {eval_dir} already holds games for a DIFFERENT leaf/eval "
+                f"config.\n  cached:  {_prev}\n  current: {_leaf_stamp}\n"
+                f"  -> use a fresh --output-root (the game cache key does NOT encode leaf config)."
+            )
+    else:
+        try:
+            _tmp = _stamp_path.with_name(".leafconfig.json.tmp")
+            _tmp.write_text(_json.dumps(_leaf_stamp, sort_keys=True))
+            _tmp.replace(_stamp_path)
+        except Exception:
+            pass  # best-effort stamp; the guard targets operator error, not a hard dep
+
     _new_spec = _h2h_side_spec("A_new", args.new_checkpoint, new_leaf_cfg,
                                leaf_eval=args.leaf_eval, sims=args.sims, c_puct=_eff_new_c,
                                fpu=args.new_fpu, paired=args.paired, seed_range=_seed_range,

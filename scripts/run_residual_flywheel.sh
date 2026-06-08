@@ -102,6 +102,25 @@ _clean_stranded() {   # $1=dir $2=output-ext(json|npz) $3=only-if-older-than-min
   fi
 }
 
+# --- RESTART-BATCH robustness helpers (shell-audit w3gbnte6z: D-S1/D-S2) ---
+HEAL_CAP=${HEAL_CAP:-8}   # D-S1: abort an iter (exit 1, loud) after this many no-progress heals — no infinite hang
+_share_writable() { ( touch "$SHARE_LOCAL/.fw_probe" 2>/dev/null && rm -f "$SHARE_LOCAL/.fw_probe" 2>/dev/null ); }
+_kill_pool() {   # D-S2: reap the prior pool on all 3 boxes before a heal relaunch (mp spawn-workers don't self-reap)
+  pkill -f "$1" 2>/dev/null || true
+  ssh -o ConnectTimeout=15 laptop  "pkill -f $1" </dev/null >/dev/null 2>&1 || true
+  ssh -o ConnectTimeout=15 xeon-wsl "pkill -f $1" </dev/null >/dev/null 2>&1 || true
+}
+_ssh_bg() {   # D-S4: launch a detached remote cmd, RETRYING on rc=255 (Tailscale jitter)
+  local host="$1" cmd="$2" label="$3" try rc   # before giving up the box for this iter (heal still re-adds on the next stall)
+  for try in 1 2 3; do
+    ssh -o ConnectTimeout=20 "$host" "$cmd" </dev/null && return 0
+    rc=$?
+    [ "$rc" = "255" ] || { echo "  $label launch rc=$rc" >&2; return "$rc"; }
+    echo "  $label ssh rc=255 (try $try/3) — retry" >&2; sleep 3
+  done
+  echo "  $label ssh FAILED after 3 tries (box dropped this iter; heal re-adds)" >&2; return 255
+}
+
 # Launch the 3-box shared-claim eval for one (scale, subdir). $1=s $2=sub $3=rckpt $4=ckpt
 _gate_launch() {
   local s="$1" sub="$2" rckpt="$3" ckpt="$4"
@@ -109,8 +128,8 @@ _gate_launch() {
     --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 --heur-leaf v2_7 \
     --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
     --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
-  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
-  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
+  _ssh_bg laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" "gate laptop"
+  _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" "gate xeon"
 }
 
 # Scale-curve gate (scale0 + scaleSCALE) fanned 3-box (~3× single-box: the eval is
@@ -124,14 +143,18 @@ run_gate() {
     if [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; then
       _clean_stranded "$dir" json 0      # pre-launch: free any stranded claims (resume after kill/crash)
       _gate_launch "$s" "$sub" "$rckpt" "$ckpt"
-      last=-1; stall=0
+      last=-1; stall=0; heals=0
       while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$N_GATE" ]; do
         sleep 30
         cur=$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)
         if [ "$cur" -eq "$last" ]; then stall=$((stall+1)); else stall=0; last=$cur; fi
         if [ "$stall" -ge 12 ]; then      # ~6min no new game (>1 game-time) = workers died → heal
-          echo "  [gate $sub] STALLED at $cur/$N_GATE — self-heal: clean stale claims + relaunch" >&2
-          _clean_stranded "$dir" json 4; _gate_launch "$s" "$sub" "$rckpt" "$ckpt"; stall=0
+          heals=$((heals+1))
+          [ "$heals" -gt "$HEAL_CAP" ] && { echo "  [gate $sub] FATAL: $heals heals, stuck at $cur/$N_GATE — aborting iter (D-S1)" >&2; exit 1; }
+          if ! _share_writable; then echo "  [gate $sub] share NOT writable — backing off (heal $heals)" >&2; continue; fi
+          echo "  [gate $sub] STALLED at $cur/$N_GATE — heal $heals: kill pool + clean stale (30min) + relaunch" >&2
+          _kill_pool eval_net_vs_heuristic
+          _clean_stranded "$dir" json 30; _gate_launch "$s" "$sub" "$rckpt" "$ckpt"; stall=0
         fi
       done
     fi
@@ -149,8 +172,8 @@ _odo_launch() {   # $1=scale $2=sub $3=rckpt $4=ckpt
     --checkpoint "$ckpt" --n "$ODO_N" --sims "$SIMS" --heur-sims "$ODO_HEUR_SIMS" --c-puct 3.0 --heur-leaf v2_7 \
     --workers 14 --out-root "$OUT/odo" --out-subdir "$sub" \
     --seed-start "$ODO_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_odo5800x.log 2>&1 &
-  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_odolaptop.log 2>&1 </dev/null &" || echo "  odo laptop launch rc=$?" >&2
-  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_odoxeon.log 2>&1 </dev/null &" || echo "  odo xeon launch rc=$?" >&2
+  _ssh_bg laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_odolaptop.log 2>&1 </dev/null &" "odo laptop"
+  _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_odoxeon.log 2>&1 </dev/null &" "odo xeon"
 }
 
 # Out-of-lineage odometer for one iter: best @SCALE vs heur@ODO_HEUR_SIMS. Self-heals the
@@ -162,14 +185,18 @@ run_odometer() {   # $1=ckpt(5800x path) $2=iter-label
   if [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$ODO_N" ]; then
     _clean_stranded "$dir" json 0
     _odo_launch "$SCALE" "$sub" "$rckpt" "$ckpt"
-    last=-1; stall=0
+    last=-1; stall=0; heals=0
     while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$ODO_N" ]; do
       sleep 30
       cur=$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)
       if [ "$cur" -eq "$last" ]; then stall=$((stall+1)); else stall=0; last=$cur; fi
       if [ "$stall" -ge 20 ]; then    # ~10min no new game (heur@800 is slow) = workers died → heal
-        echo "  [odo $sub] STALLED at $cur/$ODO_N — self-heal: clean stale claims + relaunch" >&2
-        _clean_stranded "$dir" json 4; _odo_launch "$SCALE" "$sub" "$rckpt" "$ckpt"; stall=0
+        heals=$((heals+1))
+        [ "$heals" -gt "$HEAL_CAP" ] && { echo "  [odo $sub] FATAL: $heals heals, stuck at $cur/$ODO_N — aborting (D-S1)" >&2; exit 1; }
+        if ! _share_writable; then echo "  [odo $sub] share NOT writable — backing off (heal $heals)" >&2; continue; fi
+        echo "  [odo $sub] STALLED at $cur/$ODO_N — heal $heals: kill pool + clean stale (30min) + relaunch" >&2
+        _kill_pool eval_net_vs_heuristic
+        _clean_stranded "$dir" json 30; _odo_launch "$SCALE" "$sub" "$rckpt" "$ckpt"; stall=0
       fi
     done
   fi
@@ -183,8 +210,8 @@ _gen_launch() {
   local it="$1"
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=14 WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw_gen5800x_$it.log 2>&1 & disown
-  ssh -o ConnectTimeout=20 laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=14 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genlaptop_$it.log 2>&1 </dev/null &" || echo "[it$it] laptop launch rc=$?"
-  ssh -o ConnectTimeout=20 xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=10 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genxeon_$it.log 2>&1 </dev/null &" || echo "[it$it] xeon launch rc=$?"
+  _ssh_bg laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=14 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen"
+  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=10 WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen"
 }
 
 # --- iter0 baseline at the gate seed (clean climb reference) ---
@@ -208,21 +235,27 @@ for it in $(seq $START $ITERS); do
   fi
   echo ""; echo "########## FLYWHEEL ITER $it @ $(date) (warm from best, elo=$BEST_ELO) ##########"
   DATA=$OUT/iter${it}_data; CKPT=$OUT/ckpt/iter${it}.pt
-  cp "$OUT/best.pt" "$OUT/warm.pt"
+  # D-S6: fail loudly instead of silently warming from nothing (set -e is off)
+  [ -s "$OUT/best.pt" ] || { echo "[it$it] FATAL: best.pt missing/empty ($OUT/best.pt) — refusing to warm from nothing" >&2; exit 1; }
+  cp "$OUT/best.pt" "$OUT/warm.pt" || { echo "[it$it] FATAL: cannot stage warm.pt from best.pt" >&2; exit 1; }
 
   # --- 3-box residual self-play (work-stealing), self-healing the orphan-stall ---
   if [ ! -f "$OUT/done/gen$it" ]; then
     echo "[it$it] launch 3-box residual gen @ $(date)"
     mkdir -p "$DATA/iter_00"; _clean_stranded "$DATA/iter_00" npz 0   # resume: free stranded claims
     _gen_launch "$it"
-    glast=-1; gstall=0
+    glast=-1; gstall=0; gheals=0
     while [ "$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)" -lt "$GAMES" ]; do
       sleep 60
       gcur=$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)
       if [ "$gcur" -eq "$glast" ]; then gstall=$((gstall+1)); else gstall=0; glast=$gcur; fi
       if [ "$gstall" -ge 6 ]; then        # ~6min no new npz = gen workers died → heal
-        echo "[it$it] gen STALLED at $gcur/$GAMES — self-heal: clean stale claims + relaunch" >&2
-        _clean_stranded "$DATA/iter_00" npz 4; _gen_launch "$it"; gstall=0
+        gheals=$((gheals+1))
+        [ "$gheals" -gt "$HEAL_CAP" ] && { echo "[it$it] FATAL: $gheals gen heals, stuck at $gcur/$GAMES — aborting (D-S1)" >&2; exit 1; }
+        if ! _share_writable; then echo "[it$it] gen: share NOT writable — backing off (heal $gheals)" >&2; continue; fi
+        echo "[it$it] gen STALLED at $gcur/$GAMES — heal $gheals: kill pool + clean stale (30min) + relaunch" >&2
+        _kill_pool run_selfplay_iter
+        _clean_stranded "$DATA/iter_00" npz 30; _gen_launch "$it"; gstall=0
       fi
     done
     echo "[it$it] gen complete ($(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l) npz) @ $(date)"
@@ -248,20 +281,27 @@ for it in $(seq $START $ITERS); do
   ELO=$(run_gate "$CKPT" "iter$it")
   echo "[it$it] scale$SCALE elo = $ELO  (best so far = $BEST_ELO)"
   improved=$(awk -v e="$ELO" -v b="$BEST_ELO" -v m="$KEEP_MARGIN" 'BEGIN{el=tolower(e);bl=tolower(b); if(e==""||b==""||el~/nan|inf/||bl~/nan|inf/){print 0;exit} print (e+0>b+0+m+0)?1:0}')
+  PLATEAU=0
   if [ "$improved" = "1" ]; then
     cp "$CKPT" "$OUT/best.pt"; BEST_ELO=$ELO; echo "$BEST_ELO" > "$OUT/best_elo.txt"; flat=0
     echo "[it$it] ✅ NEW BEST (climbed to $ELO) — flywheel is compounding"
   else
     flat=$((flat+1))
     echo "[it$it] ✗ no climb (flat=$flat/2); best stays $BEST_ELO"
-    if [ "$flat" -ge 2 ]; then echo "[it$it] PLATEAU (2 flat iters) — stopping the flywheel" >&2; break; fi
+    [ "$flat" -ge 2 ] && PLATEAU=1
   fi
 
-  # --- out-of-lineage odometer every ODO_EVERY iters (LOGGED, not gated) ---
-  if [ "$ODO_EVERY" -gt 0 ] && [ $(( it % ODO_EVERY )) -eq 0 ]; then
+  # --- out-of-lineage odometer: on the ODO_EVERY cadence, OR on ANY terminal iter
+  # (plateau or last) so the final out-of-lineage signal is NEVER lost. D-S7: the old
+  # plateau `break` lived in the else-branch above and fired BEFORE this block, so the
+  # iter3 odometer was SKIPPED on the 2026-06-08 plateau run (recovered manually via
+  # scripts/odo_oneshot.sh). Break now happens AFTER the odometer. ---
+  if [ "$ODO_EVERY" -gt 0 ] && { [ $(( it % ODO_EVERY )) -eq 0 ] || [ "$PLATEAU" = "1" ] || [ "$it" -ge "$ITERS" ]; }; then
     echo "[it$it] === out-of-lineage odometer: best vs heur@${ODO_HEUR_SIMS} (clean seed $ODO_SEED, n=$ODO_N) @ $(date) ==="
     run_odometer "$OUT/best.pt" "$it"
   fi
+
+  if [ "$PLATEAU" = "1" ]; then echo "[it$it] PLATEAU (2 flat iters) — stopping the flywheel" >&2; break; fi
 done
 
 echo ""; echo "=== FLYWHEEL DONE @ $(date): best scale$SCALE elo = $BEST_ELO (iter0 baseline was the residual net's +68) ==="
