@@ -157,6 +157,12 @@ Fall back to Track A as primary if, within the budget below, **any** of:
 > cluster**; if neither clears the Track-B "demonstrated" bar, pivot to Track A primary. (Compute reality: 3 GPUs,
 > a flywheel iteration is ~hours-to-a-day of gen+train+gate — 7 days allows ~3–5 iters per attempt, enough to
 > see a curve or its absence.)
+>
+> **UPDATED (Joshua, 2026-06-08 pm) — budget RELAXED, ≤2-attempt cap LIFTED.** After attempt #1 (`flywheel_residual_v2`)
+> came back CL-011-null but *informative* (it surfaced the keep-best-on-in-lineage-gate mis-selection + the
+> S-R3-1 tanh-cap), Joshua is **fine with ~10 more iters of flywheel/research iteration** (multiple attempts OK).
+> The pivot-to-Track-A clock is **PAUSED** — keep iterating on Track B. Pivot/abandon remains the eventual
+> fallback but is no longer bounded to 2 funded attempts.
 
 ## Abandonment / redesign criteria
 
