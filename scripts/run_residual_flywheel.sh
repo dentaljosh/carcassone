@@ -185,7 +185,9 @@ for it in $(seq $START $ITERS); do
     nice -n 19 env $ENVV $PY -u scripts/train_iter.py \
       --output-root "$DATA" --warmstart-root "$WARMSTART_ROOT" \
       --iter 0 --window 10 --warmstart-mix-fraction 0.0 --value-loss-weight 1.0 \
-      --stage-local "/tmp/fw_stage_$it" --warm-from "$OUT/warm.pt" --output "$CKPT" --epochs 3
+      --stage-local "/tmp/fw_stage_$it" --warm-from "$OUT/warm.pt" --output "$CKPT" --epochs 3 \
+      --prov-value-target residual --prov-selfplay-leaf "v2_7+residual${SCALE}" \
+      --prov-seed-range "0-$((GAMES-1))" --prov-run-tag "flywheel_residual_it${it}"
     rm -rf "/tmp/fw_stage_$it" 2>/dev/null || true
     [ -f "$CKPT" ] || { echo "[it$it] TRAIN FAILED — halting" >&2; exit 1; }
   fi

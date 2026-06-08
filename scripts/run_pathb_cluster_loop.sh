@@ -389,7 +389,11 @@ for ((N=START; N<ITERS; N++)); do
     --iter "$N" --window 10 --warmstart-mix-fraction 0.0 \
     --lr-schedule "${LR_SCHEDULE:-none}" --value-loss-weight "${VALUE_LOSS_WEIGHT:-1.0}" \
     --stage-local "$STAGE_DIR" \
-    --warm-from "$warm_from" --output "$CKPT_LOCAL/iter_$NN.pt" --epochs 3
+    --warm-from "$warm_from" --output "$CKPT_LOCAL/iter_$NN.pt" --epochs 3 \
+    --prov-value-target "${VALUE_TARGET:-score_diff}" \
+    --prov-selfplay-leaf "v2_7+blend${BLEND}" \
+    --prov-seed-range "0-$((GAMES-1))" \
+    --prov-run-tag "$RUN"
   trc=$?
   rm -rf "$STAGE_DIR" 2>/dev/null || true
   if [ $trc -ne 0 ]; then echo "TRAIN exited $trc (entropy collapse / NaN?) — HALTING loop at iter $N"; exit $trc; fi
