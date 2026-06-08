@@ -548,3 +548,22 @@ mechanically intact; iter1's +106.6 climb is real.
 |---|---|---|---|
 | **S-R3-1** | `selfplay.py:355-357` (target) / `network.py` value tanh / `train_iter.py:556` (MSE) | **Residual target Δ = root.Q − h ∈ [−2,+2] but the value head is tanh-bounded to [−1,+1].** For the high-signal positions (`|Δ|>1`, where search and v2.7 strongly disagree) the head saturates → vanishing gradient → the **most informative residuals are systematically under-learned**, and the leaf can only ever nudge ±scale. Self-consistent (does NOT bias any strength CLAIM) but a concrete structural CAP on what the residual can learn → a candidate mechanism for CL-004 being *modest* and a limit on CL-011 compounding (distinct from CL-008 gradient-starvation). | **Lever for attempt #2** (do NOT alter the live experiment): clip the residual target to [−1,1] before training, OR give the residual head a linear (unbounded) output, OR scale Δ into the head's range. Surface to Joshua. |
 | D-R3-2 | `train_iter.py:157-193, 694-700` | value↔outcome corr diagnostic is residual-vs-residual in residual mode but printed against the 0.61 value-vs-OUTCOME ruler (the live +0.51 reading looks like underperformance but is a category error) | cosmetic; relabel/branch the printout on value_target (re-confirm of round-2 #3) |
+
+---
+
+## Iteration — 2026-06-08 — round-4 second-pass RE-AUDIT (already-covered surfaces)
+
+5 confirmed (second pass found what the first missed). None bias the LIVE run (mix=0.0; orchestrator already exited; live dir was fresh).
+
+### Fixed
+| # | File | Bug | Fix |
+|---|---|---|---|
+| F-R4a | `CLAIM_REGISTRY.csv` CL-005 | internal contradiction: CL-005 said the out-of-lineage gate was un-met while CL-010 records the +52.5 that IS that gate's result | reconciled — CL-005 now records the +52.5 odometer (favorable but marginal n=200/z~2.1, leaf-dependent) |
+| F-R4b | `auto_chain_h2h_flywheel.sh:90` | escalation/verdict awk branched on `%.2f`-ROUNDED z → a true z∈[1.995,2.0) rounds to "2.00", SKIPS the mandated n=1500 escalation AND is crowned a 2σ verdict at n=400 (live dodged it at z=1.77) | emit z at `%.4f` for the decision |
+
+### Deferred (safe but latent / restart-only)
+| # | File:line | Finding | Disposition |
+|---|---|---|---|
+| D-R4-1 | `warmstart.py:490-525` split_files_train_val | with `mix>0`, warmstart files sampled WITH REPLACEMENT can land the same game in BOTH train and val (split is by list-index) → leaks → inflates the val "trustworthy" corr | NOT live (flywheel mix=0.0). Apply before any mix>0 retrain: dedup by path / split unique paths first, expand dupes into train only. |
+| D-R4-2 | `auto_chain_h2h_flywheel.sh:36,70` | count()/tally() glob the whole eval dir with no seed-range filter → a pre-existing larger run in the same dir could break wait_h2h early | latent (live dir was fresh; orchestrator done). Scope to the target seed range. |
+| D-S6 | `run_residual_flywheel.sh:211` | `cp best.pt warm.pt` with no existence guard + `set -e` off → a missing/partial best.pt silently warms from nothing | restart batch (add to D-S*). |

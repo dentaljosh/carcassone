@@ -91,7 +91,7 @@ if 0<wr<1 and nd>1:
     z=elo/sig if sig else 0.0
 else:
     elo=sig=z=float('nan')
-print(f"{elo:.1f} {sig:.1f} {z:.2f} {n} {wins} {dr} {ls} {nd}")
+print(f"{elo:.1f} {sig:.1f} {z:.4f} {n} {wins} {dr} {ls} {nd}")   # z at 4dp: the band/verdict awk must not round 1.99x up to 2.00 (r4 #1)
 PY
 }
 
