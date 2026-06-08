@@ -222,6 +222,20 @@ def _apply_value_blend(cfg, blend: float):
     return replace(cfg if cfg is not None else DEFAULT_CONFIG, value_blend=blend)
 
 
+def _apply_residual_scale(cfg, scale: float):
+    """Set `LeafConfig.residual_scale` on `cfg` for the Lever-1 residual leaf
+    (leaf = clip(v2.7 + scale·Δ, ±1), Δ = net value head residual). `cfg` may be
+    None ('v2_7') — then build from DEFAULT_CONFIG. scale <= 0 is a no-op (returns
+    `cfg` unchanged). PER-SIDE so a residual net (scale 0.25) can be compared to a
+    pure-policy net (scale 0) in one head-to-head — the value heads differ
+    (residual-trained vs outcome-trained), so a global scale would be unfair."""
+    if scale <= 0.0:
+        return cfg
+    from dataclasses import replace
+    from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+    return replace(cfg if cfg is not None else DEFAULT_CONFIG, residual_scale=scale)
+
+
 def _apply_leaf_cap(cfg, cap: float | None):
     """Override `LeafConfig.bonus_cap` and `opp_bonus_cap` (kept symmetric) on
     `cfg`. `cfg` may be None — then build from DEFAULT_CONFIG. `cap` None or
@@ -657,6 +671,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Value-head blend λ for the OLD side. See --new-leaf-value-blend.",
     )
     p.add_argument(
+        "--new-leaf-residual-scale", type=float, default=0.0,
+        help="Lever-1 residual scale for the NEW side: leaf = clip(v2.7 + scale·Δ, "
+             "±1), Δ = the NN value-head residual. 0.0 = pure v2.7 leaf. PER-SIDE so "
+             "a residual net (e.g. 0.25) can be compared to a pure-policy net (0.0) "
+             "in one head-to-head. Forces the NEW server to compute the value head.",
+    )
+    p.add_argument(
+        "--old-leaf-residual-scale", type=float, default=0.0,
+        help="Residual scale for the OLD side. See --new-leaf-residual-scale.",
+    )
+    p.add_argument(
         "--new-leaf-cap", type=float, default=None,
         help="Override `LeafConfig.bonus_cap` / `opp_bonus_cap` for the NEW "
              "side (only under --leaf-eval v2_5). None (default) = use the "
@@ -709,10 +734,14 @@ def main(argv: list[str] | None = None) -> int:
     # Resolve per-side leaf configs up-front so the manifest can record the FULL
     # effective config (cap/value-blend/residual) — previously dropped (R1/R7).
     new_leaf_cfg = _apply_leaf_cap(
-        _apply_value_blend(_leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend),
+        _apply_residual_scale(
+            _apply_value_blend(_leaf_config_for(args.new_leaf_variant), args.new_leaf_value_blend),
+            args.new_leaf_residual_scale),
         args.new_leaf_cap)
     old_leaf_cfg = _apply_leaf_cap(
-        _apply_value_blend(_leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend),
+        _apply_residual_scale(
+            _apply_value_blend(_leaf_config_for(args.old_leaf_variant), args.old_leaf_value_blend),
+            args.old_leaf_residual_scale),
         args.old_leaf_cap)
 
     _eff_old_sims = args.old_sims or args.sims
