@@ -76,6 +76,7 @@ def run_rung(args, heur_sims: int) -> dict:
         "--out-root", str(args.out_root),
         "--out-subdir", sub,
         "--seed-start", str(args.seed_start),
+        "--heur-leaf", args.heur_leaf,   # R1-redux fix: match the agent's v2.7 leaf (was silently v1, the -29 artifact)
     ]
     if args.paired:
         cmd.append("--paired")
@@ -134,6 +135,11 @@ def main(argv=None) -> int:
     ap.add_argument("--shared-claim", action="store_true",
                     help="3-box work-stealing (launch this on each box, same out-root).")
     ap.add_argument("--claim-host", type=str, default="local")
+    ap.add_argument("--heur-leaf", choices=["v1", "v2_7"], default="v2_7",
+                    help="HeuristicMCTS leaf. DEFAULT v2_7 = MATCH the agent's leaf (R1-redux fix). "
+                         "Before 2026-06-08 this gauge passed no --heur-leaf, so it silently ran the "
+                         "v1 leaf — the source of the bogus -29 heur@800 number (vs the matched +52.5). "
+                         "Use v1 only for an explicit legacy-leaf comparison.")
     args = ap.parse_args(argv)
 
     if not args.allow_selfplay_seeds:
