@@ -28,6 +28,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+# D2: a trivial zero-dependency enum (the engine's state.phase) — lets us compare by
+# enum identity instead of a hardcoded "tiles"/"meeples" string literal.
+from wingedsheep.carcassonne.objects.game_phase import GamePhase
+
 if TYPE_CHECKING:
     from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
 
@@ -108,7 +112,7 @@ def encode_scalars(
     include_farm: bool = False,
 ) -> np.ndarray:
     opp = 1 - player
-    is_tiles = state.phase.value == "tiles"
+    is_tiles = state.phase == GamePhase.TILES  # D2: enum, not the "tiles" literal
     # D13 fix (2026-05-29): the engine doesn't clear state.next_tile after
     # play_tile — it still holds the just-placed tile through the MEEPLES phase
     # until draw_tile runs. So counting next_tile unconditionally overcounted the

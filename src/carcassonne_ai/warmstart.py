@@ -278,7 +278,8 @@ def _heuristic_policy_2ply(
     half-tile/half-meeple position split: ~3-4x slower overall than 1-ply
     for the same dataset size.
     """
-    is_tile_phase = board.state.phase.value == "tiles"
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase  # trivial enum (local, mirrors this module's lazy-import style)
+    is_tile_phase = board.state.phase == GamePhase.TILES  # D2: enum, not the "tiles" literal
     if not is_tile_phase:
         return _heuristic_policy(game, board, valid_mask, tau=tau)
 

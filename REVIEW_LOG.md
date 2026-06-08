@@ -601,7 +601,8 @@ Cleared the entire safe/mechanical backlog. `pytest tests/ -q` green before and 
 | **D-R4-2** | `auto_chain_h2h_flywheel.sh` | count()/tally() scope to clean-namespace seeds (≥1e9) so a stray pre-1e9/other-run file can't end `wait_h2h` early. |
 | **pre-1e9 launchers** | `run_pathb_cluster_loop` (GATE_SEED), `scaling_curve`, `ladder_highsim` (SB), `rank_sweep`, `lever_sequencer` | eval `--seed-start` defaults bumped to the 1e9 floor → a reuse no longer hard-errors/hangs on the clean-seed guard. (eval_iter_head_to_head's unguarded 900000 anchor seed + self-play seed 0 left intact.) |
 
-### HELD — leaf-eval / encoding (not mechanically fixable)
-- **D16** (`_close_prob(0)` board-edge 100% bonus) — REAL bug, but changes the v2.7 leaf = ruler+production → invalidates banked clean-eval numbers + needs a cap re-sweep. Fold into the attempt-#2 leaf work.
-- **D2** (TILES/MEEPLES encoding) — invalidates ALL checkpoints + self-play data → re-encode + retrain. Joshua's call.
-- **D3** (`bonus_cap`/`opp_bonus_cap`) — **NOT a bug**: caps are equal in production (antisymmetry holds); asymmetric caps are an intentional denial-strengthening feature.
+### ✅ RESOLVED (pm-3) — the v2.7 leaf is SOUND; the two real items fixed
+- **D16** ✅ FIXED — board-edge unclosable city now `continue`s (no 100% bonus) at both leaf call sites (`virtual_score_v2.py`). Trigger is ~unreachable on a 35×35 board → negligible leaf/ruler change, no re-sweep needed. The v2.7 leaf has no real problem.
+- **D2** ✅ FIXED — phase compared by `GamePhase` enum (board_repr/features/warmstart), not the hardcoded `"tiles"`/`"meeples"` string. Provably no-op today; removes the frozen-engine fragility. (`action_space.encode(phase: str)` left by design.)
+- **D3** — NOT a bug (intentional asymmetric-cap feature; equal in production).
+- **D1 (labeling correction)** — the "TILES/MEEPLES tile-encoding mismatch" item I earlier mislabeled "D2" is actually **D1**, and it was **already resolved 2026-05-29 as intentional** (`board_repr.py:321-329` — phase-dependent ref-tile is deliberate; "always encode the placed tile" was weighed + rejected). NOT outstanding, never needed a retrain. The stale "Deferred D1" entry above predates that resolution.

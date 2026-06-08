@@ -31,16 +31,22 @@
 - **Launcher pre-1e9 seeds** ✅ — `run_pathb_cluster_loop` (GATE_SEED), `scaling_curve`, `ladder_highsim`
   (SB), `rank_sweep`, `lever_sequencer` bumped to the 1e9 floor so a reuse no longer hangs the guard.
 
-## HELD — leaf-eval / encoding changes (NOT mechanically fixable; need a decision)
-- **D16 — `virtual_score_v2.py` `_close_prob(0)`** (board-edge unfinished city with 0 in-bounds open
-  positions gets a 100% closure bonus): a **real** bug, but the fix changes the **v2.7 leaf**, which is
-  BOTH production AND the clean-eval ruler → it would invalidate every banked clean-eval number and needs
-  a **cap re-sweep**. Fold into the attempt-#2 leaf work (where the re-sweep happens anyway), not standalone.
-- **D2 — TILES vs MEEPLES tile-encoding mismatch**: changing the network input encoding **invalidates
-  ALL checkpoints + self-play data** → a full re-encode + retrain. Joshua's call.
-- **D3 — `bonus_cap`/`opp_bonus_cap` antisymmetry**: NOT a bug — `opp_bonus_cap` defaults to `bonus_cap`
-  (equal in production, antisymmetry holds); the asymmetric-cap path that "breaks" it is the intentional
-  denial-strengthening feature. No fix.
+## ✅ FIXED 2026-06-08 (pm-3) — the v2.7 leaf is SOUND; the two real items fixed
+- **D16 — `virtual_score_v2.py` `_close_prob(0)`** ✅ — a board-edge unfinished city with 0 in-bounds open
+  positions now `continue`s (no bonus) instead of getting a 100% closure-anticipation bonus, at BOTH the
+  city-closure and farm-growth loops. The trigger (a city chain reaching the edge of a 35×35 board in a
+  ~72-tile game) is **practically unreachable**, so the leaf/ruler change is negligible — **no cap
+  re-sweep needed in practice.** (My earlier "needs a re-sweep, hold for attempt #2" overstated it.)
+- **D2 — phase compared by string not enum** ✅ — `state.phase == GamePhase.{TILES,MEEPLES}` in
+  board_repr / features / warmstart instead of the hardcoded `"tiles"`/`"meeples"` literal. Provably
+  identical today (`GamePhase.TILES.value == "tiles"`); kills the fragility vs a (frozen) engine
+  enum-string change. `action_space.encode(phase: str)` left as-is — a deliberate string-param interface.
+- **D3 — `bonus_cap`/`opp_bonus_cap`** — NOT a bug: `opp_bonus_cap` defaults to `bonus_cap` (equal in
+  production → antisymmetry holds); the asymmetric-cap path is the intentional denial-strengthening feature.
+- **D1 — TILES/MEEPLES ref-tile encoding** — NOT outstanding: already adjudicated **intentional** on
+  2026-05-29 (documented in `board_repr.py:321-329`; the "always encode the placed tile" alternative was
+  weighed and rejected). The stale "Deferred D1" REVIEW_LOG line predates that resolution; nothing to do.
+  *(Earlier in this session I wrongly conflated this with "D2" and called it a retrain-gated bug — it isn't.)*
 
 ## Research decisions for attempt #2 (your call, not mechanical fixes)
 - **S-R3-1** (the big one): residual target Δ∈[−2,2] vs tanh value head [−1,1] → high-|Δ| positions

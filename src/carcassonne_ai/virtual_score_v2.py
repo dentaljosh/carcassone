@@ -315,6 +315,8 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
             if city.finished:
                 continue
             open_n = _open_city_positions(state, city)
+            if open_n <= 0:
+                continue  # D16: board-edge city with 0 in-bounds open positions physically can't close — no anticipation bonus (don't fall into _close_prob's defensive 1.0)
             p = _close_prob(open_n, closure_p)
             if continuous:
                 p *= _supply_factor(city_supply, open_n, slack)
@@ -361,6 +363,8 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                     if city.finished:
                         continue  # already in v1 farm score
                     open_n = _open_city_positions(state, city)
+                    if open_n <= 0:
+                        continue  # D16: same — an unclosable board-edge city earns no farm-growth bonus
                     p = _close_prob(open_n, closure_p)
                     if continuous:
                         p *= _supply_factor(city_supply, open_n, slack)

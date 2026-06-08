@@ -55,6 +55,7 @@ from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
 
+from wingedsheep.carcassonne.objects.game_phase import GamePhase
 from wingedsheep.carcassonne.objects.meeple_type import MeepleType
 from wingedsheep.carcassonne.objects.side import Side
 from wingedsheep.carcassonne.objects.terrain_type import TerrainType
@@ -328,7 +329,7 @@ def encode_board(
     # placed tile): rejected — it would hide the to-be-placed tile's identity
     # during the TILES decision. Keep phase-dependent + documented.
     ref_tile: "Tile | None"
-    if state.phase.value == "tiles":
+    if state.phase == GamePhase.TILES:  # D2: enum, not the hardcoded "tiles" literal
         ref_tile = state.next_tile
     else:
         ref_tile = state.last_tile_action.tile if state.last_tile_action is not None else None
@@ -340,7 +341,7 @@ def encode_board(
             internal[:, None, None]
         )
 
-    if state.phase.value == "meeples" and state.last_tile_action is not None:
+    if state.phase == GamePhase.MEEPLES and state.last_tile_action is not None:  # D2: enum, not "meeples" literal
         coord = state.last_tile_action.coordinate
         wr, wc = coord.row - off.origin_row, coord.column - off.origin_col
         if 0 <= wr < W and 0 <= wc < W:
