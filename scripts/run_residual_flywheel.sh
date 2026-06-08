@@ -34,7 +34,12 @@ ITERS=${ITERS:-3}; N_GATE=${N_GATE:-300}; START=${START:-1}
 # Late ITERS override: a control file at $OUT/ITERS_OVERRIDE wins over the passed env, so a
 # long-running launcher's baked-in ITERS can be changed before the flywheel reaches its loop.
 [ -f "$OUT/ITERS_OVERRIDE" ] && ITERS=$(tr -dc 0-9 < "$OUT/ITERS_OVERRIDE" 2>/dev/null)
-GATE_SEED=900000
+GATE_SEED=${GATE_SEED:-1000000000}   # CLEAN-ruler namespace (≥ EVAL_SEED_FLOOR=1e9). eval_net_vs_heuristic HARD-ERRORS on seed<1e9 (overlaps self-play decks); was 900000 pre-clean-ruler.
+# Out-of-lineage ODOMETER: every ODO_EVERY iters, run the current best (scale SCALE) vs
+# heur@ODO_HEUR_SIMS (4× our depth, never-gated) on a DISTINCT clean seed → the CL-011
+# out-of-lineage signal. LOGGED (→ $OUT/odometer.csv), NOT gated: keep-best stays on the
+# fast in-ecosystem gate. heur@800 is the charter's ratified Track-B gating rung.
+ODO_EVERY=${ODO_EVERY:-3}; ODO_N=${ODO_N:-200}; ODO_HEUR_SIMS=${ODO_HEUR_SIMS:-800}; ODO_SEED=${ODO_SEED:-1500000000}
 # Overnight controls: KEEP_MARGIN = elo a new iter must beat best by to be kept
 # (gate noise ~±21 at n=300, so default +12 ≈ 0.6σ — modest). DURATION_HOURS>0 =
 # wall-clock budget; the loop won't START a new iter past start+DURATION_HOURS
@@ -134,6 +139,43 @@ run_gate() {
   echo "$s25" | awk '{print $1}'
 }
 
+# Launch the 3-box out-of-lineage odometer (best @scale SCALE vs heur@ODO_HEUR_SIMS, clean
+# ODO_SEED). Same shared-claim machinery as the gate, but heur-sims=800 and a distinct seed.
+_odo_launch() {   # $1=scale $2=sub $3=rckpt $4=ckpt
+  local s="$1" sub="$2" rckpt="$3" ckpt="$4"
+  nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
+    --checkpoint "$ckpt" --n "$ODO_N" --sims "$SIMS" --heur-sims "$ODO_HEUR_SIMS" --c-puct 3.0 \
+    --workers 14 --out-root "$OUT/odo" --out-subdir "$sub" \
+    --seed-start "$ODO_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_odo5800x.log 2>&1 &
+  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --workers 14 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_odolaptop.log 2>&1 </dev/null &" || echo "  odo laptop launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --workers 10 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_odoxeon.log 2>&1 </dev/null &" || echo "  odo xeon launch rc=$?" >&2
+}
+
+# Out-of-lineage odometer for one iter: best @SCALE vs heur@ODO_HEUR_SIMS. Self-heals the
+# orphan-stall (heur@800 games are slow → 10-min stall threshold). Logs elo + appends odometer.csv.
+run_odometer() {   # $1=ckpt(5800x path) $2=iter-label
+  local ckpt="$1" it="$2" rckpt sub dir last stall cur res
+  rckpt=${ckpt/$SHARE_LOCAL/$SHARE_REMOTE}
+  sub="odo_iter${it}"; dir="$OUT/odo/$sub"; mkdir -p "$dir"
+  if [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$ODO_N" ]; then
+    _clean_stranded "$dir" json 0
+    _odo_launch "$SCALE" "$sub" "$rckpt" "$ckpt"
+    last=-1; stall=0
+    while [ "$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)" -lt "$ODO_N" ]; do
+      sleep 30
+      cur=$(ls "$dir"/*seed*.json 2>/dev/null | wc -l)
+      if [ "$cur" -eq "$last" ]; then stall=$((stall+1)); else stall=0; last=$cur; fi
+      if [ "$stall" -ge 20 ]; then    # ~10min no new game (heur@800 is slow) = workers died → heal
+        echo "  [odo $sub] STALLED at $cur/$ODO_N — self-heal: clean stale claims + relaunch" >&2
+        _clean_stranded "$dir" json 4; _odo_launch "$SCALE" "$sub" "$rckpt" "$ckpt"; stall=0
+      fi
+    done
+  fi
+  res=$(gate_elo "$dir")   # "elo sigma n" (sigma is unpaired/conservative; raw JSON saved for paired re-tally)
+  echo "  [ODOMETER it$it] best(scale$SCALE) vs heur@${ODO_HEUR_SIMS} = $res elo  | OUT-OF-LINEAGE (charter bar: +15/iter, cum +45; iter0 baseline was ~ -29 vs heur@800)" >&2
+  echo "${it},$(echo "$res" | tr ' ' ',')" >> "$OUT/odometer.csv"
+}
+
 # Launch the 3-box residual self-play gen for iter $1 (work-stealing into iter${1}_data).
 _gen_launch() {
   local it="$1"
@@ -153,6 +195,8 @@ else
   BEST_ELO=$(run_gate "$ITER0_CKPT" "iter0")
   cp "$ITER0_CKPT" "$OUT/best.pt"; echo "$BEST_ELO" > "$OUT/best_elo.txt"
   echo "  iter0 scale$SCALE elo = $BEST_ELO (baseline)"
+  echo "--- iter0 out-of-lineage odometer (clean baseline) @ $(date) ---"
+  [ "$ODO_EVERY" -gt 0 ] && run_odometer "$OUT/best.pt" "0"
 fi
 
 flat=0
@@ -209,6 +253,12 @@ for it in $(seq $START $ITERS); do
     flat=$((flat+1))
     echo "[it$it] ✗ no climb (flat=$flat/2); best stays $BEST_ELO"
     if [ "$flat" -ge 2 ]; then echo "[it$it] PLATEAU (2 flat iters) — stopping the flywheel" >&2; break; fi
+  fi
+
+  # --- out-of-lineage odometer every ODO_EVERY iters (LOGGED, not gated) ---
+  if [ "$ODO_EVERY" -gt 0 ] && [ $(( it % ODO_EVERY )) -eq 0 ]; then
+    echo "[it$it] === out-of-lineage odometer: best vs heur@${ODO_HEUR_SIMS} (clean seed $ODO_SEED, n=$ODO_N) @ $(date) ==="
+    run_odometer "$OUT/best.pt" "$it"
   fi
 done
 
