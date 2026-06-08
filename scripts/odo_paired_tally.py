@@ -54,7 +54,13 @@ for label, by in (("A iter0   ", A), ("B new     ", B)):
 # deck-paired delta on common decks (both seats present on each side)
 dA = {s: sum(A[s].values()) / len(A[s]) for s in A if A[s]}
 dB = {s: sum(B[s].values()) / len(B[s]) for s in B if B[s]}
-cc = sorted(set(dA) & set(dB))
+# R5-fix: pair only on seat-count-matched decks — never difference a 1-game strand
+# (orphan-stall) against a 2-game mean. Even/odd-out decks drop loudly (no silent cap).
+common = sorted(set(dA) & set(dB))
+cc = [s for s in common if len(A[s]) == len(B[s])]
+_dropped = len(common) - len(cc)
+if _dropped:
+    print(f"  [warn] dropped {_dropped} seat-imbalanced deck(s) from the paired delta (orphan-stall strand?)")
 deltas = [dB[s] - dA[s] for s in cc]
 if len(deltas) > 1:
     md = sum(deltas) / len(deltas)

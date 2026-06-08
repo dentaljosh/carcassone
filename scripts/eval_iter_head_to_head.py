@@ -749,8 +749,10 @@ def main(argv: list[str] | None = None) -> int:
     _eff_old_sims = args.old_sims or args.sims
     _eff_new_c = args.new_c_puct if args.new_c_puct is not None else args.c_puct
     _eff_old_c = args.old_c_puct if args.old_c_puct is not None else args.c_puct
+    # R5-fix: paired+odd games plays a leftover unpaired seed at seed_start+games//2,
+    # so the half-open [start,end) record needs (games+1)//2 to cover it (even counts unchanged).
     _seed_range = [args.seed_start,
-                   args.seed_start + (args.games // 2 if args.paired else args.games)]
+                   args.seed_start + ((args.games + 1) // 2 if args.paired else args.games)]
 
     # NOTE: no hard seed-floor guard here — this harness is also invoked by
     # in-training anchor gates that legitimately reuse self-play decks. The

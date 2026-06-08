@@ -567,3 +567,20 @@ mechanically intact; iter1's +106.6 climb is real.
 | D-R4-1 | `warmstart.py:490-525` split_files_train_val | with `mix>0`, warmstart files sampled WITH REPLACEMENT can land the same game in BOTH train and val (split is by list-index) → leaks → inflates the val "trustworthy" corr | NOT live (flywheel mix=0.0). Apply before any mix>0 retrain: dedup by path / split unique paths first, expand dupes into train only. |
 | D-R4-2 | `auto_chain_h2h_flywheel.sh:36,70` | count()/tally() glob the whole eval dir with no seed-range filter → a pre-existing larger run in the same dir could break wait_h2h early | latent (live dir was fresh; orchestrator done). Scope to the target seed range. |
 | D-S6 | `run_residual_flywheel.sh:211` | `cp best.pt warm.pt` with no existence guard + `set -e` off → a missing/partial best.pt silently warms from nothing | restart batch (add to D-S*). |
+
+---
+
+## Iteration — 2026-06-08 (pm) — round-5 FULL-SURFACE audit (multi-agent, all live code)
+
+6 surfaces fanned out (shell-flywheel, shell-orch + the NEW recovery tooling, eval-harness, eval-tally + the NEW `odo_paired_tally.py`, provenance/MCTS-core, training/leaf), each finding adversarially verified + deduped vs the 16 known items. **shell-flywheel, provenance-core, train-leaf = 0 findings.** 3 confirmed (1 = a D-S5 re-confirm; 2 genuinely-new, both LOW after adversarial severity adjustment). **Nothing result-affecting was missed** — verifiers confirmed the live CL-011 numbers are unaffected.
+
+### Fixed (result-neutral, applied this session)
+| # | File | Bug | Fix |
+|---|---|---|---|
+| F-R5a | `odo_paired_tally.py:57` | deck-paired delta keyed on seed **presence** only, not seat-count equality → a stranded single seat (orphan-stall) would be differenced against a 2-game mean, perturbing z (bounded: Δz<0.5 at realistic k; live data was clean 100×2 so the CL-011 verdict is unaffected) | pair only on `len(A[s])==len(B[s])` decks; drop seat-imbalanced ones **loudly** (no silent cap). Re-ran iter3-vs-iter0 → byte-identical (+14.3/z=0.49, 0 dropped). |
+| F-R5b | `eval_iter_head_to_head.py:752-753` | `--paired` + **odd** `--games` records a half-open `seed_range` of `(games//2)` but `_build_work` plays a leftover seed at `seed_start+games//2` → provenance under-reports by 1 seed (manifest-only; no effect on results or the floor guard; production uses even n) | `(games+1)//2` (even counts unchanged). |
+
+### Reconfirmed (already logged)
+| # | File:line | Finding | Disposition |
+|---|---|---|---|
+| D-S5 (re-confirm) | `eval_iter_head_to_head.py:117-129, 730-733` | the h2h game cache key (`_result_path` + `eval_dir`) omits ALL leaf-config params (`--leaf-eval/-variant/-value-blend/-residual-scale/-cap`), not just the c_puct/scale/blend originally noted → a rerun under a changed leaf into the same `--output-root/--iter/--vs-iter` silently reuses the prior config's cached games. R5 adds: `eval_dir` (not just the filename) needs the leaf-config discriminator; mirror the existing `o<old_sims>` tag. | latent (h2h runs done, used fresh dirs). **Fix before reusing `eval_iter_head_to_head` with a changed leaf config into an existing dir.** |
