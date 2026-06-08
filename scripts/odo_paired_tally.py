@@ -77,5 +77,10 @@ if len(deltas) > 1:
     print(f"  Δwr = {md:+.4f} ± {se:.4f}   z = {z:+.2f}")
     print(f"  elo: A={eloA:+.1f}  B={eloB:+.1f}  Δelo≈{eloB-eloA:+.1f}")
     print(f"  → {verdict}")
+    # Machine-readable summary (stable ASCII anchor for shell parsers, e.g. the
+    # attempt-#2 flywheel's external keep-best). delo = Δelo(B-A) = new − best.
+    _delo = (eloB - eloA) if (eloA == eloA and eloB == eloB) else float("nan")
+    print(f"TALLY delo={_delo:.2f} z={z:.2f} eloA={eloA:.2f} eloB={eloB:.2f} ndecks={len(cc)}")
 else:
     print(f"PAIRED: only {len(cc)} common decks — cannot pair")
+    print(f"TALLY delo=nan z=nan eloA=nan eloB=nan ndecks={len(cc)}")
