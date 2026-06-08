@@ -33,7 +33,7 @@ FW_SCALE=0.25; FW_GAMES=400; FW_SIMS=200; FW_ITERS=12   # 12 iters, no wall-cloc
 ts(){ date '+%Y-%m-%d %H:%M:%S %Z'; }
 say(){ echo "[$(ts)] $*"; }
 
-count(){ find "$H2H_DIR" -maxdepth 1 -name '*seed*.json' 2>/dev/null | wc -l; }
+count(){ find "$H2H_DIR" -maxdepth 1 -name '*seed*.json' ! -name '*.partial.json' 2>/dev/null | wc -l; }
 
 clean_stranded(){   # free .claim with no .json (shared-claim orphan-stall heal)
   local c
@@ -54,8 +54,12 @@ wait_h2h(){   # $1 = target file count; self-heal the orphan-stall
     say "h2h $cur/$target"
     [ "$cur" -ge "$target" ] && { say "h2h reached $target"; break; }
     if [ "$cur" -eq "$last" ]; then stall=$((stall+1)); else stall=0; last=$cur; fi
-    if [ "$stall" -ge 8 ]; then     # ~8 min no progress → workers died → heal + relaunch
-      say "h2h STALLED at $cur/$target — clean stranded claims + relaunch 3-box"
+    if [ "$stall" -ge 8 ]; then     # ~8 min no progress → workers died → kill stale pool, heal, relaunch
+      say "h2h STALLED at $cur/$target — kill stale pool (3-box) + clean stranded + relaunch"
+      pkill -f run_h2h_residual_vs_iter11 2>/dev/null || true
+      pkill -f eval_iter_head_to_head 2>/dev/null || true
+      ssh -o ConnectTimeout=20 laptop 'pkill -f eval_iter_head_to_head; true' </dev/null >/dev/null 2>&1 || true
+      ssh -o ConnectTimeout=20 xeon-wsl 'pkill -f eval_iter_head_to_head; true' </dev/null >/dev/null 2>&1 || true
       clean_stranded; launch_h2h "$target"; stall=0
     fi
     sleep 60
@@ -93,6 +97,8 @@ PY
 
 verdict_label(){   # $1=z ; pre-registered thresholds (residual − iter_11 perspective)
   awk -v z="$1" 'BEGIN{
+    zl=tolower(z)
+    if (z=="" || zl ~ /nan|inf/) { print "indeterminate"; exit }   # gawk treats nan>=2 as TRUE → guard by string
     az=(z<0)?-z:z
     if (az>=2)      print (z>0)?"residual_wins":"iter11_wins"
     else           print "equivalent_no_large_edge"
@@ -100,7 +106,7 @@ verdict_label(){   # $1=z ; pre-registered thresholds (residual − iter_11 pers
 }
 
 in_escalation_band(){   # $1=z → echo 1 iff 1.3 < |z| < 2
-  awk -v z="$1" 'BEGIN{ az=(z<0)?-z:z; print (az>1.3 && az<2)?1:0 }'
+  awk -v z="$1" 'BEGIN{ zl=tolower(z); if(z==""||zl~/nan|inf/){print 0;exit} az=(z<0)?-z:z; print (az>1.3 && az<2)?1:0 }'
 }
 
 say "=== AUTO-CHAIN start: wait h2h(400) → maybe n=1500 → Track-B flywheel ($FW_TAG) ==="
@@ -129,6 +135,10 @@ VLABEL=$(verdict_label "$z")
 say "VERDICT: $VLABEL  (elo=$elo z=$z n=$FINAL_N)"
 
 # ---- 3. write the machine-readable verdict for the paperwork pass ----
+# sanitize numeric fields → valid JSON even on a degenerate/empty tally (bare `nan`/empty break json.load)
+for _v in elo sig z wins draws losses decks; do
+  case "$(printf '%s' "${!_v}" | tr 'A-Z' 'a-z')" in ''|nan|-nan|inf|-inf) printf -v "$_v" 'null' ;; esac
+done
 cat > "$VERDICT" <<JSON
 {
   "experiment_id": "cleaneval_h2h_residual_rs025_vs_iter11",

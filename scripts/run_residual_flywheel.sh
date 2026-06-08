@@ -33,7 +33,7 @@ SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
 ITERS=${ITERS:-3}; N_GATE=${N_GATE:-300}; START=${START:-1}
 # Late ITERS override: a control file at $OUT/ITERS_OVERRIDE wins over the passed env, so a
 # long-running launcher's baked-in ITERS can be changed before the flywheel reaches its loop.
-[ -f "$OUT/ITERS_OVERRIDE" ] && ITERS=$(tr -dc 0-9 < "$OUT/ITERS_OVERRIDE" 2>/dev/null)
+if [ -f "$OUT/ITERS_OVERRIDE" ]; then _ov=$(tr -dc 0-9 < "$OUT/ITERS_OVERRIDE" 2>/dev/null); case "$_ov" in ''|0) echo "  ITERS_OVERRIDE empty/0 — keeping ITERS=$ITERS" >&2 ;; *) ITERS=$_ov ;; esac; fi
 GATE_SEED=${GATE_SEED:-1000000000}   # CLEAN-ruler namespace (≥ EVAL_SEED_FLOOR=1e9). eval_net_vs_heuristic HARD-ERRORS on seed<1e9 (overlaps self-play decks); was 900000 pre-clean-ruler.
 # Out-of-lineage ODOMETER: every ODO_EVERY iters, run the current best (scale SCALE) vs
 # heur@ODO_HEUR_SIMS (4× our depth, never-gated) on a DISTINCT clean seed → the CL-011
@@ -77,10 +77,12 @@ for jf in glob.glob(f"{d}/*seed*.json"):
     n+=1
     if r.get("won_by_net"): w+=1
     elif r.get("drew"): dd+=1
-wr=(w+0.5*dd)/n if n else 0
-if 0<wr<1:
-    elo=400*math.log10(wr/(1-wr)); sig=(400/math.log(10))*math.sqrt(wr*(1-wr)/n)/(wr*(1-wr))
-else: elo=float('nan'); sig=float('nan')
+if n==0:
+    print("-9999.0 0.0 0"); sys.exit()     # sentinel: no data → keep-best can never promote this
+wr=(w+0.5*dd)/n
+eps=0.5/n                                   # ±0.5-game continuity correction → wr never 0/1 → never nan
+wr=min(1-eps, max(eps, wr))
+elo=400*math.log10(wr/(1-wr)); sig=(400/math.log(10))*math.sqrt(wr*(1-wr)/n)/(wr*(1-wr))
 print(f"{elo:.1f} {sig:.1f} {n}")
 PY
 }
@@ -104,11 +106,11 @@ _clean_stranded() {   # $1=dir $2=output-ext(json|npz) $3=only-if-older-than-min
 _gate_launch() {
   local s="$1" sub="$2" rckpt="$3" ckpt="$4"
   nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
-    --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 \
+    --checkpoint "$ckpt" --n "$N_GATE" --sims "$SIMS" --heur-sims "$SIMS" --c-puct 3.0 --heur-leaf v2_7 \
     --workers 14 --out-root "$OUT/gate" --out-subdir "$sub" \
     --seed-start "$GATE_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_gate5800x.log 2>&1 &
-  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 14 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
-  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --workers 10 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_gatelaptop.log 2>&1 </dev/null &" || echo "  gate laptop launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N_GATE --sims $SIMS --heur-sims $SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/gate --out-subdir $sub --seed-start $GATE_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_gatexeon.log 2>&1 </dev/null &" || echo "  gate xeon launch rc=$?" >&2
 }
 
 # Scale-curve gate (scale0 + scaleSCALE) fanned 3-box (~3× single-box: the eval is
@@ -144,11 +146,11 @@ run_gate() {
 _odo_launch() {   # $1=scale $2=sub $3=rckpt $4=ckpt
   local s="$1" sub="$2" rckpt="$3" ckpt="$4"
   nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$s" $PY -u scripts/eval_net_vs_heuristic.py \
-    --checkpoint "$ckpt" --n "$ODO_N" --sims "$SIMS" --heur-sims "$ODO_HEUR_SIMS" --c-puct 3.0 \
+    --checkpoint "$ckpt" --n "$ODO_N" --sims "$SIMS" --heur-sims "$ODO_HEUR_SIMS" --c-puct 3.0 --heur-leaf v2_7 \
     --workers 14 --out-root "$OUT/odo" --out-subdir "$sub" \
     --seed-start "$ODO_SEED" --paired --shared-claim --claim-host 5800x >/tmp/fw_odo5800x.log 2>&1 &
-  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --workers 14 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_odolaptop.log 2>&1 </dev/null &" || echo "  odo laptop launch rc=$?" >&2
-  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --workers 10 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_odoxeon.log 2>&1 </dev/null &" || echo "  odo xeon launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 14 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host laptop > /tmp/fw_odolaptop.log 2>&1 </dev/null &" || echo "  odo laptop launch rc=$?" >&2
+  ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$s setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $ODO_N --sims $SIMS --heur-sims $ODO_HEUR_SIMS --c-puct 3.0 --heur-leaf v2_7 --workers 10 --out-root $OUTR/odo --out-subdir $sub --seed-start $ODO_SEED --paired --shared-claim --claim-host xeon > /tmp/fw_odoxeon.log 2>&1 </dev/null &" || echo "  odo xeon launch rc=$?" >&2
 }
 
 # Out-of-lineage odometer for one iter: best @SCALE vs heur@ODO_HEUR_SIMS. Self-heals the
@@ -245,7 +247,7 @@ for it in $(seq $START $ITERS); do
   # --- gate + keep-best ---
   ELO=$(run_gate "$CKPT" "iter$it")
   echo "[it$it] scale$SCALE elo = $ELO  (best so far = $BEST_ELO)"
-  improved=$(echo "$ELO $BEST_ELO" | awk -v m=$KEEP_MARGIN '{print ($1 > $2 + m) ? 1 : 0}')
+  improved=$(awk -v e="$ELO" -v b="$BEST_ELO" -v m="$KEEP_MARGIN" 'BEGIN{el=tolower(e);bl=tolower(b); if(e==""||b==""||el~/nan|inf/||bl~/nan|inf/){print 0;exit} print (e+0>b+0+m+0)?1:0}')
   if [ "$improved" = "1" ]; then
     cp "$CKPT" "$OUT/best.pt"; BEST_ELO=$ELO; echo "$BEST_ELO" > "$OUT/best_elo.txt"; flat=0
     echo "[it$it] ✅ NEW BEST (climbed to $ELO) — flywheel is compounding"
