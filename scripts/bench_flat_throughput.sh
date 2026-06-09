@@ -25,8 +25,8 @@
 #   WS="8 12 16 20" G=48 bash scripts/bench_flat_throughput.sh         # saturation curve
 set -u
 
-WT=/home/doctor/projects/carc-leafdev
-PY=/home/doctor/projects/carcassone/.venv/bin/python
+WT="${WT:-/home/doctor/projects/carc-leafdev}"          # override on remotes (overlay dir)
+PY="${PY:-/home/doctor/projects/carcassone/.venv/bin/python}"  # override per box (remote venv)
 WS="${WS:-16}"
 G="${G:-32}"
 SEED="${SEED:-2000000}"   # SAME games for OFF and FLAT at each W -> pure leaf signal
