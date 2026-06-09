@@ -16,6 +16,14 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 **Why deferred:** out of scope / premature / nice-to-have / needs Joshua decision
 -->
 
+## 2026-06-09 — Compact leaf: Phase-4 bench + the `CANONICAL_BONUS_SUM` decision
+**Context:** Built the compact flat-union-find leaf rewrite on branch `leaf-rewrite` (logic-exact, default OFF; see DECISIONS 2026-06-09 (leaf) + docs/COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md). Validation is done; perf and the determinism fix are deferred.
+**Idea:** Three follow-ups, none to be actioned without Joshua:
+  1. **Bench the compact leaf (Phase 4, quiet box).** Compile the union-find core (numba `@njit cache=True`, or Cython-AOT) — numba is NOT installed and must not go into the shared venv mid-flywheel. Success = it MOVES the bandwidth wall (per-worker erosion flattens, saturation-W rises >16 via `scan_loww.sh`), not merely "faster". Pure-Python as-built is correctness-only, likely NOT a win yet.
+  2. **Decide on `CANONICAL_BONUS_SUM` (math.fsum bonus).** Independently worth doing: the v2.7 closure bonus currently sums floats in hash-seed-dependent SET order, so the leaf — the measurement ruler — gives different ints for the same position across workers in ~1e-4 of evals. fsum makes it deterministic + lets compact be truly bit-exact. Cost: changes production output vs any running flywheel by those ~1e-4 ±1 flips → adopt at a clean boundary (with the compact merge), never mid-run.
+  3. **Merge gate:** only if BOTH provably-equivalent (the `reconcile_compact_leaf.py` gate) AND meaningfully faster → propose merge to `stage-b-wiring` + bundle refresh as a separate decision; wire into `eval_provenance.py` if it becomes production.
+**Why deferred:** the box was running attempt-#2 (no benchmarking allowed); the determinism fix is a deliberate production-output change needing Joshua's sign-off at a non-flywheel boundary.
+
 ## 2026-06-02 — PreToolUse "failure-mode linter" hook (PROJECT-SCOPED only)
 
 **Context:** Joshua noticed the same failure modes recur across threads and asked whether a hook could catch them. A transcript-audit agent mined the last 7 days (8 files, 645MB) — its findings RE-PRIORITIZED the rule set below.
