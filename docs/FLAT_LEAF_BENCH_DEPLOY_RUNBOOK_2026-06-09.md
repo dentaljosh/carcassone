@@ -15,23 +15,35 @@
 > | 20 | oversubscribed   | 7.14      | 7.42       | **1.04×** |
 >
 > **At production-scale W the gain is ~2–4% ≪ the 1.3× deploy floor → NOT deployed.**
-> WHY (decomposed by the W=1 probe): the leaf speedup is real and large single-thread
-> (+22% → the leaf is ~⅓ of single-thread self-play wall, NOT an Amdahl sliver), but it
-> collapses at W≥14 because the bottleneck there is SHARED resources — RAM bandwidth +
-> GPU-inference serialization (workers block on the NN-priors forward) — and **flat cuts
-> CPU compute, not memory traffic or GPU time.** Saturated box ⇒ cheaper per-worker CPU
-> ≠ higher aggregate throughput.
+> WHY (decomposed by the W=1 probe + reconciled with the 2026-06-09 DRAM-bandwidth
+> DECISIONS entry): the leaf speedup is real and large single-thread (+22% → the leaf is
+> ~⅓ of single-thread self-play wall, NOT an Amdahl sliver), but it collapses at W≥14
+> because production self-play is **RAM-BANDWIDTH-bound** (rigorously established last
+> night: `bw_scaling.py` saturates at 2–4 threads ≈40 GB/s; per-worker throughput erodes
+> smoothly from W=4; clock held → not thermal; GPU mostly idle during gen → not GPU).
+> **The leaf rewrite's STATED goal (BACKLOG #322 / the DRAM entry) was "cut bytes/sim →
+> raise the saturation point."** We instead built+validated a COMPUTE win (2.26× per-leaf
+> CPU, +22% single-thread) and never measured bytes/sim. The at-scale bench is that
+> measurement: ~no gain ⇒ the flat leaf does NOT meaningfully cut DRAM traffic at the
+> operating point (the dominant traffic is the MCTS tree + state/feature memory, not the
+> leaf's allocations — OR the flat leaf's own per-eval arrays/dicts move similar bytes).
+> Optimized the right hot-path for the WRONG resource. Process was sound: gating on the
+> at-scale number (not the 2.26× microbench) caught it cheaply, before any deploy.
 > FIRING PROVEN three ways: position divergence 3956→3955 at W=14 & W=20 (canonical-fsum
 > signature), the 18% single-thread wall drop on byte-identical games, and a direct
 > assertion (virtual_score_v2 routes to flat_leaf 0× when OFF / 1× when ON). NB: deployed
 > flat is pure interpreted Python — NO compilation; numba (the 3.21× compiled kernel) is
 > a separate DEFERRED path, not in this bench.
-> SEPARATE OBSERVATION (OFF-vs-OFF, not a flat effect): W=20 out-throughputs W=14 by ~8%
-> (7.14 vs 6.64 g/min) — oversubscription fills GPU-handoff idle gaps. Possible ~8% lever
-> for the flywheel's 5800x worker count, independent of the leaf. Flagged, not actioned.
+> ⚠️ RETRACTED (was wrong): an earlier note here claimed "W=20 out-throughputs W=14 by
+> ~8% → possible worker-count lever." That compared TWO separate G=32 runs at different
+> thermal states and is **inside the ±15–20% run-to-run noise** the DRAM DECISIONS entry
+> explicitly flags. Last night's CONTROLLED single-session W=1..30 scan (G=48,
+> thermal-instrumented) shows **W=16 is the peak (7.73 g/min) and W=20 is BELOW it
+> (6.71)**. The W=14–18 plateau + production W=14 STAND. No worker-count change.
 > The flat leaf stays a validated bit-exact branch (`leaf-rewrite`) for a FUTURE
-> leaf-bound / low-contention context (low-W, the numba path, or a leaf-dominated
-> pipeline). Deploy steps below retained for that future use — DO NOT run them here.
+> leaf-bound / low-contention context (low-W, the numba path, a higher-bandwidth box like
+> the DDR5 laptop, or a leaf-dominated pipeline). Deploy steps below retained for that
+> future use — DO NOT run them here.
 
 ## TL;DR — what to do next
 1. **Confirm the flywheel is paused** (Joshua is pausing it from another thread so
