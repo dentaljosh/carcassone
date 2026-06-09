@@ -52,7 +52,8 @@ $PY - <<'PY' || { echo "FATAL worktree import check failed"; exit 1; }
 import os, sys
 sys.path.insert(0, os.environ["PYTHONPATH"].split(":")[0])
 import carcassonne_ai, carcassonne_ai.flat_leaf as fl
-assert "/carc-leafdev/" in carcassonne_ai.__file__, carcassonne_ai.__file__
+want = os.environ["PYTHONPATH"].split(":")[0]
+assert carcassonne_ai.__file__.startswith(want), (carcassonne_ai.__file__, want)
 assert hasattr(fl, "flat_virtual_score_v2"), "no flat path"
 print("worktree import OK:", carcassonne_ai.__file__)
 PY
