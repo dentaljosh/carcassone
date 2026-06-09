@@ -46,6 +46,7 @@ from wingedsheep.carcassonne.utils.farm_util import FarmUtil
 from wingedsheep.carcassonne.utils.points_collector import PointsCollector
 
 from . import compact_leaf
+from . import flat_leaf
 from . import virtual_score as _vs
 from .virtual_score import virtual_score
 
@@ -448,6 +449,15 @@ def virtual_score_v2(
         )
     if cfg is None:
         cfg = DEFAULT_CONFIG
+    # Flat-leaf redirect (2026-06-09, leaf-rewrite): when USE_FLAT_LEAF is on,
+    # compute the leaf via the de-objectified flat path (bit-exact under canonical
+    # sum, ~2.26x faster per leaf). Covers BOTH leaf wrappers since they both call
+    # virtual_score_v2 here. The flat path does NOT implement the deck-aware closure
+    # configs, so fall through to the engine path for those (also the wiring-time
+    # guard from the audit: flat must never silently mis-handle tile_counting/
+    # continuous). Default OFF -> byte-identical to prior production.
+    if flat_leaf.USE_FLAT_LEAF and not (cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0):
+        return flat_leaf.flat_virtual_score_v2(state, player, cfg)
     opp = 1 - player
     # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region
     # memo (`_farm_cache`) and ONE lazy city-component memo (`_city_cache`) across

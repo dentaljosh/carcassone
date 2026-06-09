@@ -26,6 +26,7 @@ Default OFF (`USE_FLAT_LEAF`); wired into the production leaf only after the gat
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
@@ -39,12 +40,16 @@ from wingedsheep.carcassonne.utils.side_modification_util import SideModificatio
 if TYPE_CHECKING:
     from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
 
-# Flat-leaf toggle (2026-06-09, leaf-rewrite branch). When True, the production
-# leaf path computes the value via this module instead of deepcopy +
-# count_final_scores + the object-BFS closure bonus. Default OFF — must be
-# bit-exact-validated by scripts/reconcile_flat_leaf.py before any production use.
-# Wired into the leaf only once Stage 3 (flat closure bonus) lands.
-USE_FLAT_LEAF = False
+# Flat-leaf toggle (2026-06-09, leaf-rewrite branch). When True, virtual_score_v2
+# redirects to the de-objectified flat path (bit-exact under canonical sum, ~2.26x
+# faster per leaf). Default OFF — bit-exact-validated by
+# scripts/reconcile_flat_leaf.py (incl. the make_v25_value_wrapper firing check).
+# Read CARCASSONNE_USE_FLAT_LEAF at import so SPAWNED self-play/eval workers (which
+# don't inherit a runtime flip of this module attr) pick it up — this is also how a
+# deploy launcher flips it. A runtime `flat_leaf.USE_FLAT_LEAF = ...` still works in
+# the main process (the gate uses that). Adopting it == adopting CANONICAL leaf
+# semantics (the flat path is fsum-canonical), a deliberate, gated decision.
+USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 
 # --- geometry (gate-validated against the engine) ----------------------------
 # Stage 4a: the decomposition hot path int-encodes sides. Enum dict keys cost a

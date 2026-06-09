@@ -174,6 +174,57 @@ def collect_states(game: Game, seed: int, snap_every: int, max_plies: int = 400)
     return states
 
 
+def check_wrapper_path(game, seed: int, n_games: int = 6, snap_every: int = 6):
+    """Production-path guard (audit lesson from the compact silent-bypass bug):
+    the USE_FLAT_LEAF redirect must actually FIRE through the real leaf wrapper
+    `make_v25_value_wrapper` (which self-play/eval use), not just the direct
+    flat_virtual_score_v2 call the checks above exercise. A redirect that isn't
+    reached would leave self-play on the slow path while every direct-path check
+    still says green.
+
+    Routes states through make_v25_value_wrapper with USE_FLAT_LEAF OFF vs ON
+    (CANONICAL on both so the compare isolates WIRING, not the naive-sum reorder),
+    counts how many times the flat path actually fires, and compares the wrapper
+    values. Returns (n, value_mismatches, flat_fires)."""
+    from carcassonne_ai.evaluators import make_v25_value_wrapper
+
+    class _B:
+        __slots__ = ("state",)
+
+        def __init__(self, s):
+            self.state = s
+
+    def base(board):
+        return (np.zeros(1, dtype=np.float32), 0.0)
+
+    states = []
+    for g in range(n_games):
+        states += [s for s in collect_states(game, seed + g, snap_every) if s.players == 2]
+
+    orig = flat_leaf.flat_virtual_score_v2
+    fires = {"n": 0}
+
+    def counting(*a, **k):
+        fires["n"] += 1
+        return orig(*a, **k)
+
+    try:
+        flat_leaf.USE_FLAT_LEAF = False
+        w_off = make_v25_value_wrapper(base)
+        off_vals = [w_off(_B(s))[1] for s in states]
+
+        flat_leaf.flat_virtual_score_v2 = counting
+        flat_leaf.USE_FLAT_LEAF = True
+        w_on = make_v25_value_wrapper(base)
+        on_vals = [w_on(_B(s))[1] for s in states]
+    finally:
+        flat_leaf.USE_FLAT_LEAF = False
+        flat_leaf.flat_virtual_score_v2 = orig
+
+    mism = sum(1 for a, b in zip(off_vals, on_vals) if a != b)
+    return len(states), mism, fires["n"]
+
+
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
@@ -361,6 +412,14 @@ def main() -> int:
           f"roads={cov_roads}(fin={cov_rfin}/unf={cov_runfin}) "
           f"cloisters_scored={cov_cloister} farms_w_fincity={cov_farm_fincity}")
 
+    # Production-path guard: USE_FLAT_LEAF must FIRE through make_v25_value_wrapper
+    # (the self-play/eval leaf path), not just the direct calls above.
+    wrap_n, wrap_mism, wrap_fires = (0, 0, 0)
+    if not args.values_only:
+        wrap_n, wrap_mism, wrap_fires = check_wrapper_path(game, args.seed + 90000)
+        print(f"wrapper path (make_v25_value_wrapper): {wrap_n} boards, flat fired "
+              f"{wrap_fires}x, value mismatches={wrap_mism}")
+
     if first_fail is not None:
         print(f"\nFIRST FAILURE: {first_fail}")
 
@@ -377,6 +436,14 @@ def main() -> int:
     #   3 undersampled (< --min-evals) | 4 values-only (partitions+coverage skipped)
     if total_mism > 0:
         print(f"\nFAIL: {total_mism} mismatch(es) — flat leaf NOT equivalent.")
+        return 1
+    if not args.values_only and wrap_fires == 0:
+        print("\nFAIL: USE_FLAT_LEAF did NOT fire through make_v25_value_wrapper — the "
+              "production leaf path is bypassed (flat would silently no-op in self-play/eval).")
+        return 1
+    if wrap_mism > 0:
+        print(f"\nFAIL: {wrap_mism} wrapper-path value mismatch(es) — flat not equivalent "
+              "through the production leaf path.")
         return 1
     if args.values_only:
         print(f"\nVALUES-ONLY OK (NOT an acceptance run): leaf values matched on meepled "
