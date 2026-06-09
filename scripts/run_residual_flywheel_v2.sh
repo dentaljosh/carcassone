@@ -37,7 +37,7 @@ FLYWHEEL_TAG=${FLYWHEEL_TAG:-flywheel_residual_attempt2}   # fresh dir → no re
 OUT=$SHARE_LOCAL/$FLYWHEEL_TAG
 OUTR=$SHARE_REMOTE/$FLYWHEEL_TAG
 PY=$REPO_LOCAL/.venv/bin/python
-ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12"   # = the v2.7 leaf config
+ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1"   # = the v2.7 leaf config + flat-leaf rewrite (deployed 2026-06-09 @ iter5 boundary; bit-exact, ~+8% cluster)
 WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 
 # Per-box worker counts (Joshua 2026-06-08): 5800x=14, laptop=20, xeon=10.
