@@ -68,13 +68,26 @@ point in the experiment log.
 ## Deploy steps (ONLY if the bench says go — coordinate with Joshua; it touches the running experiment)
 1. **Merge `leaf-rewrite` → `stage-b-wiring`** (the flywheel's branch), OR cherry-pick
    the flat-leaf commits. The flat code is default-OFF, so the merge itself is inert.
-2. **Flip the toggle via env in the flywheel launchers:** add `CARCASSONNE_USE_FLAT_LEAF=1`
-   to the `ENVV`/`COMMON_ENV` of `run_residual_flywheel_v2.sh` (5800x train + local
-   gen), `gen_flywheel.sh` (xeon/laptop gen), and the eval launches. (It already
-   carries `CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12`.)
-3. **WIRING-TIME GUARD (audit):** the flat path raises `NotImplementedError` on the
-   deck-aware closure configs (`CARCASSONNE_V25_TILE_COUNTING` / `_CLOSURE_SLACK`).
-   v2.7 has both OFF, so safe — but assert/verify they're off wherever flat is enabled.
+2. **Flip the toggle via env — EXACT diff (verified against live tree 2026-06-09).**
+   Gen workers do NOT inherit `$ENVV`; they get env via an explicit var list. So the
+   toggle goes in TWO places:
+   - **`/mnt/c/carc-shared/code_sync/gen_flywheel.sh:28`** — the line is
+     `env CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 \` right before the
+     `run_selfplay_iter.py` call. Add `CARCASSONNE_USE_FLAT_LEAF=1`. **This is the
+     throughput win** (covers gen on all 3 boxes — it's ONE share file, every box
+     reads `$SHARE/code_sync/gen_flywheel.sh`, so no per-box sync for this edit).
+     ⚠️ This file is share-resident, NOT git-tracked — it will NOT come through the
+     bundle; edit the share copy directly.
+   - **`scripts/run_residual_flywheel_v2.sh:40`** — `ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12"`.
+     Add `CARCASSONNE_USE_FLAT_LEAF=1`. `$ENVV` flows to eval (lines 137/141/142, all
+     3 boxes, also leaf-bound → also benefits) and train (line 243, ignores it
+     harmlessly — train consumes .npz, never calls the leaf). This IS git-tracked →
+     comes through the bundle.
+3. **WIRING-TIME GUARD (audit) — VERIFIED CLEAR 2026-06-09:** the flat path raises
+   `NotImplementedError` on deck-aware closure (`CARCASSONNE_V25_TILE_COUNTING` /
+   `_CLOSURE_SLACK`). Grepped the live flywheel path (run_residual_flywheel_v2.sh,
+   gen_flywheel.sh, pathb): **neither var is set anywhere** → flat guard cannot fire.
+   Re-verify if the leaf config ever changes.
 4. **3-box git-bundle refresh + worker restart** (the flywheel is multi-box; remotes
    sync via `git bundle` on the share — see the offline-git-bundle-sync memory). Do
    this at a clean iter boundary, restart workers via `--shared-claim`.
