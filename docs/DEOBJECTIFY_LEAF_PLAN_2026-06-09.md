@@ -219,10 +219,21 @@ relative/min-of-reps micro-benches + the CPU-light gate).
   hot path. Enum hashes 2.3M→1.1M; 0.451→**0.400 ms/leaf vs OFF 0.903 = 2.26×**,
   all in pure Python. Profile is now an even spread (dict.get/append/_label_components/
   set.add); no single dominant cost. Committed.
-- **Stage 4c compile (numba/Cython, isolated venv):** IN PROGRESS — prototyping
-  `@njit` on `_label_components` in an isolated venv (numba NOT in the shared venv;
-  gcc present). The full numba payoff (the bandwidth lever) needs the array-based
-  decompose rewrite, which pairs with Stage 5 on a quiet box.
-- **Stage 5 throughput / bandwidth-wall verdict:** DEFERRED to a quiet box (the
-  flywheel is live). Success = moves the per-worker erosion curve / raises
-  saturation-W, not merely "faster".
+- **Stage 4c compile (numba, isolated venv) — PROVEN, DEPLOYMENT DEFERRED.**
+  Isolated venv `/tmp/numba_proto_venv` (numba 0.65.1 / numpy 2.4.6; shared venv +
+  flywheel untouched). `scripts/prototype_numba_labels.py` captured 2610 real
+  union-find calls (mean n=52 nodes / 68 edges) and benched `@njit`
+  `_label_components` vs pure-Python: **0 label mismatches**, numba **3.21× faster
+  WITH list→ndarray conversion** (14.5→4.5 µs/call), **10.7× kernel-only** (1.35
+  µs/call). So numba-the-core is a bit-exact drop-in win. BUT `_label_components`
+  is only ~10% of the leaf → numba-core alone moves it ~2.26×→~2.45×; and
+  **`flat_leaf.py` is kept pure-Python** (no `import numba`) because the shared
+  venv has no numba and installing it bumps numpy 2.4.4→2.4.6, which would
+  contaminate the running strength experiment. DEPLOY decision (post-flywheel):
+  either pin numpy when adding numba, or AOT-Cython the kernel (gcc present, no
+  numpy-version risk). The BIG numba payoff (the bandwidth wall) is the full
+  array-based decompose rewrite — pairs with Stage 5 on a quiet box.
+- **Stage 5 throughput / bandwidth-wall verdict:** DEFERRED to a quiet box (see
+  above). Success = moves the per-worker erosion curve / raises saturation-W.
+
+### Net result (interpreted, shared-venv-deployable TODAY): 2.26× faster per leaf, bit-exact (n=400 gate). numba adds a further proven ~1.4× on the core when deployable.
