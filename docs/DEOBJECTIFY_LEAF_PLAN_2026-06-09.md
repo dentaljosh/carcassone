@@ -209,7 +209,20 @@ relative/min-of-reps micro-benches + the CPU-light gate).
   `(r,c,Side)` tuple dict keys → Stage 4's first lever is INT-ENCODING the sides
   (Side 0–4, FarmerSide 0–7, pack `(r,c,side)` to one int), THEN numba on the
   now-pure-int `_label_components` + decompose.
-- **Stage 4 int-encode + compile:** PENDING (next).
+- **Stage 4a int-encode (pure Python, no deps) — BIT-EXACT, 2.04×.** Replaced the
+  hot internal dict keys + geometry (`_OPP`/`_FS_STEP`/`_FS_OPP`) with int side
+  codes (`_SIDE_IX`/`_FS_IX`/`_IX_SIDE`); public Decomp dicts stay enum-keyed
+  (touched O(nodes)+O(meeples) only). Enum hashes 4.1M→2.3M; 0.547→0.451 ms/leaf.
+- **Stage 4b per-tile feature cache (pure Python, no deps) — BIT-EXACT, 2.26×.**
+  `_tile_features` memoises the enum→int conversion per unique Tile
+  (WeakKeyDictionary; ~80 distinct rotated tiles/game) so it's out of the per-leaf
+  hot path. Enum hashes 2.3M→1.1M; 0.451→**0.400 ms/leaf vs OFF 0.903 = 2.26×**,
+  all in pure Python. Profile is now an even spread (dict.get/append/_label_components/
+  set.add); no single dominant cost. Committed.
+- **Stage 4c compile (numba/Cython, isolated venv):** IN PROGRESS — prototyping
+  `@njit` on `_label_components` in an isolated venv (numba NOT in the shared venv;
+  gcc present). The full numba payoff (the bandwidth lever) needs the array-based
+  decompose rewrite, which pairs with Stage 5 on a quiet box.
 - **Stage 5 throughput / bandwidth-wall verdict:** DEFERRED to a quiet box (the
   flywheel is live). Success = moves the per-worker erosion curve / raises
   saturation-W, not merely "faster".

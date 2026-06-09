@@ -28,6 +28,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from weakref import WeakKeyDictionary
 
 from wingedsheep.carcassonne.objects.farmer_side import FarmerSide
 from wingedsheep.carcassonne.objects.meeple_type import MeepleType
@@ -46,29 +47,65 @@ if TYPE_CHECKING:
 USE_FLAT_LEAF = False
 
 # --- geometry (gate-validated against the engine) ----------------------------
-# Cross a tile border on a CITY or ROAD edge: side -> (d_row, d_col, side_on_neighbour).
-# Mirrors CityUtil.opposite_edge AND RoadUtil.opposite_edge (identical geometry).
+# Stage 4a: the decomposition hot path int-encodes sides. Enum dict keys cost a
+# Python-level Enum.__hash__ (the dominant cost once the leaf is de-objectified —
+# ~0.95s of decompose's 1.84s in the Stage-3 profile); int-tuple keys hash at C
+# speed. _SIDE_IX / _FS_IX map the engine enums -> small ints; _IX_SIDE maps back
+# for the (enum-keyed, gate-facing) public Decomp fields, which are touched only
+# O(nodes) at build + ~O(meeples) at read, so they stay enum-keyed for clarity.
+_SIDE_IX: dict = {s: i for i, s in enumerate(Side)}  # TOP0 RIGHT1 BOTTOM2 LEFT3 CENTER4 TL5 TR6 BL7 BR8
+_IX_SIDE: list = list(Side)                          # ix -> Side
+_FS_IX: dict = {fs: i for i, fs in enumerate(FarmerSide)}  # TLL0 TLT1 TRT2 TRR3 BLL4 BLB5 BRB6 BRR7
+
+# Cross a tile border on a CITY or ROAD edge, by cardinal side ix:
+# (d_row, d_col, neighbour_side_ix). Mirrors CityUtil/RoadUtil.opposite_edge.
 _OPP: dict = {
-    Side.TOP: (-1, 0, Side.BOTTOM),
-    Side.RIGHT: (0, 1, Side.LEFT),
-    Side.BOTTOM: (1, 0, Side.TOP),
-    Side.LEFT: (0, -1, Side.RIGHT),
+    _SIDE_IX[Side.TOP]: (-1, 0, _SIDE_IX[Side.BOTTOM]),
+    _SIDE_IX[Side.RIGHT]: (0, 1, _SIDE_IX[Side.LEFT]),
+    _SIDE_IX[Side.BOTTOM]: (1, 0, _SIDE_IX[Side.TOP]),
+    _SIDE_IX[Side.LEFT]: (0, -1, _SIDE_IX[Side.RIGHT]),
 }
 
-# Step direction for a farmer half-side, by its cardinal Side. Mirrors the Side
-# branch of FarmUtil.opposite_edge; neighbour half-side is opposite_farmer_side.
-_FARMER_STEP: dict = {
-    Side.TOP: (-1, 0),
-    Side.RIGHT: (0, 1),
-    Side.BOTTOM: (1, 0),
-    Side.LEFT: (0, -1),
-}
+# Farmer half-side adjacency, by farmer-side ix: step (d_row, d_col) from its
+# cardinal Side, and the neighbour half-side ix (opposite_farmer_side involution
+# — taken straight from the engine to avoid transcription risk).
+_FS_STEP: dict = {}
+_FS_OPP: dict = {}
+_card_step = {Side.TOP: (-1, 0), Side.RIGHT: (0, 1), Side.BOTTOM: (1, 0), Side.LEFT: (0, -1)}
+for _fs in FarmerSide:
+    _FS_STEP[_FS_IX[_fs]] = _card_step[_fs.get_side()]
+    _FS_OPP[_FS_IX[_fs]] = _FS_IX[SideModificationUtil.opposite_farmer_side(_fs)]
+del _fs, _card_step
 
-# Precompute the farmer-side involution once (avoid per-call dispatch + any
-# transcription risk — taken straight from the engine).
-_OPP_FS: dict = {fs: SideModificationUtil.opposite_farmer_side(fs) for fs in FarmerSide}
 
-_CARDINAL = (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
+# --- per-tile int-feature cache (Stage 4b) ----------------------------------
+# Tiles are immutable and shared via canonical refs (engine base_tiles +
+# Tile._turn_cache), so a game touches only ~80 distinct rotated Tile objects.
+# Memoising the enum->int conversion per Tile hoists it out of the per-leaf hot
+# path (the remaining post-4a cost). WeakKeyDictionary keyed by the Tile object:
+# Tile has no __eq__/__hash__ override -> identity hash (fast, C-level) and entries
+# auto-drop if a tile is ever GC'd (no id-reuse hazard). Returns, per tile:
+#   city_groups_ix : tuple(tuple(side_ix))      -- intra-tile city groups
+#   road_conns_ix  : tuple((a_ix|None, b_ix|None))  -- None == CENTER (dead end)
+#   farms_tc_ix    : tuple(tuple(farmer_side_ix)) aligned with tile.farms order
+_TILE_FEAT: "WeakKeyDictionary" = WeakKeyDictionary()
+
+
+def _tile_features(tile):
+    feat = _TILE_FEAT.get(tile)
+    if feat is None:
+        city_groups_ix = tuple(tuple(_SIDE_IX[s] for s in g) for g in tile.city)
+        road_conns_ix = tuple(
+            (None if conn.a == Side.CENTER else _SIDE_IX[conn.a],
+             None if conn.b == Side.CENTER else _SIDE_IX[conn.b])
+            for conn in tile.road
+        )
+        farms_tc_ix = tuple(
+            tuple(_FS_IX[fs] for fs in fc.tile_connections) for fc in tile.farms
+        )
+        feat = (city_groups_ix, road_conns_ix, farms_tc_ix)
+        _TILE_FEAT[tile] = feat
+    return feat
 
 
 def _label_components(n: int, edges_u: list, edges_v: list) -> list:
@@ -127,20 +164,20 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
     # CITY: one node per (tile, city side); sides of one tile.city group are
     # connected (== CityUtil.cities_for_position).
     city_node_id: dict = {}
-    city_nodes: list = []         # nid -> (r, c, Side)
+    city_nodes: list = []         # nid -> (r, c, side_ix)
     city_eu: list = []
     city_ev: list = []
     # ROAD: one node per non-CENTER road side; the two non-CENTER ends of a
     # Connection are connected (== RoadUtil.outgoing_roads_for_position).
     road_node_id: dict = {}
-    road_nodes: list = []
+    road_nodes: list = []         # nid -> (r, c, side_ix)
     road_eu: list = []
     road_ev: list = []
     # FARM: one node per FarmerConnection; tile_connections give adjacency.
     farm_node_rc: list = []       # nid -> (r, c)
     farm_node_fc: list = []       # nid -> FarmerConnection
-    farm_side_to_node: dict = {}  # (r, c, FarmerSide) -> nid
-    farm_pos0: list = []          # nid -> (r, c, farmer_positions[0]) or None
+    farm_node_tc_ix: list = []    # nid -> tuple(farmer_side_ix) (cached tile_connections)
+    farm_side_to_node: dict = {}  # (r, c, farmer_side_ix) -> nid
 
     def _city_nid(key):
         nid = city_node_id.get(key)
@@ -164,39 +201,38 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
             tile = brow[c]
             if tile is None:
                 continue
-            # cities
-            for group in tile.city:
-                gids = [_city_nid((r, c, side)) for side in group]
+            city_groups_ix, road_conns_ix, farms_tc_ix = _tile_features(tile)
+            # cities  (nodes keyed by int side ix: (r, c, side_ix))
+            for group_ix in city_groups_ix:
+                gids = [_city_nid((r, c, six)) for six in group_ix]
                 first = gids[0]
                 for other in gids[1:]:
                     city_eu.append(first)
                     city_ev.append(other)
-            # roads
-            for conn in tile.road:
-                a, b = conn.a, conn.b
-                a_road = a != Side.CENTER
-                b_road = b != Side.CENTER
-                ida = _road_nid((r, c, a)) if a_road else None
-                idb = _road_nid((r, c, b)) if b_road else None
-                if a_road and b_road:
+            # roads  (non-CENTER ends only; both-non-CENTER ends of a Connection union)
+            for a_ix, b_ix in road_conns_ix:
+                ida = _road_nid((r, c, a_ix)) if a_ix is not None else None
+                idb = _road_nid((r, c, b_ix)) if b_ix is not None else None
+                if a_ix is not None and b_ix is not None:
                     road_eu.append(ida)
                     road_ev.append(idb)
-            # farms
-            for fc in tile.farms:
+            # farms  (side_to_node keyed by int farmer-side ix)
+            farms = tile.farms
+            for k in range(len(farms)):
                 nid = len(farm_node_rc)
                 farm_node_rc.append((r, c))
-                farm_node_fc.append(fc)
-                fp = fc.farmer_positions
-                farm_pos0.append((r, c, fp[0]) if fp else None)
-                for fs in fc.tile_connections:
-                    farm_side_to_node[(r, c, fs)] = nid
+                farm_node_fc.append(farms[k])
+                tc_ix = farms_tc_ix[k]
+                farm_node_tc_ix.append(tc_ix)
+                for fs_ix in tc_ix:
+                    farm_side_to_node[(r, c, fs_ix)] = nid
 
     # ---- cross-tile edges + open detection --------------------------------- #
     city_open = [False] * len(city_nodes)
     for nid in range(len(city_nodes)):
-        r, c, side = city_nodes[nid]
-        dr, dc, oside = _OPP[side]
-        onid = city_node_id.get((r + dr, c + dc, oside))
+        r, c, ix = city_nodes[nid]
+        dr, dc, o_ix = _OPP[ix]
+        onid = city_node_id.get((r + dr, c + dc, o_ix))
         if onid is not None:
             city_eu.append(nid)
             city_ev.append(onid)
@@ -205,9 +241,9 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
 
     road_open = [False] * len(road_nodes)
     for nid in range(len(road_nodes)):
-        r, c, side = road_nodes[nid]
-        dr, dc, oside = _OPP[side]
-        onid = road_node_id.get((r + dr, c + dc, oside))
+        r, c, ix = road_nodes[nid]
+        dr, dc, o_ix = _OPP[ix]
+        onid = road_node_id.get((r + dr, c + dc, o_ix))
         if onid is not None:
             road_eu.append(nid)
             road_ev.append(onid)
@@ -218,11 +254,9 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
     farm_ev: list = []
     for nid in range(len(farm_node_rc)):
         r, c = farm_node_rc[nid]
-        for fs in farm_node_fc[nid].tile_connections:
-            step = _FARMER_STEP.get(fs.get_side())
-            if step is None:
-                continue
-            neighbor = farm_side_to_node.get((r + step[0], c + step[1], _OPP_FS[fs]))
+        for fs_ix in farm_node_tc_ix[nid]:
+            step = _FS_STEP[fs_ix]
+            neighbor = farm_side_to_node.get((r + step[0], c + step[1], _FS_OPP[fs_ix]))
             if neighbor is not None:
                 farm_eu.append(nid)
                 farm_ev.append(neighbor)
@@ -239,8 +273,9 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
     city_root_open: set = set()
     city_root_emptyadj: dict = {}   # root -> set of distinct empty neighbour cells
     for nid in range(len(city_nodes)):
-        r, c, side = city_nodes[nid]
+        r, c, ix = city_nodes[nid]
         root = city_labels[nid]
+        side = _IX_SIDE[ix]  # back to enum for the public, gate-facing dicts
         city_side_root[(r, c, side)] = root
         city_root_positions.setdefault(root, set()).add((r, c, side))
         city_root_coords.setdefault(root, set()).add((r, c))
@@ -248,7 +283,7 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
             city_root_open.add(root)
         # closure-proximity: count distinct empty cells across the outward
         # neighbours of the component's city edges (== _open_city_positions).
-        dr, dc, _o = _OPP[side]
+        dr, dc, _o = _OPP[ix]
         nr, nc = r + dr, c + dc
         if 0 <= nr < H and 0 <= nc < W and board[nr][nc] is None:
             city_root_emptyadj.setdefault(root, set()).add((nr, nc))
@@ -278,8 +313,9 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
     road_root_coords: dict = {}
     road_root_open: set = set()
     for nid in range(len(road_nodes)):
-        r, c, side = road_nodes[nid]
+        r, c, ix = road_nodes[nid]
         root = road_labels[nid]
+        side = _IX_SIDE[ix]  # back to enum for the public, gate-facing dicts
         road_side_root[(r, c, side)] = root
         road_root_positions.setdefault(root, set()).add((r, c, side))
         road_root_coords.setdefault(root, set()).add((r, c))
