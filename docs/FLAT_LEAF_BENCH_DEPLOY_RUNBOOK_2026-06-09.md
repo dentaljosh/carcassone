@@ -6,16 +6,32 @@
 > The only remaining work is: **run the throughput bench → decide deploy.**
 
 > ## ⛔ BENCH DONE — VERDICT: DO NOT DEPLOY (2026-06-09)
-> Ran on a quiet 5800x, W=14 (production), G=32, sims=200, fixed seed, OFF vs FLAT
-> back-to-back. **Result: 1.02× games/min** (OFF 6.64 → FLAT 6.79; 289.3s → 282.9s).
-> The per-leaf 2.26× **evaporates at production W=14** — self-play is
-> bandwidth/contention-bound there, not leaf-compute-bound. 1.02× ≪ the 1.3× deploy
-> floor → **not deployed** into the running flywheel; not worth the disruption for ~2%
-> over ~6 remaining iters. (Position counts 3956 vs 3955 = the expected canonical-fsum
-> ±1 ruler flip → confirms FLAT fired, not bypassed.) The flat leaf stays a validated
-> bit-exact branch (`leaf-rewrite`) for a FUTURE leaf-bound context (lower-W, the numba
-> 3.21×-core path, or any pipeline where the leaf is the real bottleneck). The deploy
-> steps below are retained for that future use — DO NOT run them for this flywheel.
+> Ran on a quiet 5800x, G=32, sims=200, fixed seed, OFF vs FLAT back-to-back, swept W.
+>
+> | W  | regime           | OFF g/min | FLAT g/min | FLAT/OFF |
+> |----|------------------|-----------|------------|----------|
+> | 1  | contention-free  | 0.94      | 1.15       | **1.22×** |
+> | 14 | production       | 6.64      | 6.79       | **1.02×** |
+> | 20 | oversubscribed   | 7.14      | 7.42       | **1.04×** |
+>
+> **At production-scale W the gain is ~2–4% ≪ the 1.3× deploy floor → NOT deployed.**
+> WHY (decomposed by the W=1 probe): the leaf speedup is real and large single-thread
+> (+22% → the leaf is ~⅓ of single-thread self-play wall, NOT an Amdahl sliver), but it
+> collapses at W≥14 because the bottleneck there is SHARED resources — RAM bandwidth +
+> GPU-inference serialization (workers block on the NN-priors forward) — and **flat cuts
+> CPU compute, not memory traffic or GPU time.** Saturated box ⇒ cheaper per-worker CPU
+> ≠ higher aggregate throughput.
+> FIRING PROVEN three ways: position divergence 3956→3955 at W=14 & W=20 (canonical-fsum
+> signature), the 18% single-thread wall drop on byte-identical games, and a direct
+> assertion (virtual_score_v2 routes to flat_leaf 0× when OFF / 1× when ON). NB: deployed
+> flat is pure interpreted Python — NO compilation; numba (the 3.21× compiled kernel) is
+> a separate DEFERRED path, not in this bench.
+> SEPARATE OBSERVATION (OFF-vs-OFF, not a flat effect): W=20 out-throughputs W=14 by ~8%
+> (7.14 vs 6.64 g/min) — oversubscription fills GPU-handoff idle gaps. Possible ~8% lever
+> for the flywheel's 5800x worker count, independent of the leaf. Flagged, not actioned.
+> The flat leaf stays a validated bit-exact branch (`leaf-rewrite`) for a FUTURE
+> leaf-bound / low-contention context (low-W, the numba path, or a leaf-dominated
+> pipeline). Deploy steps below retained for that future use — DO NOT run them here.
 
 ## TL;DR — what to do next
 1. **Confirm the flywheel is paused** (Joshua is pausing it from another thread so
