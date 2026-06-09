@@ -26,10 +26,19 @@ Checks (all HARD), flat vs the engine ground truth:
 Coverage (HARD if zero): farms, cities (finished + unfinished), roads (finished +
 unfinished), cloisters scored, farms with >=1 finished adjacent city.
 
-Exits non-zero on ANY mismatch or empty coverage. Run under the production env
-(CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12).
+Exit codes (exit 0 is RESERVED for a full bit-exact acceptance pass, so CI keyed on
+the exit code cannot mistake a partial/undersampled run for one):
+  0 = full bit-exact acceptance pass (>= --min-evals, partitions + coverage all green)
+  1 = mismatch (real flat != engine failure)
+  2 = insufficient coverage
+  3 = undersampled (fewer than --min-evals v2 evals) — values matched, NOT acceptance
+  4 = --values-only (partition + coverage checks skipped) — NOT acceptance
 
-Usage:  python scripts/reconcile_flat_leaf.py --n 400 --snap-every 4
+Run under the production env (CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12).
+NOTE: inn/cathedral/shield + BIG-meeple branches are unreachable by random base-game
+play; they are covered separately by tests/test_flat_leaf_edge_cases.py.
+
+Usage:  python scripts/reconcile_flat_leaf.py --n 400 --snap-every 4   (acceptance)
 """
 from __future__ import annotations
 
@@ -37,6 +46,7 @@ import argparse
 import copy
 import random
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -71,6 +81,12 @@ from wingedsheep.carcassonne.utils.points_collector import PointsCollector  # no
 from wingedsheep.carcassonne.utils.road_util import RoadUtil  # noqa: E402
 
 _CARD = (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
+
+# Second config to exercise leaf paths DEFAULT_CONFIG leaves dead (audit finding):
+# meeple_k>0 (the economy term) and asymmetric, smaller caps (so the clamp actually
+# triggers and a cap-swap / wrong-sign meeple term can't be byte-identical). Same
+# v2.7 closure schedule (no deck-aware paths) so the flat leaf supports it.
+ALT_CONFIG = replace(DEFAULT_CONFIG, meeple_k=0.5, bonus_cap=8.0, opp_bonus_cap=4.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -167,7 +183,11 @@ def main() -> int:
     ap.add_argument("--snap-every", type=int, default=4, help="snapshot cadence (plies)")
     ap.add_argument("--seed", type=int, default=12345)
     ap.add_argument("--values-only", action="store_true",
-                    help="skip the per-node partition BFS truth checks (faster)")
+                    help="skip the per-node partition BFS truth checks (faster). NOT an "
+                         "acceptance run — exits 4, never prints BIT-EXACT.")
+    ap.add_argument("--min-evals", type=int, default=10000,
+                    help="acceptance floor on flat_virtual_score_v2 evals; below this the "
+                         "run is UNDERSAMPLED and exits 3 (not 0), even with zero mismatches.")
     args = ap.parse_args()
 
     assert "/carc-leafdev/" in carcassonne_ai.__file__, f"not worktree: {carcassonne_ai.__file__}"
@@ -189,6 +209,7 @@ def main() -> int:
     base_checks = base_mism = 0
     bonus_checks = bonus_mism = 0
     v2_checks = v2_mism = 0
+    v2alt_checks = v2alt_mism = 0
     cov_farms = cov_cities = cov_roads = 0
     cov_cfin = cov_cunfin = cov_rfin = cov_runfin = 0
     cov_cloister = cov_farm_fincity = 0
@@ -207,28 +228,28 @@ def main() -> int:
             decomp = flat_leaf.decompose(state)
 
             if not args.values_only:
-                # --- check 1: farm partition ---
+                # --- check 1: farm partition AND the pos0 (base) + anypos (bonus)
+                # meeple-match maps the scorers actually index (NO fallback scan —
+                # a missing map entry must FAIL, audit finding). ---
                 for key, fcc in _all_farm_nodes(state):
                     farm_nodes += 1
                     cov_farms += 1
                     truth = _farm_region(FarmUtil.find_farm(state, fcc))
-                    root = decomp.farm_pos0_root.get(
-                        (fcc.coordinate.row, fcc.coordinate.column,
-                         fcc.farmer_connection.farmer_positions[0])
-                    )
-                    # root via pos0 may miss a connection with no farmer_positions;
-                    # fall back to scanning farm_root_keys for the node key.
-                    got = None
-                    if root is not None:
-                        got = decomp.farm_root_keys.get(root)
-                    if got is None:
-                        for rk, keys in decomp.farm_root_keys.items():
-                            if key in keys:
-                                got = keys
-                                break
-                    if got != truth:
+                    r0, c0 = fcc.coordinate.row, fcc.coordinate.column
+                    fps = fcc.farmer_connection.farmer_positions
+                    # base map: find_meeples matches farmer_positions[0]
+                    root0 = decomp.farm_pos0_root.get((r0, c0, fps[0])) if fps else None
+                    got0 = decomp.farm_root_keys.get(root0) if root0 is not None else None
+                    if got0 != truth:
                         farm_mism += 1
-                        fail(f"FARM node {key}: flat={got} truth={truth}")
+                        fail(f"FARM pos0 node {key}: flat={got0} truth={truth}")
+                    # bonus map: find_farm_by_coordinate matches ANY farmer_position
+                    for pos in fps:
+                        rootA = decomp.farm_anypos_root.get((r0, c0, pos))
+                        gotA = decomp.farm_root_keys.get(rootA) if rootA is not None else None
+                        if gotA != truth:
+                            farm_mism += 1
+                            fail(f"FARM anypos node {key} pos={pos}: flat={gotA} truth={truth}")
 
                 # --- check 2: city partition ---
                 for cws in _all_city_edges(state):
@@ -303,6 +324,16 @@ def main() -> int:
                     v2_mism += 1
                     fail(f"flat_virtual_score_v2 p={p} flat={v2_got} truth={v2_truth}")
 
+                # --- check 8: full v2 under ALT_CONFIG (meeple_k>0 + asymmetric/
+                # smaller caps) — exercises the economy term + cap clamp that
+                # DEFAULT_CONFIG leaves dead (audit finding). ---
+                v2alt_checks += 1
+                a_truth = virtual_score_v2(state, p, ALT_CONFIG)
+                a_got = flat_leaf.flat_virtual_score_v2(state, p, ALT_CONFIG)
+                if a_truth != a_got:
+                    v2alt_mism += 1
+                    fail(f"flat_virtual_score_v2[ALT] p={p} flat={a_got} truth={a_truth}")
+
             # coverage extras
             for root, fincnt in decomp.farm_root_finished_cities.items():
                 if fincnt > 0:
@@ -325,6 +356,7 @@ def main() -> int:
     print(f"flat_base_score checks : {base_checks:>8}   mismatches: {base_mism}")
     print(f"closure-bonus checks   : {bonus_checks:>8}   mismatches: {bonus_mism}")
     print(f"flat_virtual_score_v2  : {v2_checks:>8}   mismatches: {v2_mism}")
+    print(f"  ^ ALT cfg (meeple_k+caps): {v2alt_checks:>5}   mismatches: {v2alt_mism}")
     print(f"coverage: farms={cov_farms} cities={cov_cities}(fin={cov_cfin}/unf={cov_cunfin}) "
           f"roads={cov_roads}(fin={cov_rfin}/unf={cov_runfin}) "
           f"cloisters_scored={cov_cloister} farms_w_fincity={cov_farm_fincity}")
@@ -333,25 +365,39 @@ def main() -> int:
         print(f"\nFIRST FAILURE: {first_fail}")
 
     total_mism = (farm_mism + city_mism + road_mism + final_mism + base_mism
-                  + bonus_mism + v2_mism)
-    coverage_ok = args.values_only or (
+                  + bonus_mism + v2_mism + v2alt_mism)
+    coverage_ok = (
         cov_farms > 0 and cov_cfin > 0 and cov_cunfin > 0
         and cov_rfin > 0 and cov_runfin > 0
     )
+
+    # Exit codes (audit hardening — exit 0 is RESERVED for a full acceptance pass,
+    # so CI keyed on the exit code can't mistake a partial/undersampled run for one):
+    #   0 full bit-exact acceptance | 1 mismatch | 2 coverage gap
+    #   3 undersampled (< --min-evals) | 4 values-only (partitions+coverage skipped)
     if total_mism > 0:
         print(f"\nFAIL: {total_mism} mismatch(es) — flat leaf NOT equivalent.")
         return 1
+    if args.values_only:
+        print(f"\nVALUES-ONLY OK (NOT an acceptance run): leaf values matched on meepled "
+              f"features across {v2_checks} v2 evals, but partition + coverage checks were "
+              f"SKIPPED — an unmeepled-component bug would be invisible. Re-run without "
+              f"--values-only for a bit-exact verdict.")
+        return 4
     if not coverage_ok:
         print("\nFAIL: insufficient coverage (need farms + fin/unfin cities + fin/unfin roads).")
         return 2
-    if base_checks < 10000 and not args.values_only:
-        print(f"\nWARN: only {base_checks} base evals (<10k acceptance target); raise --n.")
+    if v2_checks < args.min_evals:
+        print(f"\nUNDERSAMPLED (NOT an acceptance run): only {v2_checks} v2 evals "
+              f"(< {args.min_evals} floor). Values match so far, but this is a smoke, not a "
+              f"bit-exact verdict — raise --n (or lower --min-evals deliberately).")
+        return 3
     print(f"\nPASS (BIT-EXACT): flat == engine across {v2_checks} virtual_score_v2 evals "
-          f"(+ {base_checks} base + {bonus_checks} closure-bonus)"
-          + ("" if args.values_only
-             else f" + {farm_nodes} farm + {city_nodes} city + {road_nodes} road partitions")
-          + " — partitions / final additions / base / closure bonus / full v2 all bit-identical "
-          "(canonical sum).")
+          f"(+ {v2alt_checks} ALT-cfg + {base_checks} base + {bonus_checks} closure-bonus "
+          f"+ {farm_nodes} farm + {city_nodes} city + {road_nodes} road partitions) "
+          "— all bit-identical (canonical sum). NOTE: inn/cathedral/shield + BIG-meeple "
+          "branches are unreachable by random base-game play and are covered separately by "
+          "tests/test_flat_leaf_edge_cases.py.")
     return 0
 
 

@@ -176,8 +176,12 @@ def main() -> int:
     t_full = time_full(states, a.reps)
 
     t_cfs = max(t_base - t_dc, 0.0)  # count_final_scores ~= base - deepcopy
-    # full = base + bonus(x2) + small overhead (cache build/teardown, capping)
-    t_overhead = max(t_full - t_base - t_bon, 0.0)
+    # full - base - bonus is a RESIDUAL of three independent min-of-reps timings,
+    # not a real bucket — it's measurement noise (can be negative; ~±a few % of
+    # full). Reported, NOT clamped, so it reads honestly as noise rather than as a
+    # spurious "overhead" cost. True per-call overhead (cache build/teardown,
+    # capping, round) is ~0.04% and lives inside the buckets above.
+    t_residual = t_full - t_base - t_bon
 
     def line(name, t):
         print(f"  {name:<34} {t * 1e3 / nleaf:8.4f} ms/leaf   ({t:7.3f}s tot   {100 * t / t_full:5.1f}% of full)")
@@ -186,7 +190,7 @@ def main() -> int:
     line("(a) copy.deepcopy", t_dc)
     line("(b) count_final_scores", t_cfs)
     line("(c) closure bonus x2 (warm)", t_bon)
-    line("    overhead (cache/cap/round)", t_overhead)
+    line("    residual (timing noise)", t_residual)
     print("    " + "-" * 60)
     line("    FULL virtual_score_v2", t_full)
 

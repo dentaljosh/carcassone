@@ -237,3 +237,37 @@ relative/min-of-reps micro-benches + the CPU-light gate).
   above). Success = moves the per-worker erosion curve / raises saturation-W.
 
 ### Net result (interpreted, shared-venv-deployable TODAY): 2.26× faster per leaf, bit-exact (n=400 gate). numba adds a further proven ~1.4× on the core when deployable.
+
+## Adversarial code-review audit (2026-06-09, 18 agents)
+
+Multi-agent review (5 dimensions → per-finding adversarial verify → synthesis).
+**Verdict: the bit-exact claim HOLDS in production (2p Base+Farmers, v2.7,
+DEFAULT_CONFIG, canonical sum) — ZERO reachable flat≠engine bugs.** The 2.26×
+speedup is sound and *conservative* (the microbench times flat's `math.fsum`
+against OFF's cheaper running-sum, which only biases against flat). 8 findings,
+all reproduced; the cluster was gate *over-certification*, not leaf correctness.
+
+Fixes applied (commit after the hardened n=400 re-gate):
+- **[HIGH] gate exit-0 on undersampled runs** → `reconcile_flat_leaf` now reserves
+  exit 0 for a full acceptance pass: undersampled (`< --min-evals`, default 10k) →
+  **exit 3**, values-only → **exit 4**, never prints "BIT-EXACT" for either.
+- **[MED] config corners never tested** (DEFAULT_CONFIG has meeple_k=0, equal caps)
+  → added **check 8: full v2 under ALT_CONFIG** (meeple_k=0.5, caps 8/4) so the
+  economy term + asymmetric cap clamp are exercised. Passes 0-mismatch.
+- **[MED] `--values-only` over-certified** → distinct banner + exit 4 (above).
+- **[LOW] farm check-1 fallback masked a missing `pos0` entry** → removed the
+  fallback (missing entry now FAILS) and added an explicit `farm_anypos_root`
+  (bonus-membership) check per farmer_position.
+- **[LOW] cathedral/inn/big-meeple gate-unreachable** → already covered by
+  `tests/test_flat_leaf_edge_cases.py` (the audit ran it, 2/2 pass); PASS banner
+  now cross-references it.
+- **[LOW] stage0 "overhead" bucket** → relabelled "residual (timing noise)", no
+  longer clamped to 0 (it's a 3-timing residual, ~±few %, not a real cost).
+
+Remaining (latent, non-production): `flat_closure_bonus` raises
+`NotImplementedError` for the deck-aware closure configs (`tile_counting_closure`
+/ `closure_continuous_slack`), where the engine returns a valid (different) value.
+Fail-loud, v2.7 has both OFF, and `USE_FLAT_LEAF` has no callers — so unreachable
+today. **WIRING-TIME REQUIREMENT:** when `USE_FLAT_LEAF` is wired into production,
+assert both deck-aware flags are OFF at the wiring point (or implement those paths)
+so a config combo can't crash every leaf eval.
