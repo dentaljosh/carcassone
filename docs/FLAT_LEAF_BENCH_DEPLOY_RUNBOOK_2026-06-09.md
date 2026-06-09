@@ -5,58 +5,64 @@
 > proceed. The flat leaf is BUILT, VALIDATED bit-exact, and WIRED (default-OFF).
 > The only remaining work is: **run the throughput bench → decide deploy.**
 
-> ## ⛔ BENCH DONE — VERDICT: DO NOT DEPLOY (2026-06-09)
-> Ran on a quiet 5800x, G=32, sims=200, fixed seed, OFF vs FLAT back-to-back, swept W.
+> ## ✅ VERDICT: DEPLOY (cross-box confirmed 2026-06-09) — Joshua approved for the rest of attempt-2
+> Cross-box OFF-vs-FLAT, production W, **iter_11** checkpoint, fixed seed, back-to-back:
 >
-> | W  | regime           | OFF g/min | FLAT g/min | FLAT/OFF |
-> |----|------------------|-----------|------------|----------|
-> | 1  | contention-free  | 0.94      | 1.15       | **1.22×** |
-> | 14 | production       | 6.64      | 6.79       | **1.02×** |
-> | 20 | oversubscribed   | 7.14      | 7.42       | **1.04×** |
+> | box | memory | W | OFF g/min | FLAT g/min | FLAT/OFF | clean? |
+> |-----|--------|---|-----------|------------|----------|--------|
+> | xeon   | DDR4 | 10 | 2.73 | 3.02 | **1.11×** | ✓ foreign 4% |
+> | 5800x  | DDR4 | 16 | 6.65 | 7.35 | **1.10×** | throttle-floor |
+> | laptop | DDR5 | 20 | 9.05 | 9.51 | **1.05×** | ✓ foreign 0% |
 >
-> **At production-scale W the gain is ~2–4% ≪ the 1.3× deploy floor → NOT deployed.**
-> WHY (decomposed by the W=1 probe + reconciled with the 2026-06-09 DRAM-bandwidth
-> DECISIONS entry): the leaf speedup is real and large single-thread (+22% → the leaf is
-> ~⅓ of single-thread self-play wall, NOT an Amdahl sliver), but it collapses at W≥14
-> because production self-play is **RAM-BANDWIDTH-bound** (rigorously established last
-> night: `bw_scaling.py` saturates at 2–4 threads ≈40 GB/s; per-worker throughput erodes
-> smoothly from W=4; clock held → not thermal; GPU mostly idle during gen → not GPU).
-> **The leaf rewrite's STATED goal (BACKLOG #322 / the DRAM entry) was "cut bytes/sim →
-> raise the saturation point."** We instead built+validated a COMPUTE win (2.26× per-leaf
-> CPU, +22% single-thread) and never measured bytes/sim. The at-scale bench is that
-> measurement: ~no gain ⇒ the flat leaf does NOT meaningfully cut DRAM traffic at the
-> operating point (the dominant traffic is the MCTS tree + state/feature memory, not the
-> leaf's allocations — OR the flat leaf's own per-eval arrays/dicts move similar bytes).
-> Optimized the right hot-path for the WRONG resource. Process was sound: gating on the
-> at-scale number (not the 2.26× microbench) caught it cheaply, before any deploy.
-> FIRING PROVEN three ways: position divergence 3956→3955 at W=14 & W=20 (canonical-fsum
-> signature), the 18% single-thread wall drop on byte-identical games, and a direct
-> assertion (virtual_score_v2 routes to flat_leaf 0× when OFF / 1× when ON). NB: deployed
-> flat is pure interpreted Python — NO compilation; numba (the 3.21× compiled kernel) is
-> a separate DEFERRED path, not in this bench.
-> ⚠️ RETRACTED (was wrong): an earlier note here claimed "W=20 out-throughputs W=14 by
-> ~8% → possible worker-count lever." That compared TWO separate G=32 runs at different
-> thermal states and is **inside the ±15–20% run-to-run noise** the DRAM DECISIONS entry
-> explicitly flags. Last night's CONTROLLED single-session W=1..30 scan (G=48,
-> thermal-instrumented) shows **W=16 is the peak (7.73 g/min) and W=20 is BELOW it
-> (6.71)**. The W=14–18 plateau + production W=14 STAND. No worker-count change.
-> The flat leaf stays a validated bit-exact branch (`leaf-rewrite`) for a FUTURE
-> leaf-bound / low-contention context (low-W, the numba path, a higher-bandwidth box like
-> the DDR5 laptop, or a leaf-dominated pipeline). Deploy steps below retained for that
-> future use — DO NOT run them here.
+> **Cluster gen ≈ +8%** (sum 18.4→19.9 g/min) and flat helps the eval gauntlet too (same
+> leaf) → ~+8–10% on 2 of the 3 phases (train is GPU, untouched). Worth deploying for the
+> ~6 remaining attempt-2 iters, folded into the restart the paused flywheel needs anyway.
+>
+> **WHY the earlier "2% / DO NOT DEPLOY" was wrong — checkpoint dependence.** The first
+> bench used **iter4** and got ~1.02×; iter_11 (closer to the real nets) gets ~1.10× on
+> DDR4. The net's policy changes game dynamics → how big a share the leaf is of wall time.
+> **The cross-box pattern confirms the mechanism:** flat's real win is cache-friendly int
+> arrays vs pointer-chasing engine objects → it pays off most where the **DRAM bus is
+> saturated** (both DDR4 boxes ~1.10×) and least where there's bandwidth headroom (DDR5
+> laptop 1.05×). So flat partially *does* relieve the bandwidth wall — Joshua's hypothesis.
+>
+> **Throttle reconciliation (Joshua, HWiNFO):** the 5800x VRM-throttles ~8% of the time
+> with clocks cratering to ~0.55 GHz transiently → ~10–15% real penalty (the WSL
+> `% Processor Performance` gauge samples ~1/s and misses these cliffs — that's why last
+> night's "no throttle" was wrong). This depresses ABSOLUTE g/min on both OFF and FLAT but
+> the FLAT/OFF *ratio* is throttle-independent and biased AGAINST flat (FLAT runs hotter /
+> second + draws more watts) → **the ~1.10× is a conservative floor.** Higher wattage under
+> flat = more compute/sec = direct evidence the DRAM relief is real (bandwidth wall → thermal
+> wall). VRM fins (on order) recover the 10–15% for ALL work, both modes — orthogonal, bigger.
+>
+> FIRING PROVEN three ways: position divergence 3957→3956 (canonical-fsum signature), the
+> 18% single-thread wall drop on byte-identical games, and a direct assertion
+> (virtual_score_v2 routes to flat_leaf 0× OFF / 1× ON). Deployed flat is pure interpreted
+> Python — NO compilation; numba (3.21× kernel) stays DEFERRED. Deploying adopts canonical
+> (fsum) leaf semantics: ~7e-5 of evals by ±1, negligible (the leaf is already that
+> nondeterministic across processes) — note the switch point in the experiment log.
+> **DEPLOY STEPS: see "Deploy steps" below — already pinned exact (commit 60374bd).**
 
 ## TL;DR — what to do next
-1. **Confirm the flywheel is paused** (Joshua is pausing it from another thread so
-   the 5800x is quiet). Verify: `pgrep -f 'run_selfplay_iter|eval_net_vs_heuristic|train_iter' | wc -l` should be ~0 on the 5800x. Do NOT resume the flywheel — Joshua's other thread owns it.
-2. **Run the headline bench** (on the 5800x, where the worktree lives):
-   ```
-   cd /home/doctor/projects/carc-leafdev
-   WS="16" G=32 bash scripts/bench_flat_throughput.sh
-   ```
-   ETA ~12–15 min (warmup + OFF + FLAT at W=16). Reads the FLAT/OFF games/min ratio.
-3. **Decide** per the decision tree below. If promising, run the saturation sweep
-   `WS="8 12 16 20" G=48 bash scripts/bench_flat_throughput.sh` (~45 min) for
-   deploy-grade evidence.
+**Bench is DONE and the verdict is DEPLOY (see the ✅ block above). Joshua approved
+turning flat ON for the rest of attempt-2, folded into the restart the paused flywheel
+needs anyway. Implementation is owned by the flywheel thread — apply the "Deploy steps"
+below.** The bench commands are retained at the bottom for the post-VRM-fin clean rerun.
+
+### Deploy handoff (what the flywheel thread must do)
+1. **Get the flat code onto all 3 boxes.** Merge `leaf-rewrite` → `stage-b-wiring` (clean —
+   only docs diverged) OR cherry-pick; it's default-OFF so the merge is behaviorally inert.
+   Then bundle-refresh the remotes (offline-git-bundle-sync: bundle on the share +
+   `git fetch <bundle>` + `git reset --hard` on xeon & laptop). **The flag does nothing
+   without this code** (the boxes' current `virtual_score_v2.py` has no redirect / no `flat_leaf.py`).
+2. **Set the flag in TWO places:**
+   - `/mnt/c/carc-shared/code_sync/gen_flywheel.sh:28` (xeon+laptop gen — all boxes read this
+     share copy, so NO per-box edit needed for the flag) → add `CARCASSONNE_USE_FLAT_LEAF=1`.
+   - `scripts/run_residual_flywheel_v2.sh:40` `ENVV=...` (5800x gen + eval, lines 137/141/142) → add `CARCASSONNE_USE_FLAT_LEAF=1`.
+3. **Deck-aware guard is clear** — neither `CARCASSONNE_V25_TILE_COUNTING` nor `_CLOSURE_SLACK`
+   is set anywhere in the flywheel path, so the flat path's `NotImplementedError` can't fire.
+4. **Restart at a clean iter boundary** via `--shared-claim`. Pure-Python flat only (no numba).
+5. **Log the switch point** — deploying adopts canonical (fsum) leaf semantics (~7e-5 ±1, negligible).
 
 ## Where things stand (all committed on branch `leaf-rewrite`, worktree `/home/doctor/projects/carc-leafdev`)
 The de-objectified flat leaf (`src/carcassonne_ai/flat_leaf.py`) computes the full
