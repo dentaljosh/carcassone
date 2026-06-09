@@ -154,6 +154,33 @@ when run before it (reproduces with compact OFF; hidden in a normal alphabetical
 `pytest -q` run). A test-isolation bug worth a separate fix — logged for Joshua,
 not actioned here.
 
+## Phase-4 step-1 micro-bench (2026-06-09, no pause): the compile path is dead
+
+`scripts/microbench_compact_leaf.py` — relative per-leaf cost, compact-ON vs lazy
+object-BFS OFF, back-to-back in one process (min-of-reps; robust to the live
+flywheel's contention), n=1160 states / 2320 leaf evals:
+
+```
+  OFF (lazy object-BFS) : 0.992 ms/leaf
+  ON  (pure-Py compact) : 1.088 ms/leaf   -> 1.10x SLOWER
+```
+
+cProfile of the builds: cost is `dict.get` (614k) + enum hashing (`enum.__hash__`
+1.0M + `builtins.hash`) + Coordinate/CoordinateWithSide/FarmerConnectionWithCoordinate
+construction — i.e. the `(row,col,FarmerSide)`-keyed enumeration dicts and the
+engine-object reconstruction. **The union-find core `_label_components` is only
+4.6% of build self-time.**
+
+**Conclusion: compiling the core (numba `@njit`) would touch ~5% → worthless.**
+The pure-Python compact is a ~10% per-leaf REGRESSION, and the cost is Python
+object/dict/hash work, not the union-find. A real win needs full
+de-objectification (flat int-indexed adjacency instead of enum-keyed dicts AND
+not reconstructing Farm/City objects — i.e. rewriting `count_final_scores` + the
+closure bonus to consume flat arrays), a substantial separate project whose
+payoff is still capped by the per-leaf `deepcopy` + closure-bonus iteration
+compact doesn't touch. **Do NOT pause the flywheel to bench this**; the throughput
+bench would only confirm the regression. Keep default-OFF.
+
 ## Recommendation / open decision for Joshua
 
 1. **Logic is proven equivalent** — safe to keep developing on this branch.
