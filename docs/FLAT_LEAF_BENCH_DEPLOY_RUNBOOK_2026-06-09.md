@@ -5,6 +5,18 @@
 > proceed. The flat leaf is BUILT, VALIDATED bit-exact, and WIRED (default-OFF).
 > The only remaining work is: **run the throughput bench → decide deploy.**
 
+> ## ⛔ BENCH DONE — VERDICT: DO NOT DEPLOY (2026-06-09)
+> Ran on a quiet 5800x, W=14 (production), G=32, sims=200, fixed seed, OFF vs FLAT
+> back-to-back. **Result: 1.02× games/min** (OFF 6.64 → FLAT 6.79; 289.3s → 282.9s).
+> The per-leaf 2.26× **evaporates at production W=14** — self-play is
+> bandwidth/contention-bound there, not leaf-compute-bound. 1.02× ≪ the 1.3× deploy
+> floor → **not deployed** into the running flywheel; not worth the disruption for ~2%
+> over ~6 remaining iters. (Position counts 3956 vs 3955 = the expected canonical-fsum
+> ±1 ruler flip → confirms FLAT fired, not bypassed.) The flat leaf stays a validated
+> bit-exact branch (`leaf-rewrite`) for a FUTURE leaf-bound context (lower-W, the numba
+> 3.21×-core path, or any pipeline where the leaf is the real bottleneck). The deploy
+> steps below are retained for that future use — DO NOT run them for this flywheel.
+
 ## TL;DR — what to do next
 1. **Confirm the flywheel is paused** (Joshua is pausing it from another thread so
    the 5800x is quiet). Verify: `pgrep -f 'run_selfplay_iter|eval_net_vs_heuristic|train_iter' | wc -l` should be ~0 on the 5800x. Do NOT resume the flywheel — Joshua's other thread owns it.
