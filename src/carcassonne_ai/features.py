@@ -74,7 +74,13 @@ def farm_control_scalars(state: "CarcassonneGameState", player: int) -> tuple[in
     # resolve to the same memoized Farm object.
     own_cache = not hasattr(state, "_farm_cache")
     if own_cache:
-        state._farm_cache = {}
+        # When USE_COMPACT_LEAF is on, build the full compact farm cache rather
+        # than an empty {} — keeps this standalone encode path on the same leaf
+        # implementation as the rest (else it would silently stay on lazy BFS).
+        from . import compact_leaf
+        from . import virtual_score as _vs
+
+        state._farm_cache = compact_leaf.build_farm_cache(state) if _vs.USE_COMPACT_LEAF else {}
     try:
         counts: dict = {}  # id(farm) -> [mine, theirs]
         for pl in range(state.players):

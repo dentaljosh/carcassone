@@ -117,6 +117,43 @@ so it may not beat the existing C-level set-based BFS until the core is compiled
 throughput is a **Phase-4 benchmark question** (deferred: the box was busy and
 benchmarking was explicitly out of scope). Do not assume a win from "logic-exact".
 
+## Review (3-lane parallel, 2026-06-09): findings + fixes
+
+A 3-agent review (algorithm/geometry, gate-validity, wiring) + adversarial
+verification ran against this branch. 4 confirmed, 1 refuted.
+
+- **[MEDIUM, FIXED] `USE_COMPACT_LEAF` was bypassed on the entire production leaf
+  path.** `make_v25_value_wrapper` / `make_v25_batch_value_wrapper`
+  (`evaluators.py`) and `features.encode_farm_scalars` pre-attach an empty
+  `_farm_cache = {}` gated only on `USE_FARM_CACHE`, so `virtual_score_v2`'s
+  `own_farm = ... and not hasattr(...)` saw the `{}` and skipped the compact
+  build → silent fall-back to lazy BFS. **Compact would have no-op'd in
+  self-play/eval.** Fix: those sites now build the compact cache when the toggle
+  is on (gate widened to `USE_FARM_CACHE or USE_COMPACT_LEAF`). Verified: the
+  wrapper path now fires the compact builders (gate: `compact builds farm=144
+  city=144` for 144 boards, was 0/0), values equivalent.
+- **[MEDIUM, FIXED] The gate only exercised the direct `virtual_score_v2(state,p)`
+  call, not the wrapper path** — so it gave false "compact active" assurance.
+  Fix: `reconcile_compact_leaf.py` now has `check_wrapper_path` that routes
+  through `make_v25_value_wrapper`, asserts the compact builders actually fire
+  (>0), and that wrapper values match — gate FAILS loudly if compact is bypassed.
+- **[LOW, FIXED] "int-invariance by structure" gate line was vacuous** (bonus
+  terms land exactly on `.5` boundaries → min-margin ≈ 0, so only `drift==0` ever
+  certified). Fix: dropped the margin claim; the verdict is the measured int-flip
+  count, and `drift==0` (under `--canonical`) is the only structural certification.
+- **[LOW, FIXED] `--values-only` can't catch a dropped-node cache** (value path
+  self-heals via lazy fallback). Fix: it now prints that warning and is documented
+  as never-the-sole-acceptance-gate.
+- **[refuted] "drift measured on a different path than the contract"** — verifier
+  showed the drift audit does track the contract's drift, and it's moot for the
+  gated change.
+
+Also surfaced (PRE-EXISTING, not from this change): `tests/test_selfplay.py`
+pollutes `tests/test_neural_mcts.py::test_fpu_reduction_changes_search_but_stays_valid`
+when run before it (reproduces with compact OFF; hidden in a normal alphabetical
+`pytest -q` run). A test-isolation bug worth a separate fix — logged for Joshua,
+not actioned here.
+
 ## Recommendation / open decision for Joshua
 
 1. **Logic is proven equivalent** — safe to keep developing on this branch.

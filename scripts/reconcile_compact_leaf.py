@@ -168,6 +168,66 @@ def collect_states(game: Game, seed: int, snap_every: int, max_plies: int = 400)
     return states
 
 
+def check_wrapper_path(game, seed: int, n_games: int = 6, snap_every: int = 6):
+    """Production-path guard (review findings #1/#2): compact must actually FIRE
+    through the real leaf wrapper `make_v25_value_wrapper`, not just the direct
+    `virtual_score_v2(state, p)` call. The wrappers pre-attach a cache, so a
+    USE_COMPACT_LEAF that isn't threaded through them silently no-ops on the
+    self-play / eval hot path while the direct-path gate still says LOGIC-EXACT.
+
+    Returns (n, value_mismatches, builds_farm, builds_city). Compares the wrapper
+    value compact-ON vs compact-OFF under CANONICAL_BONUS_SUM (so the compare is
+    exact — isolates the WIRING, not the known naive-sum reorder), and counts how
+    many times the compact builders are invoked via the wrapper."""
+    from carcassonne_ai.evaluators import make_v25_value_wrapper
+    import carcassonne_ai.virtual_score_v2 as _v2mod
+
+    class _B:
+        __slots__ = ("state",)
+
+        def __init__(self, s):
+            self.state = s
+
+    def base(board):
+        return (np.zeros(1, dtype=np.float32), 0.0)
+
+    states = []
+    for g in range(n_games):
+        states += [s for s in collect_states(game, seed + g, snap_every) if s.players == 2]
+
+    saved_canon = _v2mod.CANONICAL_BONUS_SUM
+    orig_f, orig_c = compact_leaf.build_farm_cache, compact_leaf.build_city_cache
+    cnt = {"f": 0, "c": 0}
+
+    def cf(s):
+        cnt["f"] += 1
+        return orig_f(s)
+
+    def cc(s):
+        cnt["c"] += 1
+        return orig_c(s)
+
+    try:
+        _v2mod.CANONICAL_BONUS_SUM = True  # exact compare; isolate wiring from reorder
+        _vs.USE_COMPACT_LEAF = False
+        w_off = make_v25_value_wrapper(base)
+        off_vals = [w_off(_B(s))[1] for s in states]
+
+        compact_leaf.build_farm_cache = cf
+        compact_leaf.build_city_cache = cc
+        _vs.USE_COMPACT_LEAF = True
+        w_on = make_v25_value_wrapper(base)
+        on_vals = [w_on(_B(s))[1] for s in states]
+    finally:
+        _vs.USE_COMPACT_LEAF = False
+        _v2mod.CANONICAL_BONUS_SUM = saved_canon
+        compact_leaf.build_farm_cache = orig_f
+        compact_leaf.build_city_cache = orig_c
+
+    mism = sum(1 for a, b in zip(off_vals, on_vals) if a != b)
+    return len(states), mism, cnt["f"], cnt["c"]
+
+
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
@@ -350,15 +410,37 @@ def main() -> int:
     print(f"float-order audit     : {float_checks:>8}   bonus-float diffs (soft): {float_diffs}")
     print(f"  max pre-round score drift : {max_score_drift:.3e}")
     print(f"  min margin to .5 boundary : {min_half_margin:.3e}")
-    drift_safe = max_score_drift == 0.0 or max_score_drift < min_half_margin
-    print(
-        f"  int-invariance by structure: {'YES' if drift_safe else 'NO'} "
-        f"(drift={max_score_drift:.2e} vs margin={min_half_margin:.2e})"
-    )
+    # NOTE: a global "drift < min_margin ⇒ no flip" proof is vacuous here — the
+    # bonus is built from 0.5·int and p·3 terms, so pre-round scores routinely
+    # land EXACTLY on a .5 boundary (min margin ≈ 0.0). The only structural
+    # certification of bit-exactness is drift == 0.0 (achieved with
+    # --canonical / CANONICAL_BONUS_SUM). With the naive sum, the verdict is the
+    # measured v2 int-flip count below, not a margin argument.
+    if max_score_drift == 0.0:
+        print("  → drift == 0 ⇒ int-exact by construction (order-independent sum)")
+    else:
+        print(f"  → naive-sum reorder present (drift {max_score_drift:.2e}); see v2 flip count for impact")
     print(
         f"coverage: farms={cov_farms} cities={cov_cities} "
         f"finished={cov_fin} unfinished={cov_unfin} board-edge-city={cov_edge}"
     )
+
+    # Production-path guard (review findings #1/#2): compact must FIRE through the
+    # real leaf wrapper make_v25_value_wrapper (which pre-attaches a cache), not
+    # just the direct virtual_score_v2 call the checks above exercise.
+    wrap_n, wrap_mism, wrap_bf, wrap_bc = check_wrapper_path(game, args.seed + 90000)
+    print(
+        f"wrapper path (make_v25_value_wrapper): {wrap_n} boards, "
+        f"compact builds farm={wrap_bf} city={wrap_bc}, value mismatches={wrap_mism}"
+    )
+    wrapper_bypassed = wrap_bf == 0 or wrap_bc == 0
+
+    if args.values_only:
+        print(
+            "  NOTE: --values-only skips the partition truth checks; it does NOT "
+            "validate cache COMPLETENESS (a dropped node self-heals via lazy "
+            "fallback). Never use it as the sole acceptance gate for a build_* change."
+        )
 
     # LOGIC equivalence (the actual rewrite correctness): partitions, end
     # scores, and the base value must be bit-identical. v2 int flips are
@@ -379,6 +461,20 @@ def main() -> int:
             f"\nFAIL: {logic_mism} LOGIC mismatch(es) "
             f"(farm={farm_mism} city={city_mism} scores={score_mism} base={vs_mism}). "
             "Compact leaf is NOT logic-equivalent — real bug."
+        )
+        return 1
+    if wrapper_bypassed:
+        print(
+            "\nFAIL: USE_COMPACT_LEAF is BYPASSED on the production wrapper path — "
+            f"compact builders fired farm={wrap_bf} city={wrap_bc} through "
+            "make_v25_value_wrapper (expected >0). Compact would silently no-op in "
+            "self-play / eval despite a green direct-path verdict."
+        )
+        return 1
+    if wrap_mism > 0:
+        print(
+            f"\nFAIL: {wrap_mism} wrapper-path value mismatch(es) under canonical sum — "
+            "compact not equivalent through the production leaf path."
         )
         return 1
     if not coverage_ok:
