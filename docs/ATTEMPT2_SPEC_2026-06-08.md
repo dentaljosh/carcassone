@@ -3,7 +3,7 @@
 Built per Joshua's recipe after attempt #1 ended **CL-011 = NULL** (the residual value head is
 a confirmed *static* asset, +37.6 marginal, but did not **compound** via self-play co-adaptation).
 Launcher: [`scripts/run_residual_flywheel_v2.sh`](../scripts/run_residual_flywheel_v2.sh).
-**Status: BUILT, NOT LAUNCHED** (Joshua: "build but don't launch until I tell you").
+**Status: LAUNCHED 2026-06-09 — running at ITERS=12** (Joshua bumped 3→12 after launch; first launched 00:29 EDT at ITERS=3, relaunched 00:57 at ITERS=12). The "fixed 3-iter" framing below was the original recipe; the loop now runs `it=1..12` (sealed confirmation after iter12). ETA ~26–28 h.
 
 ## Why attempt #2 looks different — the attempt-#1 failure mode
 
@@ -52,7 +52,7 @@ After the loop — **sealed confirmation:** champion **and** iter0 vs heur@800-v
 
 ## Knobs (env-overridable)
 
-`ITERS=3 START=1 SCALE=0.25 GAMES=400 SIMS=200 KEEP_MARGIN=0 TELEMETRY_GATE=1`
+`ITERS=12 START=1 SCALE=0.25 GAMES=400 SIMS=200 KEEP_MARGIN=0 TELEMETRY_GATE=1` (ITERS bumped 3→12 on 2026-06-09)
 `N_GATE=300 ODO_N=200 CONFIRM_N=400 ODO_HEUR_SIMS=800 DURATION_HOURS=0`
 `W_5800X=14 W_LAPTOP=20 W_XEON=10` · `FLYWHEEL_TAG=flywheel_residual_attempt2`
 
