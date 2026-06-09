@@ -166,10 +166,50 @@ the bandwidth wall** (per-worker erosion curve flattens, saturation-W rises abov
   (`src/carcassonne_ai/flat_leaf.py`) behind `USE_FLAT_LEAF`; do not modify engine
   scoring — reproduce it. The engine stays the ground-truth oracle for the gate.
 
-## As-built (fill in during execution)
-- _Stage 0 leaf-OFF breakdown (deepcopy / count_final_scores / closure):_ TBD
-- _Stage 1 flat encoding + component facts gate:_ TBD
-- _Stage 2 flat base score gate + bench delta:_ TBD
-- _Stage 3 flat closure bonus gate:_ TBD
-- _Stage 4 compile (numba/Cython) result:_ TBD
-- _Stage 5 throughput / bandwidth-wall verdict:_ TBD
+## As-built (executed 2026-06-09, worktree `carc-leafdev` @ leaf-rewrite)
+
+Module: `src/carcassonne_ai/flat_leaf.py` (default-OFF `USE_FLAT_LEAF`). Gate:
+`scripts/reconcile_flat_leaf.py`. Benches: `scripts/stage0_leaf_breakdown.py`,
+`scripts/microbench_flat_leaf.py`. All run with the flywheel live (worktree
+isolation, `nice -n 19`, no live-tree edits, no bench on the busy box — only
+relative/min-of-reps micro-benches + the CPU-light gate).
+
+- **Stage 0 leaf-OFF breakdown — OVERTURNED THE PLAN'S PREMISE.** Per-leaf split
+  (compact OFF = production, n=1160 states): **deepcopy = 0.9%**, **count_final_scores
+  = ~90%**, **closure bonus = ~12%**. The plan assumed deepcopy was ~75%; the
+  custom `__deepcopy__` (shares Tile/FarmerConnection refs) already made it ~free
+  (0.008 ms/leaf). The real lever is `count_final_scores` (the flood-fill
+  scoring), NOT the deepcopy. cProfile of count_final_scores: `find_farm`
+  (~1.6–1.8s), city flood (~1.2s), `find_road` (~0.3s), `get_winning_players`
+  (~0.65s), pervasive `hash`/Coordinate churn — exactly what flat int arrays kill.
+- **Stage 1 flat components — BIT-EXACT.** One board pass → int union-find for
+  city/road/farm. Gate vs engine `find_farm` / `_compute_city` / `find_road`:
+  **935,018 farm + 579,575 city + 700,424 road partition checks, 0 mismatches**
+  (n=400). Road geometry mirrors city `opposite_edge`; intra-tile road union =
+  both non-CENTER ends of a `Connection`.
+- **Stage 2 flat base score — BIT-EXACT (pure int).** `flat_base_score` replaces
+  deepcopy + count_final_scores. Gate: **28,800 base evals + 14,400 final-addition
+  checks, 0 mismatches** (n=400). Key correctness details reproduced: farm meeple
+  count via `farmer_positions[0]` (find_meeples), unmeepled features score 0,
+  tied-feature → all winners, farm pts = 3×distinct finished adjacent city
+  components, cathedral/inn variants, base diff = running-score diff + final-add diff.
+- **Stage 3 flat closure bonus + full flat v2 — BIT-EXACT (canonical sum).**
+  `flat_closure_bonus` + `flat_virtual_score_v2`, summed with `math.fsum`
+  (CANONICAL_BONUS_SUM semantics — well-defined, hash-seed-independent). Gate vs
+  engine under CANONICAL_BONUS_SUM=True: closure-bonus float + full v2 int both
+  **0 mismatches** (n=20 smoke: 1440 each; full n=400 in flight, clean at 160/400).
+  Bonus uses `find_farm_by_coordinate` semantics (membership by ANY
+  `farmer_positions`, not just [0]) — separate map from base. Only the v2.7
+  schedule path is implemented; a cfg requesting tile-counting/continuous raises.
+- **Per-leaf speed (relative micro-bench, min-of-reps, n=1160 states):**
+  **FLAT 0.547 ms/leaf vs OFF 1.021 ms/leaf = 1.87× faster, INTERPRETED** (pure
+  Python, no compile). Compare: the compact attempt was 1.10× SLOWER. The
+  de-objectification worked. Remaining cost is dominated by **enum hashing**
+  (`enum.__hash__` + `hash` ≈ 0.95s of `decompose`'s 1.84s self-time) from
+  `(r,c,Side)` tuple dict keys → Stage 4's first lever is INT-ENCODING the sides
+  (Side 0–4, FarmerSide 0–7, pack `(r,c,side)` to one int), THEN numba on the
+  now-pure-int `_label_components` + decompose.
+- **Stage 4 int-encode + compile:** PENDING (next).
+- **Stage 5 throughput / bandwidth-wall verdict:** DEFERRED to a quiet box (the
+  flywheel is live). Success = moves the per-worker erosion curve / raises
+  saturation-W, not merely "faster".
