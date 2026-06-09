@@ -270,4 +270,13 @@ Remaining (latent, non-production): `flat_closure_bonus` raises
 Fail-loud, v2.7 has both OFF, and `USE_FLAT_LEAF` has no callers — so unreachable
 today. **WIRING-TIME REQUIREMENT:** when `USE_FLAT_LEAF` is wired into production,
 assert both deck-aware flags are OFF at the wiring point (or implement those paths)
-so a config combo can't crash every leaf eval.
+so a config combo can't crash every leaf eval. (Update 2026-06-09: `USE_FLAT_LEAF`
+IS now wired — `virtual_score_v2` redirect + `CARCASSONNE_USE_FLAT_LEAF` env toggle,
+default-OFF — with this guard already in the redirect; `reconcile_flat_leaf`
+`check_wrapper_path` confirms it fires through `make_v25_value_wrapper`.)
+
+## Next step → see the runbook
+The remaining work is **the throughput bench → deploy decision**, fully specified in
+[FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md](FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md)
+(POST-COMPACTION START HERE). Bench: `WS="16" G=32 bash scripts/bench_flat_throughput.sh`
+on a quiet 5800x (flywheel paused). Deploy only if at-scale games/min gain ≥ ~1.5×.

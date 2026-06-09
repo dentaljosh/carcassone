@@ -84,9 +84,12 @@ run_one() {  # $1=mode(OFF|FLAT) $2=W $3=extra_env
   echo "$mode,$W,$G,$pos,$wall,$pps,$gpm" >> "$SUM"
 }
 
-# short warmup so the first timed run isn't cold/cool (thermal fairness)
+# short warmup (few games) so the first timed run isn't on a cold/cool box
+# (CPU boost-when-cool would skew the first run). OFF also runs before FLAT at
+# each W, so any residual thermal bias makes OFF look faster -> FLAT/OFF ratio is
+# conservative (understates flat's gain), the safe direction.
 echo "### warmup @ $(date +%H:%M:%S)"
-run_one WARMUP "$(echo $WS | awk '{print $1}')" "" >/dev/null 2>&1 || true
+_GSAVE=$G; G=6; run_one WARMUP "$(echo $WS | awk '{print $1}')" "" >/dev/null 2>&1 || true; G=$_GSAVE
 sed -i '/^WARMUP,/d' "$SUM" 2>/dev/null || true
 
 for W in $WS; do
