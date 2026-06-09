@@ -204,6 +204,7 @@ def make_v25_value_wrapper(
     the (priors, value) output shape."""
     import math
 
+    from . import compact_leaf
     from . import virtual_score as _vs
     from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
 
@@ -221,12 +222,18 @@ def make_v25_value_wrapper(
         # floods ~free. virtual_score_v2 reuses an attached cache rather than
         # creating its own. Gated on the memo toggles so the bench/gate OFF
         # baseline (USE_*_CACHE=False) still runs legacy per-call flood-fills.
-        own_farm = _vs.USE_FARM_CACHE and not hasattr(st, "_farm_cache")
-        own_city = _vs.USE_CITY_CACHE and not hasattr(st, "_city_cache")
+        # Gate on USE_COMPACT_LEAF too (not just USE_*_CACHE), and when it's on
+        # build the FULL compact cache here instead of an empty {} — otherwise
+        # the pre-attached {} makes virtual_score_v2's own_farm/own_city guard
+        # (`not hasattr`) skip the compact build, silently bypassing compact on
+        # this (the production) leaf path. The shared compact cache feeds BOTH
+        # the policy-encode floods and the leaf-value pass below.
+        own_farm = (_vs.USE_FARM_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(st, "_farm_cache")
+        own_city = (_vs.USE_CITY_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(st, "_city_cache")
         if own_farm:
-            st._farm_cache = {}
+            st._farm_cache = compact_leaf.build_farm_cache(st) if _vs.USE_COMPACT_LEAF else {}
         if own_city:
-            st._city_cache = {}
+            st._city_cache = compact_leaf.build_city_cache(st) if _vs.USE_COMPACT_LEAF else {}
         try:
             priors, v_nn = base_evaluator(board)
             h = math.tanh(virtual_score_v2(st, st.current_player, eff_cfg) / 15.0)
@@ -267,6 +274,7 @@ def make_v25_batch_value_wrapper(
     `cfg.value_blend` > 0. `cfg` is an optional `LeafConfig` (None → DEFAULT_CONFIG)."""
     import math
 
+    from . import compact_leaf
     from . import virtual_score as _vs
     from .virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
 
@@ -287,12 +295,12 @@ def make_v25_batch_value_wrapper(
         owned = []
         for b in boards:
             st = b.state
-            of = _vs.USE_FARM_CACHE and not hasattr(st, "_farm_cache")
-            oc = _vs.USE_CITY_CACHE and not hasattr(st, "_city_cache")
+            of = (_vs.USE_FARM_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(st, "_farm_cache")
+            oc = (_vs.USE_CITY_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(st, "_city_cache")
             if of:
-                st._farm_cache = {}
+                st._farm_cache = compact_leaf.build_farm_cache(st) if _vs.USE_COMPACT_LEAF else {}
             if oc:
-                st._city_cache = {}
+                st._city_cache = compact_leaf.build_city_cache(st) if _vs.USE_COMPACT_LEAF else {}
             owned.append((st, of, oc))
         try:
             priors, values_nn = base_batch_evaluator(boards)

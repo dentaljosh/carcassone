@@ -40,6 +40,16 @@ if TYPE_CHECKING:
 USE_FARM_CACHE = True
 USE_CITY_CACHE = True
 
+# Compact-leaf toggle (2026-06-09, leaf-rewrite branch). When True, the lazy
+# object-graph flood-fills (`FarmUtil.find_farm` / `CityUtil._compute_city`) are
+# bypassed: `compact_leaf.build_farm_cache` / `build_city_cache` pre-populate the
+# SAME `_farm_cache` / `_city_cache` dicts via a flat union-find, so every engine
+# query is a cache hit. Default OFF — must be bit-exact-validated by
+# scripts/reconcile_compact_leaf.py before any production use. Reference it as a
+# module attribute (`virtual_score.USE_COMPACT_LEAF`) so a runtime flip (the
+# gate) is seen here AND by virtual_score_v2.
+USE_COMPACT_LEAF = False
+
 
 def virtual_score(
     state: "CarcassonneGameState",
@@ -73,10 +83,16 @@ def virtual_score(
     snapshot = copy.deepcopy(state)
     if farm_cache is not None:
         snapshot._farm_cache = farm_cache
+    elif USE_COMPACT_LEAF:
+        from . import compact_leaf
+        snapshot._farm_cache = compact_leaf.build_farm_cache(snapshot)
     elif USE_FARM_CACHE:
         snapshot._farm_cache = {}
     if city_cache is not None:
         snapshot._city_cache = city_cache
+    elif USE_COMPACT_LEAF:
+        from . import compact_leaf
+        snapshot._city_cache = compact_leaf.build_city_cache(snapshot)
     elif USE_CITY_CACHE:
         snapshot._city_cache = {}
     PointsCollector.count_final_scores(game_state=snapshot)
@@ -106,10 +122,16 @@ def virtual_score_inplace(
         )
     if farm_cache is not None:
         state._farm_cache = farm_cache
+    elif USE_COMPACT_LEAF:
+        from . import compact_leaf
+        state._farm_cache = compact_leaf.build_farm_cache(state)
     elif USE_FARM_CACHE:
         state._farm_cache = {}
     if city_cache is not None:
         state._city_cache = city_cache
+    elif USE_COMPACT_LEAF:
+        from . import compact_leaf
+        state._city_cache = compact_leaf.build_city_cache(state)
     elif USE_CITY_CACHE:
         state._city_cache = {}
     PointsCollector.count_final_scores(game_state=state)
