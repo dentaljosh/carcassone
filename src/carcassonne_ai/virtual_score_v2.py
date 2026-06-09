@@ -32,6 +32,7 @@ API mirrors `virtual_score`:
 from __future__ import annotations
 
 import copy
+import math
 import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -44,6 +45,7 @@ from wingedsheep.carcassonne.utils.city_util import CityUtil
 from wingedsheep.carcassonne.utils.farm_util import FarmUtil
 from wingedsheep.carcassonne.utils.points_collector import PointsCollector
 
+from . import compact_leaf
 from . import virtual_score as _vs
 from .virtual_score import virtual_score
 
@@ -126,6 +128,22 @@ def _config_from_env() -> LeafConfig:
 
 
 DEFAULT_CONFIG: LeafConfig = _config_from_env()
+
+# Order-independent bonus summation (2026-06-09, leaf-rewrite branch). The
+# closure-anticipation bonus sums non-associative floats (0.2-multiples) in the
+# iteration order of a SET (farm.farmer_connections_with_coordinate) — which is
+# arbitrary (it depends on which meeple populated the shared farm/city cache
+# first). Different valid orders differ by ~1 ULP, which flips int(round(score))
+# at exact-.5 rounding boundaries in ~7e-5 of leaf evals. This is a latent
+# order-sensitivity in the v2.7 leaf itself (same CLASS as the 2026-05-29
+# find_farm start-dependence fix). When True, the bonus is accumulated with
+# math.fsum (the correctly-rounded sum, order-independent), making the leaf a
+# well-defined function of the contribution multiset and the compact-leaf path a
+# TRUE bit-exact drop-in. Default OFF: turning it on CHANGES production's exact
+# output (by those same ~1e-4 ±1 flips) vs the running flywheel, so it must be
+# adopted as a deliberate, gated decision (Phase 4 / the compact-merge), not
+# silently. Read as a module attribute so a runtime flip (the gate) is seen.
+CANONICAL_BONUS_SUM = False
 
 # Back-compat module constants — some tests + diagnose_v2.py import these
 # directly. They mirror DEFAULT_CONFIG; new code should pass a LeafConfig.
@@ -291,6 +309,11 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
     deck_size = len(state.deck) if _need_supply else 0
     city_supply = _deck_city_supply(state) if _need_supply else 0
     bonus = 0.0
+    # Order-independent accumulation: when CANONICAL_BONUS_SUM is on, collect
+    # contributions and math.fsum them at the end instead of summing in the
+    # (arbitrary) set-iteration order. OFF -> _contribs stays None and only the
+    # running `bonus += ...` path runs, byte-identical to prior production.
+    _contribs = [] if CANONICAL_BONUS_SUM else None
     seen_cities: set[frozenset] = set()
     seen_farms: set[frozenset] = set()
     # Cities counted via farm-growth bonus stay deduped across all the
@@ -324,7 +347,10 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                 p = 0.0  # deck can no longer complete this city
             if p > 0:
                 delta = _city_closure_delta(state, city)
-                bonus += p * delta
+                _c = p * delta
+                bonus += _c
+                if _contribs is not None:
+                    _contribs.append(_c)
 
         elif terrain == TerrainType.CHAPEL or terrain == TerrainType.FLOWERS:
             n_surround = _surrounding_count(state, coord)
@@ -338,7 +364,10 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                 if p > 0:
                     # Cloister already scores 1 + n_surround in v1's partial.
                     # If closed, scores 9. Delta = 8 - n_surround.
-                    bonus += p * (8 - n_surround)
+                    _c = p * (8 - n_surround)
+                    bonus += _c
+                    if _contribs is not None:
+                        _contribs.append(_c)
 
         elif mp.meeple_type in (MeepleType.FARMER, MeepleType.BIG_FARMER):
             # Farm growth: for each incomplete city adjacent to this farm,
@@ -371,13 +400,21 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
                     elif gate and (deck_size < open_n or city_supply < open_n):
                         p = 0.0  # deck can no longer complete this city
                     if p > 0:
-                        bonus += p * 3
+                        _c = p * 3
+                        bonus += _c
+                        if _contribs is not None:
+                            _contribs.append(_c)
         # ROAD: no closure delta (complete and incomplete both score 1pt/tile
         # without inn modifier; with inn, finished=2/tile, unfinished=0).
         # Inn-roads ARE a closure-blind spot but rare in 2p River+Farmers.
         # Skip for v2; add in v3 if road denial shows up in failure modes.
 
-    return bonus  # uncapped — caller decides which cap to apply (self vs opp)
+    # uncapped — caller decides which cap to apply (self vs opp). When canonical,
+    # return the order-independent fsum of contributions; else the running sum
+    # (byte-identical to prior production).
+    if _contribs is not None:
+        return math.fsum(_contribs)
+    return bonus
 
 
 def _capped(bonus: float, cap: float) -> float:
@@ -427,12 +464,19 @@ def virtual_score_v2(
     # one cache across the policy-encode AND this leaf-value pass, so the farm
     # input scalars' floods are reused here for free). Only create+detach a cache
     # we own — never delete the caller's, or the encode<->leaf sharing breaks.
-    own_farm = _vs.USE_FARM_CACHE and not hasattr(state, "_farm_cache")
-    own_city = _vs.USE_CITY_CACHE and not hasattr(state, "_city_cache")
+    # Compact leaf (2026-06-09): when USE_COMPACT_LEAF is on, pre-populate the
+    # shared caches via flat union-find (compact_leaf) instead of leaving them
+    # empty for lazy object-BFS fill. Same dicts, same keys/values -> the engine
+    # resolves every find_farm/find_city as a hit; bit-exact-gated. The prebuilt
+    # cache is shared into virtual_score's snapshot below (valid: the deepcopy
+    # shares Tile/FarmerConnection refs, so id()-keyed and value-keyed entries
+    # both carry over). Compact OFF -> byte-identical to the prior {} behavior.
+    own_farm = (_vs.USE_FARM_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(state, "_farm_cache")
+    own_city = (_vs.USE_CITY_CACHE or _vs.USE_COMPACT_LEAF) and not hasattr(state, "_city_cache")
     if own_farm:
-        state._farm_cache = {}
+        state._farm_cache = compact_leaf.build_farm_cache(state) if _vs.USE_COMPACT_LEAF else {}
     if own_city:
-        state._city_cache = {}
+        state._city_cache = compact_leaf.build_city_cache(state) if _vs.USE_COMPACT_LEAF else {}
     farm_cache = getattr(state, "_farm_cache", None)
     city_cache = getattr(state, "_city_cache", None)
     try:
