@@ -74,3 +74,32 @@ _(Results table appended when Stage B lands.)_
 Only if A+B show internal signals still moving but strength flat → champion vs a **stronger /
 stylistically-different reference** (heur@3200-v2.7) to test whether heur@800-v2.7 is the binding
 ruler (the v2.7-anchoring hypothesis — still untested, NOT the falsified tanh-cap).
+
+---
+
+## Post-Stage-B decision tree (conditional — NOT a pre-commitment to any lever)
+
+Mapped in advance so we can move immediately when Stage B lands. Which branch fires is decided by
+the data, not now.
+
+**S1 — policy-driven, bounded** *(scale-0 strength climbs iter0→8; marginal s0.25−s0 small & flat;
+consistent with Stage A).* The gain is the **policy**; the residual value is ~inert locally and
+not growing. Plateau = policy/data saturation. → Skip Stage C (ruler not the issue). Candidate
+levers (pick by EV, re-sweep first): **(a)** stronger self-play teacher (higher-sims targets — we
+have the sims=800 deepsearch precedent); **(b)** opening/deck diversity to widen the training
+distribution; **(c)** a *different value design*, since residual-as-leaf is locally inert — e.g.
+direct search-Q regression with more capacity, or dropping value-as-leaf and leaning on policy +
+shallow v2.7. ⚠️ grep BACKLOG/DECISIONS first — several of these were considered.
+
+**S2 — residual contributes globally** *(s0.25 meaningfully beats s0, and/or the marginal grows
+across iters).* Then Stage A's "inert" read was local-only as warned, and the value DOES help via
+backups. Plateau is elsewhere → **run Stage C** (heur@3200-v2.7): champion still wins → ceiling is
+higher, push harder on depth/scale; champion loses → the **ruler** (heur@800) capped the
+measurement (v2.7-anchoring confirmed) → need an out-of-ecosystem reference and a non-v2.7-anchored
+leaf.
+
+**S3 — scale-0 flat across the lineage** *(policy didn't climb at the matched leaf either).* Then
+neither component improved at a matched leaf, and the +67.4 sealed leaned on this band drawing iter0
+low (the −8.7 anomaly vs +22.6/+52.5 elsewhere). → **re-open the magnitude**: the honest gain may be
+closer to the 5v0's +40 than +67; CL-018 stays Supported (a gain exists) but its size is revised
+down. Confirm with one more held-out band before any lever.
