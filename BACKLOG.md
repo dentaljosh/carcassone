@@ -281,9 +281,10 @@ Currently: MPS is the right level of Apple silicon optimization. ANE stays in th
 
 These were parked while the v1-v6 self-play recipes were active. The recipe question is now resolved — v2.7 leaf + retrain compounds (DECISIONS 2026-05-16) — but these implementation / architecture ideas remain valid and un-actioned.
 
-### Train alongside self-play (async)
-**Idea:** the retrain pipeline is synchronous — generate iter N data, train iter N, eval. Run training continuously in a separate process consuming the replay buffer; check in on convergence at iter boundaries.
-**Why deferred:** big architectural change. The GPU is largely idle during CPU-bound self-play so async training does have compute headroom — but it's only worth the complexity for a long multi-iter run, not the current one-iter-at-a-time cadence.
+### Train alongside self-play (async) → DEVELOPED, see [docs/ASYNC_FLYWHEEL_DESIGN_2026-06-10.md](docs/ASYNC_FLYWHEEL_DESIGN_2026-06-10.md)
+**Idea:** the retrain pipeline is synchronous (gen iter N → train iter N → eval, all barriered). Run gen/train/eval as continuous async services so no resource sits idle.
+**Refined 2026-06-10 (measured the phase split on the live attempt-#2 run):** the idle GPU isn't the prize — the dominant phase is **eval (64% of the cycle)**, the *in-loop* heur@800 selection gate; train is only ~21%, gen ~15%. So the highest-value move is taking heur@800 **off the per-iter critical path** (async odometer + cheap-but-never-crowning warm-from), which the design doc shows preserves attempt #2's philosophy intact (heur@800 stays the sole promotion authority; warm-from is always confirmed-best; the cheap proxy never crowns). Honest sizing: ~20% on the current 3 boxes (fills the train hole); the real multiple needs cutting eval *work* (don't re-play best every band; accumulate-until-significant) + adding boxes (which async finally lets pay off).
+**Why deferred:** big architectural change + needs Joshua sign-off (changes the run's operational shape, not its philosophy) + the per-box W-retune underneath it is untrustworthy until the 5800x VRM throttle is fixed. Design-now, build-after-fins.
 
 ### Bigger net — but actually understand what "bigger" means here
 **Idea:** Current net is 96×6 → 7.4M params. The structural truth (discovered 2026-05-13 by counting params): trunk is only ~1M; the **policy head's `Linear(2500, 2511)` dominates at ~6M**. So scaling filters/blocks gives modest growth:
