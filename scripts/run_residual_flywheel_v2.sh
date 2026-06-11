@@ -64,7 +64,9 @@ START_EPOCH=$(date +%s)
 DEADLINE=0; [ "$DURATION_HOURS" != "0" ] && DEADLINE=$(awk -v s=$START_EPOCH -v h=$DURATION_HOURS 'BEGIN{printf "%d", s+h*3600}')
 
 # iter0 = the confirmed residual net (Lever 1 winner; clean ruler +99.6 vs heur@200-v2.7).
-ITER0_CKPT=$SHARE_LOCAL/lever_seq/ckpt/residual.pt
+# Overridable: the deeper-teacher experiment (docs/DEEPER_TEACHER_SPEC_2026-06-11.md) warm-starts
+# from the new production champion via ITER0_CKPT=.../flywheel_residual_attempt2/ckpt/iter8.pt.
+ITER0_CKPT=${ITER0_CKPT:-$SHARE_LOCAL/lever_seq/ckpt/residual.pt}
 
 mkdir -p $OUT/ckpt $OUT/done $OUT/gate $OUT/odo
 cd $REPO_LOCAL || { echo "FATAL: cannot cd $REPO_LOCAL" >&2; exit 1; }
