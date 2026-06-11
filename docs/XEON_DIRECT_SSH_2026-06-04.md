@@ -73,6 +73,19 @@ ssh xeon-wsl "echo ok && hostname && nvidia-smi.exe --query-gpu=name --format=cs
 Fixes the "WSL2 VM teardown kills nohup'd jobs" rule so plain `nohup` survives
 (no more held-ssh foreground). SYSTEM-launched `wsl.exe` is uncertain — do +
 verify separately; the held-ssh pattern remains the fallback if it doesn't take.
+
+### ✅ PROVEN held-ssh keepalive (2026-06-11) — `scripts/xeon/xeon_keepalive_loop.sh`
+The idle-VM-teardown was the root cause of the 2026-06-11 `:2222` "flap"
+(intermittent banner-timeout / reset-by-peer on :2222 while Windows :22 stayed
+up; the WSL sshd itself was clean — 3/3 on localhost-inside-WSL). The portproxy
+config and WSL IP were both correct/stable — the VM was simply being torn down
+when idle, dropping the NAT proxy **and** the CIFS mount together. Fix: `nohup`
+this loop on the 5800x ONCE — it holds the VM via the reliable legacy port-22
+`sleep infinity` and self-heals (re-refresh proxy + re-mount share) on any drop.
+Took `ssh xeon-wsl` from 0/6 → 6/6 over a 30s window. This is the recommended
+keepalive (supersedes the manual one-shot); the **mirrored-mode upgrade above is
+the permanent alternative** that removes the need for it entirely (but needs one
+`wsl --shutdown`, so do it only when xeon is FREE).
 ```bash
 ssh xeon "schtasks /create /tn KeepWSLAlive /tr \"wsl.exe -d Ubuntu-24.04 -u root /bin/sleep infinity\" /sc onstart /ru SYSTEM /rl highest /f"
 ```
