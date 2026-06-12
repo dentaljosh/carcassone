@@ -275,3 +275,14 @@ The B.1 ranking-loss sweep's final verdict: **value still HURTS** — best margi
 `stage_b/ckpt/iter_01.pt`, `rank_data/iter_00`, `data/warmstart/heuristic_tau05`.
 Rough ETA single-box 5800x: L1 gen ~35m + L1 train ~22m + L1 eval ~15m + L2 train
 ~22m + L2 eval ~15m ≈ **~1h50m**.
+
+---
+
+## OUTCOME (closing addendum, 2026-06-12)
+
+The sequencer ran 2026-06-06. **Lever 1 (predict v2.7 + residual Δ) WON** — the first
+asset-positive learned value (+46.5 pooled, z=2.29; later resolved cleanly as the +37.6/z=2.98
+PROTOCOL_001 marginal). That residual net became the seed of the flywheel attempts →
+[ATTEMPT2_SPEC_2026-06-08.md](ATTEMPT2_SPEC_2026-06-08.md) (champion iter8, production
+2026-06-11) → [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md) (live).
+See DECISIONS 2026-06-06/07.

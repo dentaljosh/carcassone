@@ -30,7 +30,7 @@ play_config:
     CARCASSONNE_V25_CAP: "12"
     CARCASSONNE_V25_DROP_THREE_OPEN: "1"
     CARCASSONNE_V25_VALUE_BLEND: "0"
-    CARCASSONNE_USE_FLAT_LEAF: "1"           # flat-leaf rewrite (ea70fbf), bit-exact ~+8% faster
+    CARCASSONNE_USE_FLAT_LEAF: "1"           # flat-leaf rewrite (ea70fbf), bit-exact; ~2.26x per LEAF (~+8% end-to-end cluster self-play — both real, different denominators)
 
 # Why iter8 is the champion (the trustworthy-anchor evidence, NOT in-lineage-only):
 validation:

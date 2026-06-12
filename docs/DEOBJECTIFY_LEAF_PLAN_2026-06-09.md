@@ -1,5 +1,11 @@
 # De-objectified flat leaf — build + validation plan (2026-06-09)
 
+> ✅ **COMPLETE — flat_leaf DEPLOYED 2026-06-09** (`CARCASSONNE_USE_FLAT_LEAF=1`, merged
+> `ea70fbf`, flag flipped `1682797`; bit-exact under canonical fsum, ~2.26×/leaf, ~+8%
+> end-to-end cluster). Verdict + deploy record:
+> [FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md](FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md);
+> DECISIONS 2026-06-09 (leaf-deploy). This file is the historical build plan.
+
 > **POST-COMPACTION: START HERE.** Self-contained; the executor has NO memory of
 > the conversation that produced it. Read this whole file, then `git log`, then
 > the as-built ([COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md](COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md)),

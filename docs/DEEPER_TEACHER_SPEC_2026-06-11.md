@@ -1,7 +1,12 @@
 # Deeper-Teacher Experiment — build spec (2026-06-11)
 
-**Status:** DESIGNED, not launched. Launch is training (multi-hour, 3-box) → needs Joshua's
-go + machine choice + a real ETA from the Phase-0 bench. Branch off the current champion.
+**Status (updated 2026-06-12):** LAUNCHED & RUNNING — this is the live experiment. iter1 NULL
+(−2.0/z−0.07); **iter2 CONFIRMED +53.7 elo / z=2.14 over iter8** (n=400 paired, fresh band 1.3e9 —
+results.csv `confirm_iter2_vs_heur800_v27_s800_n400`); flywheel RESUMED `START=3` (iters 3→6,
+warm-from iter2) to test compounding — **iter3 REJECTED (−81.0/z=−2.36 vs best=iter2)**, iter4
+selection in flight. Note: the Phase-0 "null → STOP" gate below was deliberately NOT applied —
+iter1 was null but the run continued and iter2 vindicated that. See STATUS.md for live state.
+<br>*(original status: DESIGNED, not launched — needs Joshua's go + machine choice + Phase-0 ETA.)*
 
 ## Goal
 

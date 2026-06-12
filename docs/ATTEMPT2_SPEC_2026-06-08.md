@@ -3,7 +3,7 @@
 Built per Joshua's recipe after attempt #1 ended **CL-011 = NULL** (the residual value head is
 a confirmed *static* asset, +37.6 marginal, but did not **compound** via self-play co-adaptation).
 Launcher: [`scripts/run_residual_flywheel_v2.sh`](../scripts/run_residual_flywheel_v2.sh).
-**Status: LAUNCHED 2026-06-09 — running at ITERS=12** (Joshua bumped 3→12 after launch; first launched 00:29 EDT at ITERS=3, relaunched 00:57 at ITERS=12). The "fixed 3-iter" framing below was the original recipe; the loop now runs `it=1..12` (sealed confirmation after iter12). ETA ~26–28 h.
+**Status: COMPLETED 2026-06-10/11** — sealed verdict **champion iter8 +67.4 elo / z=2.73 SIGNIFICANT** vs incumbent iter0 (n=400 paired heur@800-v2.7, sealed band 1.7e9); folded to production 2026-06-11 (governance/PRODUCTION.yaml). Gain decomposed ~95% policy distillation, plateaued iter5 — see [PLATEAU_DECOMP_2026-06-10.md](PLATEAU_DECOMP_2026-06-10.md); follow-on lever = [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md). *(Original status: LAUNCHED 2026-06-09 at ITERS=12 — Joshua bumped 3→12 after launch; the "fixed 3-iter" framing below was the original recipe.)*
 
 ## Why attempt #2 looks different — the attempt-#1 failure mode
 

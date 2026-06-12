@@ -2,7 +2,7 @@
 
 > **Fill and commit this BEFORE running the experiment.** Store separately from results so the hypothesis cannot be rewritten after the outcome is known. One filled protocol per material experiment.
 >
-> This is the WORKED EXAMPLE for [`../PROTOCOL_TEMPLATE.md`](../PROTOCOL_TEMPLATE.md). It documents the clean-eval top-up **running right now** (see RESULT — PENDING).
+> This is the WORKED EXAMPLE for [`../PROTOCOL_TEMPLATE.md`](../PROTOCOL_TEMPLATE.md). It documents the clean-eval top-up — **COMPLETE 2026-06-08** (see RESULT: marginal +37.6 elo / z=2.98 at n=1200 → CL-004 PASS).
 
 **Layer:** DECISIONS-support / INTERPRETATION (see [../README.md](../README.md)). Pre-registered ahead of the run; the `RESULT` section is the only part to be filled at completion.
 

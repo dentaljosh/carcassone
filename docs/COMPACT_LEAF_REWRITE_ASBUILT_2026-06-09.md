@@ -1,5 +1,13 @@
 # Compact-leaf rewrite — AS-BUILT + validation report (2026-06-09)
 
+> ⚠️ **SUPERSEDED** — the compact approach (keep engine objects + `count_final_scores`, pre-populate
+> caches) was a ~10% per-leaf REGRESSION; it lost to the full de-objectified **flat_leaf**
+> ([DEOBJECTIFY_LEAF_PLAN_2026-06-09.md](DEOBJECTIFY_LEAF_PLAN_2026-06-09.md), deployed 2026-06-09).
+> `USE_COMPACT_LEAF` stays OFF. The numba-on-`_label_components` bench proposed below was
+> **KILLED 2026-06-11** (microbench: the core is only ~4.7% of build self-time — see BACKLOG
+> 2026-06-09 entry). The correctness work (bit-exact reconcile, canonical fsum) is banked and
+> carried forward by flat_leaf.
+
 Branch: `leaf-rewrite` (isolated worktree `/home/doctor/projects/carc-leafdev`).
 Executed per [COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md](COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md).
 **No benchmarking** (attempt-2 flywheel was live on the cluster). Correctness only.

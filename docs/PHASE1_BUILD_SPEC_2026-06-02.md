@@ -8,6 +8,11 @@ direct read of the current code (not the audit's secondhand summary). Read with
 **Status of prerequisites:** Phase 0 DONE (C1 farm bug, C2 MCTS bug + PUCT-selection residual,
 River dropped — all committed & verified). This spec is what comes next.
 
+> **Outcome (addendum 2026-06-12):** Stage A EXECUTED (stamped inline below). Stage B EXECUTED
+> → **no-go** (value-blend degrades search). Stage C **KILLED** — the C4a representation-probe
+> refutation removed its premise (see [CEILING_AND_C4C6_2026-06-04.md](CEILING_AND_C4C6_2026-06-04.md)).
+> Successors: [VALUE_LOSS_ATTACK_2026-06-05.md](VALUE_LOSS_ATTACK_2026-06-05.md) → [ATTEMPT2_SPEC_2026-06-08.md](ATTEMPT2_SPEC_2026-06-08.md) → [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md).
+
 ---
 
 ## The key reframe vs the original plan: stage by QUESTION, cheapest-informative-first

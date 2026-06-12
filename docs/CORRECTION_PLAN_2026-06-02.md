@@ -1,5 +1,12 @@
 # CORRECTION PLAN — 2026-06-02
 
+> **Phases 1–2 outcome (addendum 2026-06-12, executed 2026-06-04→06-08):** C3 (value-in-loop)
+> was TESTED — blend *hurts*; C4a (representation blind spots) and C6 (de-saturation) were
+> **REFUTED by probes** (see [CEILING_AND_C4C6_2026-06-04.md](CEILING_AND_C4C6_2026-06-04.md));
+> the line of attack moved to the residual leaf → [ATTEMPT2_SPEC_2026-06-08.md](ATTEMPT2_SPEC_2026-06-08.md)
+> (champion iter8, folded to production 2026-06-11) → [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md)
+> (live). The BLOCKER labels below are the 06-02 framing — read them as historical.
+
 Master plan to fix everything the foundational audit found. Read with
 [docs/research/foundational_audit_2026-06-02.md](research/foundational_audit_2026-06-02.md)
 (the evidence), [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) (the concrete,

@@ -6,6 +6,7 @@
 > The only remaining work is: **run the throughput bench → decide deploy.**
 
 > ## ✅ VERDICT: DEPLOY (cross-box confirmed 2026-06-09) — Joshua approved for the rest of attempt-2
+> **EXECUTED** — deployed 2026-06-09 at the attempt-2 iter5 boundary, all 3 boxes (flag in `gen_flywheel.sh:28` + launcher ENVV, commit `1682797`; merge `ea70fbf`). DECISIONS 2026-06-09 (leaf-deploy).
 > Cross-box OFF-vs-FLAT, production W, **iter_11** checkpoint, fixed seed, back-to-back:
 >
 > | box | memory | W | OFF g/min | FLAT g/min | FLAT/OFF | clean? |
