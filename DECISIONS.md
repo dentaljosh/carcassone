@@ -633,7 +633,7 @@ Cluster 21.9→41.0 mv/s = **+87%**. fp16 + shards were red herrings on the stro
 
 **Phase.** Phase 4. Methodology lesson, not a scientific finding.
 
-**Memory cross-ref:** [feedback_bracket_hyperparams](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bracket_hyperparams.md) — same family of failure mode (declaring a config change settled from off-target evidence).
+**Memory cross-ref:** `feedback_bracket_hyperparams` (auto-memory) — same family of failure mode (declaring a config change settled from off-target evidence).
 
 ---
 
@@ -665,7 +665,7 @@ Phase 2b (c=2.5/4.0/5.0) is in flight to triangulate the peak; outcome lands ~20
 
 **Phase.** Phase 4 (self-play loop) hyperparameter tuning.
 
-**Memory cross-ref:** [feedback_bug_fix_shifts_optima](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_bug_fix_shifts_optima.md) — same lesson applied to bug fixes; here it applies to checkpoint progression. Adding a new memory note for the methodological lesson.
+**Memory cross-ref:** `feedback_bug_fix_shifts_optima` (auto-memory) — same lesson applied to bug fixes; here it applies to checkpoint progression. Adding a new memory note for the methodological lesson.
 
 ---
 
@@ -708,7 +708,7 @@ This is the **"anchor before scaling" memory rule** failing in practice. Each st
 
 **Phase.** Phase 4 (self-play loop), specifically the chain methodology.
 
-**Memory cross-refs.** [feedback_anchor_before_scaling](../.claude/projects/-home-doctor-projects-carcassone/memory/feedback_anchor_before_scaling.md) was the exact warning. The maximalist sequencer's design (chain-only anchors) was the mechanism that ignored it. Future autonomous pipelines must include a global anchor per chain step.
+**Memory cross-refs.** `feedback_anchor_before_scaling` (auto-memory) was the exact warning. The maximalist sequencer's design (chain-only anchors) was the mechanism that ignored it. Future autonomous pipelines must include a global anchor per chain step.
 
 ---
 

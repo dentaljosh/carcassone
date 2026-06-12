@@ -1,5 +1,7 @@
 # Test-suite gap analysis (review agent, 2026-06-03)
 
+> **Status: CLEAN-HISTORICAL** — point-in-time review-agent record; the actioned items live in REVIEW_LOG.md.
+
 **Inventory:** 40 test files, **363 tests**, ~6,260 lines in `tests/`. Plus 3 standalone
 `scripts/verify_*.py` that are **NOT in the pytest tree** (never run as regression gates).
 

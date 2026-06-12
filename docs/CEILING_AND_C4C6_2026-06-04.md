@@ -1,5 +1,9 @@
 # The +87 ceiling and the C4/C6 value-head rebuild — sketch (2026-06-04)
 
+> **Status: CLEAN-HISTORICAL** — C4a + C6 REFUTED by the probes recorded inline; the tail
+> "DECISION pending" was decided the same evening → [INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md](INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md).
+> (NB the headline "+87" predates the matched-leaf R1 correction → +48.1, and the clean re-judgement +34.9.)
+
 ## ⚡⚡ DEEPER FINDING (2026-06-04 pm): the value head OVERFITS — that's the real bottleneck
 
 While gating the value-target-source lever I measured iter_01's **actual** value head (not the small-CNN

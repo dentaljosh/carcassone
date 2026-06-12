@@ -1,5 +1,8 @@
 # Attack the value LOSS — decision-ranking, not outcome-MSE (2026-06-05)
 
+> **Status: COMPLETE** — see the OUTCOME closing addendum at the bottom (Lever 1 WON → residual →
+> attempt-2 → production iter8).
+
 **Decision (Joshua, 2026-06-05):** after step 1 (interior targets) and step 2
 (global pooling) both failed to make the learned value a usable MCTS leaf,
 attack the **value loss / objective**, not more data or architecture.

@@ -1,5 +1,9 @@
 # In-loop search-value retrain — build spec (2026-06-04)
 
+> **Status: EXECUTED (historical)** — built + validated; the lever's outcome (interior targets
+> did NOT escape the value-as-leaf cliff) is recorded in [INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md](INLOOP_VALUE_FLYWHEEL_BUILD_2026-06-04.md)
+> → succeeded by [VALUE_LOSS_ATTACK_2026-06-05.md](VALUE_LOSS_ATTACK_2026-06-05.md).
+
 **Decision (Joshua, 2026-06-04):** build this. It's the real, properly-powered test of the
 value-target-source lever, after gate-2 confirmed the mechanism (per-position targets fix the
 overfitting direction) but was too underpowered to show a head beating v2.7. See
