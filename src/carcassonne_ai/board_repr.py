@@ -204,6 +204,62 @@ def _encode_tile_internal(tile: "Tile") -> np.ndarray:
     return out
 
 
+def offset_from_centroid_sums(
+    state: "CarcassonneGameState",
+    sum_row: int,
+    sum_col: int,
+    tile_count: int,
+    window_size: int = DEFAULT_WINDOW_SIZE,
+) -> WindowOffset:
+    """Window offset from the running centroid sums of placed tiles.
+
+    Pure function shared by ``compute_window_offset`` (which seeds the sums by
+    a full board scan) and the incremental tracker on ``Board`` (which keeps
+    the sums up to date in O(1) per tile placement). Reproduces exactly the
+    same rounding/centering math, so the two paths are bit-identical.
+
+    For an empty board (``tile_count == 0`` — defensive, the first tile is
+    auto-placed) center on the engine's ``starting_position``.
+    """
+    if tile_count == 0:
+        sp = state.starting_position
+        center_r, center_c = sp.row, sp.column
+    else:
+        center_r = round(sum_row / tile_count)
+        center_c = round(sum_col / tile_count)
+    half = window_size // 2
+    return WindowOffset(
+        origin_row=center_r - half,
+        origin_col=center_c - half,
+        size=window_size,
+    )
+
+
+def centroid_sums(state: "CarcassonneGameState") -> tuple[int, int, int]:
+    """Full-scan ``(sum_row, sum_col, tile_count)`` of placed tiles.
+
+    Seeds the incremental tracker (one-time, at Board construction). Uses
+    ``placed_coords`` when the engine maintains it (the production path), else
+    falls back to a dense board scan so the helper works on any state object.
+    """
+    placed = getattr(state, "placed_coords", None)
+    if placed:
+        sum_row = sum(coord.row for coord in placed)
+        sum_col = sum(coord.column for coord in placed)
+        return sum_row, sum_col, len(placed)
+    if placed is not None:
+        # placed_coords exists but is empty -> no tiles placed.
+        return 0, 0, 0
+    sum_row = sum_col = tile_count = 0
+    for r, row in enumerate(state.board):
+        for c, tile in enumerate(row):
+            if tile is not None:
+                sum_row += r
+                sum_col += c
+                tile_count += 1
+    return sum_row, sum_col, tile_count
+
+
 def compute_window_offset(
     state: "CarcassonneGameState",
     window_size: int = DEFAULT_WINDOW_SIZE,
@@ -211,26 +267,14 @@ def compute_window_offset(
     """Center the window on the centroid of placed tiles, snapped to int.
 
     For an empty board (defensive — the first tile is auto-placed), center
-    on the engine's starting_position.
+    on the engine's starting_position. Full board scan — used at Board
+    construction; the per-ply hot path uses the incremental tracker on Board
+    (see ``offset_from_centroid_sums``), which this delegates to so the two
+    can never diverge.
     """
-    rows: list[int] = []
-    cols: list[int] = []
-    for r, row in enumerate(state.board):
-        for c, tile in enumerate(row):
-            if tile is not None:
-                rows.append(r)
-                cols.append(c)
-    if not rows:
-        sp = state.starting_position
-        center_r, center_c = sp.row, sp.column
-    else:
-        center_r = round(sum(rows) / len(rows))
-        center_c = round(sum(cols) / len(cols))
-    half = window_size // 2
-    return WindowOffset(
-        origin_row=center_r - half,
-        origin_col=center_c - half,
-        size=window_size,
+    sum_row, sum_col, tile_count = centroid_sums(state)
+    return offset_from_centroid_sums(
+        state, sum_row, sum_col, tile_count, window_size
     )
 
 

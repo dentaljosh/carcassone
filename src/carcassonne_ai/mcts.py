@@ -247,6 +247,12 @@ class MCTS:
             state=_copy.deepcopy(board.state),
             total_tiles=board.total_tiles,
             offset=board.offset,
+            # Carry the incremental centroid sums so apply_action_inplace can
+            # keep the offset O(1)-correct down the rollout (else it would start
+            # from 0 and diverge after the first tile placement).
+            sum_row=board.sum_row,
+            sum_col=board.sum_col,
+            tile_count=board.tile_count,
         )
         leaf_player = scratch.state.current_player
         steps = 0

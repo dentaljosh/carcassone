@@ -43,9 +43,12 @@ from .board_repr import (
     N_CHANNELS,
     board_overflows_window,
     canonical_swap,
+    centroid_sums,
     compute_window_offset,
     encode_board,
+    offset_from_centroid_sums,
 )
+from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
 from .eta import measure_one, print_banner
 from .features import N_FARM_SCALARS, N_SCALAR_FEATURES, encode_scalars
 
@@ -64,6 +67,22 @@ class Board:
     state: CarcassonneGameState
     total_tiles: int
     offset: WindowOffset
+    # Incremental centroid tracker for the window offset. The offset centers the
+    # window on the centroid of placed tiles; instead of re-scanning the whole
+    # 35x35 board every transition (compute_window_offset), we keep a running
+    # (sum_row, sum_col, tile_count) of placed-tile coordinates and recompute the
+    # offset in O(1). Only a TILE placement changes these (meeple/pass do not),
+    # so transitions that don't place a tile leave the offset untouched. Seeded
+    # by a one-time scan in from_state; updated in Game.get_next_state /
+    # apply_action_inplace. Plain ints -> copy correctly under the dataclass's
+    # default deepcopy (used by NeuralMCTS._reshuffled_root) and the manual
+    # Board(...) build in mcts._rollout (which forwards them). MUST stay
+    # consistent with state.placed_coords at every ply (offset feeds action
+    # encode/decode — a wrong offset shifts the action space). Reconciled
+    # bit-identical vs the full scan by scripts/reconcile_window_offset.py.
+    sum_row: int = 0
+    sum_col: int = 0
+    tile_count: int = 0
     # Memoized string_representation result. None = not yet computed.
     # Boards are created fresh per Game.get_next_state (apply_action returns
     # a NEW Board around a deepcopied state), so this cache is auto-invalidated
@@ -74,10 +93,17 @@ class Board:
 
     @classmethod
     def from_state(cls, state: CarcassonneGameState, total_tiles: int, window_size: int) -> "Board":
+        # Seed the incremental centroid sums by a one-time scan, then derive the
+        # offset from them (same math compute_window_offset uses) so the seed and
+        # the per-ply incremental updates can never drift apart.
+        sr, sc, tc = centroid_sums(state)
         return cls(
             state=state,
             total_tiles=total_tiles,
-            offset=compute_window_offset(state, window_size),
+            offset=offset_from_centroid_sums(state, sr, sc, tc, window_size),
+            sum_row=sr,
+            sum_col=sc,
+            tile_count=tc,
         )
 
 
@@ -172,6 +198,25 @@ class Game:
 
     # --- Transitions -----------------------------------------------------
 
+    @staticmethod
+    def _next_centroid_sums(board: Board, action) -> tuple[int, int, int]:
+        """Centroid sums after `action`, carried forward from `board`.
+
+        The window offset centers on the centroid of placed tiles. Only a TILE
+        placement adds a coordinate (engine: StateUpdater.play_tile is the sole
+        writer of placed_coords); meeple actions and passes place no tile, so the
+        centroid — and therefore the offset — is unchanged. This is the O(1)
+        replacement for re-scanning the whole board every transition.
+        """
+        if isinstance(action, TileAction):
+            coord = action.coordinate
+            return (
+                board.sum_row + coord.row,
+                board.sum_col + coord.column,
+                board.tile_count + 1,
+            )
+        return board.sum_row, board.sum_col, board.tile_count
+
     def get_next_state(self, board: Board, action_idx: int) -> tuple[Board, int]:
         """Apply `action_idx` to `board`. Return (new_board, next_player).
 
@@ -182,7 +227,18 @@ class Game:
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
         new_state = StateUpdater.apply_action(game_state=state, action=action)
-        new_board = Board.from_state(new_state, board.total_tiles, self.window_size)
+        # Carry the centroid sums forward (O(1)) instead of re-scanning the whole
+        # board in Board.from_state. Bit-identical to the full scan; verified by
+        # scripts/reconcile_window_offset.py.
+        sr, sc, tc = self._next_centroid_sums(board, action)
+        new_board = Board(
+            state=new_state,
+            total_tiles=board.total_tiles,
+            offset=offset_from_centroid_sums(new_state, sr, sc, tc, self.window_size),
+            sum_row=sr,
+            sum_col=sc,
+            tile_count=tc,
+        )
         return new_board, new_state.current_player
 
     def apply_action_inplace(self, board: Board, action_idx: int) -> tuple[Board, int]:
@@ -195,8 +251,13 @@ class Game:
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
         StateUpdater.apply_action_inplace(game_state=state, action=action)
-        # offset depends on placed tiles; recompute since state mutated.
-        board.offset = compute_window_offset(state, self.window_size)
+        # Offset depends on placed tiles. Update the running centroid sums in
+        # O(1) (only a tile placement moves the centroid) and re-derive the
+        # offset — replaces the full board re-scan (compute_window_offset).
+        # Bit-identical; verified by scripts/reconcile_window_offset.py.
+        sr, sc, tc = self._next_centroid_sums(board, action)
+        board.sum_row, board.sum_col, board.tile_count = sr, sc, tc
+        board.offset = offset_from_centroid_sums(state, sr, sc, tc, self.window_size)
         # Invalidate the memoized string_representation since state changed.
         # Required for rollouts and warmstart 2-ply lookahead that mutate a
         # Board in place and then re-query get_valid_moves / string_representation.

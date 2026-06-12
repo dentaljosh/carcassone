@@ -76,8 +76,12 @@ def finish_outcome(game: Game, board, pov_player: int, max_plies: int = 400) -> 
     """Play to terminal with the 1-ply heuristic for BOTH sides; return outcome
     from pov_player's POV in {+1 win, 0 draw, -1 loss}."""
     import copy
-    b = type(board)(state=copy.deepcopy(board.state), total_tiles=board.total_tiles,
-                    offset=board.offset)
+    # Use from_state so the incremental centroid sums get seeded (a bare
+    # Board(...) would leave them at 0 and diverge the offset after the next
+    # tile placement).
+    b = type(board).from_state(
+        copy.deepcopy(board.state), board.total_tiles, game.window_size
+    )
     plies = 0
     while game.get_game_ended(b, pov_player) == 0.0 and plies < max_plies:
         a = heuristic_action(game, b)
