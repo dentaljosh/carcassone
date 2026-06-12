@@ -1,5 +1,9 @@
 # Python
 .venv/
+.venv-cy/
+# Cython build artifacts (flat_leaf_cy: rebuild per box via setup_flat_leaf_cy.py)
+src/carcassonne_ai/flat_leaf_cy.c
+src/carcassonne_ai/*.so
 __pycache__/
 *.pyc
 *.pyo

@@ -51,6 +51,17 @@ if TYPE_CHECKING:
 # semantics (the flat path is fsum-canonical), a deliberate, gated decision.
 USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 
+# Cython flat-leaf toggle (2026-06-12, dev/validation only — DEFAULT OFF and not
+# yet folded into production). When set, flat_virtual_score_v2 redirects to the
+# compiled `flat_leaf_cy` port (bit-exact gate: scripts/reconcile_cy_leaf.py;
+# build: `python setup_flat_leaf_cy.py build_ext --inplace`). With the flag
+# unset, the compiled module is NEVER imported — zero behavioral change. Same
+# read-at-import pattern as USE_FLAT_LEAF so spawned workers inherit the env
+# flip; a runtime flip needs `flat_leaf.USE_CY_LEAF = True` (lazy import fires
+# on the next leaf call).
+USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF") == "1"
+_CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
+
 # --- geometry (gate-validated against the engine) ----------------------------
 # Stage 4a: the decomposition hot path int-encodes sides. Enum dict keys cost a
 # Python-level Enum.__hash__ (the dominant cost once the leaf is de-objectified —
@@ -663,6 +674,11 @@ def flat_virtual_score_v2(state, player: int, cfg=None) -> int:
     Bit-exact to the engine leaf when the engine runs with CANONICAL_BONUS_SUM=True
     (order-independent fsum); against the naive-sum production path it differs only
     by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09)."""
+    if USE_CY_LEAF:
+        global _CY_FLAT_V2
+        if _CY_FLAT_V2 is None:
+            from .flat_leaf_cy import flat_virtual_score_v2_cy as _CY_FLAT_V2  # noqa: PLW0603
+        return _CY_FLAT_V2(state, player, cfg)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     if cfg is None:
