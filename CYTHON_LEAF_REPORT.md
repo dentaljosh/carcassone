@@ -171,3 +171,32 @@ Branch: `stage-b-wiring` (agent worktree).
    rule) and re-tune W if the leaf is no longer the per-worker bottleneck.
 6. Close out per the checklist (results.csv if a throughput claim is recorded,
    DECISIONS line, STATUS).
+
+## CLEAN BENCH ADDENDUM (2026-06-12 14:05 EDT, idle box — iter5 train window)
+
+Re-run on a CPU-idle box (iter5 gen done, train is GPU-bound → cores free), so the
+ratio is no longer load-contaminated and absolutes are trustworthy.
+
+- **Isolated leaf ratio: 12.5× median** (tight 11.5–13.4× over 10 interleaved blocks;
+  the earlier 14.3× was load-inflated). Absolutes: py **345 µs** → cy **27.5 µs** per leaf.
+- **Leaf fraction of a real HeuristicMCTS@800 search: 27.4%** (`flat_virtual_score_v2`
+  cumtime / total, cProfile over 24 plies @ sims=800, v2.7 flat leaf). `decompose` alone
+  is the largest single tottime (2.71s). The engine board ops dominate the REST:
+  `get_next_state`/`apply_action`/`state_updater` ≈ 39% cumtime, move-gen ≈ 24%.
+
+### End-to-end deploy ROI (measured Amdahl, not the isolated 12.5×)
+- Heuristic@800 search: 1/(0.726 + 0.274/12.5) = **1.34×** (the leaf-heavy eval opponent).
+  Ceiling with an infinitely-fast leaf = 1/0.726 = 1.38× → **Cython already captures ~97%
+  of the achievable leaf win**; no further leaf optimization is worth it.
+- Gen (NeuralMCTS@800, GPU/IPC-bound; leaf ≈13% of wall from the flat_leaf +8%@2.26×
+  calibration): ≈ **1.14×**.
+- Train: leaf-free (GPU) → **1.0×**.
+- **Weighted cycle (~eval 70% / gen 18% / train 12%): ≈ 1.23×** — shave ~18–20% off each
+  ~8h cycle (~1.5h/cycle). Real but modest; the isolated 12.5× collapses because the leaf
+  is only ~27% of even the most leaf-heavy phase, and gen/train are GPU-bound.
+
+### The bigger lever this surfaced
+The leaf is NOT the search bottleneck — the **engine** (board mutation + move generation,
+~40%+ of the heuristic search) is. A perfect leaf caps the heuristic search at 1.38×; the
+de-objectified-engine BACKLOG item attacks the dominant 40%. Cython-leaf is the cheap,
+correctness-safe win; the engine rewrite is the real (but much larger) throughput lever.
