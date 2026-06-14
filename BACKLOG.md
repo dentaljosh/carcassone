@@ -9,6 +9,11 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-06-14 — Flywheel orchestrator: graceful degradation on a remote-box outage (HOSTS knob)
+**Context:** Overnight 06-13→14 the **laptop dropped off Tailscale AND xeon's ssh died** (box pinged but both WSL-proxy + Windows sshd unreachable). The deeper-teacher run (iter9) churned and **burned all 6 chain-watcher relaunches → parked at iter9** (gen 355/400). Root cause was infra, not code, BUT the orchestrator amplified it: `run_residual_flywheel_v2.sh` **hard-codes the 3-box fan-out** (5800x local + `_ssh_bg laptop` + `_ssh_bg xeon`) in `_gen_launch`/`_eval_launch` with NO HOSTS knob. A dead remote → ~60s/cycle wasted on ConnectTimeout×3 retries + lost capacity → gen stalls → heal/FATAL → chain relaunch → repeat until RELAUNCH_CAP=6 exhausts.
+**Idea:** (1) **`HOSTS` env knob** (default "5800x laptop xeon") so a run can be launched/resumed on a partial cluster without churning on dead boxes. (2) **Pre-flight + periodic reachability probe** — drop an unreachable box from the active set for the iter (re-add on recovery) instead of blocking on its ssh each cycle. (3) **Don't count a dead-remote-induced stall against RELAUNCH_CAP** the same as a real crash — or raise the cap / make it time-based. (4) Chain watcher could detect "all relaunches failed at the same iter with the same remote-ssh error" and pause-with-alert rather than silently exhausting.
+**Why deferred:** infra-hardening, not a strength lever; needs Joshua sign-off + a non-running-flywheel boundary. Today's workaround = wake/restore the boxes then resume (STATUS resume recipe). The single-box fallback isn't worth building unless multi-box outages recur.
+
 <!-- Format:
 ## YYYY-MM-DD — [short title]
 **Context:** what we were doing when this came up
