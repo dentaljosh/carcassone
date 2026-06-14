@@ -140,8 +140,8 @@ _eval_launch() {   # $1=sub $2=rckpt $3=ckpt $4=n $5=heur_sims $6=seed $7=root(l
     --checkpoint "$ckpt" --n "$N" --sims "$SIMS" --heur-sims "$hs" --c-puct 3.0 --heur-leaf v2_7 \
     --workers "$W_5800X" --out-root "$root" --out-subdir "$sub" \
     --seed-start "$seed" --paired --shared-claim --claim-host 5800x >/tmp/fw2_eval5800x.log 2>&1 &
-  _ssh_bg laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub"
-  _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub"
+  _ssh_bg laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
+  _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
 }
 
 # Block until a dir reaches N games, self-healing the orphan-stall. Returns 1 (loud) on
@@ -175,8 +175,8 @@ _gen_launch() {   # $1=iter $2=seed_start
   local it="$1" sp_seed="$2"
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=$W_5800X WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw2_gen5800x_$it.log 2>&1 & disown
-  _ssh_bg laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen"
-  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen"
+  _ssh_bg laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
+  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
 }
 
 # Parse the odo_paired_tally TALLY line: A=baseline(best/iter0), B=new(iter/champion).
