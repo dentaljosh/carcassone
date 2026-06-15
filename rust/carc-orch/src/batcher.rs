@@ -1,24 +1,27 @@
-//! Transport-agnostic batching core, PIPELINED. Both the TCP and shared-memory
-//! frontends produce `Job`s on a crossbeam channel. Two threads:
+//! Transport-agnostic batching core, PIPELINED + MULTI-FORWARDER.
 //!
 //!   * collector — pulls jobs, accumulates a batch (up to max_batch or the
-//!     timeout), validates dims, and concatenates the per-job buffers into one
-//!     contiguous CPU buffer. Sends the prepared buffers to the forwarder.
-//!   * forwarder — owns the CUDA module; for each prepared batch does the H2D,
-//!     one forward, the D2H, and scatters per-job slices back.
+//!     timeout), validates dims, concatenates into contiguous CPU buffers, and
+//!     hands the prepared batch to a forwarder pool.
+//!   * forwarder pool (N threads, each its own CModule copy) — each pulls a
+//!     prepared batch, does H2D + one forward + D2H, and scatters per-job slices
+//!     back. They share the prep channel (MPMC).
 //!
-//! The split lets the collector concat batch N+1 *while* the forwarder runs
-//! batch N on the GPU — HWiNFO showed the single-threaded version left the GPU
-//! ~50% idle (GPU Power ~30% TDP) waiting on the serial CPU concat. The bounded
-//! channel double-buffers so the GPU never waits on a concat between batches.
+//! Why N forwarders: HWiNFO showed the single-threaded batcher left the GPU at
+//! ~30% TDP — it spent half each batch on serial CPU prep (from_slice/copy_data)
+//! while the GPU idled. With N forwarders, while one thread's kernel runs the
+//! others do their CPU prep and queue the next transfer, so the GPU runs
+//! back-to-back (even on the shared default stream the H2D/kernel/D2H of the
+//! next batch are already queued). Drives throughput toward the GPU-compute
+//! ceiling instead of the serial-prep ceiling.
 //!
-//! Hardening (code-review §2.1): a forward error or panic must not silently
-//! zombify the server. On any error/panic we send a shape-matched zero stub to
-//! every waiting job (so no client hangs to its 60s timeout) then exit(1) —
-//! mirroring the Python eval_server stub/reraise.
+//! Hardening (code-review §2.1): a forward error or panic sends a shape-matched
+//! zero stub to every waiting job (so no client hangs) then exit(1).
 use anyhow::{bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::panic::AssertUnwindSafe;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tch::{CModule, Device, IValue, Kind, Tensor};
 
@@ -40,7 +43,6 @@ pub struct RespMsg {
     pub k: i64,
 }
 
-/// One batch concatenated on the collector, ready for the forwarder's GPU work.
 struct Prepared {
     obs_buf: Vec<f32>,
     obs_inner: Vec<i64>,
@@ -52,23 +54,48 @@ struct Prepared {
     jobs: Vec<Job>,
 }
 
-/// Spawn the collector + forwarder. The forwarder owns the module. Returns once
-/// both threads are spawned; they run until their channels close.
+#[derive(Default)]
+struct Stats {
+    batches: AtomicU64,
+    examples: AtomicU64,
+    fwd_nanos: AtomicU64, // summed across forwarders
+}
+
+/// Spawn the collector + N forwarders. Loads `n_forwarders` module copies.
+#[allow(clippy::too_many_arguments)]
 pub fn start(
-    module: CModule,
     job_rx: Receiver<Job>,
+    model_path: &str,
     device: Device,
     max_batch: i64,
     timeout: Duration,
+    n_scalar: i64,
+    n_forwarders: usize,
 ) -> Result<()> {
-    // depth-2 so the collector can stay one batch ahead of the GPU
-    let (prep_tx, prep_rx) = bounded::<Prepared>(2);
-    std::thread::Builder::new()
-        .name("forwarder".into())
-        .spawn(move || forwarder_loop(module, device, prep_rx))?;
+    let n = n_forwarders.max(1);
+    let mut modules = Vec::with_capacity(n);
+    for _ in 0..n {
+        let mut m =
+            CModule::load_on_device(model_path, device).with_context(|| format!("load {model_path}"))?;
+        m.set_eval();
+        modules.push(m);
+    }
+    warmup(&modules[0], device, n_scalar); // primes cuDNN autotune (process-wide cache)
+
+    let (prep_tx, prep_rx) = bounded::<Prepared>(n + 1);
+    let stats = Arc::new(Stats::default());
+    for (i, m) in modules.into_iter().enumerate() {
+        let rx = prep_rx.clone();
+        let st = stats.clone();
+        std::thread::Builder::new()
+            .name(format!("forwarder-{i}"))
+            .spawn(move || forwarder_loop(m, device, rx, st, i == 0, n))?;
+    }
+    drop(prep_rx);
     std::thread::Builder::new()
         .name("collector".into())
         .spawn(move || collector_loop(job_rx, max_batch, timeout, prep_tx))?;
+    eprintln!("[carc-orch] batcher: {n} forwarder(s)");
     Ok(())
 }
 
@@ -101,7 +128,7 @@ fn collector_loop(
         match build(jobs, total_k) {
             Ok(prep) => {
                 if prep_tx.send(prep).is_err() {
-                    return; // forwarder gone
+                    return;
                 }
             }
             Err((jobs, e)) => fatal(&jobs, &format!("batch validation: {e:?}")),
@@ -109,8 +136,6 @@ fn collector_loop(
     }
 }
 
-/// Validate per-job dims (§2.1: a mismatched worker must be a clean error, not a
-/// reshape panic) and concatenate into contiguous buffers.
 fn build(jobs: Vec<Job>, total_k: i64) -> std::result::Result<Prepared, (Vec<Job>, anyhow::Error)> {
     let obs_inner = jobs[0].obs_inner.clone();
     let scalars_inner = jobs[0].scalars_inner.clone();
@@ -159,42 +184,59 @@ fn build(jobs: Vec<Job>, total_k: i64) -> std::result::Result<Prepared, (Vec<Job
     })
 }
 
-fn forwarder_loop(module: CModule, device: Device, prep_rx: Receiver<Prepared>) {
-    let mut n_batches: u64 = 0;
-    let mut n_examples: u64 = 0;
-    let mut fwd_total = Duration::ZERO;
-    let mut fwd_window = Duration::ZERO;
+fn forwarder_loop(
+    module: CModule,
+    device: Device,
+    prep_rx: Receiver<Prepared>,
+    stats: Arc<Stats>,
+    is_logger: bool,
+    n_forwarders: usize,
+) {
     let mut last_log = Instant::now();
-
+    let mut prev_ex = 0u64;
+    let mut prev_b = 0u64;
+    let mut prev_f = 0u64;
     loop {
         let prep = match prep_rx.recv() {
             Ok(p) => p,
             Err(_) => {
-                eprintln!("[carc-orch] collector gone; forwarder exiting");
+                if is_logger {
+                    eprintln!("[carc-orch] collector gone; forwarder exiting");
+                }
                 return;
             }
         };
         let total_k = prep.total_k;
         let t0 = Instant::now();
-        process(&module, prep, device); // never returns on error: stubs + exit(1)
-        let dt = t0.elapsed();
+        process(&module, prep, device);
+        let dt = t0.elapsed().as_nanos() as u64;
+        stats.batches.fetch_add(1, Ordering::Relaxed);
+        stats.examples.fetch_add(total_k as u64, Ordering::Relaxed);
+        stats.fwd_nanos.fetch_add(dt, Ordering::Relaxed);
 
-        n_batches += 1;
-        n_examples += total_k as u64;
-        fwd_total += dt;
-        fwd_window += dt;
-        let win = last_log.elapsed();
-        if win >= Duration::from_secs(5) {
-            eprintln!(
-                "[carc-orch] {} batches, {} examples, avg_batch={:.1}, gpu_busy={:.0}%, examples/s={:.0}",
-                n_batches,
-                n_examples,
-                n_examples as f64 / n_batches as f64,
-                100.0 * fwd_window.as_secs_f64() / win.as_secs_f64(),
-                n_examples as f64 / fwd_total.as_secs_f64().max(1e-9),
-            );
-            fwd_window = Duration::ZERO;
-            last_log = Instant::now();
+        if is_logger {
+            let win = last_log.elapsed();
+            if win >= Duration::from_secs(5) {
+                let e = stats.examples.load(Ordering::Relaxed);
+                let b = stats.batches.load(Ordering::Relaxed);
+                let f = stats.fwd_nanos.load(Ordering::Relaxed);
+                let d_ex = e - prev_ex;
+                let d_b = (b - prev_b).max(1);
+                let d_f = (f - prev_f) as f64 / 1e9; // summed forwarder-busy seconds
+                let wall = win.as_secs_f64();
+                eprintln!(
+                    "[carc-orch] {} batches, {} examples, avg_batch={:.1}, fwd_busy={:.0}%, examples/s={:.0}",
+                    b,
+                    e,
+                    d_ex as f64 / d_b as f64,
+                    100.0 * d_f / (wall * n_forwarders as f64),
+                    d_ex as f64 / wall, // WALL throughput (aggregate)
+                );
+                prev_ex = e;
+                prev_b = b;
+                prev_f = f;
+                last_log = Instant::now();
+            }
         }
     }
 }
@@ -326,5 +368,23 @@ fn ivalue_tensor(v: IValue) -> Result<Tensor> {
     }
 }
 
-// Keep the bounded import used even if depth changes.
-const _: fn(usize) -> (Sender<Prepared>, Receiver<Prepared>) = bounded::<Prepared>;
+fn warmup(module: &CModule, device: Device, n_scalar: i64) {
+    let res = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let obs = Tensor::zeros([1, 78, 25, 25], (Kind::Float, device));
+        let scl = Tensor::zeros([1, n_scalar], (Kind::Float, device));
+        let msk = Tensor::ones([1, 2511], (Kind::Bool, device));
+        let _ = tch::no_grad(|| {
+            module.forward_is(&[
+                IValue::Tensor(obs),
+                IValue::Tensor(scl),
+                IValue::Tensor(msk),
+            ])
+        });
+        if device.is_cuda() {
+            tch::Cuda::synchronize(0);
+        }
+    }));
+    if res.is_err() {
+        eprintln!("[carc-orch] warmup failed (n_scalar={n_scalar}?) — continuing");
+    }
+}

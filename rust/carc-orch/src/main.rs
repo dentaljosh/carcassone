@@ -17,7 +17,7 @@ mod wire;
 use anyhow::{bail, Context, Result};
 use crossbeam_channel::unbounded;
 use std::time::Duration;
-use tch::{CModule, Device, IValue, Kind, Tensor};
+use tch::Device;
 
 use batcher::Job;
 
@@ -39,6 +39,7 @@ struct Config {
     workers: usize,
     n_scalar: i64,
     require_cuda: bool,
+    forwarders: usize,
 }
 
 fn parse_args() -> Result<Config> {
@@ -54,6 +55,7 @@ fn parse_args() -> Result<Config> {
     let mut workers = 0usize;
     let mut n_scalar = 12i64;
     let mut require_cuda = true;
+    let mut forwarders = 2usize;
 
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
@@ -79,6 +81,7 @@ fn parse_args() -> Result<Config> {
             "--shm-name" => shm_name = next()?,
             "--workers" => workers = next()?.parse()?,
             "--n-scalar" => n_scalar = next()?.parse()?,
+            "--forwarders" => forwarders = next()?.parse()?,
             "--allow-cpu" => require_cuda = false,
             "--device" => {
                 device = match next()?.as_str() {
@@ -110,6 +113,7 @@ fn parse_args() -> Result<Config> {
         workers,
         n_scalar,
         require_cuda,
+        forwarders,
     })
 }
 
@@ -134,18 +138,22 @@ fn main() -> Result<()> {
         );
     }
 
-    let mut module = CModule::load_on_device(&cfg.model, cfg.device)
-        .with_context(|| format!("loading {}", cfg.model))?;
-    module.set_eval();
-    warmup(&module, cfg.device, cfg.n_scalar);
-
     let (job_tx, job_rx) = unbounded::<Job>();
-    // Spawns the collector + forwarder pipeline (overlaps CPU concat with GPU forward).
-    batcher::start(module, job_rx, cfg.device, cfg.max_batch, cfg.batch_timeout)?;
+    // Spawns the collector + N forwarders (each its own module copy). Loads the
+    // module(s) and warms cuDNN internally.
+    batcher::start(
+        job_rx,
+        &cfg.model,
+        cfg.device,
+        cfg.max_batch,
+        cfg.batch_timeout,
+        cfg.n_scalar,
+        cfg.forwarders,
+    )?;
 
     eprintln!(
-        "[carc-orch] max_batch={} timeout={:?}",
-        cfg.max_batch, cfg.batch_timeout
+        "[carc-orch] max_batch={} timeout={:?} forwarders={}",
+        cfg.max_batch, cfg.batch_timeout, cfg.forwarders
     );
     match cfg.transport {
         Transport::Tcp => tcp::serve(&cfg.host, cfg.port, job_tx)?,
@@ -159,28 +167,3 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Warm up cuDNN autotune so the first real batch doesn't pay it. Width comes
-/// from --n-scalar (§4: don't hardcode 12 — a 10-scalar net would mismatch).
-/// Best-effort: a warmup failure logs but doesn't abort (real requests autotune
-/// in-band), so a width guess never blocks startup.
-fn warmup(module: &CModule, device: Device, n_scalar: i64) {
-    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let obs = Tensor::zeros([1, 78, 25, 25], (Kind::Float, device));
-        let scl = Tensor::zeros([1, n_scalar], (Kind::Float, device));
-        let msk = Tensor::ones([1, 2511], (Kind::Bool, device));
-        let _ = tch::no_grad(|| {
-            module.forward_is(&[
-                IValue::Tensor(obs),
-                IValue::Tensor(scl),
-                IValue::Tensor(msk),
-            ])
-        });
-        if device.is_cuda() {
-            tch::Cuda::synchronize(0);
-        }
-    }));
-    match res {
-        Ok(_) => eprintln!("[carc-orch] warmup ok (n_scalar={n_scalar})"),
-        Err(_) => eprintln!("[carc-orch] warmup failed (n_scalar={n_scalar}?) — continuing; first real batch will autotune"),
-    }
-}
