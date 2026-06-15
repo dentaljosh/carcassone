@@ -4,6 +4,30 @@ A drop-in replacement for the Python `eval_server` + `remote_eval_bridge` pair.
 It speaks the **exact same** len-prefixed npy TCP protocol, so existing Python
 self-play workers connect to it unchanged via `--remote-eval-server HOST:PORT`.
 
+## Status (2026-06-15): WON 1.33x — deployed local-only
+
+**The CUDA-streams gambit succeeded: stream-SHM W28 BEATS orch-off W14 by 1.33x**
+(56 vs 42 games/360s, confirmed n=2). Additions beyond the original TCP server
+documented below:
+1. **Per-forwarder CUDA streams** (`csrc/cuda_stream_shim.cpp` + `build.rs` — tch
+   0.24 has no stream API) — *the win*: W28 runs on ONE shared CUDA context and
+   the forwarders' kernels overlap instead of serializing on the default stream.
+2. **Zero-copy SHM transport** (`--transport shm`, client
+   `src/carcassonne_ai/shm_eval_handles.py`, wired via
+   `run_selfplay_iter --shm-eval-server NAME`) — the production path; per-worker
+   `/dev/shm` slots + POSIX sems, no np.save round-trip.
+3. **N-forwarder batcher** (`--forwarders`, each its own module copy + stream).
+4. **Stall watchdog** (`--watchdog-secs`, default 30) — exits loud on a wedged
+   forwarder so workers fail clean and the flywheel heal-loop restarts.
+
+Squeeze exhausted (cuDNN / more-forwarders / H2D double-buffer all
+neutral-or-worse → **1.33x is the ceiling**; the per-worker CPU v2.7 leaf is the
+bottleneck, not the GPU server). **Deployed** into the flywheel's local-box gen
+via the share `gen_flywheel.sh` orchestrator branch (`USE_ORCH=1`). xeon/laptop
+deferred (no Rust; laptop torch 2.12 ≠ local 2.11). Full detail: STATUS.md
+"carc-orch" block + memory `reference_carc_orch_verdict`. The architecture below
+describes the TCP transport; SHM mirrors it zero-copy.
+
 ## Why
 
 Self-play in residual mode is **GPU-forward-dispatch-limited**: every MCTS node
