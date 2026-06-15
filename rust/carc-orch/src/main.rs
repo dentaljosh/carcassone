@@ -140,12 +140,8 @@ fn main() -> Result<()> {
     warmup(&module, cfg.device, cfg.n_scalar);
 
     let (job_tx, job_rx) = unbounded::<Job>();
-    let device = cfg.device;
-    let max_batch = cfg.max_batch;
-    let timeout = cfg.batch_timeout;
-    std::thread::Builder::new()
-        .name("batcher".into())
-        .spawn(move || batcher::batcher_loop(module, job_rx, device, max_batch, timeout))?;
+    // Spawns the collector + forwarder pipeline (overlaps CPU concat with GPU forward).
+    batcher::start(module, job_rx, cfg.device, cfg.max_batch, cfg.batch_timeout)?;
 
     eprintln!(
         "[carc-orch] max_batch={} timeout={:?}",

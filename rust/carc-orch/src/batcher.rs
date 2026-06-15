@@ -1,16 +1,23 @@
-//! Transport-agnostic batching core. Both the TCP and shared-memory frontends
-//! produce `Job`s on a crossbeam channel; the single batcher thread owns the
-//! CUDA module, accumulates a batch (up to max_batch or the timeout), runs one
-//! forward, and scatters per-job slices back via each job's `resp_tx`.
+//! Transport-agnostic batching core, PIPELINED. Both the TCP and shared-memory
+//! frontends produce `Job`s on a crossbeam channel. Two threads:
 //!
-//! Hardening (code-review §2.1, the high-severity finding): a forward error or
-//! panic must NOT silently zombify the server. We (a) validate per-job dims
-//! before concatenating, (b) wrap the forward in `catch_unwind`, and (c) on any
-//! error/panic send a shape-matched zero stub to EVERY waiting job (so no client
-//! hangs to its 60s timeout) and THEN `exit(1)` loudly — mirroring the Python
-//! eval_server `_process_batch` except/stub/re-raise path.
+//!   * collector — pulls jobs, accumulates a batch (up to max_batch or the
+//!     timeout), validates dims, and concatenates the per-job buffers into one
+//!     contiguous CPU buffer. Sends the prepared buffers to the forwarder.
+//!   * forwarder — owns the CUDA module; for each prepared batch does the H2D,
+//!     one forward, the D2H, and scatters per-job slices back.
+//!
+//! The split lets the collector concat batch N+1 *while* the forwarder runs
+//! batch N on the GPU — HWiNFO showed the single-threaded version left the GPU
+//! ~50% idle (GPU Power ~30% TDP) waiting on the serial CPU concat. The bounded
+//! channel double-buffers so the GPU never waits on a concat between batches.
+//!
+//! Hardening (code-review §2.1): a forward error or panic must not silently
+//! zombify the server. On any error/panic we send a shape-matched zero stub to
+//! every waiting job (so no client hangs to its 60s timeout) then exit(1) —
+//! mirroring the Python eval_server stub/reraise.
 use anyhow::{bail, Context, Result};
-use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
+use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, Sender};
 use std::panic::AssertUnwindSafe;
 use std::time::{Duration, Instant};
 use tch::{CModule, Device, IValue, Kind, Tensor};
@@ -33,24 +40,49 @@ pub struct RespMsg {
     pub k: i64,
 }
 
-pub fn batcher_loop(
+/// One batch concatenated on the collector, ready for the forwarder's GPU work.
+struct Prepared {
+    obs_buf: Vec<f32>,
+    obs_inner: Vec<i64>,
+    scl_buf: Vec<f32>,
+    scl_per: i64,
+    msk_buf: Vec<u8>,
+    a_size: i64,
+    total_k: i64,
+    jobs: Vec<Job>,
+}
+
+/// Spawn the collector + forwarder. The forwarder owns the module. Returns once
+/// both threads are spawned; they run until their channels close.
+pub fn start(
     module: CModule,
     job_rx: Receiver<Job>,
     device: Device,
     max_batch: i64,
     timeout: Duration,
-) {
-    let mut n_batches: u64 = 0;
-    let mut n_examples: u64 = 0;
-    let mut fwd_total = Duration::ZERO;
-    let mut fwd_window = Duration::ZERO;
-    let mut last_log = Instant::now();
+) -> Result<()> {
+    // depth-2 so the collector can stay one batch ahead of the GPU
+    let (prep_tx, prep_rx) = bounded::<Prepared>(2);
+    std::thread::Builder::new()
+        .name("forwarder".into())
+        .spawn(move || forwarder_loop(module, device, prep_rx))?;
+    std::thread::Builder::new()
+        .name("collector".into())
+        .spawn(move || collector_loop(job_rx, max_batch, timeout, prep_tx))?;
+    Ok(())
+}
 
+fn collector_loop(
+    job_rx: Receiver<Job>,
+    max_batch: i64,
+    timeout: Duration,
+    prep_tx: Sender<Prepared>,
+) {
     loop {
         let first = match job_rx.recv() {
             Ok(j) => j,
             Err(_) => {
-                eprintln!("[carc-orch] all producers gone; batcher exiting");
+                eprintln!("[carc-orch] all producers gone; collector exiting");
                 return;
             }
         };
@@ -66,9 +98,85 @@ pub fn batcher_loop(
                 Err(RecvTimeoutError::Timeout) | Err(RecvTimeoutError::Disconnected) => break,
             }
         }
+        match build(jobs, total_k) {
+            Ok(prep) => {
+                if prep_tx.send(prep).is_err() {
+                    return; // forwarder gone
+                }
+            }
+            Err((jobs, e)) => fatal(&jobs, &format!("batch validation: {e:?}")),
+        }
+    }
+}
 
+/// Validate per-job dims (§2.1: a mismatched worker must be a clean error, not a
+/// reshape panic) and concatenate into contiguous buffers.
+fn build(jobs: Vec<Job>, total_k: i64) -> std::result::Result<Prepared, (Vec<Job>, anyhow::Error)> {
+    let obs_inner = jobs[0].obs_inner.clone();
+    let scalars_inner = jobs[0].scalars_inner.clone();
+    let a_size = jobs[0].a_size;
+    let obs_per: usize = obs_inner.iter().product::<i64>() as usize;
+    let scl_per: i64 = scalars_inner.iter().product();
+
+    for (i, j) in jobs.iter().enumerate() {
+        let bad = if j.obs_inner != obs_inner {
+            Some(format!("obs_inner {:?} != {:?}", j.obs_inner, obs_inner))
+        } else if j.scalars_inner != scalars_inner {
+            Some(format!("scalars_inner {:?} != {:?}", j.scalars_inner, scalars_inner))
+        } else if j.a_size != a_size {
+            Some(format!("a_size {} != {}", j.a_size, a_size))
+        } else if j.obs.len() != j.k as usize * obs_per {
+            Some(format!("obs len {} != k*{}", j.obs.len(), obs_per))
+        } else if j.scalars.len() != j.k as usize * scl_per as usize {
+            Some("scalars len mismatch".into())
+        } else if j.mask.len() != j.k as usize * a_size as usize {
+            Some("mask len mismatch".into())
+        } else {
+            None
+        };
+        if let Some(msg) = bad {
+            return Err((jobs, anyhow::anyhow!("job {i} {msg}")));
+        }
+    }
+
+    let mut obs_buf = Vec::with_capacity(total_k as usize * obs_per);
+    let mut scl_buf = Vec::with_capacity(total_k as usize * scl_per as usize);
+    let mut msk_buf = Vec::with_capacity(total_k as usize * a_size as usize);
+    for j in &jobs {
+        obs_buf.extend_from_slice(&j.obs);
+        scl_buf.extend_from_slice(&j.scalars);
+        msk_buf.extend_from_slice(&j.mask);
+    }
+    Ok(Prepared {
+        obs_buf,
+        obs_inner,
+        scl_buf,
+        scl_per,
+        msk_buf,
+        a_size,
+        total_k,
+        jobs,
+    })
+}
+
+fn forwarder_loop(module: CModule, device: Device, prep_rx: Receiver<Prepared>) {
+    let mut n_batches: u64 = 0;
+    let mut n_examples: u64 = 0;
+    let mut fwd_total = Duration::ZERO;
+    let mut fwd_window = Duration::ZERO;
+    let mut last_log = Instant::now();
+
+    loop {
+        let prep = match prep_rx.recv() {
+            Ok(p) => p,
+            Err(_) => {
+                eprintln!("[carc-orch] collector gone; forwarder exiting");
+                return;
+            }
+        };
+        let total_k = prep.total_k;
         let t0 = Instant::now();
-        process_batch(&module, jobs, device, total_k); // never returns on error: stubs + exit(1)
+        process(&module, prep, device); // never returns on error: stubs + exit(1)
         let dt = t0.elapsed();
 
         n_batches += 1;
@@ -91,12 +199,21 @@ pub fn batcher_loop(
     }
 }
 
-/// Run one batch. On ANY error or panic: stub every waiting job with shaped
-/// zeros (so no client hangs) then exit(1) loudly. Mirrors Python's
-/// stub-then-reraise.
-fn process_batch(module: &CModule, jobs: Vec<Job>, device: Device, total_k: i64) {
-    let result =
-        std::panic::catch_unwind(AssertUnwindSafe(|| forward(module, &jobs, device, total_k)));
+fn process(module: &CModule, prep: Prepared, device: Device) {
+    let jobs = prep.jobs;
+    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        forward(
+            module,
+            device,
+            &prep.obs_buf,
+            &prep.obs_inner,
+            &prep.scl_buf,
+            prep.scl_per,
+            &prep.msk_buf,
+            prep.a_size,
+            prep.total_k,
+        )
+    }));
     match result {
         Ok(Ok(fwd)) => scatter(fwd, jobs),
         Ok(Err(e)) => fatal(&jobs, &format!("forward error: {e:?}")),
@@ -112,8 +229,6 @@ fn process_batch(module: &CModule, jobs: Vec<Job>, device: Device, total_k: i64)
 }
 
 fn fatal(jobs: &[Job], msg: &str) -> ! {
-    // Shape-matched zero stub to every waiting job so no client blocks to its
-    // 60s timeout, then crash loudly (the launcher sees a dead process).
     for j in jobs {
         let _ = j.resp_tx.send(RespMsg {
             priors: vec![0.0f32; (j.k * j.a_size) as usize],
@@ -122,7 +237,7 @@ fn fatal(jobs: &[Job], msg: &str) -> ! {
             k: j.k,
         });
     }
-    eprintln!("[carc-orch] FATAL batcher: {msg}");
+    eprintln!("[carc-orch] FATAL: {msg}");
     std::process::exit(1);
 }
 
@@ -132,54 +247,25 @@ struct Forward {
     a_size: i64,
 }
 
-fn forward(module: &CModule, jobs: &[Job], device: Device, total_k: i64) -> Result<Forward> {
-    let obs_inner = &jobs[0].obs_inner;
-    let scalars_inner = &jobs[0].scalars_inner;
-    let a_size = jobs[0].a_size;
-    let obs_per: usize = obs_inner.iter().product::<i64>() as usize;
-    let scl_per: i64 = scalars_inner.iter().product();
-
-    // §2.1 / §3.4: validate every job's dims BEFORE concat so a mismatched
-    // worker (e.g. the 10-vs-12 scalar-width footgun) is a clean Err, not a
-    // reshape panic that zombifies the server.
-    for (i, j) in jobs.iter().enumerate() {
-        if &j.obs_inner != obs_inner {
-            bail!("job {i} obs_inner {:?} != {:?}", j.obs_inner, obs_inner);
-        }
-        if &j.scalars_inner != scalars_inner {
-            bail!("job {i} scalars_inner {:?} != {:?}", j.scalars_inner, scalars_inner);
-        }
-        if j.a_size != a_size {
-            bail!("job {i} a_size {} != {}", j.a_size, a_size);
-        }
-        if j.obs.len() != j.k as usize * obs_per {
-            bail!("job {i} obs len {} != k*{}", j.obs.len(), obs_per);
-        }
-        if j.scalars.len() != j.k as usize * scl_per as usize {
-            bail!("job {i} scalars len mismatch");
-        }
-        if j.mask.len() != j.k as usize * a_size as usize {
-            bail!("job {i} mask len mismatch");
-        }
-    }
-
-    let mut obs_buf = Vec::with_capacity(total_k as usize * obs_per);
-    let mut scl_buf = Vec::with_capacity(total_k as usize * scl_per as usize);
-    let mut msk_buf = Vec::with_capacity(total_k as usize * a_size as usize);
-    for j in jobs {
-        obs_buf.extend_from_slice(&j.obs);
-        scl_buf.extend_from_slice(&j.scalars);
-        msk_buf.extend_from_slice(&j.mask);
-    }
-
+#[allow(clippy::too_many_arguments)]
+fn forward(
+    module: &CModule,
+    device: Device,
+    obs_buf: &[f32],
+    obs_inner: &[i64],
+    scl_buf: &[f32],
+    scl_per: i64,
+    msk_buf: &[u8],
+    a_size: i64,
+    total_k: i64,
+) -> Result<Forward> {
     let mut obs_shape = vec![total_k];
     obs_shape.extend_from_slice(obs_inner);
-    // Fallible reshape (f_*) so a residual size bug is an Err, not a panic.
-    let obs_t = Tensor::f_from_slice(&obs_buf)?.f_reshape(&obs_shape[..])?.to_device(device);
-    let scl_t = Tensor::f_from_slice(&scl_buf)?
+    let obs_t = Tensor::f_from_slice(obs_buf)?.f_reshape(&obs_shape[..])?.to_device(device);
+    let scl_t = Tensor::f_from_slice(scl_buf)?
         .f_reshape([total_k, scl_per])?
         .to_device(device);
-    let msk_t = Tensor::f_from_slice(&msk_buf)?
+    let msk_t = Tensor::f_from_slice(msk_buf)?
         .f_reshape([total_k, a_size])?
         .to_kind(Kind::Bool)
         .to_device(device);
@@ -239,3 +325,6 @@ fn ivalue_tensor(v: IValue) -> Result<Tensor> {
         other => bail!("expected Tensor, got {other:?}"),
     }
 }
+
+// Keep the bounded import used even if depth changes.
+const _: fn(usize) -> (Sender<Prepared>, Receiver<Prepared>) = bounded::<Prepared>;
