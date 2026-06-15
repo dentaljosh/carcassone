@@ -7,9 +7,16 @@
 numpy>=1.26
 pillow>=10.0
 
-# PyTorch with CUDA support for RTX 5060 Ti (Blackwell sm_120, needs >=2.7)
-# Install via:  pip install torch --index-url https://download.pytorch.org/whl/cu128
-torch>=2.7
+# PyTorch — PINNED to the validated cluster stack. All 3 boxes (5060 Ti local,
+# Xeon RTX 4000, laptop 4070m) MUST run the SAME torch+CUDA so cross-box
+# self-play/eval numerics match and the Rust carc-orch binary (links libtorch
+# 2.11/cu128) can be copied between boxes. cu128 = CUDA 12.8 (Blackwell sm_120
+# needs cu128). Do NOT float to a newer minor — 2.12/cu130 drift is what broke
+# laptop parity (2026-06-15); re-pin deliberately, cluster-wide, if you upgrade.
+# Online install:  pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+# Offline (xeon/laptop, no internet): pip install --no-index \
+#   --find-links /mnt/carc-shared/wheels/torch_2.11_cu128_cp311 torch==2.11.0+cu128
+torch==2.11.0
 
 # Training infra
 tensorboard>=2.16
