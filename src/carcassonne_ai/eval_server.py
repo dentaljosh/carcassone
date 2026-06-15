@@ -127,19 +127,21 @@ def _server_loop(
     # cumulative wallclock; the ratio of forward / batching / dispatch tells
     # us where the GIL-bottlenecked Python loop is actually spending its
     # time, which informs whether multi-process sharding is the right fix.
-    stage_t = {"dequeue": 0.0, "forward": 0.0, "dispatch": 0.0}
+    stage_t = {"wait_first": 0.0, "accumulate": 0.0, "forward": 0.0, "dispatch": 0.0}
     n_batches = 0
     total_requests = 0
     total_examples = 0
 
     while True:
-        t_dq0 = time.perf_counter()
+        t_wf0 = time.perf_counter()
         try:
             # Poll with a timeout rather than block forever. A bare get()
             # parks in a C-level semaphore where Python signal handlers
             # cannot run, so an unclean parent exit (no _SHUTDOWN sent)
             # would leave this process — and its CUDA context / VRAM —
             # hung indefinitely. The 1s wakeup lets a signal land.
+            # wait_first = time blocked here = server STARVED (no work in queue);
+            # accumulate = time pulling more to fill the batch = queue/contention.
             while True:
                 try:
                     first = request_q.get(timeout=1.0)
@@ -148,9 +150,11 @@ def _server_loop(
                     pass
         except (KeyboardInterrupt, SystemExit):
             return
+        stage_t["wait_first"] += time.perf_counter() - t_wf0
         if first == _SHUTDOWN:
             break
 
+        t_acc0 = time.perf_counter()
         batch: list[EvalRequest] = [first]
         total_k = first.obs.shape[0]
         deadline = time.perf_counter() + timeout_s
@@ -166,7 +170,7 @@ def _server_loop(
                 break
             batch.append(r)
             total_k += r.obs.shape[0]
-        stage_t["dequeue"] += time.perf_counter() - t_dq0
+        stage_t["accumulate"] += time.perf_counter() - t_acc0
 
         try:
             t_fw0 = time.perf_counter()
@@ -218,7 +222,8 @@ def _server_loop(
             f"{total_requests} requests, {total_examples} examples, "
             f"avg_batch={avg_batch:.1f}\n"
             f"[eval_server] stages: "
-            f"dequeue={stage_t['dequeue']:.1f}s ({pct['dequeue']:.0f}%), "
+            f"wait_first={stage_t['wait_first']:.1f}s ({pct['wait_first']:.0f}%, =STARVED), "
+            f"accumulate={stage_t['accumulate']:.1f}s ({pct['accumulate']:.0f}%), "
             f"forward={stage_t['forward']:.1f}s ({pct['forward']:.0f}%), "
             f"dispatch={stage_t['dispatch']:.1f}s ({pct['dispatch']:.0f}%)\n"
         )
