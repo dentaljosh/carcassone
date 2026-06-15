@@ -25,6 +25,22 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tch::{CModule, Device, IValue, Kind, Tensor};
 
+// CUDA-stream shim (csrc/cuda_stream_shim.cpp, linked via build.rs). tch 0.24 has
+// no stream API; these bind each forwarder thread to its own non-default CUDA
+// stream so forwards overlap on the GPU instead of serializing on the default
+// stream — the in-process equivalent of orch-off's per-process contexts.
+extern "C" {
+    fn carc_set_thread_stream(device: i32);
+    fn carc_current_stream_id(device: i32) -> i64;
+}
+
+fn cuda_index(device: Device) -> i32 {
+    match device {
+        Device::Cuda(i) => i as i32,
+        _ => 0,
+    }
+}
+
 pub struct Job {
     pub k: i64,
     pub obs: Vec<f32>,
@@ -89,7 +105,7 @@ pub fn start(
         let st = stats.clone();
         std::thread::Builder::new()
             .name(format!("forwarder-{i}"))
-            .spawn(move || forwarder_loop(m, device, rx, st, i == 0, n))?;
+            .spawn(move || forwarder_loop(i, m, device, rx, st, i == 0, n))?;
     }
     drop(prep_rx);
     std::thread::Builder::new()
@@ -184,7 +200,9 @@ fn build(jobs: Vec<Job>, total_k: i64) -> std::result::Result<Prepared, (Vec<Job
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn forwarder_loop(
+    idx: usize,
     module: CModule,
     device: Device,
     prep_rx: Receiver<Prepared>,
@@ -192,6 +210,17 @@ fn forwarder_loop(
     is_logger: bool,
     n_forwarders: usize,
 ) {
+    // Bind THIS forwarder thread to its own non-default CUDA stream so its forward
+    // kernels overlap on the GPU with the other forwarders' (instead of all
+    // serializing on the shared default stream). Thread-local in libtorch, so it
+    // must run here, inside the thread. Logged per-forwarder so we can verify the
+    // streams are distinct and non-zero (proof the overlap path is engaged).
+    if device.is_cuda() {
+        let dev_idx = cuda_index(device);
+        unsafe { carc_set_thread_stream(dev_idx) };
+        let sid = unsafe { carc_current_stream_id(dev_idx) };
+        eprintln!("[carc-orch] forwarder-{idx} CUDA stream=0x{sid:x} (0x0=default)");
+    }
     let mut last_log = Instant::now();
     let mut prev_ex = 0u64;
     let mut prev_b = 0u64;
