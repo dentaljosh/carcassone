@@ -40,6 +40,7 @@ struct Config {
     n_scalar: i64,
     require_cuda: bool,
     forwarders: usize,
+    watchdog_secs: u64,
 }
 
 fn parse_args() -> Result<Config> {
@@ -56,6 +57,7 @@ fn parse_args() -> Result<Config> {
     let mut n_scalar = 12i64;
     let mut require_cuda = true;
     let mut forwarders = 2usize;
+    let mut watchdog_secs = 30u64;
 
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
@@ -82,6 +84,7 @@ fn parse_args() -> Result<Config> {
             "--workers" => workers = next()?.parse()?,
             "--n-scalar" => n_scalar = next()?.parse()?,
             "--forwarders" => forwarders = next()?.parse()?,
+            "--watchdog-secs" => watchdog_secs = next()?.parse()?,
             "--allow-cpu" => require_cuda = false,
             "--device" => {
                 device = match next()?.as_str() {
@@ -114,6 +117,7 @@ fn parse_args() -> Result<Config> {
         n_scalar,
         require_cuda,
         forwarders,
+        watchdog_secs,
     })
 }
 
@@ -149,6 +153,7 @@ fn main() -> Result<()> {
         cfg.batch_timeout,
         cfg.n_scalar,
         cfg.forwarders,
+        cfg.watchdog_secs,
     )?;
 
     eprintln!(

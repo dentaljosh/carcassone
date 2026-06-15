@@ -78,6 +78,7 @@ struct Stats {
     h2d_nanos: AtomicU64, // input prep + H2D (blocking to_device)
     cmp_nanos: AtomicU64, // forward_is (kernel launch; async, returns fast)
     d2h_nanos: AtomicU64, // D2H to_device(Cpu) + contiguous + copy_data (sync-wait)
+    jobs_in: AtomicU64,   // jobs received by the collector (watchdog: in-but-no-out = wedge)
 }
 
 /// Spawn the collector + N forwarders. Loads `n_forwarders` module copies.
@@ -90,6 +91,7 @@ pub fn start(
     timeout: Duration,
     n_scalar: i64,
     n_forwarders: usize,
+    watchdog_secs: u64,
 ) -> Result<()> {
     let n = n_forwarders.max(1);
     let mut modules = Vec::with_capacity(n);
@@ -111,11 +113,53 @@ pub fn start(
             .spawn(move || forwarder_loop(i, m, device, rx, st, i == 0, n))?;
     }
     drop(prep_rx);
+    let coll_stats = stats.clone();
     std::thread::Builder::new()
         .name("collector".into())
-        .spawn(move || collector_loop(job_rx, max_batch, timeout, prep_tx))?;
-    eprintln!("[carc-orch] batcher: {n} forwarder(s)");
+        .spawn(move || collector_loop(job_rx, max_batch, timeout, prep_tx, coll_stats))?;
+
+    // Watchdog: a CUDA/forwarder wedge (the intermittent "stall") shows up as
+    // jobs flowing IN (collector receiving) but no batch completing OUT. Detect
+    // that and exit LOUD so workers fail clean (BrokenServerError, no retry) and
+    // the cluster launcher restarts — instead of every worker hanging to its 60s
+    // timeout. A pure idle (no jobs in) does NOT trip it.
+    if watchdog_secs > 0 {
+        let wd_stats = stats.clone();
+        std::thread::Builder::new()
+            .name("watchdog".into())
+            .spawn(move || watchdog_loop(wd_stats, watchdog_secs))?;
+    }
+    eprintln!("[carc-orch] batcher: {n} forwarder(s), watchdog={watchdog_secs}s");
     Ok(())
+}
+
+/// Trips when the collector keeps receiving jobs but no batch completes for
+/// ~`secs` (a wedged forwarder/GPU). Exits the process so workers fail fast.
+fn watchdog_loop(stats: Arc<Stats>, secs: u64) {
+    let window = Duration::from_secs((secs / 3).max(2));
+    let mut last_jobs = 0u64;
+    let mut last_batches = 0u64;
+    let mut stuck = 0u32;
+    loop {
+        std::thread::sleep(window);
+        let jobs = stats.jobs_in.load(Ordering::Relaxed);
+        let batches = stats.batches.load(Ordering::Relaxed);
+        if jobs > last_jobs && batches == last_batches {
+            stuck += 1;
+            eprintln!(
+                "[carc-orch] WATCHDOG: {jobs} jobs in, batches stuck at {batches} for {}s (window {stuck}/3)",
+                window.as_secs() * stuck as u64
+            );
+            if stuck >= 3 {
+                eprintln!("[carc-orch] WATCHDOG: forwarders WEDGED (~{secs}s, jobs in / no batches out) — exiting(2) for clean worker failure + launcher restart");
+                std::process::exit(2);
+            }
+        } else {
+            stuck = 0;
+        }
+        last_jobs = jobs;
+        last_batches = batches;
+    }
 }
 
 fn collector_loop(
@@ -123,6 +167,7 @@ fn collector_loop(
     max_batch: i64,
     timeout: Duration,
     prep_tx: Sender<Prepared>,
+    stats: Arc<Stats>,
 ) {
     loop {
         let first = match job_rx.recv() {
@@ -132,12 +177,14 @@ fn collector_loop(
                 return;
             }
         };
+        stats.jobs_in.fetch_add(1, Ordering::Relaxed);
         let mut total_k = first.k;
         let mut jobs = vec![first];
         let deadline = Instant::now() + timeout;
         while total_k < max_batch {
             match job_rx.recv_deadline(deadline) {
                 Ok(j) => {
+                    stats.jobs_in.fetch_add(1, Ordering::Relaxed);
                     total_k += j.k;
                     jobs.push(j);
                 }
