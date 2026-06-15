@@ -74,7 +74,10 @@ struct Prepared {
 struct Stats {
     batches: AtomicU64,
     examples: AtomicU64,
-    fwd_nanos: AtomicU64, // summed across forwarders
+    fwd_nanos: AtomicU64, // summed across forwarders (whole process())
+    h2d_nanos: AtomicU64, // input prep + H2D (blocking to_device)
+    cmp_nanos: AtomicU64, // forward_is (kernel launch; async, returns fast)
+    d2h_nanos: AtomicU64, // D2H to_device(Cpu) + contiguous + copy_data (sync-wait)
 }
 
 /// Spawn the collector + N forwarders. Loads `n_forwarders` module copies.
@@ -225,6 +228,9 @@ fn forwarder_loop(
     let mut prev_ex = 0u64;
     let mut prev_b = 0u64;
     let mut prev_f = 0u64;
+    let mut prev_h2d = 0u64;
+    let mut prev_cmp = 0u64;
+    let mut prev_d2h = 0u64;
     loop {
         let prep = match prep_rx.recv() {
             Ok(p) => p,
@@ -237,7 +243,7 @@ fn forwarder_loop(
         };
         let total_k = prep.total_k;
         let t0 = Instant::now();
-        process(&module, prep, device);
+        process(&module, prep, device, &stats);
         let dt = t0.elapsed().as_nanos() as u64;
         stats.batches.fetch_add(1, Ordering::Relaxed);
         stats.examples.fetch_add(total_k as u64, Ordering::Relaxed);
@@ -249,28 +255,40 @@ fn forwarder_loop(
                 let e = stats.examples.load(Ordering::Relaxed);
                 let b = stats.batches.load(Ordering::Relaxed);
                 let f = stats.fwd_nanos.load(Ordering::Relaxed);
+                let h = stats.h2d_nanos.load(Ordering::Relaxed);
+                let c = stats.cmp_nanos.load(Ordering::Relaxed);
+                let d = stats.d2h_nanos.load(Ordering::Relaxed);
                 let d_ex = e - prev_ex;
                 let d_b = (b - prev_b).max(1);
                 let d_f = (f - prev_f) as f64 / 1e9; // summed forwarder-busy seconds
                 let wall = win.as_secs_f64();
+                // per-batch section breakdown (ms): h2d/cmp/d2h are summed across
+                // forwarders, as is d_b, so delta/d_b is avg per batch.
+                let ms = |x: u64, p: u64| (x - p) as f64 / 1e6 / d_b as f64;
                 eprintln!(
-                    "[carc-orch] {} batches, {} examples, avg_batch={:.1}, fwd_busy={:.0}%, examples/s={:.0}",
+                    "[carc-orch] {} batches, {} examples, avg_batch={:.1}, fwd_busy={:.0}%, examples/s={:.0} | per-batch ms: h2d={:.2} cmp={:.2} d2h={:.2}",
                     b,
                     e,
                     d_ex as f64 / d_b as f64,
                     100.0 * d_f / (wall * n_forwarders as f64),
                     d_ex as f64 / wall, // WALL throughput (aggregate)
+                    ms(h, prev_h2d),
+                    ms(c, prev_cmp),
+                    ms(d, prev_d2h),
                 );
                 prev_ex = e;
                 prev_b = b;
                 prev_f = f;
+                prev_h2d = h;
+                prev_cmp = c;
+                prev_d2h = d;
                 last_log = Instant::now();
             }
         }
     }
 }
 
-fn process(module: &CModule, prep: Prepared, device: Device) {
+fn process(module: &CModule, prep: Prepared, device: Device, stats: &Stats) {
     let jobs = prep.jobs;
     let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
         forward(
@@ -283,6 +301,7 @@ fn process(module: &CModule, prep: Prepared, device: Device) {
             &prep.msk_buf,
             prep.a_size,
             prep.total_k,
+            stats,
         )
     }));
     match result {
@@ -329,7 +348,9 @@ fn forward(
     msk_buf: &[u8],
     a_size: i64,
     total_k: i64,
+    stats: &Stats,
 ) -> Result<Forward> {
+    let t_h2d = Instant::now();
     let mut obs_shape = vec![total_k];
     obs_shape.extend_from_slice(obs_inner);
     let obs_t = Tensor::f_from_slice(obs_buf)?.f_reshape(&obs_shape[..])?.to_device(device);
@@ -340,7 +361,9 @@ fn forward(
         .f_reshape([total_k, a_size])?
         .to_kind(Kind::Bool)
         .to_device(device);
+    stats.h2d_nanos.fetch_add(t_h2d.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
+    let t_cmp = Instant::now();
     let out = tch::no_grad(|| {
         module.forward_is(&[
             IValue::Tensor(obs_t),
@@ -349,7 +372,9 @@ fn forward(
         ])
     })
     .context("forward_is")?;
+    stats.cmp_nanos.fetch_add(t_cmp.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
+    let t_d2h = Instant::now();
     let (priors_t, values_t) = match out {
         IValue::Tuple(mut v) if v.len() == 2 => {
             let values = ivalue_tensor(v.pop().unwrap())?;
@@ -369,6 +394,7 @@ fn forward(
     let vlen = total_k as usize;
     let mut values = vec![0f32; vlen];
     values_cpu.copy_data(&mut values, vlen);
+    stats.d2h_nanos.fetch_add(t_d2h.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
     Ok(Forward { priors, values, a_size: pa })
 }
