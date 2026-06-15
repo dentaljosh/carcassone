@@ -135,7 +135,16 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         # (mp.Queue seeded with 0..N-1).
         global_worker_id = cfg["orch_id_q"].get()
         remote_addr = cfg.get("remote_eval_server")
-        if remote_addr:
+        shm_name = cfg.get("shm_eval_server")
+        if shm_name:
+            # Shared-memory mode: attach to this worker's /dev/shm slot +
+            # semaphores. ShmServerHandles exposes the same request_q.put() /
+            # response_q.get() API, so make_remote_*_evaluator works unchanged.
+            # n_scalar follows the learner checkpoint (12 with farm scalars).
+            from carcassonne_ai.shm_eval_handles import connect_shm
+            ns = 12 if cfg.get("include_farm_scalars") else 10
+            _worker_handles = connect_shm(shm_name, global_worker_id, ns)
+        elif remote_addr:
             # Network mode: open a TCP connection to the remote bridge. The
             # SocketServerHandles exposes the same .request_q.put() /
             # .response_q.get() API as the local IPC ServerHandles, so the
@@ -565,6 +574,14 @@ def main(argv: list[str] | None = None) -> int:
              "--orchestrator. Mutually exclusive with --serve-on.",
     )
     p.add_argument(
+        "--shm-eval-server", type=str, default=None, metavar="NAME",
+        help="Client mode over SHARED MEMORY (carc-orch --transport shm). Each "
+             "local worker attaches to /dev/shm/carc_NAME + its POSIX semaphores "
+             "and ships eval requests zero-copy (no TCP/np.save). Implies "
+             "--orchestrator. Local-box only; mutually exclusive with --serve-on "
+             "/ --remote-eval-server. Still pass --checkpoint (scalar-width peek).",
+    )
+    p.add_argument(
         "--anchor-checkpoint", type=Path, default=None,
         help="Anchor-fraction self-play: fixed strong-opponent checkpoint. "
              "When set, a fraction of games (see --anchor-fraction) are played "
@@ -594,14 +611,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.remote_eval_server and args.serve_on:
         p.error("--remote-eval-server and --serve-on are mutually exclusive")
+    if args.shm_eval_server and (args.serve_on or args.remote_eval_server):
+        p.error("--shm-eval-server is mutually exclusive with --serve-on / --remote-eval-server")
     if args.serve_on and not args.orchestrator:
         p.error("--serve-on requires --orchestrator")
     if args.serve_on and args.serve_slots <= 0:
         p.error("--serve-on requires --serve-slots > 0")
-    if args.remote_eval_server:
-        # Remote mode is an orchestrator client; the remote box owns the
-        # server pool. Force the orchestrator code path on so _worker_init
-        # takes the orchestrator branch.
+    if args.remote_eval_server or args.shm_eval_server:
+        # Orchestrator-client mode (TCP or SHM); the server owns the net pool.
+        # Force the orchestrator code path on so _worker_init takes that branch.
         args.orchestrator = True
     if not args.remote_eval_server and args.checkpoint is None:
         p.error("--checkpoint is required (only optional with --remote-eval-server)")
@@ -764,6 +782,17 @@ def main(argv: list[str] | None = None) -> int:
             for w in range(n_workers):
                 id_q.put(w)
             cfg["remote_eval_server"] = (host, port)
+            cfg["orch_id_q"] = id_q
+        elif args.shm_eval_server:
+            print(
+                f"  shm eval-server mode: attaching to "
+                f"/dev/shm/carc_{args.shm_eval_server} from {n_workers} local workers"
+            )
+            sys.stdout.flush()
+            id_q = ctx.Queue()
+            for w in range(n_workers):
+                id_q.put(w)
+            cfg["shm_eval_server"] = args.shm_eval_server
             cfg["orch_id_q"] = id_q
         else:
             # Local server. If --serve-on is set, oversize the pool by

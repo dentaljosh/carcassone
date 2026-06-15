@@ -1,0 +1,3 @@
+/target
+# Local dev-speed only (hardcodes this box's mold path) — not portable.
+/.cargo/config.toml

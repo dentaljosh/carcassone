@@ -1,0 +1,24 @@
+[package]
+name = "carc-orch"
+version = "0.1.0"
+edition = "2021"
+description = "Rust GPU inference-orchestrator for Carcassonne self-play (drop-in for the Python eval_server bridge)"
+
+[[bin]]
+name = "smoke"
+path = "src/bin/smoke.rs"
+
+[[bin]]
+name = "carc-orch"
+path = "src/main.rs"
+
+[dependencies]
+tch = "0.24"
+anyhow = "1"
+crossbeam-channel = "0.5"
+memmap2 = "0.9"
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
