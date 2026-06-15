@@ -4,7 +4,7 @@ A drop-in replacement for the Python `eval_server` + `remote_eval_bridge` pair.
 It speaks the **exact same** len-prefixed npy TCP protocol, so existing Python
 self-play workers connect to it unchanged via `--remote-eval-server HOST:PORT`.
 
-## Status (2026-06-15): WON 1.33x — deployed local-only
+## Status (2026-06-15): WON — deployed on 5800x (1.33x) + xeon (1.40x at W18)
 
 **The CUDA-streams gambit succeeded: stream-SHM W28 BEATS orch-off W14 by 1.33x**
 (56 vs 42 games/360s, confirmed n=2). Additions beyond the original TCP server
@@ -22,9 +22,11 @@ documented below:
 
 Squeeze exhausted (cuDNN / more-forwarders / H2D double-buffer all
 neutral-or-worse → **1.33x is the ceiling**; the per-worker CPU v2.7 leaf is the
-bottleneck, not the GPU server). **Deployed** into the flywheel's local-box gen
-via the share `gen_flywheel.sh` orchestrator branch (`USE_ORCH=1`). xeon/laptop
-deferred (no Rust; laptop torch 2.12 ≠ local 2.11). Full detail: STATUS.md
+bottleneck, not the GPU server). **Deployed** into the flywheel gen on **5800x**
+(~1.33x) AND **xeon** (~1.40x at W18; A/B 2026-06-15 `b8bc488`, forward-rate probe)
+via the share `gen_flywheel.sh` orchestrator branch (`USE_ORCH=1`) — xeon runs the
+COPIED binary (same torch 2.11/cu128, no rebuild). Laptop stays orch-off (no binary
+copied; torch was standardized 2.12/cu130→2.11/cu128). Full detail: STATUS.md
 "carc-orch" block + memory `reference_carc_orch_verdict`. The architecture below
 describes the TCP transport; SHM mirrors it zero-copy.
 
