@@ -35,11 +35,14 @@ SP_COMMON="--iter 0 --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-blend 0
 # USE_ORCH=1 routes the LOCAL box (5800x) through the carc-orch GPU orchestrator
 # (per-forwarder CUDA streams → W~28 on one shared context = ~1.33x more games/min
 # than orch-off; verdict 2026-06-15, result-IDENTICAL priors — just batched over
-# SHM instead of per-worker forward). Remotes ALWAYS take the orch-off branch
-# (carc-orch is local-only: laptop torch 2.12 mismatch, no Rust on the boxes).
+# SHM instead of per-worker forward). NOW ALSO ON XEON (A/B 2026-06-15: fwd-rate
+# scales W10->W18 = 1.40x, GPU starved at W10; xeon has the binary + matching
+# libtorch 2.11/cu128). LAPTOP stays orch-off (no Rust binary copied there).
 USE_ORCH="${USE_ORCH:-0}"
-if [ "$HOST" = "5800x" ] && [ "$USE_ORCH" = "1" ]; then
-  OW="${ORCH_WORKERS:-28}"; FWD="${ORCH_FWD:-4}"; MB="${ORCH_MAX_BATCH:-16}"
+if { [ "$HOST" = "5800x" ] || [ "$HOST" = "xeon" ]; } && [ "$USE_ORCH" = "1" ]; then
+  # per-box worker default: 5800x VRAM allows W28; xeon (12-thread Turing) -> W18
+  _OWD=28; [ "$HOST" = "xeon" ] && _OWD=18
+  OW="${ORCH_WORKERS:-$_OWD}"; FWD="${ORCH_FWD:-4}"; MB="${ORCH_MAX_BATCH:-16}"
   SRV="$REPO/rust/carc-orch/run_server.sh"
   NS="$("$PY" -c "import torch,sys; print(int(torch.load(sys.argv[1],map_location='cpu',weights_only=False).get('n_scalar_features',10)))" "$WARM")"
   TS="/tmp/carc_fwgen_${HOST}.ts.pt"; SHMN="fwgen${HOST}"

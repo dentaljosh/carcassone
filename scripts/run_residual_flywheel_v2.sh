@@ -44,11 +44,12 @@ WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 W_5800X=${W_5800X:-14}; W_LAPTOP=${W_LAPTOP:-20}; W_XEON=${W_XEON:-10}
 
 SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
-# USE_ORCH=1 routes the LOCAL box's gen through the carc-orch GPU orchestrator
-# (per-forwarder CUDA streams, ~1.33x more games/min vs orch-off; verdict 2026-06-15,
-# result-identical priors). Local-only (xeon/laptop stay orch-off). Default 0 = ready
-# but opt-in; the deployed resume recipe (STATUS) sets USE_ORCH=1. ORCH_WORKERS=28 is
-# the swept local peak (W18-28 plateau).
+# USE_ORCH=1 routes 5800x AND xeon gen through the carc-orch GPU orchestrator
+# (per-forwarder CUDA streams, result-identical priors; verdict 2026-06-15). 5800x
+# ~1.33x, xeon ~1.40x vs orch-off (A/B 2026-06-15; xeon fwd-rate scales W10->W18).
+# Laptop stays orch-off (no Rust binary copied). Default 0 = ready but opt-in; the
+# deployed resume recipe (STATUS) sets USE_ORCH=1. ORCH_WORKERS=28 is the 5800x peak;
+# xeon defaults to W18 inside gen_flywheel.sh (NOT overridden here, so xeon picks 18).
 USE_ORCH=${USE_ORCH:-0}; ORCH_WORKERS=${ORCH_WORKERS:-28}
 ITERS=${ITERS:-3}; START=${START:-1}; KEEP_MARGIN=${KEEP_MARGIN:-0}   # external paired Δelo to promote; 0 = follow the external signal
 TELEMETRY_GATE=${TELEMETRY_GATE:-1}                                   # 1 = also log the in-lineage heur@200 gate (no authority)
@@ -182,7 +183,7 @@ _gen_launch() {   # $1=iter $2=seed_start
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=$W_5800X USE_ORCH=$USE_ORCH ORCH_WORKERS=$ORCH_WORKERS WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw2_gen5800x_$it.log 2>&1 & disown
   _ssh_bg laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
-  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
+  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=$USE_ORCH setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
 }
 
 # Parse the odo_paired_tally TALLY line: A=baseline(best/iter0), B=new(iter/champion).
