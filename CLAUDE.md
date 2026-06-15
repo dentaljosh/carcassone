@@ -75,7 +75,9 @@ A second always-on machine is available for training runs (set up 2026-05-18).
 - **⚠️ cmd.exe mangles shell operators:** `ssh xeon "wsl … -- bash -lc 'a && b | c'"` — the `&& | ; > ||` get interpreted by the Windows shell, not bash (see also [feedback_xeon_ssh_quoting]). Keep operators inside a real `.sh` file run by a single operator-free invocation; for `pkill` use `wsl … -- pkill -TERM -f X` (no `bash -lc`, no inner redirects).
 - **GPU read:** the WSL-native `nvidia-smi` may throw `NVML: Function Not Found` (version mismatch); the Windows interop `nvidia-smi.exe` works from WSL and isn't fooled. (Windows Task Manager's default GPU graph shows the **3D** engine — CUDA compute is under a separate **Compute/Cuda** engine you must select, else WSL torch looks idle.)
 
-## Third machine — laptop (pop-os, via Tailscale)
+## Third machine — laptop (REBUILT 2026-06-15 → Windows 11 + WSL2 Ubuntu)
+
+> ⚠️ **REBUILT 2026-06-15: the laptop is NO LONGER pop-os.** It's now **Windows 11 + WSL2 Ubuntu 26.04** at LAN **192.168.0.221** (on the LAN, not Tailscale — like the xeon). Reach it via `ssh laptop` (Windows cmd.exe, user `Doctor`) or `ssh laptop-wsl` (direct WSL2 bash :2222, user `doctor`); passwordless key + sudo. Mirrored WSL networking (Hyper-V firewall rule, no portproxy). ⚠️ WSL idle-shuts-down — a keepalive (scheduled task) is still TBD; (re)start WSL via `ssh laptop` before use. CUDA/torch/repo/CIFS NOT yet set up. **Current details: memory `reference_laptop_cluster_access`.** Everything below is the OLD pop-os setup (historical).
 
 A third cluster box — a pop-os laptop — joined for self-play/eval (first used over Shabbos 2026-05-29).
 
