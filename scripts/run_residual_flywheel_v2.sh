@@ -44,6 +44,10 @@ WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 
 # Per-box worker counts (Joshua 2026-06-08): 5800x=14, laptop=20, xeon=10.
 W_5800X=${W_5800X:-14}; W_LAPTOP=${W_LAPTOP:-20}; W_XEON=${W_XEON:-10}
+# Eval-W decoupled from gen-W (2026-06-16 xeon eval-W characterization: orch-off eval
+# is CPU-thread-bound, peak at W=threads; xeon eval-W=12 > gen-W=10). Defaults to the
+# per-box gen-W (behaviour unchanged) EXCEPT xeon=12. Used in _eval_launch only.
+EVAL_W_5800X=${EVAL_W_5800X:-$W_5800X}; EVAL_W_LAPTOP=${EVAL_W_LAPTOP:-$W_LAPTOP}; EVAL_W_XEON=${EVAL_W_XEON:-12}
 
 SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
 # USE_ORCH=1 routes 5800x AND xeon gen through the carc-orch GPU orchestrator
@@ -147,10 +151,10 @@ _eval_launch() {   # $1=sub $2=rckpt $3=ckpt $4=n $5=heur_sims $6=seed $7=root(l
   rroot=${root/$SHARE_LOCAL/$SHARE_REMOTE}
   nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$SCALE" $PY -u scripts/eval_net_vs_heuristic.py \
     --checkpoint "$ckpt" --n "$N" --sims "$SIMS" --heur-sims "$hs" --c-puct 3.0 --heur-leaf v2_7 \
-    --workers "$W_5800X" --out-root "$root" --out-subdir "$sub" \
+    --workers "$EVAL_W_5800X" --out-root "$root" --out-subdir "$sub" \
     --seed-start "$seed" --paired --shared-claim --claim-host 5800x >/tmp/fw2_eval5800x.log 2>&1 &
-  _ssh_bg $LAPTOP_SSH "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
-  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
+  _ssh_bg $LAPTOP_SSH "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $EVAL_W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
+  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $EVAL_W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
 }
 
 # Block until a dir reaches N games, self-healing the orphan-stall. Returns 1 (loud) on
