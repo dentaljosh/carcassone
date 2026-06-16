@@ -98,19 +98,33 @@ ssh -o ConnectTimeout=20 $LAPTOP_SSH "cd $REPO_LAPTOP && git fetch $SHARE_REMOTE
 # Shared helpers (carried verbatim from attempt #1's hardened launcher: D-S1..S4).
 # ---------------------------------------------------------------------------
 HEAL_CAP=${HEAL_CAP:-8}
+# Eval heal stall-window (polls x 30s before declaring a stall). 60 = 30min, comfortably longer than
+# one sims=800 net-vs-heur game (~10-30min). The old fixed 20 (10min) false-stalled on the tail/long
+# games -> heal thrash that re-stacked workers, hung launch-ssh, and risked the heal-cap abort
+# (2026-06-16). Gate evals (sims=200, ~2-4min games) keep their small window.
+STALL_ODO=${STALL_ODO:-60}
+# Gen heal stall-window (polls x 60s). 15 = 15min; the old 6 (6min) was shorter than a sims=800
+# self-play game (same false-stall class as the eval bug above).
+STALL_GEN=${STALL_GEN:-15}
 _share_writable() { ( touch "$SHARE_LOCAL/.fw2_probe" 2>/dev/null && rm -f "$SHARE_LOCAL/.fw2_probe" 2>/dev/null ); }
-_kill_pool() {   # reap the prior pool on all 3 boxes before a heal relaunch
-  pkill -f "$1" 2>/dev/null || true
-  ssh -o ConnectTimeout=15 $LAPTOP_SSH "pkill -f $1" </dev/null >/dev/null 2>&1 || true
-  [ "$USE_XEON" = 1 ] && ssh -o ConnectTimeout=15 xeon-wsl "pkill -f $1" </dev/null >/dev/null 2>&1 || true
+_kill_pool() {   # reap the prior pool (cmdline pattern $1) on all 3 boxes: SIGKILL, scoped, hang-proof.
+  # Bracket the 1st char so the regex matches real workers (incl. spawn/forkserver children, which
+  # carry the full argv) but never the pkill shell itself (self-match guard). `timeout` caps each
+  # remote kill so a drowning box can't hang the heal (the 2026-06-16 17-min wedge).
+  local pat="[${1:0:1}]${1:1}"
+  pkill -9 -f "$pat" 2>/dev/null || true
+  timeout 20 ssh -o ConnectTimeout=10 $LAPTOP_SSH "pkill -9 -f '$pat'" </dev/null >/dev/null 2>&1 || true
+  [ "$USE_XEON" = 1 ] && timeout 20 ssh -o ConnectTimeout=10 xeon-wsl "pkill -9 -f '$pat'" </dev/null >/dev/null 2>&1 || true
 }
-_ssh_bg() {   # launch a detached remote cmd, RETRYING on rc=255 (Tailscale jitter)
+_ssh_bg() {   # launch a detached remote cmd, RETRYING on rc=255/124 (Tailscale jitter / overload-hang).
+  # `timeout 45` caps the launch ssh: even with setsid+&, a drowning box can hold the channel open
+  # indefinitely (the 2026-06-16 wedge). 45s is ample for a detached launch; a timeout (124) is retried.
   local host="$1" cmd="$2" label="$3" try rc
   for try in 1 2 3; do
-    ssh -o ConnectTimeout=20 "$host" "$cmd" </dev/null && return 0
+    timeout 45 ssh -o ConnectTimeout=20 "$host" "$cmd" </dev/null && return 0
     rc=$?
-    [ "$rc" = "255" ] || { echo "  $label launch rc=$rc" >&2; return "$rc"; }
-    echo "  $label ssh rc=255 (try $try/3) — retry" >&2; sleep 3
+    { [ "$rc" = "255" ] || [ "$rc" = "124" ]; } || { echo "  $label launch rc=$rc" >&2; return "$rc"; }
+    echo "  $label ssh rc=$rc (try $try/3) — retry" >&2; sleep 3
   done
   echo "  $label ssh FAILED after 3 tries (box dropped this iter; heal re-adds)" >&2; return 255
 }
@@ -176,7 +190,7 @@ _run_eval() {   # $1=ckpt(local) $2=sub $3=n $4=heur_sims $5=seed $6=stall_polls
       [ "$heals" -gt "$HEAL_CAP" ] && { echo "  [$sub] FATAL: $heals heals, stuck at $cur/$N — aborting (D-S1)" >&2; return 1; }
       if ! _share_writable; then echo "  [$sub] share NOT writable — backing off (heal $heals)" >&2; continue; fi
       echo "  [$sub] STALLED at $cur/$N — heal $heals: kill pool + clean stale (30min) + relaunch" >&2
-      _kill_pool eval_net_vs_heuristic
+      _kill_pool "$sub"
       _clean_stranded "$dir" json 30; _eval_launch "$sub" "$rckpt" "$ckpt" "$N" "$hs" "$seed" "$root"; stall=0
     fi
   done
@@ -237,7 +251,7 @@ for it in $(seq $START $ITERS); do
       sleep 60
       gcur=$(ls $DATA/iter_00/*.npz 2>/dev/null | wc -l)
       if [ "$gcur" -eq "$glast" ]; then gstall=$((gstall+1)); else gstall=0; glast=$gcur; fi
-      if [ "$gstall" -ge 6 ]; then
+      if [ "$gstall" -ge "$STALL_GEN" ]; then
         gheals=$((gheals+1))
         [ "$gheals" -gt "$HEAL_CAP" ] && { echo "[it$it] FATAL: $gheals gen heals, stuck at $gcur/$GAMES — aborting (D-S1)" >&2; exit 1; }
         if ! _share_writable; then echo "[it$it] gen: share NOT writable — backing off (heal $gheals)" >&2; continue; fi
@@ -268,8 +282,8 @@ for it in $(seq $START $ITERS); do
   # --- EXTERNAL keep-best: deck-paired heur@800 head-to-head new-vs-best on a ROTATING band ---
   BAND=$(( SEL_SEED_BASE + it * SEL_STRIDE ))
   echo "[it$it] === selection: iter$it vs best=$BEST_ID, paired heur@${ODO_HEUR_SIMS}-v2.7, band $BAND, n=$ODO_N @ $(date) ==="
-  _run_eval "$CKPT"        "sel_it${it}_new"  "$ODO_N" "$ODO_HEUR_SIMS" "$BAND" 20 "$OUT/odo" || { echo "[it$it] FATAL: selection(new) heal-cap" >&2; exit 1; }
-  _run_eval "$OUT/best.pt" "sel_it${it}_best" "$ODO_N" "$ODO_HEUR_SIMS" "$BAND" 20 "$OUT/odo" || { echo "[it$it] FATAL: selection(best) heal-cap" >&2; exit 1; }
+  _run_eval "$CKPT"        "sel_it${it}_new"  "$ODO_N" "$ODO_HEUR_SIMS" "$BAND" $STALL_ODO "$OUT/odo" || { echo "[it$it] FATAL: selection(new) heal-cap" >&2; exit 1; }
+  _run_eval "$OUT/best.pt" "sel_it${it}_best" "$ODO_N" "$ODO_HEUR_SIMS" "$BAND" $STALL_ODO "$OUT/odo" || { echo "[it$it] FATAL: selection(best) heal-cap" >&2; exit 1; }
   read DELO ZTAL ELOBEST ELONEW NDECKS < <(_paired "$OUT/odo/sel_it${it}_best" "$OUT/odo/sel_it${it}_new")
   echo "[it$it] selection: iter$it=${ELONEW} elo  best($BEST_ID)=${ELOBEST} elo  | paired Δelo(new−best)=${DELO} z=${ZTAL} decks=${NDECKS}"
   PROMOTE=$(awk -v d="$DELO" -v m="$KEEP_MARGIN" 'BEGIN{dl=tolower(d); if(d==""||dl~/nan|inf/){print 0; exit} print (d+0 > m+0)?1:0}')
@@ -295,8 +309,8 @@ done
 # Always runs (even after a DEADLINE break). This is THE attempt-#2 out-of-lineage verdict.
 # ---------------------------------------------------------------------------
 echo ""; echo "===== SEALED CONFIRMATION @ $(date): champion=$BEST_ID vs iter0 on held-out band $SEALED_SEED, n=$CONFIRM_N, heur@${ODO_HEUR_SIMS}-v2.7 ====="
-_run_eval "$OUT/best.pt"  "sealed_champ" "$CONFIRM_N" "$ODO_HEUR_SIMS" "$SEALED_SEED" 20 "$OUT/odo" || { echo "FATAL: sealed(champ) heal-cap" >&2; exit 1; }
-_run_eval "$ITER0_CKPT"   "sealed_iter0" "$CONFIRM_N" "$ODO_HEUR_SIMS" "$SEALED_SEED" 20 "$OUT/odo" || { echo "FATAL: sealed(iter0) heal-cap" >&2; exit 1; }
+_run_eval "$OUT/best.pt"  "sealed_champ" "$CONFIRM_N" "$ODO_HEUR_SIMS" "$SEALED_SEED" $STALL_ODO "$OUT/odo" || { echo "FATAL: sealed(champ) heal-cap" >&2; exit 1; }
+_run_eval "$ITER0_CKPT"   "sealed_iter0" "$CONFIRM_N" "$ODO_HEUR_SIMS" "$SEALED_SEED" $STALL_ODO "$OUT/odo" || { echo "FATAL: sealed(iter0) heal-cap" >&2; exit 1; }
 echo "--- sealed paired tally (A=iter0 baseline, B=champion $BEST_ID) ---"
 $PY scripts/odo_paired_tally.py "$OUT/odo/sealed_iter0" "$OUT/odo/sealed_champ" | tee "$OUT/SEALED_VERDICT.txt"
 read SDELO SZ SELOA SELOB SND < <(_paired "$OUT/odo/sealed_iter0" "$OUT/odo/sealed_champ")
