@@ -94,6 +94,61 @@ _worker_handles: ServerHandles | SocketServerHandles | None = None
 _worker_anchor_net: CarcassonneNet | None = None
 _worker_anchor_handles: ServerHandles | SocketServerHandles | None = None
 
+# --- Throughput instrumentation (opt-in via CARC_THROUGHPUT_LOG=1; additive,
+# zero-cost when off). Each worker counts POSITIONS sent to its evaluator and
+# writes its cumulative count to <dir>/w<pid> ~1x/sec. An external harness sums
+# the per-worker files at two timestamps -> positions(=forwards)/sec, the
+# low-noise metric for orch-vs-orch-off W-sweeps. Same instrumentation point for
+# BOTH modes (remote evaluator in orch, local in orch-off), so the two are
+# directly comparable; for orch it should also match the server's examples/s. ---
+_FW_ENABLED = bool(os.environ.get("CARC_THROUGHPUT_LOG"))
+_FW_DIR = os.environ.get("CARC_THROUGHPUT_DIR", "/tmp/carc_fwcount")
+_fw_count = 0
+_fw_last_write = 0.0
+_fw_file: str | None = None
+
+
+def _fw_tick(n: int) -> None:
+    """Add n positions to this worker's counter; flush to its file ~1x/sec."""
+    global _fw_count, _fw_last_write, _fw_file
+    _fw_count += n
+    now = time.time()
+    if now - _fw_last_write < 1.0:
+        return
+    _fw_last_write = now
+    try:
+        if _fw_file is None:
+            os.makedirs(_FW_DIR, exist_ok=True)
+            _fw_file = os.path.join(_FW_DIR, f"w{os.getpid()}")
+        with open(_fw_file, "w") as f:
+            f.write(f"{_fw_count} {now}\n")
+    except OSError:
+        pass
+
+
+def _wrap_throughput(ev, bev):
+    """Wrap (single, batch) evaluators to count positions evaluated, passing the
+    exact (priors, value) results through unchanged (no behavior change)."""
+    _ev, _bev = ev, bev
+
+    def ev_t(board):
+        r = _ev(board)
+        _fw_tick(1)
+        return r
+
+    bev_t = None
+    if _bev is not None:
+
+        def bev_t(boards):
+            r = _bev(boards)
+            try:
+                _fw_tick(len(boards))
+            except TypeError:
+                _fw_tick(1)
+            return r
+
+    return ev_t, bev_t
+
 
 def _parse_host_port(s: str) -> tuple[str, int]:
     """argparse type for HOST:PORT flags."""
@@ -306,6 +361,8 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             ev = make_v25_value_wrapper(ev, cfg=leaf_cfg)
             if bev is not None:
                 bev = make_v25_batch_value_wrapper(bev, cfg=leaf_cfg)
+        if _FW_ENABLED:
+            ev, bev = _wrap_throughput(ev, bev)
         return ev, bev
 
     evaluator, batch_evaluator = _build_evaluators(_worker_handles, _worker_net)
