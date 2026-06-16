@@ -32,7 +32,9 @@ SHARE_LOCAL=/mnt/c/carc-shared
 SHARE_REMOTE=/mnt/carc-shared
 REPO_LOCAL=/home/doctor/projects/carcassone
 REPO_XEON=/home/doctor/projects/carcassone
-REPO_LAPTOP=/home/pop/carcassone
+REPO_LAPTOP=/home/doctor/projects/carcassone   # rebuilt laptop 2026-06-15: Win11+WSL, was /home/pop (pop-os)
+LAPTOP_SSH=${LAPTOP_SSH:-laptop-wsl}            # rebuilt laptop: direct WSL bash (ssh laptop = Windows cmd.exe)
+USE_XEON=${USE_XEON:-1}                         # 0 = exclude xeon from gen+eval (e.g. while benching it)
 FLYWHEEL_TAG=${FLYWHEEL_TAG:-flywheel_residual_attempt2}   # fresh dir → no resume of attempt #1
 OUT=$SHARE_LOCAL/$FLYWHEEL_TAG
 OUTR=$SHARE_REMOTE/$FLYWHEEL_TAG
@@ -85,8 +87,8 @@ echo "    keep-best = EXTERNAL (heur@${ODO_HEUR_SIMS}-v2.7 paired, rotating deck
 git bundle create $SHARE_LOCAL/code_sync/carc_stage-b-wiring.bundle stage-b-wiring >/dev/null 2>&1
 echo "  bundle tip: $(git rev-parse --short stage-b-wiring)"
 echo "  syncing remotes to bundle…"
-ssh -o ConnectTimeout=20 laptop "cd $REPO_LAPTOP && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  laptop synced" || echo "  laptop sync FAILED (gate/odo fan may run stale)"
-ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  xeon synced" || echo "  xeon sync FAILED (gate/odo fan may run stale)"
+ssh -o ConnectTimeout=20 $LAPTOP_SSH "cd $REPO_LAPTOP && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  laptop synced" || echo "  laptop sync FAILED (gate/odo fan may run stale)"
+[ "$USE_XEON" = 1 ] && { ssh -o ConnectTimeout=20 xeon-wsl "cd $REPO_XEON && git fetch $SHARE_REMOTE/code_sync/carc_stage-b-wiring.bundle stage-b-wiring && git reset --hard FETCH_HEAD" >/dev/null 2>&1 && echo "  xeon synced" || echo "  xeon sync FAILED (gate/odo fan may run stale)"; } || echo "  xeon EXCLUDED (USE_XEON=0)"
 
 # ---------------------------------------------------------------------------
 # Shared helpers (carried verbatim from attempt #1's hardened launcher: D-S1..S4).
@@ -95,8 +97,8 @@ HEAL_CAP=${HEAL_CAP:-8}
 _share_writable() { ( touch "$SHARE_LOCAL/.fw2_probe" 2>/dev/null && rm -f "$SHARE_LOCAL/.fw2_probe" 2>/dev/null ); }
 _kill_pool() {   # reap the prior pool on all 3 boxes before a heal relaunch
   pkill -f "$1" 2>/dev/null || true
-  ssh -o ConnectTimeout=15 laptop  "pkill -f $1" </dev/null >/dev/null 2>&1 || true
-  ssh -o ConnectTimeout=15 xeon-wsl "pkill -f $1" </dev/null >/dev/null 2>&1 || true
+  ssh -o ConnectTimeout=15 $LAPTOP_SSH "pkill -f $1" </dev/null >/dev/null 2>&1 || true
+  [ "$USE_XEON" = 1 ] && ssh -o ConnectTimeout=15 xeon-wsl "pkill -f $1" </dev/null >/dev/null 2>&1 || true
 }
 _ssh_bg() {   # launch a detached remote cmd, RETRYING on rc=255 (Tailscale jitter)
   local host="$1" cmd="$2" label="$3" try rc
@@ -147,8 +149,8 @@ _eval_launch() {   # $1=sub $2=rckpt $3=ckpt $4=n $5=heur_sims $6=seed $7=root(l
     --checkpoint "$ckpt" --n "$N" --sims "$SIMS" --heur-sims "$hs" --c-puct 3.0 --heur-leaf v2_7 \
     --workers "$W_5800X" --out-root "$root" --out-subdir "$sub" \
     --seed-start "$seed" --paired --shared-claim --claim-host 5800x >/tmp/fw2_eval5800x.log 2>&1 &
-  _ssh_bg laptop "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
-  _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
+  _ssh_bg $LAPTOP_SSH "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
+  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
 }
 
 # Block until a dir reaches N games, self-healing the orphan-stall. Returns 1 (loud) on
@@ -182,8 +184,8 @@ _gen_launch() {   # $1=iter $2=seed_start
   local it="$1" sp_seed="$2"
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=$W_5800X USE_ORCH=$USE_ORCH ORCH_WORKERS=$ORCH_WORKERS WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw2_gen5800x_$it.log 2>&1 & disown
-  _ssh_bg laptop "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
-  _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=$USE_ORCH setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
+  _ssh_bg $LAPTOP_SSH "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
+  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=$USE_ORCH setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
 }
 
 # Parse the odo_paired_tally TALLY line: A=baseline(best/iter0), B=new(iter/champion).
