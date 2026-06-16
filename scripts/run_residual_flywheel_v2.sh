@@ -185,7 +185,7 @@ _gen_launch() {   # $1=iter $2=seed_start
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=$W_5800X USE_ORCH=$USE_ORCH ORCH_WORKERS=$ORCH_WORKERS WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw2_gen5800x_$it.log 2>&1 & disown
   _ssh_bg $LAPTOP_SSH "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
-  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=$USE_ORCH setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &
+  [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=0 setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &   # xeon=orch-OFF W10 (2026-06-16 bench: tie, GPU underfed; only 5800x earns orch)
 }
 
 # Parse the odo_paired_tally TALLY line: A=baseline(best/iter0), B=new(iter/champion).
