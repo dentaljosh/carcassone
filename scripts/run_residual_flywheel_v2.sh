@@ -116,15 +116,18 @@ _kill_pool() {   # reap the prior pool (cmdline pattern $1) on all 3 boxes: SIGK
   timeout 20 ssh -o ConnectTimeout=10 $LAPTOP_SSH "pkill -9 -f '$pat'" </dev/null >/dev/null 2>&1 || true
   [ "$USE_XEON" = 1 ] && timeout 20 ssh -o ConnectTimeout=10 xeon-wsl "pkill -9 -f '$pat'" </dev/null >/dev/null 2>&1 || true
 }
-_ssh_bg() {   # launch a detached remote cmd, RETRYING on rc=255/124 (Tailscale jitter / overload-hang).
-  # `timeout 45` caps the launch ssh: even with setsid+&, a drowning box can hold the channel open
-  # indefinitely (the 2026-06-16 wedge). 45s is ample for a detached launch; a timeout (124) is retried.
+_ssh_bg() {   # launch a detached remote cmd. RETRY only on rc=255 (connect jitter).
+  # `timeout 45` caps the launch ssh so a held-open channel can't wedge the heal. But a detached
+  # launch (setsid+&) routinely holds the channel open on the WSL boxes, so the ssh hits the 45s
+  # timeout (rc=124) AFTER the pool already started. Treat 124 as LAUNCHED and do NOT retry —
+  # retrying stacks a 2nd/3rd pool (the 2026-06-16 retry-stacking bug: xeon hit 42 workers / 3 pools).
   local host="$1" cmd="$2" label="$3" try rc
   for try in 1 2 3; do
     timeout 45 ssh -o ConnectTimeout=20 "$host" "$cmd" </dev/null && return 0
     rc=$?
-    { [ "$rc" = "255" ] || [ "$rc" = "124" ]; } || { echo "  $label launch rc=$rc" >&2; return "$rc"; }
-    echo "  $label ssh rc=$rc (try $try/3) — retry" >&2; sleep 3
+    [ "$rc" = "124" ] && { echo "  $label launched (detached; ssh channel held open, rc=124 — not retried)" >&2; return 0; }
+    [ "$rc" = "255" ] || { echo "  $label launch rc=$rc" >&2; return "$rc"; }
+    echo "  $label ssh rc=255 (try $try/3) — retry" >&2; sleep 3
   done
   echo "  $label ssh FAILED after 3 tries (box dropped this iter; heal re-adds)" >&2; return 255
 }
