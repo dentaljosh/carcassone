@@ -42,8 +42,9 @@ PY=$REPO_LOCAL/.venv/bin/python
 ENVV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1"   # = the v2.7 leaf config + flat-leaf rewrite (deployed 2026-06-09 @ iter5 boundary; bit-exact, ~+8% cluster)
 WARMSTART_ROOT=$REPO_LOCAL/data/warmstart/heuristic_tau05
 
-# Per-box worker counts (Joshua 2026-06-08): 5800x=14, laptop=20, xeon=10.
-W_5800X=${W_5800X:-14}; W_LAPTOP=${W_LAPTOP:-20}; W_XEON=${W_XEON:-10}
+# Per-box worker counts: 5800x=14, laptop=12 (rebuilt 8GB/11GB box; orch sweep
+# 2026-06-17 ~flat W12-16, W20 RAM-thrashes; was a stale 20 from the pop-os era), xeon=10.
+W_5800X=${W_5800X:-14}; W_LAPTOP=${W_LAPTOP:-12}; W_XEON=${W_XEON:-10}
 # Eval-W decoupled from gen-W (2026-06-16 xeon eval-W characterization: orch-off eval
 # is CPU-thread-bound, peak at W=threads; xeon eval-W=12 > gen-W=10). Defaults to the
 # per-box gen-W (behaviour unchanged) EXCEPT xeon=12. Used in _eval_launch only.
@@ -205,7 +206,7 @@ _gen_launch() {   # $1=iter $2=seed_start
   local it="$1" sp_seed="$2"
   SHARE=$SHARE_LOCAL REPO=$REPO_LOCAL HOST=5800x WORKERS=$W_5800X USE_ORCH=$USE_ORCH ORCH_WORKERS=$ORCH_WORKERS WARM=$OUT/warm.pt OUT=$OUT/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed \
     nohup nice -n 19 bash $SHARE_LOCAL/code_sync/gen_flywheel.sh > /tmp/fw2_gen5800x_$it.log 2>&1 & disown
-  _ssh_bg $LAPTOP_SSH "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &
+  _ssh_bg $LAPTOP_SSH "SHARE=$SHARE_REMOTE REPO=$REPO_LAPTOP HOST=laptop USE_ORCH=$USE_ORCH WORKERS=$W_LAPTOP WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genlaptop_$it.log 2>&1 </dev/null &" "[it$it] laptop gen" &   # laptop NOW orch (USE_ORCH=1 -> _OWD=12 + CY_REPR; A/B 2026-06-17 orch>off @s800)
   [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "SHARE=$SHARE_REMOTE REPO=$REPO_XEON HOST=xeon WORKERS=$W_XEON WARM=$OUTR/warm.pt OUT=$OUTR/iter${it}_data SCALE=$SCALE GAMES=$GAMES SIMS=$SIMS SEED_START=$sp_seed USE_ORCH=0 setsid nice -n 19 bash $SHARE_REMOTE/code_sync/gen_flywheel.sh > /tmp/fw2_genxeon_$it.log 2>&1 </dev/null &" "[it$it] xeon gen" &   # xeon=orch-OFF W10 (2026-06-16 bench: tie, GPU underfed; only 5800x earns orch)
 }
 

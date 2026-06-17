@@ -37,11 +37,14 @@ SP_COMMON="--iter 0 --games $GAMES --sims $SIMS --leaf-eval v2_5 --value-blend 0
 # than orch-off; verdict 2026-06-15, result-IDENTICAL priors — just batched over
 # SHM instead of per-worker forward). NOW ALSO ON XEON (A/B 2026-06-15: fwd-rate
 # scales W10->W18 = 1.40x, GPU starved at W10; xeon has the binary + matching
-# libtorch 2.11/cu128). LAPTOP stays orch-off (no Rust binary copied there).
+# libtorch 2.11/cu128). LAPTOP NOW orch-capable too (binary+TS present; A/B
+# 2026-06-17: orch W12=24 games vs off W12=18 @sims800 = 1.33x; orch off W16+
+# OOMs the 8GB 4070m, so orch _OWD=12).
 USE_ORCH="${USE_ORCH:-0}"
-if { [ "$HOST" = "5800x" ] || [ "$HOST" = "xeon" ]; } && [ "$USE_ORCH" = "1" ]; then
-  # per-box worker default: 5800x VRAM allows W28; xeon (12-thread Turing) -> W18
-  _OWD=28; [ "$HOST" = "xeon" ] && _OWD=18
+if { [ "$HOST" = "5800x" ] || [ "$HOST" = "xeon" ] || [ "$HOST" = "laptop" ]; } && [ "$USE_ORCH" = "1" ]; then
+  # per-box worker default: 5800x VRAM allows W28; xeon (12-thread Turing) -> W18;
+  # laptop (8GB 4070m / 11GB WSL) -> W12 (orch sweep flat ~W12-16, W20 RAM-thrashes)
+  _OWD=28; [ "$HOST" = "xeon" ] && _OWD=18; [ "$HOST" = "laptop" ] && _OWD=12
   OW="${ORCH_WORKERS:-$_OWD}"; FWD="${ORCH_FWD:-4}"; MB="${ORCH_MAX_BATCH:-16}"
   SRV="$REPO/rust/carc-orch/run_server.sh"
   NS="$("$PY" -c "import torch,sys; print(int(torch.load(sys.argv[1],map_location='cpu',weights_only=False).get('n_scalar_features',10)))" "$WARM")"
@@ -61,7 +64,10 @@ if { [ "$HOST" = "5800x" ] || [ "$HOST" = "xeon" ]; } && [ "$USE_ORCH" = "1" ]; 
     || { echo "FATAL: carc-orch server failed to start" >&2; tail -10 "/tmp/carc_srv_${HOST}.log" >&2; exit 1; }
   echo "  [orch] server ready ($(grep -c 'CUDA stream=' "/tmp/carc_srv_${HOST}.log") streams); self-play W=$OW via SHM '$SHMN'"
   # shellcheck disable=SC2086
-  env CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1 \
+  # CY_REPR=1: Cython board-encoder, +7% gen throughput on the orch path (A/B
+  # 2026-06-17, 5800x W28). Bit-exact + graceful Python fallback if a box lacks
+  # the .so. Orch-only (NULL on orch-off/GPU-dispatch-bound; see the else branch).
+  env CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 \
     nice -n 19 "$PY" -u scripts/run_selfplay_iter.py $SP_COMMON --workers "$OW" --shm-eval-server "$SHMN"
 else
   # shellcheck disable=SC2086
