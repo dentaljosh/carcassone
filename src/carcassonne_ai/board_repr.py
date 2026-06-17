@@ -51,6 +51,7 @@ which feature was actually claimed.
 """
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Iterable
 
 import numpy as np
@@ -294,6 +295,17 @@ def board_overflows_window(state: "CarcassonneGameState", off: WindowOffset) -> 
 _NORMAL_SIDE_TO_OFFSET: dict[Side, int] = {s: i for i, s in enumerate(SIDES_5)}
 _FARMER_CORNER_TO_OFFSET: dict[Side, int] = {s: i for i, s in enumerate(CORNERS_4)}
 
+# Cython board-encoder toggle (2026-06-17, stage-b-wiring). When set,
+# encode_board redirects to the compiled `flat_repr_cy.encode_board_cy` port
+# (bit-exact gate: scripts/reconcile_repr_cy.py; build:
+# `python setup_flat_repr_cy.py build_ext --inplace`). DEFAULT OFF until
+# reconciled+folded — with the flag unset the compiled module is NEVER imported
+# (zero behavioral change). Same read-at-import pattern as flat_leaf.USE_CY_LEAF
+# so SPAWNED self-play/eval workers inherit an env flip; a runtime flip needs
+# `board_repr.USE_CY_REPR = True` (lazy import fires on the next call).
+USE_CY_REPR = os.environ.get("CARCASSONNE_USE_CY_REPR", "0") == "1"
+_CY_ENCODE = None  # lazily bound flat_repr_cy.encode_board_cy
+
 
 def encode_board(
     state: "CarcassonneGameState",
@@ -304,6 +316,15 @@ def encode_board(
 
     `player` is the current-player perspective (mine = `player`, opp = the other).
     """
+    if USE_CY_REPR:
+        global _CY_ENCODE  # noqa: PLW0603
+        if _CY_ENCODE is None:
+            try:
+                from .flat_repr_cy import encode_board_cy as _CY_ENCODE  # noqa: PLW0603
+            except ImportError:
+                _CY_ENCODE = False  # .so missing on this box -> pure-Python (no crash, no retry)
+        if _CY_ENCODE:
+            return _CY_ENCODE(state, player, off)
     W = off.size
     arr = np.zeros((N_CHANNELS, W, W), dtype=np.float32)
     opp = 1 - player
