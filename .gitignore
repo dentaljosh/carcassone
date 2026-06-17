@@ -5,6 +5,9 @@
 src/carcassonne_ai/flat_leaf_cy.c
 src/carcassonne_ai/flat_repr_cy.c
 src/carcassonne_ai/*.so
+# carc-orch TorchScript exports (per-box, parity-gated rebuild via export_torchscript.py)
+rust/carc-orch/*.ts.pt
+*.ts.pt
 __pycache__/
 *.pyc
 *.pyo
