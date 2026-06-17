@@ -34,7 +34,10 @@ REPO_LOCAL=/home/doctor/projects/carcassone
 REPO_XEON=/home/doctor/projects/carcassone
 REPO_LAPTOP=/home/doctor/projects/carcassone   # rebuilt laptop 2026-06-15: Win11+WSL, was /home/pop (pop-os)
 LAPTOP_SSH=${LAPTOP_SSH:-laptop-wsl}            # rebuilt laptop: direct WSL bash (ssh laptop = Windows cmd.exe)
-USE_XEON=${USE_XEON:-1}                         # 0 = exclude xeon from gen+eval (e.g. while benching it)
+USE_XEON=${USE_XEON:-0}                         # RETIRED 2026-06-17: xeon dropped from gen+eval. Its weight
+                                                # collapsed once 5800x+laptop got orch+cython eval (~5x/+7%);
+                                                # it stayed orch-OFF (Quadro flaky) + was the #1 cluster-friction
+                                                # source. Set USE_XEON=1 to temporarily re-enlist it.
 FLYWHEEL_TAG=${FLYWHEEL_TAG:-flywheel_residual_attempt2}   # fresh dir → no resume of attempt #1
 OUT=$SHARE_LOCAL/$FLYWHEEL_TAG
 OUTR=$SHARE_REMOTE/$FLYWHEEL_TAG
@@ -48,7 +51,10 @@ W_5800X=${W_5800X:-14}; W_LAPTOP=${W_LAPTOP:-12}; W_XEON=${W_XEON:-10}
 # Eval-W decoupled from gen-W (2026-06-16 xeon eval-W characterization: orch-off eval
 # is CPU-thread-bound, peak at W=threads; xeon eval-W=12 > gen-W=10). Defaults to the
 # per-box gen-W (behaviour unchanged) EXCEPT xeon=12. Used in _eval_launch only.
-EVAL_W_5800X=${EVAL_W_5800X:-$W_5800X}; EVAL_W_LAPTOP=${EVAL_W_LAPTOP:-$W_LAPTOP}; EVAL_W_XEON=${EVAL_W_XEON:-12}
+# EVAL orch W (2026-06-17 sweep): 5800x+laptop run eval through carc-orch (eval_orch.sh) +cython;
+# 5800x W48 = plateau start (9.78 mps w/cython = 5.0x over off-baseline 1.95; W48-60 all ~9.4, GPU-bound
+# fwd_busy 59%); laptop W26 = RAM-safe (W28 hit 0GB avail on the 11GB box). xeon stays orch-OFF (Quadro flaky).
+EVAL_W_5800X=${EVAL_W_5800X:-48}; EVAL_W_LAPTOP=${EVAL_W_LAPTOP:-26}; EVAL_W_XEON=${EVAL_W_XEON:-12}
 
 SCALE=${SCALE:-0.25}; GAMES=${GAMES:-400}; SIMS=${SIMS:-200}
 # USE_ORCH=1 routes 5800x AND xeon gen through the carc-orch GPU orchestrator
@@ -167,11 +173,15 @@ PY
 _eval_launch() {   # $1=sub $2=rckpt $3=ckpt $4=n $5=heur_sims $6=seed $7=root(local)
   local sub="$1" rckpt="$2" ckpt="$3" N="$4" hs="$5" seed="$6" root="$7" rroot
   rroot=${root/$SHARE_LOCAL/$SHARE_REMOTE}
-  nice -n 19 env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE="$SCALE" $PY -u scripts/eval_net_vs_heuristic.py \
-    --checkpoint "$ckpt" --n "$N" --sims "$SIMS" --heur-sims "$hs" --c-puct 3.0 --heur-leaf v2_7 \
-    --workers "$EVAL_W_5800X" --out-root "$root" --out-subdir "$sub" \
+  # 5800x + laptop: orch+cython eval via eval_orch.sh (exports TS -> launches carc-orch -> runs the
+  # --shm-eval-server client -> trap-cleans the server on exit). eval_orch.sh ALREADY supplies
+  # --checkpoint/--sims/--heur-sims/--workers/--shm-eval-server (+CY_REPR in its LEAFENV), so we pass
+  # only the rest. xeon stays orch-OFF (raw eval below; Quadro RTX 4000 orch flaky). [2026-06-17 deploy]
+  CKPT="$ckpt" OW="$EVAL_W_5800X" SIMS="$SIMS" HEUR_SIMS="$hs" CARCASSONNE_V25_RESIDUAL_SCALE="$SCALE" \
+    nice -n 19 bash scripts/eval_orch.sh \
+    --n "$N" --c-puct 3.0 --heur-leaf v2_7 --out-root "$root" --out-subdir "$sub" \
     --seed-start "$seed" --paired --shared-claim --claim-host 5800x >/tmp/fw2_eval5800x.log 2>&1 &
-  _ssh_bg $LAPTOP_SSH "cd $REPO_LAPTOP && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $EVAL_W_LAPTOP --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
+  _ssh_bg $LAPTOP_SSH "cd $REPO_LAPTOP && CKPT=$rckpt OW=$EVAL_W_LAPTOP SIMS=$SIMS HEUR_SIMS=$hs CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 bash scripts/eval_orch.sh --n $N --c-puct 3.0 --heur-leaf v2_7 --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host laptop > /tmp/fw2_evallaptop.log 2>&1 </dev/null &" "eval laptop $sub" &
   [ "$USE_XEON" = 1 ] && _ssh_bg xeon-wsl "cd $REPO_XEON && env $ENVV CARCASSONNE_V25_RESIDUAL_SCALE=$SCALE setsid nice -n 19 $REPO_XEON/.venv/bin/python -u scripts/eval_net_vs_heuristic.py --checkpoint $rckpt --n $N --sims $SIMS --heur-sims $hs --c-puct 3.0 --heur-leaf v2_7 --workers $EVAL_W_XEON --out-root $rroot --out-subdir $sub --seed-start $seed --paired --shared-claim --claim-host xeon > /tmp/fw2_evalxeon.log 2>&1 </dev/null &" "eval xeon $sub" &
 }
 

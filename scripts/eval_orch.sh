@@ -25,7 +25,11 @@ SRV="$REPO/rust/carc-orch/run_server.sh"
 TS="/tmp/carc_eval_${HOST}.ts.pt"
 SHMN="evalorch${HOST}"
 # Production v2.7 leaf env (matches gen_flywheel / flywheel-eval ENVV).
-LEAFENV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_V25_RESIDUAL_SCALE=${CARCASSONNE_V25_RESIDUAL_SCALE:-0.25}"
+# CY_REPR=1: Cython board-encoder, +5.7-7.3% on the orch eval path (A/B 2026-06-17:
+# 5800x W48 9.25->9.78 +5.7%, laptop W26 7.49->8.04 +7.3%). Bit-exact + graceful Python
+# fallback if a box lacks the .so. Worker-CPU win (fwd_busy unchanged), so it converts
+# near-directly while the orch workers are CPU-bound.
+LEAFENV="CARCASSONNE_V25_DROP_THREE_OPEN=1 CARCASSONNE_V25_CAP=12 CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_V25_RESIDUAL_SCALE=${CARCASSONNE_V25_RESIDUAL_SCALE:-0.25}"
 
 cd "$REPO"
 NS="$("$PY" -c "import torch,sys; print(int(torch.load(sys.argv[1],map_location='cpu',weights_only=False).get('n_scalar_features',10)))" "$CKPT")"
