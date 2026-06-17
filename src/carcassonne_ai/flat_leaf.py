@@ -59,7 +59,7 @@ USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 # read-at-import pattern as USE_FLAT_LEAF so spawned workers inherit the env
 # flip; a runtime flip needs `flat_leaf.USE_CY_LEAF = True` (lazy import fires
 # on the next leaf call).
-USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF") == "1"
+USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF", "1") != "0"  # FOLDED 2026-06-17: default ON (all 3 boxes built+reconciled bit-exact); set =0 to force the Python path
 _CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
 
 # --- geometry (gate-validated against the engine) ----------------------------
@@ -675,10 +675,14 @@ def flat_virtual_score_v2(state, player: int, cfg=None) -> int:
     (order-independent fsum); against the naive-sum production path it differs only
     by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09)."""
     if USE_CY_LEAF:
-        global _CY_FLAT_V2
+        global _CY_FLAT_V2  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
-            from .flat_leaf_cy import flat_virtual_score_v2_cy as _CY_FLAT_V2  # noqa: PLW0603
-        return _CY_FLAT_V2(state, player, cfg)
+            try:
+                from .flat_leaf_cy import flat_virtual_score_v2_cy as _CY_FLAT_V2  # noqa: PLW0603
+            except ImportError:
+                _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
+        if _CY_FLAT_V2:
+            return _CY_FLAT_V2(state, player, cfg)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     if cfg is None:
