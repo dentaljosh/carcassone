@@ -1,0 +1,430 @@
+{
+  "summary": {
+    "n_positions": 8,
+    "determinism_ok_all": true,
+    "n_positions_action_changed": 2,
+    "n_positions_value_changed": 8,
+    "frac_value_changed": 1.0,
+    "frac_action_changed": 0.25,
+    "verdict": "CLAIRVOYANT",
+    "config": {
+      "checkpoint": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+      "residual_scale": 0.25,
+      "sims": 200,
+      "c_puct": 3.0,
+      "perms": 6,
+      "mcts_seed": 1234,
+      "min_deck": 20
+    }
+  },
+  "positions": [
+    {
+      "idx": 0,
+      "harvest_seed": 900000000,
+      "ply": 18,
+      "deck_remaining": 62,
+      "next_tile": "straight_road",
+      "n_legal": 18,
+      "determinism_ok": true,
+      "n_distinct_actions": 2,
+      "value_spread": 0.193776,
+      "action_changed": true,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 1049,
+          "value": -0.4079022302355905
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 1145,
+          "value": -0.45075992476719967
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 1145,
+          "value": -0.5713336488835079
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 1145,
+          "value": -0.3775580001421696
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 1145,
+          "value": -0.49989521162528694
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 1145,
+          "value": -0.42875601399019786
+        }
+      ]
+    },
+    {
+      "idx": 1,
+      "harvest_seed": 900000001,
+      "ply": 14,
+      "deck_remaining": 64,
+      "next_tile": "city_diagonal_top_right_shield_flowers",
+      "n_legal": 11,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.113304,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 1448,
+          "value": 0.1867960474509081
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 1448,
+          "value": 0.15483176332224916
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 1448,
+          "value": 0.13747783115484238
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 1448,
+          "value": 0.07680561252411867
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 1448,
+          "value": 0.1869719180077581
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 1448,
+          "value": 0.19010927124524613
+        }
+      ]
+    },
+    {
+      "idx": 2,
+      "harvest_seed": 900000002,
+      "ply": 21,
+      "deck_remaining": 61,
+      "next_tile": "straight_road",
+      "n_legal": 3,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.146898,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 2504,
+          "value": 0.36703387967845713
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.3225031206149726
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.367766032284194
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.45410894608684776
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.3072106138854597
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.3835348747298283
+        }
+      ]
+    },
+    {
+      "idx": 3,
+      "harvest_seed": 900000003,
+      "ply": 20,
+      "deck_remaining": 61,
+      "next_tile": "city_top_road_bend_right",
+      "n_legal": 20,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.07506,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 1351,
+          "value": 0.22450818832474206
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 1351,
+          "value": 0.14944783917391646
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 1351,
+          "value": 0.20677406252022898
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 1351,
+          "value": 0.22086862936568114
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 1351,
+          "value": 0.21858139658196374
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 1351,
+          "value": 0.21183974978295284
+        }
+      ]
+    },
+    {
+      "idx": 4,
+      "harvest_seed": 900000004,
+      "ply": 13,
+      "deck_remaining": 65,
+      "next_tile": "city_narrow",
+      "n_legal": 4,
+      "determinism_ok": true,
+      "n_distinct_actions": 2,
+      "value_spread": 0.141034,
+      "action_changed": true,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 2502,
+          "value": -0.015217367064235767
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 2502,
+          "value": 0.09831139078303103
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 2502,
+          "value": 0.10820353038903383
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 2504,
+          "value": 0.03867193199719793
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 2502,
+          "value": 0.10149846270635887
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 2502,
+          "value": 0.1258164511475835
+        }
+      ]
+    },
+    {
+      "idx": 5,
+      "harvest_seed": 900000005,
+      "ply": 12,
+      "deck_remaining": 65,
+      "next_tile": "city_bottom_road_shield",
+      "n_legal": 10,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.069437,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 1448,
+          "value": -0.24538200608120384
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 1448,
+          "value": -0.3148191986114632
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 1448,
+          "value": -0.2707871909972872
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 1448,
+          "value": -0.2891554563642977
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 1448,
+          "value": -0.26775740323578784
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 1448,
+          "value": -0.2473172454739258
+        }
+      ]
+    },
+    {
+      "idx": 6,
+      "harvest_seed": 900000006,
+      "ply": 8,
+      "deck_remaining": 67,
+      "next_tile": "three_split_road",
+      "n_legal": 12,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.059759,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 1155,
+          "value": 0.13428874018957807
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 1155,
+          "value": 0.169475137238699
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 1155,
+          "value": 0.11318824728562342
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 1155,
+          "value": 0.1729476100917902
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 1155,
+          "value": 0.1535026266637969
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 1155,
+          "value": 0.1132084086312245
+        }
+      ]
+    },
+    {
+      "idx": 7,
+      "harvest_seed": 900000007,
+      "ply": 23,
+      "deck_remaining": 60,
+      "next_tile": "bent_road",
+      "n_legal": 3,
+      "determinism_ok": true,
+      "n_distinct_actions": 1,
+      "value_spread": 0.206356,
+      "action_changed": false,
+      "value_changed": true,
+      "perms": [
+        {
+          "perm": 0,
+          "shuffled": false,
+          "action": 2501,
+          "value": 0.19597360590317858
+        },
+        {
+          "perm": 1,
+          "shuffled": true,
+          "action": 2501,
+          "value": 0.04381448054494151
+        },
+        {
+          "perm": 2,
+          "shuffled": true,
+          "action": 2501,
+          "value": 0.04413569536756791
+        },
+        {
+          "perm": 3,
+          "shuffled": true,
+          "action": 2501,
+          "value": 0.24756237062698222
+        },
+        {
+          "perm": 4,
+          "shuffled": true,
+          "action": 2501,
+          "value": 0.16352946950678768
+        },
+        {
+          "perm": 5,
+          "shuffled": true,
+          "action": 2501,
+          "value": 0.2501702394376504
+        }
+      ]
+    }
+  ]
+}

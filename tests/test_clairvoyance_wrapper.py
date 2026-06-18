@@ -15,10 +15,27 @@ No checkpoint needed — a uniform stub evaluator drives the search.
 """
 from __future__ import annotations
 
+import random as _random
+
 import numpy as np
+import pytest
 
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
+
+
+@pytest.fixture(autouse=True)
+def _preserve_global_random():
+    """These tests call get_init_board(), which shuffles the deck via the engine's
+    GLOBAL `random`. Save/restore that state so this module has ZERO net effect on
+    global random — otherwise it shifts the boards of later (alphabetically) test
+    files that don't seed global random (e.g. test_neural_mcts's fpu test, which
+    then hits a transposition double-count). Keeps the suite order-independent."""
+    st = _random.getstate()
+    try:
+        yield
+    finally:
+        _random.setstate(st)
 
 
 def _uniform_evaluator(board):
