@@ -1,6 +1,14 @@
 # Deeper-Teacher Experiment — build spec (2026-06-11)
 
-**Status (updated 2026-06-12):** LAUNCHED & RUNNING — this is the live experiment. iter1 NULL
+**Status: CLOSED 2026-06-17 — TIE vs iter8** (NOT a win). Clean fresh-band paired verdict
+(`deepteacher_audit/ITER8_VS_ITER12_VERDICT.md`): iter12 vs iter8 = +14.6/z0.65 @s200, +12.4/z0.51
+@s800 = tie at both planes; champion stays iter8. ⚠️ The sealed/washout "iter0" baseline was
+`residual.pt`, NOT the warm-from iter8 (provenance defect, `DEEPTEACHER_PROVENANCE_AUDIT.md`) → the
+"+8.1 tie"/"+82.8 washout" below are iter12-vs-residual, not vs iter8; and the "iter2 +53.7 over
+iter8" did NOT survive to the final champion on a clean band. Deeper-teacher hypothesis =
+powered-null at the deep verdict plane. NEXT = value-ranking kill-test. _The 06-12 "running" status
+below is superseded:_
+<br>**Status (updated 2026-06-12):** LAUNCHED & RUNNING — this is the live experiment. iter1 NULL
 (−2.0/z−0.07); **iter2 CONFIRMED +53.7 elo / z=2.14 over iter8** (n=400 paired, fresh band 1.3e9 —
 results.csv `confirm_iter2_vs_heur800_v27_s800_n400`); flywheel RESUMED `START=3` (iters 3→6,
 warm-from iter2) to test compounding — **iter3 REJECTED (−81.0/z=−2.36 vs best=iter2)**, iter4
