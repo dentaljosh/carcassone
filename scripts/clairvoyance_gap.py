@@ -60,6 +60,7 @@ from carcassonne_ai.claim import try_claim as _try_claim
 from carcassonne_ai import eval_provenance as ep
 from carcassonne_ai.eval_provenance import deck_hash
 from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrapper
+from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
@@ -110,7 +111,21 @@ def _save(p: Path, r: GameResult):
 
 
 def _worker_init(checkpoint, mode, K, residual_scale, heur_leaf,
-                 shared_claim, claim_host, claim_stale_secs):
+                 shared_claim, claim_host, claim_stale_secs,
+                 shm_name="", id_q=None, ns=10):
+    _W.update(mode=mode, K=int(K), residual_scale=residual_scale, heur_leaf=heur_leaf,
+              shared_claim=shared_claim, claim_host=claim_host,
+              claim_stale_secs=claim_stale_secs)
+    if shm_name:
+        # carc-orch SHM orchestrator: the server owns the only net; this worker is
+        # CPU-only and gets priors/value over shared memory (the v2.7 leaf still runs
+        # here). Mirrors eval_net_vs_heuristic's --shm-eval-server path. See
+        # feedback_use_orch_for_eval_and_gen: prefer this at high W for forward-heavy
+        # evals (the K-determinization nonclair arm does ~K*sims forwards/move).
+        from carcassonne_ai.shm_eval_handles import connect_shm
+        _W.update(orch=True, device=torch.device("cpu"), include_farm=ns > 10,
+                  handles=connect_shm(shm_name, id_q.get(), ns))
+        return
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(checkpoint, map_location=device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
@@ -120,14 +135,12 @@ def _worker_init(checkpoint, mode, K, residual_scale, heur_leaf,
                          ).to(device)
     net.load_state_dict(ck["model_state"])
     net.train(False)
-    _W.update(net=net, device=device, include_farm=ns > 10, mode=mode, K=int(K),
-              residual_scale=residual_scale, heur_leaf=heur_leaf,
-              shared_claim=shared_claim, claim_host=claim_host,
-              claim_stale_secs=claim_stale_secs)
+    _W.update(orch=False, net=net, device=device, include_farm=ns > 10)
 
 
 def _build_net_mcts(game, seed, sims, c_puct, fair_chance):
-    base = make_single_evaluator(_W["net"], _W["device"], game)
+    base = (make_remote_single_evaluator(_W["handles"], game) if _W.get("orch")
+            else make_single_evaluator(_W["net"], _W["device"], game))
     rs = _W["residual_scale"]
     if rs is None:
         leaf = make_v25_value_wrapper(base)
@@ -268,6 +281,12 @@ def main(argv=None) -> int:
     ap.add_argument("--seed-start", type=int, default=2_700_000_000)
     ap.add_argument("--paired", action="store_true")
     ap.add_argument("--workers", type=int, default=None)
+    ap.add_argument("--shm-eval-server", type=str, default=None,
+                    help="carc-orch SHM orchestrator: attach workers to /dev/shm/carc_<NAME> "
+                         "for batched net forwards (server owns the net; workers CPU-only). "
+                         "Start the server first (rust/carc-orch/run_server.sh / eval_orch.sh). "
+                         "Prefer this at high W for this forward-heavy eval "
+                         "(feedback_use_orch_for_eval_and_gen). Unset = per-worker net.")
     ap.add_argument("--out-root", type=str, required=True)
     ap.add_argument("--out-subdir", type=str, default=None)
     ap.add_argument("--shared-claim", action="store_true")
@@ -306,7 +325,9 @@ def main(argv=None) -> int:
                            "c_puct": args.c_puct, "residual_scale": args.residual_scale,
                            "paired": args.paired, "seed_start": args.seed_start,
                            "seed_range": seed_range, "opponent": "HeuristicMCTS",
-                           "aggregation": "summed-visit-argmax (both arms)",
+                           "orch": bool(args.shm_eval_server),
+                           "aggregation": "production best_action (clair: true world; "
+                                          "nonclair: best_action pooled over K determinizations)",
                            "wrapper": "root-determinization (fair_chance) per move; "
                                       "true deck never read by the agent"},
                    overwrite=True)
@@ -318,13 +339,36 @@ def main(argv=None) -> int:
           f"{len(tasks)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}",
           flush=True)
 
+    # ns (n_scalar_features) for the orch worker (which never loads the ckpt itself).
+    _ck = torch.load(str(args.checkpoint), map_location="cpu", weights_only=False)
+    ns = int(_ck.get("n_scalar_features", 10))
+    del _ck
+
     results = []
     if todo:
         t0 = time.perf_counter()
-        with Pool(processes=workers, initializer=_worker_init,
-                  initargs=(str(args.checkpoint), args.mode, args.K, args.residual_scale,
-                            args.heur_leaf, args.shared_claim, args.claim_host,
-                            args.claim_stale_secs)) as pool:
+        if args.shm_eval_server:
+            # Orchestrator: spawn context (CUDA-clean re-import) + a worker-id Queue
+            # so each CPU worker pops a unique SHM slot. Mirrors eval_net_vs_heuristic.
+            _ctx = mp.get_context("spawn")
+            _id_q = _ctx.Queue()
+            for _w in range(workers):
+                _id_q.put(_w)
+            print(f"  [orch] SHM eval-server '{args.shm_eval_server}': {workers} CPU "
+                  f"workers attach to /dev/shm/carc_{args.shm_eval_server}", flush=True)
+            _pool_cm = _ctx.Pool(processes=workers, initializer=_worker_init,
+                                 initargs=(str(args.checkpoint), args.mode, args.K,
+                                           args.residual_scale, args.heur_leaf,
+                                           args.shared_claim, args.claim_host,
+                                           args.claim_stale_secs, args.shm_eval_server,
+                                           _id_q, ns))
+        else:
+            _pool_cm = Pool(processes=workers, initializer=_worker_init,
+                            initargs=(str(args.checkpoint), args.mode, args.K,
+                                      args.residual_scale, args.heur_leaf,
+                                      args.shared_claim, args.claim_host,
+                                      args.claim_stale_secs, "", None, ns))
+        with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
