@@ -29,16 +29,26 @@ the non-clairvoyant arm is meaningful. Raw: `measurement/clairvoyance/step0_sent
 - **NONCLAIR (K=12):** same net/leaf/sims, `NeuralMCTS(fair_chance=True)`. At each
   move it runs K=12 independent searches, each on a fresh **root determinization**
   (deep-copy the root, shuffle ONLY the unseen `state.deck`, keep `next_tile`); it
-  votes by **summed root visit counts** across the 12 trees and plays the argmax.
+  **pools the child stats across the 12 trees** — summed visits N_a and summed
+  signed value W_a (root-player POV) — and picks by (pooled Q = W_a/N_a, N_a), i.e.
+  the production `best_action` rule generalized to the determinization ensemble
+  (standard PIMC statistic-pooling).
 - **Opponent (both arms):** `HeuristicMCTS(heur_leaf=v2_7)` @ heur_sims=800.
 
 ### Isolation & honesty notes
-- **Aggregation held fixed:** BOTH arms choose the root action by argmax of summed
-  visit counts (AlphaZero τ→0). The clair arm is therefore visit-argmax, NOT the
-  production `best_action` (Q+N) — this keeps the paired Δ a pure clairvoyance
-  contrast, not an aggregation-rule artifact. Cross-check: visit-argmax-clair vs
-  heur@800 should land near the published best_action number (i8_s200 = **+72.2**,
-  band 2.5e9) — a large divergence would flag an aggregation effect to separate out.
+- **Aggregation = production `best_action` for BOTH arms** (Q + visit tiebreak), so
+  the clair arm reproduces the published clairvoyant number and the paired Δ isolates
+  clairvoyance (true vs sampled futures), NOT an aggregation-rule difference.
+- **⚠ Aggregation-bug caught at the interim read (2026-06-18):** the first harness
+  used **visit-argmax** (raw τ→0 visit-max) for both arms. At sims=200 + c_puct=3.0
+  that selector is ~105 elo WEAKER than `best_action`: visit-argmax clair-iter8 vs
+  heur@800 scored **−34.9** (n=100, band 2.7e9) while the published best_action
+  number is **+72.2** (i8_s200, n=400, band 2.5e9). Confirmed by a same-config
+  reproduction: `eval_net_vs_heuristic` (best_action, per-worker net, band 2.7e9,
+  n=40) = **+70.4** — matches the published +72, and isolates the cause to the
+  selector (NOT orchestrator/net-source). Harness switched to `best_action` (commit
+  below); the visit-argmax run is discarded (kept as the diagnostic record under
+  `clairvoyance_gap/`, the corrected run writes to `clairvoyance_gap_v2/`).
 - **Compute asymmetry is intended, not a confound:** the non-clairvoyant agent
   spends K× the search because not knowing the future is the COST of fair play; the
   question is the best a cheap fair agent does vs the clairvoyant production agent.

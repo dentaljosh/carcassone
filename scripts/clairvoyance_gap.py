@@ -139,24 +139,37 @@ def _build_net_mcts(game, seed, sims, c_puct, fair_chance):
 
 
 def _choose_action(net_mcts, board, mode, K):
-    """Visit-argmax aggregation for BOTH arms.
+    """PRODUCTION best_action selection for BOTH arms (Q + visit tiebreak), so the
+    clair arm reproduces the published clairvoyant number (+72 at this config) and
+    the paired Δ isolates clairvoyance, NOT an aggregation-rule change.
 
-    clair (K=1, fair_chance=False): one search on the TRUE deck order.
+    clair (K=1, fair_chance=False): production best_action on the TRUE deck order.
     nonclair (K>=1, fair_chance=True): K independent searches, each on a fresh
-    in-agent root determinization; sum root visit counts across the K trees and
-    pick the argmax. clear() between determinizations resets the tree but NOT the
-    rng, so the K reshuffles are distinct worlds."""
+    in-agent root determinization (clear() resets the tree but NOT the rng -> K
+    distinct worlds, same public root_key since deck ORDER isn't in the key). Pool
+    the child stats across the K trees -- summed visits N_a and summed signed value
+    W_a (from the root player's POV) -- then pick by (pooled Q = W_a/N_a, N_a), the
+    best_action rule generalized to the determinization ensemble (standard PIMC
+    statistic-pooling)."""
     if mode == "clair":
         net_mcts.clear()
-        visits = net_mcts.search(board)
-        return max(visits, key=lambda a: (visits[a], -a))
-    agg = defaultdict(int)
+        return net_mcts.best_action(board)
+    key = net_mcts.game.string_representation(board)
+    aggN = defaultdict(float)
+    aggW = defaultdict(float)
     for _ in range(K):
         net_mcts.clear()
-        visits = net_mcts.search(board)   # fair_chance=True reshuffles the root internally
-        for a, n in visits.items():
-            agg[a] += n
-    return max(agg, key=lambda a: (agg[a], -a))
+        net_mcts.search(board)   # fair_chance=True reshuffles the root internally
+        root = net_mcts._nodes[key]
+        for a, child in net_mcts._deduped_children(root):
+            if child.N <= 0:
+                continue
+            sw = child.W if child.player_to_move == root.player_to_move else -child.W
+            aggN[a] += child.N
+            aggW[a] += sw
+    if not aggN:
+        return int(np.flatnonzero(net_mcts.game.get_valid_moves(board))[0])
+    return max(aggN, key=lambda a: (aggW[a] / aggN[a], aggN[a]))
 
 
 def _play_one(args) -> GameResult | None:
