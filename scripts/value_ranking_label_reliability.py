@@ -89,7 +89,7 @@ def pairwise_agreement(x: np.ndarray, y: np.ndarray) -> float:
     n = len(x); agree = tot = 0
     for i in range(n):
         for j in range(i + 1, n):
-            sx = (x[i] > x[j]) - (x[i] < x[j]); sy = (y[i] > y[j]) - (y[i] < y[j])
+            sx = int(x[i] > x[j]) - int(x[i] < x[j]); sy = int(y[i] > y[j]) - int(y[i] < y[j])
             if sx == 0 or sy == 0:
                 continue
             tot += 1; agree += int(sx == sy)

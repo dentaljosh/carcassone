@@ -57,7 +57,7 @@ def kendall_tau_b(x, y):
     c = d = tx = ty = 0
     for i in range(n):
         for j in range(i + 1, n):
-            sx = (x[i] > x[j]) - (x[i] < x[j]); sy = (y[i] > y[j]) - (y[i] < y[j])
+            sx = int(x[i] > x[j]) - int(x[i] < x[j]); sy = int(y[i] > y[j]) - int(y[i] < y[j])
             if sx == 0 and sy == 0:
                 continue
             if sx == 0:
@@ -73,7 +73,7 @@ def pairwise_agreement(x, y):
     n = len(x); agree = tot = 0
     for i in range(n):
         for j in range(i + 1, n):
-            sx = (x[i] > x[j]) - (x[i] < x[j]); sy = (y[i] > y[j]) - (y[i] < y[j])
+            sx = int(x[i] > x[j]) - int(x[i] < x[j]); sy = int(y[i] > y[j]) - int(y[i] < y[j])
             if sx == 0 or sy == 0:
                 continue
             tot += 1; agree += int(sx == sy)
@@ -242,7 +242,7 @@ def main(argv=None):
                 loss = loss / len(batch)
                 if train:
                     opt.zero_grad(); loss.backward(); opt.step()
-            total += float(loss); nb += 1
+            total += float(loss.detach()); nb += 1
         return total / max(nb, 1)
 
     best_val = math.inf; best_state = None
