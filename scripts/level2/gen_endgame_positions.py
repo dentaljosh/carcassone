@@ -108,25 +108,37 @@ def generate_game(seed: int, want_ks: set[int]) -> list[dict]:
     return [seen[k] for k in sorted(seen)]
 
 
+def _gen_one(arg):
+    seed, want = arg
+    try:
+        return generate_game(seed, want)
+    except Exception as e:  # noqa - a generator game dying shouldn't kill the suite
+        print(f"  seed {seed} skipped: {e}", file=sys.stderr)
+        return []
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--band", type=int, default=3_200_000_000)
     ap.add_argument("--n", type=int, default=120, help="number of generator games")
     ap.add_argument("--ks", type=int, nargs="+", default=[2, 3, 4, 5, 6])
     ap.add_argument("--out", default="measurement/level2/l23_positions.jsonl")
+    ap.add_argument("--workers", type=int, default=12)
     args = ap.parse_args(argv)
     want = set(args.ks)
+    seeds = [args.band + i for i in range(args.n)]
 
     records = []
-    for i in range(args.n):
-        seed = args.band + i
-        try:
-            recs = generate_game(seed, want)
+    from multiprocessing import get_context
+    ctx = get_context("fork")
+    with ctx.Pool(args.workers) as pool:
+        done = 0
+        for recs in pool.imap_unordered(_gen_one, [(s, want) for s in seeds], chunksize=2):
             records.extend(recs)
-        except Exception as e:  # noqa - a generator game dying shouldn't kill the suite
-            print(f"  seed {seed} skipped: {e}", file=sys.stderr)
-        if (i + 1) % 20 == 0:
-            print(f"  {i+1}/{args.n} games, {len(records)} positions", flush=True)
+            done += 1
+            if done % 30 == 0:
+                print(f"  {done}/{args.n} games, {len(records)} positions", flush=True)
+    records.sort(key=lambda r: (r["seed"], r["k_remaining"]))
 
     with open(args.out, "w") as f:
         for r in records:

@@ -1,0 +1,631 @@
+{
+  "n_positions": 150,
+  "agents": [
+    "greedy",
+    "heur@1600",
+    "heur@3200",
+    "heur@800",
+    "heur_v1@200",
+    "iter8"
+  ],
+  "modes": [
+    "clairvoyant",
+    "marginalized"
+  ],
+  "ks": [
+    2
+  ],
+  "coverage": {
+    "clairvoyant": {
+      "2": {
+        "positions": 150,
+        "solved": 150,
+        "decision": 141
+      }
+    },
+    "marginalized": {
+      "2": {
+        "positions": 150,
+        "solved": 150,
+        "decision": 141
+      }
+    }
+  },
+  "metrics": {
+    "clairvoyant": {
+      "all": {
+        "overall": {
+          "greedy": {
+            "n": 150,
+            "top1_agreement": 0.7733,
+            "mean_regret": 0.693,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.12,
+            "blunder_gt5": 0.0267,
+            "blunder_gt10": 0.0
+          },
+          "heur@1600": {
+            "n": 150,
+            "top1_agreement": 0.7933,
+            "mean_regret": 0.433,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0533,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur@3200": {
+            "n": 150,
+            "top1_agreement": 0.8467,
+            "mean_regret": 0.373,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0533,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur@800": {
+            "n": 150,
+            "top1_agreement": 0.7733,
+            "mean_regret": 0.487,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0733,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur_v1@200": {
+            "n": 150,
+            "top1_agreement": 0.8467,
+            "mean_regret": 0.347,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.04,
+            "blunder_gt5": 0.0067,
+            "blunder_gt10": 0.0
+          },
+          "iter8": {
+            "n": 150,
+            "top1_agreement": 0.6867,
+            "mean_regret": 0.573,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.06,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          }
+        },
+        "by_k": {
+          "2": {
+            "greedy": {
+              "n": 150,
+              "top1_agreement": 0.7733,
+              "mean_regret": 0.693,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.12,
+              "blunder_gt5": 0.0267,
+              "blunder_gt10": 0.0
+            },
+            "heur@1600": {
+              "n": 150,
+              "top1_agreement": 0.7933,
+              "mean_regret": 0.433,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0533,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur@3200": {
+              "n": 150,
+              "top1_agreement": 0.8467,
+              "mean_regret": 0.373,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0533,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur@800": {
+              "n": 150,
+              "top1_agreement": 0.7733,
+              "mean_regret": 0.487,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0733,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur_v1@200": {
+              "n": 150,
+              "top1_agreement": 0.8467,
+              "mean_regret": 0.347,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.04,
+              "blunder_gt5": 0.0067,
+              "blunder_gt10": 0.0
+            },
+            "iter8": {
+              "n": 150,
+              "top1_agreement": 0.6867,
+              "mean_regret": 0.573,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.06,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            }
+          }
+        }
+      },
+      "decision": {
+        "overall": {
+          "greedy": {
+            "n": 141,
+            "top1_agreement": 0.7589,
+            "mean_regret": 0.738,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.1277,
+            "blunder_gt5": 0.0284,
+            "blunder_gt10": 0.0
+          },
+          "heur@1600": {
+            "n": 141,
+            "top1_agreement": 0.7801,
+            "mean_regret": 0.461,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0567,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur@3200": {
+            "n": 141,
+            "top1_agreement": 0.8369,
+            "mean_regret": 0.397,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0567,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur@800": {
+            "n": 141,
+            "top1_agreement": 0.7589,
+            "mean_regret": 0.518,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.078,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur_v1@200": {
+            "n": 141,
+            "top1_agreement": 0.8369,
+            "mean_regret": 0.369,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0426,
+            "blunder_gt5": 0.0071,
+            "blunder_gt10": 0.0
+          },
+          "iter8": {
+            "n": 141,
+            "top1_agreement": 0.6667,
+            "mean_regret": 0.61,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0638,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          }
+        },
+        "by_k": {
+          "2": {
+            "greedy": {
+              "n": 141,
+              "top1_agreement": 0.7589,
+              "mean_regret": 0.738,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.1277,
+              "blunder_gt5": 0.0284,
+              "blunder_gt10": 0.0
+            },
+            "heur@1600": {
+              "n": 141,
+              "top1_agreement": 0.7801,
+              "mean_regret": 0.461,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0567,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur@3200": {
+              "n": 141,
+              "top1_agreement": 0.8369,
+              "mean_regret": 0.397,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0567,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur@800": {
+              "n": 141,
+              "top1_agreement": 0.7589,
+              "mean_regret": 0.518,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.078,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur_v1@200": {
+              "n": 141,
+              "top1_agreement": 0.8369,
+              "mean_regret": 0.369,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0426,
+              "blunder_gt5": 0.0071,
+              "blunder_gt10": 0.0
+            },
+            "iter8": {
+              "n": 141,
+              "top1_agreement": 0.6667,
+              "mean_regret": 0.61,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0638,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            }
+          }
+        }
+      }
+    },
+    "marginalized": {
+      "all": {
+        "overall": {
+          "greedy": {
+            "n": 150,
+            "top1_agreement": 0.7733,
+            "mean_regret": 0.693,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.12,
+            "blunder_gt5": 0.0267,
+            "blunder_gt10": 0.0
+          },
+          "heur@1600": {
+            "n": 150,
+            "top1_agreement": 0.7933,
+            "mean_regret": 0.433,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0533,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur@3200": {
+            "n": 150,
+            "top1_agreement": 0.8467,
+            "mean_regret": 0.373,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0533,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur@800": {
+            "n": 150,
+            "top1_agreement": 0.7733,
+            "mean_regret": 0.487,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0733,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          },
+          "heur_v1@200": {
+            "n": 150,
+            "top1_agreement": 0.8467,
+            "mean_regret": 0.347,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.04,
+            "blunder_gt5": 0.0067,
+            "blunder_gt10": 0.0
+          },
+          "iter8": {
+            "n": 150,
+            "top1_agreement": 0.6867,
+            "mean_regret": 0.573,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.06,
+            "blunder_gt5": 0.0133,
+            "blunder_gt10": 0.0
+          }
+        },
+        "by_k": {
+          "2": {
+            "greedy": {
+              "n": 150,
+              "top1_agreement": 0.7733,
+              "mean_regret": 0.693,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.12,
+              "blunder_gt5": 0.0267,
+              "blunder_gt10": 0.0
+            },
+            "heur@1600": {
+              "n": 150,
+              "top1_agreement": 0.7933,
+              "mean_regret": 0.433,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0533,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur@3200": {
+              "n": 150,
+              "top1_agreement": 0.8467,
+              "mean_regret": 0.373,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0533,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur@800": {
+              "n": 150,
+              "top1_agreement": 0.7733,
+              "mean_regret": 0.487,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0733,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            },
+            "heur_v1@200": {
+              "n": 150,
+              "top1_agreement": 0.8467,
+              "mean_regret": 0.347,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.04,
+              "blunder_gt5": 0.0067,
+              "blunder_gt10": 0.0
+            },
+            "iter8": {
+              "n": 150,
+              "top1_agreement": 0.6867,
+              "mean_regret": 0.573,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.06,
+              "blunder_gt5": 0.0133,
+              "blunder_gt10": 0.0
+            }
+          }
+        }
+      },
+      "decision": {
+        "overall": {
+          "greedy": {
+            "n": 141,
+            "top1_agreement": 0.7589,
+            "mean_regret": 0.738,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.1277,
+            "blunder_gt5": 0.0284,
+            "blunder_gt10": 0.0
+          },
+          "heur@1600": {
+            "n": 141,
+            "top1_agreement": 0.7801,
+            "mean_regret": 0.461,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0567,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur@3200": {
+            "n": 141,
+            "top1_agreement": 0.8369,
+            "mean_regret": 0.397,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0567,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur@800": {
+            "n": 141,
+            "top1_agreement": 0.7589,
+            "mean_regret": 0.518,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.078,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          },
+          "heur_v1@200": {
+            "n": 141,
+            "top1_agreement": 0.8369,
+            "mean_regret": 0.369,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0426,
+            "blunder_gt5": 0.0071,
+            "blunder_gt10": 0.0
+          },
+          "iter8": {
+            "n": 141,
+            "top1_agreement": 0.6667,
+            "mean_regret": 0.61,
+            "median_regret": 0.0,
+            "blunder_gt2": 0.0638,
+            "blunder_gt5": 0.0142,
+            "blunder_gt10": 0.0
+          }
+        },
+        "by_k": {
+          "2": {
+            "greedy": {
+              "n": 141,
+              "top1_agreement": 0.7589,
+              "mean_regret": 0.738,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.1277,
+              "blunder_gt5": 0.0284,
+              "blunder_gt10": 0.0
+            },
+            "heur@1600": {
+              "n": 141,
+              "top1_agreement": 0.7801,
+              "mean_regret": 0.461,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0567,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur@3200": {
+              "n": 141,
+              "top1_agreement": 0.8369,
+              "mean_regret": 0.397,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0567,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur@800": {
+              "n": 141,
+              "top1_agreement": 0.7589,
+              "mean_regret": 0.518,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.078,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            },
+            "heur_v1@200": {
+              "n": 141,
+              "top1_agreement": 0.8369,
+              "mean_regret": 0.369,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0426,
+              "blunder_gt5": 0.0071,
+              "blunder_gt10": 0.0
+            },
+            "iter8": {
+              "n": 141,
+              "top1_agreement": 0.6667,
+              "mean_regret": 0.61,
+              "median_regret": 0.0,
+              "blunder_gt2": 0.0638,
+              "blunder_gt5": 0.0142,
+              "blunder_gt10": 0.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": {
+    "mode": "clairvoyant",
+    "largest_iter8_losses": [
+      {
+        "seed": 3200000129,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 9.0,
+        "iter8_move": 1736
+      },
+      {
+        "seed": 3200000022,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 6.0,
+        "iter8_move": 1157
+      },
+      {
+        "seed": 3200000092,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 5.0,
+        "iter8_move": 754
+      },
+      {
+        "seed": 3200000099,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 4.0,
+        "iter8_move": 1386
+      },
+      {
+        "seed": 3200000121,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 4.0,
+        "iter8_move": 1062
+      },
+      {
+        "seed": 3200000004,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 3.0,
+        "iter8_move": 625
+      },
+      {
+        "seed": 3200000103,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 3.0,
+        "iter8_move": 1120
+      },
+      {
+        "seed": 3200000111,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 3.0,
+        "iter8_move": 1170
+      }
+    ],
+    "iter8_wins_over_field": [
+      {
+        "seed": 3200000123,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 848,
+        "max_heur_regret": 6.0
+      },
+      {
+        "seed": 3200000066,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 821,
+        "max_heur_regret": 4.0
+      },
+      {
+        "seed": 3200000003,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1056,
+        "max_heur_regret": 3.0
+      },
+      {
+        "seed": 3200000100,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1644,
+        "max_heur_regret": 3.0
+      },
+      {
+        "seed": 3200000115,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1740,
+        "max_heur_regret": 3.0
+      },
+      {
+        "seed": 3200000104,
+        "ply": 139,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1641,
+        "max_heur_regret": 2.0
+      },
+      {
+        "seed": 3200000067,
+        "ply": 139,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1060,
+        "max_heur_regret": 1.0
+      },
+      {
+        "seed": 3200000068,
+        "ply": 140,
+        "k": 2,
+        "iter8_regret": 0.0,
+        "iter8_move": 1072,
+        "max_heur_regret": 1.0
+      }
+    ]
+  }
+}
