@@ -69,6 +69,7 @@ from wingedsheep.carcassonne.objects.game_phase import GamePhase
 from carcassonne_ai.claim import try_claim as _try_claim
 from carcassonne_ai.eval_provenance import deck_hash
 from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrapper
+from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
@@ -140,17 +141,18 @@ def hybrid_should_latch(state, K: int):
 # --------------------------------------------------------------------------- #
 # Agents — uniform interface .move(board) -> int, plus move counters           #
 # --------------------------------------------------------------------------- #
-def _make_iter8_mcts(net, dev, game_farm, seed):
-    base = make_single_evaluator(net, dev, game_farm)
+def _make_iter8_mcts(base_eval, game_farm, seed):
+    """base_eval = the raw net evaluator for game_farm (local make_single_evaluator
+    OR remote SHM make_remote_single_evaluator). The v2.7 leaf wraps it."""
     cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=ITER8_RESIDUAL_SCALE)
-    leaf = make_v25_value_wrapper(base, cfg)
+    leaf = make_v25_value_wrapper(base_eval, cfg)
     return NeuralMCTS(game=game_farm, evaluator=leaf, simulations=ITER8_SIMS,
                       seed=seed, c_puct=ITER8_CPUCT)
 
 
 class _Iter8Agent:
-    def __init__(self, net, dev, game_farm, seed):
-        self._m = _make_iter8_mcts(net, dev, game_farm, seed)
+    def __init__(self, base_eval, game_farm, seed):
+        self._m = _make_iter8_mcts(base_eval, game_farm, seed)
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
@@ -177,8 +179,8 @@ class _HeurAgent:
 class _HybridAgent:
     """iter8 policy until the first TILES decision with k_remaining<=K, then heur@sims."""
 
-    def __init__(self, net, dev, game_farm, game_plain, K, heur_sims, seed):
-        self._neural = _make_iter8_mcts(net, dev, game_farm, seed)
+    def __init__(self, base_eval, game_farm, game_plain, K, heur_sims, seed):
+        self._neural = _make_iter8_mcts(base_eval, game_farm, seed)
         # offset the heur seed so it never coincides with the neural seed
         self._heur = HeuristicMCTS(game=game_plain, simulations=heur_sims,
                                    seed=seed + 7, heur_leaf="v2_7")
@@ -203,13 +205,15 @@ class _HybridAgent:
         return int(self._neural.best_action(board))
 
 
-def make_agent(spec: str, *, net, dev, game_farm, game_plain, seed):
+def make_agent(spec: str, *, base_factory, game_farm, game_plain, seed):
+    """base_factory(game_farm) -> raw net evaluator (local or remote SHM). Only
+    called for agents that need the net (iter8, hybrid); heur never touches it."""
     kind, K, sims = parse_agent(spec)
     if kind == "iter8":
-        return _Iter8Agent(net, dev, game_farm, seed)
+        return _Iter8Agent(base_factory(game_farm), game_farm, seed)
     if kind == "heur":
         return _HeurAgent(game_plain, sims, seed)
-    return _HybridAgent(net, dev, game_farm, game_plain, K, sims, seed)
+    return _HybridAgent(base_factory(game_farm), game_farm, game_plain, K, sims, seed)
 
 
 # --------------------------------------------------------------------------- #
@@ -256,15 +260,27 @@ def _save(p: Path, r: GameResult):
 
 
 def _worker_init(ckpt: str, device_str: str, need_net: bool,
-                 shared_claim: bool, claim_host: str, claim_stale_secs: int):
+                 shared_claim: bool, claim_host: str, claim_stale_secs: int,
+                 shm_name: str = "", id_q=None, ns: int = 10):
     torch.set_num_threads(1)
-    dev = torch.device(device_str)
-    _W["dev"] = dev
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale_secs"] = claim_stale_secs
     _W["net"] = None
-    _W["farm"] = False
+    _W["handles"] = None
+    _W["orch"] = False
+    _W["farm"] = ns > 10
+    if shm_name:
+        # carc-orch SHM orchestrator: the server owns the only net copy; this
+        # worker is CPU-only and gets net forwards (iter8 priors+value) over SHM.
+        # The v2.7 leaf + the heur@N search still run here on the worker (CPU).
+        from carcassonne_ai.shm_eval_handles import connect_shm
+        _W["orch"] = True
+        _W["dev"] = torch.device("cpu")
+        _W["handles"] = connect_shm(shm_name, id_q.get(), ns)
+        return
+    dev = torch.device(device_str)
+    _W["dev"] = dev
     if need_net:
         ck = torch.load(ckpt, map_location=dev, weights_only=False)
         ns = int(ck.get("n_scalar_features", 10))
@@ -301,9 +317,15 @@ def _play_one(args) -> GameResult | None:
     ga_plain = Game(enable_legal_moves_cache=True)
     gb_farm = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
     gb_plain = Game(enable_legal_moves_cache=True)
-    a = make_agent(agent_a, net=_W["net"], dev=_W["dev"],
+    if _W.get("orch"):
+        def base_factory(gf):
+            return make_remote_single_evaluator(_W["handles"], gf)
+    else:
+        def base_factory(gf):
+            return make_single_evaluator(_W["net"], _W["dev"], gf)
+    a = make_agent(agent_a, base_factory=base_factory,
                    game_farm=ga_farm, game_plain=ga_plain, seed=seed)
-    b = make_agent(agent_b, net=_W["net"], dev=_W["dev"],
+    b = make_agent(agent_b, base_factory=base_factory,
                    game_farm=gb_farm, game_plain=gb_plain, seed=seed + 1)
 
     t0 = time.perf_counter()
@@ -425,10 +447,12 @@ def _smoke(args) -> int:
         random.seed(seed)
         game = Game(enable_legal_moves_cache=True)
         board = game.get_init_board()
-        a = make_agent(args.agent_a, net=net, dev=dev,
+        def base_factory(gf):
+            return make_single_evaluator(net, dev, gf)
+        a = make_agent(args.agent_a, base_factory=base_factory,
                        game_farm=Game(enable_legal_moves_cache=True, include_farm_scalars=farm),
                        game_plain=Game(enable_legal_moves_cache=True), seed=seed)
-        b = make_agent(args.agent_b, net=net, dev=dev,
+        b = make_agent(args.agent_b, base_factory=base_factory,
                        game_farm=Game(enable_legal_moves_cache=True, include_farm_scalars=farm),
                        game_plain=Game(enable_legal_moves_cache=True), seed=seed + 1)
         moves = 0
@@ -467,6 +491,11 @@ def main(argv=None) -> int:
     ap.add_argument("--seed-start", type=int, default=3_400_000_000)
     ap.add_argument("--paired", action="store_true")
     ap.add_argument("--device", default=("cuda" if torch.cuda.is_available() else "cpu"))
+    ap.add_argument("--shm-eval-server", type=str, default=None,
+                    help="carc-orch SHM orchestrator: attach to /dev/shm/carc_<NAME> for "
+                         "batched iter8 net forwards over shared memory (the server owns the "
+                         "net; workers are CPU-only). Start the server first (run_server.sh / "
+                         "scripts/level2/run_hybrid_bands_orch.sh). Unset = per-worker nets.")
     ap.add_argument("--smoke", action="store_true",
                     help="single-process plumbing + handoff-fires proof, then exit")
     ap.add_argument("--out-root", type=str, default=None)
@@ -504,11 +533,17 @@ def main(argv=None) -> int:
 
     seed_range = [args.seed_start, args.seed_start + (args.n // 2 if args.paired else args.n)]
     need_net = _needs_net(args.agent_a) or _needs_net(args.agent_b)
+    # ns (scalar-feature width) — needed for SHM connect AND for non-orch farm flag.
+    _ns = 10
+    if need_net:
+        _ck = torch.load(str(args.ckpt), map_location="cpu", weights_only=False)
+        _ns = int(_ck.get("n_scalar_features", 10))
+        del _ck
     write_manifest(out, kind="eval_hybrid_handoff", game=game_tag(Game()),
                    config={"agent_a": args.agent_a, "agent_b": args.agent_b,
                            "ckpt": str(args.ckpt), "n": args.n, "paired": args.paired,
                            "seed_start": args.seed_start, "seed_range": seed_range,
-                           "device": args.device,
+                           "device": args.device, "orch": args.shm_eval_server,
                            "iter8_play": {"sims": ITER8_SIMS, "c_puct": ITER8_CPUCT,
                                           "residual_scale": ITER8_RESIDUAL_SCALE,
                                           "leaf": "v2_7"},
@@ -529,11 +564,20 @@ def main(argv=None) -> int:
     if todo:
         t0 = time.perf_counter()
         # spawn: safe with CUDA in workers (fork+CUDA is unsafe). Net loaded per
-        # worker in _worker_init from the checkpoint path.
+        # worker in _worker_init (per-worker), OR attached over SHM (orch mode).
         ctx = get_context("spawn")
+        id_q = None
+        if args.shm_eval_server:
+            id_q = ctx.Queue()
+            for _w in range(workers):
+                id_q.put(_w)
+            print(f"  [orch] SHM eval-server '{args.shm_eval_server}': {workers} CPU "
+                  f"workers attach to /dev/shm/carc_{args.shm_eval_server} (n_scalar={_ns})")
+            sys.stdout.flush()
         with ctx.Pool(processes=workers, initializer=_worker_init,
                       initargs=(str(args.ckpt), args.device, need_net,
-                                args.shared_claim, args.claim_host, args.claim_stale_secs)) as pool:
+                                args.shared_claim, args.claim_host, args.claim_stale_secs,
+                                args.shm_eval_server or "", id_q, _ns)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
