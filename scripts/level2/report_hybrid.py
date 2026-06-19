@@ -68,10 +68,34 @@ def _band_stats(d: Path):
     }
 
 
+def _phase2_winners(rows, gate: float, max_k: int):
+    """K values whose hybrid:K:3200-vs-iter8 band beats iter8: paired_z>=gate AND
+    margin>0. Sorted by paired_z desc, capped at max_k. Used to gate the expensive
+    Phase-2 champion check (hybrid vs heur@3200) — no point if iter8 isn't beaten."""
+    import re
+    cands = []
+    for r in rows:
+        m = re.match(r"hybridK(\d+)h3200__vs__iter8", r["band"])
+        if not m:
+            continue
+        pz = r.get("paired_z")
+        pm = r.get("paired_margin")
+        if pz is not None and pm is not None and pz >= gate and pm > 0:
+            cands.append((int(m.group(1)), pz))
+    cands.sort(key=lambda x: -x[1])
+    return [k for k, _ in cands[:max_k]]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True)
     ap.add_argument("--md", default=None, help="also write a markdown table here")
+    ap.add_argument("--phase2-winners", action="store_true",
+                    help="print ONLY the winning K (space-separated) for Phase-2 gating "
+                         "and exit; nothing printed if none clear the gate.")
+    ap.add_argument("--gate", type=float, default=1.5,
+                    help="paired_z threshold for a hybrid to count as beating iter8 (default 1.5).")
+    ap.add_argument("--max-k", type=int, default=2, help="cap winners at this many K.")
     args = ap.parse_args(argv)
     root = Path(args.root)
     rows = []
@@ -80,6 +104,9 @@ def main(argv=None) -> int:
             s = _band_stats(d)
             if s:
                 rows.append(s)
+    if args.phase2_winners:
+        print(" ".join(str(k) for k in _phase2_winners(rows, args.gate, args.max_k)))
+        return 0
     if not rows:
         print("no band data yet under", root)
         return 0

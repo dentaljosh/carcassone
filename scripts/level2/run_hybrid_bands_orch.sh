@@ -65,11 +65,12 @@ done
 grep -q "forwarder-" "$LOG" 2>/dev/null || { echo "FATAL: server failed to start" >&2; tail -12 "$LOG" >&2; exit 1; }
 echo "[hybrid-orch] server ready; running bands via SHM '$SHMN' at W=$OW"
 
-run() {  # $1=agent_a  $2=subdir
-  echo "=== $1 vs $3  (n=$N, band b340, orch W=$OW) ==="
+run() {  # $1=agent_a  $2=subdir  $3=agent_b  $4=n(optional, default $N)
+  local nn="${4:-$N}"
+  echo "=== $1 vs $3  (n=$nn, band b340, orch W=$OW) ==="
   nice -n 19 "$PY" -u scripts/level2/eval_hybrid_handoff.py \
     --agent-a "$1" --agent-b "$3" --ckpt "$CKPT" \
-    --n "$N" --paired --seed-start "$SEED" --workers "$OW" \
+    --n "$nn" --paired --seed-start "$SEED" --workers "$OW" \
     --shm-eval-server "$SHMN" \
     --out-root "$OUT" --out-subdir "$2" $EXTRA
 }
@@ -82,8 +83,15 @@ if [ "$PH" = "1" ]; then
   run "hybrid:5:800"  "hybridK5h800__vs__iter8_b340_n${N}"  "iter8"
 else
   : "${KS:?set KS=\"5 8\" for Phase 2}"
+  TOPUP="${TOPUP:-400}"
   for K in $KS; do
-    run "hybrid:${K}:3200" "hybridK${K}h3200__vs__heur3200_b340_n${N}" "heur@3200"
+    # (a) reproduce/strengthen the vs-iter8 result by topping up to n=TOPUP in
+    #     the SAME dir (resumes from the cached n=200; the _n200 label is just a name).
+    if [ "$TOPUP" -gt "$N" ]; then
+      run "hybrid:${K}:3200" "hybridK${K}h3200__vs__iter8_b340_n${N}" "iter8" "$TOPUP"
+    fi
+    # (b) champion check vs the deepest heuristic.
+    run "hybrid:${K}:3200" "hybridK${K}h3200__vs__heur3200_b340_n${N}" "heur@3200" "$N"
   done
 fi
 echo "[hybrid-orch] all bands done"
