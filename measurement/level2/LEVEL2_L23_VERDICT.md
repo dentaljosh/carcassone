@@ -21,7 +21,23 @@
   caps exact solving at **K=2** (~4 s/position, fully solved). K≥3 needs >80k nodes
   (~minutes); K≥4 intractable. So this verdict is the **K=2 endgame** (the last two
   tiles). A make/unmake solver (avoid the deepcopy) is the path to K=3-6 — future work.
-  _(K=3 clairvoyant best-effort RUNNING; folds in below when done.)_
+  ⚠️ **K=3 best-effort OOM-crashed the 5800x WSL at W=20** (20 workers × solver
+  transposition-tables + heur@3200 trees + net copies exhausted RAM) → got 74/150
+  before the VM restarted. **Memory-heavy solver runs need low W** (≤8–10). The 74
+  partial K=3 positions (68 decision) are saved + folded in below.
+
+## K=3 (partial, 68 decision positions — clairvoyant only; the deficit is DEPTH-ROBUST)
+| agent | top-1 | mean regret |
+|---|---|---|
+| heur_v1@200 / greedy | 0.750 | 0.52 / 0.63 |
+| heur@1600 | 0.647 | 0.78 |
+| heur@800 | 0.632 | 0.81 |
+| heur@3200 | 0.618 | 0.82 |
+| **iter8** | **0.574** | **0.96 (highest)** |
+**iter8 is the WORST at K=3 too** (top-1 0.574, highest mean regret) — its endgame
+deficit holds at greater depth. (Twist at K=3: the *shallow* agents v1/greedy top the
+list while deep heur search drops — n=68, and at K=3 the clairvoyant agents plan along
+2 unknown future tiles; treat the heur ordering as noisy, but **iter8-worst is robust**.)
 
 ## Result — K=2 endgame (150 positions, 141 "decision" positions where the move matters)
 Clairvoyant GT (== marginalized at K=2: the 1-tile bag is determined). Top-1 = fraction
@@ -79,7 +95,17 @@ non-catastrophic amounts in the last-tile endgame, where deep heuristic search (
 the weak v1 heuristic) is more optimal. Endgame-regret and full-game-Elo are genuinely
 different axes — neither dominates the other. **No train/promote follows — measurement gate.**
 
-## Next
-- K=3 clairvoyant (running) → extend the depth; if iter8's deficit holds, it's robust.
-- Future: make/unmake solver → K=4-6 + the marginalized GT where it matters.
-- Joshua #8 (separate, Elo): same-band iter8 vs heur@3200 full-game comparison.
+## Cross-reference — Joshua #8 (Elo, SEPARATE from this regret verdict)
+The same-band (3.10e9) iter8-vs-heur ladder completed: iter8 vs heur@800 **+40.1**,
+heur@1600 **+24.4**, **heur@3200 −28.7 (45.9% wr, paired z−0.70 = tie/marginally behind)**.
+iter8's full-game margin shrinks monotonically with heur depth and is **erased by
+heur@3200**. This dovetails with the regret result: **heur@3200 is simultaneously the
+most endgame-precise (this verdict) AND the heuristic that catches iter8 full-game (#8)**
+— deep search wins on both axes. (Recorded in results.csv `l22_iter8_vs_heur3200_b310_n400`,
+kept out of the endgame-regret conclusions per #7.)
+
+## Next / future
+- **K=3-6 exact** needs the make/unmake solver (the deepcopy wall + the OOM); then the
+  marginalized GT where it matters (K≥3) + larger n. The K=3 partial already confirms
+  iter8-worst is depth-robust.
+- Re-run K=3 at **low W (≤8)** if completing the 150 is wanted (the W=20 OOM lesson).
