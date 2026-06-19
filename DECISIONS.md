@@ -2607,3 +2607,20 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** low
 **Phase:** Phase 0
+
+---
+
+## 2026-06-19 — Hybrid-handoff measurement (iter8 early/mid → heur endgame); CL-026
+
+**Context:** L2-3 found iter8 plays the endgame worst; #8 found iter8 −28.7 Elo vs heur@3200. Question: can iter8's early/mid policy combine with deep-heuristic endgame precision?
+
+**Built:** `scripts/level2/eval_hybrid_handoff.py` (+orch SHM, aggregator, autonomous Phase-2 gate `auto_phase2.sh`). Handoff = latched switch to HeuristicMCTS@N at the first own TILES decision with `k_remaining<=K` (k = len(deck)+in-hand; identical to gen_endgame_positions → "K≤2" == L2-3 K=2). Fresh band b340, n=200 paired, shared decks. Measurement only; champion (iter8) unchanged.
+
+**Phase 1 verdict (DONE): endgame weakness is locally PATCHABLE.** All hybrids beat iter8 on paired margin, monotone in K: K2 +0.36/z2.65, K3 +0.25/z1.18, K5 +0.80/z3.45, K8 +1.36/z4.68; K8 reproduced at n=400 (+1.31/z5.61). Compute sanity K5@heur800 +0.60/z2.89 (cheap heur endgame captures most of it). Modest absolute size. results.csv `l2hyb_*`.
+
+**Phase 2 (RUNNING, local solo):** hybrid:{8,5} vs heur@3200 (+K5 n=400 topup). Disambiguates champion vs gap-closing. Full writeup [measurement/level2/LEVEL2_HYBRID_VERDICT.md](measurement/level2/LEVEL2_HYBRID_VERDICT.md).
+
+**Cluster decision:** pulled the laptop after 2 transient mobile-4070 GPU stalls (carc-orch cmp 2.4ms→3316ms → 60s SHM worker timeout → BrokenServerError → set -e aborted launcher). Local RTX 5060 Ti stable; runs Phase 2 solo. Per-game JSONs cached/resumable.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first
