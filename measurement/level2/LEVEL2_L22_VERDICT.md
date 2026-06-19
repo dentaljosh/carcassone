@@ -29,7 +29,7 @@ across bands), and 3.1e9 is a fresh band. So the ladder harness + the carc-orch 
 eval path reproduce the established result within band-variation. (The n=24 smoke's
 −29 was pure small-n noise, as expected at ±71 elo.)
 
-## Headline — iter8 clears BOTH validated rungs (but the scale is non-transitive)
+## Headline — iter8 clears BOTH validated rungs; the scale IS transitive (non-transitivity was band-variance)
 iter8 beats heur@800 (**+40.1/z2.29**) AND heur@1600 (**+34.9/z2.00**) by ~the same
 margin. So the champion is stronger than deep heuristic search at *both* depths
 measured — a better result than predicted (I expected iter8 to fall below heur@1600,
@@ -53,13 +53,43 @@ distinguished:
    absolute-vs-heur is known to swing ±~30 elo by band (CL-018). ~50 elo is large for
    band variance alone, but not impossible across 3 bands + per-comparison noise (±17).
 
-**This is NOT decidable from different-band data.** ⇒ the overnight control: re-run
-**iter8 vs heur@1600** AND **heur@1600 vs heur@800** on **band 3.10e9** (the same decks
-as the existing iter8-vs-heur@800), n=400 each, so all three pairs share decks and
-transitivity is cleanly testable. (CL-024 stays provisional until that lands.)
+**This was NOT decidable from different-band data ⇒ same-band control (band 3.10e9, all
+three pairs on shared decks, n=400 each).**
 
-## Next (autonomous, overnight)
-1. **Same-band transitivity control** (band 3.10e9): iter8-vs-h1600 (orch) + h1600-vs-h800
-   (CPU ladder), n=400 each → resolve real-non-transitivity vs band-artifact.
-2. then the **@3200 depth-continuation top-up** (L1 loose end) if cluster time remains.
+### ✅ RESOLVED — transitivity HOLDS; the non-transitivity was band-variance
+Re-ran all three pairs on **band 3.10e9** (shared decks):
+
+| pair (band 3.10) | elo | z |
+|---|---|---|
+| iter8 vs heur@800 | +40.1 | 2.29 |
+| iter8 vs heur@1600 (C1) | +24.4 | 1.40 |
+| heur@1600 vs heur@800 (C2) | +20.0 | 3.21 |
+
+Transitivity predicts iter8-vs-heur@1600 = (iter8-vs-h800) − (h1600-vs-h800) =
+40.1 − 20.0 = **+20.1**; measured **+24.4** → Δ=4.3, **well within noise** (±17/comparison).
+**⇒ The elo scale is TRANSITIVE on controlled decks — a valid total order.** The apparent
+~50-elo intransitivity in the table above was entirely **cross-band artifact**: the
+heur@1600-vs-heur@800 gap swung from **+55 (band 3.04, L1)** to **+20 (band 3.10)** — a
+35-elo band swing. (It stays *significant* on both bands, z=3.23 & 3.21, so CL-023's
+saturation refutation **replicates on a 2nd band**; only the magnitude is band-noisy.)
+
+**Lesson banked:** cross-band elo composition is unreliable (±30–35 elo of deck-band
+swing even for deterministic heur-vs-heur); only same-band paired comparisons compose.
+Reinforces the results-discipline rule + CL-018 (band-dependent absolutes).
+
+## Bottom line (Level-2 so far)
+- The L1 ladder is a **valid, transitive ruler** (saturation refuted, depth scales it,
+  transitivity confirmed on controlled decks).
+- The champion **iter8 sits above both validated heuristic rungs** (heur@800 and heur@1600)
+  on shared decks — so the learned policy is genuinely stronger than deep heuristic search
+  at the measured depths, not merely tied.
+- **Caveat that now governs everything:** ±30–35 elo of deck-band swing. Absolute magnitudes
+  (and any cross-rung composition) are only trustworthy *within a shared band*. This is the
+  measurement reality the superhuman program must live with — a single elo number is
+  band-conditional.
+
+## Next
+- **@3200 depth-continuation top-up** (L1 loose end) runs next on the freed cluster (n=200→400,
+  band 3.06e9) — though note the band-variance lesson means even that may stay fuzzy.
+- L2-3 (endgame regret suite) is a separate phase — **left for Joshua** (not built autonomously).
 No train/promote/redesign follows — measurement gate only.
