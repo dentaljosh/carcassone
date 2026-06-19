@@ -112,6 +112,9 @@ rung pair the scale can't resolve.
 - **L2-0 (this doc):** freeze champion / config / rungs / bands / rules. ✅
 - **L2-1:** the adjacent-rung sanity matrix (R1vR0 … R5vR4), n=200 paired each. Report
   W/D/L, elo, CI/z, manifests, deck hashes, **monotonicity verdict** + **saturation verdict**.
+  **✅ DONE 2026-06-18** — saturation **REFUTED** (R5 heur@1600 > R4 heur@800, +55.2/z3.23
+  @n400); depth drives the ruler, mid-rungs compressed. See `LEVEL2_LADDER_VERDICT.md`,
+  CL-023. (Follow-on R5'@3200-vs-@1600 running.)
 - **L2-2:** iter8 vs R4 (and vs strongest validated higher rung), fresh band, n=400 paired.
   Top up only if it changes interpretation. (iter8 vs R4 ≈ the published +58/+72 cell — this
   re-grounds iter8 on the *validated* ladder; V6 reproduce-check.)
