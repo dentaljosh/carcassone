@@ -66,6 +66,45 @@ def _cifs_mismatch(cmd: str) -> str | None:
     return None
 
 
+def _ssh_remote_no_cd(cmd: str) -> str | None:
+    """A remote `ssh <host> '<inner>'` whose inner command is repo-relative
+    (git / python scripts / bash scripts / pytest / .venv) but has no `cd` into
+    the repo. The remote shell lands in $HOME, so the command fails ('not a git
+    repository' / 'No such file') — the recurring cd-thrash (5 identical broken
+    retries, 2026-06-18). Always-wrong -> block. The robust fix is to pipe a
+    script: `ssh host 'bash -s' < script.sh` with `cd` as line 1, or inline
+    `ssh host 'cd /home/doctor/projects/carcassone && ...'`."""
+    m_ssh = re.search(r"\bssh\b", cmd)
+    if not m_ssh:
+        return None
+    after = cmd[m_ssh.end():]
+    # the piped-script pattern (`ssh host 'bash -s' < file`) carries its own cd
+    # inside the file -> always OK.
+    if "bash -s" in after:
+        return None
+    # the remote command is the first quoted arg after ssh
+    m = re.search(r"""(['"])(.*?)\1""", after, re.S)
+    if not m:
+        return None  # no quoted remote cmd (interactive ssh / -O etc.) -> skip
+    inner = m.group(2).strip()
+    # a cd/pushd anywhere in the remote cmd, or an explicit git dir -> fine
+    if re.search(r"\bcd\s+\S", inner) or re.search(r"\bpushd\b", inner):
+        return None
+    if re.search(r"\bgit\s+(-C|--git-dir)\b", inner):
+        return None
+    # repo-relative op that needs the repo CWD?
+    if re.search(r"(^|;|&&|\|\|?|\bnice\s+-n\s+\d+\s+)\s*"
+                 r"(git|python3?|\.?/?scripts/|bash\s+scripts/|\.venv/|pytest)\b", inner):
+        snippet = inner[:48].replace("\n", " ")
+        return ("remote `ssh … '" + snippet + "…'` runs a repo-relative command "
+                "with no `cd` — the remote shell lands in $HOME and this fails "
+                "('not a git repository' / No such file). Pipe a script "
+                "(`ssh host 'bash -s' < script.sh`, cd on line 1) or inline "
+                "`ssh host 'cd /home/doctor/projects/carcassone && …'`. "
+                "(Override: add `# allow-nocd`.)")
+    return None
+
+
 def _doclint_on_commit(cmd: str) -> str | None:
     """On `git commit`, run the doc linter in errors-only mode on STAGED files.
     Blocks ONLY on E-class findings (broken links / tracked-doc -> untracked-file),
@@ -140,6 +179,10 @@ def main() -> int:
         c = _cifs_mismatch(cmd)
         if c:
             blocks.append(f"CIFS path mismatch: {c} (Override: add `# allow-path`.)")
+    if "# allow-nocd" not in cmd:
+        n = _ssh_remote_no_cd(cmd)
+        if n:
+            blocks.append(n)
     if "# allow-doclint" not in cmd:
         d = _doclint_on_commit(cmd)
         if d:
