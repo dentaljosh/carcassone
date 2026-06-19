@@ -5,12 +5,16 @@ found (see BACKLOG.md "PreToolUse failure-mode hook" + DECISIONS.md). **CLAUDE.m
 for the mechanically-checkable subset.
 
 ## Scripts (tracked here)
-- `pretooluse_lint.py` — fires before every **Bash** call. **Blocks** (exit 2):
-  foreground `sleep ≥10s` (use Monitor/`run_in_background`), and the two unambiguous
-  CIFS mount-path misuses (`/mnt/c/carc-shared` vs `/mnt/carc-shared`). **Advises**
-  (non-blocking): `--seed-start` without `--shared-claim`, backgrounded python without
-  nohup/setsid, cluster launch without `nice -n 19`. Escape hatches in the command:
-  `# nolint`, `# allow-sleep`, `# allow-path`. **Fail-open** (any bug → exit 0).
+- `pretooluse_lint.py` — fires before every **Bash** and **Read** call. **Blocks** (exit 2,
+  Bash only): foreground `sleep ≥10s` (use Monitor/`run_in_background`), the two unambiguous
+  CIFS mount-path misuses (`/mnt/c/carc-shared` vs `/mnt/carc-shared`), `ssh`-to-remote with
+  no `cd`, and broken/untracked doc links on `git commit`. **Advises** (non-blocking):
+  `--seed-start` without `--shared-claim`, backgrounded python without nohup/setsid, cluster
+  launch without `nice -n 19`, and — on **Read** — a whole-file read (no offset/limit) of any
+  file >50KB (results.csv ~88KB ≈ 22K tokens, DECISIONS.md, the governance CSVs) → grep the
+  row/section instead (the 2026-06-19 context-discipline add; pass an explicit `limit` to
+  suppress). Escape hatches in the command: `# nolint`, `# allow-sleep`, `# allow-path`,
+  `# allow-nocd`, `# allow-doclint`. **Fail-open** (any bug → exit 0).
 - `posttooluse_log.py` — fires after Bash/Edit/Write/Read/etc. Appends real failures to
   `.claude/tool_failures.jsonl` (skips intentional nonzero exits like `pkill`). Passive,
   always exit 0. Mine that small log instead of re-chewing GB of transcripts.
@@ -24,7 +28,7 @@ To recreate on a fresh checkout, create `.claude/settings.local.json`:
 {
   "hooks": {
     "PreToolUse": [
-      {"matcher": "Bash",
+      {"matcher": "Bash|Read",
        "hooks": [{"type": "command", "command": "python3 /home/doctor/projects/carcassone/scripts/hooks/pretooluse_lint.py"}]}
     ],
     "PostToolUse": [

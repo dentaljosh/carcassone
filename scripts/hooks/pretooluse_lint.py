@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""PreToolUse lint hook for the carcassonne project (Bash only).
+"""PreToolUse lint hook for the carcassonne project (Bash + Read).
 
 Catches the mechanically-checkable failure modes the 2026-06-02 transcript
 audit found recurring. PROJECT-SCOPED: registered in this project's
-.claude/settings.json, so it only fires here.
+.claude/settings.local.json (matcher `Bash|Read`), so it only fires here.
 
 Contract (Claude Code PreToolUse):
   - stdin = JSON {tool_name, tool_input:{command,...}, cwd, ...}
@@ -12,8 +12,14 @@ Contract (Claude Code PreToolUse):
   - exit 0  -> allow; advisories go to stderr + the lint log (non-blocking)
   - FAIL-OPEN: any internal error -> exit 0 (never break a tool over a lint bug)
 
+Read handling (the 2026-06-19 context-discipline add): a whole-file `Read`
+(no offset/limit) of a large source-of-truth file (results.csv ~90KB, the
+governance CSVs, any >50KB doc) is the #1 avoidable context cost behind the
+"context fills to 400K fast" problem — advise grep/offset. Advisory only.
+
 Escape hatches (put in the command): `# nolint` (skip all), `# allow-sleep`,
-`# allow-path`, `# allow-doclint`.
+`# allow-path`, `# allow-doclint`. For Read, pass an explicit `limit` to read
+a known-large file whole on purpose (suppresses the nudge).
 """
 from __future__ import annotations
 
@@ -130,6 +136,38 @@ def _doclint_on_commit(cmd: str) -> str | None:
     return None
 
 
+# A whole-file Read above this size is worth a grep/offset nudge (~12.5K tokens).
+_LARGE_READ_BYTES = 50_000
+
+
+def _large_whole_read(data: dict) -> str | None:
+    """A `Read` with neither offset nor limit pulls the whole file (up to the
+    harness ~25K-token cap) into context. For the big source-of-truth files
+    (results.csv ~90KB, the governance CSVs, DECISIONS.md) that's ~10-25K tokens
+    you almost never need whole — grep the row/section instead. The empirical
+    driver of the 2026-06-19 "context fills to 400K fast" finding. Advisory only
+    (whole reads are sometimes legitimate; an explicit `limit` suppresses this)."""
+    ti = data.get("tool_input") or {}
+    if ti.get("offset") is not None or ti.get("limit") is not None:
+        return None  # already a targeted read
+    fp = ti.get("file_path") or ""
+    if not fp:
+        return None
+    try:
+        sz = Path(fp).stat().st_size
+    except Exception:
+        return None  # missing / unstat-able -> let Read report it
+    if sz < _LARGE_READ_BYTES:
+        return None
+    name = Path(fp).name
+    how = (f"grep the specific row(s) (`grep <key> {name}`)" if name.endswith(".csv")
+           else "grep the section, or Read with offset/limit")
+    return (f"Reading {name} whole (~{sz // 1024} KB ≈ {sz // 4000}K tokens) — {how}. "
+            f"Whole-file reads of the big source-of-truth files are the #1 avoidable "
+            f"context cost (the 400K-context problem). "
+            f"(Need it all? pass an explicit large `limit` to suppress this.)")
+
+
 def _advisories(cmd: str) -> list[str]:
     out = []
     is_evalish = any(s in cmd for s in (
@@ -161,7 +199,16 @@ def main() -> int:
         data = json.loads(raw)
     except Exception:
         return 0
-    if data.get("tool_name") != "Bash":
+    tool = data.get("tool_name")
+    if tool == "Read":
+        adv = _large_whole_read(data)
+        if adv:
+            _log({"ts": time.time(), "kind": "pre_advisory_read",
+                  "path": (data.get("tool_input") or {}).get("file_path"),
+                  "advisory": adv})
+            print("PreToolUse lint (advisory, not blocking):\n- " + adv, file=sys.stderr)
+        return 0
+    if tool != "Bash":
         return 0
     cmd = (data.get("tool_input") or {}).get("command", "") or ""
     if "# nolint" in cmd:
