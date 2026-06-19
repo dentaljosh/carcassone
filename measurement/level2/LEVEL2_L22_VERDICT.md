@@ -1,0 +1,65 @@
+# Level-2 L2-2 — iter8 on the validated ladder (VERDICT)
+
+> **Measurement gate only.** No train / promote / redesign / modify-iter8 follows.
+> Phase L2-2 of [LEVEL2_LADDER_PROTOCOL.md](LEVEL2_LADDER_PROTOCOL.md): re-ground the
+> frozen champion **iter8** (sha `0d355002…`) on the *validated* L2-1 ladder. Neural
+> matchup ⇒ run through the **carc-orch SHM eval server at high W** (5800x OW=48 +
+> laptop OW=16/24, shared-claim, CY_REPR), unlike the pure-CPU L2-1.
+> Run 2026-06-18, code_rev `efb182c`. Raw: `/mnt/c/carc-shared/level2_l22/`.
+
+## iter8 config (frozen, = production)
+NeuralMCTS sims=200, c_puct=3.0, v2.7 leaf, RESIDUAL_SCALE=0.25, CAP=12,
+DROP_THREE_OPEN=1, FLAT_LEAF=1. Heur opponents run the v2.7 leaf at the module
+default c=1.5 (the eval gate's `--c-puct` applies to the net side only) = the same
+config as the L1 ladder rungs, so R4/R5 here ARE the validated ladder rungs.
+
+## Results (n=400 paired, fresh disjoint bands)
+
+| comparison | band | W/D/L | elo (iter8 vs rung) | z | read |
+|---|---|---|---|---|---|
+| **iter8 vs R4 = heur@800** | 3.10e9 | 220/6/174 | **+40.1 ±17.5** | **+2.29** | ✅ beats heur@800 |
+| **iter8 vs R5 = heur@1600** | 3.11e9 | 217/6/177 | **+34.9 ±17.5** | **+2.00** | ✅ beats heur@1600 too |
+
+## V6 reproduce (iter8 vs heur@800)
+**PASS (qualitatively).** iter8's learned policy beats heur@800 at +40.1 (z=2.29,
+clearly significant). The magnitude is on the low side of the established cell
+(published +72.2 `p2_iter8_*`, sealed +58.7) — ~1σ below sealed — but iter8's
+absolute-vs-heur is known to swing by deck band (CL-018: iter0 ranges −8.7/+22.6/+52.5
+across bands), and 3.1e9 is a fresh band. So the ladder harness + the carc-orch SHM
+eval path reproduce the established result within band-variation. (The n=24 smoke's
+−29 was pure small-n noise, as expected at ±71 elo.)
+
+## Headline — iter8 clears BOTH validated rungs (but the scale is non-transitive)
+iter8 beats heur@800 (**+40.1/z2.29**) AND heur@1600 (**+34.9/z2.00**) by ~the same
+margin. So the champion is stronger than deep heuristic search at *both* depths
+measured — a better result than predicted (I expected iter8 to fall below heur@1600,
+since heur@1600 is +55 over heur@800 while iter8 is only +40 over heur@800).
+
+**⚠️ NON-TRANSITIVITY (the load-bearing caveat).** Compose the three measurements:
+- iter8 > heur@800: **+40** (band 3.10)
+- heur@1600 > heur@800: **+55** (band 3.04, L1 R5vR4)
+- ⇒ elo-transitivity predicts iter8 vs heur@1600 ≈ +40 − 55 = **−15**
+- but measured: iter8 vs heur@1600 = **+35** → a **~50-elo intransitivity.**
+
+Relative to the common reference heur@800, heur@1600 (+55) ranks *above* iter8 (+40),
+yet iter8 *beats* heur@1600 head-to-head. Two candidate explanations, not yet
+distinguished:
+1. **Real non-transitivity** — iter8's learned policy exploits a weakness *shared* by
+   both heuristics (so it beats both by ~the same margin), while the heuristics' depth
+   ordering (h1600≫h800) is a separate axis. Consistent with CL-016 (opponent-leaf
+   effects are non-transitive). If real, **elo is not a valid single strength axis here**
+   — a central caveat for the whole Level-2 measurement program.
+2. **Band variance** — the three comparisons are on three different bands; iter8's
+   absolute-vs-heur is known to swing ±~30 elo by band (CL-018). ~50 elo is large for
+   band variance alone, but not impossible across 3 bands + per-comparison noise (±17).
+
+**This is NOT decidable from different-band data.** ⇒ the overnight control: re-run
+**iter8 vs heur@1600** AND **heur@1600 vs heur@800** on **band 3.10e9** (the same decks
+as the existing iter8-vs-heur@800), n=400 each, so all three pairs share decks and
+transitivity is cleanly testable. (CL-024 stays provisional until that lands.)
+
+## Next (autonomous, overnight)
+1. **Same-band transitivity control** (band 3.10e9): iter8-vs-h1600 (orch) + h1600-vs-h800
+   (CPU ladder), n=400 each → resolve real-non-transitivity vs band-artifact.
+2. then the **@3200 depth-continuation top-up** (L1 loose end) if cluster time remains.
+No train/promote/redesign follows — measurement gate only.
