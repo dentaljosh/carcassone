@@ -39,18 +39,19 @@ Provenance smoke passed: each heur rung ran exactly its claimed leaf
 ## Depth-continuation rung — R5'@3200 vs @1600 (pre-registered "@3200 if R5 beats R4")
 | step | higher vs lower | W/D/L | elo | z | flag |
 |---|---|---|---|---|---|
-| R5'vR5 | heur_v2_7@3200 vs heur_v2_7@1600 | 110/5/85 (n200) | +43.7 ±24.8 | +1.68 | ⚠️ under-powered |
+| R5'vR5 | heur_v2_7@3200 vs heur_v2_7@1600 | **217/6/177 (n400)** | **+34.9 ±17.5** | **+2.36** | ✅ clean |
 
-The full depth ladder: **@200→@800 +75.9 (z3.59) · @800→@1600 +55.2 (z3.23) · @1600→@3200
-+43.7 (z1.68).** This is **diminishing-but-still-positive** returns, NOT a flat saturation:
-the @3200 point estimate (+43.7) is a real-looking gain, only *under-powered* at n=200 (a
-+44 gain is ~1.7σ; z≥2 needs n≈400 — the same under-power R5vR4 had at n=200 before its
-top-up confirmed it). So the honest read is **"depth returns are shrinking and the @1600→@3200
-step is unconfirmed at n=200,"** not "depth tops out at @1600." A definitive answer to "does
-headroom continue past @1600?" needs an n=400 top-up of this one rung (band 3.06e9) — but it
-does **not** change the headline (headroom above heur@800 is already confirmed at R5/n400).
-_(5800x ran this at W=20 — a thermal-throttle worker drop that turned out to give no watt
-relief on the PPT-capped box; W=24 next CPU round.)_
+The full depth ladder (all confirmed at n≥400): **@200→@800 +75.9 (z3.59) · @800→@1600
++55.2 (z3.23) · @1600→@3200 +34.9 (z2.36).** **✅ DEPTH HEADROOM CONTINUES past @1600** —
+the @3200 step is significant (topped up from the n=200 +43.7/z1.68 under-power; point
+estimate dropped +43.7→+34.9 but z strengthened 1.68→2.36, the same regression-to-mean
+pattern R5vR4 showed). So plain heuristic search keeps climbing with depth through @3200,
+with **clearly diminishing returns** (per-doubling gain +76 → +55 → +35). The full-game
+heuristic ruler is **not saturated even at @1600** — a deeper rung is always available as a
+stronger (if increasingly expensive) reference, until the per-doubling gain eventually
+washes into noise.
+_(n=200 ran 5800x W=20 — a thermal-throttle worker drop that gave no watt relief on the
+PPT-capped box; the n=400 top-up ran W=24 + laptop W=8.)_
 
 Flag legend: **clean** = higher rung wins with z≥2 (non-overlapping CIs);
 **compressed** = within-noise tie (|z|<2), the scale can't resolve that pair at
@@ -96,16 +97,13 @@ resolution is concentrated at the two ends:
    a stronger, cheap, out-of-lineage reference. The ruler can be made stronger by
    simply spending more search — which *raises the bar* for any "superhuman" claim
    (iter8 must now also clear the deeper rung, not just heur@800).
-5. **Next recommended action.** — **R5'@3200 done: +43.7/z1.68 (under-powered, diminishing
-   returns).** The depth-headroom likely continues past @1600 but is unconfirmed at n=200.
-   Recommendation: **do NOT spend ~30 min topping up @3200 to n=400** — the headline (headroom
-   above heur@800) is already settled at R5/n400, and @1600 is a validated stronger rung;
-   resolving the @3200 step from z1.68→~2.4 wouldn't change the strategic picture. **Go to
-   L2-2** = iter8 vs {R4=heur@800, R5=heur@1600} on the carc-orch SHM server at high W
-   (re-ground iter8 on the *validated* ladder + V6 reproduce vs the +58.7/+72.2 cell). Carry
-   **R5=heur@1600** as the strongest *confirmed* higher rung (a more demanding bar than
-   heur@800 for any superhuman claim). Optional/deferred: the @3200 n=400 top-up if a precise
-   depth-saturation point is later wanted. **No train/promote/redesign follows — measurement
+5. **Next recommended action.** — **R5'@3200 CONFIRMED at n=400: +34.9/z2.36 ✅** (topped up
+   2026-06-19; the z1.68 under-power resolved). Depth-headroom **continues past @1600** with
+   diminishing returns (+76→+55→+35). **L2-2 DONE** (`LEVEL2_L22_VERDICT.md`, CL-024): iter8
+   beats both validated rungs (heur@800 +40.1, heur@1600 +24.4 same-band) and the ladder is
+   **transitive** (the apparent non-transitivity was band-variance). Carry **heur@1600 (and
+   now @3200)** as confirmed higher rungs. **Next = L2-3** (endgame regret suite) — left for
+   Joshua to direct. **No train/promote/redesign follows — measurement
    gate only.**
 
 ## Power escalation (pre-registered)
