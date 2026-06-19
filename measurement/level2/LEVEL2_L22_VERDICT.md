@@ -83,13 +83,32 @@ Reinforces the results-discipline rule + CL-018 (band-dependent absolutes).
 - The champion **iter8 sits above both validated heuristic rungs** (heur@800 and heur@1600)
   on shared decks — so the learned policy is genuinely stronger than deep heuristic search
   at the measured depths, not merely tied.
-- **Caveat that now governs everything:** ±30–35 elo of deck-band swing. Absolute magnitudes
-  (and any cross-rung composition) are only trustworthy *within a shared band*. This is the
-  measurement reality the superhuman program must live with — a single elo number is
-  band-conditional.
+- **Band-variance caveat (REFINED by direct measurement — see below):** comparison-specific.
+  The headline neural cell (iter8-vs-heur@800) is band-**robust** within the current era
+  (σ_band≈3.6 over 3 fresh bands); larger swings appear in heur-vs-heur depth (+55/+20) and
+  cross-era. Cross-rung elo *composition* is still only safe within a shared band.
+
+## Band-variance characterization (iter8 vs heur@800, n=400 each)
+Re-ran the headline cell on 3 fresh bands, current code era (orch + CY_REPR):
+
+| band | elo | z |
+|---|---|---|
+| 3.10 | +40.1 | 2.29 |
+| 3.12 | +48.1 | 2.75 |
+| 3.13 | +47.2 | 2.70 |
+
+**mean +45.1, band-to-band σ ≈ 3.6** (≪ the within-band 1σ≈17.5 at n=400). So within the
+current era this cell is **band-robust** (~±4–8) — my earlier "±30–35" was an over-statement,
+driven by the *heur-vs-heur* depth swing (+55 b3.04 / +20 b3.10) and by lumping in the historical
+gap. **Band-variance is comparison-specific:** small for this neural cell, larger for heur-vs-heur.
+- **Open thread (not chased autonomously):** all 3 fresh bands sit ~+13–27 *below* the historical
+  sealed +58.7 (b1.7e9) / published +72.2 (b2.5e9). With σ_band≈3.6 that gap is too large to be
+  band-variance alone ⇒ likely a **fresh-vs-historical config/era difference** (orch/CY_REPR path,
+  or favorable historical bands). The leaf is bit-exact across eras, so an era-controlled A/B
+  (same band, old vs new path) would settle it. Either way **iter8 robustly beats heur@800
+  (+40 to +72, every measurement significant)** — only the magnitude is in question.
 
 ## Next
-- **@3200 depth-continuation top-up** (L1 loose end) runs next on the freed cluster (n=200→400,
-  band 3.06e9) — though note the band-variance lesson means even that may stay fuzzy.
-- L2-3 (endgame regret suite) is a separate phase — **left for Joshua** (not built autonomously).
+- **L2-3** (endgame regret suite) is a separate phase — **left for Joshua** (not built autonomously).
+- Optional follow-up: the era-controlled A/B to explain the fresh-vs-historical +45-vs-+58/72 gap.
 No train/promote/redesign follows — measurement gate only.
