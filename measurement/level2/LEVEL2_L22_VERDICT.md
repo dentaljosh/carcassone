@@ -83,32 +83,41 @@ Reinforces the results-discipline rule + CL-018 (band-dependent absolutes).
 - The champion **iter8 sits above both validated heuristic rungs** (heur@800 and heur@1600)
   on shared decks — so the learned policy is genuinely stronger than deep heuristic search
   at the measured depths, not merely tied.
-- **Band-variance caveat (REFINED by direct measurement — see below):** comparison-specific.
-  The headline neural cell (iter8-vs-heur@800) is band-**robust** within the current era
-  (σ_band≈3.6 over 3 fresh bands); larger swings appear in heur-vs-heur depth (+55/+20) and
-  cross-era. Cross-rung elo *composition* is still only safe within a shared band.
+- **The real caveat is just n=400 measurement noise (±17.5 paired), NOT a separate "band-variance"
+  effect** (see below — the orch-off A/B settled this). The eval apparatus is clean (orch+CY =
+  orch-off, bit-identical). Each magnitude carries ±17.5; composing 2–3 measurements stacks the
+  noise, which is why same-band paired comparisons (sharing the deck sample) are what compose.
+  Tighter magnitudes need larger n, not more bands.
 
-## Band-variance characterization (iter8 vs heur@800, n=400 each)
-Re-ran the headline cell on 3 fresh bands, current code era (orch + CY_REPR):
+## Band-variance investigation — RESOLVED: it's just n=400 noise, and the eval path is clean
+The iter8-vs-heur@800 cell, all bands measured (n=400 paired each):
 
-| band | elo | z |
+| band | path | elo |
 |---|---|---|
-| 3.10 | +40.1 | 2.29 |
-| 3.12 | +48.1 | 2.75 |
-| 3.13 | +47.2 | 2.70 |
+| 3.10 | orch + CY_REPR | +40.1 |
+| 3.10 | **orch-OFF, no CY (historical path)** | **+40.1 — BIT-IDENTICAL (220/6/174 both)** |
+| 3.12 | orch + CY_REPR | +48.1 |
+| 3.13 | orch + CY_REPR | +47.2 |
+| 1.7e9 (hist, sealed) | orch-off | +58.7 |
+| 2.5e9 (hist, published) | orch-off | +72.2 |
 
-**mean +45.1, band-to-band σ ≈ 3.6** (≪ the within-band 1σ≈17.5 at n=400). So within the
-current era this cell is **band-robust** (~±4–8) — my earlier "±30–35" was an over-statement,
-driven by the *heur-vs-heur* depth swing (+55 b3.04 / +20 b3.10) and by lumping in the historical
-gap. **Band-variance is comparison-specific:** small for this neural cell, larger for heur-vs-heur.
-- **Open thread (not chased autonomously):** all 3 fresh bands sit ~+13–27 *below* the historical
-  sealed +58.7 (b1.7e9) / published +72.2 (b2.5e9). With σ_band≈3.6 that gap is too large to be
-  band-variance alone ⇒ likely a **fresh-vs-historical config/era difference** (orch/CY_REPR path,
-  or favorable historical bands). The leaf is bit-exact across eras, so an era-controlled A/B
-  (same band, old vs new path) would settle it. Either way **iter8 robustly beats heur@800
-  (+40 to +72, every measurement significant)** — only the magnitude is in question.
+**Two clean conclusions (and a correction of my own overnight over-statement):**
+1. **Measurement-integrity A/B: the orch+CY_REPR eval path is BIT-IDENTICAL to the historical
+   orch-off path** on band 3.10 (220/6/174 = +40.1, both). So the orchestrator + cython encoder
+   introduce **zero** bias — all L2-2 numbers are fully comparable to historical. (End-to-end
+   confirmation of the per-forward parity gate, at n=400.)
+2. **There is NO band-variance beyond standard n=400 noise.** Because orch+CY = orch-off exactly,
+   the fresh-vs-historical gap (+45 vs +58/72) is purely different-deck sampling. Across the 5
+   bands, observed σ = **11.2 ≤ the per-measurement noise σ≈17.5** ⇒ no detectable band effect.
+   Even the heur@1600-vs-heur@800 "+55 (b3.04) vs +20 (b3.10) swing" is only **z=1.44 — within
+   noise.** ⟹ **My earlier "±30–35 band-variance" was an over-interpretation of ordinary n=400
+   sampling noise.** The real caveat is just: each n=400 paired eval carries ±17.5 (1σ); composing
+   2–3 of them stacks the noise (→ ±25–30), which is why cross-band composition looks "unreliable"
+   and same-band paired comparisons (sharing the deck sample) compose. **Fix for tighter
+   magnitudes = larger n, not more bands.** iter8-vs-heur@800 best estimate ≈ **+53 ± 17.5**.
 
 ## Next
 - **L2-3** (endgame regret suite) is a separate phase — **left for Joshua** (not built autonomously).
-- Optional follow-up: the era-controlled A/B to explain the fresh-vs-historical +45-vs-+58/72 gap.
+- The era/path A/B is DONE (orch+CY = orch-off, bit-identical) — no open thread remains; the gap
+  was just sampling noise.
 No train/promote/redesign follows — measurement gate only.
