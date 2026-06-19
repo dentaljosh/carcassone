@@ -27,6 +27,10 @@ LADDER = [
     ("R3vR2", "heur_v2_7@200", "heur_v1@200", "monotone"),
     ("R4vR3", "heur_v2_7@800", "heur_v2_7@200", "monotone"),
     ("R5vR4", "heur_v2_7@1600", "heur_v2_7@800", "saturation"),
+    # pre-registered continuation ("R5 then @3200 if R5 beats R4"): does the
+    # depth-headroom keep going above @1600, or saturate there? optional — skipped
+    # cleanly (status MISSING) if not run.
+    ("R5bvR5", "heur_v2_7@3200", "heur_v2_7@1600", "saturation_ext"),
 ]
 
 
@@ -80,13 +84,26 @@ def main(argv=None) -> int:
     compressed = [c["label"] for c in done_mono if not c["step_clean_zge2"]
                   and not c["step_inverted_zle_neg2"]]
 
+    def _beats(c):  # higher rung beats lower with elo>0 and z>=2
+        return (c and c["status"] == "DONE" and c["elo"] is not None and c["elo"] > 0
+                and c["paired_z"] is not None and c["paired_z"] >= 2.0)
+
     sat = next((c for c in comparisons if c["role"] == "saturation"), None)
     if sat is None or sat["status"] != "DONE":
         saturation_verdict = "PENDING"
-    elif sat["elo"] is not None and sat["elo"] > 0 and sat["paired_z"] is not None and sat["paired_z"] >= 2.0:
+    elif _beats(sat):
         saturation_verdict = "REFUTED (R5 beats R4 — ruler has headroom above heur@800)"
     else:
         saturation_verdict = "SATURATED (R5 does not beat R4 — ruler tops out at heur@800-v2.7)"
+
+    # pre-registered continuation: does headroom continue above @1600?
+    ext = next((c for c in comparisons if c["role"] == "saturation_ext"), None)
+    if ext is None or ext["status"] != "DONE":
+        ext_verdict = "PENDING_OR_NOT_RUN"
+    elif _beats(ext):
+        ext_verdict = "HEADROOM CONTINUES (R5'@3200 beats @1600 — ladder still climbing)"
+    else:
+        ext_verdict = "HEADROOM TOPS OUT (R5'@3200 does not beat @1600 — depth saturates by ~@1600)"
 
     out = {
         "experiment": "Level-2 L2-1 adjacent-rung ladder",
@@ -100,6 +117,10 @@ def main(argv=None) -> int:
         "saturation_gate": {
             "verdict": saturation_verdict,
             "comparison": sat["label"] if sat else None,
+        },
+        "depth_headroom_continuation": {
+            "verdict": ext_verdict,
+            "comparison": ext["label"] if ext else None,
         },
     }
     outp = Path(args.out)
@@ -120,6 +141,8 @@ def main(argv=None) -> int:
           + (f"  | INVERTED: {inverted_any}" if inverted_any else "")
           + (f"  | compressed: {compressed}" if compressed else ""))
     print(f"Saturation gate (R5 vs R4): {saturation_verdict}")
+    if ext is not None and ext["status"] == "DONE":
+        print(f"Depth headroom (R5'@3200 vs @1600): {ext_verdict}")
     print(f"\nwrote {outp}")
     return 0
 

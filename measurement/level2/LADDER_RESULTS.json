@@ -106,6 +106,27 @@
       "step_clean_zge2": true,
       "step_inverted_zle_neg2": false,
       "dir": "/mnt/c/carc-shared/level2_ladder/heurv271600__vs__heurv27800"
+    },
+    {
+      "label": "R5bvR5",
+      "rung_a": "heur_v2_7@3200",
+      "rung_b": "heur_v2_7@1600",
+      "role": "saturation_ext",
+      "status": "DONE",
+      "n": 200,
+      "W": 110,
+      "D": 5,
+      "L": 85,
+      "winrate": 0.5625,
+      "elo": 43.657787770027234,
+      "elo_sig_1sigma": 24.761617619024214,
+      "paired_mean_margin": 2.41,
+      "paired_z": 1.6835617240722127,
+      "n_paired": 100,
+      "n_deck_hashes": 100,
+      "step_clean_zge2": false,
+      "step_inverted_zle_neg2": false,
+      "dir": "/mnt/c/carc-shared/level2_ladder/heurv273200__vs__heurv271600"
     }
   ],
   "monotonicity_V4": {
@@ -119,5 +140,9 @@
   "saturation_gate": {
     "verdict": "REFUTED (R5 beats R4 \u2014 ruler has headroom above heur@800)",
     "comparison": "R5vR4"
+  },
+  "depth_headroom_continuation": {
+    "verdict": "HEADROOM TOPS OUT (R5'@3200 does not beat @1600 \u2014 depth saturates by ~@1600)",
+    "comparison": "R5bvR5"
   }
 }

@@ -36,8 +36,21 @@ Provenance smoke passed: each heur rung ran exactly its claimed leaf
 > from the n=200 +70.4 (that band ran slightly favorable) but z *strengthened* with n ⇒
 > the refutation is solid, not a borderline fluke. **Saturation gate REFUTED.**
 >
-> _Follow-on (running): R5'@3200 vs @1600 (band 3.06e9, n=200) — does the depth-headroom
-> continue above @1600, or does saturation just move up one rung?_
+## Depth-continuation rung — R5'@3200 vs @1600 (pre-registered "@3200 if R5 beats R4")
+| step | higher vs lower | W/D/L | elo | z | flag |
+|---|---|---|---|---|---|
+| R5'vR5 | heur_v2_7@3200 vs heur_v2_7@1600 | 110/5/85 (n200) | +43.7 ±24.8 | +1.68 | ⚠️ under-powered |
+
+The full depth ladder: **@200→@800 +75.9 (z3.59) · @800→@1600 +55.2 (z3.23) · @1600→@3200
++43.7 (z1.68).** This is **diminishing-but-still-positive** returns, NOT a flat saturation:
+the @3200 point estimate (+43.7) is a real-looking gain, only *under-powered* at n=200 (a
++44 gain is ~1.7σ; z≥2 needs n≈400 — the same under-power R5vR4 had at n=200 before its
+top-up confirmed it). So the honest read is **"depth returns are shrinking and the @1600→@3200
+step is unconfirmed at n=200,"** not "depth tops out at @1600." A definitive answer to "does
+headroom continue past @1600?" needs an n=400 top-up of this one rung (band 3.06e9) — but it
+does **not** change the headline (headroom above heur@800 is already confirmed at R5/n400).
+_(5800x ran this at W=20 — a thermal-throttle worker drop that turned out to give no watt
+relief on the PPT-capped box; W=24 next CPU round.)_
 
 Flag legend: **clean** = higher rung wins with z≥2 (non-overlapping CIs);
 **compressed** = within-noise tie (|z|<2), the scale can't resolve that pair at
@@ -83,12 +96,17 @@ resolution is concentrated at the two ends:
    a stronger, cheap, out-of-lineage reference. The ruler can be made stronger by
    simply spending more search — which *raises the bar* for any "superhuman" claim
    (iter8 must now also clear the deeper rung, not just heur@800).
-5. **Next recommended action.** — (a) finish **R5'@3200 vs @1600** (running) to see how
-   far the depth-headroom extends before the heuristic itself saturates; (b) run
-   **L2-2** = iter8 vs {R4, R5} on the orchestrator at high W (re-ground iter8 on the
-   *validated* ladder + V6 reproduce); (c) if @3200 still climbs, the strongest
-   validated deep-heuristic rung becomes the new measurement ceiling for the superhuman
-   program. **No train/promote/redesign follows from L2-1 — measurement gate only.**
+5. **Next recommended action.** — **R5'@3200 done: +43.7/z1.68 (under-powered, diminishing
+   returns).** The depth-headroom likely continues past @1600 but is unconfirmed at n=200.
+   Recommendation: **do NOT spend ~30 min topping up @3200 to n=400** — the headline (headroom
+   above heur@800) is already settled at R5/n400, and @1600 is a validated stronger rung;
+   resolving the @3200 step from z1.68→~2.4 wouldn't change the strategic picture. **Go to
+   L2-2** = iter8 vs {R4=heur@800, R5=heur@1600} on the carc-orch SHM server at high W
+   (re-ground iter8 on the *validated* ladder + V6 reproduce vs the +58.7/+72.2 cell). Carry
+   **R5=heur@1600** as the strongest *confirmed* higher rung (a more demanding bar than
+   heur@800 for any superhuman claim). Optional/deferred: the @3200 n=400 top-up if a precise
+   depth-saturation point is later wanted. **No train/promote/redesign follows — measurement
+   gate only.**
 
 ## Power escalation (pre-registered)
 If R5vR4 lands z ∈ [1.5, 2.5] (ambiguous), top up that one comparison to n=400
