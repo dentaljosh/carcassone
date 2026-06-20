@@ -138,8 +138,9 @@ def _eval_one(rec: dict, modes: list[str], budget: int, agents: list[str],
             moves[a] = -1
             moves[a + "_err"] = str(e)[:80]
 
-    out = {**{k: rec[k] for k in ("gen_id", "seed", "ply", "k_remaining", "to_move",
-                                  "scores", "legal_n", "in_hand_tile", "bag_size")},
+    out = {**{k: rec.get(k) for k in ("gen_id", "source_agent", "seed", "ply",
+                                      "k_remaining", "to_move", "scores", "legal_n",
+                                      "in_hand_tile", "bag_size")},
            "moves": moves, "gt": {}}
     for mode in modes:
         g = gt[mode]
