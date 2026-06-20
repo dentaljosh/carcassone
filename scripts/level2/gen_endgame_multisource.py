@@ -100,7 +100,7 @@ class _Policy:
 
     def __init__(self, spec: str):
         self.spec = spec
-        self.kind = spec.split(":")[0]
+        self.kind = spec.split(":")[0].split("@")[0]  # greedy|heur|iter8|hybrid
         self.hybrid_K = self.hybrid_N = None
         self.heur_sims = None
         if self.kind == "hybrid":
