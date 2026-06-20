@@ -52,6 +52,16 @@ from carcassonne_ai.rule_based_player import RuleBasedPlayer
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 import endgame_solver as S
 from gen_endgame_positions import replay_to
+from gen_endgame_multisource import replay_actions
+
+
+def _reconstruct(rec):
+    """(game, board) for a suite record. Multi-source records carry an action
+    sequence (replay_actions, source-agnostic); the legacy greedy suite carries
+    only (seed, ply) and replays the greedy generator."""
+    if rec.get("actions") is not None:
+        return replay_actions(rec["seed"], rec["actions"])
+    return replay_to(rec["seed"], rec["ply"])
 
 # default agent set
 ALL_AGENTS = ["iter8", "heur@800", "heur@1600", "heur@3200", "greedy", "heur_v1@200"]
@@ -98,9 +108,10 @@ def _agent_move(name: str, game_farm: Game, game_plain: Game, board, seed: int) 
     return int(mcts.best_action(board))
 
 
-def _eval_one(rec: dict, modes: list[str], budget: int, agents: list[str]) -> dict:
+def _eval_one(rec: dict, modes: list[str], budget: int, agents: list[str],
+              alphabeta: bool = False) -> dict:
     seed, ply = rec["seed"], rec["ply"]
-    game, board = replay_to(seed, ply)                 # plain game (include_farm=False)
+    game, board = _reconstruct(rec)                     # plain game (include_farm=False)
     game_farm = Game(enable_legal_moves_cache=True, include_farm_scalars=(_W.get("ns", 10) > 10))
     move_seed = (seed * 131 + ply) & 0x7FFFFFFF
 
@@ -108,8 +119,9 @@ def _eval_one(rec: dict, modes: list[str], budget: int, agents: list[str]) -> di
     gt = {}
     for mode in modes:
         t0 = time.perf_counter()
+        ab = alphabeta and (mode == "clairvoyant")     # AB is clairvoyant-only
         try:
-            res = S.solve(game, board, mode=mode, budget=budget)
+            res = S.solve(game, board, mode=mode, budget=budget, alphabeta=ab)
             gt[mode] = {"value": res.value, "optimal": res.optimal_actions,
                         "child_values": {int(a): v for a, v in res.child_values.items()},
                         "to_move": res.to_move, "nodes": res.nodes,
@@ -163,7 +175,7 @@ def _task(rec):
     if _CFG["shared_claim"]:
         if not _try_claim(fp.with_suffix(".claim"), _CFG["claim_host"], 5400):
             return ("claimed", None)
-    res = _eval_one(rec, _CFG["modes"], _CFG["budget"], _CFG["agents"])
+    res = _eval_one(rec, _CFG["modes"], _CFG["budget"], _CFG["agents"], _CFG.get("alphabeta", False))
     tmp = fp.with_suffix(".tmp")
     json.dump(res, open(tmp, "w"))
     tmp.replace(fp)
@@ -178,6 +190,8 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=14)
     ap.add_argument("--budget", type=int, default=150_000)
     ap.add_argument("--modes", nargs="+", default=["marginalized", "clairvoyant"])
+    ap.add_argument("--alphabeta", action="store_true",
+                    help="use exact alpha-beta pruning for the clairvoyant solve (much faster at K>=3).")
     ap.add_argument("--agents", nargs="+", default=ALL_AGENTS)
     ap.add_argument("--ks", type=int, nargs="+", default=None, help="restrict to these K")
     ap.add_argument("--device", default="cpu")
@@ -195,7 +209,8 @@ def main(argv=None) -> int:
     out.mkdir(parents=True, exist_ok=True)
 
     _CFG.update(out=out, modes=args.modes, budget=args.budget, agents=args.agents,
-                shared_claim=args.shared_claim, claim_host=args.claim_host)
+                shared_claim=args.shared_claim, claim_host=args.claim_host,
+                alphabeta=args.alphabeta)
     print(f"L2-3 regret: {len(recs)} positions, agents={args.agents}, modes={args.modes}, "
           f"budget={args.budget}, W={args.workers}, out={out}", flush=True)
 
