@@ -41,6 +41,9 @@ _TILES = GamePhase.TILES
 _MEEPLES = GamePhase.MEEPLES
 _TIE = 1e-6  # float tolerance for optimal-set membership in the marginalized mode
 
+# Alpha-beta TT bound flags (clairvoyant pruning path only).
+_EXACT, _LOWER, _UPPER = 0, 1, 2
+
 
 class BudgetExceeded(Exception):
     """Raised when a solve exceeds its node budget (position skipped, logged)."""
@@ -91,11 +94,19 @@ class _Solver:
     (clairvoyant) or the sorted bag MULTISET (marginalized = the spec's V5
     no-leak key: states differing only in unrevealed order collide)."""
 
-    def __init__(self, game: Game, mode: str, budget: int):
+    def __init__(self, game: Game, mode: str, budget: int, alphabeta: bool = False):
         assert mode in ("clairvoyant", "marginalized")
+        # Alpha-beta is EXACT (it only prunes provably-irrelevant subtrees), but
+        # it is sound only for pure minimax — chance (expectation) nodes have no
+        # cutoff bound, so it is restricted to the clairvoyant mode. The exact
+        # no-prune `_value` path is retained as the validation oracle (the AB
+        # result must match it bit-for-bit on the already-solved K2/K3 suites).
+        assert not (alphabeta and mode == "marginalized"), \
+            "alpha-beta is clairvoyant-only (chance nodes break minimax cutoffs)"
         self.game = game
         self.mode = mode
         self.budget = budget
+        self.alphabeta = alphabeta
         self.nodes = 0
         self.tt: dict = {}
 
@@ -147,12 +158,75 @@ class _Solver:
             exp += (len(tiles) / total) * self._value(child)
         return exp
 
+    def _value_ab(self, board: Board, alpha: float, beta: float) -> float:
+        """Exact alpha-beta minimax for the clairvoyant mode. Returns V* of the
+        subtree when called with a full window (alpha=-inf, beta=+inf); inside a
+        narrowed window it returns a fail-soft bound that the TT flag records.
+        P0 maximizes, P1 minimizes (same convention as `_value`)."""
+        if _terminal(board):
+            return float(flat_base_score(board.state, 0))
+        key = self._key(board)
+        cached = self.tt.get(key)
+        if cached is not None:
+            val, flag = cached
+            if flag == _EXACT:
+                return val
+            if flag == _LOWER:
+                if val >= beta:
+                    return val
+                alpha = val if val > alpha else alpha
+            elif flag == _UPPER:
+                if val <= alpha:
+                    return val
+                beta = val if val < beta else beta
+            if alpha >= beta:
+                return val
+        self._tick()
+        mover = board.state.current_player
+        a0, b0 = alpha, beta
+        if mover == 0:                      # maximizer
+            best = -math.inf
+            for a in _legal(self.game, board):
+                nb, _ = self.game.get_next_state(board, int(a))
+                v = self._value_ab(nb, alpha, beta)
+                if v > best:
+                    best = v
+                if best > alpha:
+                    alpha = best
+                if alpha >= beta:
+                    break                   # beta cutoff
+        else:                               # minimizer
+            best = math.inf
+            for a in _legal(self.game, board):
+                nb, _ = self.game.get_next_state(board, int(a))
+                v = self._value_ab(nb, alpha, beta)
+                if v < best:
+                    best = v
+                if best < beta:
+                    beta = best
+                if beta <= alpha:
+                    break                   # alpha cutoff
+        # Fail-soft bound classification for the TT.
+        if best <= a0:
+            flag = _UPPER                   # failed low -> best is an upper bound
+        elif best >= b0:
+            flag = _LOWER                   # failed high -> best is a lower bound
+        else:
+            flag = _EXACT
+        self.tt[key] = (best, flag)
+        return best
+
 
 def solve(game: Game, board: Board, mode: str = "marginalized",
-          budget: int = 4_000_000) -> SolveResult:
+          budget: int = 4_000_000, alphabeta: bool = False) -> SolveResult:
     """Solve the position. Evaluates EVERY legal root action exactly (no
-    cross-action pruning at the root) so regret can be scored for any move."""
-    s = _Solver(game, mode, budget)
+    cross-action pruning at the root) so regret can be scored for any move.
+
+    `alphabeta` (clairvoyant only) prunes inside each root child's subtree —
+    every child is solved with a FULL window (-inf, +inf) so its returned value
+    is exact (cross-sibling narrowing would only bound the suboptimal moves,
+    which the regret harness still needs). Exact-equal to the no-prune path."""
+    s = _Solver(game, mode, budget, alphabeta=alphabeta)
     to_move = board.state.current_player
     was_meeples = (board.state.phase == _MEEPLES)
     legal = _legal(game, board)
@@ -164,6 +238,8 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
             child_values[a] = float(flat_base_score(nb.state, 0))
         elif mode == "marginalized" and was_meeples:
             child_values[a] = s._chance(nb)
+        elif alphabeta:                       # clairvoyant + pruning (full window)
+            child_values[a] = s._value_ab(nb, -math.inf, math.inf)
         else:
             child_values[a] = s._value(nb)
     if not child_values:
