@@ -1,7 +1,10 @@
 # L2 Hybrid-Handoff Verdict — can iter8 early/mid + deep heuristic endgame combine?
 
-**Status: Phase 1 COMPLETE (verdict in). Phase 2 RUNNING (local solo, ~2h ETA as of 2026-06-19 ~22:4x UTC).**
-Measurement only — no training, no promotion. Champion of record is unchanged (iter8, [governance/PRODUCTION.yaml](../../governance/PRODUCTION.yaml)).
+**Status: COMPLETE (Phase 1 + Phase 2, 2026-06-19). VERDICT: iter8's endgame weakness is locally
+PATCHABLE (hybrid beats iter8, reproduced n=400 z≈+6) but the patched hybrid is GAP-CLOSING, NOT a
+new champion — neither hybrid:5 nor hybrid:8 beats heur@3200 (both lose at |z|<1). Deep heuristic
+remains strongest.** Measurement only — no training, no promotion. Champion of record unchanged
+(iter8, [governance/PRODUCTION.yaml](../../governance/PRODUCTION.yaml)).
 
 ## Question
 Joshua's hybrid-handoff experiment: does iter8's early/midgame policy strength combine with deep
@@ -41,23 +44,30 @@ and #8 (iter8 −28.7 Elo vs heur@3200; heur@3200 most endgame-precise).
 - Compute sanity: heur@**800** endgame captures most of the gain (K5 +0.60 vs +0.80 for @3200) — a cheap
   heuristic endgame is most of the win; depth adds a little.
 
-## Phase 2 — hybrid:K vs heur@3200 (RUNNING, local solo). The champion question.
-Auto-gated (auto_phase2): K=8 and K=5 cleared (paired_z≥1.5 vs iter8, top-2). Running:
-- `hybridK8h3200__vs__heur3200_b340_n200`, `hybridK5h3200__vs__heur3200_b340_n200` (n=200) +
-  n=400 top-ups of the vs-iter8 bands (done for K8; K5 pending).
-- **The disambiguation:** iter8 is −28.7 Elo vs heur@3200. If hybrid:8 ≈ heur@3200 (tie), iter8's early/mid
-  adds nothing the deep heuristic lacks (gain was just "use more heur"). If hybrid:8 > heur@3200, the
-  combination is genuinely better → new practical champion (would need a 2nd-band reproduction before any
-  promotion). Expected (rough transitivity −28.7 + ~21): hybrid:8 still *loses* to heur@3200 but closes
-  most of the gap.
+## Phase 2 — hybrid:K vs heur@3200 (COMPLETE, n=200 paired, b340). The champion question.
+Auto-gated (auto_phase2): K=8 and K=5 cleared (paired_z≥1.5 vs iter8, top-2). Plus n=400 top-ups of the
+vs-iter8 bands (reproduce Phase 1).
 
-## To resume / get the final verdict
+| Hybrid vs heur@3200 | W/D/L | winrate | Elo | paired margin | paired z |
+|---|---|---|---|---|---|
+| K≤5 → heur@3200 | 94/4/102 | 0.480 | −13.9 | −0.43 | −0.30 |
+| K≤8 → heur@3200 | 92/5/103 | 0.472 | −19.1 | −0.76 | −0.51 |
+
+- **VERDICT: gap-closing, NOT a new champion.** Both hybrids *lose* to heur@3200, but at |z|<1 — a
+  statistical tie-to-slight-loss. Crucially they are clearly **better than plain iter8** (−28.7 Elo,
+  z=−0.70 vs heur@3200): the early/mid iter8 policy + deep-heuristic endgame closes most of iter8's gap
+  to the deep heuristic, but does not surpass it. The deep heuristic remains the strongest practical agent.
+- **Interpretation-table row hit:** "Hybrid ties/loses heur@3200 → deep heuristic remains strongest."
+  Promotion rule (beat iter8 same-band paired AND beat heur@3200) NOT met → **nothing promoted** (as specified).
+- **Phase 1 reproduced at n=400** (vs iter8): K≤5 margin +0.90 **z=+6.23**, K≤8 margin +1.32 **z=+5.79**
+  — the PATCHABLE finding is robust. Note the small raw-Elo (+6) vs large paired-z: the hybrid reliably
+  wins a *small per-game margin* (decisive on the paired statistic) that doesn't swing the winrate much.
+
+## Reproduce / inspect (run is complete)
 ```
-python scripts/level2/report_hybrid.py --root /mnt/c/carc-shared/level2_hybrid          # full table
-tail -f /mnt/c/carc-shared/level2_hybrid/local_phase2.log                                # progress
+python scripts/level2/report_hybrid.py --root /mnt/c/carc-shared/level2_hybrid          # full table (authoritative)
 ```
-Phase 2 complete when `hybridK{8,5}h3200__vs__heur3200_b340_n200` each have 200 seed-files and
-`hybridK5h3200__vs__iter8_b340_n200` has 400. Then read the heur@3200 bands' paired_z for the champion verdict.
+All bands at final n (vs-iter8 topups n=400, vs-heur3200 n=200). Numbers above + in results.csv `l2hyb_*`.
 
 ## Cluster note (2026-06-19)
 Phase 2 runs **local solo** (RTX 5060 Ti, orch W=48). The laptop (mobile 4070, W=26) was pulled after two

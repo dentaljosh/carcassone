@@ -2618,7 +2618,7 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Phase 1 verdict (DONE): endgame weakness is locally PATCHABLE.** All hybrids beat iter8 on paired margin, monotone in K: K2 +0.36/z2.65, K3 +0.25/z1.18, K5 +0.80/z3.45, K8 +1.36/z4.68; K8 reproduced at n=400 (+1.31/z5.61). Compute sanity K5@heur800 +0.60/z2.89 (cheap heur endgame captures most of it). Modest absolute size. results.csv `l2hyb_*`.
 
-**Phase 2 (RUNNING, local solo):** hybrid:{8,5} vs heur@3200 (+K5 n=400 topup). Disambiguates champion vs gap-closing. Full writeup [measurement/level2/LEVEL2_HYBRID_VERDICT.md](measurement/level2/LEVEL2_HYBRID_VERDICT.md).
+**Phase 2 verdict (DONE): gap-closing, NOT a new champion.** hybrid:5 vs heur@3200 −13.9 Elo/pz−0.30, hybrid:8 −19.1 Elo/pz−0.51 (both n=200) — both *lose* to heur@3200 at |z|<1 (tie-to-slight-loss), but clearly better than iter8's −28.7. The early/mid iter8 policy + deep-heuristic endgame closes most of iter8's gap to the deep heuristic without surpassing it. Promotion rule (beat iter8 paired AND beat heur@3200) NOT met → nothing promoted. Phase 1 reproduced at n=400 (K5 margin+0.90/z+6.23, K8 +1.32/z+5.79). Interpretation: "Hybrid ties/loses heur@3200 → deep heuristic remains strongest." Full writeup [measurement/level2/LEVEL2_HYBRID_VERDICT.md](measurement/level2/LEVEL2_HYBRID_VERDICT.md).
 
 **Cluster decision:** pulled the laptop after 2 transient mobile-4070 GPU stalls (carc-orch cmp 2.4ms→3316ms → 60s SHM worker timeout → BrokenServerError → set -e aborted launcher). Local RTX 5060 Ti stable; runs Phase 2 solo. Per-game JSONs cached/resumable.
 
