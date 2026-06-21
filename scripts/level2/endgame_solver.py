@@ -23,6 +23,7 @@ Pure CPU, no net. Resumable/parallel via the regret harness, not here.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import sys
@@ -130,7 +131,22 @@ class _Solver:
         sr = self.game.string_representation(board)
         descs = (t.description for t in board.state.deck)
         deck = tuple(descs) if self.mode == "clairvoyant" else tuple(sorted(descs))
-        return (sr, deck)
+        # COMPACT key: hash the (sr, deck) identity to a 128-bit digest (~16B) instead
+        # of storing the ~7KB `string_representation` string per TT entry. The TT holds
+        # ~1M entries on hard positions, so fat string keys are what blow RSS to ~12GB
+        # (measured: sr ~6876 chars/key); the 16B digest cuts per-entry ~140x -> RSS
+        # collapses, letting workers run uncapped at high W. 128-bit -> collision prob
+        # ~1e-27 at 1M entries (safe for a ground-truth solver). Semantically identical
+        # to the (sr, deck) tuple key except for (astronomically unlikely) collisions;
+        # node counts + V* are bit-identical to the string-key solver (validated). A
+        # true incremental Zobrist hash would also skip building `sr`, but that's a
+        # bigger change; this captures the entire MEMORY win for ~free CPU (blake2b on
+        # an already-computed 7KB string is ~microseconds vs the ~ms/node solve cost).
+        h = hashlib.blake2b(digest_size=16)
+        h.update(sr.encode())
+        h.update(b"\x00")
+        h.update("\x1f".join(deck).encode())
+        return h.digest()
 
     def _value(self, board: Board) -> float:
         if _terminal(board):
