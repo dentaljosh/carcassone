@@ -158,9 +158,27 @@ def _eval_one(rec: dict, modes: list[str], budget: int, agents: list[str],
                                 "match": mv in g["optimal"]}
             else:
                 per_agent[a] = {"move": mv, "regret": None, "match": False, "illegal": True}
+        # Position-difficulty metrics (from the exact child-value spectrum). All in
+        # the mover's perspective so regret >= 0. These let the analysis separate
+        # "iter8 is bad at the endgame" from "iter8 reaches easy endgames":
+        #   best_vs_second_gap : V* minus the 2nd-best move's value (decisiveness/sharpness)
+        #   n_within1          : # legal moves within 1pt of optimal (forgiving-ness)
+        #   random_legal_regret: mean regret over ALL legal moves (uniform-random baseline)
+        #   value_spread       : max-min child value (total swing across legal moves)
+        vstar, tm = g["value"], g["to_move"]
+        vals = list(cv.values())
+        regrets = [(vstar - v) if tm == 0 else (v - vstar) for v in vals]
+        vs_sorted = sorted(vals, reverse=(tm == 0))   # best first in mover perspective
+        gap = abs(vs_sorted[0] - vs_sorted[1]) if len(vs_sorted) >= 2 else None
+        difficulty = {
+            "best_vs_second_gap": round(gap, 4) if gap is not None else None,
+            "n_within1": sum(1 for r in regrets if r <= 1.0 + 1e-9),
+            "random_legal_regret": round(sum(regrets) / len(regrets), 4) if regrets else None,
+            "value_spread": round(max(vals) - min(vals), 4) if vals else None,
+        }
         out["gt"][mode] = {"solved": True, "value": g["value"], "n_optimal": len(g["optimal"]),
                            "n_legal": len(cv), "nodes": g["nodes"], "secs": g["secs"],
-                           "per_agent": per_agent}
+                           "difficulty": difficulty, "per_agent": per_agent}
     return out
 
 

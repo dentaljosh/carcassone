@@ -144,6 +144,54 @@ def main(argv=None) -> int:
             sr = [d for d in rows if (d.get("source_agent") or "?") == src]
             report["metrics"][mode]["by_source"][src] = {a: _agent_stats(sr, a, mode) for a in agents}
 
+    # ---- (3) DIFFICULTY: distribution by source + agents by sharpness ------ #
+    # H1/H2/H3 disentangler: is iter8's high top-1 on iter8-positions because it
+    # plays well, or because iter8-positions are EASIER (lower gap/spread)? And do
+    # heuristics degrade LESS than iter8 as positions get sharper?
+    def _diff_fields(d, mode):
+        g = d["gt"].get(mode, {})
+        if not g.get("solved"):
+            return None
+        diff = dict(g.get("difficulty") or {})
+        sc, tm = d.get("scores"), d.get("to_move")
+        diff["score_margin"] = (sc[tm] - sc[1 - tm]) if (sc and tm is not None) else None
+        diff["legal_n"] = d.get("legal_n")
+        diff["n_optimal"] = g.get("n_optimal")
+        return diff
+
+    report["difficulty_by_source"] = {}
+    for mode in modes:
+        report["difficulty_by_source"][mode] = {}
+        for src in sources:
+            ds = [_diff_fields(d, mode) for d in rows if (d.get("source_agent") or "?") == src]
+            ds = [x for x in ds if x]
+            if not ds:
+                continue
+            def col(k):
+                xs = [x[k] for x in ds if x.get(k) is not None]
+                return _med(xs)
+            report["difficulty_by_source"][mode][src] = {
+                "n": len(ds), "gap_med": col("best_vs_second_gap"),
+                "n_within1_med": col("n_within1"), "random_regret_med": col("random_legal_regret"),
+                "value_spread_med": col("value_spread"), "score_margin_med": col("score_margin"),
+                "legal_n_med": col("legal_n")}
+
+    # agents on SHARP (gap>=2) vs FORGIVING (gap<2) positions
+    report["agents_by_sharpness"] = {}
+    for mode in modes:
+        report["agents_by_sharpness"][mode] = {}
+        for label, lo, hi in (("forgiving_gap_lt2", -1e9, 2.0), ("sharp_gap_ge2", 2.0, 1e9)):
+            bucket = []
+            for d in rows:
+                g = d["gt"].get(mode, {})
+                if not g.get("solved"):
+                    continue
+                gp = (g.get("difficulty") or {}).get("best_vs_second_gap")
+                if gp is not None and lo <= gp < hi:
+                    bucket.append(d)
+            report["agents_by_sharpness"][mode][label] = {
+                "n": len(bucket), "agents": {a: _agent_stats(bucket, a, mode) for a in agents}}
+
     json.dump(report, open(args.out, "w"), indent=2)
 
     # ---- human-readable ---------------------------------------------------- #
@@ -174,6 +222,27 @@ def main(argv=None) -> int:
             if s:
                 print(f"  {a:14}{s['n']:>5}{s['top1']:>7.3f}{s['mean_regret']:>9.2f}{s['median_regret']:>8.2f}"
                       f"{s['blunder_gt2']:>6.2f}{s['blunder_gt5']:>6.2f}{s['blunder_gt10']:>6.2f}")
+        print(" TOP-1 BY SOURCE (does the ranking hold across generators?):")
+        print(f"  {'source':16}" + "".join(f"{a:>11}" for a in agents))
+        for src in sources:
+            bs = report["metrics"][mode]["by_source"][src]
+            cells = "".join(f"{(bs[a]['top1'] if bs.get(a) else float('nan')):>11.2f}" for a in agents)
+            n = next((bs[a]['n'] for a in agents if bs.get(a)), 0)
+            print(f"  {src:16}{cells}   (n={n})")
+        print(" DIFFICULTY BY SOURCE (is iter8 reaching EASIER endgames?):")
+        print(f"  {'source':16}{'n':>4}{'gap':>7}{'within1':>8}{'randReg':>8}{'spread':>8}{'margin':>8}{'legalN':>7}")
+        for src in sources:
+            ds = report["difficulty_by_source"][mode].get(src)
+            if ds:
+                print(f"  {src:16}{ds['n']:>4}{str(ds['gap_med']):>7}{str(ds['n_within1_med']):>8}"
+                      f"{str(ds['random_regret_med']):>8}{str(ds['value_spread_med']):>8}"
+                      f"{str(ds['score_margin_med']):>8}{str(ds['legal_n_med']):>7}")
+        print(" AGENTS BY SHARPNESS (do heuristics generalize to sharp positions better than iter8?):")
+        for label in ("forgiving_gap_lt2", "sharp_gap_ge2"):
+            blk = report["agents_by_sharpness"][mode][label]
+            print(f"  [{label} n={blk['n']}]  " + " ".join(
+                f"{a}={blk['agents'][a]['top1']:.2f}/{blk['agents'][a]['mean_regret']:.2f}"
+                for a in agents if blk['agents'].get(a)))
     print(f"\nwrote {args.out}")
     return 0
 
