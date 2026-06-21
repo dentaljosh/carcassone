@@ -61,10 +61,11 @@ Confirms the 3 hypotheses with difficulty controls (best-vs-2nd gap, #near-optim
 baseline regret, score-margin-entering-K4, source bucket): **(H1)** iter8 near-optimal on its own endgames;
 **(H2)** iter8 poor on sharper/OOD endgames; **(H3)** heuristics generalize across sources better. Running
 (`/mnt/c/carc-shared/l23_k4_expand_probe/`, AB @1M); aggregate with `aggregate_k4_probe.py`.
-**Status as of 2026-06-21:** 157/200; 43 left (the hard tail: 19 iter8 monsters + 9 hybrid + 8 greedy +
-7 heur). Running **local W=3 + Xeon W=1** (uncapped; memory-capped W — see hardware note). Partial aggregate
-already replicates the headline at n=137 (iter8 worst overall: top-1 0.540 vs heur@3200 0.673; iter8 worst
-on sharp gap≥2 positions). _Verdict table PENDING completion._
+**Status as of 2026-06-21:** ~163/200; hard tail left (~19 iter8 monsters + stragglers). Running **3 boxes**:
+local W=3 + Xeon W=1 (uncapped, solve monsters) + laptop W=1 **capped** (`TT_CAP=150000`, OOM-proof; solves
+light positions, budget-hits monsters → final local uncapped mop-up). Partial aggregate already replicates
+the headline at n=137 (iter8 worst overall: top-1 0.540 vs heur@3200 0.673; iter8 worst on sharp gap≥2
+positions). _Verdict table PENDING completion (completion = 200 SOLVED, not 200 json)._
 
 ## Perfect-information vs bag-expectation — _PENDING (marginalized K=4 tractability test; needs make/unmake)_
 
