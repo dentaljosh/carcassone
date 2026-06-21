@@ -67,11 +67,15 @@ baseline regret, score-margin-entering-K4, source bucket): **(H1)** iter8 near-o
 
 ## K=5 feasibility — _PENDING (small probe, only AFTER the K=4 expansion verdict)_
 
-## Hardware note (run ops, 2026-06-21)
-The local 5900XT threw a repeated fatal **MCE (Cache Hierarchy Error, physical core 1 / APIC ID 2)** twice
-under heavy all-core load → unclean shutdowns. Root cause: PBO Curve Optimizer too aggressive on core 1
-(−20 all-core; −15 was stable). Probe throttled to W≤8 on local until the curve is fixed. Run is fully
-crash-resumable (shared-claim + per-position cache on the share), so the MCEs cost time, not data. Other
-session "crashes" were clean WSL VM restarts (no WHEA), not hardware.
+## Hardware / run-ops note (2026-06-21) — two failure modes, both understood
+1. **Hardware MCE:** the local 5900XT threw a repeated fatal *Cache Hierarchy Error on physical core 1
+   (APIC ID 2)* twice under heavy all-core load → unclean shutdowns. Root cause: PBO Curve Optimizer too
+   aggressive on core 1 (−20 all-core; −15 was stable). Fix: set core 1 → −15.
+2. **OOM (the W ceiling):** the AB solver's transposition table reaches **~6GB for a single worker** on a
+   hard/budget-hit position at the 1M budget. At W=12–16 several big-TT positions at once exhausted the
+   41GB WSL VM → oom-killer → forced restart. **Memory caps W: keep W≤6 on local @1M** (6×6GB≈36GB<41GB);
+   lower budget or a TT-size cap would permit higher W.
+Probe runs local-solo at W=6. Fully crash-resumable (shared-claim + per-position cache), so these cost time,
+not data. Other session "crashes" were clean WSL VM restarts (no WHEA), not hardware.
 
 ## Conclusions — _PENDING expansion completion_
