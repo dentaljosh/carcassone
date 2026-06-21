@@ -61,17 +61,25 @@ Confirms the 3 hypotheses with difficulty controls (best-vs-2nd gap, #near-optim
 baseline regret, score-margin-entering-K4, source bucket): **(H1)** iter8 near-optimal on its own endgames;
 **(H2)** iter8 poor on sharper/OOD endgames; **(H3)** heuristics generalize across sources better. Running
 (`/mnt/c/carc-shared/l23_k4_expand_probe/`, AB @1M); aggregate with `aggregate_k4_probe.py`.
-**Status as of 2026-06-21:** ~123/200 (greedy/heur/hybrid blocks ~done; iter8 tail solving at W=2 — heavy
-TT). Local-solo, memory-capped (see hardware note). _Verdict table PENDING completion._
+**Status as of 2026-06-21:** 157/200; 43 left (the hard tail: 19 iter8 monsters + 9 hybrid + 8 greedy +
+7 heur). Running **local W=3 + Xeon W=1** (uncapped; memory-capped W — see hardware note). Partial aggregate
+already replicates the headline at n=137 (iter8 worst overall: top-1 0.540 vs heur@3200 0.673; iter8 worst
+on sharp gap≥2 positions). _Verdict table PENDING completion._
 
 ## Perfect-information vs bag-expectation — _PENDING (marginalized K=4 tractability test; needs make/unmake)_
 
 ## K=5 feasibility — _PENDING (small probe, only AFTER the K=4 expansion verdict)_
 
-## Hardware / run-ops note (2026-06-21) — two failure modes, both understood
+## Hardware / run-ops note (2026-06-21) — failure modes, all understood
 1. **Hardware MCE:** the local 5900XT threw a repeated fatal *Cache Hierarchy Error on physical core 1
    (APIC ID 2)* twice under heavy all-core load → unclean shutdowns. Root cause: PBO Curve Optimizer too
-   aggressive on core 1 (−20 all-core; −15 was stable). Fix: set core 1 → −15.
+   aggressive on core 1 (−20 all-core; −15 was stable). **FIXED 2026-06-21 (core 1 → −15).** Thermal limit
+   gone — but **memory still caps W** (see #2): the constraint is RAM, not thermals.
+1b. **TT-cap rejected for K=4:** a `CARCASSONNE_TT_CAP` (freeze-at-cap, correctness-neutral memoization
+   bound) was built to let small boxes join, but it can only *reduce* the solved set — node-inflation pushes
+   more positions over the budget, and it never makes an unsolvable position solve (`greedy_s3500000000` is
+   a 1M-budget-hit even uncapped). The laptop (11GB) can't solve a 12GB monster regardless, so the cap buys
+   nothing for K=4. Kept as a tool for K=5 (where the memory wall is worse). The probe stays **uncapped**.
 2. **OOM (the W ceiling — and it's SOURCE-dependent):** the AB solver's transposition table balloons on
    hard positions — observed **~12GB for a single worker** (above the initial 6GB estimate) at the 1M
    budget. The ceiling depends on the *source*: greedy/heur@3200/hybrid endgames solve at W=4–6, but the

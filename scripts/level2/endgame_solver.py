@@ -109,6 +109,17 @@ class _Solver:
         self.alphabeta = alphabeta
         self.nodes = 0
         self.tt: dict = {}
+        # Optional TT entry cap (memory bound). 0/unset = unlimited. When the table
+        # is full we FREEZE it: new keys are not inserted (so the dict stops growing
+        # -> bounded RSS), but existing keys may still be updated (no growth) and are
+        # still read. This is correctness-NEUTRAL: the TT is pure memoization, so a
+        # missing entry only forces recomputation -> more nodes, identical values
+        # (and AB bound flags stay valid). It trades memory for node count.
+        self.tt_cap = int(os.environ.get("CARCASSONNE_TT_CAP", "0"))
+
+    def _put(self, key, val) -> None:
+        if key in self.tt or not self.tt_cap or len(self.tt) < self.tt_cap:
+            self.tt[key] = val
 
     def _tick(self):
         self.nodes += 1
@@ -139,7 +150,7 @@ class _Solver:
             else:
                 vals.append(self._value(nb))
         v = max(vals) if mover == 0 else min(vals)
-        self.tt[key] = v
+        self._put(key, v)
         return v
 
     def _chance(self, nb: Board) -> float:
@@ -213,7 +224,7 @@ class _Solver:
             flag = _LOWER                   # failed high -> best is a lower bound
         else:
             flag = _EXACT
-        self.tt[key] = (best, flag)
+        self._put(key, (best, flag))
         return best
 
 
