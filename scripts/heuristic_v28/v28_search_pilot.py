@@ -62,17 +62,22 @@ def _save(p: Path, r: GameResult):
     tmp.replace(p)
 
 
-def _worker_init(variant_name):
-    global _VARIANT_NAME, _VARIANT_CFG
+def _worker_init(variant_name, sims_b=None):
+    global _VARIANT_NAME, _VARIANT_CFG, _SIMS_B
     _VARIANT_NAME = variant_name
     _VARIANT_CFG = v28_configs.build_variants([variant_name])[variant_name]
+    _SIMS_B = sims_b
+
+
+_SIMS_B = None  # side-B sims override (cross-depth anchor); None -> same as side A
 
 
 def _make_sides(seed, sims):
-    """Side A = v2.8 variant leaf; side B = v2.7 leaf (leaf_cfg=None)."""
+    """Side A = v2.8 variant leaf @ sims; side B = v2.7 leaf @ (_SIMS_B or sims)."""
     ga, gb = Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True)
+    sims_b = _SIMS_B if _SIMS_B else sims
     a = HeuristicMCTS(game=ga, simulations=sims, seed=seed, heur_leaf="v2_7", leaf_cfg=_VARIANT_CFG)
-    b = HeuristicMCTS(game=gb, simulations=sims, seed=seed + 1, heur_leaf="v2_7", leaf_cfg=None)
+    b = HeuristicMCTS(game=gb, simulations=sims_b, seed=seed + 1, heur_leaf="v2_7", leaf_cfg=None)
     return ga, a, b
 
 
@@ -147,6 +152,7 @@ def main(argv=None):
     ap.add_argument("--variant", required=True, help="v2.8 variant name from V28_VARIANT_CONFIGS.json")
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--sims", type=int, default=200)
+    ap.add_argument("--sims-b", type=int, default=None, help="side-B (v2.7) sims override for the cross-depth anchor; default = --sims")
     ap.add_argument("--paired", action="store_true")
     ap.add_argument("--workers", type=int, default=14)
     ap.add_argument("--seed-start", type=int, default=1_700_000_000)  # distinct namespace; not selfplay seeds
@@ -157,7 +163,8 @@ def main(argv=None):
         ap.error("--paired requires even --n")
 
     cfg = v28_configs.build_variants([args.variant])[args.variant]
-    out = Path(args.out_root) / f"{args.variant}_vs_v27_s{args.sims}"
+    _suffix = f"s{args.sims}" if not args.sims_b else f"s{args.sims}_vs_v27s{args.sims_b}"
+    out = Path(args.out_root) / f"{args.variant}_vs_v27_{_suffix}"
     out.mkdir(parents=True, exist_ok=True)
     # manifest
     spec = v28_configs.load_spec()["variants"][args.variant]
@@ -182,7 +189,7 @@ def main(argv=None):
     results = []
     if todo:
         t0 = time.perf_counter()
-        with Pool(args.workers, initializer=_worker_init, initargs=(args.variant,)) as pool:
+        with Pool(args.workers, initializer=_worker_init, initargs=(args.variant, args.sims_b)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 results.append(r); done += 1

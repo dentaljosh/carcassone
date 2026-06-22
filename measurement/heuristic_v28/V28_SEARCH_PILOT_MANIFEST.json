@@ -1,0 +1,28 @@
+{
+  "schema": "v28-search-pilot-1",
+  "created": "2026-06-22",
+  "kind": "paired full-game HeuristicMCTS A/B — side A = heur@N with a v2.8 leaf (HeuristicMCTS leaf_cfg=), side B = heur@N with v2.7 (leaf_cfg=None)",
+  "harness": "scripts/heuristic_v28/v28_search_pilot.py",
+  "config": {
+    "agent": "HeuristicMCTS (pure heuristic, no net, no orchestrator — CPU-bound)",
+    "c_puct": "n/a (heuristic UCT)",
+    "paired": true,
+    "balanced_seats": true,
+    "workers": 15,
+    "box": "local 5900XT (16C/32T), nice -19",
+    "base_env": {"CARCASSONNE_V25_CAP": "12", "CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_USE_FLAT_LEAF": "1"},
+    "leaf_path_note": "side A (v2.8) forces the engine/object path (_v28_active); side B (v2.7) uses the flat fast path — leaf VALUES are correct on both, only speed differs (a strength A/B, not a speed A/B)."
+  },
+  "seed_namespaces": {
+    "1906220000": "heur@200 pilots (fresh; distinct from the SPENT 1.7e9 sealed deck panel)",
+    "1906230000": "heur@800 robustness"
+  },
+  "runs": [
+    {"variant": "v28_completion", "overrides": {"closure_continuous_slack": 3.0}, "sims": 200, "n": 200, "out": "/mnt/c/carc-shared/v28_pilot/v28_completion_vs_v27_s200"},
+    {"variant": "v28_meeple", "overrides": {"v28_meeple_k": 2.0, "v28_meeple_recovery_t0": 72}, "sims": 200, "n": 200, "out": "/mnt/c/carc-shared/v28_pilot/v28_meeple_vs_v27_s200"},
+    {"variant": "v28_meeple", "overrides": {"v28_meeple_k": 2.0, "v28_meeple_recovery_t0": 72}, "sims": 800, "n": 120, "out": "/mnt/c/carc-shared/v28_pilot/v28_meeple_vs_v27_s800", "purpose": "depth-robustness / search-duplication test"},
+    {"variant": "v28_meeple_flat", "overrides": {"v28_meeple_k": 2.0, "v28_meeple_recovery_t0": 0}, "sims": 200, "n": 200, "out": "/mnt/c/carc-shared/v28_pilot/v28_meeple_flat_vs_v27_s200", "purpose": "disentangle recovery-scaling vs flat term; re-test the n=20 'null' verdict (DECISIONS 2026-05-14)"},
+    {"variant": "v28_meeple_k1", "overrides": {"v28_meeple_k": 1.0, "v28_meeple_recovery_t0": 72}, "sims": 200, "n": 200, "out": "/mnt/c/carc-shared/v28_pilot/v28_meeple_k1_vs_v27_s200", "purpose": "k-bracket below"}
+  ],
+  "power_note": "n=200 paired near wr=0.5 -> 1sigma_elo ~= +/-25; |z_margin|>2 on the per-game paired diff = reliable per-game margin (CLAUDE.md results discipline). n=120 @800 is coarser."
+}
