@@ -1,6 +1,6 @@
 # L2 K=4 Solver-Grounded Late-Game Probe — how close are the agents to EXACT play at K=4?
 
-**Status: IN PROGRESS (2026-06-19).** Measurement only — no training, no promotion.
+**Status: COMPLETE (2026-06-21).** Measurement only — no training, no promotion.
 Champion of record unchanged (iter8, [governance/PRODUCTION.yaml](../../governance/PRODUCTION.yaml)).
 
 ## Question
@@ -56,18 +56,59 @@ Agent regret vs the EXACT optimum (top-1 = fraction agent's move is optimal):
   iter8 is **near-optimal on the endgames it reaches (0.92)** but **worst on greedy/hybrid endgames (0.36/0.50)** — two compounding effects: iter8-generated K=4 positions are *easier* (all agents ~0.92) AND iter8 mishandles the sharper/OOD endgames others reach. A greedy-only suite would have mis-read this as pure skill deficit. **Small n (10–12/cell) → EXPANSION underway to confirm.**
 - **Selection bias: minimal.** 96% solved (44/46), solved-rate even across sources (greedy 11/12, heur 11/11, hybrid 10/11, iter8 12/12); solved positions reach legal_n=72 while unsolved max 60 → not a low-branching bias.
 
-## EXPANSION (active) — balanced 50/source × 4 = 200 K=4 positions
-Confirms the 3 hypotheses with difficulty controls (best-vs-2nd gap, #near-optimal-within-1pt, random-legal
-baseline regret, score-margin-entering-K4, source bucket): **(H1)** iter8 near-optimal on its own endgames;
-**(H2)** iter8 poor on sharper/OOD endgames; **(H3)** heuristics generalize across sources better. Running
-(`/mnt/c/carc-shared/l23_k4_expand_probe/`, AB @1M); aggregate with `aggregate_k4_probe.py`.
-**Status as of 2026-06-21:** solved=162/200, ~31 left (monster tail + ~6–7 genuine 1M-budget-hits). Now on
-the **COMPACT-key solver** (`6f9dd08`, blake2b-128 TT key, validated bit-identical 12/12) → monsters ~12GB→~7GB
-(~1.5×; the rest is transient deepcopy churn — make/unmake is the real lever, see BACKLOG). **3 boxes uncapped:
-local W=5 + Xeon W=2 + laptop W=1** (~8 workers, all solve monsters). Partial aggregate at n≈160 already
-replicates the headline (iter8 worst overall: top-1 0.540 vs heur@3200 0.673; iter8 worst on sharp gap≥2).
-_Verdict table PENDING completion — completion ≈ 193/200 SOLVED (the ~6–7 unsolved are genuine 1M budget-hits =
-correct selection-bias data, NOT a failure)._
+## RESULTS — balanced 200 K=4 positions (50/source × 4), CLAIRVOYANT @1M — COMPLETE 2026-06-21
+200/200 attempted, **187 solved (94%)**, 13 genuine 1M-node budget-hits (greedy 7, heur@3200 2, hybrid 2,
+iter8 2 — these EXCEED the budget even uncapped; correct selection-bias data, NOT failures). Solve cost:
+nodes median 108k / max 973k, secs median ~21min / max ~7.4h. Run on 3 boxes with the **COMPACT blake2b-128
+TT key** (`6f9dd08`, validated bit-identical 12/12 incl. node counts); local W dropped 5→3 mid-run after
+monsters hit ~10.6GB (see run-ops note). Aggregated with `aggregate_k4_probe.py` → `K4_PROBE_RESULTS.json`.
+
+**Agent regret vs the EXACT optimum (n=187, overall; top-1 = fraction the agent's move is optimal):**
+| agent | top-1 | mean regret | >2pt | >5pt |
+|---|---|---|---|---|
+| **heur@3200** | **0.679** | 1.07 | 0.13 | 0.05 |
+| heur@800 | 0.652 | 1.21 | 0.14 | 0.06 |
+| greedy | 0.647 | 1.33 | 0.16 | 0.08 |
+| **iter8** | **0.561** | 1.48 | 0.20 | 0.06 |
+
+→ **iter8 plays the K=4 endgame WORST overall** (top-1 0.561 vs heur@3200 0.679) — robustly replicates L2-3
+K=2 (CL-025, top-1 0.667) and K=3. Endgame optimality stays decoupled from full-game Elo.
+
+**Top-1 by source (the multi-source disentangler — does the ranking hold across generators?):**
+| positions from → | iter8 | heur@3200 | heur@800 | greedy | n |
+|---|---|---|---|---|---|
+| iter8-generated | 0.65 | 0.73 | 0.71 | **0.75** | 48 |
+| heur@3200-gen | 0.58 | 0.73 | 0.69 | 0.65 | 48 |
+| hybrid-gen | 0.56 | 0.67 | 0.60 | 0.60 | 48 |
+| greedy-generated | **0.44** | 0.58 | 0.60 | 0.58 | 43 |
+
+**Difficulty by source** (within1 = # moves within 1pt of optimal; randReg = random-legal regret):
+| source | within1 | randReg | iter8 top-1 |
+|---|---|---|---|
+| iter8-gen | 28.5 | 1.1 | 0.65 |
+| heur@3200-gen | 24.0 | 1.1 | 0.58 |
+| greedy-gen | 7 | 1.9 | 0.44 |
+| hybrid-gen | 6 | 2.0 | 0.56 |
+
+**Sharpness split** (best-vs-2nd-best gap): forgiving (gap<2, n=149) iter8 top-1=0.60 vs sharp (gap≥2, n=38)
+iter8=0.40, mean regret 1.01→3.34. All agents degrade on sharp positions; **iter8 degrades the worst.**
+
+## VERDICT — the 3 hypotheses
+- **(H1) iter8 near-optimal on its OWN endgames — NOT supported as stated (the pilot's 0.92 was n=12 noise).**
+  iter8 scores only **0.65** on iter8-generated endgames (mediocre, not near-optimal) and is BEATEN there by
+  greedy (0.75) and heur@3200 (0.73). What IS true: iter8-generated endgames are objectively EASIER
+  (within1=28.5, randReg=1.1 — many moves near-optimal), so iter8 merely *looks* least-bad on its own source.
+- **(H2) iter8 poor on sharper / OOD endgames — SUPPORTED.** iter8 is worst on greedy-generated (0.44 vs
+  0.58–0.60) and worst on sharp gap≥2 positions (0.40, regret 3.34). Conservative: the 7 excluded greedy
+  budget-hits are even higher-branching (unsolved legalN med 49 vs solved 40), likely sharper still.
+- **(H3) heuristics generalize across sources better — SUPPORTED.** heur@3200 is the most consistent across
+  generators (0.58–0.73) and best overall (0.679); iter8 is the most variable (0.44–0.65) and worst overall.
+
+**Net:** the headline (iter8 worst at the endgame) is robust K=2→K=3→K=4. The pilot's dramatic source split
+(0.92 own / 0.36 greedy) was small-n noise; the real effect is tamer (0.65 / 0.44) but the same direction —
+two compounding effects: (1) iter8 *reaches* easier endgames (forgiving, many near-optimal moves), and
+(2) iter8 still handles the SHARP endgames others reach the worst. Consistent with the hybrid-handoff finding
+(CL-026): iter8's endgame weakness is real and locally patchable by handing off to heur@3200 near game end.
 
 ## Perfect-information vs bag-expectation — _PENDING (marginalized K=4 tractability test; needs make/unmake)_
 
@@ -96,4 +137,13 @@ Probe runs local-solo (W=4 easy-source blocks, dropped to W=2 for the iter8 tail
 (shared-claim + per-position cache), so these cost time,
 not data. Other session "crashes" were clean WSL VM restarts (no WHEA), not hardware.
 
-## Conclusions — _PENDING expansion completion_
+## Conclusions
+1. **iter8 plays the K=4 endgame worst of all four agents** (top-1 0.561 vs heur@3200 0.679) — the L2-3
+   endgame-weakness finding holds and deepens from K=2 to K=4. Endgame precision ≠ full-game Elo.
+2. **The pilot's headline source effect was partly noise.** The real disentangled picture: iter8 reaches
+   *easier* endgames (the selection effect is real) AND mishandles sharp/OOD endgames worst (the skill
+   deficit is real) — both effects present, each ~2–3× smaller than the n=12 pilot suggested.
+3. **Heuristics (esp. heur@3200) generalize across position sources; iter8 does not.** This is the
+   measurement backing for the hybrid-handoff patch (CL-026) — hand the endgame to heur@3200.
+4. **Measurement only.** Champion (iter8) unchanged. Next exact-solver steps (marginalized/bag-expectation
+   labels, K=5) are gated on a make/unmake solver — see BACKLOG (deepcopy churn is the binding constraint).
