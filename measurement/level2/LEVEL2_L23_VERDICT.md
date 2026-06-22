@@ -99,9 +99,11 @@ different axes — neither dominates the other. **No train/promote follows — m
 The same-band (3.10e9) iter8-vs-heur ladder completed: iter8 vs heur@800 **+40.1**,
 heur@1600 **+24.4**, **heur@3200 −28.7 (45.9% wr, paired z−0.70 = tie/marginally behind)**.
 iter8's full-game margin shrinks monotonically with heur depth and is **erased by
-heur@3200**. This dovetails with the regret result: **heur@3200 is simultaneously the
-most endgame-precise (this verdict) AND the heuristic that catches iter8 full-game (#8)**
-— deep search wins on both axes. (Recorded in results.csv `l22_iter8_vs_heur3200_b310_n400`,
+heur@3200**. This dovetails with the regret result: **heur@3200 catches iter8 full-game (#8)
+AND is the most endgame-precise agent _at K=2_ (this verdict, tied with heur_v1@200)** — but NOT
+universally: at the partial K=3 it drops to 0.618 (2nd-worst, below the shallow agents at 0.750),
+recovering to best at K=4 (0.679, K4 probe). So heur@3200 is the strongest directly-tested practical
+ruler, not "most endgame-precise on every K". (Recorded in results.csv `l22_iter8_vs_heur3200_b310_n400`,
 kept out of the endgame-regret conclusions per #7.)
 
 ## Next / future

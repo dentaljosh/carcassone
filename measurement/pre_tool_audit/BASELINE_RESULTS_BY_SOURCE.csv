@@ -1,0 +1,17 @@
+selector,k,source,n,top1,mean_regret
+iter8,4,greedy_selfplay,43,0.4419,1.9302
+iter8,4,heur@3200_selfplay,48,0.5833,1.4792
+iter8,4,hybrid:8:3200_selfplay,48,0.5625,1.4375
+iter8,4,iter8_selfplay,48,0.6458,1.125
+heur@3200,4,greedy_selfplay,43,0.5814,1.2326
+heur@3200,4,heur@3200_selfplay,48,0.7292,1.1667
+heur@3200,4,hybrid:8:3200_selfplay,48,0.6667,0.8958
+heur@3200,4,iter8_selfplay,48,0.7292,1.0
+heur@800,4,greedy_selfplay,43,0.6047,1.186
+heur@800,4,heur@3200_selfplay,48,0.6875,1.125
+heur@800,4,hybrid:8:3200_selfplay,48,0.6042,1.4792
+heur@800,4,iter8_selfplay,48,0.7083,1.0625
+greedy,4,greedy_selfplay,43,0.5814,1.3721
+greedy,4,heur@3200_selfplay,48,0.6458,1.5417
+greedy,4,hybrid:8:3200_selfplay,48,0.6042,1.3125
+greedy,4,iter8_selfplay,48,0.75,1.0833

@@ -19,6 +19,13 @@ config as the L1 ladder rungs, so R4/R5 here ARE the validated ladder rungs.
 |---|---|---|---|---|---|
 | **iter8 vs R4 = heur@800** | 3.10e9 | 220/6/174 | **+40.1 ±17.5** | **+2.29** | ✅ beats heur@800 |
 | **iter8 vs R5 = heur@1600** | 3.11e9 | 217/6/177 | **+34.9 ±17.5** | **+2.00** | ✅ beats heur@1600 too |
+| **iter8 vs R6 = heur@3200** (#8) | 3.10e9 | 180/7/213 | **−28.7 ±17.5** | **−0.70** | ⚠️ fails to beat — tie-to-slight-loss |
+
+> **The completing rung (#8), recorded in results.csv `l22_iter8_vs_heur3200_b310_n400` and
+> [LEVEL2_L23_VERDICT.md:99-100](LEVEL2_L23_VERDICT.md).** The same-band (3.10e9) ladder is therefore
+> **+40.1 (@800) → +24.4 (@1600, same-band C1, see below) → −28.7 (@3200)**: iter8's edge shrinks with
+> heuristic depth and is erased by the deepest rung. (The +34.9 @1600 above is a fresh disjoint band;
+> the same-band @1600 control is +24.4, line 65.)
 
 ## V6 reproduce (iter8 vs heur@800)
 **PASS (qualitatively).** iter8's learned policy beats heur@800 at +40.1 (z=2.29,

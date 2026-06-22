@@ -9,7 +9,9 @@ remains strongest.** Measurement only — no training, no promotion. Champion of
 ## Question
 Joshua's hybrid-handoff experiment: does iter8's early/midgame policy strength combine with deep
 heuristic endgame precision? Motivated by L2-3 (iter8 plays the endgame *worst*, top-1 0.667 @ K=2)
-and #8 (iter8 −28.7 Elo vs heur@3200; heur@3200 most endgame-precise).
+and #8 (iter8 −28.7 Elo vs heur@3200; heur@3200 = the strongest directly-tested practical
+full-game ruler — best at K=4, but NOT universally best across K=2/K=3/K=4 exact top-1; see
+[measurement/pre_tool_audit/EVIDENCE_HYGIENE_NOTES.md](../pre_tool_audit/EVIDENCE_HYGIENE_NOTES.md)).
 
 ## Harness (committed, d654082)
 - [scripts/level2/eval_hybrid_handoff.py](../../scripts/level2/eval_hybrid_handoff.py) — paired-band
@@ -54,9 +56,10 @@ vs-iter8 bands (reproduce Phase 1).
 | K≤8 → heur@3200 | 92/5/103 | 0.472 | −19.1 | −0.76 | −0.51 |
 
 - **VERDICT: gap-closing, NOT a new champion.** Both hybrids *lose* to heur@3200, but at |z|<1 — a
-  statistical tie-to-slight-loss. Crucially they are clearly **better than plain iter8** (−28.7 Elo,
-  z=−0.70 vs heur@3200): the early/mid iter8 policy + deep-heuristic endgame closes most of iter8's gap
-  to the deep heuristic, but does not surpass it. The deep heuristic remains the strongest practical agent.
+  statistical tie-to-slight-loss. They are **modestly closer to heur@3200 than plain iter8 is** (iter8 vs
+  heur@3200 = −28.7 Elo, z=−0.70 — itself a tie-to-slight-loss, so all three are |z|<1 vs the deep
+  heuristic): the early/mid iter8 policy + deep-heuristic endgame closes most of iter8's gap to the deep
+  heuristic, but does not surpass it. The deep heuristic remains the strongest practical agent.
 - **Interpretation-table row hit:** "Hybrid ties/loses heur@3200 → deep heuristic remains strongest."
   Promotion rule (beat iter8 same-band paired AND beat heur@3200) NOT met → **nothing promoted** (as specified).
 - **Phase 1 reproduced at n=400** (vs iter8): K≤5 margin +0.90 **z=+6.23**, K≤8 margin +1.32 **z=+5.79**

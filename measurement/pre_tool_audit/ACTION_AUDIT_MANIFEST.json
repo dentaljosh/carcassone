@@ -1,0 +1,95 @@
+{
+  "dataset": "ACTION_AUDIT_DATASET.jsonl",
+  "purpose": "Pre-tool audit (Phase 2): unified action-level audit dataset over exact-solver-labelled endgame positions, with cheap already-existing per-action quantities attached.",
+  "built_by": "scripts/level2/build_action_audit_dataset.py",
+  "base_commit": "1924261",
+  "v27_leaf_env": {
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_V25_CAP": "12",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "note": "Matches production v2.7 leaf (governance/PRODUCTION.yaml). v27_score per action = virtual_score_v2(child.state, mover), the mover-perspective integer point-diff estimate."
+  },
+  "data_sources": [
+    {
+      "bucket": "K2/K3 greedy self-play (exact solver)",
+      "solver_files": "/mnt/c/carc-shared/l23_regret/g*_k{2,3}.json",
+      "state_for_reconstruction": "measurement/level2/l23_positions.jsonl (committed) + replay_to(seed, ply)",
+      "modes": ["clairvoyant", "marginalized (K=2 only)"],
+      "agents_scored": ["iter8", "heur@800", "heur@1600", "heur@3200", "greedy", "heur_v1@200"],
+      "provenance_verdict": "measurement/level2/LEVEL2_L23_VERDICT.md (CL-025)"
+    },
+    {
+      "bucket": "K4 multi-source self-play (exact alpha-beta solver)",
+      "solver_files": "/mnt/c/carc-shared/l23_k4_expand_probe/*_k4.json",
+      "state_for_reconstruction": "/mnt/c/carc-shared/l23_k4_expand.jsonl (seed+actions) + replay_actions(seed, actions)",
+      "modes": ["clairvoyant"],
+      "agents_scored": ["iter8", "heur@800", "heur@3200", "greedy"],
+      "sources": ["greedy", "iter8", "heur@3200", "hybrid:8:3200"],
+      "provenance_verdict": "measurement/level2/LEVEL2_K4_PROBE_VERDICT.md (CL-027)"
+    }
+  ],
+  "counts": {
+    "positions_with_exact_labels": 408,
+    "positions_unsolved_no_label_kept_flagged": 3,
+    "action_rows_labelled": 17674,
+    "by_k": {"2": 150, "3": 71, "4": 187},
+    "by_source": {
+      "greedy_selfplay": 264,
+      "iter8_selfplay": 48,
+      "heur@3200_selfplay": 48,
+      "hybrid:8:3200_selfplay": 48
+    },
+    "by_k_source": {
+      "k2|greedy_selfplay": 150,
+      "k3|greedy_selfplay": 71,
+      "k4|greedy_selfplay": 43,
+      "k4|iter8_selfplay": 48,
+      "k4|heur@3200_selfplay": 48,
+      "k4|hybrid:8:3200_selfplay": 48
+    }
+  },
+  "label_kind": {
+    "clairvoyant+marginalized_exact": 150,
+    "clairvoyant_exact": 258,
+    "none_unsolved_k3": 3
+  },
+  "labels": {
+    "all_408_are_EXACT_solver_labels": true,
+    "teacher_only_positions": 0,
+    "positions_with_clairvoyant_exact": 408,
+    "positions_with_marginalized_exact": 150,
+    "clairvoyant_meaning": "perfect-information minimax/alpha-beta over the KNOWN real future deck order (known_order). Clairvoyant = upper bound, NOT honest play.",
+    "marginalized_meaning": "expectiminimax over the unknown remaining bag (fair-information). Only K=2 has it (K>=3 marginalized is intractable without make/unmake). At K=2 marginalized == clairvoyant (1-tile bag determined).",
+    "teacher_labels_note": "heur@800 / heur@1600 / heur@3200 / greedy / heur_v1@200 / iter8 CHOICES are stored as agent moves, each with its EXACT solver regret (not as a separate teacher-imitation target). heur@6400 does not exist."
+  },
+  "per_position_fields": [
+    "position_id", "source_bucket", "source_game_seed", "ply", "k_remaining",
+    "tiles_remaining", "to_move", "scores", "score_diff_mover", "in_hand_tile",
+    "legal_n_file", "legal_n_recon", "recon_ok", "label_modes", "label_kind",
+    "labels{<mode>:{value,n_optimal,n_legal,nodes,secs,difficulty,per_agent}}",
+    "n_actions", "actions[]"
+  ],
+  "per_action_fields": {
+    "action": "engine action index (0..2510)",
+    "action_type": "tile / tile_pass / meeple_normal / meeple_farmer / meeple_pass",
+    "imm_score_delta_mover": "scores[mover] gained THIS action (completion scoring)",
+    "imm_score_delta_opp": "scores[opp] gained THIS action",
+    "score_diff_after": "scores[mover]-scores[opp] after the action",
+    "meeple_delta_mover": "mover free-meeple change (+returns on completion, -1 on placement)",
+    "completion_scored": "total board score increased this action (proxy for 'completed a scoring feature')",
+    "v27_score": "virtual_score_v2(child.state, mover) — production v2.7 leaf point-diff estimate",
+    "chosen_by": "list of agents whose move == this action",
+    "solver_regret_clair": "exact clairvoyant regret (points lost vs optimal) — NON-NULL ONLY for actions some agent chose",
+    "solver_regret_marg": "exact marginalized regret — NON-NULL ONLY for actions some agent chose, K=2 only"
+  },
+  "known_caveats": [
+    "PER-ACTION SOLVER REGRET IS SPARSE: the committed solver runs persisted regret only for the agents' chosen moves (+ difficulty summaries), NOT a full per-legal-action regret map. So solver_regret_* is non-null only on chosen actions. Scoring an ARBITRARY new selector's exact regret requires re-solving (cheap for K=2: median 7.5s/pos; expensive for K=3: median 264s/pos; K=4 not re-solvable). Phase 3 handles this with a K=2 re-solve that dumps the full child-value map.",
+    "CLAIRVOYANT != honest play. All K=3/K=4 labels are clairvoyant (perfect future-deck knowledge). Only K=2 has fair-information (marginalized) labels, and there they coincide with clairvoyant. See FAIR_INFORMATION_LABELS_NOTE.md.",
+    "completion_scored is a SCORE-DELTA PROXY (true for completions that score points this turn; farms never score mid-game, so farm-related completions are not flagged). It is a first-pass flag, not a verified completion detector.",
+    "K=4 lacks heur@1600 and heur_v1@200 (only iter8/heur@800/heur@3200/greedy were run there).",
+    "K=4 source buckets are CONFOUNDED with difficulty (iter8-generated endgames are objectively easier; greedy/hybrid sharper) — keep same-source paired conclusions distinct from cross-source comparisons (LEVEL2_K4_PROBE_VERDICT.md).",
+    "iter8 policy prior / visit counts / value head are NOT included (not persisted; would need a net re-run via the orchestrator). Only iter8's CHOSEN move + its exact regret are available.",
+    "The separate value_ranking dataset (value_ranking/, 20670 rows / 1494 groups, iter8 ckpt) is TEACHER-labelled (heur MCTS oracle @ oracle_sims=400), NOT solver-exact, and in a different (npz tensor) format — it is referenced, not merged here. Its verdict: value_ranking/VALUE_RANKING_VERDICT.md."
+  ]
+}
