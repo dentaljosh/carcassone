@@ -2626,3 +2626,19 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** low (measurement; no production change).
 **Phase:** measurement-first
+
+
+## 2026-06-22 — Heuristic v2.8 leaf branch: meeple-economy term is a real, large heur-leaf gain (measurement)
+
+**Context:** With both strength levers exhausted and the tool/midgame branches closed, the next live branch was "build a stronger heuristic leaf v2.8 via controlled ablations" (classical-engine progress first; ML progress only if neural search can later use/distill/surpass it). v2.7 frozen forever; v2.8 opt-in. Full writeup: [measurement/heuristic_v28/HEURISTIC_V28_REPORT.md](measurement/heuristic_v28/HEURISTIC_V28_REPORT.md).
+
+**Built:** opt-in versioned v2.8 variants (LeafConfig fields, default OFF == bit-identical v2.7, proven 184 tests; HeuristicMCTS `leaf_cfg=` threading). 4 patches from a 678-case failure taxonomy: farm-majority-gate, deck-aware-closure, meeple-economy, opp-denial. Root-action audit (exact K=2 + heur@3200 teacher), mechanistic autopsies (line autopsy + counterfactual), paired full-game heur search pilots.
+
+**Verdict (DONE): ONE survivor — the flat meeple-economy term.** Killed at root audit: farm (broad degradation, cap-masked), denial (no movement). Killed at search: completion/deck-aware-closure (exact-endgame-K2 top-1 0.763->0.826 but NULL full-game +3.5 elo z=1.09 — endgame-local washes out, hybrid-handoff lesson). **Survivor: meeple-economy = +179.5 elo z=9.9 @ heur@200, holds @ heur@800 (+94.9 z=3.8), and v28@200 BEATS v27@800 (+202.6 z=7.0) — quadrupling v2.7's search does NOT close the gap (real leaf-quality gain, not search-imitation).** results.csv `v28_meeple_*`.
+
+**Key correction:** the candidate is BIT-IDENTICAL to the existing legacy `meeple_k=2` knob (verified 560/560), already implemented in object/flat/Cython paths at full speed. **This OVERTURNS the 2026-05-14 "meeple_K null" verdict — that was an n=20 screen (one-sigma noise) and the additive-on-saturating-cap hypothesis was wrong (the term is post-cap).** The recovery-scaling refinement I added DETRACTS (-75 elo) and is excluded. Autopsy mechanism: fixes v2.7 failure-mode #4 (over-committed meeples).
+
+**Decision:** candidate **v2.8 = v2.7 + meeple_k=2** is an EXPERIMENTAL reference (clears 4/5 promotion gates). **NOT promoted to production, NOT a v2.7 replacement, no PRODUCTION.yaml change, no training.** The open decisive gate: does it help the NEURAL policy (iter8 leaf-swap) — deferred to the SHM orchestrator (net-on-CPU infeasible; harness ready). Next: orchestrator neural leaf-swap, k-optimization, out-of-lineage anchor.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first

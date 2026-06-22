@@ -1,0 +1,34 @@
+{
+  "schema": "v28-candidate-eval-1",
+  "created": "2026-06-22",
+  "candidate": "v2.8_candidate = v2.7 + flat meeple_k=2 (V28_CANDIDATE_CONFIG.json)",
+  "evals": {
+    "classical_heuristic_gain": {
+      "status": "DONE",
+      "tests": [
+        {"name": "heur@200_v28 vs heur@200_v27", "n": 200, "result": "+179.5 elo z=9.92 (v28_meeple_flat row)"},
+        {"name": "heur@800_v28 vs heur@800_v27", "n": 120, "result": "+94.9 elo z=3.76 (v28_meeple k2,t0=72 row; flat@800 not separately run, expected >=)"}
+      ],
+      "source": "V28_SEARCH_PILOT_RESULTS.csv"
+    },
+    "cross_depth_anchor": {
+      "status": "DONE",
+      "test": "heur@200_v28_flat vs heur@800_v27 — is the leaf gain worth 4x search depth?",
+      "n": 120,
+      "result": "+202.6 elo z=6.97, 0.762 wr — v28@200 BEATS v27@800; quadrupling v2.7 search does NOT close the gap (real leaf-quality gain)",
+      "out": "/mnt/c/carc-shared/v28_pilot/v28_meeple_flat_vs_v27_s200_vs_v27s800"
+    },
+    "neural_guided_gain": {
+      "status": "DEFERRED",
+      "test": "iter8 net priors + v2.8 leaf (resid 0) vs + v2.7 leaf (resid 0), NeuralMCTS@200",
+      "reason": "net-on-CPU NeuralMCTS@200 infeasibly slow (n=2 smoke timed out >120s/game); requires the SHM orchestrator (memory: default neural eval to carc-orch at high W). Harness ready: scripts/heuristic_v28/v28_iter8_leaf_eval.py (per-worker net-on-CPU) — orchestrator port is the next step.",
+      "note": "residual head is v2.7-tied -> compare PURE leaf values (resid 0) on both sides; production iter8 (resid 0.25) is NOT modified."
+    },
+    "hybrid_gain": {
+      "status": "DEFERRED",
+      "test": "HYBRID_K8 with v2.8 leaf vs v2.7 leaf",
+      "reason": "gated behind the neural eval (hybrid = neural + heur@N handoff); same orchestrator dependency."
+    }
+  },
+  "runtime_cost_note": "The PILOTS ran the v28_meeple_k field which forces the object path (~2.26x slower per leaf). BUT the candidate is bit-identical to legacy meeple_k=2, which the flat AND Cython paths ALREADY implement -> the candidate itself runs at FULL production speed (no object-path penalty). Heur pilots: ~2.5-6 s/game @ sims 200-800, W=15 local."
+}

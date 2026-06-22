@@ -1,0 +1,6 @@
+eval,side_A,side_B,n,W,D,L,winrate,avg_diff,z_margin,elo,elo_1sig,signal
+classical_equal_budget_200,heur@200_v28(meeple_k2),heur@200_v27,200,145,5,50,0.7375,15.45,9.92,179.5,27.9,VERDICT-RANGE
+classical_equal_budget_800,heur@800_v28(meeple_k2_t0=72),heur@800_v27,120,76,0,44,0.6333,7.58,3.76,94.9,32.9,VERDICT-RANGE
+cross_depth_anchor,heur@200_v28(meeple_k2),heur@800_v27,120,90,3,27,0.7625,13.26,6.97,202.6,37.3,VERDICT-RANGE
+neural_leaf_swap,iter8net+v28leaf,iter8net+v27leaf,0,,,,,,,,,DEFERRED(orchestrator)
+hybrid_leaf_swap,hybridK8+v28leaf,hybridK8+v27leaf,0,,,,,,,,,DEFERRED(orchestrator)
