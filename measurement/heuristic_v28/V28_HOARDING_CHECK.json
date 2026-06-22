@@ -1,0 +1,215 @@
+{
+  "n": 60,
+  "meeple_k": 2.0,
+  "sims": 200,
+  "a_v28_mean_terminal_unplaced": 7.0,
+  "b_v27_mean_terminal_unplaced": 7.0,
+  "delta_terminal_unplaced_v28_minus_v27": 0.0,
+  "a_v28_mean_last5_unplaced": 0.263,
+  "b_v27_mean_last5_unplaced": 0.05,
+  "a_v28_winrate": 0.717,
+  "a_wins_n": 43,
+  "a_wins_with_more_terminal_unplaced_than_b": 0,
+  "samples": [
+    {
+      "seed": 1908220004,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.6,
+      "b_last5_unplaced": 0.0,
+      "diff": 24,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220002,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 5,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220001,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 6,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220006,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": -2,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220002,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 42,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220000,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 5,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220005,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 1.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 52,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220001,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": -8,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220000,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": -28,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220006,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.6,
+      "b_last5_unplaced": 0.0,
+      "diff": -1,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220007,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 23,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220003,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 70,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220005,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": -19,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220004,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 20,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220003,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": -47,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220007,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 1.2,
+      "b_last5_unplaced": 0.0,
+      "diff": 36,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220010,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.2,
+      "diff": -23,
+      "won_by_a": false
+    },
+    {
+      "seed": 1908220009,
+      "a_seat": 0,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 8,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220008,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.2,
+      "b_last5_unplaced": 0.0,
+      "diff": 21,
+      "won_by_a": true
+    },
+    {
+      "seed": 1908220011,
+      "a_seat": 1,
+      "a_term_unplaced": 7,
+      "b_term_unplaced": 7,
+      "a_last5_unplaced": 0.0,
+      "b_last5_unplaced": 0.0,
+      "diff": 1,
+      "won_by_a": true
+    }
+  ]
+}

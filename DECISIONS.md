@@ -2642,3 +2642,25 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** low (measurement; no production change).
 **Phase:** measurement-first
+
+
+## 2026-06-22 (cont.) — v2.8 leaf-swap battery: meeple leaf is a CLASSICAL gain, NOT an ML/superhuman lever
+
+**Context:** the heur-search finding (meeple_k=2 = +179 elo vs v2.7) needed the generalization gate — does it help the NEURAL production policy and let it exceed the deep-heuristic ruler? Ran via the carc-orch SHM orchestrator (2-box, local 5060 Ti + laptop 4070, deck-paired, both seats). Full writeup [measurement/heuristic_v28/V28_LEAF_SWAP_REPORT.md](measurement/heuristic_v28/V28_LEAF_SWAP_REPORT.md); rows results.csv `iter8_v28_*` / `hybrid8_*`.
+
+**Results (same net/sims/c_puct/residual 0.25/decks/seats; ONLY leaf differs):**
+- iter8+v2.8 vs iter8+v2.7: **+154.5 elo (z=9.82, n=400)** — the meeple leaf helps the NEURAL policy.
+- iter8+v2.8 vs heur@3200_v2.7: **+153.4 (z=5.87)** — flips Joshua #8's iter8+v2.7 = −28.7.
+- iter8+v2.8 vs heur@3200_**v2.8** (EQUAL leaf): **−38.4 (z=−1.56)** — the disambiguator.
+- hybrid:8:800 v2.8 vs v2.7: **+153.4 (z=5.87)** — the hybrid gains too.
+- k-sweep (heur@200, flat term): inverted-U, **peak k=2** (+179.5); k1 +75.9, k3 +159.8, k4 +34.9.
+- terminal-hoarding (n=60): NO pathology (last-5-plies in-hand 0.26 v2.8 vs 0.05 v2.7, tiny).
+
+**Decision (INTERPRETATION):** The +153.4 vs heur@3200_v2.7 was **entirely the leaf gap** — at EQUAL leaf the neural agent still LOSES to deep heuristic search (−38.4, ~the same relative position as v2.7's −28.7). So the meeple leaf is a **real, large CLASSICAL-ENGINE improvement** that lifts the heuristic, the neural agent, AND the hybrid ~uniformly (+150–180 each over v2.7) — but it is **NOT an ML/superhuman lever**: the learned components still do not exceed the (now stronger) heuristic. **Structural blocker #2 REMAINS.** v2.8 raises the ceiling for everyone; it does not change who is on top. **Positive:** heur@3200_v2.8 is a stronger non-saturated reference ruler (the better measurement anchor the program is gated on). v2.8 = v2.7 + meeple_k=2 → EXPERIMENTAL reference / stronger ruler. **NOT promoted to production, NOT a v2.7 replacement, no PRODUCTION.yaml change, no training; v2.7 frozen.**
+
+**Next lever:** the learned value/policy must EXCEED the v2.8 heuristic (distillation-from-v2.8 or a fundamentally stronger learned value), measured against the heur@3200_v2.8 ruler.
+
+**Ops:** disambiguator hit the shared-claim orphan-stall (laptop mobile-4070 carc-orch BrokenServerError / 60s SHM timeout → set -e abort → 38 stranded claims); recovered per playbook (cleaned stale claims, finished on local). Reinforces feedback_shared_claim_orphan_stall + the laptop-4070 instability note.
+
+**Reversal cost:** low (measurement; no production change).
+**Phase:** measurement-first
