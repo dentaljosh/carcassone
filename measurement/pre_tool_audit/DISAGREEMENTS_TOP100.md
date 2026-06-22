@@ -11,9 +11,9 @@
 
 | v2.7 axis | all iter8 misses | top-100 |
 |---|---|---|
-| no-stronger-ref(both-miss) | 69 | 44 |
 | v2.7-rankable | 8 | 6 |
 | iter8-move-v2.7-preferred | 4 | 4 |
+| no-stronger-ref(both-miss) | 69 | 44 |
 | beyond-v2.7 | 77 | 46 |
 
 *'v2.7-rankable' = the v2.7 leaf already scores the better move higher (by >2) — iter8 deviated from a signal it already consumes. 'beyond-v2.7' / 'iter8-move-v2.7-preferred' = v2.7 ALSO mis-ranks it (a new exact signal would be needed).*
@@ -23,7 +23,8 @@
 
 | mechanism | all | top-100 |
 |---|---|---|
-| structural-or-farm | 89 | 56 |
+| structural-or-farm | 82 | 49 |
+| completion | 7 | 7 |
 | no-stronger-ref(both-miss) | 69 | 44 |
 
 ## Top 30 disagreements (highest iter8 regret)
@@ -32,7 +33,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | heur3200_s3502000036_k4 | 4 | heur@3200 | three_split_road | 35 |  | 19 | -17 | -17 | structural-or-farm | beyond-v2.7 |
 | 2 | iter8_s3501000033_k4 | 4 | iter8 | city_diagonal_top_left | 44 | Y | 13 | 9 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
-| 3 | greedy_s3500000008_k4 | 4 | greedy | city_top_right | 42 | Y | 12 | 26 | 32 | structural-or-farm | v2.7-rankable |
+| 3 | greedy_s3500000008_k4 | 4 | greedy | city_top_right | 42 | Y | 12 | 26 | 32 | completion | v2.7-rankable |
 | 4 | hybrid_8_3200_s3503000027_k4 | 4 | hybrid:8:3200 | city_diagonal_top_righ | 28 | Y | 12 | -74 | -73 | structural-or-farm | beyond-v2.7 |
 | 5 | hybrid_8_3200_s3503000015_k4 | 4 | hybrid:8:3200 | chapel | 60 |  | 12 | 25 | 25 | structural-or-farm | beyond-v2.7 |
 | 6 | iter8_s3501000009_k4 | 4 | iter8 | city_top_road_bend_lef | 43 | Y | 11 | 32 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
@@ -45,9 +46,9 @@
 | 13 | g3200000022_k2 | 2 | greedy | bent_road | 50 |  | 6 | 25 | 31 | structural-or-farm | v2.7-rankable |
 | 14 | g3200000022_k3 | 3 | greedy | city_bottom_grass_shie | 36 |  | 6 | -23 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
 | 15 | g3200000059_k3 | 3 | greedy | three_split_road | 50 |  | 6 | 0 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
-| 16 | g3200000075_k3 | 3 | greedy | crossroads | 28 |  | 6 | 8 | 9 | structural-or-farm | beyond-v2.7 |
+| 16 | g3200000075_k3 | 3 | greedy | crossroads | 28 |  | 6 | 8 | 9 | completion | beyond-v2.7 |
 | 17 | hybrid_8_3200_s3503000022_k4 | 4 | hybrid:8:3200 | city_diagonal_top_righ | 34 |  | 6 | 8 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
-| 18 | greedy_s3500000016_k4 | 4 | greedy | city_bottom_road_shiel | 37 | Y | 5 | 19 | 20 | structural-or-farm | beyond-v2.7 |
+| 18 | greedy_s3500000016_k4 | 4 | greedy | city_bottom_road_shiel | 37 | Y | 5 | 19 | 20 | completion | beyond-v2.7 |
 | 19 | heur3200_s3502000031_k4 | 4 | heur@3200 | city_diagonal_top_righ | 29 | Y | 5 | 17 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
 | 20 | g3200000092_k2 | 2 | greedy | city_top | 71 |  | 5 | 19 | 15 | structural-or-farm | iter8-move-v2.7-preferred |
 | 21 | greedy_s3500000007_k4 | 4 | greedy | city_top_right | 44 |  | 5 | -2 | -3 | structural-or-farm | beyond-v2.7 |
@@ -58,14 +59,14 @@
 | 26 | iter8_s3501000048_k4 | 4 | iter8 | city_bottom_grass_flow | 21 | Y | 4 | 16 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
 | 27 | g3200000099_k2 | 2 | greedy | three_split_road | 47 |  | 4 | -3 | -3 | structural-or-farm | beyond-v2.7 |
 | 28 | g3200000121_k2 | 2 | greedy | city_top_crossroads | 24 |  | 4 | 1 | 1 | structural-or-farm | beyond-v2.7 |
-| 29 | g3200000011_k3 | 3 | greedy | bent_road | 47 |  | 4 | 27 | 27 | structural-or-farm | beyond-v2.7 |
+| 29 | g3200000011_k3 | 3 | greedy | bent_road | 47 |  | 4 | 27 | 27 | completion | beyond-v2.7 |
 | 30 | g3200000023_k3 | 3 | greedy | city_top_road_bend_lef | 32 |  | 4 | -13 | None | no-stronger-ref(both-miss) | no-stronger-ref(both-miss) |
 
 ## A few worked examples (iter8 misses)
 
 - **heur3200_s3502000036_k4** (K=4, src=heur@3200, tile=`three_split_road`, legal_n=35, n_optimal=7): iter8 played action 1840 (regret **19**, v27=-17, imm_net=0, meeple Δ=0); better action 1033 (v27=-17, imm_net=0, meeple Δ=0, completes=False). → mechanism: *structural-or-farm*, axis: *beyond-v2.7*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/heur3200_s3502000036_k4.json`
 - **iter8_s3501000033_k4** (K=4, src=iter8, tile=`city_diagonal_top_left_road`, legal_n=44, n_optimal=1): iter8 played action 1538 (regret **13**, v27=9, imm_net=0, meeple Δ=0); better action None (v27=None, imm_net=0, meeple Δ=None, completes=None). → mechanism: *no-stronger-ref(both-miss)*, axis: *no-stronger-ref(both-miss)*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/iter8_s3501000033_k4.json`
-- **greedy_s3500000008_k4** (K=4, src=greedy, tile=`city_top_right`, legal_n=42, n_optimal=1): iter8 played action 1285 (regret **12**, v27=26, imm_net=0, meeple Δ=0); better action 1527 (v27=32, imm_net=0, meeple Δ=0, completes=False). → mechanism: *structural-or-farm*, axis: *v2.7-rankable*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/greedy_s3500000008_k4.json`
+- **greedy_s3500000008_k4** (K=4, src=greedy, tile=`city_top_right`, legal_n=42, n_optimal=1): iter8 played action 1285 (regret **12**, v27=26, imm_net=0, meeple Δ=0); better action 1527 (v27=32, imm_net=18, meeple Δ=1, completes=True). → mechanism: *completion*, axis: *v2.7-rankable*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/greedy_s3500000008_k4.json`
 - **hybrid_8_3200_s3503000027_k4** (K=4, src=hybrid:8:3200, tile=`city_diagonal_top_right`, legal_n=28, n_optimal=1): iter8 played action 1534 (regret **12**, v27=-74, imm_net=0, meeple Δ=0); better action 1460 (v27=-73, imm_net=0, meeple Δ=0, completes=False). → mechanism: *structural-or-farm*, axis: *beyond-v2.7*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/hybrid_8_3200_s3503000027_k4.json`
 - **hybrid_8_3200_s3503000015_k4** (K=4, src=hybrid:8:3200, tile=`chapel`, legal_n=60, n_optimal=4): iter8 played action 928 (regret **12**, v27=25, imm_net=0, meeple Δ=0); better action 1360 (v27=25, imm_net=0, meeple Δ=0, completes=False). → mechanism: *structural-or-farm*, axis: *beyond-v2.7*. raw: `/mnt/c/carc-shared/l23_k4_expand_probe/hybrid_8_3200_s3503000015_k4.json`
 

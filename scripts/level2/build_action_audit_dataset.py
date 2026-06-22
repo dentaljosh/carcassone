@@ -53,7 +53,9 @@ from carcassonne_ai.virtual_score_v2 import virtual_score_v2, DEFAULT_CONFIG  # 
 from carcassonne_ai.action_space import (                 # noqa: E402
     tile_pass_index, meeple_normal_base, DEFAULT_WINDOW_SIZE, tile_action_count,
 )
+from wingedsheep.carcassonne.objects.game_phase import GamePhase  # noqa: E402
 
+GamePhase_MEEPLES = GamePhase.MEEPLES
 W = DEFAULT_WINDOW_SIZE
 TILE_PASS = tile_pass_index(W)         # 2500
 MEEPLE_BASE = meeple_normal_base(W)    # 2501
@@ -72,8 +74,43 @@ def _action_type(a: int) -> str:
     return "meeple_farmer"
 
 
+def _resolve_turn(game, child1, mover):
+    """Given the immediate child after a TILES-phase action (now in the mover's MEEPLES
+    sub-phase, BEFORE the engine has scored completions), realize scoring by playing the
+    meeple sub-decision. Returns (pass_state, best_meeple_state) where:
+      pass_state       = tile + meeple-PASS  -> the FORCED completions (no new claim).
+      best_meeple_state= tile + the meeple choice maximizing the mover's realized own-net.
+    If child1 is already past the mover's meeple sub-phase (e.g. the action was itself a
+    meeple action / a MEEPLES-phase position), scoring is already realized -> return it as both.
+    """
+    if not (child1.state.phase == GamePhase_MEEPLES and child1.state.current_player == mover):
+        return child1, child1
+    mlegal = [int(x) for x in np.flatnonzero(game.get_valid_moves(child1))]
+    pass_state = None
+    best_state = None
+    best_net = None
+    for ma in mlegal:
+        c2, _ = game.get_next_state(child1, ma)
+        net = (c2.state.scores[mover] - c2.state.scores[1 - mover])
+        if ma == MEEPLE_PASS:
+            pass_state = c2
+        if best_net is None or net > best_net:
+            best_net, best_state = net, c2
+    if pass_state is None:                 # pass should always be legal; fall back defensively
+        pass_state = best_state if best_state is not None else child1
+    if best_state is None:
+        best_state = pass_state
+    return pass_state, best_state
+
+
 def _per_action_features(game, board):
-    """Enumerate legal actions; return {action: feature-dict} for the position."""
+    """Enumerate legal actions; return {action: feature-dict} for the position.
+
+    Per-action quantities are computed on the SCORING-RESOLVED afterstate (tile + meeple
+    sub-phase resolved) — NOT the pre-scoring half-move, which left every delta constant.
+    `pass` variant = forced completions (existing meeples); `best`/claim = extra achievable
+    by placing the new meeple.
+    """
     mover = board.state.current_player
     opp = 1 - mover
     s0 = list(board.state.scores)
@@ -82,17 +119,29 @@ def _per_action_features(game, board):
     out = {}
     for a in legal:
         a = int(a)
-        child, _ = game.get_next_state(board, a)
-        cs = child.state.scores
+        child1, _ = game.get_next_state(board, a)
+        pass_st, best_st = _resolve_turn(game, child1, mover)
+        ps, bs = pass_st.state, best_st.state
+        pass_net = (ps.scores[mover] - s0[mover]) - (ps.scores[opp] - s0[opp])
+        best_net = (bs.scores[mover] - s0[mover]) - (bs.scores[opp] - s0[opp])
         out[a] = {
             "action": a,
             "action_type": _action_type(a),
-            "imm_score_delta_mover": int(cs[mover] - s0[mover]),
-            "imm_score_delta_opp": int(cs[opp] - s0[opp]),
-            "score_diff_after": int(cs[mover] - cs[opp]),
-            "meeple_delta_mover": int(child.state.meeples[mover] - m0[mover]),
-            "completion_scored": bool((cs[0] + cs[1]) > (s0[0] + s0[1])),
-            "v27_score": int(virtual_score_v2(child.state, mover, DEFAULT_CONFIG)),
+            # forced-completion (meeple-pass) resolution:
+            "imm_score_delta_mover": int(ps.scores[mover] - s0[mover]),
+            "imm_score_delta_opp": int(ps.scores[opp] - s0[opp]),
+            "imm_net_pass": int(pass_net),
+            "score_diff_after": int(ps.scores[mover] - ps.scores[opp]),
+            "meeple_delta_mover": int(ps.meeples[mover] - m0[mover]),
+            "completion_scored": bool((ps.scores[0] + ps.scores[1]) > (s0[0] + s0[1])),
+            # best achievable this turn (place the new meeple to claim+score):
+            "best_meeple_net": int(best_net),
+            "claim_gain": int(best_net - pass_net),
+            "best_meeple_delta_mover": int(bs.meeples[mover] - m0[mover]),
+            # v2.7 leaf score of the immediate (pre-meeple) child — production-leaf semantics, kept
+            # for continuity; plus the resolved-state v2.7 for consistency with the deltas above:
+            "v27_score": int(virtual_score_v2(child1.state, mover, DEFAULT_CONFIG)),
+            "v27_score_resolved": int(virtual_score_v2(ps, mover, DEFAULT_CONFIG)),
         }
     return mover, out
 

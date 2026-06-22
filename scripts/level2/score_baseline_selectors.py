@@ -54,8 +54,10 @@ def load():
 
 
 # ---- per-action score functions for computed selectors (K=2) ----
-def f_imm_net(a):    return a["imm_score_delta_mover"] - a["imm_score_delta_opp"]
-def f_imm_own(a):    return a["imm_score_delta_mover"]
+# NOTE: imm_score_delta_*/score_diff_after/meeple_delta_mover/completion_scored are now the
+# SCORING-RESOLVED (meeple-pass) values; best_meeple_net is the best achievable own-net this turn.
+def f_imm_net(a):    return a["imm_score_delta_mover"] - a["imm_score_delta_opp"]  # forced-completion net
+def f_best_meeple(a): return a["best_meeple_net"]                                  # incl. claim+score
 def f_meeple(a):     return a["meeple_delta_mover"]
 def f_score_meeple(a): return (a["imm_score_delta_mover"] - a["imm_score_delta_opp"]) + 0.5 * a["meeple_delta_mover"]
 def f_v27(a):        return a["v27_score"]
@@ -63,7 +65,8 @@ def f_scorediff(a):  return a["score_diff_after"]
 def f_completion(a): return (1000 if a["completion_scored"] else 0) + (a["imm_score_delta_mover"] - a["imm_score_delta_opp"])
 
 COMPUTED = [
-    ("immediate-score-only(net)", f_imm_net),
+    ("immediate-score-only(forced-net)", f_imm_net),
+    ("immediate-score+meeple-claim(best)", f_best_meeple),
     ("meeple-delta-only", f_meeple),
     ("score+meeple", f_score_meeple),
     ("v2.7-action-score-only", f_v27),
@@ -140,7 +143,8 @@ def main():
                     "to_move": to_move})
         # tau: cheap quantity vs mover-value
         target = mvals
-        for qn, qf in [("v2.7", f_v27), ("imm_net", f_imm_net), ("meeple", f_meeple), ("scorediff_after", f_scorediff)]:
+        for qn, qf in [("v2.7", f_v27), ("imm_net_forced", f_imm_net), ("best_meeple_net", f_best_meeple),
+                       ("meeple_delta", f_meeple), ("scorediff_after", f_scorediff)]:
             q = [qf(a) for a in acts]
             tau_acc[qn].append(kendall_tau_b(q, target))
 
@@ -175,7 +179,8 @@ def main():
                   for p in sub if p["d"]["labels"]["clairvoyant"]["per_agent"].get(ag)]
             m = agg(pp)
             if m: rows_diff.append([ag, 2, bucket, m["n"], m["top1"], m["mean_regret"]])
-        for name, fn in [("v2.7-action-score-only", f_v27), ("immediate-score-only(net)", f_imm_net)]:
+        for name, fn in [("v2.7-action-score-only", f_v27), ("immediate-score+meeple-claim(best)", f_best_meeple),
+                         ("immediate-score-only(forced-net)", f_imm_net)]:
             pp = [eval_computed(p["acts"], p["reg"], fn) for p in sub]
             m = agg(pp)
             if m: rows_diff.append([name, 2, bucket, m["n"], m["top1"], m["mean_regret"]])
