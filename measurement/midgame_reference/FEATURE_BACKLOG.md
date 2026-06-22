@@ -1,0 +1,21 @@
+# Phase 2 — Feature Backlog (deliberately NOT built in this measurement)
+
+> Per the brief: *"If a quantity is expensive or ambiguous, put it in FEATURE_BACKLOG.md rather
+> than implementing it now."* These are quantities considered for the per-action feature set and
+> **deliberately deferred** — with the reason and the cheap proxy used instead (if any). Building
+> any of these is a tool-branch decision, not a measurement one.
+
+| # | quantity | why deferred | proxy used here instead |
+|---|---|---|---|
+| B1 | **Exact "which remaining bag tile-types can close feature F"** (edge-type matching of each deck tile against each open position of the affected component) | **Ambiguous + expensive.** True placeability needs an adjacency/rotation search per (open-position × deck-tile-type) — the v2.7 leaf itself refuses this on the hot path and uses a permissive over-count (`_deck_city_supply` docstring). Doing it right is a structural search, i.e. half a tool. | `bag_city_supply` = `_deck_city_supply(state)` (city-bearing tiles left) + `completion_scarcity_bucket` (supply vs the affected city's open-position count). Coarse but it is the **exact quantity the production leaf consults**. |
+| B2 | **Per-component open-edge before/after with component-identity tracking across a merge** | A placement can MERGE two city components or EXTEND one; mapping "the affected feature" back to a single parent component is ambiguous when the tile joins two. | `city_open_edge_delta` / `road_open_edge_delta` = **board-level** open-edge change (before−after). Unambiguous; in practice dominated by the placed tile's local neighbourhood since all other components are unchanged. Plus `aff_city_min_open_after` (the closest affected unfinished city's open count in the child). |
+| B3 | **Bag-aware ROAD completion scarcity** | Roads close in 1–2 tiles and the deck is rarely road-limited, so a road analog of `_deck_city_supply` carries little signal for the cost; v2.7 itself does not gate roads on deck supply. | `road_open_edge_delta` + `aff_road_unfinished_n` + `aff_road_owner` (structural only, no bag term). |
+| B4 | **Farm value projection / per-action farm-control delta** | Farms never score mid-game; their value is a deep end-of-game projection (the v2.7 leaf's job) and the brief explicitly says *"Do not over-engineer farms."* | None. Farm structure is read only where `decompose` exposes it for free (ownership of city/road, not farms). The two production farm SCALARS already feed the net. |
+| B5 | **Opponent-denial / blocking value of an action** (does this placement cap an opponent feature / steal a field) | Requires per-action opponent-feature lookahead — ABSENT from the net input (audit #8) but genuinely a mini-search, not a cheap feature. | Partial: `aff_city_owner`/`aff_road_owner` ∈ {self,opp,shared,empty} flags whether the touched feature is contested, but not the denial *value*. |
+| B6 | **Fair-information / determinized / bag-marginalized midgame labels** | **Intractable at midgame K.** Marginalizing over the unknown bag needs expectiminimax (the endgame audit could only do it at K=2). At K=10–52 it is hopeless. | All labels are **real-fixed-deck** search (clairvoyant-leaning, flagged on every row). Leakage is weaker at midgame (shallow v2.7-leaf search vs a deep bag) but NOT zero — see REUSE_AND_SCOPE.md. |
+| B7 | **Exact per-legal-action solver regret at midgame** | No tractable exact solver above K≈4–6. This is *the* reason the midgame is a measurement blind spot. | Deep-search teacher (heur@3200) preference + its root child-Q gap as a **soft** reference; never called ground truth. |
+| B8 | **iter8 root visit distribution / full policy posterior** as a feature | Persisting the full MCTS visit posterior per position is a label, captured in Phase 3 — but feeding it back as a *feature* would be circular for the "does the net already rank well" question. | Phase 3 records iter8's MCTS@200 choice + raw policy-prior argmax + prior top-k; used as references/baselines, not as input features. |
+
+**Rule:** none of B1–B8 is needed to answer the Phase-6 decision question (is there a midgame tool
+case?). If the answer is "yes, gate further," B1 (exact bag-completion matching) and B5 (denial
+value) are the first two to promote — both are cleanly ABSENT from the net input (audit #6/#8).

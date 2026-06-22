@@ -1,0 +1,67 @@
+{
+  "dataset": "MIDGAME_POSITION_SAMPLE.jsonl",
+  "purpose": "Phase 1 midgame/opening position sample for the midgame reference build.",
+  "built_by": "scripts/midgame_reference/build_midgame_sample.py",
+  "source_file": "/mnt/c/carc-shared/l23_k4_expand.jsonl",
+  "bands_tiles_remaining": {
+    "52": "opening",
+    "40": "early_mid",
+    "28": "mid",
+    "16": "late_mid",
+    "10": "pre_endgame"
+  },
+  "n_positions": 1000,
+  "counts_by_source_bucket": {
+    "greedy": 250,
+    "heur@3200": 250,
+    "hybrid:8:3200": 250,
+    "iter8": 250
+  },
+  "counts_by_band": {
+    "opening": 200,
+    "early_mid": 200,
+    "mid": 200,
+    "late_mid": 200,
+    "pre_endgame": 200
+  },
+  "counts_by_source_x_band": {
+    "greedy|early_mid": 50,
+    "greedy|late_mid": 50,
+    "greedy|mid": 50,
+    "greedy|opening": 50,
+    "greedy|pre_endgame": 50,
+    "heur@3200|early_mid": 50,
+    "heur@3200|late_mid": 50,
+    "heur@3200|mid": 50,
+    "heur@3200|opening": 50,
+    "heur@3200|pre_endgame": 50,
+    "hybrid:8:3200|early_mid": 50,
+    "hybrid:8:3200|late_mid": 50,
+    "hybrid:8:3200|mid": 50,
+    "hybrid:8:3200|opening": 50,
+    "hybrid:8:3200|pre_endgame": 50,
+    "iter8|early_mid": 50,
+    "iter8|late_mid": 50,
+    "iter8|mid": 50,
+    "iter8|opening": 50,
+    "iter8|pre_endgame": 50
+  },
+  "median_legal_tile_actions_by_band": {
+    "opening": 22,
+    "early_mid": 28,
+    "mid": 33,
+    "late_mid": 37,
+    "pre_endgame": 40
+  },
+  "label_availability": {
+    "exact_solver": "NONE (midgame K is above the exact-solver region K<=4)",
+    "deep_search_teacher": "heur@800/1600/3200 (Phase 3)",
+    "learned_agent": "iter8 MCTS@200 + policy prior (Phase 3)",
+    "static": "v2.7-depth-0 best action (Phase 3)"
+  },
+  "honesty_flags": {
+    "known_deck": true,
+    "fair_information": false,
+    "clairvoyance": "real_deck_order \u2014 all search labels descend the fixed deck; clairvoyant-leaning, weaker leakage than endgame (see REUSE_AND_SCOPE.md)"
+  }
+}
