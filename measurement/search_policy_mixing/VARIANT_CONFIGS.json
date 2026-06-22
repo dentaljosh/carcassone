@@ -1,0 +1,93 @@
+{
+  "_meta": {
+    "audit": "search_policy_mixing",
+    "base_commit": "8c42550",
+    "champion_unchanged": "flywheel2_champion_iter8",
+    "ckpt": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+    "leaf_env": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_V25_CAP": "12",
+      "CARCASSONNE_V25_DROP_THREE_OPEN": "1",
+      "CARCASSONNE_V25_VALUE_BLEND": "0"
+    },
+    "note": "residual_scale is set IN CODE per-variant via dataclasses.replace(DEFAULT_CONFIG, residual_scale=X), NOT the env var, so two values can coexist in one process for paired head-to-heads."
+  },
+  "variants": {
+    "ITER8_PROD": {
+      "kind": "neural_mcts", "agent": "NeuralMCTS",
+      "sims": 200, "c_puct": 3.0, "leaf": "virtual_score_v2",
+      "policy_source": "net", "value_source": "v2.7_leaf + 0.25*net_residual", "residual_scale": 0.25,
+      "root_label_in_existing_data": "iter8_choice",
+      "cost": "labelled (reuse)", "status": "baseline-reused"
+    },
+    "HEUR_200_V27": {
+      "kind": "heur_mcts", "agent": "HeuristicMCTS",
+      "sims": 200, "leaf": "virtual_score_v2", "policy_source": "none", "value_source": "v2.7_leaf", "residual_scale": null,
+      "root_label_in_existing_data": "heur200_choice (NEW)",
+      "cost": "cheap (200 sims); computed in Phase-2 pass", "status": "new-cheap"
+    },
+    "HEUR_800_V27": {
+      "kind": "heur_mcts", "agent": "HeuristicMCTS",
+      "sims": 800, "leaf": "virtual_score_v2", "policy_source": "none", "value_source": "v2.7_leaf", "residual_scale": null,
+      "root_label_in_existing_data": "heur800_choice",
+      "cost": "labelled (reuse)", "status": "baseline-reused"
+    },
+    "HEUR_3200_V27": {
+      "kind": "heur_mcts", "agent": "HeuristicMCTS",
+      "sims": 3200, "leaf": "virtual_score_v2", "policy_source": "none", "value_source": "v2.7_leaf", "residual_scale": null,
+      "root_label_in_existing_data": "heur3200_choice",
+      "cost": "labelled (reuse); strongest practical ruler / teacher", "status": "baseline-reused"
+    },
+    "ITER8_POLICY_ONLY_LEAF_V27": {
+      "kind": "neural_mcts", "agent": "NeuralMCTS",
+      "sims": 200, "c_puct": 3.0, "leaf": "virtual_score_v2", "policy_source": "net", "value_source": "v2.7_leaf (net value DISABLED)", "residual_scale": 0.0,
+      "root_label_in_existing_data": "iter8_noresid_choice (NEW)",
+      "collapses_with": "ITER8_NO_RESIDUAL",
+      "cost": "one @200 neural search/position; computed in Phase-2 pass", "status": "new-cheap"
+    },
+    "ITER8_NO_RESIDUAL": {
+      "kind": "neural_mcts", "agent": "NeuralMCTS",
+      "sims": 200, "c_puct": 3.0, "leaf": "virtual_score_v2", "policy_source": "net", "value_source": "v2.7_leaf (residual 0)", "residual_scale": 0.0,
+      "root_label_in_existing_data": "iter8_noresid_choice (NEW, SAME as ITER8_POLICY_ONLY_LEAF_V27)",
+      "collapses_with": "ITER8_POLICY_ONLY_LEAF_V27",
+      "cost": "FREE — identical agent to ITER8_POLICY_ONLY_LEAF_V27 (the residual-0 wrapper discards net value)", "status": "collapsed-duplicate"
+    },
+    "ITER8_POLICY_ROOT_ONLY": {
+      "kind": "wrapper_diagnostic", "agent": "policy-prior argmax at root only",
+      "sims": 0, "policy_source": "net policy argmax (no search)", "value_source": "n/a",
+      "root_label_in_existing_data": "iter8_prior_argmax",
+      "cost": "labelled (reuse) for the ROOT-pick diagnostic; the 'heuristic search after root' play variant is NOT built unless offline gate clears",
+      "status": "baseline-reused (root pick); play-variant gated"
+    },
+    "V27_STATIC_ROOT_ONLY": {
+      "kind": "static", "agent": "argmax virtual_score_v2 over legal afterstates",
+      "sims": 0, "policy_source": "none", "value_source": "v2.7_static_depth0",
+      "root_label_in_existing_data": "v27_static_choice",
+      "cost": "labelled (reuse)", "status": "baseline-reused"
+    },
+    "HYBRID_FIXED_K8": {
+      "kind": "hybrid", "agent": "_HybridAgent", "spec": "hybrid:8:3200",
+      "rule": "iter8 until first TILES decision with k_remaining<=8, then HeuristicMCTS@3200",
+      "fullgame_result_in_existing_data": "LEVEL2_HYBRID_VERDICT: +20.9 elo vs iter8 (z=4.68/n200, z=5.79/n400); -19.1 elo vs heur@3200 (z=-0.51)",
+      "cost": "full-game DONE (reuse)", "status": "fullgame-reused"
+    },
+    "HYBRID_FIXED_K5": {
+      "kind": "hybrid", "agent": "_HybridAgent", "spec": "hybrid:5:3200",
+      "rule": "iter8 until first TILES decision with k_remaining<=5, then HeuristicMCTS@3200",
+      "fullgame_result_in_existing_data": "LEVEL2_HYBRID_VERDICT: +10.4 elo vs iter8 (z=3.45); -13.9 elo vs heur@3200 (z=-0.30)",
+      "cost": "full-game DONE (reuse)", "status": "fullgame-reused"
+    },
+    "HYBRID_PHASE_DYNAMIC": {
+      "kind": "hybrid_dynamic_candidate", "agent": "_HybridAgent variant",
+      "rule": "handoff threshold a function of (k_remaining band, legal action count) rather than fixed K",
+      "cost": "offline routing analysis FIRST (Phase 4); full-game pilot ONLY if offline coverage/agreement beats fixed-K8",
+      "status": "gated-offline-first"
+    },
+    "HYBRID_SHARPNESS_DYNAMIC": {
+      "kind": "hybrid_dynamic_candidate", "agent": "_HybridAgent variant",
+      "rule": "handoff on a cheap sharpness proxy: policy_entropy / policy_top1_prob / v27_gap / iter8 visit concentration / k_remaining",
+      "cost": "offline routing analysis FIRST (Phase 4); full-game pilot ONLY if offline gate clears",
+      "status": "gated-offline-first"
+    }
+  }
+}

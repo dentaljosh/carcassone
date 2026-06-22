@@ -1,0 +1,17 @@
+section,signal,a,b,c,d
+baseline,always_iter8,0.487,always_heur800,0.658,
+baseline,oracle_iter8_or_heur800,0.727,,,
+error_separation_quartiles,k_remaining,0.58,0.515,0.5,0.39,0.19
+error_separation_quartiles,n_legal,0.4045,0.5148,0.5579,0.5913,0.1868
+error_separation_quartiles,policy_entropy,0.4382,0.412,0.568,0.6345,0.2225
+error_separation_quartiles,policy_top1_prob,0.6494,0.54,0.476,0.3855,0.2639
+error_separation_quartiles,v27_gap,0.6214,nan,0.3099,0.0909,nan
+error_separation_quartiles,noresid_topvisit,0.6947,0.5913,0.4628,0.2869,0.4078
+error_separation_quartiles,abs_score_diff,0.4495,0.48,0.5388,0.5957,0.1462
+threshold_router,k_remaining,thr=52,agree=0.658,cov=1.0,
+threshold_router,n_legal,thr=7,agree=0.658,cov=1.0,
+threshold_router,policy_entropy,thr=0.70496,agree=0.658,cov=1.0,
+threshold_router,policy_top1_prob,thr=0.55401,agree=0.659,cov=0.987,
+threshold_router,v27_gap,thr=7,agree=0.658,cov=0.994,
+threshold_router,noresid_topvisit,thr=0.82,agree=0.659,cov=0.99,
+threshold_router,abs_score_diff,thr=0,agree=0.658,cov=1.0,
