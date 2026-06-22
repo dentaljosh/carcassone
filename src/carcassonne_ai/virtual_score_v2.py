@@ -97,6 +97,22 @@ class LeafConfig:
     closure_continuous_slack: float = 0.0
     value_blend: float = 0.0
     residual_scale: float = 0.0
+    # --- v2.8 experimental leaf patches (Phase 3, measurement/heuristic_v28/) ---
+    # All default OFF == bit-identical v2.7. All force the engine (object) path —
+    # flat_leaf.py does NOT implement them (same opt-in pattern as the deck-aware
+    # closure knobs above). NEVER set in production env knobs; constructed only
+    # inside v28 eval/audit scripts.
+    #   v28_farm_majority: gate the farm-growth bonus by current field farmer-
+    #     majority — credit +3×P only on fields `player` would actually score
+    #     (counts[opp] <= counts[player]). Fixes contested-field overvaluation.
+    #   v28_meeple_k: coefficient on a recovery-scaled meeple-economy term, added
+    #     AFTER caps, INDEPENDENT of the legacy `meeple_k`.
+    #   v28_meeple_recovery_t0: tiles-remaining normalizer — the term is scaled by
+    #     min(1, len(deck)/t0) so free meeples decay toward ~0 value in the endgame
+    #     (no tiles left to redeploy). 0 == flat (no scaling), == legacy meeple_k shape.
+    v28_farm_majority: bool = False
+    v28_meeple_k: float = 0.0
+    v28_meeple_recovery_t0: int = 0
 
 
 def _config_from_env() -> LeafConfig:
@@ -125,6 +141,10 @@ def _config_from_env() -> LeafConfig:
         residual_scale=float(os.environ.get("CARCASSONNE_V25_RESIDUAL_SCALE", "0.0")),
         tile_counting_closure=(os.environ.get("CARCASSONNE_V25_TILE_COUNTING") == "1"),
         closure_continuous_slack=float(os.environ.get("CARCASSONNE_V25_CLOSURE_SLACK", "0.0")),
+        # v2.8 experimental knobs — default OFF so production DEFAULT_CONFIG is unchanged.
+        v28_farm_majority=(os.environ.get("CARCASSONNE_V28_FARM_MAJORITY") == "1"),
+        v28_meeple_k=float(os.environ.get("CARCASSONNE_V28_MEEPLE_K", "0.0")),
+        v28_meeple_recovery_t0=int(os.environ.get("CARCASSONNE_V28_MEEPLE_RECOVERY_T0", "0")),
     )
 
 
@@ -152,6 +172,38 @@ _CLOSURE_P: dict[int, float] = DEFAULT_CONFIG.closure_p
 _BONUS_CAP: float = DEFAULT_CONFIG.bonus_cap
 _OPP_BONUS_CAP: float = DEFAULT_CONFIG.opp_bonus_cap
 _MEEPLE_K: float = DEFAULT_CONFIG.meeple_k
+
+
+def _v28_active(cfg: "LeafConfig") -> bool:
+    """True iff any v2.8 experimental patch is enabled on `cfg`. Used to force the
+    engine (object) path — flat_leaf.py does not implement these. Off by default,
+    so production cfgs return False (flat fast path stays bit-exact v2.7)."""
+    return cfg.v28_farm_majority or cfg.v28_meeple_k != 0.0
+
+
+def _field_owner_counts(state) -> dict:
+    """v2.8 (v28_farm) helper. One pass over BOTH players' placed farmers → map
+    each field (keyed by `frozenset(farm.farmer_connections_with_coordinate)`, the
+    SAME key the closure bonus dedupes on) to `[count_p0, count_p1]` (big farmer =
+    2). Lets the farm-growth bonus be gated to the field's majority owner — the
+    player who would actually score the field's cities at game end. Uses the
+    shared `_farm_cache` if attached (find_farm_by_coordinate reads it). Engine
+    path only; not in the production hot path."""
+    counts: dict = {}
+    for p in (0, 1):
+        for mp in state.placed_meeples[p]:
+            if mp.meeple_type not in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+                continue
+            farm = FarmUtil.find_farm_by_coordinate(
+                game_state=state, position=mp.coordinate_with_side
+            )
+            key = frozenset(farm.farmer_connections_with_coordinate)
+            c = counts.get(key)
+            if c is None:
+                c = [0, 0]
+                counts[key] = c
+            c[p] += 2 if mp.meeple_type == MeepleType.BIG_FARMER else 1
+    return counts
 
 
 def _close_prob(open_positions: int, closure_p: dict[int, float] | None = None) -> float:
@@ -297,6 +349,10 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
     if cfg is None:
         cfg = DEFAULT_CONFIG
     closure_p = cfg.closure_p
+    # v2.8 (v28_farm): precompute field farmer-majority once per call so the
+    # farm-growth branch can suppress credit on fields the opponent will win.
+    opp = 1 - player
+    owner_counts = _field_owner_counts(state) if cfg.v28_farm_majority else None
     # Deck-aware closure (Option-1 steps 2 & 5): a feature whose open
     # positions outnumber what the remaining deck can supply is unlikely (or
     # unable) to close by game-end. `gate` = the step-2 hard cliff (P→0 when
@@ -379,6 +435,14 @@ def _closure_anticipation_bonus(state, player: int, cfg: "LeafConfig | None" = N
             if farm_key in seen_farms:
                 continue
             seen_farms.add(farm_key)
+            if owner_counts is not None:
+                # v28_farm: suppress the entire field's growth credit when the
+                # opponent holds a strict farmer majority — those cities score for
+                # THEM at game end, so +3×P to `player` is spurious. Ties keep the
+                # credit (canonical rule: tied farmers both score).
+                oc = owner_counts.get(farm_key)
+                if oc is not None and oc[opp] > oc[player]:
+                    continue
             for fc in farm.farmer_connections_with_coordinate:
                 cities = CityUtil.find_cities(
                     game_state=state,
@@ -456,7 +520,9 @@ def virtual_score_v2(
     # configs, so fall through to the engine path for those (also the wiring-time
     # guard from the audit: flat must never silently mis-handle tile_counting/
     # continuous). Default OFF -> byte-identical to prior production.
-    if flat_leaf.USE_FLAT_LEAF and not (cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0):
+    if flat_leaf.USE_FLAT_LEAF and not (
+        cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0 or _v28_active(cfg)
+    ):
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
     opp = 1 - player
     # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region
@@ -507,4 +573,12 @@ def virtual_score_v2(
     score = base + bonus_self - bonus_opp
     if cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
+    if cfg.v28_meeple_k != 0.0:
+        # v28_meeple: recovery-scaled meeple economy. Free meeples are worth more
+        # while tiles remain to redeploy them, ~nothing in the endgame. t0=0 -> flat
+        # (== legacy meeple_k shape); t0>0 -> linear decay by remaining deck.
+        rf = 1.0
+        if cfg.v28_meeple_recovery_t0 > 0:
+            rf = min(1.0, len(state.deck) / cfg.v28_meeple_recovery_t0)
+        score += cfg.v28_meeple_k * (state.meeples[player] - state.meeples[opp]) * rf
     return int(round(score))

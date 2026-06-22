@@ -311,11 +311,16 @@ class HeuristicMCTS(MCTS):
     Terminal leaves return the engine's signed terminal value unchanged.
     """
 
-    def __init__(self, *args, heur_leaf: str = "v1", **kwargs):
+    def __init__(self, *args, heur_leaf: str = "v1", leaf_cfg=None, **kwargs):
         super().__init__(*args, **kwargs)
         if heur_leaf not in ("v1", "v2_7"):
             raise ValueError(f"heur_leaf must be 'v1' or 'v2_7'; got {heur_leaf!r}")
         self._heur_leaf = heur_leaf
+        # leaf_cfg (2026-06-22, v2.8 branch): an optional virtual_score_v2.LeafConfig
+        # passed to the v2_7 leaf, so an OPT-IN v2.8 variant can run in HeuristicMCTS
+        # search without touching v2.7. None -> virtual_score_v2 uses DEFAULT_CONFIG
+        # (bit-identical to prior behaviour). Only meaningful when heur_leaf == "v2_7".
+        self._leaf_cfg = leaf_cfg
         # Runtime provenance counters — let an eval ASSERT which leaf actually
         # ran (outside-review R1: the opponent ran v1 while labels implied v2.7).
         self._v1_calls = 0
@@ -338,7 +343,7 @@ class HeuristicMCTS(MCTS):
             return v
         if self._heur_leaf == "v2_7":
             from .virtual_score_v2 import virtual_score_v2
-            diff = virtual_score_v2(board.state, leaf_player)
+            diff = virtual_score_v2(board.state, leaf_player, self._leaf_cfg)
             self._v2_7_calls += 1
         else:
             diff = virtual_score_estimate(board, leaf_player)
