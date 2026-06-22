@@ -1,0 +1,33 @@
+{
+  "clair": {
+    "n": 200,
+    "W": 119,
+    "D": 0,
+    "L": 81,
+    "winrate": 0.595,
+    "elo": 66.82477700555239,
+    "elo_sig": 25.02322669225297,
+    "avg_diff": 5.41
+  },
+  "nonclair": {
+    "n": 182,
+    "W": 100,
+    "D": 3,
+    "L": 79,
+    "winrate": 0.5576923076923077,
+    "elo": 40.26806475254529,
+    "elo_sig": 25.9268070310579,
+    "avg_diff": 2.7857142857142856
+  },
+  "paired": {
+    "n_cells": 182,
+    "mean_d_nonclair_minus_clair": -0.046703296703296704,
+    "se_d": 0.05060289243018097,
+    "z": -0.9229372958815604,
+    "mean_margin_diff": -3.120879120879121
+  },
+  "gap_elo_clair_minus_nonclair": 26.5567122530071,
+  "delta_elo_nonclair_minus_clair": -26.5567122530071,
+  "V1_monotonic_nonclair_le_clair": true,
+  "verdict": "GAP <=30 elo: hidden draw-order info is a MINOR contributor. Clairvoyant numbers ~transfer; proceed toward the saturated-ruler/ladder work (skip the expensive non-clairvoyant search)."
+}
