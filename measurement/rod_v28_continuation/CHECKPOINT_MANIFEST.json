@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "doc": "RoD v2.8 continuation probe — checkpoint manifest (Phase 3)",
+    "branch": "rod_v28_continuation_probe",
+    "date": "2026-06-22",
+    "status": "MEASUREMENT ONLY — no promotion, PRODUCTION.yaml unchanged, v2.7 frozen, v2.8 opt-in",
+    "leaf": "v2.8 = v2.7 + meeple_k=2.0 (env CARCASSONNE_V25_MEEPLE_K=2.0, legacy field, flat fast path)"
+  },
+  "parent_frozen": {
+    "id": "iter8 (flywheel2_champion_iter8)",
+    "path_local": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+    "sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+    "verified_unchanged_after_iter1": true,
+    "note": "warm-from source for RoD; never modified/relabeled by the probe"
+  },
+  "checkpoints": [
+    {
+      "id": "RoD_iter_01",
+      "path_local": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+      "sha256": "a8b824df0786284cbc5caf8e49d27ea90fb263bc1016eed27c2fe30e6d2a1f4b",
+      "size_bytes": 29715197,
+      "arch": "96x6 ResNet, params 7,417,037, n_scalar_features=12, global_pool=False",
+      "parent": "iter8 (0d355002...)",
+      "warm_from": "iter8",
+      "code_commit_at_train": "9e3c0ea2a97994c9d336b95213ca9826521c6605",
+      "crashes_resumes": "none (gen 0 failed; train completed cleanly)",
+      "selfplay_gen": {
+        "games": 1000,
+        "sims": 200,
+        "c_puct": 3.0,
+        "leaf": "v2.8 (meeple_k=2.0)",
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "value_blend": 0,
+        "leaf_eval_flag": "v2_5 (=v2.7 family; meeple_k from env)",
+        "seed_start": 600010000,
+        "seed_band": "< 1e9 (self-play namespace)",
+        "boxes": "5800x orch W28 + laptop orch W8 (carc-orch SHM, shared-claim)",
+        "fresh_local": 562,
+        "fresh_laptop": 438,
+        "skipped": 24,
+        "failed": 0,
+        "npz": 1000,
+        "positions_total": 2121164,
+        "gen_wallclock_sec": "~2939 (local) / ~2853 (laptop), overlapped ~49 min"
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "warm_from": "iter8",
+        "epochs": 3,
+        "batch_size": 256,
+        "value_loss_weight": 1.5,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 2064525,
+        "n_val_positions": 108671,
+        "n_batches_per_epoch": 8065,
+        "epoch_wallclock_sec": [1562.2, 1496.7, 1521.5],
+        "total_train_sec": 4580.4,
+        "train_pol_loss": [1.5557, 1.5436, 1.5379],
+        "val_pol_loss": [0.2693, 0.2693, 0.2699],
+        "train_val_loss": [0.0057, 0.0056, 0.0056],
+        "policy_entropy": 1.5429,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor": 0.8731,
+        "collapse": false,
+        "value_outcome_corr_residual_vs_residual": 0.4126,
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_continuation"
+      },
+      "notes": "val policy loss flat across all 3 epochs (0.269->0.269->0.270) => the policy fit converges by epoch 1-2; epoch 3 marginal. Healthy fine-tune of iter8 on fresh v2.8-guided self-play, no collapse."
+    }
+  ],
+  "ab_speed_test": {
+    "purpose": "MEASUREMENT ONLY (speed) — batch 512 / 1 epoch, throwaway to /tmp/rod_ab_b512_e1.pt, never used as a probe checkpoint (different batch => systematically different net).",
+    "status": "running (pid 349210); result appended to TRAINING_LOG_SUMMARY.md",
+    "production_recipe_unchanged": "batch 256 / 3 epochs"
+  }
+}
