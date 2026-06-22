@@ -1,0 +1,8 @@
+tag,n,W,D,L,winrate,avg_diff,elo,paired_margin,paired_z,n_paired
+iter8@resid0.25_vs_resid0_OVERALL,200,110,0,90,0.55,1.945,34.9,1.945,1.518,100
+resid0.25_as_seat0,100,51,0,49,0.51,0.34,6.9,,,0
+resid0.25_as_seat1,100,59,0,41,0.59,3.55,63.2,,,0
+REUSED:HYBRID_K8_vs_iter8,400,,,,,,20.9,1.31,5.79,
+REUSED:HYBRID_K8_vs_heur3200,200,,,,,,-19.1,-0.76,-0.51,
+REUSED:iter8_vs_heur800,400,,,,,,58.7,,,
+REUSED:iter8_vs_heur3200,200,,,,,,-28.7,,-0.7,

@@ -1,0 +1,36 @@
+{
+  "audit": "search_policy_mixing",
+  "phase": 3,
+  "base_commit": "8c42550",
+  "champion_unchanged": "flywheel2_champion_iter8",
+  "measurement_only": true,
+  "metric_planes_kept_separate": ["full_game_elo", "root_action_agreement", "teacher_imitation"],
+  "new_pilot": {
+    "name": "residual_role_isolation",
+    "matchup": "iter8@resid0.25  vs  iter8@resid0.0",
+    "purpose": "isolate the net value head: identical net forward (priors+v_nn), only residual_scale differs (0.25 vs 0). resid0 == ITER8_POLICY_ONLY_LEAF_V27 == ITER8_NO_RESIDUAL.",
+    "agent_config": {"agent": "NeuralMCTS", "sims": 200, "c_puct": 3.0, "leaf": "virtual_score_v2", "env": {"CARCASSONNE_V25_CAP": "12", "CARCASSONNE_V25_DROP_THREE_OPEN": "1", "CARCASSONNE_USE_FLAT_LEAF": "1", "CARCASSONNE_V25_VALUE_BLEND": "0"}},
+    "band": "b360 (fresh, seed-start 3600000000) — NOT the spent 1.7e9 sealed panel",
+    "n": 200,
+    "paired": true,
+    "both_seats": true,
+    "clairvoyance": "real_deck per game (paired same deck both seats); standard full-game (no determinization)",
+    "harness": "scripts/search_policy_mixing/residual_pilot.py (reuses eval_hybrid_handoff GameResult + paired-z/elo) via carc-orch SHM orchestrator",
+    "compute": "local 5900XT (RTX 5060 Ti, orch W=28) + laptop (RTX 4070, orch W=24), --shared-claim work-stealing",
+    "pilot_n20_preliminary": {"W": 8, "D": 0, "L": 12, "winrate": 0.40, "elo": -70.4, "paired_margin": -1.45, "paired_z": -0.39, "note": "10 decks, NOISE-DOMINATED, not a verdict"},
+    "out_dir": "/mnt/c/carc-shared/spm_residual/resid0.25__vs__resid0.0_b360_n200",
+    "result": "see FULLGAME_PILOT_RESULTS.csv / .md (filled on completion)"
+  },
+  "reused_matchups_NOT_rerun": [
+    {"name": "HYBRID_FIXED_K8 vs ITER8_PROD", "source": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "result": "+20.9 elo / +1.36 pts / paired z=4.68 (n=200), z=5.79 (n=400)"},
+    {"name": "HYBRID_FIXED_K8 vs HEUR_3200", "source": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "result": "-19.1 elo / -0.76 pts / paired z=-0.51 (tie-loss)"},
+    {"name": "HYBRID_FIXED_K5 vs ITER8_PROD", "source": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "result": "+10.4 elo / paired z=3.45"},
+    {"name": "HYBRID_FIXED_K5 vs HEUR_3200", "source": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "result": "-13.9 elo / paired z=-0.30"},
+    {"name": "ITER8_PROD vs HEUR_800 (full-game)", "source": "governance/PRODUCTION.yaml champion validation", "result": "+58.7 elo (iter8 stronger full-game despite worse root imitation)"},
+    {"name": "ITER8_PROD vs HEUR_3200 (full-game)", "source": "measurement/level2/LEVEL2_HYBRID_VERDICT.md", "result": "-28.7 elo / z=-0.70 (tie-loss)"}
+  ],
+  "dynamic_hybrid_pilots_SKIPPED": {
+    "reason": "Phase-4 routing analysis: no cheap signal beats always-heur@800 at the root (0.659 vs 0.658); offline gate not cleared; would duplicate fixed-K. See ROUTING_RULE_ANALYSIS.md.",
+    "variants": ["HYBRID_PHASE_DYNAMIC", "HYBRID_SHARPNESS_DYNAMIC"]
+  }
+}
