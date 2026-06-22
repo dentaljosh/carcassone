@@ -66,6 +66,21 @@
       "code_path": "object (forced via _v28_active)",
       "grid": null
     },
+    "v28_meeple_flat_k1": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=1",
+      "overrides": {"v28_meeple_k": 1.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
+    "v28_meeple_flat_k3": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=3 (bracket above 2)",
+      "overrides": {"v28_meeple_k": 3.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
+    "v28_meeple_flat_k4": {
+      "patch": "k-sensitivity of the CANDIDATE (flat, t0=0) — k=4 (bracket above 2)",
+      "overrides": {"v28_meeple_k": 4.0, "v28_meeple_recovery_t0": 0},
+      "new_code": true, "code_path": "object (forced via _v28_active)", "grid": null
+    },
     "v28_completion": {
       "patch": "completion_timing_v1 — continuous deck-aware closure (reuses closure_continuous_slack)",
       "overrides": {"closure_continuous_slack": 3.0},

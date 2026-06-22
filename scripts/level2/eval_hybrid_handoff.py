@@ -141,18 +141,28 @@ def hybrid_should_latch(state, K: int):
 # --------------------------------------------------------------------------- #
 # Agents — uniform interface .move(board) -> int, plus move counters           #
 # --------------------------------------------------------------------------- #
-def _make_iter8_mcts(base_eval, game_farm, seed):
+def _make_iter8_mcts(base_eval, game_farm, seed, meeple_k=0.0):
     """base_eval = the raw net evaluator for game_farm (local make_single_evaluator
-    OR remote SHM make_remote_single_evaluator). The v2.7 leaf wraps it."""
-    cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=ITER8_RESIDUAL_SCALE)
+    OR remote SHM make_remote_single_evaluator). The v2.7 leaf wraps it.
+
+    meeple_k (2026-06-22, v2.8 leaf-swap): adds the v2.8 flat meeple-economy term to the
+    NEURAL VALUE leaf (legacy LeafConfig.meeple_k field -> flat path). 0.0 == v2.7 (default,
+    bit-identical to prior CL-026 behaviour)."""
+    cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=ITER8_RESIDUAL_SCALE, meeple_k=meeple_k)
     leaf = make_v25_value_wrapper(base_eval, cfg)
     return NeuralMCTS(game=game_farm, evaluator=leaf, simulations=ITER8_SIMS,
                       seed=seed, c_puct=ITER8_CPUCT)
 
 
+def _heur_leaf_cfg(meeple_k):
+    """v2.8 leaf-swap: a LeafConfig with the flat meeple term for the HeuristicMCTS endgame
+    (None == v2.7 / DEFAULT_CONFIG, bit-identical default)."""
+    return dataclasses.replace(DEFAULT_CONFIG, meeple_k=meeple_k) if meeple_k else None
+
+
 class _Iter8Agent:
-    def __init__(self, base_eval, game_farm, seed):
-        self._m = _make_iter8_mcts(base_eval, game_farm, seed)
+    def __init__(self, base_eval, game_farm, seed, meeple_k=0.0):
+        self._m = _make_iter8_mcts(base_eval, game_farm, seed, meeple_k)
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
@@ -164,8 +174,9 @@ class _Iter8Agent:
 
 
 class _HeurAgent:
-    def __init__(self, game_plain, sims, seed):
-        self._m = HeuristicMCTS(game=game_plain, simulations=sims, seed=seed, heur_leaf="v2_7")
+    def __init__(self, game_plain, sims, seed, meeple_k=0.0):
+        self._m = HeuristicMCTS(game=game_plain, simulations=sims, seed=seed,
+                                heur_leaf="v2_7", leaf_cfg=_heur_leaf_cfg(meeple_k))
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
@@ -179,11 +190,12 @@ class _HeurAgent:
 class _HybridAgent:
     """iter8 policy until the first TILES decision with k_remaining<=K, then heur@sims."""
 
-    def __init__(self, base_eval, game_farm, game_plain, K, heur_sims, seed):
-        self._neural = _make_iter8_mcts(base_eval, game_farm, seed)
+    def __init__(self, base_eval, game_farm, game_plain, K, heur_sims, seed, meeple_k=0.0):
+        self._neural = _make_iter8_mcts(base_eval, game_farm, seed, meeple_k)
         # offset the heur seed so it never coincides with the neural seed
         self._heur = HeuristicMCTS(game=game_plain, simulations=heur_sims,
-                                   seed=seed + 7, heur_leaf="v2_7")
+                                   seed=seed + 7, heur_leaf="v2_7",
+                                   leaf_cfg=_heur_leaf_cfg(meeple_k))
         self._K = K
         self._latched = False
         self.latch_k = None
@@ -205,15 +217,16 @@ class _HybridAgent:
         return int(self._neural.best_action(board))
 
 
-def make_agent(spec: str, *, base_factory, game_farm, game_plain, seed):
+def make_agent(spec: str, *, base_factory, game_farm, game_plain, seed, meeple_k=0.0):
     """base_factory(game_farm) -> raw net evaluator (local or remote SHM). Only
-    called for agents that need the net (iter8, hybrid); heur never touches it."""
+    called for agents that need the net (iter8, hybrid); heur never touches it.
+    meeple_k>0 swaps in the v2.8 flat meeple-economy leaf (default 0.0 == v2.7)."""
     kind, K, sims = parse_agent(spec)
     if kind == "iter8":
-        return _Iter8Agent(base_factory(game_farm), game_farm, seed)
+        return _Iter8Agent(base_factory(game_farm), game_farm, seed, meeple_k)
     if kind == "heur":
-        return _HeurAgent(game_plain, sims, seed)
-    return _HybridAgent(base_factory(game_farm), game_farm, game_plain, K, sims, seed)
+        return _HeurAgent(game_plain, sims, seed, meeple_k)
+    return _HybridAgent(base_factory(game_farm), game_farm, game_plain, K, sims, seed, meeple_k)
 
 
 # --------------------------------------------------------------------------- #
@@ -261,11 +274,14 @@ def _save(p: Path, r: GameResult):
 
 def _worker_init(ckpt: str, device_str: str, need_net: bool,
                  shared_claim: bool, claim_host: str, claim_stale_secs: int,
-                 shm_name: str = "", id_q=None, ns: int = 10):
+                 shm_name: str = "", id_q=None, ns: int = 10,
+                 meeple_k_a: float = 0.0, meeple_k_b: float = 0.0):
     torch.set_num_threads(1)
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale_secs"] = claim_stale_secs
+    _W["mk_a"] = meeple_k_a
+    _W["mk_b"] = meeple_k_b
     _W["net"] = None
     _W["handles"] = None
     _W["orch"] = False
@@ -324,9 +340,9 @@ def _play_one(args) -> GameResult | None:
         def base_factory(gf):
             return make_single_evaluator(_W["net"], _W["dev"], gf)
     a = make_agent(agent_a, base_factory=base_factory,
-                   game_farm=ga_farm, game_plain=ga_plain, seed=seed)
+                   game_farm=ga_farm, game_plain=ga_plain, seed=seed, meeple_k=_W.get("mk_a", 0.0))
     b = make_agent(agent_b, base_factory=base_factory,
-                   game_farm=gb_farm, game_plain=gb_plain, seed=seed + 1)
+                   game_farm=gb_farm, game_plain=gb_plain, seed=seed + 1, meeple_k=_W.get("mk_b", 0.0))
 
     t0 = time.perf_counter()
     moves = 0
@@ -451,10 +467,10 @@ def _smoke(args) -> int:
             return make_single_evaluator(net, dev, gf)
         a = make_agent(args.agent_a, base_factory=base_factory,
                        game_farm=Game(enable_legal_moves_cache=True, include_farm_scalars=farm),
-                       game_plain=Game(enable_legal_moves_cache=True), seed=seed)
+                       game_plain=Game(enable_legal_moves_cache=True), seed=seed, meeple_k=args.meeple_k_a)
         b = make_agent(args.agent_b, base_factory=base_factory,
                        game_farm=Game(enable_legal_moves_cache=True, include_farm_scalars=farm),
-                       game_plain=Game(enable_legal_moves_cache=True), seed=seed + 1)
+                       game_plain=Game(enable_legal_moves_cache=True), seed=seed + 1, meeple_k=args.meeple_k_b)
         moves = 0
         while game.get_game_ended(board, 0) == 0.0:
             cur = board.state.current_player
@@ -504,6 +520,10 @@ def main(argv=None) -> int:
     ap.add_argument("--claim-stale-secs", type=int, default=5400)
     ap.add_argument("--claim-host", type=str, default=socket.gethostname())
     ap.add_argument("--summary-only", action="store_true")
+    ap.add_argument("--meeple-k-a", type=float, default=0.0,
+                    help="v2.8 leaf-swap: flat meeple-economy term for agent-A's leaf (neural value "
+                         "+ heur endgame). 0.0 == v2.7 (default). e.g. 2.0 for the v2.8 candidate.")
+    ap.add_argument("--meeple-k-b", type=float, default=0.0, help="same, for agent-B (default 0.0 = v2.7).")
     args = ap.parse_args(argv)
     parse_agent(args.agent_a); parse_agent(args.agent_b)  # validate early
     if args.paired and args.n % 2 != 0:
@@ -514,7 +534,8 @@ def main(argv=None) -> int:
 
     def _san(s):
         return s.replace("@", "").replace(":", "_")
-    sub = args.out_subdir or f"{_san(args.agent_a)}__vs__{_san(args.agent_b)}"
+    _mk_tag = "" if (args.meeple_k_a == 0.0 and args.meeple_k_b == 0.0) else f"_mkA{args.meeple_k_a:g}_mkB{args.meeple_k_b:g}"
+    sub = args.out_subdir or f"{_san(args.agent_a)}__vs__{_san(args.agent_b)}{_mk_tag}"
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
     out.mkdir(parents=True, exist_ok=True)
@@ -577,7 +598,8 @@ def main(argv=None) -> int:
         with ctx.Pool(processes=workers, initializer=_worker_init,
                       initargs=(str(args.ckpt), args.device, need_net,
                                 args.shared_claim, args.claim_host, args.claim_stale_secs,
-                                args.shm_eval_server or "", id_q, _ns)) as pool:
+                                args.shm_eval_server or "", id_q, _ns,
+                                args.meeple_k_a, args.meeple_k_b)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
