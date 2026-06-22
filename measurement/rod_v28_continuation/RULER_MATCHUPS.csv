@@ -1,0 +1,3 @@
+matchup,agent_a,agent_b,leaf_both,a_sims,heur_sims,c_puct,residual_scale,n,W,D,L,winrate,elo,elo_1sig,paired_mean_diff,paired_z,z_margin,seed_start,manifest,note
+RoD_iter_01_vs_heur3200_v28,RoD_iter_01(neural@200),heur@3200,v2.8(meeple_k=2.0),200,3200,3.0,0.25,200,107,3,90,0.542,29.6,24.7,1.80,1.17,1.20,1922100000,v28_rod_probe/rod_iter01_vs_heur3200_v28/manifest.json,RoD closed the parent gap (parent iter8+v2.8 was -38.4 vs same ruler); parity-or-slightly-ahead but z<2
+ITER8_V28_PARENT_vs_heur3200_v28_ANCHOR,iter8(neural@200),heur@3200,v2.8(meeple_k=2.0),200,3200,3.0,0.25,200,,,,,-38.4,,,,-1.56,,,measurement/heuristic_v28 (battery row iter8_v28_vs_heur3200_v28_n200),the frozen-parent anchor RoD is compared against
