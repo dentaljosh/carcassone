@@ -7,8 +7,11 @@
 # in the shared out-dir, so the two boxes drain ONE game pool together. n=200 screen and the
 # n=400 top-up are the SAME command with a bigger N (harness caches per-seed -> top-up resumes).
 #
-#   local:  bash scripts/rod_v28/run_b512_nvn.sh phase4 400
+#   local:  bash scripts/rod_v28/run_b512_nvn.sh phase4 400                    # OW=48 (tuned EVAL_W, 44dbc42)
 #   laptop: SHARE=/mnt/carc-shared OW=16 bash scripts/rod_v28/run_b512_nvn.sh phase4 400
+#
+# W note: 5800x tuned EVAL_W=48 (single-context); net-vs-net runs TWO carc-orch contexts so the
+# laptop (host-RAM-bound, single-context tuned W26) starts CONSERVATIVE at OW=16 — watch `free`.
 #
 #   phase4 = ROD_ITER1_B512_TEST (A) vs frozen ITER8_V28_PARENT (B)  — band 1.922e9
 #            (SAME decks as the B256-vs-parent matchup -> directly comparable margins)
@@ -20,7 +23,7 @@ REPO=$(cd "$(dirname "$0")/../.." && pwd)
 PHASE=${1:?usage: run_b512_nvn.sh <phase4|phase5> <n_even>}
 N=${2:?usage: run_b512_nvn.sh <phase4|phase5> <n_even>}
 SHARE=${SHARE:-/mnt/c/carc-shared}      # laptop overrides to /mnt/carc-shared
-OW=${OW:-24}                            # per-box client workers (local 24; laptop ~16 for 2 contexts on 8GB)
+OW=${OW:-48}                            # per-box client workers (local 48 = tuned EVAL_W; laptop override OW=16)
 
 B512=$SHARE/rod_batch512_calibration/ckpt/iter_01_b512.pt
 ITER8=$SHARE/flywheel_residual_attempt2/ckpt/iter8.pt
