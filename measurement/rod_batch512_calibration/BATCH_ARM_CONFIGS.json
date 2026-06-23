@@ -1,0 +1,98 @@
+{
+  "_meta": {
+    "doc": "rod_batch512_calibration — Phase 1 batch-arm configs (machine-readable)",
+    "branch": "rod_batch512_calibration",
+    "date": "2026-06-22",
+    "status": "MEASUREMENT ONLY — recipe calibration; no promotion, PRODUCTION.yaml unchanged, v2.7 frozen, v2.8 opt-in",
+    "question": "Can batch 512 replace batch 256 for the RoD v2.8 continuation recipe without weakening the net?",
+    "the_variable": "--batch-size (256 -> 512); everything else identical"
+  },
+  "parent_frozen": {
+    "id": "ITER8_V28_PARENT (flywheel2_champion_iter8)",
+    "path_local": "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+    "sha256": "0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c",
+    "arch": "96x6 ResNet, n_scalar_features=12, value_global_pool=False, params 7417037"
+  },
+  "leaf_v28": {
+    "definition": "v2.7 (virtual_score_v2 / flat_leaf) + legacy LeafConfig.meeple_k=2.0",
+    "env": "CARCASSONNE_V25_MEEPLE_K=2.0",
+    "fast_path": "flat/Cython (legacy meeple_k does NOT trip _v28_active)",
+    "do_not_use": "CARCASSONNE_V28_MEEPLE_K (object path, 2.26x slower, hurt ~75 elo)",
+    "train_time_relevance": "INERT — npz targets baked at gen; train_iter.py has no leaf/env read"
+  },
+  "shared_data": {
+    "dir": "/mnt/c/carc-shared/rod_v28_continuation/iter1_data/iter_00/",
+    "n_npz": 1000,
+    "seed_range": "seed_600010000 .. seed_600010999",
+    "fingerprint": "61a12d76cd65b719",
+    "total_bytes": 1372882184,
+    "n_train_positions": 2064525,
+    "n_val_positions": 108671,
+    "policy_target": "mcts_visit_distribution",
+    "value_target": "residual (baked at gen, residual_scale 0.25)"
+  },
+  "arms": [
+    {
+      "id": "ROD_ITER1_B256_REFERENCE",
+      "role": "reference (existing; NOT retrained)",
+      "checkpoint": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+      "sha256": "a8b824df0786284cbc5caf8e49d27ea90fb263bc1016eed27c2fe30e6d2a1f4b",
+      "metrics": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.metrics.json",
+      "batch_size": 256,
+      "n_batches_per_epoch": 8065,
+      "code_commit_at_train": "9e3c0ea2a97994c9d336b95213ca9826521c6605",
+      "validated": "+53.4 elo / z3.51 (n=400) vs ITER8_V28_PARENT; TIE vs heur@3200_v28 (n=800)"
+    },
+    {
+      "id": "ROD_ITER1_B512_TEST",
+      "role": "test (trained in Phase 2)",
+      "checkpoint_planned": "/mnt/c/carc-shared/rod_batch512_calibration/ckpt/iter_01_b512.pt",
+      "sha256": "TBD_phase2",
+      "batch_size": 512,
+      "n_batches_per_epoch_expected": 4033,
+      "code_commit_at_train": "TBD_phase2"
+    }
+  ],
+  "held_constant": {
+    "warm_from": "iter8 (0d355002...)",
+    "epochs": 3,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "lr_schedule": "none",
+    "value_loss_weight": 1.5,
+    "aux_weight": 0.15,
+    "rank_weight": 0.0,
+    "center_weight": 0.0,
+    "value_target": "residual",
+    "seed": 0,
+    "window": 10,
+    "warmstart_mix_fraction": 0.0,
+    "val_fraction": 0.05,
+    "arch": "96x6 n_scalar=12 no_global_pool",
+    "eval_config": "NeuralMCTS sims=200, c_puct=3.0, residual_scale=0.25, leaf v2.8, deck-paired both seats"
+  },
+  "allowed_to_vary": {
+    "batch_size": "256 -> 512 (THE variable)",
+    "derived_consequences_not_separate_knobs": [
+      "optimizer steps per epoch 8065 -> ~4033",
+      "effective gradient averaging / effective LR per example"
+    ],
+    "explicitly_NOT_compensated": "no LR rescale, no extra epochs, no extra data (naive same-epochs/same-LR swap)"
+  },
+  "train_command_b512": [
+    "--output-root", "/mnt/c/carc-shared/rod_v28_continuation/iter1_data",
+    "--warmstart-root", "data/warmstart/heuristic_tau05",
+    "--iter", "0",
+    "--window", "10",
+    "--warmstart-mix-fraction", "0.0",
+    "--value-loss-weight", "1.5",
+    "--batch-size", "512",
+    "--stage-local", "/tmp/rod_b512_stage",
+    "--warm-from", "/mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt",
+    "--output", "/mnt/c/carc-shared/rod_batch512_calibration/ckpt/iter_01_b512.pt",
+    "--epochs", "3",
+    "--prov-value-target", "residual",
+    "--prov-selfplay-leaf", "v2_8_meeple_k2",
+    "--prov-run-tag", "rod_batch512_calibration"
+  ]
+}
