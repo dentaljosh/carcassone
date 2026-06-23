@@ -1,0 +1,4 @@
+phase,n,W,D,L,winrate,elo,elo_1sig,avg_diff,z_margin,paired_mean,paired_z,a_seat0_wr,a_seat1_wr,signal,seed_start,band,src_dir
+B512_vs_parent_screen,200,104,2,94,0.525,17.4,24.6,3.27,1.92,3.27,2.06,0.470,0.580,INCONCLUSIVE,1922000000,1.922e9,/mnt/c/carc-shared/rod_b512_calib/nvn_iter_01_b512_mk20_vs_iter8_mk20_s200_rs025
+B512_vs_parent_confirm,400,203,6,191,0.515,10.4,17.4,1.87,1.55,1.87,1.65,0.487,0.542,INCONCLUSIVE,1922000000,1.922e9,/mnt/c/carc-shared/rod_b512_calib/nvn_iter_01_b512_mk20_vs_iter8_mk20_s200_rs025
+REF_B256_vs_parent_n400,400,227,7,166,0.576,53.4,17.6,3.68,3.51,3.68,3.51,0.562,0.590,POSITIVE,1922000000,1.922e9,/mnt/c/carc-shared/v28_rod_probe/nvn_iter_01_mk20_vs_iter8_mk20_s200_rs025
