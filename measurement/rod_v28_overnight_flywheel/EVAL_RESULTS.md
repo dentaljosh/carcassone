@@ -22,14 +22,15 @@ elo sign: candidate − RoD_iter_01 (>0 ⇒ candidate stronger).
 - The chain produced a **modest, real** internal gain: **iter_08 is the best checkpoint, +33.1 elo / paired_z +2.00** over RoD_iter_01 — small but credible (right at the 2σ bar).
 - The gain is **not monotonic to the end**: iter_04/07 ≈ tied, iter_08 peaks, iter_10 (endpoint) regresses back to ~tied. Keep-**best** ⇒ iter_08, not the latest.
 
-## 2. Best candidate vs the ruler — iter_08 vs heur@3200_v2.8 (n=200, paired)
+## 2. Best candidate vs the ruler — iter_08 vs heur@3200_v2.8 (n=800, VERDICT)
 
 | matchup | winrate elo | paired margin | verdict |
 |---|---|---|---|
-| iter_08 vs heur@3200_v2.8 | +15.6 (z+0.64) | −1.46 (z−0.83) | **TIE** (104W/1D/95L) |
+| iter_08 vs heur@3200_v2.8 (**n=800**) | +6.5 (z+0.53) | **−0.38 (z−0.48)** | **TIE** (402W/11D/387L) |
+| _n=200 screen (deflated)_ | +15.6 (z+0.64) | −1.46 (z−0.83) | tie |
 | _ref: RoD_iter_01 vs same ruler (n=800)_ | +16.5 (z1.34) | −0.36 (z−0.47) | TIE |
 
-**iter_08 reaches PARITY with deep-heuristic search but does NOT exceed it — virtually identical to RoD_iter_01.** The continuation's "decisive open test" (does a later iter push *above* heur@3200_v28?) is answered **no** for the first 9 iters.
+**iter_08 reaches PARITY with deep-heuristic search but does NOT exceed it — virtually identical to RoD_iter_01** (paired margins −0.38 vs −0.36). Confirmed at **verdict power (n=800)**: both stats |z|<1, the n=200 screen's marginal +15.6 deflated to +6.5. The continuation's "decisive open test" (does a later iter push *above* heur@3200_v28?) is answered a clean **no** for the first 9 iters.
 
 ## Verdict
 
