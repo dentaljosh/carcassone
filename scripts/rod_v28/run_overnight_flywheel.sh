@@ -42,11 +42,13 @@ SCREEN=$REPO_LOCAL/scripts/rod_v28/overnight_iter_screen.py
 MEEPLE_K=2.0; SCALE=${SCALE:-0.25}; SIMS=${SIMS:-200}; CPUCT=3.0
 GAMES=${GAMES:-400}; EPOCHS=3; BATCH=256; VLW=1.5
 
-# --- worker counts (orch, per box). User dir was "48 and 26"; but 26 is the laptop EVAL ceiling.
-# GEN workers are heavier: a W26 gen pre-flight (2026-06-23) wedged the laptop at ~131MB free and
-# OOM-stalled sshd. The documented gen-safe + throughput-optimal laptop value is W8 (gen_flywheel.sh:49
-# sweep: W8=9.1GB w/ headroom == W12=11.9GB ceiling on throughput). Local stays W48 (32GB box, safe). ---
-OW_LOCAL=${OW_LOCAL:-48}
+# --- worker counts (orch, per box). User dir was "48 and 26" — but those are the EVAL numbers.
+# GEN workers are MUCH heavier (each holds a sims=200 MCTS tree + the game's position buffer), so the
+# gen ceilings are lower AND are also the throughput optima (gen is GPU-bound past them). 2026-06-23
+# pre-flight/live measurements: W26 gen OOM-wedged the 11GB laptop (~131MB free); W48 gen drove local
+# worker RSS past 38GB on the 42GB box (heading to OOM). The documented gen peaks are W28 local
+# (gen_flywheel.sh:64 "5800x peak") + W8 laptop (gen_flywheel.sh:49). Use those; do NOT use the eval W. ---
+OW_LOCAL=${OW_LOCAL:-28}
 OW_LAPTOP=${OW_LAPTOP:-8}
 USE_LAPTOP=${USE_LAPTOP:-1}
 
@@ -105,10 +107,16 @@ _kill_one() {   # bracket 1st char so the regex matches workers but never the pk
   pkill -9 -f "$pat" 2>/dev/null || true
   [ "$USE_LAPTOP" = 1 ] && timeout 20 ssh -o ConnectTimeout=10 "$LAPTOP_SSH" "pkill -9 -f '$pat'" </dev/null >/dev/null 2>&1 || true
 }
-_kill_gen() {   # full reset of the gen pools + orch servers on BOTH boxes (heal / cleanup)
+_kill_gen() {   # full reset of gen pools + orch on BOTH boxes. Kill carc-orch FIRST so SHM-attached
+                # workers error out, THEN reap the multiprocessing SPAWN children explicitly: their
+                # cmdline lacks "run_selfplay_iter", so `pkill -f run_selfplay_iter` MISSES them
+                # (2026-06-23 they orphaned + held ~37GB; a heal that relaunched on top would OOM).
+  _kill_one carc-orch
   _kill_one run_selfplay_iter
   _kill_one gen_flywheel
-  _kill_one carc-orch
+  _kill_one spawn_main                 # multiprocessing spawn workers (generic cmdline)
+  _kill_one multiprocessing.resource_tracker
+  rm -f /dev/shm/carc_fwgen5800x /dev/shm/sem.carc_fwgen5800x_* 2>/dev/null || true
 }
 
 _clean_stranded() {   # $1=dir $2=ext $3=age-min(0=all): remove .claim files with no matching output

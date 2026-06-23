@@ -69,7 +69,7 @@
     "gen": "2-box work-stealing via carc-orch SHM orchestrator (USE_ORCH=1), --shared-claim claim files in the shared iterN_data dir; both boxes drain ONE game pool.",
     "train": "LOCAL only (5900XT). Training is GPU-latency-bound; the laptop trains ~10% slower (memory reference_training_latency_bound).",
     "smoke": "LOCAL only, two carc-orch contexts (one per checkpoint).",
-    "workers_orch": { "local_OW": 48, "laptop_OW": 8, "_note": "user directive was 'w 48 and 26'. Local 48 = tuned EVAL_W (44dbc42), verified RAM-safe on the 32GB box. Laptop 26 is the EVAL ceiling but GEN workers are heavier: the W26 gen PRE-FLIGHT (2026-06-23) wedged the laptop at ~131MB free and OOM-stalled sshd -> dropped to W8 = the documented gen-safe + throughput-optimal value (gen_flywheel.sh:49 sweep). Both boxes RAM-monitored during the re-validated pre-flight." },
+    "workers_orch": { "local_OW": 28, "laptop_OW": 8, "_note": "user directive was 'w 48 and 26' — but those are the EVAL numbers. GEN workers are much heavier (each holds a sims=200 MCTS tree + position buffer), so the gen ceilings are lower AND are the throughput optima (gen is GPU-bound past them). 2026-06-23 measurements: W26 gen OOM-wedged the 11GB laptop (~131MB free, sshd banner-timeout); W48 gen drove local worker RSS past 38GB on the 42GB box (heading to OOM, killed). Reset to the documented gen peaks W28 local (gen_flywheel.sh:64 '5800x peak') + W8 laptop (gen_flywheel.sh:49). Both RAM-monitored live." },
     "share_path_local": "/mnt/c/carc-shared",
     "share_path_remote": "/mnt/carc-shared",
     "code_sync": "git bundle carc_stage-b-wiring.bundle on the share; laptop git-resets to it (gen code == stage-b-wiring, unchanged on this branch). If laptop sync fails -> auto local-only."

@@ -50,7 +50,7 @@ Reversible: `GAMES=1000 bash scripts/rod_v28/run_overnight_flywheel.sh` runs the
 
 ## Per-iteration sequence
 
-1. **Self-play gen** — 400 games, 2-box **work-stealing** (carc-orch SHM, `--shared-claim`), v2.8 leaf via `CARCASSONNE_V25_MEEPLE_K=2.0` in the gen env (reaches the MCTS search leaf — verified for RoD_iter_01, `run_selfplay_iter.py:354`). Local W48 + laptop W8 (W8 = the gen-safe laptop value; the W26 the user quoted is the *eval* ceiling — a W26 gen pre-flight OOM-wedged the 11GB laptop).
+1. **Self-play gen** — 400 games, 2-box **work-stealing** (carc-orch SHM, `--shared-claim`), v2.8 leaf via `CARCASSONNE_V25_MEEPLE_K=2.0` in the gen env (reaches the MCTS search leaf — verified for RoD_iter_01, `run_selfplay_iter.py:354`). Local **W28** + laptop **W8** (the gen peaks). The user's "48 and 26" are the *eval* numbers; gen workers (sims=200 MCTS tree + position buffer) are RAM-heavier — W26 gen OOM-wedged the 11GB laptop and W48 gen drove local worker RSS past 38GB on the 42GB box. W28/W8 are also the throughput optima (gen is GPU-bound past them).
 2. **Train** — LOCAL only (5900XT), batch 256 / 3 epochs / VLW 1.5, warm-from prev. Writes `iter_NN.pt` + `.metrics.json`.
 3. **Cheap screens** (catastrophe detectors, **NOT verdicts**):
    - training-loss sanity (monotone train_pol, flat val_pol),
@@ -65,7 +65,7 @@ Reversible: `GAMES=1000 bash scripts/rod_v28/run_overnight_flywheel.sh` runs the
 
 | stage | ~time @ 400 games |
 |---|---|
-| gen (local W48 + laptop W8, orch, work-stealing) | ~20–27 min |
+| gen (local W28 + laptop W8, orch, work-stealing) | ~22–28 min |
 | train (5900XT, ~0.83M positions, 3 ep) | ~30 min |
 | smoke (n=16 paired, local two-context) | ~4 min |
 | **per iter** | **~55–60 min** |
