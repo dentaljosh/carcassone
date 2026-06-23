@@ -1,0 +1,3 @@
+phase,n,W,D,L,winrate,elo,elo_1sig,avg_diff,z_margin,paired_mean,paired_z,a_seat0_wr,a_seat1_wr,signal,seed_start,band,src_dir
+B512_vs_B256_screen,200,95,6,99,0.490,-6.9,24.6,-0.99,-0.57,-0.99,-0.64,0.510,0.470,INCONCLUSIVE,1923000000,1.923e9,/mnt/c/carc-shared/rod_b512_calib/nvn_iter_01_b512_mk20_vs_iter_01_mk20_s200_rs025
+B512_vs_B256_confirm,400,194,10,196,0.497,-1.7,17.4,-0.44,-0.37,-0.44,-0.41,0.542,0.453,INCONCLUSIVE_TIE,1923000000,1.923e9,/mnt/c/carc-shared/rod_b512_calib/nvn_iter_01_b512_mk20_vs_iter_01_mk20_s200_rs025
