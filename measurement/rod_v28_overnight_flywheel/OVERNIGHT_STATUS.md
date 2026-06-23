@@ -9,6 +9,6 @@ This file is **overwritten live** by `scripts/rod_v28/run_overnight_flywheel.sh`
 ---
 - Recipe (FROZEN): v2.8 leaf (meeple_k=2.0) · batch 256 · 3 epochs · VLW 1.5 · residual_scale 0.25 · sims 200 · c_puct 3.0 · games/iter 400
 - Lineage: latest-chain RoD_iter_01 → iter_02 → … (warm-from previous iter)
-- Workers (orch): local W48 · laptop W26
+- Workers (orch): local W48 · laptop W8 (gen-safe; W26 = eval-only ceiling)
 - Live deliverables: CHECKPOINT_MANIFEST.json · TRAINING_LOG_SUMMARY.md · CHEAP_SCREEN_RESULTS.csv
 - MEASUREMENT ONLY — no promotion, PRODUCTION.yaml unchanged, champion unchanged, v2.7 frozen.

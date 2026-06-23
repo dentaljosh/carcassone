@@ -69,7 +69,7 @@
     "gen": "2-box work-stealing via carc-orch SHM orchestrator (USE_ORCH=1), --shared-claim claim files in the shared iterN_data dir; both boxes drain ONE game pool.",
     "train": "LOCAL only (5900XT). Training is GPU-latency-bound; the laptop trains ~10% slower (memory reference_training_latency_bound).",
     "smoke": "LOCAL only, two carc-orch contexts (one per checkpoint).",
-    "workers_orch": { "local_OW": 48, "laptop_OW": 26, "_note": "user directive 'w 48 and 26'. Local 48 = tuned EVAL_W (44dbc42). Laptop 26 is the EVAL ceiling; gen workers are heavier (gen_flywheel.sh:49 notes laptop gen ceiling ~W8-12). SMOKE-VALIDATED before the full launch; falls back to laptop W12 if RAM thrashes." },
+    "workers_orch": { "local_OW": 48, "laptop_OW": 8, "_note": "user directive was 'w 48 and 26'. Local 48 = tuned EVAL_W (44dbc42), verified RAM-safe on the 32GB box. Laptop 26 is the EVAL ceiling but GEN workers are heavier: the W26 gen PRE-FLIGHT (2026-06-23) wedged the laptop at ~131MB free and OOM-stalled sshd -> dropped to W8 = the documented gen-safe + throughput-optimal value (gen_flywheel.sh:49 sweep). Both boxes RAM-monitored during the re-validated pre-flight." },
     "share_path_local": "/mnt/c/carc-shared",
     "share_path_remote": "/mnt/carc-shared",
     "code_sync": "git bundle carc_stage-b-wiring.bundle on the share; laptop git-resets to it (gen code == stage-b-wiring, unchanged on this branch). If laptop sync fails -> auto local-only."
@@ -85,7 +85,9 @@
     "smoke_seed_base": 1940000000,
     "smoke_seed_stride": 100000,
     "smoke_seed_note": ">= 1e9 eval floor; disjoint from spent eval bands (1.7e9 sealed, 1.906/1.907e9 battery, 1.922/1.923e9 b512).",
-    "smoke_n": 40,
+    "smoke_n": 16,
+    "smoke_ow": 32,
+    "smoke_note": "two-context net-vs-net is GPU-latency-bound + startup-dominated (~80s dual TorchScript export/boot). Measured n=10@OW32 = 194s -> n=16 ~= 4 min/iter (~40 min over 10 iters). CATASTROPHE DETECTOR ONLY (wr<0.25 vs prev = collapse); n far too small for strength.",
     "smoke_catastrophe_winrate": 0.25,
     "stall_heal": "gen no-progress for 15 polls x 60s -> kill pools+orch on both boxes, clean stranded claims, relaunch; abort after 8 heals."
   },

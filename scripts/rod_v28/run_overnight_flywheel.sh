@@ -10,7 +10,7 @@
 #   NeuralMCTS sims=200 · c_puct=3.0 · 96x6 ResNet · games/iter=400 (attempt-2 flywheel cadence)
 #
 # Per iter: 2-box work-stealing self-play gen (carc-orch SHM, high W) -> local train ->
-#           CHEAP screens (train-loss/entropy/collapse + tiny n=40 paired SMOKE vs prev) ->
+#           CHEAP screens (train-loss/entropy/collapse + tiny n=16 paired SMOKE vs prev) ->
 #           manifest/log/csv append. NO expensive evals overnight (heur@3200 etc deferred
 #           to tomorrow on selected checkpoints).
 #
@@ -42,9 +42,12 @@ SCREEN=$REPO_LOCAL/scripts/rod_v28/overnight_iter_screen.py
 MEEPLE_K=2.0; SCALE=${SCALE:-0.25}; SIMS=${SIMS:-200}; CPUCT=3.0
 GAMES=${GAMES:-400}; EPOCHS=3; BATCH=256; VLW=1.5
 
-# --- worker counts (orch, per box). User dir: local 48 / laptop 26 (laptop smoke-validated). ---
+# --- worker counts (orch, per box). User dir was "48 and 26"; but 26 is the laptop EVAL ceiling.
+# GEN workers are heavier: a W26 gen pre-flight (2026-06-23) wedged the laptop at ~131MB free and
+# OOM-stalled sshd. The documented gen-safe + throughput-optimal laptop value is W8 (gen_flywheel.sh:49
+# sweep: W8=9.1GB w/ headroom == W12=11.9GB ceiling on throughput). Local stays W48 (32GB box, safe). ---
 OW_LOCAL=${OW_LOCAL:-48}
-OW_LAPTOP=${OW_LAPTOP:-26}
+OW_LAPTOP=${OW_LAPTOP:-8}
 USE_LAPTOP=${USE_LAPTOP:-1}
 
 # --- loop control ---
@@ -54,9 +57,12 @@ DURATION_HOURS=${DURATION_HOURS:-10}
 SP_BASE=${SP_BASE:-620000000}           # self-play seed bands (<1e9), per-iter disjoint
 SMOKE_BASE=${SMOKE_BASE:-1940000000}    # smoke eval bands (>=1e9 floor), per-iter disjoint
 DO_SMOKE=${DO_SMOKE:-1}
-SMOKE_N=${SMOKE_N:-40}                   # tiny paired smoke (catastrophe detector ONLY, not a verdict)
-SMOKE_OW=${SMOKE_OW:-22}                 # per-server workers for the two-context LOCAL smoke
-SMOKE_TIMEOUT=${SMOKE_TIMEOUT:-1200}
+SMOKE_N=${SMOKE_N:-16}                   # tiny paired smoke (CATASTROPHE DETECTOR ONLY, not a verdict).
+                                         # two-context net-vs-net is GPU-latency-bound + startup-dominated
+                                         # (~80s dual TorchScript export/boot): n=10@OW32 = 194s measured ->
+                                         # n=16 ~= 4 min/iter. NOT sized for strength (n far too small).
+SMOKE_OW=${SMOKE_OW:-32}                 # client workers for the two-context LOCAL smoke (RAM ~15GB, safe)
+SMOKE_TIMEOUT=${SMOKE_TIMEOUT:-900}
 SMOKE_CATASTROPHE_WR=${SMOKE_CATASTROPHE_WR:-0.25}
 
 # --- self-heal ---

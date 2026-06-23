@@ -50,12 +50,12 @@ Reversible: `GAMES=1000 bash scripts/rod_v28/run_overnight_flywheel.sh` runs the
 
 ## Per-iteration sequence
 
-1. **Self-play gen** — 400 games, 2-box **work-stealing** (carc-orch SHM, `--shared-claim`), v2.8 leaf via `CARCASSONNE_V25_MEEPLE_K=2.0` in the gen env (reaches the MCTS search leaf — verified for RoD_iter_01, `run_selfplay_iter.py:354`). Local W48 + laptop W26.
+1. **Self-play gen** — 400 games, 2-box **work-stealing** (carc-orch SHM, `--shared-claim`), v2.8 leaf via `CARCASSONNE_V25_MEEPLE_K=2.0` in the gen env (reaches the MCTS search leaf — verified for RoD_iter_01, `run_selfplay_iter.py:354`). Local W48 + laptop W8 (W8 = the gen-safe laptop value; the W26 the user quoted is the *eval* ceiling — a W26 gen pre-flight OOM-wedged the 11GB laptop).
 2. **Train** — LOCAL only (5900XT), batch 256 / 3 epochs / VLW 1.5, warm-from prev. Writes `iter_NN.pt` + `.metrics.json`.
 3. **Cheap screens** (catastrophe detectors, **NOT verdicts**):
    - training-loss sanity (monotone train_pol, flat val_pol),
    - **policy-entropy / collapse** check (floor = 0.5 × baseline),
-   - **tiny n=40 paired smoke vs the previous iter** (local two-context net-vs-net, same v2.8 leaf) — flags only a *catastrophic* play regression (wr < 0.25).
+   - **tiny n=16 paired smoke vs the previous iter** (local two-context net-vs-net, same v2.8 leaf) — flags only a *catastrophic* play regression (wr < 0.25). Two-context net-vs-net is GPU-latency-bound + startup-dominated (~80s dual export/boot; measured n=10@OW32 = 194s) → n=16 kept small (~4 min/iter). **Not sized for strength** (n far too small).
    - *(root-action audit on the fixed 1000-pos v2.8 midgame sample is deferred to tomorrow — not cheap enough for every iter.)*
 4. **Manifest / log / csv append** — `overnight_iter_screen.py` writes one row each to `CHECKPOINT_MANIFEST.json`, `TRAINING_LOG_SUMMARY.md`, `CHEAP_SCREEN_RESULTS.csv` (idempotent on iter).
 
@@ -65,10 +65,10 @@ Reversible: `GAMES=1000 bash scripts/rod_v28/run_overnight_flywheel.sh` runs the
 
 | stage | ~time @ 400 games |
 |---|---|
-| gen (local W48 + laptop W26, orch) | ~18–25 min |
-| train (5900XT, ~0.83M positions, 3 ep) | ~30–35 min |
-| smoke (n=40 paired, local two-context) | ~6–10 min |
-| **per iter** | **~55–70 min** |
+| gen (local W48 + laptop W8, orch, work-stealing) | ~20–27 min |
+| train (5900XT, ~0.83M positions, 3 ep) | ~30 min |
+| smoke (n=16 paired, local two-context) | ~4 min |
+| **per iter** | **~55–60 min** |
 
 → in a **10 h** window, **~9–10 iterations** (capped at 14; stops cleanly at the deadline or on catastrophe). Owned hardware, **no cloud $**.
 
