@@ -50,6 +50,6 @@ Codified in `docs/CLUSTER_OPS.md` "Worker counts — GEN W ≠ EVAL W".
 
 ## Follow-on
 
-The chain is being **extended to iter_30** (latest-chain continuation from iter_10, `DO_SMOKE=0`, gen W28/8, no deadline) — the bet that more iterations eventually push past parity. All iter_11…iter_30 checkpoints will be retained for the same keep-best + ruler eval. Given the first 9 iters peaked at parity (iter_08), this is exploratory, not promotion-grade.
+The chain was **extended iter_11→iter_17** (latest-chain from iter_10, `DO_SMOKE=0` = no per-iter eval, gen W28/8) then **stopped early at the user's call** (target had been iter_30). **All 16 continuation checkpoints `RoD_iter_02…iter_17` are retained**; iters **11–17 are UNEVALED** (no net-vs-net / ruler eval was run on them) — they're held for a future keep-best + ruler pass if the line is revisited. Given iters 02–10 peaked at parity (iter_08, TIE vs heur@3200_v2.8 at n=800), the extension is **exploratory and unresolved**, not promotion-grade. Nothing promoted; champion + PRODUCTION.yaml unchanged.
 
 **Artifacts:** `evals/iter{04,07,08,10}_vs_iter01_n100/`, `evals/iter{08,10}_vs_iter01_n400/`, `evals/iter08_vs_heur3200_v28/`. Harnesses: `scripts/rod_v28/run_overnight_evals.sh` (net-vs-net 2-box), `scripts/rod_v28/run_heur_eval.sh` (ruler 2-box).
