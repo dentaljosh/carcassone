@@ -19,6 +19,20 @@ The CIFS share has **different mount paths per box.** Using the wrong one was th
 
 **Rule:** local commands use `/mnt/c/carc-shared`; anything inside an `ssh xeon/laptop` uses `/mnt/carc-shared`. In scripts, resolve a per-box `$SHARE` (the launchers do this via a sed `SHARE_LOCAL`→`SHARE_REMOTE` substitution). The project PreToolUse lint hook (`scripts/hooks/pretooluse_lint.py`) blocks the two unambiguous misuses (local cmd using `/mnt/carc-shared`, or `ssh`-to-remote using `/mnt/c/carc-shared`); add `# allow-path` to override.
 
+## Worker counts — ⚠️ GEN W ≠ EVAL W (the distinction that bites)
+
+**The durable rule (never goes stale):** a **GEN (self-play) worker is RAM-heavier than an EVAL worker** — it carries a live `sims` MCTS search tree **plus** the game's accumulated position buffer (~0.9 GB/worker at sims=200). An eval worker just plays/scores. **So the per-box gen W is LOWER than the eval W. Do NOT use the eval worker count for generation — it OOMs.** (This is *why* there are two numbers per box; mixing them up cost a relaunch on 2026-06-23.)
+
+Current per-box maxes, **orchestrator-ON** (carc-orch SHM, the deployed mode — [[reference_carc_orch_verdict]]); values as of **2026-06-23**, re-bench after any code-era change:
+
+| Box | **GEN W** (self-play) | **EVAL W** (net-vs-heur / net-vs-net) | live RAM headroom at gen W |
+|---|---|---|---|
+| 5800x / 5900XT (42 GB RAM, 16 GB GPU) | **28** | **48** single-ctx · ~32 two-ctx net-vs-net | W28 → ~17 GB free (W48 gen hit ~38 GB RSS → **OOM**) |
+| laptop (11 GB WSL, 8 GB GPU) | **8** | **26** single-ctx · 16 two-ctx | W8 → ~4 GB free (W26 gen → **131 MB free, sshd wedge**) |
+| xeon (retired 2026-06-17) | 18 | 12 | — |
+
+**Canonical source (point, don't copy):** the gen defaults are `gen_flywheel.sh` `_OWD` (≈line 49: `5800x=28; xeon=18; laptop=8`); the eval defaults are `run_residual_flywheel_v2.sh` `EVAL_W_*` (≈line 57: `5800x=48; laptop=26; xeon=12`). Those script defaults are the runtime source of truth; this table just makes the **gen-vs-eval split** discoverable. Both are throughput-optima too (gen is GPU-dispatch-bound past these W; pushing higher only adds RAM/contention). **orch-OFF self-play is a different profile** (CPU-thread-bound, see [[feedback_worker_count_by_bottleneck]]). Confirm with `free -g` + `ps`, not just loadavg — a WSL OOM restarts the whole VM.
+
 ## SSH-disconnect resilience (Mac→Windows→WSL setup)
 
 Joshua connects via SSH from a Mac to Windows, then to WSL2. **When the Mac sleeps, SSH disconnects and SIGHUP propagates to any tty-attached process** — this killed two long runs on 2026-04-28 (warmstart gen at 125/500, T2 at 16/100). Per-game checkpoints saved the work but compute was lost.
