@@ -92,17 +92,27 @@ was parallelism, not capability.
 
 ## Part B — Ruler ladder (full-game)
 
-_[PENDING — local h6400-vs-h3200 n=400 + h12800-vs-h6400 n=100 running. Table to be filled from
-`scripts/deeper_search/analyze_ladder.py`.]_
+Paired decks, both seats. **winrate Elo and paired score margin are reported separately** (the central
+distinction). s/game inflated by concurrent audit contention; the clean per-game cost is Part A's 480 s.
 
-| matchup | n | W/D/L | winrate | winrate-z | Elo ±1σ | paired margin | paired_z | n_pair | s/game |
-|---|---|---|---|---|---|---|---|---|---|
-| heur@6400 vs heur@3200 | — | — | — | — | — | — | — | — | — |
-| heur@12800 vs heur@6400 | — | — | — | — | — | — | — | — | — |
+| matchup | n | W/D/L | winrate | winrate-z | Elo ±1σ | **paired margin** | **paired_z** | n_pair |
+|---|---|---|---|---|---|---|---|---|
+| **heur@6400 vs heur@3200** | **400** | 212/7/181 | **0.539** | **+1.6 (NS)** | +27.0 ±34 | **+2.49 pt** | **+2.61 (sig)** | 200 |
+| heur@12800 vs heur@6400 | _[running n=100]_ | — | — | — | — | — | — | — |
 
-Interpretation rubric (from the spec): h6400 ≫ h3200 → h3200 not saturated, h6400 is the new ruler;
-h6400 ≈ h3200 → search saturated near h3200; deeper wins margin but not games → "sharper ruler, not a
-stronger match agent" (the exact-endgame pattern).
+**h6400 vs h3200 (n=400) — the exact-endgame pattern, confirmed at solid n:** deeper search is a
+**sharper ruler** — paired score margin **+2.49 pt at z+2.61 (significant)** — but **NOT a significantly
+stronger match-winner**: winrate **0.539 (z+1.6, not significant)**. The two are mutually consistent: at
+the empirical ~1.6%-winrate-per-point slope, +2.49 pt ⇒ ~0.54 winrate ≈ the observed 0.539. The early
+n=48 read (+4.0 pt) regressed to +2.49 — the "a lone >1σ spike regresses" lesson; the firm effect is
+~+2.5 pt. Reaching winrate significance would need n≈800 (0.54 ⇒ z≈2.2), and the effect would still be
+small.
+
+**Read:** h3200 is **not fully saturated on score margin** (h6400 reliably out-scores it by ~2.5 pt/game)
+but **is ~saturated on winrate** (the extra points don't reliably flip games). h6400 is a *sharper* ruler,
+not a meaningfully *stronger match agent* — exactly the exact-endgame verdict shape, now for whole-game
+heuristic depth rather than the endgame tail. Consistent with the prior (`heurdepth_augoff`: depth is
+"2nd-order"; the v2.8 leaf dominates move choice — the +2.5 pt is the residual second-order gain).
 
 ---
 
@@ -134,13 +144,29 @@ _[PENDING — 50–100 high-confidence h12800/h6400-over-h3200 disagreements, pr
 
 ## Part F — Teacher / distillation feasibility
 
-_[PENDING — conditioned on Parts B/D.]_
+Decision tree (resolved once B/D land):
+- **If deeper search wins games (winrate-significant at n=400) AND Part D shows stable converged new
+  decisions concentrated in late_mid/pre_endgame** → there IS teacher signal. Plan: oversample those
+  positions; target = h12800 root choice (argmax, NOT the near-uniform visit dist — Part D shows visits
+  don't concentrate) as a policy/top-k ranking target; start from RoD_iter_01 (closest to the ruler);
+  exact K-endgame labels as an auxiliary head. Size by the converged-disagreement rate × phase mix.
+- **If deeper search wins margin but NOT games (the exact-endgame pattern)** → the gain is score-padding,
+  not outcome-flipping. Distillation EV low: a policy target from a sharper-but-outcome-neutral ruler
+  teaches point-maximisation, not win-maximisation. At most a value-calibration target (deeper-search
+  score-margin as a regression target), bounded by the same sub-point/outcome-neutral ceiling.
+- **If h6400 ≈ h3200 (saturation)** → no teacher signal; the v2.8 leaf is the ceiling; do NOT distill.
+
+_[Which branch — PENDING B/D.]_
 
 ---
 
 ## Part G — Decision output (brutally honest verdict)
 
-_[PENDING.]_
+Answers the 6 spec questions (1) h3200 saturated? (2) h6400 meaningfully stronger ruler? (3) h12800
+worth it as full-game ruler / root teacher / not? (4) RoD_iter_01 parity vs deeper search? (5) deeper
+improvements broad enough for winrate? (6) next best branch.
+
+_[PENDING — filled from B/C/D/E.]_
 
 ---
 
