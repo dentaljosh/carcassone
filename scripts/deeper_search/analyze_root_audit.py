@@ -36,12 +36,25 @@ def agree(a, b, rec):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("allpos")
-    ap.add_argument("--conf", type=float, default=0.5, help="deep top_share threshold for 'confident'")
+    ap.add_argument("allpos", help="all_positions.json OR the root_audit dir (reads pos/*.json — works mid-run)")
+    ap.add_argument("--conf", type=float, default=0.5, help="(unused; kept for compat) deep top_share gate")
     ap.add_argument("--out", default="measurement/deeper_search_ruler/root_audit")
     args = ap.parse_args(argv)
-    recs = [r for r in json.load(open(args.allpos)) if "error" not in r]
+    import glob as _glob
+    p = Path(args.allpos)
+    if p.is_dir():
+        files = _glob.glob(str(p / "pos" / "*.json")) or _glob.glob(str(p / "*.json"))
+        recs = []
+        for fp in files:
+            try:
+                recs.append(json.load(open(fp)))
+            except Exception:
+                pass
+    else:
+        recs = json.load(open(args.allpos))
+    recs = [r for r in recs if "error" not in r and "agents" in r]
     out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
     present = set()
     for r in recs:
         present.update(r["agents"].keys())
