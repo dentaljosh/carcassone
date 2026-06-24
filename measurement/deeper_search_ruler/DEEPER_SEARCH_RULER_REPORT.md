@@ -192,7 +192,26 @@ score-state slices are well covered; **all root choices are TILES-phase** (meepl
 
 ## Part E — Mechanism classification
 
-_[PENDING — 50–100 high-confidence h12800/h6400-over-h3200 disagreements, prioritised late_mid/pre_endgame.]_
+462 deep (h12800) ≠ shallow (h3200) disagreements (`partE.csv`, `partE_digest.md`). Because the suite is
+TILES-phase roots, **every disagreement is a tile-PLACEMENT** (meeple/farm decisions are downstream and
+never the audited root choice) — the same shape as the exact-endgame finding that the leak is *placement*,
+not meeple management. To get inside the placement differences, each move is applied + the turn completed
+(tile + meeple-PASS) to read its immediate scoring effect:
+
+| effect of the deep move vs the shallow move | count | % |
+|---|---|---|
+| **equal immediate turn-score** (pure geometry / blocking / future-equity) | 441 | **95.5 %** |
+| deep **forgoes** immediate completion pts (positional / tempo sacrifice) | 15 | 3.2 % |
+| deep **captures** a completion h3200 left (shallow leaves points on the table) | 6 | 1.3 % |
+
+Mean (deep − shallow) immediate = **−0.08 pt**. **The mechanism is positional, not point-grabbing:**
+h3200 *already* captures the immediate points (it only "leaves a completion" 6/462 = 1.3 % of the time);
+in 95.5 % of disagreements both placements score identically this turn and differ only in **future
+position** (blocking / future-equity / setup), and where they differ on immediate points the deeper search
+slightly *sacrifices* them (15 vs 6). This is exactly why h6400's **+2.49 pt full-game margin** does **not**
+convert to winrate: it is **better positioning that compounds a couple of points over ~144 moves**, not the
+recovery of blunders that would swing outcomes. The deeper search sees future value the v2.7/v2.8 leaf
+(and the shallow tree) cannot — but that value is sub-decisive.
 
 ---
 
