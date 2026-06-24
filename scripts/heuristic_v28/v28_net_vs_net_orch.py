@@ -233,7 +233,10 @@ def main(argv=None):
     ap.add_argument("--out-root", required=True)
     ap.add_argument("--out-subdir", default=None)
     ap.add_argument("--shared-claim", action="store_true")
-    ap.add_argument("--claim-stale-secs", type=int, default=5400)
+    ap.add_argument("--claim-stale-secs", type=int, default=300)  # was 5400 (90min): 300s lets a
+    # dead box's in-flight claims be reclaimed WITHIN a screen by the drain barrier below; a
+    # sims=200 game is <60s, so a LIVE claim is never falsely judged stale.
+    ap.add_argument("--drain-timeout-secs", type=int, default=900)  # bound the drain wait
     ap.add_argument("--claim-host", default=socket.gethostname())
     ap.add_argument("--summary-only", action="store_true")
     args = ap.parse_args(argv)
@@ -293,11 +296,44 @@ def main(argv=None):
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
-                    continue
+                    continue   # peer claimed this unit (work-stealing) — skip, drain waits below
                 results.append(r); done += 1
-                if done % 10 == 0 or done == len(todo):
+                if done % 10 == 0:
                     el = time.perf_counter() - t0
-                    print(f"  {done}/{len(todo)} ({el/done:.1f}s/game, ~{(len(todo)-done)*el/done/60:.0f} min left)", flush=True)
+                    print(f"  {done} played by this box ({el/done:.1f}s/game)", flush=True)
+            # ---- DRAIN-TO-COMPLETION BARRIER (2026-06-23 fix for 2-box work-stealing) ----
+            # Without this, a client finishing its imap pass tallies a PARTIAL result: it
+            # SKIPPED (never waited on) units the peer claimed, so the fast box writes
+            # result.json at e.g. 80/100 while the slow box is still playing. Instead, keep
+            # re-mapping the still-missing units until ALL N have JSON: a unit the peer is
+            # actively playing has a fresh claim -> _play_one returns None fast (no dup work);
+            # a DEAD peer's claims go stale (--claim-stale-secs) -> we reclaim + play them.
+            # Self-balancing + self-healing with NO speed-ratio prediction. No-op single-box.
+            if args.shared_claim:
+                drain_deadline = time.perf_counter() + args.drain_timeout_secs
+                idle = 0
+                while True:
+                    remaining = [t for t in tasks
+                                 if not _result_path(out, args.sims, args.c_puct, t[1], t[2]).exists()]
+                    if not remaining:
+                        print(f"  [drain] complete — all {len(tasks)} units have results", flush=True)
+                        break
+                    if time.perf_counter() > drain_deadline:
+                        print(f"  [drain] TIMEOUT after {args.drain_timeout_secs}s — {len(remaining)} "
+                              f"units still missing; tallying partial", flush=True)
+                        break
+                    got = 0
+                    for r in pool.imap_unordered(_play_one, remaining, chunksize=1):
+                        if r is not None:
+                            results.append(r); got += 1
+                    if got == 0:
+                        idle += 1
+                        print(f"  [drain] {len(remaining)} unit(s) in flight on the peer "
+                              f"(idle round {idle}); waiting", flush=True)
+                        time.sleep(10)
+                    else:
+                        idle = 0
+                        print(f"  [drain] reclaimed+played {got}; {len(remaining)-got} left", flush=True)
     for t in tasks:
         p = _result_path(out, args.sims, args.c_puct, t[1], t[2])
         if p.exists() and not any(r.seed == t[1] and r.a_player == t[2] for r in results):
