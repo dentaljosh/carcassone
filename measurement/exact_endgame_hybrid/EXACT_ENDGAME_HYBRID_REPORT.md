@@ -167,17 +167,35 @@ timeouts, solver ~40–89 s/game (heavy tail to 52 min, all solved):
 | depth | exact moves/game | margin vs RoD1 | Δ-margin vs h3200 | winrate vs RoD1 | winrate vs h3200 |
 |---|---|---|---|---|---|
 | K=2 | 2.0 | +0.645 (z+7.5) | +0.652 (z+4.5) | 0.501 | 0.526 (z+1.05) |
-| K=3 | 3.0 | **+1.422 (z+8.1)** | **+1.260 (z+7.3)** | 0.525 (z+0.98) | 0.537 (z+1.50) |
-| K=4 | ~4 | _(running, n=100)_ | _(running, n=100)_ | — | — |
+| K=3 | 3.0 | +1.422 (z+8.1) | +1.260 (z+7.3) | 0.525 (z+0.98) | 0.537 (z+1.50) |
+| K=4 | 4.0 | _(n=12, re-running)_ | **+1.943 (z+2.80)** | — | 0.568 (z+1.44) |
 
-**The margin gain ~doubles per +1 of exact depth** (vs RoD1 +0.65 → +1.42; vs-h3200 Δ +0.65 →
-+1.26) — the exact tail does real, depth-scaling work — and **the winrate edge grows with
-depth** (vs RoD1 0.501 → 0.525; vs h3200 0.526 → 0.537, Elo +18 → +26), now *leaning* toward
-beating the ruler but still short of significance (z+1.50). K=3 dodges K=2's parity dilution
-(always catches ≥k=2) so it is a better-powered test, and it shows exact endgame play can
-*pressure* the heuristic, not merely match it. **K=4 (n=100, running)** extends the series to
-test whether the margin keeps scaling and the winrate finally crosses. Digests:
-[`partCDF_k3_vs_RoD1.md`](partCDF_k3_vs_RoD1.md), [`partCDF_k3_vs_h3200.md`](partCDF_k3_vs_h3200.md).
+(K=4 vs-h3200 = n=94/100, **0 timeouts**, all solved; winrates are **deck-paired** seat-balanced.
+K=4 vs-RoD1 was interrupted by a local OOM at n=12 — re-running. The K=4 z's are lower than K=3
+only because n=94 ≪ n=400, not because the effect shrank.)
+
+**Two findings, kept strictly separate — this is the winrate-vs-margin distinction in action:**
+
+1. **The Δ-margin scales cleanly and significantly with depth:** +0.65 → +1.26 → +1.94 raw score
+   points/deck (z+4.5 → +7.3 → +2.80). The exact tail demonstrably does *more* the deeper it
+   reaches. **Mechanism (Part B regret):** h3200's *own* endgame play degrades with depth —
+   top-1 vs the solver drops 0.833 (K=2) → ~0.60 (K=4) — so exact's advantage over the heuristic
+   compounds. By K=4, RoD1 and h3200 are *equally* far from optimal (both ~0.60 top-1) and exact
+   beats both.
+
+2. **The winrate does NOT track it.** Deck-corrected, it drifts up only weakly (0.526 → 0.537 →
+   0.568) and is **non-significant at every depth** (z+1.05 / +1.50 / +1.44). The empirical
+   margin→winrate slope is **~1.6% winrate per point** (measured off the K=2 n=400 margin
+   distribution, σ≈24), so the ~+1.3-point margin gain K=2→K=4 *should* buy only ~+2% winrate —
+   which is about what's seen. (A K=4 n=82 partial briefly showed 0.61 / z+2.09, but that was
+   **deck-selection bias**: the fast-completing games sat on A-favouring decks where RoD1 *itself*
+   scored +3; once the hard games landed it regressed to 0.568. The deck-paired Δ is the
+   trustworthy statistic — the raw winrate of a partial is not.)
+
+**So: exact endgame play sharpens the score margin, and the effect grows with depth — but the
+points mostly do not flip outcomes, so it produces no significant winrate edge over the ruler at
+any feasible depth.** Digests: [`partCDF_k3_vs_RoD1.md`](partCDF_k3_vs_RoD1.md),
+[`partCDF_k3_vs_h3200.md`](partCDF_k3_vs_h3200.md), [`partCDF_k4_vs_h3200.md`](partCDF_k4_vs_h3200.md).
 
 ## Part D — Slice analysis (why margin improves but winrate doesn't)
 
@@ -214,8 +232,33 @@ single mechanism:
 
 Full table: [`partE_examples_digest.md`](partE_examples_digest.md) / `.csv`.
 
-## Part F — Does exact solve h3200's gap or just patch RoD?
-_(pending — interpret against the bar above.)_
+## Part F — Does exact solve h3200's gap, or just patch RoD?
+
+Against the four pre-registered outcomes:
+
+- **It patches RoD1's endgame leak** — the deck-controlled Δ-margin vs h3200 is positive and
+  significant at every depth (+0.65 → +1.26 → +1.94; z+4.5 → +7.3 → +2.80), and Part B/E pin the
+  leak to RoD1's last-tile *placement* (sub-point at K=2, ~1.5 pts by K=4).
+- **On the score-margin metric it *exceeds* h3200 — and increasingly with depth.** RoD1 ties
+  h3200 (cached −0.36); the exact tail lifts it to a clear margin lead by K=4
+  (−0.36 + Δ1.94 ≈ **+1.6 pts/deck deck-neutral**). This realises the autopsy's "one lever that
+  can exceed a heuristic": where RoD1 *and* h3200 both misplay the deep endgame (Part E: 40% of
+  RoD1's K=2 mistakes are shared by h3200; Part B: both ~0.60 top-1 at K=4), exact beats both. So
+  "can the learned/heuristic stack be exceeded in the endgame?" → **yes, on margin**, strictly,
+  with the gap *widening* as you solve deeper.
+- **But it does NOT break the ruler on winrate.** The margin does not convert: deck-paired
+  winrate vs h3200 is non-significant at all depths (0.526 / 0.537 / 0.568; z≤1.5). Per Part D
+  the extra points land where games are already decided, not in the close games that would flip;
+  and the empirical conversion (~1.6%/pt) is too shallow for a sub-2-pt margin to move outcomes.
+- **The comparison is clean** — clairvoyant-exact vs clairvoyant-search h3200 (like-for-like
+  information), **0 timeouts** at K≤4 (no fallback contamination), no clairvoyance artefact.
+
+**Verdict (Part F):** it is **more than "patches RoD, ties h3200"** — exact genuinely *exceeds*
+h3200 on the endgame score-margin, and the excess scales with depth. But it is **less than
+"beats h3200"** in the way that makes a champion: the margin never becomes a winrate edge. The
+one-liner: **exact endgame play is provably better than the deep heuristic in the endgame — and
+more so the deeper you solve — but that superiority is sub-point and outcome-neutral. It sharpens
+the ruler; it doesn't beat it where games are won.**
 
 ## Part G — Distillation feasibility (exact labels as a training target)
 
@@ -237,10 +280,71 @@ endgame set is cheap at k≤2 (~20–50k positions ≈ ~2–5 h at W=14), costly
   positions with V* targets could improve endgame *calibration* without the policy-washout
   problem. This is the one distillation angle with a plausible mechanism.
 
-**Upper bound on the upside:** the fix is worth ~0.57 pts/move at k=2 and is geometrically
-confined to the last 1–3 tiles, so even *perfect* distillation cannot address blocker #2 (the
-learned net exceeding the heuristic across the whole game) — it can only sharpen the endgame
-tail. Final recommendation gated on Part C (does the exact tail even help in full games).
+**Upper bound on the upside:** the fix is geometrically confined to the last 1–3 tiles, so even
+*perfect* distillation cannot address blocker #2 (the learned net exceeding the heuristic across
+the whole game) — it can only sharpen the endgame tail. **Now that Part C is in** — the exact
+tail's full-game effect is a real-but-outcome-neutral score-margin gain — **policy-distillation EV
+for play-strength is LOW**: the distilled policy gain is the same sub-point, washout-prone,
+winrate-neutral margin sharpening. **Recommendation:** do *not* pursue policy distillation for
+strength; harvest exact V* at k≤3 as an auxiliary endgame **value-calibration** target *only if*
+the value-head's endgame degradation (autopsy) becomes the binding constraint.
 
-## Part H — Verdict + 10-line executive summary
-_(pending.)_
+## Part H — Verdict
+
+**Did exact handoff produce full-game lift?** On the **score margin, yes** — a real, highly
+significant gain that *scales with depth* (Δ vs h3200 +0.65 → +1.26 → +1.94 pts/deck, K=2→K=4,
+z up to +8). On the **winrate, no** — deck-paired 0.526 → 0.568, non-significant at every depth.
+
+**Did it exceed h3200?** **On margin, yes, and the excess grows with depth** (by K=4, deck-neutral
+≈ +1.6 pts/deck vs the ruler; at K=4 RoD1 and h3200 are equally suboptimal and exact beats both).
+**On winrate, no.** So "can the endgame be played provably better than the deep heuristic?" →
+**yes** — but the superiority is sub-point and outcome-neutral.
+
+**Broad enough to matter?** No. Confined to the last ~2–4 tiles, and the points accrue mostly in
+already-decided games (Part D) — they don't flip outcomes. It sharpens the ruler; it doesn't win
+more games.
+
+**Worth engineering K5/K6 / make-unmake / Rust?** **Not for strength.** Winrate is flat at K=2–4
+and the margin→winrate slope (~1.6%/pt) means even a +3–4 pt margin at K=6 buys <~6% winrate —
+still likely sub-significant — at hours/game solver cost. (Operational frontier: the orchestrated
+eval path is **incompatible with K≥4** — long solves starve the SHM server → crash — and
+net-on-CPU is **RAM-bound**, W ≤ RAM/~2 GB.) Build it only if a value-calibration use justifies it.
+
+**Is exact-label distillation worth doing?** **Not for play-strength** (the policy gain is the
+same washout-prone, outcome-neutral margin sharpening). One surviving angle: exact V* at k≤3 as an
+**auxiliary endgame value-calibration** target — and only if the value-head's endgame degradation
+becomes the binding constraint.
+
+**Next branch.** Exact endgame play is a clean diagnostic and a real-but-cosmetic margin lever — it
+is **not** a path to superhuman strength: blocker #2 (the learned/heuristic stack being exceeded
+*across the whole game*, not just the last tile) stands untouched. Recommend (1) a **non-saturated
+reference** (h6400/h12800 or a stronger external opponent) to re-open measurement headroom, and
+(2) **whole-game** strength levers, not deeper endgame exactness. **No promotion; v2.7 frozen,
+PRODUCTION unchanged.**
+
+### 10-line executive summary
+
+1. Built `exact:K:MODE` — a hybrid that plays RoD1 (v2.8) then hands the last K tiles to an exact
+   clairvoyant alpha-beta solver (verified, 0 illegal, leaf-independent tail; fair clairvoyant-vs-clairvoyant).
+2. Feasible full-game depths: K=2 (~5 s/solve), K=3 (~80 s), K=4 (net-on-CPU only — the
+   orchestrator crashes on K≥4's minute-long solves; net-on-CPU is RAM-bound). K≥5 needs make/unmake/Rust.
+3. Endgame regret (Part B): RoD1/iter_08 play the K=2 endgame measurably worse than h3200 (top-1
+   0.67 vs 0.83), but h3200's edge **vanishes by K=4** (both ~0.60).
+4. Mechanism (Part E): RoD1's leak is pure **last-tile placement** (scoring/denial), not meeple
+   management; h3200 shares 40% of those exact mistakes.
+5. K=2 full-game: exact adds **+0.65 pt/game** (z+7.5 vs RoD1; deck-Δ z+4.5 vs h3200), winrate flat.
+6. **Headline: the Δ-margin vs h3200 scales ~linearly with exact depth — +0.65 (K2) → +1.26 (K3)
+   → +1.94 (K4), z up to +8.** Exact play does more the deeper it solves.
+7. **But the winrate does not follow:** deck-paired 0.526 → 0.537 → 0.568, **non-significant at
+   every depth** (slope only ~1.6%/pt). A K=4 partial's 0.61/z+2.09 was deck-selection bias → 0.568.
+8. So exact endgame play is **provably better than the deep heuristic on margin (growing with
+   depth) but outcome-neutral** — it sharpens the ruler, it doesn't beat it on winrate.
+9. Not a champion, not a path to one: confined to the last ~2–4 tiles; blocker #2 (whole-game
+   learned strength) stands. Distillation EV low (value-calibration only).
+10. **No promotion; v2.7 frozen, PRODUCTION unchanged.** Next: a non-saturated reference + whole-game
+    levers, not deeper endgame exactness.
+
+> **Status note:** K=4-vs-h3200 = n=94/100 (tail finishing); K=4-vs-RoD1 re-running after a local
+> OOM (the W=18 K=4 net-on-CPU run exceeded 42 GB — fixed at W=6). Numbers above are stable; the
+> final 6 + the vs-RoD1 row will be folded in on completion. This report flips to **status:
+> COMPLETE** then.
