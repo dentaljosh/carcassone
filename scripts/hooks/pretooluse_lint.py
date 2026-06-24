@@ -17,9 +17,17 @@ Read handling (the 2026-06-19 context-discipline add): a whole-file `Read`
 governance CSVs, any >50KB doc) is the #1 avoidable context cost behind the
 "context fills to 400K fast" problem — advise grep/offset. Advisory only.
 
+Block-message design (the 2026-06-23 cd-loop fix): when a block has a single
+mechanical fix, the message hands over the CORRECTED command verbatim ("copy
+this line") rather than describing the fix. The model's failure mode is
+rebuilding the command from memory on each retry and re-dropping the same token
+(the cd got dropped 6x in a row, 2026-06-23) — a paste-ready string defeats that
+where an instruction does not. A loop-breaker (see _recent_block_count) escalates
+loudly once the same error class has fired repeatedly in a short window.
+
 Escape hatches (put in the command): `# nolint` (skip all), `# allow-sleep`,
-`# allow-path`, `# allow-doclint`. For Read, pass an explicit `limit` to read
-a known-large file whole on purpose (suppresses the nudge).
+`# allow-path`, `# allow-doclint`, `# allow-nocd`. For Read, pass an explicit
+`limit` to read a known-large file whole on purpose (suppresses the nudge).
 """
 from __future__ import annotations
 
@@ -29,6 +37,7 @@ import sys
 import time
 from pathlib import Path
 
+REPO = "/home/doctor/projects/carcassone"
 LOG = Path(__file__).resolve().parent.parent.parent / ".claude" / "tool_failures.jsonl"
 
 
@@ -39,6 +48,34 @@ def _log(rec: dict) -> None:
             f.write(json.dumps(rec) + "\n")
     except Exception:
         pass
+
+
+def _recent_block_count(signature: str, window_s: int = 900) -> int:
+    """How many times a block whose reason contains `signature` has fired in the
+    last `window_s` seconds (scan the tail of the block log). Used as a loop-
+    breaker: a repeat means the model is re-sending a near-identical broken
+    command and needs a louder, switch-tactics nudge. Fail-open -> 0."""
+    try:
+        if not LOG.exists():
+            return 0
+        now = time.time()
+        count = 0
+        with open(LOG) as f:
+            tail = f.readlines()[-80:]
+        for ln in tail:
+            try:
+                rec = json.loads(ln)
+            except Exception:
+                continue
+            if rec.get("kind") != "pre_block":
+                continue
+            if now - float(rec.get("ts", 0)) > window_s:
+                continue
+            if any(signature in r for r in rec.get("reasons", [])):
+                count += 1
+        return count
+    except Exception:
+        return 0
 
 
 def _foreground_sleep_ge(cmd: str, thresh: int = 10) -> float | None:
@@ -76,10 +113,10 @@ def _ssh_remote_no_cd(cmd: str) -> str | None:
     """A remote `ssh <host> '<inner>'` whose inner command is repo-relative
     (git / python scripts / bash scripts / pytest / .venv) but has no `cd` into
     the repo. The remote shell lands in $HOME, so the command fails ('not a git
-    repository' / 'No such file') — the recurring cd-thrash (5 identical broken
-    retries, 2026-06-18). Always-wrong -> block. The robust fix is to pipe a
-    script: `ssh host 'bash -s' < script.sh` with `cd` as line 1, or inline
-    `ssh host 'cd /home/doctor/projects/carcassone && ...'`."""
+    repository' / 'No such file') — the recurring cd-thrash (6 identical broken
+    retries, 2026-06-23). Always-wrong -> block. The message hands over the
+    corrected command VERBATIM (the model kept re-dropping the cd when asked to
+    retype) plus the piped-script alternative."""
     m_ssh = re.search(r"\bssh\b", cmd)
     if not m_ssh:
         return None
@@ -102,12 +139,19 @@ def _ssh_remote_no_cd(cmd: str) -> str | None:
     if re.search(r"(^|;|&&|\|\|?|\bnice\s+-n\s+\d+\s+)\s*"
                  r"(git|python3?|\.?/?scripts/|bash\s+scripts/|\.venv/|pytest)\b", inner):
         snippet = inner[:48].replace("\n", " ")
+        # Inject `cd <repo> &&` right after the opening quote of the remote arg so
+        # the fix is COPY-PASTE, not retype-from-intent (which is how the cd kept
+        # getting dropped, 2026-06-23). Best-effort: nested same-quote inners may
+        # truncate, but the printed line still carries the cd in the right place.
+        inject = m_ssh.end() + m.start(2)
+        fixed = cmd[:inject] + f"cd {REPO} && " + cmd[inject:]
         return ("remote `ssh … '" + snippet + "…'` runs a repo-relative command "
                 "with no `cd` — the remote shell lands in $HOME and this fails "
-                "('not a git repository' / No such file). Pipe a script "
-                "(`ssh host 'bash -s' < script.sh`, cd on line 1) or inline "
-                "`ssh host 'cd /home/doctor/projects/carcassone && …'`. "
-                "(Override: add `# allow-nocd`.)")
+                "('not a git repository' / No such file).\n"
+                "  Corrected (copy this line VERBATIM — do NOT retype it):\n"
+                "    " + fixed + "\n"
+                "  (alt: pipe a script — `ssh host 'bash -s' < script.sh` with `cd` "
+                "on line 1. Override: add `# allow-nocd`.)")
     return None
 
 
@@ -237,6 +281,19 @@ def main() -> int:
 
     if blocks:
         msg = "PreToolUse lint blocked this command:\n- " + "\n- ".join(blocks)
+        # Loop-breaker: if this SAME class of block has already fired repeatedly in
+        # a short window, the model is re-sending a near-identical broken command
+        # (the 2026-06-23 cd-thrash). Escalate loudly so it switches tactic — copy
+        # the corrected line / pipe a script — instead of retyping the same string.
+        sig = "no `cd`" if any("no `cd`" in b for b in blocks) else None
+        if sig:
+            prior = _recent_block_count(sig)
+            if prior >= 2:
+                msg = (f"⛔ REPEAT BLOCK ({prior + 1}x in 15min) — you keep re-sending this "
+                       f"same broken command; the `cd` keeps getting dropped because you are "
+                       f"rebuilding it from memory. STOP. Copy the 'Corrected (copy this line "
+                       f"VERBATIM)' command below EXACTLY, or switch to "
+                       f"`ssh host 'bash -s' < script.sh`.\n\n" + msg)
         _log({"ts": time.time(), "kind": "pre_block", "cmd": cmd[:500],
               "reasons": blocks})
         print(msg, file=sys.stderr)
