@@ -1,0 +1,24 @@
+{
+  "2": {
+    "n": 3,
+    "solved": 3,
+    "sec_med": 4.458362937992206,
+    "sec_max": 6.482712475000881,
+    "node_med": 1654,
+    "node_max": 2604,
+    "legal_med": 53,
+    "illegal": 0,
+    "verdict": "FULLGAME-MARGINAL"
+  },
+  "3": {
+    "n": 3,
+    "solved": 3,
+    "sec_med": 80.18483873299556,
+    "sec_max": 119.32710195999243,
+    "node_med": 25764,
+    "node_max": 74101,
+    "legal_med": 47,
+    "illegal": 0,
+    "verdict": "MICRO-ONLY"
+  }
+}

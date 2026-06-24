@@ -62,6 +62,7 @@ from multiprocessing import get_context
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.dirname(__file__))   # scripts/level2 -> endgame_solver
 
 import torch
 from wingedsheep.carcassonne.objects.game_phase import GamePhase
@@ -75,6 +76,7 @@ from carcassonne_ai.mcts import HeuristicMCTS, NeuralMCTS
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.run_manifest import game_tag, write_manifest
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+import endgame_solver as S  # exact endgame solver (same dir); leaf-independent terminal scoring
 
 REPO = Path(__file__).resolve().parent.parent.parent
 EVAL_ROOT = REPO / "data" / "level2_hybrid"
@@ -83,6 +85,16 @@ EVAL_ROOT = REPO / "data" / "level2_hybrid"
 ITER8_SIMS = 200
 ITER8_CPUCT = 3.0
 ITER8_RESIDUAL_SCALE = 0.25
+
+# Exact endgame-solver modes for the `exact:K:MODE` agent.
+#   clair -> clairvoyant minimax + alpha-beta (FAST; a like-for-like comparison vs the
+#            clairvoyant-search production agents, which also descend the true deck order).
+#   marg  -> marginalized expectiminimax (fair-information / honest hidden-bag value; NO
+#            alpha-beta -> realistically tractable only ~K<=2).
+# The exact tail is LEAF-INDEPENDENT (flat_base_score = true terminal score), so meeple_k
+# only ever affects the NEURAL prefix, never an exact move.
+_EXACT_MODES = {"clair": "clairvoyant", "marg": "marginalized"}
+EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
 
 # Per-worker state (set in _worker_init).
 _W: dict = {}
@@ -114,11 +126,22 @@ def parse_agent(spec: str):
         if K < 0 or sims <= 0:
             raise ValueError(f"bad K/sims in {spec!r}")
         return ("hybrid", K, sims)
-    raise ValueError(f"unknown agent spec {spec!r}; expected iter8|heur@N|hybrid:K:N")
+    if spec.startswith("exact:"):
+        parts = spec.split(":")
+        if len(parts) != 3:
+            raise ValueError(f"exact spec must be exact:K:MODE (MODE=clair|marg), got {spec!r}")
+        K, mode = int(parts[1]), parts[2]
+        if K < 0:
+            raise ValueError(f"bad K in {spec!r}")
+        if mode not in _EXACT_MODES:
+            raise ValueError(f"bad mode {mode!r} in {spec!r}; expected clair|marg")
+        return ("exact", K, mode)        # 3rd field is the MODE string, not sims
+    raise ValueError(f"unknown agent spec {spec!r}; expected iter8|heur@N|hybrid:K:N|exact:K:MODE")
 
 
 def _needs_net(spec: str) -> bool:
-    return parse_agent(spec)[0] in ("iter8", "hybrid")
+    # exact needs the net for the early/mid prefix AND the timeout fallback move.
+    return parse_agent(spec)[0] in ("iter8", "hybrid", "exact")
 
 
 def k_remaining(state) -> int:
@@ -217,16 +240,90 @@ class _HybridAgent:
         return int(self._neural.best_action(board))
 
 
+class _ExactAgent:
+    """Neural (RoD/iter8) policy until the first TILES decision with k_remaining<=K,
+    then EXACT-SOLVER play for the rest of the game (the boundary tile's meeple + all
+    later turns). Latching is the SAME trigger as _HybridAgent (turn-atomic, one-way).
+
+    The chosen move is min(optimal_actions): deterministic, and value-irrelevant within
+    the optimal set under optimal play. The solver is minimax-optimal vs a WORST-CASE
+    opponent — NOT a best-response to this specific (suboptimal) opponent — i.e. a valid,
+    conservative endgame policy, not an oracle exploiter.
+
+    Timeout fallback: a solve that exceeds the node budget (BudgetExceeded) falls back to
+    the NEURAL move for THAT decision only (the agent stays latched and retries the solver
+    next ply on the now-smaller tree). Fallbacks are counted (n_timeouts), never hidden.
+    mode='marg' has no alpha-beta and will time out above ~K=2."""
+
+    def __init__(self, base_eval, game_farm, game_plain, K, mode, seed, meeple_k=0.0,
+                 budget=EXACT_BUDGET):
+        self._neural = _make_iter8_mcts(base_eval, game_farm, seed, meeple_k)
+        self._game = game_plain
+        self._K = K
+        self._mode = _EXACT_MODES[mode]
+        self._ab = (self._mode == "clairvoyant")   # alpha-beta is clairvoyant-only
+        self._budget = budget
+        self._latched = False
+        self.latch_k = None
+        self.neural_moves = 0
+        self.heur_moves = 0          # kept 0 — harness symmetry only
+        # exact instrumentation (read by _play_one into GameResult)
+        self.exact_moves = 0
+        self.n_timeouts = 0
+        self.solver_secs = 0.0
+        self.solver_nodes = 0
+        self.max_solve_secs = 0.0
+        self.latch_score = None      # margin (mover perspective) at the latching decision
+        self.latch_meeples = None    # mover's meeples-in-hand at latch
+        self.latch_nlegal = None     # legal action count at latch
+
+    def move(self, board) -> int:
+        if not self._latched:
+            latch_now, k = hybrid_should_latch(board.state, self._K)
+            if latch_now:
+                self._latched = True
+                self.latch_k = k
+                mv = board.state.current_player
+                sc = board.state.scores
+                self.latch_score = int(sc[mv] - sc[1 - mv])
+                self.latch_meeples = int(board.state.meeples[mv])
+                self.latch_nlegal = int(self._game.get_valid_moves(board).sum())
+        if not self._latched:
+            self._neural.clear()
+            self.neural_moves += 1
+            return int(self._neural.best_action(board))
+        t0 = time.perf_counter()
+        try:
+            res = S.solve(self._game, board, mode=self._mode,
+                          budget=self._budget, alphabeta=self._ab)
+            dt = time.perf_counter() - t0
+            self.solver_secs += dt
+            self.max_solve_secs = max(self.max_solve_secs, dt)
+            self.solver_nodes += res.nodes
+            self.exact_moves += 1
+            return int(min(res.optimal_actions))
+        except S.BudgetExceeded:
+            self.solver_secs += time.perf_counter() - t0
+            self.n_timeouts += 1
+            self._neural.clear()
+            self.neural_moves += 1       # fallback move; stays latched
+            return int(self._neural.best_action(board))
+
+
 def make_agent(spec: str, *, base_factory, game_farm, game_plain, seed, meeple_k=0.0):
     """base_factory(game_farm) -> raw net evaluator (local or remote SHM). Only
-    called for agents that need the net (iter8, hybrid); heur never touches it.
+    called for agents that need the net (iter8, hybrid, exact); heur never touches it.
     meeple_k>0 swaps in the v2.8 flat meeple-economy leaf (default 0.0 == v2.7)."""
-    kind, K, sims = parse_agent(spec)
+    kind, K, sims_or_mode = parse_agent(spec)
     if kind == "iter8":
         return _Iter8Agent(base_factory(game_farm), game_farm, seed, meeple_k)
     if kind == "heur":
-        return _HeurAgent(game_plain, sims, seed, meeple_k)
-    return _HybridAgent(base_factory(game_farm), game_farm, game_plain, K, sims, seed, meeple_k)
+        return _HeurAgent(game_plain, sims_or_mode, seed, meeple_k)
+    if kind == "exact":
+        return _ExactAgent(base_factory(game_farm), game_farm, game_plain, K, sims_or_mode,
+                           seed, meeple_k)
+    return _HybridAgent(base_factory(game_farm), game_farm, game_plain, K, sims_or_mode,
+                        seed, meeple_k)
 
 
 # --------------------------------------------------------------------------- #
@@ -250,6 +347,23 @@ class GameResult:
     b_heur_moves: int = 0
     a_latch_k: int | None = None
     b_latch_k: int | None = None
+    # exact-solver handoff instrumentation (0/None unless the side is an exact:K:MODE agent)
+    a_exact_moves: int = 0
+    b_exact_moves: int = 0
+    a_timeouts: int = 0
+    b_timeouts: int = 0
+    a_solver_secs: float = 0.0
+    b_solver_secs: float = 0.0
+    a_solver_nodes: int = 0
+    b_solver_nodes: int = 0
+    a_max_solve_secs: float = 0.0
+    b_max_solve_secs: float = 0.0
+    a_latch_score: int | None = None
+    b_latch_score: int | None = None
+    a_latch_meeples: int | None = None
+    b_latch_meeples: int | None = None
+    a_latch_nlegal: int | None = None
+    b_latch_nlegal: int | None = None
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -358,6 +472,8 @@ def _play_one(args) -> GameResult | None:
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
     diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
+    def gx(agent, attr, default=0):
+        return getattr(agent, attr, default)
     r = GameResult(
         seed=seed, a_seat=a_seat, agent_a=agent_a, agent_b=agent_b,
         score_p0=int(s0), score_p1=int(s1), diff=int(diff),
@@ -366,6 +482,14 @@ def _play_one(args) -> GameResult | None:
         a_neural_moves=a.neural_moves, a_heur_moves=a.heur_moves,
         b_neural_moves=b.neural_moves, b_heur_moves=b.heur_moves,
         a_latch_k=a.latch_k, b_latch_k=b.latch_k,
+        a_exact_moves=gx(a, "exact_moves"), b_exact_moves=gx(b, "exact_moves"),
+        a_timeouts=gx(a, "n_timeouts"), b_timeouts=gx(b, "n_timeouts"),
+        a_solver_secs=round(gx(a, "solver_secs", 0.0), 3), b_solver_secs=round(gx(b, "solver_secs", 0.0), 3),
+        a_solver_nodes=gx(a, "solver_nodes"), b_solver_nodes=gx(b, "solver_nodes"),
+        a_max_solve_secs=round(gx(a, "max_solve_secs", 0.0), 3), b_max_solve_secs=round(gx(b, "max_solve_secs", 0.0), 3),
+        a_latch_score=gx(a, "latch_score", None), b_latch_score=gx(b, "latch_score", None),
+        a_latch_meeples=gx(a, "latch_meeples", None), b_latch_meeples=gx(b, "latch_meeples", None),
+        a_latch_nlegal=gx(a, "latch_nlegal", None), b_latch_nlegal=gx(b, "latch_nlegal", None),
     )
     _save(p, r)
     return r
@@ -408,6 +532,11 @@ def _summary(results, agent_a, agent_b):
     a_heur = [r.a_heur_moves for r in results]
     a_neu = [r.a_neural_moves for r in results]
     latches = [r.a_latch_k for r in results if r.a_latch_k is not None]
+    # exact-solver instrumentation (A side)
+    a_exact = [r.a_exact_moves for r in results]
+    a_solv = [r.a_solver_secs for r in results]
+    a_to = [r.a_timeouts for r in results]
+    a_maxsolve = [r.a_max_solve_secs for r in results]
     print()
     print(f"=== HYBRID-HANDOFF: {agent_a}  vs  {agent_b} ===")
     print(f"games:  {n}   {agent_a}: {w}W / {d}D / {losses}L   winrate {wr:.3f} (z={wr_z:+.2f})")
@@ -419,6 +548,11 @@ def _summary(results, agent_a, agent_b):
         print(f"A handoff: heur-moves/game mean {sum(a_heur)/n:.1f} "
               f"(range {min(a_heur)}-{max(a_heur)}), neural-moves/game mean {sum(a_neu)/n:.1f}; "
               f"latched in {len(latches)}/{n} games")
+    if any(a_exact):
+        print(f"A EXACT: exact-moves/game mean {sum(a_exact)/n:.1f} "
+              f"(range {min(a_exact)}-{max(a_exact)}); solver {sum(a_solv)/n:.2f}s/game "
+              f"(max-single-solve {max(a_maxsolve):.1f}s); timeouts {sum(a_to)} over {n} games; "
+              f"latched {len(latches)}/{n}")
     return {
         "agent_a": agent_a, "agent_b": agent_b, "n": n, "W": w, "D": d, "L": losses,
         "winrate": wr, "winrate_z": wr_z, "elo": elo, "elo_sig_1sigma": elo_sig,
@@ -427,6 +561,10 @@ def _summary(results, agent_a, agent_b):
         "a_heur_moves_mean": (sum(a_heur) / n) if n else 0,
         "a_neural_moves_mean": (sum(a_neu) / n) if n else 0,
         "a_latched_games": len(latches),
+        "a_exact_moves_mean": (sum(a_exact) / n) if n else 0,
+        "a_solver_secs_mean": (sum(a_solv) / n) if n else 0,
+        "a_solver_secs_max_single": max(a_maxsolve) if a_maxsolve else 0,
+        "a_timeouts_total": sum(a_to),
     }
 
 
@@ -483,8 +621,11 @@ def _smoke(args) -> int:
         s0, s1 = board.state.scores
         diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
         print(f"[smoke] a_seat={a_seat}: scores={s0}-{s1} diff(A-B)={diff:+d} moves={moves} | "
-              f"A neural/heur={a.neural_moves}/{a.heur_moves} latch_k={a.latch_k} ; "
-              f"B neural/heur={b.neural_moves}/{b.heur_moves} latch_k={b.latch_k}")
+              f"A neural/heur/exact={a.neural_moves}/{a.heur_moves}/{getattr(a,'exact_moves',0)} "
+              f"latch_k={a.latch_k} solver={getattr(a,'solver_secs',0.0):.1f}s "
+              f"(max {getattr(a,'max_solve_secs',0.0):.1f}s) timeouts={getattr(a,'n_timeouts',0)} ; "
+              f"B neural/heur/exact={b.neural_moves}/{b.heur_moves}/{getattr(b,'exact_moves',0)} "
+              f"latch_k={b.latch_k}")
         results.append((a_seat, diff))
     dt = time.perf_counter() - t0
     # sanity: a hybrid:K agent MUST have made some heur moves (handoff fired)
@@ -493,6 +634,9 @@ def _smoke(args) -> int:
         if kind == "hybrid":
             assert agent.heur_moves > 0, f"hybrid {spec} never handed off (K too small?)"
             assert agent.neural_moves > 0, f"hybrid {spec} never used neural (K too big?)"
+        if kind == "exact":
+            assert agent.exact_moves > 0, f"exact {spec} never solved (K too small / all timeouts?)"
+            assert agent.neural_moves > 0, f"exact {spec} never used neural prefix (K too big?)"
     print(f"[smoke] OK — plumbing + handoff verified ({dt:.1f}s for 2 games)")
     return 0
 
