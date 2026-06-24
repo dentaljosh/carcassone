@@ -136,11 +136,39 @@ the *worst* endgame (regret 0.69, a 15-pt worst case) — consistent with the au
 ---
 
 ## Part C — Full-game exact-hybrid evaluation
-_(pending — screens then top-ups; every cell reports WDL, winrate, winrate-Elo, paired
-margin, paired_z, n decks, timeouts, solver runtime, handoff K-distribution.)_
 
-## Part D — Slice analysis
-_(pending.)_
+**K=2 (full n=400, deck-paired both seats), v2.8 throughout.** Exact tail = RoD1 prefix until
+the first TILES decision with k≤2, then clairvoyant+alpha-beta solve. 0 timeouts,
+exact-moves/game = 2.0, latched 400/400, K@latch split 200×k=2 / 200×k=1 (the parity 50/50).
+
+| cell | W/D/L | winrate (z) | winrate-Elo | **paired score margin** |
+|---|---|---|---|---|
+| exact:2 vs **RoD1** | 198/5/197 | **0.501** (z+0.05) | +0.9 (±17.4) | **+0.645 (z+7.49)** |
+| exact:2 vs **heur@3200_v2.8** | 206/9/185 | 0.526 (z+1.05) | +18.3 (±17.4) | +1.09 raw (z+0.99) · **Δ +0.652 (z+4.47)** |
+
+(Δ = paired difference vs the cached RoD1-vs-h3200 run on the *identical* decks — isolates the
+exact tail.) **The result is consistent and unambiguous:** the exact K=2 tail adds a real,
+highly-significant **~+0.65 pt/game** (z+7.5 vs RoD1; deck-controlled z+4.5 vs h3200) —
+exactly recovering RoD1's ~0.57-pt/move endgame regret (Part B) — **but moves the WINRATE by
+≈ 0** (vs RoD1 literally 0.501; vs h3200 +18.3 Elo but z+1.05, **not** significant). It
+**patches the endgame leak without breaking the ruler.** Deck-neutral, exact:2 lifts RoD1 from
+the cached −0.36 margin vs h3200 to ≈ +0.29 — a tie-to-slight-margin-lead, not a winrate win.
+
+_(K=3 depth series running — does deeper exact grow the margin enough to move the winrate? →
+gates the K=4 decision.)_
+
+## Part D — Slice analysis (why margin improves but winrate doesn't)
+
+The exact gain does **not** concentrate where it would flip outcomes:
+- **vs h3200:** the +0.65 margin lands in **blowouts (paired +2.96)** not **close games
+  (−0.44, z−0.51)** — extra endgame points pile up in already-decided games. That is the
+  mechanism of the margin/winrate split.
+- **vs RoD1:** the gain is ~uniform — close +0.57 (z+5.95), blowout +0.66 (z+4.1) — but +0.57
+  pts is too small to flip close games (a flip needs the final margin to cross 0).
+- The `margin@latch` slice (already-ahead → 0.84 wr; behind → 0.17 wr) is just "leading at the
+  endgame → win", not an exact effect — the paired-Δ controls for it.
+- 0 timeouts; solver ~3.4 s/game (vs RoD1) / ~7.6 s/game (vs h3200); nodes/game ~770.
+- Full digests: [`partCDF_vs_RoD1.md`](partCDF_vs_RoD1.md), [`partCDF_vs_h3200.md`](partCDF_vs_h3200.md).
 
 ## Part E — Endgame mechanism: what the exact tail actually fixes
 
