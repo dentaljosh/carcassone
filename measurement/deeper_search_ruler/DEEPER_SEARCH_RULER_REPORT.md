@@ -1,6 +1,6 @@
 # Deeper-Search Ruler / Teacher Probe — Report
 
-**Status: IN PROGRESS (2026-06-24)** · branch `deeper-search-ruler` · **no promotion, PRODUCTION.yaml untouched, v2.7 frozen, v2.8 opt-in.**
+**Status: COMPLETE (2026-06-24)** · branch `deeper-search-ruler` · **no promotion, PRODUCTION.yaml untouched, v2.7 frozen, v2.8 opt-in.**
 
 Question: does deeper heuristic search under the **same v2.8 leaf** (v2.7 + flat `meeple_k=2`)
 produce a meaningfully stronger ruler than `heur@3200_v2.8`, and does it reveal actionable
@@ -61,11 +61,12 @@ heur-vs-heur is **RAM-light** (each worker holds one search tree ≤ N nodes, cl
 | matchup | s/game mean | median | p95 | max | moves/game | RAM/worker | crashes/OOM/timeout |
 |---|---|---|---|---|---|---|---|
 | **heur@6400 vs heur@3200** | **480** | 475 | 521 | 521 | 144 | ~0.65 GB | 0 / 0 / 0 |
-| heur@12800 vs heur@6400 | ~960 (proj.)¹ | — | — | — | 144 | ~0.7 GB | 0 / 0 / 0 |
+| **heur@12800 vs heur@6400** | **1043** | 1038 | 1154 | — | 144 | ~0.7 GB | 0 / 0 / 0 |
+| RoD_iter_01 vs heur@6400 (orch) | 455 | 456 | 502 | — | 144 | (orch) | 0 / 0 / 0 |
 
-¹ Projected from the per-move cost (a heur@N move ≈ N·~0.3 ms incl. tree + leaf; the deeper agent does
-half the moves): h6400-move ≈ 4.4 s, h3200-move ≈ 2.2 s, h12800-move ≈ 8.8 s. **Confirmed value folded in
-from the local h12800-vs-h6400 run below.** (The laptop was intended to run this leg in parallel but its
+Measured (not projected): h12800-vs-h6400 = **1043 s/game** (≈2.2× the h6400-vs-h3200 rung, as expected for
+2× the deep agent's per-move cost); RoD1-vs-h6400 via orch = 455 s/game (the heur@6400 half dominates;
+RoD1's net forwards are orch-batched and cheap). (The laptop was intended to run a leg in parallel but its
 WSL distro could not hold a >5-min detached job — see "Box note".)
 
 **Projected wall-clock (16 W local):**
@@ -133,17 +134,26 @@ ruler)? RoD_iter_01 = `iter8` net (sims=200, c_puct=3.0, residual_scale=0.25, v2
 heur@6400_v2.8, paired both-seats, via carc-orch SHM at high W. Clairvoyant-vs-clairvoyant (both descend
 the true deck) — like-for-like.
 
-**Root-level signal (already in hand, Part D):** RoD1 is **equidistant from all heuristic depths**
-(agreement RoD1~h3200 0.515 ≈ RoD1~h6400 0.516 ≈ RoD1~h12800 0.503), and the symmetric placement counts
-(==h3200-not-h6400 82 ≈ ==h6400-not-h3200 83) say RoD1's root choices are **no further from h6400 than
-from h3200**. So the prediction is **parity holds against the deeper ruler** — RoD1's distance to the
-heuristic is a *style/policy* (RPS) gap, not a *depth* gap, and deeper search doesn't widen it.
-
 | matchup | n | W/D/L | winrate | winrate-z | Elo ±1σ | paired margin | paired_z | n_pair |
 |---|---|---|---|---|---|---|---|---|
-| RoD_iter_01 vs heur@6400 | _[running n=200]_ | — | — | — | — | — | — | — |
+| **RoD_iter_01 vs heur@6400** | **200** | 85/4/111 | **0.435** | **−1.8** | −45.4 ±24 | **−4.41 pt** | **−3.24 (sig)** | 100 |
 
-_[Full-game verdict PENDING — confirms or refutes the root-level parity prediction.]_
+**RoD_iter_01 does NOT hold against the deeper ruler — it falls clearly below h6400** (winrate 0.435,
+margin **−4.41 pt at z−3.24, significant**). RoD1 reached *practical parity with h3200* (~0.50); against
+h6400 it is a clear loser. **The deeper ruler erodes the parity that h3200 conceded.**
+
+**This refutes my root-level prediction (parity) — and the why is instructive:** the Part D root *agreement*
+was equidistant (RoD1~h3200 0.515 ≈ RoD1~h6400 0.516), which I read as "no worse vs h6400." But **agreement
+≠ strength.** RoD1 disagrees with *both* depths ~48 % of the time; when it disagrees with the **deeper**
+h6400, the heuristic's move is more often the better one, so RoD1's disagreements **cost more** against h6400.
+The magnitude is consistent with transitivity on margin: RoD1-vs-h3200 ≈ −1.9 pt (winrate-parity, slight
+margin deficit) **+** h6400's +2.49 pt edge over h3200 ⇒ ≈ −4.4 pt vs h6400 (observed −4.41).
+
+**The constructive consequence:** h6400 is not a stronger *match agent* than h3200 (their winrate gap is NS),
+but it **is a meaningfully better *measurement reference*** — it **un-saturates** the RoD1-vs-h3200 parity
+that hid the learned agent's gap. The measurement-first program wanted a *non-saturated reference*; **h6400
+(and h12800) partially provide one.** (iter_08 not separately run — Part D already shows all learned agents
+diverge from the heuristics ~equally; the RPS point would behave like RoD1.)
 
 ---
 
@@ -248,6 +258,12 @@ is exactly where RoD1 diverges most (RoD1~heur ~0.40). So *if* anything, the onl
 **endgame value-calibration / score-margin regression** auxiliary — which is precisely what the
 exact-endgame branch already tried and bounded at sub-point / outcome-neutral. **No new lever.**
 
+**The Part C angle doesn't rescue it:** RoD1 *loses* to h6400 (−4.4 pt), so h6400 is a valid stronger-
+**on-margin** teacher — but distilling it can at best bring RoD1 *up to* h6400, and h6400 is itself
+sharper-not-stronger vs h3200 (margin, not winrate). So the distillation ceiling is **the heuristic's
+margin-sharpness — the v2.7/v2.8-leaf ceiling that is the project's core blocker — not a winrate
+breakthrough.** Distilling the ruler caps the net *at* the heuristic; it cannot exceed it.
+
 **Recommendation: do NOT pursue policy distillation from the deeper ruler.** Blind self-play continuation
 is also unjustified (deeper-search analysis gives no reason it would help; it would chase the same +2.5 pt
 margin that does not convert). If any micro-effort, it is value-head recalibration on deeper-search
@@ -262,9 +278,11 @@ margins — low EV, already characterised.
    score. But the winrate edge is **not significant (0.539, z+1.6)** — the extra points do not reliably
    flip games. So h3200 is ~saturated **as a match-strength ruler**, not fully saturated **as a
    score-maximiser**.
-2. **Is h6400_v2.8 a meaningfully stronger ruler?** **Sharper, not meaningfully stronger.** It is a
-   better *score* ruler (significant margin) — useful if you grade on margin — but **not a meaningfully
-   stronger match agent** (winrate NS). Same shape as the exact-endgame verdict.
+2. **Is h6400_v2.8 a meaningfully stronger ruler?** **Yes as a measurement *reference*; no as a *match
+   agent*.** vs h3200 it is sharper-not-stronger (significant margin, winrate NS). **But as a reference for
+   grading the learned agent it IS meaningfully stronger:** RoD1 was at parity with h3200 and **loses to
+   h6400 (0.435, −4.4 pt, z−3.24)** — h6400 un-saturates a ruler the learned agent had caught up to. That is
+   exactly the *non-saturated reference* the measurement-first program has been missing.
 3. **Is h12800 worth using?** **As a sharper *score* ruler, marginally; otherwise no.** h12800 out-scores
    h6400 by +3.87 pt (z+2.27, n=100 screen) — the margin keeps scaling with depth — but it costs **2×**
    (~1043 s/game), its winrate edge (0.605) is an unconfirmed n=100 screen likely to regress, and it agrees
@@ -272,19 +290,25 @@ margins — low EV, already characterised.
    small). **Not worth it as a full-game ruler** (h6400 is a sufficient sharper ruler at half the cost) and
    **not as a root teacher** (Part F). Use it only if you specifically need the sharpest available *score*
    discriminator and can pay 2×.
-4. **Does RoD_iter_01 hold parity vs deeper search?** _[full-game Part C running.]_ Root-level: RoD1 is
-   **equidistant from all depths** (~51 % agreement, ==h3200-not-h6400 ≈ ==h6400-not-h3200) → **no worse
-   against h6400 than h3200**. It reached h3200 practical parity; the root audit says that parity is **not
-   eroded by deeper search** — RoD1's gap to the heuristic is a *style/policy* gap (RPS), not a depth gap.
+4. **Does RoD_iter_01 hold parity vs deeper search?** **No — it falls clearly below h6400** (winrate 0.435,
+   margin −4.41 pt, z−3.24, n=200). RoD1 *merely reached h3200 parity*; the deeper ruler erodes it. The
+   root-audit agreement looked equidistant (RoD1~h3200 ≈ RoD1~h6400), but **agreement ≠ strength** — RoD1's
+   ~48 % disagreements cost more against the deeper (more-often-right) opponent. Its gap is part style/RPS,
+   but it is **also a depth gap** the deeper ruler exposes.
 5. **Are deeper-search improvements broad enough to matter for winrate?** **No.** The margin gain is
    sub-winrate (+2.5 pt → ~0.54, NS at n=400); only ~10 % of positions carry a stable deeper preference
    and it is matched ~1:1 by noise. Not broad enough to move outcomes.
-6. **Next best branch?** **Not deeper search, not distillation, not blind self-play.** Both endpoints of
-   "search deeper under the v2.8 leaf" — exact endgame (prior branch) and deeper whole-game heuristic
-   (this branch) — now independently land on the **same margin-not-winrate ceiling**. The v2.8 leaf
-   dominates move *choice*; more search refines *score*, not *wins*. **The blocker stands: a whole-game
-   learned component that exceeds the heuristic on WINRATE, not margin.** Deeper heuristic search is
-   exhausted as a strength lever. Stop here; do not pursue h6400/h12800 distillation or a deeper rung.
+6. **Next best branch?** Split the answer:
+   - **As a strength/teacher lever: stop.** Not a deeper rung, not h6400/h12800 distillation, not blind
+     self-play. Both "search-deeper-under-v2.8" endpoints — exact endgame (prior) and deeper whole-game
+     heuristic (this branch) — land on the **same margin-not-winrate ceiling**: the v2.8 leaf dominates move
+     *choice*; more search refines *score*, not *wins*. The blocker stands — **a learned component that beats
+     the heuristic on WINRATE, not margin.**
+   - **As a measurement reference: adopt h6400 (the one constructive output).** RoD1 saturated h3200 but
+     loses to h6400, so **future learned-agent gates/ladders should grade against h6400** (or h12800 for the
+     sharpest score-discriminator) — it is the least-saturated v2.8 reference available, which is what the
+     measurement-first program needs. h6400 is ~2× h3200's cost per game but worth it for the verdict-grade
+     gate; h12800 (4×) only if you need the sharpest score discriminator.
 
 ---
 
@@ -302,15 +326,17 @@ margins — low EV, already characterised.
    endgame/pre_endgame-weighted. Heuristic visit distributions stay near-uniform even at h12800.
 6. **Part E:** every disagreement is a tile-*placement* (suite is TILES-phase); **95.5 % are positionally
    equivalent on immediate score** — the margin is *better positioning that compounds*, not blunder-recovery.
-7. **Part C:** RoD_iter_01 holds **~parity vs h6400** — it is equidistant from all heuristic depths (root
-   audit), so its gap to the heuristic is a *style/RPS* gap, not a *depth* gap; the deeper ruler doesn't
-   erode the parity it reached vs h3200. _(full-game n=200 figure folded in below.)_
+7. **Part C:** RoD_iter_01 **does NOT hold vs h6400** — it loses (winrate 0.435, margin −4.41 pt, z−3.24,
+   n=200). It only reached *h3200* parity; the deeper ruler erodes it. (Root agreement looked equidistant,
+   but agreement ≠ strength — its disagreements cost more vs the deeper, more-often-right opponent.)
 8. **Part F:** distillation EV is **LOW** — no rich policy target (near-uniform visits), outcome-neutral
    signal, and the net adopts the deep move only 19 % of the time. No new lever; at most endgame
    value-recalibration, already characterised by the exact-endgame branch.
 9. **Verdict:** **deeper heuristic search is exhausted as a strength lever.** Both "search-deeper" endpoints
    under the v2.8 leaf — exact endgame and deeper whole-game heuristic — land on the **same
    margin-not-winrate ceiling.** The v2.8 leaf dominates move *choice*; more search refines *score*, not *wins*.
-10. **Next:** NOT a deeper rung, NOT h6400/h12800 distillation, NOT blind self-play. The structural blocker
-    stands — **a whole-game learned component that beats the heuristic on WINRATE, not margin.** No promotion;
-    PRODUCTION + champion + v2.7 unchanged; v2.8 stays opt-in.
+10. **Next:** as a *strength/teacher* lever — stop (no deeper rung, no h6400/h12800 distillation, no blind
+    self-play); the blocker stands — **a learned component that beats the heuristic on WINRATE, not margin.**
+    But the one **constructive** output: **adopt h6400 as the measurement reference** — RoD1 saturated h3200
+    yet loses to h6400, so it is the least-saturated v2.8 ruler for future learned-agent gates (what the
+    measurement-first program needs). No promotion; PRODUCTION + champion + v2.7 unchanged; v2.8 stays opt-in.
