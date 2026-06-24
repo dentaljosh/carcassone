@@ -2684,3 +2684,16 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** none (measurement/analysis only; no checkpoint, config, or production change).
 **Phase:** measurement-first
+
+## 2026-06-24 — Exact endgame-solver hybrid (exact:K): margin scales with depth, winrate does not — COMPLETE
+
+**Context:** the iter_08 autopsy (2026-06-23) localized the learned agents' costliest gap to the endgame and named the exact/endgame-solver hybrid as the highest-EV next branch (the one place an exact solver can provably exceed a heuristic). Built `exact:K:MODE` in `scripts/level2/eval_hybrid_handoff.py` — RoD1 (v2.8) prefix, then a clairvoyant alpha-beta exact solver for the final K tiles (leaf-independent; fair clairvoyant-vs-clairvoyant). Full report: `measurement/exact_endgame_hybrid/EXACT_ENDGAME_HYBRID_REPORT.md`.
+
+**Finding (FACT, deck-paired both seats):** the exact tail adds a real, highly-significant endgame SCORE-MARGIN gain that SCALES ~linearly with exact depth — Δ-margin vs h3200 +0.65 (K=2, n=400) → +1.26 (K=3, n=400) → +1.94 (K=4, n=94); z+4.5/+7.3/+2.8; vs RoD1 +0.65 → +1.42 (n=400). But the WINRATE does NOT follow: deck-paired 0.526/0.537/0.568, NON-SIGNIFICANT at every depth (z≤1.5; empirical margin→winrate slope only ~1.6%/pt). A K=4 n=82 partial's 0.61/z2.09 was deck-selection bias → regressed to 0.568 (the winrate-vs-margin distinction was decisive). Mechanism (regret micro, n=24): h3200's OWN endgame degrades with depth (top-1 0.833 K=2 → 0.667 K=4 = tied with RoD1), so exact's edge compounds. Mechanism (Part E): RoD1's leak is pure last-tile PLACEMENT, not meeple mgmt; h3200 shares 40% of those mistakes. results.csv `exact{2,3,4}_vs_{rod1,heur3200}_v28_*`.
+
+**Decision (INTERPRETATION):** exact endgame play is PROVABLY better than the deep heuristic on score-margin (and more so the deeper you solve) but the superiority is SUB-POINT and OUTCOME-NEUTRAL — it sharpens the ruler, it does not beat it on winrate. NOT a champion and NOT a path to one: confined to the last ~2–4 tiles; blocker #2 (whole-game learned strength > heuristic) stands untouched. Distillation EV low (value-calibration only). **Next: a non-saturated reference (h6400/h12800) + whole-game strength levers, NOT deeper endgame exactness.** STOP at K=4 (K≥5 needs make-unmake/Rust; not worth it — winrate flat at K≤4).
+
+**Infra lesson (memory `reference_exact_solver_eval_infra`):** carc-orch is INCOMPATIBLE with K≥4 (minutes-long solves starve the SHM eval-server → 60s timeout → BrokenServerError → eval crash) → run K≥4 net-on-CPU; net-on-CPU is RAM-BOUND (solver TT ~1–2GB/worker on hard K=4; W=18 OOMed local's 42GB and took the Claude session down — size W ≤ RAM/~2GB).
+
+**Reversal cost:** none (measurement/engineering only; no checkpoint/config/production change; v2.7 frozen, PRODUCTION + champion `flywheel2_champion_iter8` unchanged, v2.8 opt-in).
+**Phase:** measurement-first

@@ -1,6 +1,6 @@
 # Exact Endgame-Solver Hybrid — REPORT
 
-> **Status: IN PROGRESS** (branch `exact-endgame-hybrid`, opened 2026-06-24).
+> **Status: COMPLETE** (branch `exact-endgame-hybrid`, 2026-06-24).
 > **Measurement / engineering only.** No promote, no PRODUCTION.yaml change, v2.7 frozen,
 > v2.8 opt-in. The exact tail is leaf-independent (true terminal score), so nothing here
 > touches the production leaf.
@@ -133,6 +133,12 @@ handoff fixes a **real-but-tiny leak** in RoD1 and has little to fix vs h3200. i
 the *worst* endgame (regret 0.69, a 15-pt worst case) — consistent with the autopsy's
 "iter_08 moves *away* from the ruler in the endgame".
 
+**K=4 (n=24, micro-validation on the L2-3 K=4 suite, net-on-CPU):** RoD1 and h3200 are **tied** at
+top-1 **0.667** (mean regret 1.29 / 1.12) — h3200's K=2 edge (0.833 vs RoD1's 0.673) has **fully
+vanished by K=4**. The heuristic's deep-endgame play degrades as fast as the net's — the mechanism
+behind the full-game Δ-margin scaling vs h3200 (Part C). (K=4 solve ~21 min/position; K≥5 needs
+make-unmake/Rust.)
+
 ---
 
 ## Part C — Full-game exact-hybrid evaluation
@@ -168,19 +174,21 @@ timeouts, solver ~40–89 s/game (heavy tail to 52 min, all solved):
 |---|---|---|---|---|---|
 | K=2 | 2.0 | +0.645 (z+7.5) | +0.652 (z+4.5) | 0.501 | 0.526 (z+1.05) |
 | K=3 | 3.0 | +1.422 (z+8.1) | +1.260 (z+7.3) | 0.525 (z+0.98) | 0.537 (z+1.50) |
-| K=4 | 4.0 | _(n=12, re-running)_ | **+1.943 (z+2.80)** | — | 0.568 (z+1.44) |
+| K=4 | 4.0 | _(n=12, inconcl.)_ | **+1.943 (z+2.80)** | _(n=12)_ | 0.568 (z+1.44) |
 
-(K=4 vs-h3200 = n=94/100, **0 timeouts**, all solved; winrates are **deck-paired** seat-balanced.
-K=4 vs-RoD1 was interrupted by a local OOM at n=12 — re-running. The K=4 z's are lower than K=3
-only because n=94 ≪ n=400, not because the effect shrank.)
+(K=4 vs-h3200 = **n=94/100**, **0 timeouts**, all solved; winrates **deck-paired** seat-balanced.
+K=4 vs-RoD1 = **n=12, inconclusive** — interrupted by a local OOM and not re-run; its paired margin
++2.0 is directionally consistent with the depth-scaling but underpowered, so the vs-RoD1 trend rests
+on the K=2/K=3 n=400 cells and the vs-h3200 column carries the K=4 conclusion. The K=4 z's are
+lower than K=3 only because n=94 ≪ n=400, not because the effect shrank.)
 
 **Two findings, kept strictly separate — this is the winrate-vs-margin distinction in action:**
 
 1. **The Δ-margin scales cleanly and significantly with depth:** +0.65 → +1.26 → +1.94 raw score
    points/deck (z+4.5 → +7.3 → +2.80). The exact tail demonstrably does *more* the deeper it
    reaches. **Mechanism (Part B regret):** h3200's *own* endgame play degrades with depth —
-   top-1 vs the solver drops 0.833 (K=2) → ~0.60 (K=4) — so exact's advantage over the heuristic
-   compounds. By K=4, RoD1 and h3200 are *equally* far from optimal (both ~0.60 top-1) and exact
+   top-1 vs the solver drops 0.833 (K=2) → 0.667 (K=4) — so exact's advantage over the heuristic
+   compounds. By K=4, RoD1 and h3200 are *equally* far from optimal (both 0.667 top-1) and exact
    beats both.
 
 2. **The winrate does NOT track it.** Deck-corrected, it drifts up only weakly (0.526 → 0.537 →
@@ -243,7 +251,7 @@ Against the four pre-registered outcomes:
   h3200 (cached −0.36); the exact tail lifts it to a clear margin lead by K=4
   (−0.36 + Δ1.94 ≈ **+1.6 pts/deck deck-neutral**). This realises the autopsy's "one lever that
   can exceed a heuristic": where RoD1 *and* h3200 both misplay the deep endgame (Part E: 40% of
-  RoD1's K=2 mistakes are shared by h3200; Part B: both ~0.60 top-1 at K=4), exact beats both. So
+  RoD1's K=2 mistakes are shared by h3200; Part B: both 0.667 top-1 at K=4), exact beats both. So
   "can the learned/heuristic stack be exceeded in the endgame?" → **yes, on margin**, strictly,
   with the gap *widening* as you solve deeper.
 - **But it does NOT break the ruler on winrate.** The margin does not convert: deck-paired
@@ -329,7 +337,7 @@ PRODUCTION unchanged.**
 2. Feasible full-game depths: K=2 (~5 s/solve), K=3 (~80 s), K=4 (net-on-CPU only — the
    orchestrator crashes on K≥4's minute-long solves; net-on-CPU is RAM-bound). K≥5 needs make/unmake/Rust.
 3. Endgame regret (Part B): RoD1/iter_08 play the K=2 endgame measurably worse than h3200 (top-1
-   0.67 vs 0.83), but h3200's edge **vanishes by K=4** (both ~0.60).
+   0.67 vs 0.83), but h3200's edge **vanishes by K=4** (both 0.667).
 4. Mechanism (Part E): RoD1's leak is pure **last-tile placement** (scoring/denial), not meeple
    management; h3200 shares 40% of those exact mistakes.
 5. K=2 full-game: exact adds **+0.65 pt/game** (z+7.5 vs RoD1; deck-Δ z+4.5 vs h3200), winrate flat.
@@ -344,7 +352,10 @@ PRODUCTION unchanged.**
 10. **No promotion; v2.7 frozen, PRODUCTION unchanged.** Next: a non-saturated reference + whole-game
     levers, not deeper endgame exactness.
 
-> **Status note:** K=4-vs-h3200 = n=94/100 (tail finishing); K=4-vs-RoD1 re-running after a local
-> OOM (the W=18 K=4 net-on-CPU run exceeded 42 GB — fixed at W=6). Numbers above are stable; the
-> final 6 + the vs-RoD1 row will be folded in on completion. This report flips to **status:
-> COMPLETE** then.
+> **Status note (final):** K=4-vs-h3200 settled at **n=94/100** (0 timeouts; the last 6 hardest
+> games were not run — compute stopped to free the cluster). K=4-vs-RoD1 is **inconclusive at n=12**
+> (interrupted by a local OOM — the W=18 K=4 net-on-CPU run exceeded 42 GB; the recovery confirmed
+> RAM-bound W, see memory `reference_exact_solver_eval_infra`). All conclusions above are final and
+> unaffected — the vs-h3200 column carries the K=4 result, and the depth-scaling rests on the
+> K=2/K=3 n=400 cells. K=4 regret micro (n=24): RoD1 0.667 = h3200 0.667 (h3200's K=2 edge of 0.833
+> fully gone by K=4).
