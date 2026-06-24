@@ -184,29 +184,61 @@ _[PENDING — 50–100 high-confidence h12800/h6400-over-h3200 disagreements, pr
 
 ## Part F — Teacher / distillation feasibility
 
-Decision tree (resolved once B/D land):
-- **If deeper search wins games (winrate-significant at n=400) AND Part D shows stable converged new
-  decisions concentrated in late_mid/pre_endgame** → there IS teacher signal. Plan: oversample those
-  positions; target = h12800 root choice (argmax, NOT the near-uniform visit dist — Part D shows visits
-  don't concentrate) as a policy/top-k ranking target; start from RoD_iter_01 (closest to the ruler);
-  exact K-endgame labels as an auxiliary head. Size by the converged-disagreement rate × phase mix.
-- **If deeper search wins margin but NOT games (the exact-endgame pattern)** → the gain is score-padding,
-  not outcome-flipping. Distillation EV low: a policy target from a sharper-but-outcome-neutral ruler
-  teaches point-maximisation, not win-maximisation. At most a value-calibration target (deeper-search
-  score-margin as a regression target), bounded by the same sub-point/outcome-neutral ceiling.
-- **If h6400 ≈ h3200 (saturation)** → no teacher signal; the v2.8 leaf is the ceiling; do NOT distill.
+**Branch taken: "wins margin, not games" → distillation EV is LOW.** The evidence converges:
 
-_[Which branch — PENDING B/D.]_
+1. **Outcome-neutral (Part B):** h6400 out-scores h3200 by +2.49 pt but the winrate is NS (0.539). A
+   policy distilled from this ruler teaches **point-maximisation, not win-maximisation** — the same
+   sub-winrate ceiling the exact-endgame branch hit.
+2. **Thin, noise-matched signal (Part D):** only **~10 %** of positions carry a *stable* deeper-search
+   preference (converged), and it is matched ~1:1 by pure churn (~10 % unstable). A policy target built on
+   a 10 %-of-positions signal with an equal noise floor is a poor teacher.
+3. **No rich policy target to distill (Part D sharpness):** heuristic visit distributions stay
+   **near-uniform even at h12800** (top_share 0.05→0.08). There is no concentrated visit distribution to
+   imitate — only the bare argmax, and that is stable on just ~10 % of positions. The neural policy is
+   *already* far sharper (top_share 0.27) than the ruler it would learn from.
+4. **The net doesn't want it (Part D):** RoD1 adopts the deep move on only **19 %** of disagreements and
+   is **equidistant from all depths** — it is not "reaching for" the deeper choice; it plays a different
+   (RPS) policy. Distilling the deep argmax would push it toward a style it already declines.
+
+**Most that is defensible:** the converged signal is endgame/pre_endgame-weighted (54 %), and the endgame
+is exactly where RoD1 diverges most (RoD1~heur ~0.40). So *if* anything, the only target is an
+**endgame value-calibration / score-margin regression** auxiliary — which is precisely what the
+exact-endgame branch already tried and bounded at sub-point / outcome-neutral. **No new lever.**
+
+**Recommendation: do NOT pursue policy distillation from the deeper ruler.** Blind self-play continuation
+is also unjustified (deeper-search analysis gives no reason it would help; it would chase the same +2.5 pt
+margin that does not convert). If any micro-effort, it is value-head recalibration on deeper-search
+margins — low EV, already characterised.
 
 ---
 
 ## Part G — Decision output (brutally honest verdict)
 
-Answers the 6 spec questions (1) h3200 saturated? (2) h6400 meaningfully stronger ruler? (3) h12800
-worth it as full-game ruler / root teacher / not? (4) RoD_iter_01 parity vs deeper search? (5) deeper
-improvements broad enough for winrate? (6) next best branch.
-
-_[PENDING — filled from B/C/D/E.]_
+1. **Is h3200_v2.8 saturated?** **Partially — and the part that matters (winrate) is.** h6400 reliably
+   out-scores h3200 by **+2.49 pt/game (paired_z +2.61)**, so the heuristic is *not* fully converged on
+   score. But the winrate edge is **not significant (0.539, z+1.6)** — the extra points do not reliably
+   flip games. So h3200 is ~saturated **as a match-strength ruler**, not fully saturated **as a
+   score-maximiser**.
+2. **Is h6400_v2.8 a meaningfully stronger ruler?** **Sharper, not meaningfully stronger.** It is a
+   better *score* ruler (significant margin) — useful if you grade on margin — but **not a meaningfully
+   stronger match agent** (winrate NS). Same shape as the exact-endgame verdict.
+3. **Is h12800 worth using?** _[h12800-vs-h6400 n=100 running.]_ Part D already shows h12800 agrees with
+   h6400 on **76.5 %** of root choices (vs h3200~h6400 74.3 %) — deeper search **converges, not diverges**,
+   so the marginal gain from h6400→h12800 is small at the root. Preliminary read: **not worth it as a
+   full-game ruler** (2× cost) and **not as a root teacher** (Part F); h6400 is a sufficient sharper ruler.
+4. **Does RoD_iter_01 hold parity vs deeper search?** _[full-game Part C running.]_ Root-level: RoD1 is
+   **equidistant from all depths** (~51 % agreement, ==h3200-not-h6400 ≈ ==h6400-not-h3200) → **no worse
+   against h6400 than h3200**. It reached h3200 practical parity; the root audit says that parity is **not
+   eroded by deeper search** — RoD1's gap to the heuristic is a *style/policy* gap (RPS), not a depth gap.
+5. **Are deeper-search improvements broad enough to matter for winrate?** **No.** The margin gain is
+   sub-winrate (+2.5 pt → ~0.54, NS at n=400); only ~10 % of positions carry a stable deeper preference
+   and it is matched ~1:1 by noise. Not broad enough to move outcomes.
+6. **Next best branch?** **Not deeper search, not distillation, not blind self-play.** Both endpoints of
+   "search deeper under the v2.8 leaf" — exact endgame (prior branch) and deeper whole-game heuristic
+   (this branch) — now independently land on the **same margin-not-winrate ceiling**. The v2.8 leaf
+   dominates move *choice*; more search refines *score*, not *wins*. **The blocker stands: a whole-game
+   learned component that exceeds the heuristic on WINRATE, not margin.** Deeper heuristic search is
+   exhausted as a strength lever. Stop here; do not pursue h6400/h12800 distillation or a deeper rung.
 
 ---
 
