@@ -132,37 +132,51 @@ def main(argv=None):
               f"- RoD1 == both (h3200==h6400 anyway): {both}",
               f"- RoD1 == neither: {neither}", ""]
 
-    # --- disagreement list for Part E (deep-confident, deep != shallow) ---
+    # --- disagreement list for Part E ---
+    # NOTE: heur-MCTS visit distributions stay near-UNIFORM even at h12800 (this MCTS refines Q,
+    # not visit concentration; the v2.8 leaf rates many placements similarly), so top_share is a
+    # WEAK confidence proxy. The robust confidence signal is CONVERGENCE: h6400 AND h12800 (two
+    # independent searches: different sims, different seeds) both pick the SAME non-h3200 action.
     deep = "h12800" if "h12800" in present else ("h6400" if "h6400" in present else None)
     shallow = "h3200" if "h3200" in present else None
+    have_both_deep = ("h6400" in present and "h12800" in present and "h3200" in present)
     dis = []
     if deep and shallow:
         for r in recs:
             ag = r["agents"]
             if deep not in ag or shallow not in ag:
                 continue
-            if ag[deep]["chosen"] != ag[shallow]["chosen"] and ag[deep]["top_share"] >= args.conf:
-                confirm = ("h6400" in ag and deep == "h12800" and ag["h6400"]["chosen"] == ag[deep]["chosen"])
-                dis.append({
-                    "gen_id": r["gen_id"], "seed": r["seed"], "ply": r["ply"], "k": r["k_remaining"],
-                    "phase": r["phase"], "legal_n": r["legal_n"], "score_margin_abs": r["score_margin_abs"],
-                    "meeples_free": r.get("meeples_free"),
-                    f"{shallow}_chosen": ag[shallow]["chosen"], f"{deep}_chosen": ag[deep]["chosen"],
-                    f"{deep}_top_share": ag[deep]["top_share"], f"{shallow}_top_share": ag[shallow]["top_share"],
-                    "deep_confirmed_by_h6400": confirm,
-                    "rod1_chosen": ag.get("rod1", {}).get("chosen"),
-                    "rod1_matches_deep": (ag.get("rod1", {}).get("chosen") == ag[deep]["chosen"]) if "rod1" in ag else None,
-                })
+            if ag[deep]["chosen"] == ag[shallow]["chosen"]:
+                continue
+            # convergence = both deep searches agree on the SAME non-shallow move (= stable signal)
+            converged = bool(have_both_deep and ag["h6400"]["chosen"] == ag["h12800"]["chosen"]
+                             and ag["h12800"]["chosen"] != ag["h3200"]["chosen"])
+            dis.append({
+                "gen_id": r["gen_id"], "seed": r["seed"], "ply": r["ply"], "k": r["k_remaining"],
+                "phase": r["phase"], "legal_n": r["legal_n"], "score_margin_abs": r["score_margin_abs"],
+                "meeples_free": r.get("meeples_free"),
+                "h3200_chosen": ag["h3200"]["chosen"] if "h3200" in ag else None,
+                "h6400_chosen": ag["h6400"]["chosen"] if "h6400" in ag else None,
+                "h12800_chosen": ag["h12800"]["chosen"] if "h12800" in ag else None,
+                "converged_deep": converged,
+                f"{deep}_top_share": ag[deep]["top_share"], f"{shallow}_top_share": ag[shallow]["top_share"],
+                "rod1_chosen": ag.get("rod1", {}).get("chosen"),
+                "rod1_matches_deep": (ag.get("rod1", {}).get("chosen") == ag[deep]["chosen"]) if "rod1" in ag else None,
+            })
         pri = {ph: i for i, ph in enumerate(["pre_endgame", "late_mid", "endgame", "midgame", "opening"])}
-        dis.sort(key=lambda d: (pri.get(d["phase"], 9), -d[f"{deep}_top_share"]))
+        # convergent (stable) disagreements first, then phase priority, then by k
+        dis.sort(key=lambda d: (0 if d["converged_deep"] else 1, pri.get(d["phase"], 9), d["k"]))
         with open(out / "disagreements.csv", "w", newline="") as f:
             if dis:
                 w = csv.DictWriter(f, fieldnames=list(dis[0].keys())); w.writeheader()
                 for d in dis:
                     w.writerow(d)
-        L += [f"## High-confidence deep disagreements ({deep} != {shallow}, {deep} top_share >= {args.conf})",
-              f"- total: {len(dis)}  (by phase: " + ", ".join(f"{ph}:{sum(1 for d in dis if d['phase']==ph)}" for ph in PHASE_ORDER) + ")",
-              f"- deep-confirmed by h6400: {sum(1 for d in dis if d['deep_confirmed_by_h6400'])}/{len(dis)}",
+        n_conv = sum(1 for d in dis if d["converged_deep"])
+        L += [f"## Deep disagreements ({deep} != {shallow})",
+              f"- total: {len(dis)}/{len(recs)}  ({100*len(dis)/max(len(recs),1):.0f}% of positions)",
+              f"- **CONVERGED (h6400==h12800 != h3200 = stable deeper-search preference): {n_conv}/{len(dis)}**",
+              f"  by phase: " + ", ".join(f"{ph}:{sum(1 for d in dis if d['phase']==ph and d['converged_deep'])}" for ph in PHASE_ORDER),
+              f"- RoD1 sides WITH the deep move on these: {sum(1 for d in dis if d.get('rod1_matches_deep'))}/{len(dis)}",
               f"- written: {out}/disagreements.csv", ""]
 
     (out / "ROOT_AUDIT_DIGEST.md").write_text("\n".join(L) + "\n")
