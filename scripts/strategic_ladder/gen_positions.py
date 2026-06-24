@@ -94,6 +94,16 @@ def play_game(a_spec, b_spec, seed, g, max_per_game, regime, band):
     return snaps
 
 
+def _worker_init():
+    import torch
+    torch.set_num_threads(1)
+
+
+def _play_one(arg):
+    a_spec, b_spec, seed, g, max_per_game, regime, band = arg
+    return play_game(a_spec, b_spec, seed, g, max_per_game, regime, band)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--regime", required=True, help="agent_a:agent_b, e.g. h6400:random")
@@ -101,29 +111,43 @@ def main():
     ap.add_argument("--seed-base", type=int, default=1940000)
     ap.add_argument("--band", choices=["dev", "test"], default="test")
     ap.add_argument("--max-per-game", type=int, default=40)
+    ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--g-start", type=int, default=0, help="first game index (for cross-box seed-range split)")
+    ap.add_argument("--tag-suffix", default="", help="appended to output filename (e.g. box id)")
     ap.add_argument("--out", default="measurement/strategic_behavior_ladder/bank")
     args = ap.parse_args()
 
     a_spec, b_spec = args.regime.split(":")
     os.makedirs(args.out, exist_ok=True)
-    tag = f"{args.band}_{a_spec}__vs__{b_spec}"
+    tag = f"{args.band}_{a_spec}__vs__{b_spec}{args.tag_suffix}"
     out_pkl = os.path.join(args.out, f"{tag}.pkl")
+
+    jobs = [(a_spec, b_spec, args.seed_base + args.g_start + i, args.g_start + i,
+             args.max_per_game, args.regime, args.band) for i in range(args.games)]
 
     all_snaps = []
     t0 = time.perf_counter()
-    for g in range(args.games):
-        seed = args.seed_base + g
-        snaps = play_game(a_spec, b_spec, seed, g, args.max_per_game, args.regime, args.band)
-        all_snaps.extend(snaps)
-        dt = time.perf_counter() - t0
-        print(f"[{tag}] game {g+1}/{args.games} seed={seed} "
-              f"snaps={len(snaps)} total={len(all_snaps)} elapsed={dt:.0f}s", flush=True)
+    if args.workers <= 1:
+        for j in jobs:
+            snaps = _play_one(j)
+            all_snaps.extend(snaps)
+            print(f"[{tag}] game seed={j[2]} snaps={len(snaps)} total={len(all_snaps)} "
+                  f"elapsed={time.perf_counter()-t0:.0f}s", flush=True)
+    else:
+        from multiprocessing import get_context
+        ctx = get_context("fork")
+        done = 0
+        with ctx.Pool(args.workers, initializer=_worker_init) as pool:
+            for snaps in pool.imap_unordered(_play_one, jobs):
+                all_snaps.extend(snaps)
+                done += 1
+                print(f"[{tag}] {done}/{len(jobs)} games done, total snaps={len(all_snaps)} "
+                      f"elapsed={time.perf_counter()-t0:.0f}s", flush=True)
 
     with open(out_pkl, "wb") as f:
         pickle.dump(all_snaps, f, protocol=pickle.HIGHEST_PROTOCOL)
-    # opportunity-frequency manifest (for regime contrast)
     n_opp = {m: sum(1 for s in all_snaps if m in s["labels"]) for m in M.MOTIFS}
-    print(f"\nDONE {tag}: {len(all_snaps)} snapshots, opp counts={n_opp}")
+    print(f"\nDONE {tag}: {len(all_snaps)} snapshots in {time.perf_counter()-t0:.0f}s, opp counts={n_opp}")
     print(f"wrote {out_pkl}")
 
 
