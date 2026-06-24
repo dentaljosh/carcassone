@@ -88,20 +88,53 @@ def main(argv=None):
     rows = rows[: args.topn]
     deep_col = "h12800_chosen" if rows and rows[0].get("h12800_chosen") not in (None, "", "None") else "h6400_chosen"
 
+    def turn_score_delta(game, board, tile_action, W):
+        """Apply the tile placement THEN a meeple-PASS to complete the turn (completion scoring is
+        deferred to turn resolution in this engine), holding the meeple decision constant at PASS so
+        we isolate the TILE placement's scoring effect. Returns the mover's score gain this turn."""
+        mover = board.state.current_player
+        s0 = int(board.state.scores[mover])
+        try:
+            nb, _ = game.get_next_state(board, int(tile_action))
+            pass_idx = A.meeple_pass_index(W)
+            if not game.get_valid_moves(nb)[pass_idx]:
+                return None
+            nb2, _ = game.get_next_state(nb, pass_idx)
+            return int(nb2.state.scores[mover]) - s0
+        except Exception:
+            return None
+
+    def sub_mech(delta):
+        if delta is None:
+            return "unclassified (apply failed)"
+        if delta > 0:
+            return f"deep completes +{delta} more pts this turn (shallow leaves a completion / conversion)"
+        if delta < 0:
+            return f"deep forgoes {-delta} completion pts this turn (positional / tempo / setup)"
+        return "equal turn scoring (positional / blocking / future-equity, no completion diff)"
+
     out_rows = []
     for r in rows:
         seed, ply = int(r["seed"]), int(r["ply"])
         game, board = replay_to(seed, ply)
         W = W_from_mask(len(game.get_valid_moves(board)))
-        sh_t = classify(int(r["h3200_chosen"]), W) if r.get("h3200_chosen") not in (None, "", "None") else "NA"
-        dp_raw = r.get(deep_col)
-        dp_t = classify(int(dp_raw), W) if dp_raw not in (None, "", "None") else "NA"
+        sh_a = r.get("h3200_chosen"); dp_a = r.get(deep_col)
+        sh_t = classify(int(sh_a), W) if sh_a not in (None, "", "None") else "NA"
+        dp_t = classify(int(dp_a), W) if dp_a not in (None, "", "None") else "NA"
+        # immediate board-effect sub-classification (apply each move from the same root)
+        delta = None
+        if sh_a not in (None, "", "None") and dp_a not in (None, "", "None"):
+            d_sh = turn_score_delta(game, board, sh_a, W)
+            d_dp = turn_score_delta(game, board, dp_a, W)
+            delta = (d_dp - d_sh) if (d_sh is not None and d_dp is not None) else None
         out_rows.append({
-            "gen_id": r["gen_id"], "seed": seed, "ply": ply, "k": r["k_remaining"], "phase": r["phase"],
+            "gen_id": r["gen_id"], "seed": seed, "ply": ply, "k": r["k"], "phase": r["phase"],
             "legal_n": r["legal_n"], "score_margin_abs": r["score_margin_abs"], "meeples_free": r.get("meeples_free"),
             "converged": r.get("converged_deep"), "h3200_move": sh_t, "deep_move": dp_t,
+            "deep_minus_shallow_immediate": delta,
             "rod1_matches_deep": r.get("rod1_matches_deep"),
             "mechanism": mechanism(sh_t, dp_t),
+            "sub_mechanism": sub_mech(delta),
             "affects_winloss_guess": "margin-only" if r["phase"] == "endgame" else "possible W/L",
         })
     outp = Path(args.out)
@@ -112,20 +145,33 @@ def main(argv=None):
             for r in out_rows:
                 w.writerow(r)
     mh = Counter(r["mechanism"] for r in out_rows)
+    smh = Counter(r["sub_mechanism"] for r in out_rows)
+    deltas = [r["deep_minus_shallow_immediate"] for r in out_rows if r["deep_minus_shallow_immediate"] is not None]
+    n_more = sum(1 for d in deltas if d > 0); n_less = sum(1 for d in deltas if d < 0); n_eq = sum(1 for d in deltas if d == 0)
     L = [f"# Part E — mechanism classification ({len(out_rows)} deep-vs-h3200 disagreements"
          + (", converged-only" if args.converged_only else "") + ")", "",
-         "## Mechanism histogram"]
+         "## Move-type histogram (NOTE: suite is TILES-phase roots only, so meeple/farm decisions are",
+         "## downstream and never the audited root choice — all disagreements are tile-PLACEMENT geometry,",
+         "## mirroring the exact-endgame finding that the leak is placement, not meeple mgmt)"]
     for m, c in mh.most_common():
         L.append(f"- {c:>3}  {m}")
+    L += ["", "## Immediate board-effect sub-classification (apply each move, compare mover's resulting score)",
+          f"- deep captures MORE immediate pts: {n_more}/{len(deltas)}  (shallow leaves points on the table)",
+          f"- deep scores LESS immediate (positional/tempo sacrifice): {n_less}/{len(deltas)}",
+          f"- equal immediate score (pure geometry / blocking / future-equity): {n_eq}/{len(deltas)}",
+          f"- mean (deep - shallow) immediate pts: {sum(deltas)/len(deltas):+.2f}" if deltas else "- (no deltas)", ""]
+    for m, c in smh.most_common():
+        L.append(f"  - {c:>3}  {m}")
     L += ["", "## By phase",
           "  " + "  ".join(f"{ph}:{sum(1 for r in out_rows if r['phase']==ph)}"
                            for ph in ["opening", "midgame", "late_mid", "pre_endgame", "endgame"]),
           "", "## Representative examples",
-          "seed | ply | k | phase | legal | margin | h3200 | deep | conv | rod1==deep | mechanism",
-          "--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---"]
+          "seed | ply | k | phase | legal | margin | h3200 | deep | conv | rod1==dp | dNow | sub_mechanism",
+          "--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---"]
     for r in out_rows[:30]:
         L.append(f"{r['seed']} | {r['ply']} | {r['k']} | {r['phase']} | {r['legal_n']} | {r['score_margin_abs']} | "
-                 f"{r['h3200_move']} | {r['deep_move']} | {r['converged']} | {r['rod1_matches_deep']} | {r['mechanism']}")
+                 f"{r['h3200_move']} | {r['deep_move']} | {r['converged']} | {r['rod1_matches_deep']} | "
+                 f"{r['deep_minus_shallow_immediate']} | {r['sub_mechanism'][:48]}")
     (Path(str(outp) + "_digest.md")).write_text("\n".join(L) + "\n")
     print("\n".join(L))
     print(f"\n[written] {outp}.csv + {outp}_digest.md")
