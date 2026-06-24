@@ -102,25 +102,36 @@ Clairvoyant + alpha-beta, real L2-3 suite positions
 | 4 | (K4 probe) | ~21 min @1M | 7.4 h | 108k | **infeasible for full games** |
 
 0 illegal moves across the bench — the exact-tail choice path (`min(optimal_actions)`) is
-correct. **Implication:** the full-game exact-hybrid is **K=2 only**. K=3/K=4/K=5 are
-*micro-validation only* — deeper-K full-game would need make/unmake (~3–5×) or Rust
-(scoped + deferred in the K4 probe).
+correct. **Implication (depth series):** **K=2 full-game (n=400)** is cheap (~10 s/game);
+**K=3 full-game screens (n≤200)** are feasible (~80 s/solve, solver-bound → runs on the
+CPU-heavy Xeon / local); **K=4 full-game** is marginal (~21 min/solve, 7.4 h tail → needs a
+node-budget cap → ~6–10 % timeout-fallback) and worth it only gated on a K=2→K=3 trend;
+**K=5+ needs make/unmake or Rust** (deferred). Feasible full-game series = **K=2 → K=3
+(→ small K=4)**; K=4/K=5 regret stays micro-validation. (Parity: for any K the agent latches
+at k=K or k=K−1 by turn parity, so deeper K = less dilution — K=3 is a *better-powered* test
+than K=2, not just "more depth".)
 
 ### B.2 — Endgame regret vs exact (already measured; L2-3 / K4 probe)
 
 The endgame *disagreement* the autopsy localized is real, but its **point value is small**,
 and h3200 already plays it near-optimally:
 
-| agent | K=2 top-1 (n=150) | K=2 mean regret | K=3 top-1 (n=68) |
-|---|---|---|---|
-| heur@3200 | **0.837** | 0.40 pts | 0.618 |
-| heur@1600 | 0.780 | 0.46 | 0.647 |
-| iter8 (≈ RoD1 parent) | **0.667 (worst)** | 0.61 | **0.574 (worst)** |
+**NEW (this branch — RoD1/iter_08/parent scored at K=2 with their v2.8 leaf, n=150 each):**
 
-So: RoD1's lineage plays the endgame **worst**; h3200 plays it **near-optimally**; mean
-regret is **sub-point**. This is the mechanistic basis of the conservative prior — exact
-handoff should help RoD1 more than it pressures h3200. _(RoD1/iter_08 added directly at K=2:
-pending the cheap re-solve.)_
+| agent (v2.8) | K=2 top-1 | mean regret | worst single error |
+|---|---|---|---|
+| **RoD1** | 0.673 | 0.57 | 9 |
+| iter_08 (keep-best) | 0.687 | 0.69 | **15** |
+| parent | 0.687 | 0.61 | 9 |
+| **heur@3200** (v2.7 ref) | **0.833** | 0.41 | 8 |
+
+The learned nets (RoD1 ≈ iter_08 ≈ parent, all ~0.68 top-1) play the K=2 endgame
+**measurably worse** than h3200 (0.833) — reproducing L2-3 (iter8 0.667 / h3200 0.837) with
+the v2.8 agents, and confirming the autopsy's "RoD1 ≈ iter_08 ≈ parent" extends to the
+endgame. But mean regret is **sub-point** (0.57–0.69) and h3200 is near-optimal → exact
+handoff fixes a **real-but-tiny leak** in RoD1 and has little to fix vs h3200. iter_08 carries
+the *worst* endgame (regret 0.69, a 15-pt worst case) — consistent with the autopsy's
+"iter_08 moves *away* from the ruler in the endgame".
 
 ---
 
