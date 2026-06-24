@@ -228,8 +228,49 @@ def main():
     digest = os.path.join(args.out, "ANALYSIS_DIGEST.md")
     with open(digest, "w") as f:
         f.write("\n".join(L) + "\n")
+
+    # ---- deliverable CSVs ---------------------------------------------------
+    import csv
+    pos_csv = os.path.join(args.out, "positions_labeled.csv")
+    with open(pos_csv, "w", newline="") as f:
+        w = csv.writer(f)
+        head = ["idx", "regime", "mover_spec", "opp_spec", "opp_class", "phase",
+                "k_remaining", "legal_n", "final_margin_mover", "result_mover", "motifs"]
+        for m in MOTIFS:
+            head += [f"{m}_opp", f"{m}_mag", f"{m}_actual_took"]
+        w.writerow(head)
+        for i, r in enumerate(recs):
+            row = [r.get("idx", i), r["regime"], r["mover_spec"], r["opp_spec"],
+                   opp_class(r["opp_spec"]), r["phase"], r["k_remaining"], r["legal_n"],
+                   r.get("final_margin_mover"), r.get("result_mover"),
+                   "|".join(m for m in MOTIFS if m in r["labels"])]
+            for m in MOTIFS:
+                if m in r["labels"]:
+                    t = took(r, "ACTUAL", m)
+                    row += [1, r["labels"][m]["mag"], int(t) if t is not None else ""]
+                else:
+                    row += [0, "", ""]
+            w.writerow(row)
+
+    met_csv = os.path.join(args.out, "metrics_takerate.csv")
+    with open(met_csv, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["agent", "motif", "slice", "k", "n", "rate", "lo", "hi"])
+        slices = [("all", None)]
+        for c in ("weak", "mid", "strong"):
+            slices.append((f"opp_{c}", (lambda r, cc=c: opp_class(r["opp_spec"]) == cc)))
+        for ph in ("opening", "midgame", "late_mid", "pre_endgame", "endgame"):
+            slices.append((f"phase_{ph}", (lambda r, pp=ph: r["phase"] == pp)))
+        for m in MOTIFS:
+            for sl_name, sl in slices:
+                rt = rate_table(recs, LADDER + ["ACTUAL"], m, filt=sl)
+                for ag in LADDER + ["ACTUAL"]:
+                    k, n, p, lo, hi = rt[ag]
+                    if n:
+                        w.writerow([ag, m, sl_name, k, n, f"{p:.4f}", f"{lo:.4f}", f"{hi:.4f}"])
+
     print("\n".join(L))
-    print(f"\nwrote {digest}")
+    print(f"\nwrote {digest}\nwrote {pos_csv}\nwrote {met_csv}")
 
 
 if __name__ == "__main__":
