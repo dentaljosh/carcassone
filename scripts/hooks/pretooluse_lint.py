@@ -148,10 +148,12 @@ def _ssh_remote_no_cd(cmd: str) -> str | None:
         return ("remote `ssh … '" + snippet + "…'` runs a repo-relative command "
                 "with no `cd` — the remote shell lands in $HOME and this fails "
                 "('not a git repository' / No such file).\n"
-                "  Corrected (copy this line VERBATIM — do NOT retype it):\n"
-                "    " + fixed + "\n"
-                "  (alt: pipe a script — `ssh host 'bash -s' < script.sh` with `cd` "
-                "on line 1. Override: add `# allow-nocd`.)")
+                "  FIX (mandatory — do this EVERY time): an inline `ssh host 'cd .. && ..'` is "
+                "NOT reliable here, the leading cd gets STRIPPED in transit. Pipe a script whose "
+                "line 1 is the cd:\n"
+                "    write /tmp/r.sh = `cd " + REPO + "\\n<your cmd>` ; then  "
+                "ssh <host> 'bash -s' < /tmp/r.sh\n"
+                "  (inline fallback, often stripped: " + fixed + "  |  Override: `# allow-nocd`.)")
     return None
 
 
@@ -289,11 +291,11 @@ def main() -> int:
         if sig:
             prior = _recent_block_count(sig)
             if prior >= 2:
-                msg = (f"⛔ REPEAT BLOCK ({prior + 1}x in 15min) — you keep re-sending this "
-                       f"same broken command; the `cd` keeps getting dropped because you are "
-                       f"rebuilding it from memory. STOP. Copy the 'Corrected (copy this line "
-                       f"VERBATIM)' command below EXACTLY, or switch to "
-                       f"`ssh host 'bash -s' < script.sh`.\n\n" + msg)
+                msg = (f"⛔ REPEAT BLOCK ({prior + 1}x in 15min) — the inline `cd` keeps getting "
+                       f"STRIPPED in transit; retyping/copying the inline form will NEVER work. "
+                       f"STOP and switch tactic: write a /tmp/*.sh with `cd " + REPO + "` on "
+                       f"line 1, then `ssh <host> 'bash -s' < /tmp/that.sh`. Do the .sh — it is "
+                       f"not optional.\n\n" + msg)
         _log({"ts": time.time(), "kind": "pre_block", "cmd": cmd[:500],
               "reasons": blocks})
         print(msg, file=sys.stderr)
