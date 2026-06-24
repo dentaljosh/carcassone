@@ -1,0 +1,33 @@
+### exact:3 vs RoD1 (n=400)
+- games **374** | **192W / 9D / 173L** | winrate **0.525** (z=+0.98) | Elo **+17.7** (±18.0)
+- avg score margin (A−B) **+1.50** | **paired margin +1.422** (z=**+8.08**, 186 decks)
+- seat split: A@seat0 wr 0.569 (n=188), A@seat1 wr 0.481 (n=186)
+- A exact: exact-moves/game 2.99 (range 2-4); solver 40.18s/game (max 982.8s); nodes/game 12118; timeouts 0 over 374; latched 374/374; K@latch dist {2: 188, 3: 186}
+
+#### Part D slices (paired margin within slice; n=decks w/ both seats)
+  - **by K@latch**
+    - K@latch=2: n=188 wr=0.569 paired=None (z=None, 0 decks)
+    - K@latch=3: n=186 wr=0.481 paired=None (z=None, 0 decks)
+  - **by seat**
+    - seat=0: n=188 wr=0.569 paired=None (z=None, 0 decks)
+    - seat=1: n=186 wr=0.481 paired=None (z=None, 0 decks)
+  - **by margin@latch**
+    - margin@latch=ahead(>3): n=166 wr=0.892 paired=None (z=None, 1 decks)
+    - margin@latch=behind(<-3): n=163 wr=0.138 paired=None (z=None, 0 decks)
+    - margin@latch=close(-3..3): n=45 wr=0.578 paired=1.59 (z=2.55, 22 decks)
+  - **by meeples@latch**
+    - meeples@latch=0-1: n=362 wr=0.521 paired=1.35 (z=7.49, 174 decks)
+    - meeples@latch=2-3: n=12 wr=0.667 paired=None (z=None, 0 decks)
+  - **by legal@latch**
+    - legal@latch=hi(>45): n=117 wr=0.466 paired=1.89 (z=4.77, 28 decks)
+    - legal@latch=lo(<20): n=13 wr=0.462 paired=None (z=None, 0 decks)
+    - legal@latch=mid(20-45): n=244 wr=0.557 paired=1.52 (z=4.77, 88 decks)
+  - **by game**
+    - game=blowout(|d|>=20): n=150 wr=0.533 paired=1.68 (z=6.68, 69 decks)
+    - game=close(|d|<20): n=224 wr=0.520 paired=1.07 (z=6.19, 106 decks)
+  - **by timeout**
+    - timeout=clean: n=374 wr=0.525 paired=1.42 (z=8.08, 186 decks)
+  - **by solver_nodes**
+    - solver_nodes=1k-5k: n=151 wr=0.543 paired=0.21 (z=2.16, 12 decks)
+    - solver_nodes=<1k: n=67 wr=0.582 paired=None (z=None, 1 decks)
+    - solver_nodes=>5k: n=156 wr=0.484 paired=2.2 (z=2.56, 5 decks)
