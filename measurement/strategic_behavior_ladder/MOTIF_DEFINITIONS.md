@@ -25,10 +25,19 @@ before the held-out audit. **Diagnostic only — not a training target, not a ch
 
 | tier | motifs | why |
 |---|---|---|
-| **structural / credible** | `farm_claim`, `farm_denial`, `contest` | clean ownership-flip detection; survives turn-end (farms never auto-complete) |
+| **structural / credible** | `farm_claim` (MEEPLES), `contest_merge` (TILES) | clean ownership detection; farms never auto-complete so a placed farmer survives turn-end |
 | **equity-proxy / low-fidelity** | `block`, `avoid_feeding` | a placed tile rarely interacts with the opponent's feature; real blocking is meeple/tile *denial*, invisible as a board delta. Cities only (decomposition exposes no road completion-distance). |
 | **descriptive only** | meeple liquidity / lock | reported as state statistics, not a take-rate motif |
 | **separate solver slice** | pre-endgame conversion | exact-K labels, small set, RAM-bound — its own dataset |
+
+> **⚠️ Rules constraint that reshaped the motif set (surfaced during validation).** In 2-player
+> BASE Carcassonne you **cannot place a meeple on an occupied feature** — so you cannot "steal"
+> or "deny" a field by placing a meeple on the opponent's field (it's illegal). The **only legal
+> contest/denial mechanism is a TILES-phase MERGE**: a tile that connects two *pre-placed*
+> farmers into one shared field, where majority is decided by farmer count. So the spec's
+> "steal/contest" (#2) and "farm denial" (#4) collapse into a single **TILES-phase `contest_merge`**
+> motif. A naive meeple-phase steal detector fired **0 times across 22 games** — correctly, because
+> it is structurally impossible. This is a genuine finding, not a detector bug.
 
 ## Definitions
 
@@ -57,15 +66,15 @@ Farm projected value = `3 × (#adjacent city components)`; farm realized = `3 ×
   and `adj_n`. **Outcome-sanity (Part F.3) conditions on `finished_adj` and phase** — an
   opening claim with finished_adj=0 is speculative and may not be good play.
 
-### 4. `farm_denial` — contest the opponent's field  (MEEPLES phase, structural)
-- **opportunity**: a legal FARMER placement moves an opp-SOLE field (projected ≥ **6**) to a
-  tie (or take) for the mover.
-- **satisfying**: those placements. magnitude = projected value denied.
-
-### 5. `contest` — share an opponent's open feature  (MEEPLES phase, structural)
-- **opportunity**: a legal meeple placement makes the mover a co-owner of an OPEN city
-  currently opp-sole, value ≥ **4**.
-- **satisfying**: those placements.
+### 4. `contest_merge` — favorably merge into a contested field  (TILES phase, structural)
+- Operationalizes BOTH the spec's "steal/contest" (#2) and "farm denial" (#4) — the only legal
+  form in 2p base (see rules box above).
+- **opportunity**: some legal tile placements yield a mover-FAVORABLE (tie-or-win by farmer
+  count) CONTESTED field (both players have farmers) with projected value ≥ **6**, and others do
+  **not** — i.e. the placement *choice* determines whether the mover favorably contests the
+  field. (`n_yes` satisfying out of `n_legal`.)
+- **satisfying**: the placements that yield the favorable contested field.
+- magnitude = projected value of the contested field.
 
 ### 6. `punish_weak` — NOT a separate detector
 - The capture motifs (`block`, `farm_claim`, `farm_denial`, `contest`) measured in the

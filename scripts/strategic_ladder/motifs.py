@@ -63,10 +63,14 @@ BLOCK_SPREAD = 2.0                      # min (max-min) swing in opp completion-
                                         #   choices -- block/feed are LOW-FIDELITY equity proxies.
 FEED_SPREAD = 2.0                       # same consequential-swing gate for avoid_feeding
 V_FARM_PROJ = 6.0                       # high-value farm = projected >= 6 (touches >= 2 cities)
-V_CONTEST = 4.0                         # min value of an open feature to count a contest
 EPS = 1e-9
 
-MOTIFS = ("block", "avoid_feeding", "farm_claim", "farm_denial", "contest")
+# NOTE on contest/denial: in 2-player BASE Carcassonne you CANNOT place a meeple on an
+# occupied feature (illegal), so you cannot "steal" a field by placing on it. The ONLY
+# legal contest/denial mechanism is a TILES-phase MERGE -- a tile that connects two
+# pre-placed farmers into one shared field. So contest_merge is a TILES motif, and there
+# is no meeple-phase "steal". (This is a genuine rules constraint, surfaced in the report.)
+MOTIFS = ("block", "avoid_feeding", "contest_merge", "farm_claim")
 
 
 def pclose(open_n: int) -> float:
@@ -128,10 +132,9 @@ def _farm_value_real(decomp, root):
     return 3 * decomp.farm_root_finished_cities.get(root, 0)
 
 
-def opp_completion_equity(state, decomp, opp):
+def _opp_eq(state, decomp, city_counts, opp):
     """Sum over OPEN cities where `opp` holds majority/tie:  value * P(close).
     The opponent's pending-completion value on the board. Cities only."""
-    city_counts, _, _ = _feature_owners(state, decomp)
     total = 0.0
     for root in decomp.city_root_coords:
         if decomp.city_root_finished[root]:
@@ -139,10 +142,27 @@ def opp_completion_equity(state, decomp, opp):
         open_n = decomp.city_root_open_n[root]
         if open_n > NEAR_OPEN_N:
             continue
-        winners = _winners(city_counts.get(root, [0, 0]))
-        if opp in winners:
+        if opp in _winners(city_counts.get(root, [0, 0])):
             total += _city_value(decomp, root, state.board) * pclose(open_n)
     return total
+
+
+def opp_completion_equity(state, decomp, opp):
+    city_counts, _, _ = _feature_owners(state, decomp)
+    return _opp_eq(state, decomp, city_counts, opp)
+
+
+def _mover_fav_contest(decomp, farm_counts, mover):
+    """Max projected value of a mover-FAVORABLE (tie-or-win) CONTESTED farm (both
+    players have farmers) with projected value >= V_FARM_PROJ; 0.0 if none. This is
+    the only legal steal/denial in 2p base -- created by a tile merging two fields."""
+    best = 0.0
+    for root, counts in farm_counts.items():
+        if counts[0] > 0 and counts[1] > 0 and mover in _winners(counts):
+            v = _farm_value_proj(decomp, root)
+            if v >= V_FARM_PROJ:
+                best = max(best, v)
+    return best
 
 
 # --------------------------------------------------------------------------- #
@@ -222,104 +242,72 @@ def label_position(game, board, legal_actions, leaf_cfg=None) -> dict:
 
 
 def _label_tiles(game, board, st, mover, opp, decomp, legal_actions, out):
-    """TILES-phase motifs: block (deny opp completion equity), avoid_feeding."""
-    # opponent's pending completion equity in the CURRENT position
-    opp_eq_pre = opp_completion_equity(st, decomp, opp)
-    # per-action: opponent's completion equity AFTER my tile placement
-    per_action = {}
+    """TILES-phase motifs: block, avoid_feeding (equity proxies), contest_merge
+    (favorable merge into a contested high-value field). One ownership scan / action."""
+    pre_city, _, _ = _feature_owners(st, decomp)
+    opp_eq_pre = _opp_eq(st, decomp, pre_city, opp)
+    per_eq = {}       # opp completion equity AFTER my placement
+    per_contest = {}  # mover-favorable contested-farm value AFTER my placement
     for a in legal_actions:
-        post_state, post_decomp = _apply(game, board, a)
-        per_action[a] = opp_completion_equity(post_state, post_decomp, opp)
-    if not per_action:
+        ps, pd = _apply(game, board, a)
+        cc, _, fc = _feature_owners(ps, pd)
+        per_eq[a] = _opp_eq(ps, pd, cc, opp)
+        per_contest[a] = _mover_fav_contest(pd, fc, mover)
+    if not per_eq:
         return
-    vals = per_action.values()
-    lo, hi = min(vals), max(vals)
+    lo, hi = min(per_eq.values()), max(per_eq.values())
     spread = hi - lo
 
-    # BLOCK: opp already has a near-complete owned city (>= V_BLOCK at stake) AND the
-    # placement choice is CONSEQUENTIAL (>= BLOCK_SPREAD swing in opp completion
-    # equity). satisfying = STRICT arg-min (the genuine denials). Equity proxy --
-    # low fidelity, since my tile rarely interacts with the opp's feature.
+    # BLOCK: opp has a near-complete owned city (>= V_BLOCK) AND the placement choice
+    # is consequential (>= BLOCK_SPREAD swing). satisfying = strict arg-min (denials).
     if opp_eq_pre >= V_BLOCK and spread >= BLOCK_SPREAD:
-        sat = {a for a, v in per_action.items() if v <= lo + EPS}
-        if len(sat) < len(per_action):   # a real choice exists
-            out["block"] = MotifLabel(
-                opportunity=True, satisfying=sat, best_magnitude=spread,
-                detail={"opp_eq_pre": round(opp_eq_pre, 2), "lo": round(lo, 2),
-                        "hi": round(hi, 2), "spread": round(spread, 2)},
-            )
+        sat = {a for a, v in per_eq.items() if v <= lo + EPS}
+        if len(sat) < len(per_eq):
+            out["block"] = MotifLabel(True, sat, spread,
+                {"opp_eq_pre": round(opp_eq_pre, 2), "lo": round(lo, 2),
+                 "hi": round(hi, 2), "spread": round(spread, 2)})
 
-    # AVOID_FEEDING: a CONSEQUENTIAL feeding move exists (some actions hand the opp
-    # >= FEED_SPREAD more pending equity than others). satisfying = strict arg-min
-    # (didn't feed). Equity proxy -- low fidelity.
+    # AVOID_FEEDING: a consequential feeding move exists. satisfying = strict arg-min.
     if spread >= FEED_SPREAD:
-        sat = {a for a, v in per_action.items() if v <= lo + EPS}
-        if len(sat) < len(per_action):
-            out["avoid_feeding"] = MotifLabel(
-                opportunity=True, satisfying=sat, best_magnitude=spread,
-                detail={"lo": round(lo, 2), "hi": round(hi, 2), "spread": round(spread, 2)},
-            )
+        sat = {a for a, v in per_eq.items() if v <= lo + EPS}
+        if len(sat) < len(per_eq):
+            out["avoid_feeding"] = MotifLabel(True, sat, spread,
+                {"lo": round(lo, 2), "hi": round(hi, 2), "spread": round(spread, 2)})
+
+    # CONTEST_MERGE: some placements give the mover a favorable share of a valuable
+    # contested field (the only legal steal/denial), others don't -> a real choice.
+    has = {a for a, v in per_contest.items() if v >= V_FARM_PROJ}
+    if has and len(has) < len(per_contest):
+        out["contest_merge"] = MotifLabel(True, has, max(per_contest.values()),
+            {"n_yes": len(has), "n_legal": len(per_contest)})
 
 
 def _label_meeples(game, board, st, mover, opp, decomp, legal_actions, out):
-    """MEEPLES-phase motifs (structural ownership flips): farm_claim, farm_denial,
-    contest. Apply each candidate meeple action, re-decompose, compare ownership by
-    root (roots are stable across a meeple placement; farms never auto-complete)."""
+    """MEEPLES-phase motif: farm_claim (the only legal field motif at meeple time --
+    you cannot place on an occupied feature, so no steal/denial here)."""
     pre_city, pre_road, pre_farm = _feature_owners(st, decomp)
-
-    claim_sat, denial_sat, contest_sat = set(), set(), set()
-    claim_mag = denial_mag = contest_mag = 0.0
-    claim_fin = denial_fin = 0   # # finished adjacent cities of the best farm (outcome-sanity)
-    claim_adj = denial_adj = 0   # # adjacent city components
-
+    claim_sat = set()
+    claim_mag = 0.0
+    claim_fin = claim_adj = 0
     for a in legal_actions:
         post_state, post_decomp = _apply(game, board, a)
-        post_city, post_road, post_farm = _feature_owners(post_state, post_decomp)
-
-        # ---- FARMS (roots stable; farmers survive turn-end) ----
+        _, _, post_farm = _feature_owners(post_state, post_decomp)
         for root in post_decomp.farm_root_keys:
             post_w = _winners(post_farm.get(root, [0, 0]))
-            if mover not in post_w:
+            if post_w != [mover]:
                 continue
-            pre_w = _winners(pre_farm.get(root, [0, 0]))
-            if mover in pre_w:
-                continue  # already owned -> not a new claim/denial
+            if mover in _winners(pre_farm.get(root, [0, 0])):
+                continue  # already owned
             vproj = _farm_value_proj(post_decomp, root)
-            fin = post_decomp.farm_root_finished_cities.get(root, 0)
-            adj = len(post_decomp.farm_root_adj_city_roots.get(root, ()))
-            if pre_w == [opp]:
-                # I moved an opp-sole farm to a tie (or take) -> DENIAL
-                if vproj >= V_FARM_PROJ:
-                    denial_sat.add(a)
-                    if vproj > denial_mag:
-                        denial_mag, denial_fin, denial_adj = vproj, fin, adj
-            else:
-                # previously unowned (or mine) -> CLAIM of a high-value field
-                if vproj >= V_FARM_PROJ and post_w == [mover]:
-                    claim_sat.add(a)
-                    if vproj > claim_mag:
-                        claim_mag, claim_fin, claim_adj = vproj, fin, adj
-
-        # ---- CONTEST open city/road (surviving features) ----
-        for root in post_decomp.city_root_coords:
-            if post_decomp.city_root_finished.get(root, False):
-                continue
-            post_w = _winners(post_city.get(root, [0, 0]))
-            pre_w = _winners(pre_city.get(root, [0, 0]))
-            if pre_w == [opp] and mover in post_w:
-                val = _city_value(post_decomp, root, post_state.board)
-                if val >= V_CONTEST:
-                    contest_sat.add(a)
-                    contest_mag = max(contest_mag, val)
-
+            if vproj >= V_FARM_PROJ:
+                claim_sat.add(a)
+                fin = post_decomp.farm_root_finished_cities.get(root, 0)
+                adj = len(post_decomp.farm_root_adj_city_roots.get(root, ()))
+                if vproj > claim_mag:
+                    claim_mag, claim_fin, claim_adj = vproj, fin, adj
     if claim_sat:
         out["farm_claim"] = MotifLabel(True, claim_sat, claim_mag,
                                        {"finished_adj": claim_fin, "adj_n": claim_adj})
-    if denial_sat:
-        out["farm_denial"] = MotifLabel(True, denial_sat, denial_mag,
-                                        {"finished_adj": denial_fin, "adj_n": denial_adj})
-    if contest_sat:
-        out["contest"] = MotifLabel(True, contest_sat, contest_mag)
 
 
 # --------------------------------------------------------------------------- #
