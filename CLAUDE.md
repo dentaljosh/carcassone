@@ -41,6 +41,19 @@ Three boxes are available — the 5900XT-box (local, hostnames still say "5800x"
 - **⚠️ The share mount path differs by box:** local commands use `/mnt/c/carc-shared`; anything inside an `ssh xeon/laptop` uses `/mnt/carc-shared`. (The PreToolUse lint hook blocks the two unambiguous misuses; `# allow-path` overrides.)
 - **⚠️ Detach any run >~1 min** (`nohup … & disown`, or `setsid`) — Joshua's Mac→Windows→WSL setup means Mac-sleep SIGHUP *and* WSL VM-teardown both kill tty-attached jobs. The harness's `run_in_background=true` alone is NOT enough — the python child must be explicitly detached.
 
+## Remote command rule — Claude Code drops `cd` in SSH (known failure mode)
+
+Claude Code **silently omits `cd /path &&` from SSH Bash-tool commands** — a documented failure mode (it over-applies the Bash-tool "avoid `cd`" guidance to remote SSH, where each call starts fresh in `$HOME`). The omission is at *token generation*, upstream of the tool, so it persists through CLAUDE.md, explicit correction, and even Claude admitting it (proven 2026-06-23: a plain non-ssh `echo` of the phrase drops it too). **Retrying or "copying carefully" the inline `cd` form cannot work — don't try.**
+
+**So never rely on `cd` in an SSH command. Use a path-stable form:**
+- Git → `ssh HOST 'git -C /home/doctor/projects/carcassone <subcmd>'`
+- Python → absolute paths: `ssh HOST '/home/doctor/projects/carcassone/.venv/bin/python /home/doctor/projects/carcassone/scripts/x.py'`
+- Cargo → `cargo … --manifest-path /home/doctor/projects/carcassone/rust/<crate>/Cargo.toml`
+- Docker → `docker compose -f /absolute/path/docker-compose.yml …`
+- **Multi-step / needs the repo CWD →** a remote wrapper script that does its own `cd`, then just `ssh HOST '/home/doctor/projects/carcassone/scripts/whatever.sh'` (or `ssh HOST 'bash -s' < /tmp/x.sh` with `cd` on line 1).
+
+Before any SSH command, verify it does NOT depend on the remote shell's starting directory. The PreToolUse lint hook blocks repo-relative SSH commands that lack a path-stable form (`# allow-nocd` overrides). Memory: `feedback_remote_ssh_pipe_script_mandatory`.
+
 ## Operating norms (learned the hard way — don't violate)
 
 - **Test as you go.** Don't ship code without pytest coverage of the contract.

@@ -111,12 +111,13 @@ def _cifs_mismatch(cmd: str) -> str | None:
 
 def _ssh_remote_no_cd(cmd: str) -> str | None:
     """A remote `ssh <host> '<inner>'` whose inner command is repo-relative
-    (git / python scripts / bash scripts / pytest / .venv) but has no `cd` into
-    the repo. The remote shell lands in $HOME, so the command fails ('not a git
-    repository' / 'No such file') — the recurring cd-thrash (6 identical broken
-    retries, 2026-06-23). Always-wrong -> block. The message hands over the
-    corrected command VERBATIM (the model kept re-dropping the cd when asked to
-    retype) plus the piped-script alternative."""
+    (git / python / scripts / pytest / .venv) but has NO path-stable addressing —
+    no `cd`, no `git -C`, no `bash -s` script, and the absolute repo path doesn't
+    appear. The remote shell lands in $HOME, so it fails ('not a git repository' /
+    'No such file'). Always-wrong -> block. NB: Claude Code drops an inline
+    `cd /path &&` from SSH commands at generation time (known failure mode, proven
+    2026-06-23 — a plain non-ssh echo drops it too), so the message recommends
+    PATH-STABLE forms (git -C, absolute paths, wrapper script), NOT an inline cd."""
     m_ssh = re.search(r"\bssh\b", cmd)
     if not m_ssh:
         return None
@@ -130,30 +131,29 @@ def _ssh_remote_no_cd(cmd: str) -> str | None:
     if not m:
         return None  # no quoted remote cmd (interactive ssh / -O etc.) -> skip
     inner = m.group(2).strip()
-    # a cd/pushd anywhere in the remote cmd, or an explicit git dir -> fine
+    # path-stable forms -> no cd needed -> fine:
+    #  - explicit cd/pushd, or git -C / --git-dir
+    #  - the absolute repo path appears (python /abs/x.py, --manifest-path /abs/..,
+    #    docker -f /abs/.., a wrapper /abs/x.sh) -> not $HOME-relative
     if re.search(r"\bcd\s+\S", inner) or re.search(r"\bpushd\b", inner):
         return None
     if re.search(r"\bgit\s+(-C|--git-dir)\b", inner):
+        return None
+    if REPO in inner:
         return None
     # repo-relative op that needs the repo CWD?
     if re.search(r"(^|;|&&|\|\|?|\bnice\s+-n\s+\d+\s+)\s*"
                  r"(git|python3?|\.?/?scripts/|bash\s+scripts/|\.venv/|pytest)\b", inner):
         snippet = inner[:48].replace("\n", " ")
-        # Inject `cd <repo> &&` right after the opening quote of the remote arg so
-        # the fix is COPY-PASTE, not retype-from-intent (which is how the cd kept
-        # getting dropped, 2026-06-23). Best-effort: nested same-quote inners may
-        # truncate, but the printed line still carries the cd in the right place.
-        inject = m_ssh.end() + m.start(2)
-        fixed = cmd[:inject] + f"cd {REPO} && " + cmd[inject:]
-        return ("remote `ssh … '" + snippet + "…'` runs a repo-relative command "
-                "with no `cd` — the remote shell lands in $HOME and this fails "
-                "('not a git repository' / No such file).\n"
-                "  FIX (mandatory — do this EVERY time): an inline `ssh host 'cd .. && ..'` is "
-                "NOT reliable here, the leading cd gets STRIPPED in transit. Pipe a script whose "
-                "line 1 is the cd:\n"
-                "    write /tmp/r.sh = `cd " + REPO + "\\n<your cmd>` ; then  "
-                "ssh <host> 'bash -s' < /tmp/r.sh\n"
-                "  (inline fallback, often stripped: " + fixed + "  |  Override: `# allow-nocd`.)")
+        return ("remote `ssh … '" + snippet + "…'` runs a repo-relative command with no path-"
+                "stable addressing — it lands in $HOME and fails. NOTE: Claude Code silently "
+                "drops an inline `cd /path &&` from SSH commands (known failure mode), so do NOT "
+                "use cd. Use a PATH-STABLE form:\n"
+                "    git:    ssh <host> 'git -C " + REPO + " <subcmd>'\n"
+                "    python: ssh <host> '" + REPO + "/.venv/bin/python " + REPO + "/scripts/x.py'  (abs paths)\n"
+                "    multi:  a wrapper that cd's itself —  ssh <host> '" + REPO + "/scripts/x.sh'\n"
+                "            (or  ssh <host> 'bash -s' < /tmp/x.sh  with cd on line 1)\n"
+                "  (Override: add `# allow-nocd`.)")
     return None
 
 
@@ -287,15 +287,15 @@ def main() -> int:
         # a short window, the model is re-sending a near-identical broken command
         # (the 2026-06-23 cd-thrash). Escalate loudly so it switches tactic — copy
         # the corrected line / pipe a script — instead of retyping the same string.
-        sig = "no `cd`" if any("no `cd`" in b for b in blocks) else None
+        sig = "path-stable" if any("path-stable" in b for b in blocks) else None
         if sig:
             prior = _recent_block_count(sig)
             if prior >= 2:
-                msg = (f"⛔ REPEAT BLOCK ({prior + 1}x in 15min) — the inline `cd` keeps getting "
-                       f"STRIPPED in transit; retyping/copying the inline form will NEVER work. "
-                       f"STOP and switch tactic: write a /tmp/*.sh with `cd " + REPO + "` on "
-                       f"line 1, then `ssh <host> 'bash -s' < /tmp/that.sh`. Do the .sh — it is "
-                       f"not optional.\n\n" + msg)
+                msg = (f"⛔ REPEAT BLOCK ({prior + 1}x in 15min) — Claude Code drops the inline "
+                       f"`cd` from SSH at generation; retrying it will NEVER work. STOP using cd. "
+                       f"Use a PATH-STABLE form: `git -C " + REPO + " ..`, absolute python paths "
+                       f"(`" + REPO + "/.venv/bin/python " + REPO + "/scripts/x.py`), or a wrapper "
+                       f"`ssh <host> '" + REPO + "/scripts/x.sh'`.\n\n" + msg)
         _log({"ts": time.time(), "kind": "pre_block", "cmd": cmd[:500],
               "reasons": blocks})
         print(msg, file=sys.stderr)
