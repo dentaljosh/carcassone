@@ -48,8 +48,47 @@ elo sign: candidate − RoD_iter_01 (>0 ⇒ candidate stronger).
 
 Codified in `docs/CLUSTER_OPS.md` "Worker counts — GEN W ≠ EVAL W".
 
-## Follow-on
+## Follow-on — TAIL EVAL (iters 11–17) + early-iter completeness (02/03), 2026-06-23
 
-The chain was **extended iter_11→iter_17** (latest-chain from iter_10, `DO_SMOKE=0` = no per-iter eval, gen W28/8) then **stopped early at the user's call** (target had been iter_30). **All 16 continuation checkpoints `RoD_iter_02…iter_17` are retained**; iters **11–17 are UNEVALED** (no net-vs-net / ruler eval was run on them) — they're held for a future keep-best + ruler pass if the line is revisited. Given iters 02–10 peaked at parity (iter_08, TIE vs heur@3200_v2.8 at n=800), the extension is **exploratory and unresolved**, not promotion-grade. Nothing promoted; champion + PRODUCTION.yaml unchanged.
+The chain was **extended iter_11→iter_17** then stopped (target had been 30). Those tail iters
+were initially `DO_SMOKE=0` (unevaled); this section is the **after-the-fact tail eval** plus the
+early iters 02/03 for completeness. All numbers in `experiments/results.csv` (`rod_ov_*_n100` /
+`*_n384`); n=100 are SCREENS (±35 elo, coarse).
 
-**Artifacts:** `evals/iter{04,07,08,10}_vs_iter01_n100/`, `evals/iter{08,10}_vs_iter01_n400/`, `evals/iter08_vs_heur3200_v28/`. Harnesses: `scripts/rod_v28/run_overnight_evals.sh` (net-vs-net 2-box), `scripts/rod_v28/run_heur_eval.sh` (ruler 2-box).
+**vs RoD_iter_01 (n=100 screen; elo = candidate − RoD1):**
+
+| iter | elo | paired_z | read |
+|---|---|---|---|
+| iter_02 | +20.9 | +0.17 | tied |
+| iter_03 | −3.5 | +0.40 | tied |
+| iter_11 | +96.2 | +1.18 | looks strong but **inflated** (see h2h below) |
+| iter_13 | +17.4 | +0.83 | ~tied |
+| iter_15 | +3.5 | −0.32 | tied |
+| iter_17 | +41.9 | +0.69 | positive; best tail contender |
+
+**vs the keep-best iter_08 (the decisive test — does the extension beat it?):**
+
+| iter | n | elo | paired_z | verdict |
+|---|---|---|---|---|
+| iter_11 | 100 | **−56.1** | −1.80 | **LOSES** — its +96-vs-RoD1 was non-transitive noise |
+| iter_13 | 100 | −13.9 | +0.56 | tie (wash) |
+| iter_17 | 100 | +13.9 | −0.74 | tie (wash) — best contender |
+| **iter_17** | **384** | **+6.3** | **−0.16** | **TIE at verdict power** (40-min timeout clipped from 400) |
+
+**Verdict: the extended chain (11–17) does NOT beat iter_08.** The strongest-vs-RoD1 tail iter
+(iter_11) *loses* head-to-head to iter_08; iter_13/iter_17 tie; the best contender (iter_17) ties
+at n=384. Combined with the early/middle iters (02/03/04/07 all ~tied/below RoD1) and iter_10
+(tied), **the whole chain hovers at RoD1/heuristic level; iter_08 remains the lone 2σ point and
+the keep-best, sitting at heur@3200 parity without exceeding it.** Nothing promoted; champion +
+PRODUCTION.yaml unchanged. All 16 continuation checkpoints retained.
+
+**Note (2-box tally):** the early 2-box screens (iter_15/17) first reported clipped n (72/80) from a
+premature-tally race in the shared-claim path (no completion barrier — diagnosed 2026-06-23, work-
+stealing distributes fine, 32/68 split, but each box tallies on its own pass-completion). All were
+re-tallied to full n after both boxes drained. Fix tracked separately (drain-to-completion barrier
++ shorter claim-stale-secs).
+
+**Artifacts:** `evals/iter{02,03,04,07,08,10,11,13,15,17}_vs_iter01_n100/`, `evals/iter{08,10}_vs_iter01_n400/`,
+`evals/iter{11,13,17}_vs_iter08_n100/`, `evals/iter17_vs_iter08_n400/`, `evals/iter08_vs_heur3200_v28/`.
+Harnesses: `scripts/rod_v28/run_overnight_evals.sh` (vs-RoD1 2-box), `scripts/rod_v28/run_screens_vs_base.sh`
+(vs-iter08, parameterized baseline), `scripts/rod_v28/run_heur_eval.sh` (ruler).
