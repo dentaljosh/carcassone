@@ -142,8 +142,27 @@ margin, paired_z, n decks, timeouts, solver runtime, handoff K-distribution.)_
 ## Part D — Slice analysis
 _(pending.)_
 
-## Part E — Endgame mechanism examples
-_(pending — 20–50 positions: RoD1 vs h3200 vs exact choice + mechanism label.)_
+## Part E — Endgame mechanism: what the exact tail actually fixes
+
+Top 40 RoD1-suboptimal K=2 positions (from Part B regret), move-types decoded — a striking
+single mechanism:
+
+- **Every one is a last-tile *placement* error** (TILES phase, k=2): RoD1 places its final
+  tile worse than the exact optimum (`tile_place` vs `tile_place`). **Zero** are meeple
+  under-deployment or farmer over-commit — by k=2 the meeples are already placed (meeples
+  in hand 0–1), so the leak is pure **scoring-conversion / denial on the last tile**
+  (completing a city/road/farm, or denying the opponent), not meeple economy. (Refines the
+  L2-3 "iter8 wastes meeples" intuition: at the *very* endgame it's tile placement, not
+  meeple deployment, that RoD1 gets wrong.)
+- **h3200 already makes the exact fix on 24/40 (60%)** of RoD1's mistakes → little for exact
+  to add there. But on **16/40 (40%) h3200 is *also* suboptimal** — on those, exact play
+  beats **both** RoD1 and h3200. That 40% is the narrow avenue by which exact endgame play
+  can *exceed* the deep heuristic (the autopsy's "one lever that can exceed a heuristic"),
+  bounded to the last tile.
+- Worst RoD1 error in the set: **9 pts** (seed 3200000129, a 67–64 game decided on the last
+  tile). Most are 1–3 pts.
+
+Full table: [`partE_examples_digest.md`](partE_examples_digest.md) / `.csv`.
 
 ## Part F — Does exact solve h3200's gap or just patch RoD?
 _(pending — interpret against the bar above.)_
