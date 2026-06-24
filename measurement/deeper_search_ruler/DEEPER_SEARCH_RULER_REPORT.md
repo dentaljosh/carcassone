@@ -29,6 +29,27 @@ signal. Do not oversell score-margin-only gains as champion strength.
 - **Seeds:** h6400-vs-h3200 `1924100000`; h12800-vs-h6400 `1924200000`; RoD1-vs-h6400 `1924300000`;
   root-audit suite band `1925000000` (greedy `replay_to`, agent-unbiased, fixed once written).
 
+## Prior context (reconciliation — results-discipline)
+
+No prior **heur@6400-vs-heur@3200** or **heur@12800-vs-heur@6400** direct head-to-head exists in
+`experiments/results.csv` (grep clean) — this is the first direct heur-vs-heur depth ladder at these
+depths. Adjacent priors that set the expectation (all argue toward saturation, hence the conservative prior):
+
+- **`heurdepth_augoff_*` (2026-06-11):** heur depth 200→800 (v2.7) "**DOES NOT MATTER** for this net —
+  v2.7 leaf dominates move choice; tree sims are 2nd-order" (curve flat within noise). Caveat: net-vs-heur,
+  and **net-dependent** (iter_11 *did* drift 74%@200→58%@800). Not a heur-vs-heur statement, and only to h800.
+- **`odometer_residual_*` (2026-06-07):** against heur@3200 (16× deeper) a leaf correction **washes out** —
+  "against a vastly deeper searcher a small leaf correction stops mattering." So h3200 is already "deep".
+- **DECISIONS 2026-06-09 (iter_08 autopsy) + 2026-06-24 (exact-endgame verdict):** both explicitly name
+  "**h6400/h12800 as a non-saturated ruler**" as the recommended follow-on. This branch executes that.
+- **Midgame reference probe (2026-06-21):** static v2.7 explains the deep teacher (Kendall τ **+0.61**);
+  where v2.7 errs, the fix is **deeper search** (heur@800 recovers ~47% of iter8's misses), not a feature —
+  ~90% of disagreements are structural/positional. Directly relevant to Part D/E.
+
+So the prior is: the v2.7/v2.8 leaf dominates move selection and tree sims are second-order by ~h3200 →
+**h6400 ≈ h3200 (saturation) is the expected outcome**; a *stable* h6400/h12800-over-h3200 signal in
+late_mid/pre_endgame would be the surprise worth distilling.
+
 ---
 
 ## Part A — Runtime feasibility
