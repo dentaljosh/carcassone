@@ -2667,3 +2667,20 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** low (measurement; no production change).
 **Phase:** measurement-first
+
+## 2026-06-23 — Autopsy: RoD v2.8 overnight iter_08 is a NON-TRANSITIVE style point, not a champion (measurement)
+
+**Context:** deep-dive autopsy of the overnight-flywheel keep-best (iter_08, +33/z2.0 over RoD1 but heur@3200_v2.8 PARITY). Goal: where does iter_08 beat RoD1, is it ruler-aligned or RPS, and what's the highest-EV next branch? Constraints held: nothing promoted, PRODUCTION.yaml/champion/v2.7 untouched, v2.8 opt-in. Full report: **[measurement/rod_v28_overnight_flywheel/autopsy/AUTOPSY_RoD_v28_iter08.md](measurement/rod_v28_overnight_flywheel/autopsy/AUTOPSY_RoD_v28_iter08.md)** (+ CSVs/digests in that dir).
+
+**Method:** all from CACHED records + on-disk metadata except ONE new run (iter_08 root choices on the 1000 fixed midgame positions, NeuralMCTS@200 v2.8, identical method to the cached rod/parent labels). Scripts `scripts/rod_v28/autopsy_*.py`.
+
+**FACT — outcome triangle:** iter08>RoD1 (+33.1 wr / +2.23 paired z2.0, n400) but iter08-vs-h3200 (−0.38) ≡ RoD1-vs-h3200 (−0.36): the +33 transfers ZERO to the external ruler. Clean non-transitive cycle (iter08 > RoD1 ≈ h3200 ≈ iter08). The +33 is **concentrated** (top 10% of decks = 132% of net margin; median deck +0.8) = RPS/exploit tail, not broad skill.
+
+**FACT — training space:** value_outcome_corr DRIFTS DOWN parent 0.510 → RoD1 0.413 → chain 0.36–0.49; iter_08 (0.397) is among the chain's LOWEST value-corr + HIGHEST entropy (1.594). Not a value gain, not a sharper policy.
+
+**FACT — root audit (executed, 1000 pos):** iter08≡h3200 0.521 ≈ RoD1 0.511 ≈ parent 0.520. iter08's divergence from RoD1 = net +10 toward the ruler (z+0.7, NOT significant) → orthogonal/style, confirmed at move level. The disagreement LOCALIZES to the endgame (late_mid/pre_endgame agreement 0.445–0.485, iter08 moves AWAY there) — where the ruler is most confident (L2-3 most endgame-precise).
+
+**Decision (INTERPRETATION):** iter_08 = keep-best parent (conditional yes) but NOT a champion; its gain is RPS/style + selection noise, not ruler-aligned improvement. Structural blocker #2 stands. **Highest-EV next branch = exact/endgame-solver hybrid** (the executed audit localizes the learned policy's costliest, most persistent gap to the endgame — the one place an EXACT solver can provably exceed any heuristic; the l2hyb handoffs only tied h3200 because they handed off to another heuristic). Then h6400 as a non-saturated ruler; deprioritize v2.9-leaf and blind RoD continuation. **STOP undirected RoD continuation iters.**
+
+**Reversal cost:** none (measurement/analysis only; no checkpoint, config, or production change).
+**Phase:** measurement-first
