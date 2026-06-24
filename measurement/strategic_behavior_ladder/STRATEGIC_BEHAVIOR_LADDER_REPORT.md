@@ -59,9 +59,17 @@ agents punish weak-CREATED chances more than strong-created ones.
   regime, seed, seat, ply, k_remaining, labels, satisfying sets, magnitudes, eventual outcome — all stored.
 
 ## Part C — benchmark metrics  [FILL]
-See [`ANALYSIS_DIGEST.md`](ANALYSIS_DIGEST.md) (Tables 1–6 + ladder). Summary + interpretation here.
+See [`ANALYSIS_DIGEST.md`](ANALYSIS_DIGEST.md) (Tables 1–6 + ladder) and CSVs
+[`metrics_takerate.csv`](metrics_takerate.csv), [`positions_labeled.csv`](positions_labeled.csv).
+Summary + interpretation here.
 
 ## Part D — pseudo-human ladder  [FILL]
+- Does behavior improve monotonically with agent strength? (per-motif corr) — [FILL]
+- Does h6400 show more strategic behavior than h3200? — [FILL]
+- Does RoD1 look h3200-like, h6400-like, or weird/RPS-like? — [FILL]
+- Does RoD1 punish weak opponents (take rate vs weak)? — [FILL]
+- Does RoD1 fail to punish weak mistakes even when obvious? — [FILL]
+- Motifs where ALL internal agents fail (missing human dimension)? — [FILL]
 
 ## Part E — representative examples  [FILL]
 See [`EXAMPLES.md`](EXAMPLES.md).
@@ -82,6 +90,15 @@ See [`EXAMPLES.md`](EXAMPLES.md).
    must still beat `h6400_v2.8` on full-game held-out winrate (PRODUCTION.yaml untouched, v2.7 frozen,
    v2.8 opt-in).
 
-## Part G — verdict  [FILL]
+## Part G — verdict (brutally honest)  [FILL]
+1. Does RoD1 exhibit higher-level strategic behavior, or mostly search/eval compression? — [FILL]
+2. Which motifs does h6400 show more than RoD1? — [FILL]
+3. Does RoD1 punish weak opponents appropriately? — [FILL]
+4. Are failures broad or motif-specific? — [FILL]
+5. Are the motif definitions credible, or too noisy/subjective? — [FILL]
+6. Which motifs are plausible future tools/training targets? — [FILL]
+7. Which motifs to KILL as non-predictive / benchmax bait? — [FILL]
+8. Next branch: targeted tool construction / h6400-motif distillation / v2.9 heuristic concept patch /
+   exact-lookahead conversion setup / human expert labeling / STOP? — [FILL]
 
 ## 10-line executive summary  [FILL]
