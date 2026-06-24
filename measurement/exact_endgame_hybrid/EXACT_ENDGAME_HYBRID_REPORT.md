@@ -154,8 +154,21 @@ exactly recovering RoD1's ~0.57-pt/move endgame regret (Part B) — **but moves 
 **patches the endgame leak without breaking the ruler.** Deck-neutral, exact:2 lifts RoD1 from
 the cached −0.36 margin vs h3200 to ≈ +0.29 — a tie-to-slight-margin-lead, not a winrate win.
 
-_(K=3 depth series running — does deeper exact grow the margin enough to move the winrate? →
-gates the K=4 decision.)_
+**K=3 (n=100 screen; top-up to n=400 + a K=4 n=100 screen in progress).** Latch k∈{2,3} by
+parity, exact-moves/game 3.0, 0 timeouts, solver ~57–128 s/game (heavy tail to 38 min, solved):
+
+| cell | winrate (z) | winrate-Elo | **paired score margin** |
+|---|---|---|---|
+| exact:3 vs **RoD1** (n=100) | 0.535 (z+0.70) | +24.4 (±34.8) | **+1.95 (z+5.17)** |
+| exact:3 vs **heur@3200_v2.8** (n=98) | 0.546 (z+0.91) | +32.0 (±35.2) | +2.76 raw · **Δ +1.23 (z+4.11)** |
+
+**The effect SCALES with exact depth.** The paired margin ~tripled K=2→K=3 (vs RoD1 +0.65 →
++1.95; vs-h3200 Δ +0.65 → +1.23), and the winrate is **starting to move** (vs h3200 0.526 →
+0.546, Elo +18→+32; vs RoD1 0.501 → 0.535) — though n=100 is underpowered (z<1) on the
+winrate. K=3 is the deeper, less-parity-diluted test (it always catches ≥k=2), and it confirms
+the exact tail is doing real, depth-scaling work. **n=400 top-ups + a K=4 n=100 screen running**
+to resolve whether the winrate edge is real and whether it scales further — the result that
+decides whether exact endgame play can *exceed* the heuristic, not just match it.
 
 ## Part D — Slice analysis (why margin improves but winrate doesn't)
 
