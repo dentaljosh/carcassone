@@ -128,11 +128,51 @@ Key question: did RoD_iter_01 merely reach h3200 parity, or does it also hold ag
 Suite: **1620 positions**, greedy `replay_to` (agent-unbiased), TILES-phase, spanning the whole game by
 k_remaining: endgame 450 / pre_endgame 360 / late_mid 270 / midgame 270 / opening 270. Each audited by
 h3200/h6400/h12800/RoD1 → root choice (`best_action`, = what it plays), top visit-share, top-k, visit
-entropy, value. _[Agreement matrices + choice-chain stability PENDING from `analyze_root_audit.py`.]_
+entropy, value. (`ROOT_AUDIT_DIGEST.md`, `all_positions.json`, `disagreements.csv`.)
 
-Note: the greedy generator **does not place farmers** (greedy maximizes immediate score), so the
-"farm-heavy" slice is not represented — same limitation as the l23 suite. Phase / legal-count /
-meeple-pressure / score-state slices are well covered.
+**Search sharpness by depth** — heuristic UCT visits stay **near-uniform even at h12800** (the extra sims
+refine Q, not visit concentration; the v2.8 leaf rates many placements similarly):
+
+| agent | mean entropy (nats) | mean top visit-share | mean #children |
+|---|---|---|---|
+| h3200 | 3.519 | 0.051 | 38.2 |
+| h6400 | 3.494 | 0.062 | 38.2 |
+| h12800 | 3.445 | 0.079 | 38.2 |
+| RoD1 | **2.572** | **0.270** | 26.8 |
+
+So `top_share` is a weak confidence proxy for the heuristics (→ I use **convergence** as the stable-signal
+test). The neural policy is far sharper than heuristic search at any depth.
+
+**Pairwise top-1 agreement:** h3200~h6400 **0.743**, h6400~h12800 **0.765**, h3200~h12800 **0.715** —
+adjacent depths agree ~74–77%, i.e. **~25–29 % of root moves change with depth** (not root-level
+saturation). RoD1~h3200 **0.515**, RoD1~h6400 0.516, RoD1~h12800 **0.503** — RoD1 agrees with *all* depths
+~51 % and is **not closer to the deeper search** (≤ its h3200 agreement); in the **endgame** RoD1~heur
+drops to ~0.40 (its largest divergence — consistent with the known endgame leak).
+
+**Choice-chain stability (does deeper search produce stable new decisions, or noise?):**
+
+| outcome | count | % |
+|---|---|---|
+| agree3 (h3200=h6400=h12800, search saturated) | 1070 | **66 %** |
+| **converged** (h6400≠h3200 **and** h12800=h6400 — STABLE new deep decision) | 169 | **10 %** |
+| unstable (all three differ = search noise) | 160 | **10 %** |
+| partial (other) | 221 | 14 % |
+
+**The decisive Part D fact: the stable deeper-search signal (~10 %) is matched ~1:1 by pure churn (~10 %).**
+Deeper search *does* produce stable new decisions, but they are a minority and roughly equalled by noise.
+Converged cases are endgame/pre_endgame-weighted (endgame 53 + pre_endgame 38 = 54 % of 169).
+
+**Deep disagreements (h12800 ≠ h3200):** 462/1620 (**29 %**), of which **169 (37 %) converged** (stable).
+RoD1 sides with the deep move on only **86/462 (19 %)** — it does *not* preferentially adopt the
+deeper-search choice.
+
+**RoD1 placement vs the ladder:** ==h3200-not-h6400 **82** ≈ ==h6400-not-h3200 **83** (symmetric — RoD1 is
+*not* systematically stuck at the shallow ceiling), ==both 753, ==neither **702** (it plays its own policy
+~43 % of the time). **Root-level Part C signal: RoD1's relationship to h6400 ≈ its relationship to h3200.**
+
+Note: the greedy generator **does not place farmers** (greedy maximises immediate score), so the
+"farm-heavy" slice is unrepresented — same limitation as l23. Phase / legal-count / meeple-pressure /
+score-state slices are well covered; **all root choices are TILES-phase** (meeple decisions are downstream).
 
 ---
 
