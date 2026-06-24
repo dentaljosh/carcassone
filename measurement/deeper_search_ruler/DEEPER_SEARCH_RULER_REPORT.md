@@ -98,7 +98,17 @@ distinction). s/game inflated by concurrent audit contention; the clean per-game
 | matchup | n | W/D/L | winrate | winrate-z | Elo ±1σ | **paired margin** | **paired_z** | n_pair |
 |---|---|---|---|---|---|---|---|---|
 | **heur@6400 vs heur@3200** | **400** | 212/7/181 | **0.539** | **+1.6 (NS)** | +27.0 ±34 | **+2.49 pt** | **+2.61 (sig)** | 200 |
-| heur@12800 vs heur@6400 | _[running n=100]_ | — | — | — | — | — | — | — |
+| heur@12800 vs heur@6400 | 100 (screen) | 60/1/39 | 0.605 | +2.1 | +74.1 ±37 | **+3.87 pt** | **+2.27 (sig)** | 50 |
+
+**h12800 vs h6400 (n=100 SCREEN) — the margin scales with depth.** Paired margin **+3.87 pt (z+2.27)** vs
+the +2.49 pt of the rung below: deeper search keeps **out-scoring** the rung beneath it, and by a *growing*
+(or at least non-shrinking) amount — the exact-endgame depth-scaling, reproduced for whole-game heuristic
+depth. **The winrate (0.605, z+2.1) is a SCREEN, NOT a verdict** (n=100 ≈ ±35 elo): it *exceeds* the
+margin-slope prediction (+3.87 pt → ~0.56 expected winrate, observed 0.605), the classic small-n
+over-shoot — recall the h6400-vs-h3200 early read was +4.0 pt / 0.552 and regressed to +2.49 / 0.539 at
+n=400. So the honest read is **margin confirmed (scales with depth), winrate suggestive-but-unconfirmed**.
+I deliberately did **not** top this to n=400 (~7 h) — the verdict-grade rung (h6400-vs-h3200, n=400) already
+establishes the pattern, and the most likely outcome of a top-up is the winrate regressing toward ~0.55.
 
 **h6400 vs h3200 (n=400) — the exact-endgame pattern, confirmed at solid n:** deeper search is a
 **sharper ruler** — paired score margin **+2.49 pt at z+2.61 (significant)** — but **NOT a significantly
@@ -255,10 +265,13 @@ margins — low EV, already characterised.
 2. **Is h6400_v2.8 a meaningfully stronger ruler?** **Sharper, not meaningfully stronger.** It is a
    better *score* ruler (significant margin) — useful if you grade on margin — but **not a meaningfully
    stronger match agent** (winrate NS). Same shape as the exact-endgame verdict.
-3. **Is h12800 worth using?** _[h12800-vs-h6400 n=100 running.]_ Part D already shows h12800 agrees with
-   h6400 on **76.5 %** of root choices (vs h3200~h6400 74.3 %) — deeper search **converges, not diverges**,
-   so the marginal gain from h6400→h12800 is small at the root. Preliminary read: **not worth it as a
-   full-game ruler** (2× cost) and **not as a root teacher** (Part F); h6400 is a sufficient sharper ruler.
+3. **Is h12800 worth using?** **As a sharper *score* ruler, marginally; otherwise no.** h12800 out-scores
+   h6400 by +3.87 pt (z+2.27, n=100 screen) — the margin keeps scaling with depth — but it costs **2×**
+   (~1043 s/game), its winrate edge (0.605) is an unconfirmed n=100 screen likely to regress, and it agrees
+   with h6400 on **76.5 %** of root choices (deeper search *converges*, the root-level marginal gain is
+   small). **Not worth it as a full-game ruler** (h6400 is a sufficient sharper ruler at half the cost) and
+   **not as a root teacher** (Part F). Use it only if you specifically need the sharpest available *score*
+   discriminator and can pay 2×.
 4. **Does RoD_iter_01 hold parity vs deeper search?** _[full-game Part C running.]_ Root-level: RoD1 is
    **equidistant from all depths** (~51 % agreement, ==h3200-not-h6400 ≈ ==h6400-not-h3200) → **no worse
    against h6400 than h3200**. It reached h3200 practical parity; the root audit says that parity is **not

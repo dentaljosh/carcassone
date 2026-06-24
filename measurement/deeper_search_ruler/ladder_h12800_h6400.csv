@@ -1,0 +1,2 @@
+matchup,n,W,D,L,winrate,winrate_z,elo,elo_sig,avg_diff,paired_margin,paired_z,n_paired,n_deckhash,sec_mean,sec_median,sec_p95,sec_max,moves_mean,timeouts
+heur@12800 vs heur@6400,100,60,1,39,0.605,2.1,74.1,35.5,3.87,3.87,2.27,50,50,1043.6,1050.3,1154.1,1197.8,144.0,0
