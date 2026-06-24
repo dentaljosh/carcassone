@@ -167,8 +167,30 @@ Full table: [`partE_examples_digest.md`](partE_examples_digest.md) / `.csv`.
 ## Part F — Does exact solve h3200's gap or just patch RoD?
 _(pending — interpret against the bar above.)_
 
-## Part G — Distillation feasibility
-_(pending.)_
+## Part G — Distillation feasibility (exact labels as a training target)
+
+**What the solver can label (free, per position):** the optimal action (policy target), V*
+(the true optimal-play value target), and `child_values` — the exact value of *every* legal
+action (a dense policy/regret target, far richer than a one-hot).
+
+**Generation cost (measured):** K=2 ~5 s/solve, K=3 ~80 s, K=4 ~21 min. An exact-labeled
+endgame set is cheap at k≤2 (~20–50k positions ≈ ~2–5 h at W=14), costly-but-feasible at k=3
+(~10k ≈ ~16 h at W=14), prohibitive at k≥4 (needs make/unmake or Rust).
+
+**What it could teach — and the headwinds:**
+- *Policy head* (better last-tile placement, the Part-E mechanism): **low EV** — policy gains
+  **wash out under deep MCTS** (memory: net improvements wash out at high sims) and the gain
+  is **sub-point** (Part B regret 0.57). Unlikely to move play-strength.
+- *Value head* (the more promising target): the autopsy showed the value head **degrading**
+  through the RoD continuation (0.510→0.40). Exact V* at k≤3 is a clean true-optimal signal to
+  **recalibrate** endgame value estimates — an auxiliary endgame-value head / oversampling late
+  positions with V* targets could improve endgame *calibration* without the policy-washout
+  problem. This is the one distillation angle with a plausible mechanism.
+
+**Upper bound on the upside:** the fix is worth ~0.57 pts/move at k=2 and is geometrically
+confined to the last 1–3 tiles, so even *perfect* distillation cannot address blocker #2 (the
+learned net exceeding the heuristic across the whole game) — it can only sharpen the endgame
+tail. Final recommendation gated on Part C (does the exact tail even help in full games).
 
 ## Part H — Verdict + 10-line executive summary
 _(pending.)_
