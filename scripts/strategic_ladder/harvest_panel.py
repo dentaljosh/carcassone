@@ -35,7 +35,7 @@ import roster as R
 
 _META = ("regime", "band", "seed", "g", "ply", "mover", "mover_spec", "opp_spec",
          "tile_phase", "phase", "k_remaining", "legal_n", "chosen",
-         "final_margin_mover", "result_mover", "meeples_free")
+         "final_margin_mover", "result_mover", "meeples_free", "scores", "meeples_placed")
 
 _G = None
 
