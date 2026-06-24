@@ -118,8 +118,22 @@ heuristic depth rather than the endgame tail. Consistent with the prior (`heurde
 
 ## Part C — Learned agents vs the deeper ruler
 
-_[PENDING — RoD_iter_01 vs heur@6400 n=200 (orch, high-W); iter_08 optional.]_
-Key question: did RoD_iter_01 merely reach h3200 parity, or does it also hold against h6400?
+Key question: did RoD_iter_01 merely reach h3200 parity, or does it also hold against h6400 (the sharper
+ruler)? RoD_iter_01 = `iter8` net (sims=200, c_puct=3.0, residual_scale=0.25, v2.8 value leaf) vs
+heur@6400_v2.8, paired both-seats, via carc-orch SHM at high W. Clairvoyant-vs-clairvoyant (both descend
+the true deck) — like-for-like.
+
+**Root-level signal (already in hand, Part D):** RoD1 is **equidistant from all heuristic depths**
+(agreement RoD1~h3200 0.515 ≈ RoD1~h6400 0.516 ≈ RoD1~h12800 0.503), and the symmetric placement counts
+(==h3200-not-h6400 82 ≈ ==h6400-not-h3200 83) say RoD1's root choices are **no further from h6400 than
+from h3200**. So the prediction is **parity holds against the deeper ruler** — RoD1's distance to the
+heuristic is a *style/policy* (RPS) gap, not a *depth* gap, and deeper search doesn't widen it.
+
+| matchup | n | W/D/L | winrate | winrate-z | Elo ±1σ | paired margin | paired_z | n_pair |
+|---|---|---|---|---|---|---|---|---|
+| RoD_iter_01 vs heur@6400 | _[running n=200]_ | — | — | — | — | — | — | — |
+
+_[Full-game verdict PENDING — confirms or refutes the root-level parity prediction.]_
 
 ---
 
