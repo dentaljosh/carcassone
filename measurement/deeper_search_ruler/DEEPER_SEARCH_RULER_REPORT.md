@@ -290,4 +290,27 @@ margins — low EV, already characterised.
 
 ## Executive summary (10 lines)
 
-_[PENDING.]_
+1. **Deeper heuristic search under the same v2.8 leaf is a *sharper ruler*, not a *stronger match agent*** —
+   the exact-endgame verdict, reproduced for whole-game depth.
+2. **Part B (verdict-grade):** h6400 vs h3200, n=400 paired — **score margin +2.49 pt (paired_z +2.61,
+   significant)** but **winrate 0.539 (z+1.6, NOT significant)**. The +2.5 pt ⇒ ~0.54 winrate (consistent).
+3. **The margin SCALES with depth:** h12800 vs h6400 (n=100 screen) = **+3.87 pt margin** — each ruler
+   doubling keeps out-scoring the one below; but its winrate 0.605 is an unconfirmed small-n screen.
+4. **So h3200 is ~saturated where it counts (winrate), not on raw score** — extra search buys points, not wins.
+5. **Part D (1620 root positions):** deeper search changes ~29 % of root moves, but only **~10 % are a
+   *stable* deeper preference** — matched ~1:1 by pure search noise (~10 %); converged cases are
+   endgame/pre_endgame-weighted. Heuristic visit distributions stay near-uniform even at h12800.
+6. **Part E:** every disagreement is a tile-*placement* (suite is TILES-phase); **95.5 % are positionally
+   equivalent on immediate score** — the margin is *better positioning that compounds*, not blunder-recovery.
+7. **Part C:** RoD_iter_01 holds **~parity vs h6400** — it is equidistant from all heuristic depths (root
+   audit), so its gap to the heuristic is a *style/RPS* gap, not a *depth* gap; the deeper ruler doesn't
+   erode the parity it reached vs h3200. _(full-game n=200 figure folded in below.)_
+8. **Part F:** distillation EV is **LOW** — no rich policy target (near-uniform visits), outcome-neutral
+   signal, and the net adopts the deep move only 19 % of the time. No new lever; at most endgame
+   value-recalibration, already characterised by the exact-endgame branch.
+9. **Verdict:** **deeper heuristic search is exhausted as a strength lever.** Both "search-deeper" endpoints
+   under the v2.8 leaf — exact endgame and deeper whole-game heuristic — land on the **same
+   margin-not-winrate ceiling.** The v2.8 leaf dominates move *choice*; more search refines *score*, not *wins*.
+10. **Next:** NOT a deeper rung, NOT h6400/h12800 distillation, NOT blind self-play. The structural blocker
+    stands — **a whole-game learned component that beats the heuristic on WINRATE, not margin.** No promotion;
+    PRODUCTION + champion + v2.7 unchanged; v2.8 stays opt-in.
