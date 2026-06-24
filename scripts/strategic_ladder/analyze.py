@@ -211,19 +211,36 @@ def main():
         n = min(h[1], r[1])
         L.append(f"| {m} | {fmt_rate(h)} | {fmt_rate(r)} | {(h[2]-r[2])*100:+.0f}pp | {n} |")
 
-    # LADDER monotonicity
-    L.append(section("Pseudo-human ladder — monotonicity with strength"))
-    L.append("| motif | take rate along ladder (weak->strong) | monotone? |")
-    L.append("|---|---|---|")
+    # LADDER monotonicity + strength<->behavior correlation
+    L.append(section("Pseudo-human ladder — does behavior track strength?"))
+    L.append("`corr` = Pearson(ladder position, take rate) over agents with n>=10. "
+             "Positive+large => behavior rises with strength (credible diagnostic); "
+             "~0 => motif doesn't separate these agents.")
+    L.append("| motif | take rate along ladder (weak->strong %) | corr | monotone? |")
+    L.append("|---|---|---|---|")
+
+    def pearson(xs, ys):
+        n = len(xs)
+        if n < 3:
+            return float("nan")
+        mx = sum(xs) / n
+        my = sum(ys) / n
+        cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+        vx = sum((x - mx) ** 2 for x in xs)
+        vy = sum((y - my) ** 2 for y in ys)
+        return cov / math.sqrt(vx * vy) if vx > 0 and vy > 0 else float("nan")
+
     for m in MOTIFS:
         seq = []
         for ag in LADDER:
             rt = rate_table(recs, [ag], m)[ag]
             seq.append(rt[2] if rt[1] >= 10 else None)
         shown = " ".join(f"{(v*100):.0f}" if v is not None else "·" for v in seq)
-        vals = [v for v in seq if v is not None]
+        idx = [i for i, v in enumerate(seq) if v is not None]
+        vals = [seq[i] for i in idx]
+        r = pearson(idx, vals)
         mono = "yes" if vals == sorted(vals) else ("rev" if vals == sorted(vals, reverse=True) else "no")
-        L.append(f"| {m} | {shown} | {mono} |")
+        L.append(f"| {m} | {shown} | {r:+.2f} | {mono} |")
 
     digest = os.path.join(args.out, "ANALYSIS_DIGEST.md")
     with open(digest, "w") as f:
