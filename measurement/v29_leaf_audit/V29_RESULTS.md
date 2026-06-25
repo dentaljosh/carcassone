@@ -119,8 +119,27 @@ bumping local W14→30 + laptop→22 (62 workers) gave ZERO speedup over 34 work
 
 → The audit's core question is answered: **v2.8's tiny leaf WAS leaving winrate on the
 table, in the meeple-economy term, and a nonlinear curve recovers ~+30–50 elo that
-holds to the reference depth.** Wave-2 (curve-shape decomposition) running; RoD_iter_01
-neural matchup on hold.
+holds to the reference depth.**
+
+## Wave-2 — curve-shape decomposition (sims=200, n=400 paired, same decks) — DONE 2026-06-25
+
+| curve | shape (value by free-meeple count 0..7) | wr | elo | z(margin) | verdict |
+|---|---|---|---|---|---|
+| **Bflattop** | gentle low + **flat top** (-8,-4,-1,0,2,3,**3.5,4**) | **0.583** | +58 | **+4.42** | **best** |
+| Bmild | gentle low + rising top (-8,-4,-1,0,2,3,4,5) | 0.570 | +49 | +3.39 | tied |
+| Bsteep | steep low + rising top (-14,-7,-3,0,2,3,4,5) | 0.568 | +47 | +3.46 | tied |
+| Baggr | steep low + flat top (-14,-7,-3,0,2,3,3.5,4) | 0.566 | +46 | +2.97 | tied |
+| Bxaggr | very steep + shifted (-20,-10,-5,-1,1,2,3,4) | 0.490 | −7 | −0.33 | **kill** |
+
+**Decomposition: the FLAT TOP is the driver, not the steep penalty.** Holding the
+low-end gentle and flattening the top (Bflattop) is best (0.583/z+4.42); adding a steep
+emergency penalty doesn't help (Bsteep ≈ Bmild), and over-aggression breaks it entirely
+(Bxaggr → null). ⇒ the meeple economy wants **moderate diminishing-returns value that
+caps out** (6 ≈ 7 free meeples; don't reward hoarding the last meeple, don't harshly
+punish being low). Bflattop edges Bmild by ~+9 elo = within 1σ (statistically tied) —
+the marginal favorite, but NOT h6400-confirmed (only Bmild was taken to the arbiter).
+3-box gen (local W30 + laptop W22 + xeon W10), ~20 min. **Audit complete; RoD_iter_01
+neural matchup on hold.**
 
 ## Final — h6400 / h3200, n=400  (single best config)
 

@@ -21,8 +21,13 @@ base (cap=12, drop-three-open). Replaces the flat `meeple_k=2.0` term.
 **Bmild meets the "candidate-for-production" bar.**
 
 ## BUT — promotion is a SEPARATE, explicit decision (not taken here). Open items:
-1. **Wave-2 curve optimization (running):** Bsteep/Bflattop/Bxaggr may find a better
-   shape than Bmild. Promote the *best* curve, not necessarily Bmild. Don't lock in yet.
+1. **Wave-2 curve optimization (DONE):** the best shape is **Bflattop** =
+   `(-8,-4,-1,0,2,3,3.5,4)` — 0.583/z+4.42 @ sims200 n400, marginally above Bmild
+   (0.570) but within 1σ (tied). The decomposition shows the **FLAT TOP drives the win**
+   (cap meeple value: 6≈7 free meeples), NOT the steep low-end penalty (Bsteep≈Bmild),
+   and over-aggression breaks it (Bxaggr 0.490 null). **If promoting, use Bflattop**
+   (best shape) — but it is NOT yet h6400-confirmed; only Bmild (0.581) was taken to the
+   arbiter. A cheap follow-up would be Bflattop@h6400 to confirm it ≥ Bmild at depth.
 2. **Re-sweep production knobs (bug-fix-shifts-optima rule):** the curve changes the
    meeple-economy magnitude; cap / drop-three-open / residual_scale optima may shift.
 3. **Neural champion-line impact UNTESTED (RoD_iter_01 matchup on hold):** v2.9 is a
