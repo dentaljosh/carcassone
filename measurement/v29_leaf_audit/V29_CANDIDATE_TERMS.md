@@ -29,6 +29,14 @@ risks indifference between a safe win and a marginal one (loses margin resolutio
 search needs). **Runtime:** ~0 (one tanh per leaf); but v2.9-active forces the object
 path ⇒ ~2.26× the flat-path leaf cost. **Toggle:** `v29_util_tanh_t`.
 
+> **Mechanism note (why_decompose finding, 2026-06-25):** `T·tanh` is a *monotonic*
+> transform of the leaf total, so it CANNOT change the 1-ply leaf argmax except by
+> breaking v2.8's integer-rounding ties (confirmed: A16 flips only ~12% of 1-ply
+> decisions, all by ±0.06–0.19 pt). **A's real effect is through MCTS *backup*** — it
+> compresses the Q-values large leads contribute, changing selection/exploration over
+> multiple plies. ⇒ the 1-ply `why_decompose` tool UNDERSTATES A (predictive for the
+> additive terms B/D/E, not for A). Judge A only by the full-MCTS screen.
+
 ## Candidate B — nonlinear meeple liquidity  `v29_meeple_curve = (v0..v7)`
 
 **Failure mode addressed.** Flat `meeple_k=2.0` was the ONLY survivor of the 2026-06-22
