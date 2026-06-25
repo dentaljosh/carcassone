@@ -1,8 +1,17 @@
 # V29_DECISION — promote / kill / top-up / combine
 
-**Status: INTERIM — Wave-1 screen done (n=200), n=400 verdict running.** No promotion,
+**Status: INTERIM — n=400 verdict DONE; sims=800 washout running.** No promotion,
 no PRODUCTION.yaml edit, no checkpoint change without an explicit winrate-gated decision
 here.
+
+## n=400 verdict (sims=200, ±17 elo) — CONFIRMED
+- **Bmild 0.570 (z+3.39 margin) and Baggr 0.566 (z+2.97) both CONFIRMED** — nonlinear
+  meeple curve beats flat k=2 by ~+45–50 elo, gain in the competitive even-bucket (not
+  padding). The two curves are tied; washout (sims=800) will pick the depth-robust one.
+- **A32 KILLED** — regressed to 0.534, even-bucket 0.46 (padding), ~0 margin.
+- **D2 deferred** — 0.547 weak-positive but fires 0.2% (mechanistically can't carry it).
+- **The meeple curve is the v2.9 lever.** Gates remaining before any promotion talk:
+  sims=800 washout (does it survive deeper search?) → h6400 (the strength arbiter).
 
 ## Interim read (Wave-1 screen, sims=200 n=200 — coarse, ±25 elo)
 - **Lead candidate: Candidate B nonlinear meeple curve.** `Baggr` 0.580 (z+3.08 on the

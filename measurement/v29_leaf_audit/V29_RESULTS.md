@@ -56,11 +56,31 @@ mechanically it cannot move winrate +28 elo. Almost certainly an n=200 spike.
 **Baggr** (primary), **Bmild** (secondary), **A32** + **D2** (confirm-to-kill).
 Reuses the n=200 games (resumable); adds 100 new deck-pairs each.
 
-## Wave 1 — verdict @ sims=200, n=400  — _running_
+## Wave 1 — verdict @ sims=200, n=400 paired — DONE 2026-06-25
 
-_(to be filled)_
+| cand | n | wr | elo | avgΔ | z(margin) | even | behind | ahead | blowout | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Bmild** | 400 | **0.570** | +49 | +3.8 | **+3.39** | 0.51 | 0.17 | 0.77 | 0.93 | **CONFIRMED** |
+| **Baggr** | 400 | **0.566** | +46 | +3.1 | **+2.97** | 0.52 | 0.24 | 0.62 | 0.92 | **CONFIRMED** |
+| A32 | 400 | 0.534 | +23 | +0.5 | +0.44 | **0.46** | 0.19 | 0.83 | 0.90 | **KILL** (padding) |
+| D2 | 400 | 0.547 | +33 | +1.8 | +1.64 | 0.60 | 0.20 | 0.70 | 0.97 | defer (suspect) |
 
-## Wave 1 — washout check @ sims=800, n=400  (finalists only)
+n=400 paired: 1σ ≈ ±17 elo. **Both meeple curves CONFIRMED** (~0.57, z+3 on margin —
+significant; gain in the competitive even-bucket, not padding). Bmild ≈ Baggr (tied).
+**A32 KILLED** — partially regressed (0.550→0.534) and the even-bucket stays 0.46 with
+~0 margin = already-ahead padding, not strength (the win-shape thesis fails from inside).
+**D2 deferred** — 0.547 is weak-positive but the term fires in 0.2% of states
+(mechanistically can't carry +33 elo); not worth washout compute until/unless the
+curves wash out.
+
+→ **Washout (sims=800) on Bmild + Baggr** — the key gate before the expensive h6400.
+
+## Wave 1 — washout check @ sims=800  (Bmild + Baggr) — _running_
+
+The deciding question: does the curve gain survive DEEPER search, or wash out like
+deck-aware-closure did (full-game null despite an endgame-local edge)? Prior: the flat
+meeple term it refines did NOT wash out (held heur@200→heur@800), so the curve likely
+holds — but this is the test.
 
 _(to be filled)_
 
