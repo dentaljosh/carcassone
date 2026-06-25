@@ -1,8 +1,21 @@
 # V29_DECISION — promote / kill / top-up / combine
 
-**Status: PENDING — awaiting Wave-1 results.** No promotion, no PRODUCTION.yaml edit,
-no checkpoint change will happen from this audit without an explicit, winrate-gated
-decision recorded here.
+**Status: INTERIM — Wave-1 screen done (n=200), n=400 verdict running.** No promotion,
+no PRODUCTION.yaml edit, no checkpoint change without an explicit winrate-gated decision
+here.
+
+## Interim read (Wave-1 screen, sims=200 n=200 — coarse, ±25 elo)
+- **Lead candidate: Candidate B nonlinear meeple curve.** `Baggr` 0.580 (z+3.08 on the
+  paired margin), `Bmild` 0.537. Flat-k controls (Bk1 0.417 / Bk3 0.472, both < flat
+  k=2) prove it's the curve SHAPE, not the scalar. This is the predicted lever — B
+  refines the one v2.8 term that worked (meeple economy). **Confirming at n=400, then
+  the sims=800 washout, then h6400.**
+- **A (win-shape): null + a trap.** Small T hurts (A8 0.355). A32 0.550 is a lone peak
+  whose even-bucket wr is 0.45 → already-ahead padding, not strength. Likely noise.
+- **D2 (punish): noise** (fires 0.2%). **E (farm): dead** (killed-cousin prior held).
+- **The leaf is NOT fully at the search-compensated ceiling** — B opens real winrate
+  headroom (subject to the n=400 + washout gates). That partially answers the program's
+  core question: v2.8's tiny leaf WAS leaving winrate on the table, in the meeple term.
 
 ## Standing constraints (do not violate)
 - v2.7 frozen + bit-identical; v2.8 stays production; v2.9 stays opt-in/experimental.
