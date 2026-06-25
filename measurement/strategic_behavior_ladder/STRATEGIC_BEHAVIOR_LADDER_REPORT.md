@@ -1,6 +1,12 @@
 # Strategic-behavior ladder — diagnostic report
 
 **Status: COMPLETE ✅ (2026-06-24).** Exact-K conversion slice: see [`EXACT_SLICE.md`](EXACT_SLICE.md).
+> **⚠️ Verdict TIGHTENED by a follow-up validation audit ([`VALIDATION_FARMCLAIM.md`](VALIDATION_FARMCLAIM.md)).**
+> The one candidate lever (`farm_claim`) was confound-tested: the headline +17pp was inflated by close-game
+> (collider) conditioning — the honest effect is +11pp, falling to **+5pp** after controlling for pre-move
+> lead and removing weak opponents; it is **agent-dependent (RoD1's own farm claims are outcome-neutral, −2pp)**;
+> and RoD1's deficit lives in **low-leverage** regimes (vs weak / already-won / late). **Revised recommendation:
+> STOP — do not run the farm probe (expected winrate move vs h6400 ≈ 0).** Section §G/§exec below updated.
 Branch `strategic-behavior-ladder`. Diagnostic only — **not** a promotion benchmark, **not**
 a training target. Full-game held-out winrate vs `h6400_v2.8` remains the final strength arbiter.
 
@@ -173,19 +179,22 @@ that rod1's loss to h6400 is an endgame (last-tile placement + conversion) probl
    outcome-relevant). `contest_merge` is a coarse search-detector (saturated above greedy, not
    outcome-predictive). `block`/`avoid_feeding` are **noise** — equity proxies where random ≈ h6400.
    Honest hit rate: the structural motifs survived, the equity proxies died, as flagged a priori.
-6. **Plausible future tools/training targets?** Only the **late/grounded farm-claim value** — and only
-   as a *narrow* probe: distill h6400's late-farm-claim policy (or recalibrate rod1's value head toward
-   end-game farm value) and test whether it moves **full-game winrate vs h6400**. This aligns with the
-   standing "value-head recalibration is the one plausible angle" finding.
-7. **Kill as benchmax bait?** `block` and `avoid_feeding` (non-discriminating, non-predictive).
-   Demote `contest_merge` to a descriptive random-vs-search check.
-8. **Next branch?** **A narrow, gated probe, then likely STOP — not a new program.** The diagnostic
-   found exactly one actionable thread (late/weak-opp farm claims, ~6pp, outcome-confounded). Recommend:
-   a single **late-farm-value distillation/value-head-recalibration probe**, gated on the **only** arbiter
-   that matters — full-game held-out winrate vs `h6400_v2.8`. **If it doesn't move winrate, STOP:** the
-   behavior benchmark did not reveal a large hidden lever, and rod1's loss to h6400 is dominated by the
-   already-known endgame *placement* leak (deeper-search/exact-hybrid branches), not a farm-claim gap of
-   this size. Do **not** train on this benchmark or optimize its score (3/4 motifs are Goodhart traps).
+6. **Plausible future tools/training targets?** **After the validation audit: none actionable.**
+   `farm_claim` survives as a *monitoring diagnostic* (it correlates with winning in competitive games,
+   +5pp after lead/opponent controls), but it does **not** point to a fixable RoD1 weakness — RoD1's
+   farm deficit is in low-leverage regimes and its own farm claims are outcome-neutral (−2pp). See
+   [`VALIDATION_FARMCLAIM.md`](VALIDATION_FARMCLAIM.md).
+7. **Kill as benchmax bait?** `block` and `avoid_feeding` (random ≡ h6400 on 82%/87% of opportunities —
+   the detector cannot even separate random from the strongest agent). Demote `contest_merge` to a
+   descriptive random-vs-search check (its −11pp outcome is thin noise, not "contesting is bad").
+8. **Next branch? → STOP (tightened by the validation audit).** The first pass flagged late/weak-opp farm
+   claims as a candidate lever; the audit shows it is **not actionable** — the deficit is concentrated vs
+   weak opponents (62% of rod1's misses) and in already-won/late positions (top misses at pre-move margin
+   +33…+54 = margin-padding, not lost games); where farms have leverage (vs strong, even score, opening)
+   RoD1 already matches h6400 (53/53 vs strong). Expected winrate move vs `h6400_v2.8` ≈ 0. **Do not run
+   the probe; do not train on this benchmark (3/4 motifs are Goodhart traps).** RoD1's real loss to h6400
+   is the separately-characterized endgame **placement/conversion** leak (deeper-search/exact-hybrid), which
+   this benchmark corroborates but does not newly unlock.
 
 ## 10-line executive summary
 
@@ -208,5 +217,7 @@ that rod1's loss to h6400 is an endgame (last-tile placement + conversion) probl
    deeper-search ruler (depth sharpens margin, not decisions).
 9. **Anti-benchmax safeguards worked:** the outcome-sanity gate killed 3/4 motifs; `farm_claim`'s
    cross-opponent split exposed a vs-weak-only effect a single score would have hidden.
-10. **Recommendation: one narrow late-farm-value probe gated on winrate vs `h6400_v2.8`; if it doesn't
-    move the arbiter, STOP.** No champion, no promotion; PRODUCTION.yaml untouched, v2.7 frozen, v2.8 opt-in.
+10. **Recommendation (after the validation audit): STOP — no actionable lever.** The one candidate
+    (farm_claim) is confounded/low-leverage (honest +11pp → +5pp after controls; rod1's own claims
+    outcome-neutral; deficit lives in already-won/vs-weak positions). Keep farm_claim as a monitoring
+    diagnostic; retire the others. No champion, no promotion; PRODUCTION.yaml untouched, v2.7 frozen, v2.8 opt-in.
