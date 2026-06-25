@@ -1,8 +1,40 @@
 # V29_DECISION — promote / kill / top-up / combine
 
-**Status: INTERIM — n=400 verdict DONE; sims=800 washout running.** No promotion,
-no PRODUCTION.yaml edit, no checkpoint change without an explicit winrate-gated decision
-here.
+**Status: AUDIT COMPLETE (core) — h6400 arbiter DONE. Bmild CLEARS the promotion bar;
+promotion held for Joshua's explicit call.** No PRODUCTION.yaml edit, no checkpoint
+change, no RoD2 training has occurred or will without that call.
+
+## FINAL FINDING (h6400 arbiter, n=209)
+**The v2.9 nonlinear meeple liquidity curve (Bmild) beats production v2.8 at the
+strength arbiter: 0.581 wr, +3.6 margin, z+2.69 (significant), gain in competitive
+games (even-bucket 0.64) not padding.** Depth-robust: 0.570 @ sims200 / 0.545 @ sims800
+/ 0.581 @ h6400. This answers the program's core question — **v2.8's tiny expected-score
+leaf WAS leaving winrate on the table, in the meeple-economy term; a diminishing-returns
++ emergency-penalty curve recovers ~+30–50 elo that holds to play depth.**
+
+Bmild = `LeafConfig(meeple_k unused, v29_meeple_curve=(-8,-4,-1,0,2,3,4,5))` on the v2.8
+base (cap=12, drop-three-open). Replaces the flat `meeple_k=2.0` term.
+
+## Decision-rule check
+✅ wr ≥ 0.55 at the h6400 arbiter (0.581, significant at n=209) · ✅ holds across the
+200→800→6400 depth ladder (no washout) · ✅ gain in even/behind, not blowout padding.
+**Bmild meets the "candidate-for-production" bar.**
+
+## BUT — promotion is a SEPARATE, explicit decision (not taken here). Open items:
+1. **Wave-2 curve optimization (running):** Bsteep/Bflattop/Bxaggr may find a better
+   shape than Bmild. Promote the *best* curve, not necessarily Bmild. Don't lock in yet.
+2. **Re-sweep production knobs (bug-fix-shifts-optima rule):** the curve changes the
+   meeple-economy magnitude; cap / drop-three-open / residual_scale optima may shift.
+3. **Neural champion-line impact UNTESTED (RoD_iter_01 matchup on hold):** v2.9 is a
+   classical leaf win; whether it helps the *neural* agent (whose value head was trained
+   against the v2.8 residual base) is unknown — and a clean test needs a retrain (out of
+   current scope). The classical win does NOT automatically transfer to the champion.
+4. n=209 not n=400 — significant but the tighter number wasn't run (called early).
+
+**Recommendation:** record Bmild as a confirmed, promotion-worthy classical-leaf
+candidate; finish Wave-2 to pick the best curve; defer actual production promotion +
+the neural matchup to an explicit follow-up. v2.7 frozen, v2.8 production, v2.9 opt-in
+throughout.
 
 ## n=400 verdict (sims=200, ±17 elo) — CONFIRMED
 - **Bmild 0.570 (z+3.39 margin) and Baggr 0.566 (z+2.97) both CONFIRMED** — nonlinear

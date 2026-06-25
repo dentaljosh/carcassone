@@ -93,9 +93,34 @@ this depth needs n=400. Bmild ≥ Baggr at both depths → **Bmild is the lead c
 → Decision point (compute spend): h6400 arbiter on Bmild, OR confirm sims=800 at n=400
 first. See V29_DECISION.md.
 
-## Final — h6400 / h3200, n=400  (single best config)
+## Final — h6400 ARBITER, Bmild vs v2.8 — DONE 2026-06-25 (n=209, called early)
 
-_(pending decision — the h6400 spend is ~2–2.5 h split across boxes)_
+| cand | n | wr | elo | avgΔ | z(margin) | even | behind | ahead | blowout |
+|---|---|---|---|---|---|---|---|---|---|
+| **Bmild @ h6400** | 209 | **0.581** | +57 | +3.6 | **+2.69** | 0.64 | 0.26 | 0.68 | 0.93 |
+
+**VERDICT: the meeple curve beats production v2.8 at the strength arbiter.** 0.581 wr,
+z+2.69 on the paired margin (significant), gain in the competitive even-bucket (0.64),
+not padding. Called at n=209 (already significant; n=400 would only tighten ±24→±17).
+
+**The gain is depth-robust, NOT shrinking** (my earlier sims=800-based "washout" worry
+was a small-n artifact):
+
+| depth | Bmild wr | avg margin |
+|---|---|---|
+| sims=200 (n=400) | 0.570 | +3.8 |
+| sims=800 (n=200) | 0.545 | +2.4 |
+| **h6400 (n=209)** | **0.581** | **+3.6** |
+
+Run cost note (for the record): h6400 is ~7 min/game single-worker but the leaf is
+DRAM-latency-bound, so throughput plateaus at ~1 game/min regardless of worker count —
+bumping local W14→30 + laptop→22 (62 workers) gave ZERO speedup over 34 workers
+(confirmed the standing "W≈14–16 optimum" memory). 3-box (local+laptop+xeon) gen.
+
+→ The audit's core question is answered: **v2.8's tiny leaf WAS leaving winrate on the
+table, in the meeple-economy term, and a nonlinear curve recovers ~+30–50 elo that
+holds to the reference depth.** Wave-2 (curve-shape decomposition) running; RoD_iter_01
+neural matchup on hold.
 
 ## Final — h6400 / h3200, n=400  (single best config)
 
