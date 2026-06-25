@@ -69,6 +69,10 @@ def candidate_cfg(name: str):
         return dc.replace(V28, meeple_k=1.0)                  # flat-k control
     if name == "Bk3":
         return dc.replace(V28, meeple_k=3.0)
+    if name in ("D1", "D2", "D3"):                            # Candidate D: punish_k
+        return dc.replace(V28, v29_punish_k={"D1": 0.3, "D2": 0.6, "D3": 1.0}[name])
+    if name in ("E1", "E2"):                                  # Candidate E: farm_access_k
+        return dc.replace(V28, v29_farm_access_k={"E1": 0.2, "E2": 0.4}[name])
     # combos: "A16+Bmild"
     if "+" in name:
         cfg = V28

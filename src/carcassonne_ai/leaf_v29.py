@@ -67,28 +67,117 @@ def _meeple_curve_term(state, player: int, opp: int, curve) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Candidate D — sparse high-confidence tactical punish (STUB)
+# Candidate D — sparse high-confidence tactical punish / must-block
 # ---------------------------------------------------------------------------
+# Thresholds: a feature is a "tactical" target only if it's IMMINENT (open_n==1, the
+# high-confidence half of the closure schedule) AND HIGH-VALUE (closure delta >= this).
+# Sparse by construction — fires on a handful of positions, not generically.
+V_PUNISH = 8.0
+
+# Caveat carried from the code map / strategic-ladder finding: this is a LEAF-state
+# term, and "complete my own feature / claim an exposed farm" is already in `base`. The
+# only genuinely-additive signal a leaf can carry is that the CAPPED linear closure
+# bonus UNDER-weights a single big imminent threat — so D emphasizes exactly those.
+# The 2026-06-25 evidence says the real punish gap is in SEARCH/POLICY; we screen D
+# anyway (user request) and expect the data to kill it. Examples inspected before the
+# aggregate (spec Part B) — see HIGH_PRECISION_EXAMPLES discipline.
+
+
+def _imminent_high_value(state, p: int) -> float:
+    """Σ closure-delta over p's meepled INCOMPLETE cities that are ONE tile from
+    closing (open_n==1) AND worth >= V_PUNISH points. The sparse set of completions a
+    strong player fights over. Deduped by city content. Cloisters never qualify (a
+    1-away cloister is worth only 1pt). Roads have no closure delta in this leaf."""
+    from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+    from wingedsheep.carcassonne.utils.city_util import CityUtil
+    from .virtual_score_v2 import _city_closure_delta, _open_city_positions
+
+    total = 0.0
+    seen: set = set()
+    for mp in state.placed_meeples[p]:
+        cs = mp.coordinate_with_side
+        coord = cs.coordinate
+        tile = state.board[coord.row][coord.column]
+        if tile is None or tile.get_type(cs.side) != TerrainType.CITY:
+            continue
+        city = CityUtil.find_city(game_state=state, city_position=cs)
+        key = frozenset(city.city_positions)
+        if key in seen or city.finished:
+            continue
+        seen.add(key)
+        if _open_city_positions(state, city) != 1:
+            continue
+        d = _city_closure_delta(state, city)
+        if d >= V_PUNISH:
+            total += d
+    return total
+
+
 def _punish_signal(state, player: int, opp: int, cfg: "LeafConfig") -> float:
-    """STUB (returns 0.0). Second-wave: a LEAF-state term for "I just punished a
-    weak/exposed opponent" largely duplicates the base score (completing a feature
-    or claiming an exposed farm already banks points in `base`). The 2026-06-25
-    strategic-ladder evidence (h6400 takes MUST_PUNISH_WEAK 92% vs RoD1 84%) points
-    at a SEARCH/POLICY gap, not a leaf gap — so a leaf term is the wrong lever here.
-    Kept as a toggle so the hypothesis can be tested if A/B show the leaf has room.
-    Do not enable without an inspectable example set (spec Part B: examples first)."""
-    return 0.0
+    """Differential of sparse imminent high-value city threats (mine minus theirs).
+    Positive => I have more big near-complete cities (press); negative => the opponent
+    does (must-block). Multiplied by cfg.v29_punish_k in apply_v29."""
+    return _imminent_high_value(state, player) - _imminent_high_value(state, opp)
 
 
 # ---------------------------------------------------------------------------
-# Candidate E — farm access / denial window (STUB, low prior)
+# Candidate E — contested high-value farm pressure (low prior)
 # ---------------------------------------------------------------------------
+V_FARM = 9.0  # a field counts as high-value at >= this potential (3pts per adjacent city)
+
+# Low prior: farm-majority-gate (broad degradation) and opp-denial (no movement) were
+# both KILLED in the 2026-06-22 v2.8 program. This is a different angle — directional
+# pressure on CONTESTED high-value fields (both players hold farmers, the outcome can
+# still flip) — but starts from a very negative base. Screened on user request.
+
+
+def _contested_field_pressure(state, player: int, opp: int) -> float:
+    """For high-value CONTESTED fields (both players have farmers, potential >= V_FARM):
+    +potential if `player` leads the field, -potential if behind, 0 if tied. Values
+    WINNING the contest for a big field, beyond `base` (which scores the current
+    majority as if final). Potential = 3 * distinct adjacent cities (any state)."""
+    from wingedsheep.carcassonne.objects.meeple_type import MeepleType
+    from wingedsheep.carcassonne.utils.city_util import CityUtil
+    from wingedsheep.carcassonne.utils.farm_util import FarmUtil
+
+    fields: dict = {}  # field_key -> [count_p0, count_p1, potential]
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            if mp.meeple_type not in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+                continue
+            farm = FarmUtil.find_farm_by_coordinate(game_state=state, position=mp.coordinate_with_side)
+            key = frozenset(farm.farmer_connections_with_coordinate)
+            ent = fields.get(key)
+            if ent is None:
+                pot, seen_cities = 0, set()
+                for fc in farm.farmer_connections_with_coordinate:
+                    for city in CityUtil.find_cities(game_state=state, coordinate=fc.coordinate,
+                                                     sides=fc.farmer_connection.city_sides):
+                        ck = frozenset(city.city_positions)
+                        if ck not in seen_cities:
+                            seen_cities.add(ck)
+                            pot += 3
+                ent = [0, 0, pot]
+                fields[key] = ent
+            ent[pl] += 2 if mp.meeple_type == MeepleType.BIG_FARMER else 1
+
+    total = 0.0
+    for c0, c1, pot in fields.values():
+        if pot < V_FARM:
+            continue
+        cp, co = (c0, c1) if player == 0 else (c1, c0)
+        if cp > 0 and co > 0:  # contested
+            if cp > co:
+                total += pot
+            elif co > cp:
+                total -= pot
+    return total
+
+
 def _farm_access_signal(state, player: int, opp: int, cfg: "LeafConfig") -> float:
-    """STUB (returns 0.0). Low prior: farm-majority-gate and opp-denial were both
-    KILLED in the 2026-06-22 v2.8 program (code map §5). Reserved for an access-
-    WINDOW formulation (unclaimed high-value field with legal farmer access, merge
-    swing) only if A/B prove the leaf is leaving winrate on the table."""
-    return 0.0
+    """Contested-high-value-field pressure, multiplied by cfg.v29_farm_access_k in
+    apply_v29."""
+    return _contested_field_pressure(state, player, opp)
 
 
 # ---------------------------------------------------------------------------

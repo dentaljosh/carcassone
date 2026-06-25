@@ -168,7 +168,20 @@ def test_heuristic_mcts_v29_can_change_action():
 # ---------------------------------------------------------------------------
 # (C) DECOMPOSE
 # ---------------------------------------------------------------------------
-@pytest.mark.parametrize("cfg_name", ["v28", "A12", "Bcurve", "A12+Bcurve"])
+def test_punish_and_farm_terms_fire():
+    """D (imminent high-value city threat) and E (contested high-value field) must be
+    nonzero on >=1 position across a large random corpus — else the term is inert by
+    construction (a kill signal worth knowing before screening)."""
+    from carcassonne_ai.leaf_v29 import _contested_field_pressure, _imminent_high_value
+    states = _midgame_states(n_seeds=40, plies=95, every=4)
+    d_fires = sum(1 for st in states for p in (0, 1) if _imminent_high_value(st, p) > 0)
+    e_fires = sum(1 for st in states for p in (0, 1)
+                  if _contested_field_pressure(st, p, 1 - p) != 0.0)
+    assert d_fires > 0, "Candidate D (imminent high-value city) never fired — inert"
+    assert e_fires > 0, "Candidate E (contested high-value field) never fired — inert"
+
+
+@pytest.mark.parametrize("cfg_name", ["v28", "A12", "Bcurve", "A12+Bcurve", "D", "E"])
 def test_decompose_sums_to_leaf(cfg_name):
     """decompose_v29 total_int == virtual_score_v2 (object path), and the additive
     components + utility_transform_delta == pretransform/total. Force the object path
@@ -179,6 +192,8 @@ def test_decompose_sums_to_leaf(cfg_name):
         "A12": dc.replace(V28, v29_util_tanh_t=12.0),
         "Bcurve": dc.replace(V28, v29_meeple_curve=MILD_CURVE),
         "A12+Bcurve": dc.replace(V28, v29_util_tanh_t=12.0, v29_meeple_curve=MILD_CURVE),
+        "D": dc.replace(V28, v29_punish_k=0.6),
+        "E": dc.replace(V28, v29_farm_access_k=0.3),
     }[cfg_name]
     saved = flat_leaf.USE_FLAT_LEAF
     flat_leaf.USE_FLAT_LEAF = False
