@@ -113,6 +113,21 @@ class LeafConfig:
     v28_farm_majority: bool = False
     v28_meeple_k: float = 0.0
     v28_meeple_recovery_t0: int = 0
+    # --- v2.9 experimental leaf candidates (opt-in, measurement/v29_leaf_audit/) ---
+    # All default neutral == bit-identical v2.8. All force the engine (object) path
+    # (flat_leaf.py does NOT implement them — same pattern as the v28_* knobs above).
+    # Constructed explicitly in v29 eval/audit scripts (NOT env-built), so a stray
+    # env var can never activate them in production. Logic lives in leaf_v29.py.
+    #   v29_util_tanh_t: Candidate A. If >0, the FINAL total is win-shaped to
+    #     T*tanh(total/T) (point-scale preserved). 0.0 == off (linear, == v2.8).
+    #   v29_meeple_curve: Candidate B. A value-by-free-meeple-count table (tuple,
+    #     index = count 0..7). When set, REPLACES the flat meeple_k term with the
+    #     symmetric curve differential. None == off.
+    #   v29_punish_k / v29_farm_access_k: Candidates D / E (stubs in leaf_v29.py).
+    v29_util_tanh_t: float = 0.0
+    v29_meeple_curve: tuple | None = None
+    v29_punish_k: float = 0.0
+    v29_farm_access_k: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -179,6 +194,14 @@ def _v28_active(cfg: "LeafConfig") -> bool:
     engine (object) path — flat_leaf.py does not implement these. Off by default,
     so production cfgs return False (flat fast path stays bit-exact v2.7)."""
     return cfg.v28_farm_majority or cfg.v28_meeple_k != 0.0
+
+
+def _v29_active(cfg: "LeafConfig") -> bool:
+    """True iff any v2.9 candidate is enabled on `cfg`. Forces the engine (object)
+    path — leaf_v29.py builds on the object helpers; flat_leaf does not implement it.
+    Off by default, so production/v2.8 cfgs return False (flat fast path unchanged)."""
+    return (cfg.v29_util_tanh_t > 0.0 or cfg.v29_meeple_curve is not None
+            or cfg.v29_punish_k != 0.0 or cfg.v29_farm_access_k != 0.0)
 
 
 def _field_owner_counts(state) -> dict:
@@ -521,7 +544,8 @@ def virtual_score_v2(
     # guard from the audit: flat must never silently mis-handle tile_counting/
     # continuous). Default OFF -> byte-identical to prior production.
     if flat_leaf.USE_FLAT_LEAF and not (
-        cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0 or _v28_active(cfg)
+        cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0
+        or _v28_active(cfg) or _v29_active(cfg)
     ):
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
     opp = 1 - player
@@ -571,7 +595,9 @@ def virtual_score_v2(
             except AttributeError:
                 pass
     score = base + bonus_self - bonus_opp
-    if cfg.meeple_k > 0.0:
+    # The flat meeple term is REPLACED by the v2.9 curve when one is set (the curve
+    # term is added in apply_v29). Bit-exact when v29_meeple_curve is None.
+    if cfg.meeple_k > 0.0 and cfg.v29_meeple_curve is None:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     if cfg.v28_meeple_k != 0.0:
         # v28_meeple: recovery-scaled meeple economy. Free meeples are worth more
@@ -581,4 +607,9 @@ def virtual_score_v2(
         if cfg.v28_meeple_recovery_t0 > 0:
             rf = min(1.0, len(state.deck) / cfg.v28_meeple_recovery_t0)
         score += cfg.v28_meeple_k * (state.meeples[player] - state.meeples[opp]) * rf
+    if _v29_active(cfg):
+        # v2.9 candidate terms (B curve, D/E stubs) + win-shaping transform (A).
+        # Object-path only (the flat redirect above falls through when v29 active).
+        from . import leaf_v29
+        score = leaf_v29.apply_v29(state, player, opp, cfg, score)
     return int(round(score))
