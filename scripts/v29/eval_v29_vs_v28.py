@@ -53,6 +53,12 @@ V28 = dc.replace(DEFAULT_CONFIG, meeple_k=2.0)
 # Nonlinear meeple liquidity curves (value by free-meeple count 0..7).
 MILD_CURVE = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
 AGGR_CURVE = (-14.0, -7.0, -3.0, 0.0, 2.0, 3.0, 3.5, 4.0)
+# Wave-2 decomposition of AGGR's advantage over MILD: AGGR changes two things at once —
+# (a) a STEEPER low-meeple emergency penalty, (b) a FLATTER high-meeple top. These
+# isolate each, plus a more-aggressive variant to check AGGR isn't already past optimum.
+STEEP_CURVE = (-14.0, -7.0, -3.0, 0.0, 2.0, 3.0, 4.0, 5.0)   # AGGR low + MILD top
+FLATTOP_CURVE = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 3.5, 4.0)  # MILD low + AGGR top
+XAGGR_CURVE = (-20.0, -10.0, -5.0, -1.0, 1.0, 2.0, 3.0, 4.0) # steeper still
 
 
 def candidate_cfg(name: str):
@@ -65,6 +71,12 @@ def candidate_cfg(name: str):
         return dc.replace(V28, v29_meeple_curve=MILD_CURVE)
     if name == "Baggr":
         return dc.replace(V28, v29_meeple_curve=AGGR_CURVE)
+    if name == "Bsteep":
+        return dc.replace(V28, v29_meeple_curve=STEEP_CURVE)
+    if name == "Bflattop":
+        return dc.replace(V28, v29_meeple_curve=FLATTOP_CURVE)
+    if name == "Bxaggr":
+        return dc.replace(V28, v29_meeple_curve=XAGGR_CURVE)
     if name == "Bk1":
         return dc.replace(V28, meeple_k=1.0)                  # flat-k control
     if name == "Bk3":
