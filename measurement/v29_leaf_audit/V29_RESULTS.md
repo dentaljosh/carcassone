@@ -75,14 +75,27 @@ curves wash out.
 
 → **Washout (sims=800) on Bmild + Baggr** — the key gate before the expensive h6400.
 
-## Wave 1 — washout check @ sims=800  (Bmild + Baggr) — _running_
+## Wave 1 — washout check @ sims=800, n=200 paired — DONE 2026-06-25
 
-The deciding question: does the curve gain survive DEEPER search, or wash out like
-deck-aware-closure did (full-game null despite an endgame-local edge)? Prior: the flat
-meeple term it refines did NOT wash out (held heur@200→heur@800), so the curve likely
-holds — but this is the test.
+| cand | n | wr | elo | avgΔ | z(margin) | even | behind | ahead | blowout | vs sims=200 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Bmild** | 200 | 0.545 | +31 | +2.4 | +1.62 | 0.52 | 0.26 | 0.71 | 1.00 | 0.570 → 0.545 |
+| **Baggr** | 200 | 0.532 | +23 | +2.7 | +1.77 | 0.42 | 0.16 | 0.69 | 0.88 | 0.566 → 0.532 |
 
-_(to be filled)_
+**Verdict: the gain PERSISTS at depth, shrinking ~50% (not a washout).** Both curves
+stay clearly > 0.50 with positive margin z (~+1.7) — categorically different from
+deck-aware-closure's tight null (47.5%/z≈0). The ~50% retention (sims-200→800) **matches
+the flat meeple term's own retention** (+179 elo @ heur200 → +95 @ heur800), so the
+curve is a genuine refinement of a real term, not a shallow-search artifact. n=200 at
+sims=800 is ±25 elo, so the ~+27 elo is suggestive-not-significant — a clean verdict at
+this depth needs n=400. Bmild ≥ Baggr at both depths → **Bmild is the lead curve.**
+
+→ Decision point (compute spend): h6400 arbiter on Bmild, OR confirm sims=800 at n=400
+first. See V29_DECISION.md.
+
+## Final — h6400 / h3200, n=400  (single best config)
+
+_(pending decision — the h6400 spend is ~2–2.5 h split across boxes)_
 
 ## Final — h6400 / h3200, n=400  (single best config)
 
