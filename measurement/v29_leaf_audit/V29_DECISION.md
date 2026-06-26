@@ -1,5 +1,13 @@
 # V29_DECISION — promote / kill / top-up / combine
 
+> **⮑ SUPERSEDED BY THE V2.9.1 RETUNE (2026-06-25) — see [V29_1_RETUNE_PLAN.md](V29_1_RETUNE_PLAN.md).**
+> The retune extended Bmild: re-tuning production knobs around it found ONE more lever
+> (closure cap 5→8, +46 elo). **Final config = `Bmild_cap8`**, which BEATS *real* production
+> v2.8 (`v28prod` = cap12+drop-3-open+flat-k2) by **+55 elo / z+3.94** (sims200 n400,
+> depth-robust through sims800). NB: this doc's "v2.8" baseline below was the cap5/3-open
+> env default, NOT production — the retune's throne test corrects that. h6400 arbiter on the
+> final config deferred to promotion-time. Still nothing promoted.
+
 **Status: AUDIT COMPLETE (core) — h6400 arbiter DONE. Bmild CLEARS the promotion bar;
 promotion held for Joshua's explicit call.** No PRODUCTION.yaml edit, no checkpoint
 change, no RoD2 training has occurred or will without that call.

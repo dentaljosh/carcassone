@@ -2699,3 +2699,24 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Reversal cost:** none (measurement/engineering only; no checkpoint/config/production change; v2.7 frozen, PRODUCTION + champion `flywheel2_champion_iter8` unchanged, v2.8 opt-in).
 **Phase:** measurement-first
+
+## 2026-06-25 — v2.9.1 leaf retune: closure-cap is the one lever; Bmild_cap8 BEATS real production v2.8 (measurement)
+
+**Context.** The v2.9 audit found the nonlinear meeple curve (`Bmild`) beats its baseline. Per the bug-fix-shifts-optima rule, changing the meeple economy can shift the OTHER leaf knobs' optima, so we re-tuned them around the Bmild anchor (sequential waves, NOT a grid). **Success bar: beat the Bmild ANCHOR, not merely v2.8.**
+
+**Finding 0 (the mislabel, found mid-retune).** Every prior v29 run measured against the harness `v28` = `DEFAULT_CONFIG`+meeple_k=2, which resolves from env defaults to **cap=5 + 3-open schedule** — NOT documented production (cap=12 + drop-three-open). The comparisons were internally valid (both sides shared the base), but "Bmild beats v2.8" really meant "beats cap5/3-open". Added a `v28prod` harness baseline (real production) for the throne test the audit never ran.
+
+**Retune result (sims=200, paired, 3-box, vs Bmild anchor).** Of four knobs, exactly ONE moved the needle:
+- **Wave A meeple-curve SCALE: NULL.** ×0.75 (−37 elo) and ×1.25 (−26) both lose → the curve shape already captured the magnitude (inverted-U peak at ×1.00).
+- **Wave B closure CAP: WIN.** cap 5→8 = **+46 elo @ n=400**, even-bucket 0.669 (competitive gain). cap8 beat cap12 on the even-bucket (0.669 vs 0.453 = cap12 over-values fantasy closures, pads blowouts, loses tight games). Flat plateau 8–16; cap8 the pick. The anchor's cap=5 (env default) was simply too low.
+- **Wave C closure-P: NULL.** Only flag (p060, higher prob) collapsed 0.557→0.506 @ n=400, even-bucket 0.385 = padding (same trap as cap12). Schedule already well-tuned.
+- **Wave D tanh-norm: NULL.** n12 (diff/12) 0.542→0.515 @ n=400 = noise; norm=15 already fine. (Wired a per-instance `HeuristicMCTS.value_norm`, default-preserving.)
+
+**Final v2.9.1 = `Bmild_cap8`** = MILD curve `(-8,-4,-1,0,2,3,4,5)` + cap=8 + 3-open + diff/15 norm.
+
+**THRONE TEST (the one the audit skipped): `Bmild_cap8` vs REAL production `v28prod`.** sims=200 n=400 = **0.579 wr / +55 elo / z+3.94 / even-bucket 0.636** (competitive win, not padding). Depth-robust: survives the sims=800 washout (0.550 / +35 / z+1.84 / even 0.569; mirrors the original Bmild ladder which recovered at h6400). The curve is the bulk of the win; cap8 adds. results.csv `v291_*` rows.
+
+**Decision (INTERPRETATION).** v2.9.1 (`Bmild_cap8`) is a CONFIRMED, depth-robust CLASSICAL-leaf win over actual production v2.8 — promotion-worthy as a candidate. But this is a classical heuristic-vs-heuristic result; whether it helps the NEURAL champion (value head trained against the v2.8 residual base) is UNTESTED and needs the orchestrator + likely a retrain. **h6400 arbiter DEFERRED to promotion-time** (Joshua's call; ~3-5 hr, ~37 min/game under cluster contention). Pre-registered plan + full tables: [measurement/v29_leaf_audit/V29_1_RETUNE_PLAN.md](measurement/v29_leaf_audit/V29_1_RETUNE_PLAN.md).
+
+**Reversal cost:** none (measurement only; no checkpoint/config/production change; v2.7 frozen, PRODUCTION + champion `flywheel2_champion_iter8` unchanged, v2.8 prod, v2.9/v2.9.1 opt-in). 39 tests green; harness commits d1251ae/c21f751/6133739.
+**Phase:** measurement-first

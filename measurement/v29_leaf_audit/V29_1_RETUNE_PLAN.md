@@ -1,7 +1,9 @@
 # V29.1 RETUNE — pre-registered plan (Bmild anchor, local knob re-tune)
 
-**Status: RUNNING (Wave A live, 3-box) — 2026-06-25.** Pre-registered before reading
-results to avoid Goodharting. The core v2.9 result (nonlinear meeple curve beats the
+**Status: COMPLETE ✅ — 2026-06-25.** Final v2.9.1 = `Bmild_cap8` (curve + cap8); BEATS real
+production v2.8 by +55 elo (sims200 n400, depth-robust through sims800). h6400 arbiter
+deferred to promotion-time. Nothing promoted; v2.7 frozen, v2.8 prod, v2.9.1 opt-in. Pre-
+registered before reading results to avoid Goodharting. The core v2.9 result (nonlinear meeple curve beats the
 flat-k2 baseline, ~+30–50 elo, depth-robust) is DONE — see [V29_DECISION.md](V29_DECISION.md).
 This asks the follow-up: now that meeple economy changed, are the *old* production knobs
 (cap, closure-P, tanh-norm) — tuned around flat k=2 — still locally optimal around Bmild?
