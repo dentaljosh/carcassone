@@ -1,5 +1,10 @@
 # Hard-Position Policy Repair — Plan
 
+> **STATUS: CONCLUDED 2026-06-26 — DECISION A (repair fails; STOP, no games).** Pilot only
+> (1620-pool, no generation). The `h3200≠h6400` target is **signal-free** (disagreement states
+> are value-indifferent: Q-gap ~0.002). Results: [HARD_POLICY_REPAIR_RESULTS.md](HARD_POLICY_REPAIR_RESULTS.md)
+> · Decision: [HARD_POLICY_REPAIR_DECISION.md](HARD_POLICY_REPAIR_DECISION.md). Stages 6/7 not run.
+
 **Date:** 2026-06-26 · **Branch:** rod_v2_flywheel · **MEASUREMENT / DIAGNOSTIC ONLY.**
 No promotion · PRODUCTION.yaml unchanged · champion unchanged · v2.9 evaluator frozen + unchanged.
 
