@@ -61,10 +61,37 @@ FLATTOP_CURVE = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 3.5, 4.0)  # MILD low + AGGR t
 XAGGR_CURVE = (-20.0, -10.0, -5.0, -1.0, 1.0, 2.0, 3.0, 4.0) # steeper still
 
 
+def _scale_curve(curve, k):
+    return tuple(round(v * k, 4) for v in curve)
+
+
 def candidate_cfg(name: str):
-    """Map a candidate name to a LeafConfig (built on the v2.8 baseline)."""
+    """Map a candidate name to a LeafConfig (built on the v2.8 baseline).
+
+    Bmild local-retune variants (composable modifiers, '_'-joined onto 'Bmild'):
+      _x<NNN>      scale the curve by NNN/100   (Wave A: Bmild_x075, Bmild_x125)
+      _cap<N>      bonus_cap = opp_bonus_cap = N (Wave B: Bmild_cap8, Bmild_x125_cap16)
+      _p<AA>-<BB>  closure_p = {1: AA/100, 2: BB/100} (Wave C: Bmild_p060-025)
+    e.g. 'Bmild_x125_cap16_p060-025'. Tanh-norm (Wave D) is a HeuristicMCTS knob, not a
+    LeafConfig field — handled separately when that wave runs."""
     if name == "v28":
         return V28                                            # null control (A vs B both v28)
+    if name.startswith("Bmild_"):
+        scale, cap, cp = 1.0, None, None
+        for mod in name.split("_")[1:]:
+            if mod.startswith("x"):
+                scale = int(mod[1:]) / 100.0
+            elif mod.startswith("cap"):
+                cap = float(mod[3:])
+            elif mod.startswith("p"):
+                a, b = mod[1:].split("-")
+                cp = {1: int(a) / 100.0, 2: int(b) / 100.0}
+        cfg = dc.replace(V28, v29_meeple_curve=_scale_curve(MILD_CURVE, scale))
+        if cap is not None:
+            cfg = dc.replace(cfg, bonus_cap=cap, opp_bonus_cap=cap)
+        if cp is not None:
+            cfg = dc.replace(cfg, closure_p=cp)
+        return cfg
     if name.startswith("A") and name[1:].isdigit():
         return dc.replace(V28, v29_util_tanh_t=float(name[1:]))   # Candidate A: win-shape T
     if name == "Bmild":
