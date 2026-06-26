@@ -26,8 +26,10 @@ AGENTS=(
   "rod2_iter04|$CKDIR/iter_04.pt"
   "rod2_iter06|$CKDIR/iter_06.pt"
 )
-# depth   OW_LOCAL OW_LAPTOP   (h6400 tree ~2x RAM of h3200 -> lower W)
-DEPTHS=("6400|20|6" "3200|24|8")
+# depth   OW_LOCAL OW_LAPTOP   (flat/cy leaf ~750M/worker steady; local 32T+41G: W40 = ~30G py
+# + ~5G sys, ~6-12G headroom, fills the ~17% orch-wait idle without oversubscribing 32T.
+# laptop maxed at W8 h6400 / W10 h3200 — leave it.)
+DEPTHS=("6400|40|8" "3200|40|10")
 SEED_BASE=1950000000; N=${N:-200}; ci=0
 
 [ -f "$SUMMARY" ] || printf "# RoD v2 (v2.9 leaf) ruler screen — n=%s paired\n\nMain signal = vs h6400_v2.9. Started %s.\n\n| agent | vs | n | A_W | A_L | D | elo | note |\n|---|---|--:|--:|--:|--:|--:|---|\n" "$N" "$(date)" > "$SUMMARY"
