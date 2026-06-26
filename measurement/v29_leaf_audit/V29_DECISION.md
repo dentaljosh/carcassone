@@ -25,9 +25,12 @@ base (cap=12, drop-three-open). Replaces the flat `meeple_k=2.0` term.
    `(-8,-4,-1,0,2,3,3.5,4)` — 0.583/z+4.42 @ sims200 n400, marginally above Bmild
    (0.570) but within 1σ (tied). The decomposition shows the **FLAT TOP drives the win**
    (cap meeple value: 6≈7 free meeples), NOT the steep low-end penalty (Bsteep≈Bmild),
-   and over-aggression breaks it (Bxaggr 0.490 null). **If promoting, use Bflattop**
-   (best shape) — but it is NOT yet h6400-confirmed; only Bmild (0.581) was taken to the
-   arbiter. A cheap follow-up would be Bflattop@h6400 to confirm it ≥ Bmild at depth.
+   and over-aggression breaks it (Bxaggr 0.490 null). **Bflattop @ h6400 CONFIRMED**
+   (n=258): 0.552 wr / +4.7 margin / z+3.47 — beats v2.8, **statistically TIED with Bmild**
+   (0.581) at the arbiter (≈1σ). The sims=200 edge does NOT translate to a winrate edge at
+   depth; Bflattop is margin-favored, Bmild winrate-favored. **Either is a valid v2.9
+   curve — interchangeable.** If promoting, pick on taste (Bflattop has the cleaner shape
+   logic + higher margin; Bmild has the firmer winrate point).
 2. **Re-sweep production knobs (bug-fix-shifts-optima rule):** the curve changes the
    meeple-economy magnitude; cap / drop-three-open / residual_scale optima may shift.
 3. **Neural champion-line impact UNTESTED (RoD_iter_01 matchup on hold):** v2.9 is a

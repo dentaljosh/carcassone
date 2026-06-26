@@ -136,10 +136,22 @@ low-end gentle and flattening the top (Bflattop) is best (0.583/z+4.42); adding 
 emergency penalty doesn't help (Bsteep ≈ Bmild), and over-aggression breaks it entirely
 (Bxaggr → null). ⇒ the meeple economy wants **moderate diminishing-returns value that
 caps out** (6 ≈ 7 free meeples; don't reward hoarding the last meeple, don't harshly
-punish being low). Bflattop edges Bmild by ~+9 elo = within 1σ (statistically tied) —
-the marginal favorite, but NOT h6400-confirmed (only Bmild was taken to the arbiter).
-3-box gen (local W30 + laptop W22 + xeon W10), ~20 min. **Audit complete; RoD_iter_01
-neural matchup on hold.**
+punish being low). 3-box gen (local W30 + laptop W22 + xeon W10), ~20 min.
+
+## Bflattop @ h6400 ARBITER — confirmed (n=258, stopped early; same decks as Bmild)
+
+| curve @ h6400 | n | wr | elo | avgΔ | z(margin) |
+|---|---|---|---|---|---|
+| Bmild | 209 | **0.581** | +57 | +3.6 | +2.69 |
+| Bflattop | 258 | 0.552 | +36 | **+4.7** | **+3.47** |
+
+**Both curves beat v2.8 at the arbiter; the two are statistically TIED with each other**
+(0.552 vs 0.581 ≈ 1σ at ±22 elo). Split: Bflattop margin-favored (+4.7, z+3.47), Bmild
+winrate-favored (0.581). The Wave-2 "Bflattop best at sims=200" does NOT translate into a
+winrate edge over Bmild at depth — **the two are interchangeable; either is a valid
+v2.9 curve.** (Bflattop's early partial 0.595 was selection-bias-inflated, settled to
+0.552 — same washout Bmild showed 0.634→0.581.) **Audit complete; RoD_iter_01 neural
+matchup on hold.**
 
 ## Final — h6400 / h3200, n=400  (single best config)
 
