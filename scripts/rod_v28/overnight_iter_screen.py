@@ -124,17 +124,17 @@ def screen(metrics, smoke, smoke_catastrophe_wr):
     return "HEALTHY", reasons or ["all cheap screens nominal"]
 
 
-def update_manifest(path, entry):
+def update_manifest(path, entry, leaf_label=None, branch=None, doc_str=None):
     if os.path.exists(path):
         doc = json.load(open(path))
     else:
         doc = {
             "_meta": {
-                "doc": "RoD v2.8 overnight flywheel — checkpoint manifest (appended per iter)",
-                "branch": "rod_v28_overnight_flywheel",
+                "doc": doc_str or "RoD v2.8 overnight flywheel — checkpoint manifest (appended per iter)",
+                "branch": branch or "rod_v28_overnight_flywheel",
                 "status": "MEASUREMENT ONLY — exploratory; no promotion, PRODUCTION.yaml unchanged, v2.7 frozen, v2.8 opt-in",
-                "leaf": "v2.8 = v2.7 + meeple_k=2.0 (CARCASSONNE_V25_MEEPLE_K=2.0, legacy field, flat fast path)",
-                "lineage": "latest-chain: RoD_iter_01 -> iter_02 -> iter_03 -> ... (warm-from previous iter unless catastrophic)",
+                "leaf": leaf_label or "v2.8 = v2.7 + meeple_k=2.0 (CARCASSONNE_V25_MEEPLE_K=2.0, legacy field, flat fast path)",
+                "lineage": "latest-chain: warm-from previous iter (unless catastrophic)",
             },
             "checkpoints": [],
         }
@@ -202,6 +202,13 @@ def main():
     ap.add_argument("--smoke-seed", default="")
     ap.add_argument("--smoke-catastrophe-wr", type=float, default=0.25)
     ap.add_argument("--crashes", default="none")
+    # Record labels — defaults preserve the v2.8 overnight behavior; RoD v2 overrides
+    # these to the frozen v2.9 substrate so the manifest/csv are honest (the
+    # authoritative leaf is prov_selfplay_leaf from the checkpoint metrics regardless).
+    ap.add_argument("--leaf-label", default="v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)")
+    ap.add_argument("--id-prefix", default="RoD")
+    ap.add_argument("--manifest-branch", default="rod_v28_overnight_flywheel")
+    ap.add_argument("--manifest-doc", default="RoD v2.8 overnight flywheel — checkpoint manifest (appended per iter)")
     args = ap.parse_args()
 
     metrics = json.load(open(args.metrics))
@@ -223,7 +230,7 @@ def main():
 
     entry = {
         "iter": args.iter,
-        "id": f"RoD_iter_{args.iter:02d}",
+        "id": f"{args.id_prefix}_iter_{args.iter:02d}",
         "path_local": args.ckpt,
         "path_remote": args.ckpt.replace("/mnt/c/carc-shared", "/mnt/carc-shared"),
         "sha256": ck_sha,
@@ -234,7 +241,7 @@ def main():
         "code_commit_at_train": prov.get("code_commit"),
         "arch": prov.get("arch"),
         "crashes_resumes": args.crashes,
-        "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+        "leaf": args.leaf_label,
         "selfplay_gen": {
             "games_target": args.games,
             "npz_produced": args.gen_npz,
@@ -294,7 +301,8 @@ def main():
         "stamped_utc": now,
     }
 
-    update_manifest(os.path.join(args.measure_dir, "CHECKPOINT_MANIFEST.json"), entry)
+    update_manifest(os.path.join(args.measure_dir, "CHECKPOINT_MANIFEST.json"), entry,
+                    leaf_label=args.leaf_label, branch=args.manifest_branch, doc_str=args.manifest_doc)
 
     # --- CSV row ---
     sm_wr = f"{smoke['wr']:.3f}" if smoke else ""
@@ -307,7 +315,7 @@ def main():
         "smoke_elo_vs_parent", "verdict", "code_commit",
     ]
     csv_row = [
-        args.iter, f"RoD_iter_{args.iter:02d}", args.parent_id, ck_sha[:12], args.games,
+        args.iter, f"{args.id_prefix}_iter_{args.iter:02d}", args.parent_id, ck_sha[:12], args.games,
         args.gen_npz, round(args.gen_sec, 1), round(args.train_sec, 1), total_steps,
         metrics.get("n_train_positions"),
         train_pol[-1] if train_pol else "", val_pol[-1] if val_pol else "",

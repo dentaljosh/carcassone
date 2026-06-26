@@ -147,11 +147,21 @@ def _config_from_env() -> LeafConfig:
     else:
         closure_p = {1: 0.5, 2: 0.2, 3: 0.05}
     bonus_cap = float(os.environ.get("CARCASSONNE_V25_CAP", "5.0"))
+    # v2.9 meeple liquidity curve (Candidate B). Comma-separated value-by-free-count
+    # table (8 entries, free-meeple count 0..7); when set it REPLACES the flat
+    # meeple_k term (see leaf_v29._meeple_curve_term / flat_leaf curve branch). Unset
+    # == None == off (production v2.8 unchanged). The frozen v2.9 substrate sets
+    # CARCASSONNE_V29_MEEPLE_CURVE="-8,-4,-1,0,2,3,4,5" (governance/LEAF_SUBSTRATES.yaml).
+    _v29_curve_env = os.environ.get("CARCASSONNE_V29_MEEPLE_CURVE")
+    v29_meeple_curve = (
+        tuple(float(x) for x in _v29_curve_env.split(",")) if _v29_curve_env else None
+    )
     return LeafConfig(
         closure_p=closure_p,
         bonus_cap=bonus_cap,
         opp_bonus_cap=float(os.environ.get("CARCASSONNE_V25_OPP_CAP", str(bonus_cap))),
         meeple_k=float(os.environ.get("CARCASSONNE_V25_MEEPLE_K", "0.0")),
+        v29_meeple_curve=v29_meeple_curve,
         value_blend=float(os.environ.get("CARCASSONNE_V25_VALUE_BLEND", "0.0")),
         residual_scale=float(os.environ.get("CARCASSONNE_V25_RESIDUAL_SCALE", "0.0")),
         tile_counting_closure=(os.environ.get("CARCASSONNE_V25_TILE_COUNTING") == "1"),
@@ -202,6 +212,19 @@ def _v29_active(cfg: "LeafConfig") -> bool:
     Off by default, so production/v2.8 cfgs return False (flat fast path unchanged)."""
     return (cfg.v29_util_tanh_t > 0.0 or cfg.v29_meeple_curve is not None
             or cfg.v29_punish_k != 0.0 or cfg.v29_farm_access_k != 0.0)
+
+
+def _v29_curve_only(cfg: "LeafConfig") -> bool:
+    """True iff the ONLY active v2.9 term is the meeple curve (Candidate B). The
+    curve is a pure `state.meeples` table lookup — flat_leaf.py implements it
+    directly (and the curve-aware pure-Python flat path is bit-exact to the object
+    path), so a curve-only cfg can STAY on the fast flat path. The other v2.9 terms
+    (A util_tanh / D punish / E farm) need the engine/object helpers, so they still
+    force the object path."""
+    return (cfg.v29_meeple_curve is not None
+            and cfg.v29_util_tanh_t <= 0.0
+            and cfg.v29_punish_k == 0.0
+            and cfg.v29_farm_access_k == 0.0)
 
 
 def _field_owner_counts(state) -> dict:
@@ -545,8 +568,12 @@ def virtual_score_v2(
     # continuous). Default OFF -> byte-identical to prior production.
     if flat_leaf.USE_FLAT_LEAF and not (
         cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0
-        or _v28_active(cfg) or _v29_active(cfg)
+        or _v28_active(cfg)
+        or (_v29_active(cfg) and not _v29_curve_only(cfg))
     ):
+        # Curve-only v2.9 configs (Candidate B) stay on the fast flat path —
+        # flat_virtual_score_v2 applies the curve bit-exactly (and skips the cy
+        # leaf, which doesn't know the curve). Other v2.9 terms fall through.
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
     opp = 1 - player
     # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region

@@ -1,4 +1,9 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, initializedcheck=False, cdivision=True
+# Capability flag: this build implements the v2.9 meeple curve (Candidate B). The
+# Python wrapper (flat_leaf.py) checks it before routing a curve config here, so a
+# STALE .so (no curve support) can never silently drop the curve — it falls back to
+# the pure-Python flat path instead. Bump/rename if the curve semantics ever change.
+SUPPORTS_V29_CURVE = True
 """Cython port of the production flat leaf (`flat_leaf.flat_virtual_score_v2`).
 
 DEV-ONLY (2026-06-12, stage-b-wiring worktree). Default OFF — nothing imports
@@ -886,6 +891,17 @@ cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p)
     return <double>_fsum(contribs)
 
 
+cdef inline double _curve_lookup_c(object curve, long n):
+    """== flat_leaf._flat_curve_lookup / leaf_v29._curve_lookup. Value of holding `n`
+    free meeples, clamped into [0, len-1]."""
+    cdef Py_ssize_t L = len(curve)
+    if n < 0:
+        n = 0
+    elif n >= L:
+        n = L - 1
+    return <double>curve[n]
+
+
 def flat_virtual_score_v2_cy(state, int player, cfg=None):
     """Cython drop-in for flat_leaf.flat_virtual_score_v2 (bit-exact)."""
     if state.players != 2:
@@ -918,7 +934,13 @@ def flat_virtual_score_v2_cy(state, int player, cfg=None):
         bonus_opp = opp_cap
     cdef double score = base + bonus_self - bonus_opp
     cdef double meeple_k = <double>cfg.meeple_k
-    if meeple_k > 0.0:
+    cdef object curve = cfg.v29_meeple_curve
+    if curve is not None:
+        # v2.9 Candidate B: nonlinear meeple liquidity curve REPLACES the flat
+        # meeple_k term (== flat_leaf._flat_curve_lookup / leaf_v29._meeple_curve_term).
+        meeples = state.meeples
+        score += _curve_lookup_c(curve, <long>int(meeples[player])) - _curve_lookup_c(curve, <long>int(meeples[opp]))
+    elif meeple_k > 0.0:
         meeples = state.meeples
         score += meeple_k * (<long>int(meeples[player]) - <long>int(meeples[opp]))
     # Python round semantics (banker's rounding) on a boxed float — exact match

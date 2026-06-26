@@ -61,6 +61,7 @@ USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 # on the next leaf call).
 USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF", "1") != "0"  # FOLDED 2026-06-17: default ON (all 3 boxes built+reconciled bit-exact); set =0 to force the Python path
 _CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
+_CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind time
 
 # --- geometry (gate-validated against the engine) ----------------------------
 # Stage 4a: the decomposition hot path int-encodes sides. Enum dict keys cost a
@@ -667,6 +668,16 @@ def _capped(bonus: float, cap: float) -> float:
     return cap if bonus > cap else bonus
 
 
+def _flat_curve_lookup(curve, n: int) -> float:
+    """== leaf_v29._curve_lookup. Value of holding `n` free meeples, clamped into
+    [0, len-1] (free-meeple count is 0..7 in base+farmers)."""
+    if n < 0:
+        n = 0
+    elif n >= len(curve):
+        n = len(curve) - 1
+    return float(curve[n])
+
+
 def flat_virtual_score_v2(state, player: int, cfg=None) -> int:
     """== virtual_score_v2(state, player, cfg) under CANONICAL_BONUS_SUM, computed
     entirely flat (no deepcopy, no count_final_scores, no engine Farm/City BFS).
@@ -674,26 +685,38 @@ def flat_virtual_score_v2(state, player: int, cfg=None) -> int:
     Bit-exact to the engine leaf when the engine runs with CANONICAL_BONUS_SUM=True
     (order-independent fsum); against the naive-sum production path it differs only
     by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09)."""
-    if USE_CY_LEAF:
-        global _CY_FLAT_V2  # noqa: PLW0603
-        if _CY_FLAT_V2 is None:
-            try:
-                from .flat_leaf_cy import flat_virtual_score_v2_cy as _CY_FLAT_V2  # noqa: PLW0603
-            except ImportError:
-                _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
-        if _CY_FLAT_V2:
-            return _CY_FLAT_V2(state, player, cfg)
-    if state.players != 2:
-        raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     if cfg is None:
         from .virtual_score_v2 import DEFAULT_CONFIG
         cfg = DEFAULT_CONFIG
+    # v2.9 meeple curve (Candidate B). The cy leaf implements it when the loaded .so
+    # advertises SUPPORTS_V29_CURVE; a STALE .so (no curve support) would silently
+    # DROP the curve, so for curve configs we fall back to the pure-Python curve path
+    # below unless the build supports it. No curve -> cy as before.
+    curve = cfg.v29_meeple_curve
+    if USE_CY_LEAF:
+        global _CY_FLAT_V2, _CY_SUPPORTS_CURVE  # noqa: PLW0603
+        if _CY_FLAT_V2 is None:
+            try:
+                from . import flat_leaf_cy as _cy
+                _CY_FLAT_V2 = _cy.flat_virtual_score_v2_cy
+                _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
+            except ImportError:
+                _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
+                _CY_SUPPORTS_CURVE = False
+        if _CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE):
+            return _CY_FLAT_V2(state, player, cfg)
+    if state.players != 2:
+        raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     decomp = decompose(state)
     opp = 1 - player
     base = flat_base_score(state, player, decomp)
     bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg), cfg.bonus_cap)
     bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg), cfg.opp_bonus_cap)
     score = base + bonus_self - bonus_opp
-    if cfg.meeple_k > 0.0:
+    if curve is not None:
+        # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
+        # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
+        score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+    elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     return int(round(score))
