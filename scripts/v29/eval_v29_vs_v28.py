@@ -128,6 +128,21 @@ def candidate_cfg(name: str):
     raise ValueError(f"unknown candidate {name!r}")
 
 
+def candidate_value_norm(name: str) -> float:
+    """Per-side tanh value-norm for a candidate name (Wave D: the `_n<NN>` modifier).
+
+    HeuristicMCTS squashes the leaf via tanh(diff / value_norm); default 15.0. A
+    `Bmild_..._n12` name runs THIS side at diff/12 while the other side keeps 15.0, so a
+    paired A/B sweeps the norm per-side (it is an MCTS knob, not a LeafConfig field, so it
+    rides alongside candidate_cfg rather than inside it). No `_n<NN>` -> default 15.0.
+    """
+    from carcassonne_ai.mcts import HEURISTIC_VALUE_NORM
+    for mod in name.split("_")[1:]:
+        if mod.startswith("n") and mod[1:].isdigit():
+            return float(mod[1:])
+    return float(HEURISTIC_VALUE_NORM)
+
+
 @dataclass
 class GameResult:
     seed: int
@@ -165,22 +180,27 @@ def _save(p: Path, r: GameResult):
     tmp.replace(p)
 
 
-_W = {"shared_claim": False, "claim_host": "", "stale": 5400, "cand": None, "base": None}
+_W = {"shared_claim": False, "claim_host": "", "stale": 5400, "cand": None, "base": None,
+      "cand_norm": None, "base_norm": None}
 
 
-def _worker_init(shared_claim, claim_host, stale, cand_cfg, base_cfg):
+def _worker_init(shared_claim, claim_host, stale, cand_cfg, base_cfg, cand_norm, base_norm):
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["stale"] = stale
     _W["cand"] = cand_cfg
     _W["base"] = base_cfg
+    _W["cand_norm"] = cand_norm   # Wave D: per-side tanh value-norm (None -> HeuristicMCTS default 15.0)
+    _W["base_norm"] = base_norm
 
 
 def _make_sides(seed, sims):
     game_a = Game(enable_legal_moves_cache=True)
     game_b = Game(enable_legal_moves_cache=True)
-    a = HeuristicMCTS(game=game_a, simulations=sims, seed=seed, heur_leaf="v2_7", leaf_cfg=_W["cand"])
-    b = HeuristicMCTS(game=game_b, simulations=sims, seed=seed + 1, heur_leaf="v2_7", leaf_cfg=_W["base"])
+    a = HeuristicMCTS(game=game_a, simulations=sims, seed=seed, heur_leaf="v2_7",
+                      leaf_cfg=_W["cand"], value_norm=_W["cand_norm"])
+    b = HeuristicMCTS(game=game_b, simulations=sims, seed=seed + 1, heur_leaf="v2_7",
+                      leaf_cfg=_W["base"], value_norm=_W["base_norm"])
     return game_a, a, b
 
 
@@ -310,6 +330,8 @@ def main(argv=None) -> int:
 
     cand_cfg = candidate_cfg(args.candidate)
     base_cfg = candidate_cfg(args.baseline)
+    cand_norm = candidate_value_norm(args.candidate)  # Wave D: per-side tanh value-norm
+    base_norm = candidate_value_norm(args.baseline)
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
@@ -337,6 +359,7 @@ def main(argv=None) -> int:
                            "git_commit": _git_commit(),
                            "leaf_version": "v29_experimental",
                            "win_shaped": cand_cfg.v29_util_tanh_t > 0.0,
+                           "cand_value_norm": cand_norm, "base_value_norm": base_norm,
                            "cand_cfg": {k: (list(v) if isinstance(v, tuple) else v)
                                         for k, v in asdict(cand_cfg).items()},
                            "base_cfg": {k: (list(v) if isinstance(v, tuple) else v)
@@ -354,7 +377,7 @@ def main(argv=None) -> int:
         t0 = time.perf_counter()
         with Pool(processes=workers, initializer=_worker_init,
                   initargs=(args.shared_claim, args.claim_host, args.claim_stale_secs,
-                            cand_cfg, base_cfg)) as pool:
+                            cand_cfg, base_cfg, cand_norm, base_norm)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:

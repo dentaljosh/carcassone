@@ -13,7 +13,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts", "v29"))
-from eval_v29_vs_v28 import MILD_CURVE, candidate_cfg  # noqa: E402
+from eval_v29_vs_v28 import MILD_CURVE, candidate_cfg, candidate_value_norm  # noqa: E402
 
 ANCHOR_CLOSURE_P = {1: 0.5, 2: 0.2, 3: 0.05}  # 3-open (env default; the anchor's schedule)
 
@@ -79,6 +79,17 @@ def test_composition_scale_and_cap():
     c = candidate_cfg("Bmild_x125_cap16")
     assert c.v29_meeple_curve == tuple(round(v * 1.25, 4) for v in MILD_CURVE)
     assert c.bonus_cap == 16.0 and c.opp_bonus_cap == 16.0
+
+
+@pytest.mark.parametrize("name,norm", [
+    ("Bmild", 15.0), ("Bmild_cap8", 15.0),            # no _n -> default 15.0
+    ("Bmild_cap8_n12", 12.0), ("Bmild_n18", 18.0), ("Bmild_cap8_n24", 24.0),
+])
+def test_value_norm_extraction(name, norm):
+    """Wave D: _n<NN> rides ALONGSIDE candidate_cfg (MCTS knob, not a LeafConfig field)."""
+    assert candidate_value_norm(name) == norm
+    # the _n modifier must NOT corrupt the LeafConfig (cap/curve still resolve normally)
+    assert candidate_cfg(name).bonus_cap == (8.0 if "cap8" in name else 5.0)
 
 
 def test_compose_true_production_base():
