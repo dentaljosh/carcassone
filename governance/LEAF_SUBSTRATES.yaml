@@ -1,0 +1,54 @@
+# Frozen classical leaf substrates (heuristic virtual_score_v2 configs).
+# Recorded 2026-06-25 at Joshua's request after the v2.9.1 retune.
+#
+# These FREEZE two named leaf configs by exact value + config hash + commit. They are the
+# heuristic-leaf substrates used by HeuristicMCTS (and, via make_v25_value_wrapper, the
+# neural agent). NOTHING here is a production-champion promotion — the production champion +
+# its full config live in governance/PRODUCTION.yaml; v2.7 stays frozen; nets unchanged.
+#
+# config_hash recipe (reproducible / verifiable):
+#   from carcassonne_ai... candidate_cfg(name); d = {k:(list(v) if tuple else v) for k,v in asdict(cfg)};
+#   sha256( json.dumps(d, sort_keys=True, separators=(",",":")) ).hexdigest()[:16]
+# Reproduce either config via the harness: scripts/v29/eval_v29_vs_v28.py --candidate <name>.
+
+commit_hash: faa8c0b26388366afa27ec4b19be9280b9f71b2c   # HEAD at freeze (branch strategic-behavior-ladder)
+recorded: 2026-06-25
+
+substrates:
+
+  v2_8_production:
+    role: frozen production baseline
+    harness_name: v28prod
+    config_hash: 2586097d44af9291
+    bonus_cap: 12.0
+    opp_bonus_cap: 12.0
+    closure_schedule: {1: 0.5, 2: 0.2}          # drop-three-open (no 3-open ticket)
+    meeple_k: 2.0                                 # flat meeple economy
+    v29_meeple_curve: null                        # no curve
+    tanh_value_norm: 15.0                          # HeuristicMCTS default (diff/15)
+    note: >
+      Actual production v2.8 (cap=12 + drop-three-open + flat meeple_k=2). Distinct from the
+      v29 harness 'v28' default (cap5/3-open) that every PRIOR v29 run mislabeled as 'v2.8';
+      this is the real one, used for the v2.9 throne test.
+
+  v2_9_bmild_cap8:
+    role: frozen classical substrate (v2.9.1 retune output)
+    harness_name: Bmild_cap8
+    config_hash: 7fc930b82801cb43
+    bonus_cap: 8.0                                 # cap=8 — the ONE retune lever (Wave B, +46 elo vs cap5)
+    opp_bonus_cap: 8.0
+    closure_schedule: {1: 0.5, 2: 0.2, 3: 0.05}   # 3-open — UNCHANGED by the retune (Wave C null)
+    meeple_k: 2.0                                  # present but INERT (the curve replaces it)
+    v29_meeple_curve: [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0]   # MILD curve, by free-meeple count 0..7; UNCHANGED magnitude (Wave A null)
+    tanh_value_norm: 15.0                          # UNCHANGED (Wave D null; diff/15 default)
+    closure_schedule_note: >
+      3-open (keeps the 3:0.05 ticket) — this is the anchor's env-default, NOT production's
+      drop-three-open. The retune did not change it (Wave C closure-P null). A deliberate,
+      recorded difference from v2_8_production, not an accident.
+    throne_test: >
+      Bmild_cap8 vs v2_8_production: 0.579 wr / +55 elo / z+3.94 / even-bucket 0.636
+      (sims=200 n=400 paired), depth-robust through sims=800 (0.550 / +35 / z+1.84).
+      results.csv v291_* rows; full record DECISIONS 2026-06-25 + CLAIM_REGISTRY CL-028.
+    status: >
+      Confirmed depth-robust CLASSICAL-leaf win over production. NOT promoted. h6400 arbiter
+      deferred to promotion-time; neural-champion transfer UNTESTED (needs orch + retrain).
