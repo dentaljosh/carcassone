@@ -71,9 +71,11 @@ def candidate_cfg(name: str):
     Bmild local-retune variants (composable modifiers, '_'-joined onto 'Bmild'):
       _x<NNN>      scale the curve by NNN/100   (Wave A: Bmild_x075, Bmild_x125)
       _cap<N>      bonus_cap = opp_bonus_cap = N (Wave B: Bmild_cap8, Bmild_x125_cap16)
-      _p<AA>-<BB>  closure_p = {1: AA/100, 2: BB/100} (Wave C: Bmild_p060-025)
-    e.g. 'Bmild_x125_cap16_p060-025'. Tanh-norm (Wave D) is a HeuristicMCTS knob, not a
-    LeafConfig field — handled separately when that wave runs."""
+      _p<AA>-<BB>      closure_p = {1:AA/100, 2:BB/100} — DROPS the anchor's 3-open ticket
+      _p<AA>-<BB>-<CC> closure_p = {1:AA/100, 2:BB/100, 3:CC/100} — structure-preserving
+                       (Bmild_p050-020-005 == anchor; the clean Wave-C control)
+    e.g. 'Bmild_x125_cap16_p060-025-005'. Tanh-norm (Wave D) is a HeuristicMCTS knob, not
+    a LeafConfig field — handled separately when that wave runs."""
     if name == "v28":
         return V28                                            # null control (A vs B both v28)
     if name.startswith("Bmild_"):
@@ -84,8 +86,9 @@ def candidate_cfg(name: str):
             elif mod.startswith("cap"):
                 cap = float(mod[3:])
             elif mod.startswith("p"):
-                a, b = mod[1:].split("-")
-                cp = {1: int(a) / 100.0, 2: int(b) / 100.0}
+                # _p<AA>-<BB>       -> {1:AA, 2:BB}        (drops the anchor's 3-open ticket)
+                # _p<AA>-<BB>-<CC>  -> {1:AA, 2:BB, 3:CC}  (keeps 3-open; structure-preserving)
+                cp = {i + 1: int(x) / 100.0 for i, x in enumerate(mod[1:].split("-"))}
         cfg = dc.replace(V28, v29_meeple_curve=_scale_curve(MILD_CURVE, scale))
         if cap is not None:
             cfg = dc.replace(cfg, bonus_cap=cap, opp_bonus_cap=cap)

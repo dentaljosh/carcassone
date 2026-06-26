@@ -311,11 +311,16 @@ class HeuristicMCTS(MCTS):
     Terminal leaves return the engine's signed terminal value unchanged.
     """
 
-    def __init__(self, *args, heur_leaf: str = "v1", leaf_cfg=None, **kwargs):
+    def __init__(self, *args, heur_leaf: str = "v1", leaf_cfg=None, value_norm=None, **kwargs):
         super().__init__(*args, **kwargs)
         if heur_leaf not in ("v1", "v2_7"):
             raise ValueError(f"heur_leaf must be 'v1' or 'v2_7'; got {heur_leaf!r}")
         self._heur_leaf = heur_leaf
+        # value_norm (2026-06-25, v2.9.1 retune Wave D): per-INSTANCE tanh normalization
+        # denominator. None -> module default HEURISTIC_VALUE_NORM (15.0), so every existing
+        # caller is bit-identical. Per-instance (not the module global) so a paired A/B can
+        # run the candidate at a swept norm while the baseline stays at 15.0.
+        self._value_norm = HEURISTIC_VALUE_NORM if value_norm is None else float(value_norm)
         # leaf_cfg (2026-06-22, v2.8 branch): an optional virtual_score_v2.LeafConfig
         # passed to the v2_7 leaf, so an OPT-IN v2.8 variant can run in HeuristicMCTS
         # search without touching v2.7. None -> virtual_score_v2 uses DEFAULT_CONFIG
@@ -348,7 +353,7 @@ class HeuristicMCTS(MCTS):
         else:
             diff = virtual_score_estimate(board, leaf_player)
             self._v1_calls += 1
-        return math.tanh(diff / HEURISTIC_VALUE_NORM)
+        return math.tanh(diff / self._value_norm)
 
 
 # ---------------------------------------------------------------------------
