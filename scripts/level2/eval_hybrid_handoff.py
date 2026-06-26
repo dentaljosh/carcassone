@@ -715,8 +715,10 @@ def main(argv=None) -> int:
                            "handoff": "latched on first TILES decision with "
                                       "k_remaining<=K; k=len(deck)+(next_tile is not None)",
                            "v25_env": {k: os.environ.get(k) for k in
-                                       ("CARCASSONNE_V25_CAP", "CARCASSONNE_V25_DROP_THREE_OPEN",
-                                        "CARCASSONNE_USE_FLAT_LEAF", "CARCASSONNE_V25_VALUE_BLEND")}})
+                                       ("CARCASSONNE_V25_CAP", "CARCASSONNE_V25_OPP_CAP",
+                                        "CARCASSONNE_V25_DROP_THREE_OPEN", "CARCASSONNE_V25_MEEPLE_K",
+                                        "CARCASSONNE_V29_MEEPLE_CURVE", "CARCASSONNE_USE_FLAT_LEAF",
+                                        "CARCASSONNE_V25_VALUE_BLEND")}})
 
     todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
