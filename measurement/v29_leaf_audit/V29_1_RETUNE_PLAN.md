@@ -84,6 +84,45 @@ just pads blowouts. No upward trend → no cap20. The anchor's cap=5 (env defaul
 documented production's 12 sits on the plateau. **n=400 confirm cap8 + cap12 next.** All
 n=200 (~1.6σ) — flags, not verdicts.
 
+#### Wave B — n=400 VERDICT — DONE 2026-06-25
+| cell | wr vs anchor | elo | z(margin) | even-bucket | verdict |
+|---|---|---|---|---|---|
+| **Bmild_cap8** | **0.566** | +46 | +1.92 | **0.669** | **WINNER** (competitive-state gain) |
+| Bmild_cap12 | 0.559 | +41 | +2.17 | 0.453 | confirmed but even<0.5 = padding |
+
+**cap8 WINS.** Both confirm cap>5 (~+45 elo, winrate held from n=200), but the even-bucket
+splits them decisively: cap8 0.669 (competitive win) vs cap12 0.453 (below coinflip — its
+margin-z is blowout padding, the A32 trap). cap=12 over-values fantasy closures and misleads
+in tight games; cap=8 prices real threats without the fantasy. **NEW ANCHOR = `Bmild_cap8`
+(cap=8 + MILD curve + 3-open).** Depth-verify (h6400) deferred to the final combined config.
+
+### Wave C — closure-P @ sims=200 n=200 paired vs **Bmild_cap8** — SCREEN DONE 2026-06-25
+| cell | change | wr | z(margin) | even | verdict |
+|---|---|---|---|---|---|
+| p040-015-005 | lower P | 0.485 | −0.48 | 0.471 | null |
+| p060-025-005 | higher P | **0.557** | +1.73 | **0.450** | flag, padding-suspect → n400 |
+| p050-010-005 | lower 2-open | 0.495 | +0.03 | 0.514 | null |
+| p050-020 | drop 3-open | 0.525 | −0.75 | 0.683 | even↑ but overall null → skip |
+
+Messy (matches the moderate-low prior). The lone winrate flag (p060, higher closure prob)
+carries the A32/cap12 PADDING signature — even-bucket 0.450 (<coinflip), winrate from
+non-competitive buckets. Mechanistically: higher closure-P over-values closures like cap12
+did. Drop-3-open (p050-020) has the opposite profile (even 0.683, overall null, n=30 noisy).
+**→ n=400 confirm p060-025-005, even-bucket is the decider** (same lens as cap8-vs-cap12).
+Expect: padding → kill → Wave C null → Bmild_cap8 holds.
+
+#### Wave C — n=400 VERDICT — DONE 2026-06-25: **NULL (padding confirmed)**
+p060-025-005 vs Bmild_cap8 collapsed 0.557 (n200) → **0.506 (n400)**, elo +4.3, even-bucket
+0.385 (deep <coinflip). The n=200 flag was selection-inflation + blowout padding; higher
+closure-P pads blowouts and loses tight games (same trap as cap12). The closure schedule
+(0.5/0.2/0.05) is already well-tuned. **Wave C NULL → `Bmild_cap8` holds as the anchor.**
+
+### Wave D — tanh value-norm @ sims=200 n=200 paired vs **Bmild_cap8** — RUNNING
+Cells `Bmild_cap8_n12 / _n18 / _n24` (candidate squashes leaf via tanh(diff/N); baseline
+Bmild_cap8 stays diff/15). The ONLY genuinely-untested knob (T=15 hardcoded since warmstart,
+never swept) — so real value despite the low prior. Success = beats Bmild_cap8. Per-side
+value_norm (commit c21f751); n15 == baseline control (skipped).
+
 ## Standing constraints
 v2.7 frozen/bit-identical · v2.8 stays production · v2.9 opt-in · no RoD2 training on
 these results · no PRODUCTION.yaml edit / checkpoint change without Joshua's explicit call.

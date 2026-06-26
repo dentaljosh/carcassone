@@ -97,6 +97,12 @@ def candidate_cfg(name: str):
         return cfg
     if name.startswith("A") and name[1:].isdigit():
         return dc.replace(V28, v29_util_tanh_t=float(name[1:]))   # Candidate A: win-shape T
+    if name == "v28prod":
+        # REAL production v2.8: flat meeple_k=2.0, cap=12, DROP-three-open ({1:0.5,2:0.2}).
+        # The harness 'v28' baseline is cap5/3-open (the env default), NOT production — every
+        # prior v29 run measured against cap5/3-open (see V29_1_RETUNE_PLAN.md). Use v28prod
+        # for the final throne test of the v2.9.1 stack vs ACTUAL production.
+        return dc.replace(V28, bonus_cap=12.0, opp_bonus_cap=12.0, closure_p={1: 0.5, 2: 0.2})
     if name == "Bmild":
         return dc.replace(V28, v29_meeple_curve=MILD_CURVE)
     if name == "Baggr":

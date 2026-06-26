@@ -97,3 +97,13 @@ def test_compose_true_production_base():
     c = candidate_cfg("Bmild_cap12_p050-020")
     assert c.bonus_cap == 12.0 and c.closure_p == {1: 0.5, 2: 0.2}
     assert c.v29_meeple_curve == MILD_CURVE
+
+
+def test_v28prod_is_real_production():
+    """v28prod = ACTUAL production v2.8 (cap12, drop-3-open, flat-k2, NO curve) — the throne-test
+    baseline. Distinct from the harness 'v28' (cap5/3-open env default) every prior run used."""
+    p = candidate_cfg("v28prod")
+    assert p.bonus_cap == 12.0 and p.opp_bonus_cap == 12.0
+    assert p.closure_p == {1: 0.5, 2: 0.2}     # drop-3-open (no 3:0.05 ticket)
+    assert p.meeple_k == 2.0 and p.v29_meeple_curve is None   # flat meeple, no curve
+    assert candidate_cfg("v28").bonus_cap == 5.0              # the harness 'v28' is NOT production
