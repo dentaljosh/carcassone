@@ -39,3 +39,8 @@ az/
 
 # Codex scratch state (review agent uses this)
 .codex
+
+# Hard-policy-repair: logs ephemeral; npz already covered by `data/` above
+# (regenerable from mine_label.py + the committed multiphase pool). Manifests
+# (jsonl) stay TRACKED for provenance.
+measurement/hard_policy_repair/*.log
