@@ -158,8 +158,18 @@ the comparison the whole v2.9 audit skipped (it used the cap5/3-open env default
 Margin ≈ the original Bmild-vs-cap5/3-open win (0.581) ⇒ the CURVE (meeple economy) is the
 bulk; cap8 adds a bit. Production's cap=12 vs our cap=8 didn't save it — the curve dominates.
 
-**Depth ladder (cost-disciplined):** sims=800 washout (RUNNING, ~30 min, cheap) → h6400
-arbiter (~3-5 hr, **Joshua's call** — h6400 is ~37 min/game under cluster contention).
+**Depth ladder (cost-disciplined):** sims=800 washout (DONE, below) → h6400 arbiter
+(~3-5 hr, **Joshua's call** — h6400 is ~37 min/game under cluster contention).
+
+| depth | Bmild_cap8 vs v28prod | elo | z(margin) | even |
+|---|---|---|---|---|
+| sims=200 n=400 | 0.579 | +55 | +3.94 | 0.636 |
+| sims=800 n=200 | **0.550** | +35 | +1.84 | 0.569 |
+
+**Washout check PASSED — depth-robust.** Gain shrinks +55→+35 but stays positive +
+competitive-favorable (even 0.569) at sims=800, mirroring the original Bmild ladder (which
+recovered to 0.581 at h6400). n=200@s800 is ±25 elo (coarse). `Bmild_cap8` is a confirmed,
+depth-robust win over actual production v2.8. h6400 arbiter pending Joshua's compute call.
 
 ## Standing constraints
 v2.7 frozen/bit-identical · v2.8 stays production · v2.9 opt-in · no RoD2 training on
