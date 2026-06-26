@@ -117,11 +117,49 @@ p060-025-005 vs Bmild_cap8 collapsed 0.557 (n200) → **0.506 (n400)**, elo +4.3
 closure-P pads blowouts and loses tight games (same trap as cap12). The closure schedule
 (0.5/0.2/0.05) is already well-tuned. **Wave C NULL → `Bmild_cap8` holds as the anchor.**
 
-### Wave D — tanh value-norm @ sims=200 n=200 paired vs **Bmild_cap8** — RUNNING
-Cells `Bmild_cap8_n12 / _n18 / _n24` (candidate squashes leaf via tanh(diff/N); baseline
-Bmild_cap8 stays diff/15). The ONLY genuinely-untested knob (T=15 hardcoded since warmstart,
-never swept) — so real value despite the low prior. Success = beats Bmild_cap8. Per-side
-value_norm (commit c21f751); n15 == baseline control (skipped).
+### Wave D — tanh value-norm @ sims=200 n=200 paired vs **Bmild_cap8** — SCREEN DONE 2026-06-25
+| cell | squash | wr | z(margin) | even | verdict |
+|---|---|---|---|---|---|
+| n12 | diff/12 (sharper) | **0.542** | +1.39 | 0.549 | flag (not padding) → n400 |
+| n18 | diff/18 (gentler) | 0.438 | −1.40 | 0.516 | loses |
+| n24 | diff/24 (gentler) | 0.522 | +0.35 | 0.588 | null overall |
+
+Weak signal toward a SHARPER squash (diff/12 > diff/15; gentler hurts). n12's even-bucket
+(0.549) is healthy — not the padding trap. Plausible (curve+cap8 changed the leaf-diff
+scale). But weak (~1.2σ) and the norm is a search-balance knob (depth-sensitive). **→ n=400
+confirm n12** (per-side value_norm; runs on c21f751, no re-sync). Then the throne test.
+
+#### Wave D — n=400 VERDICT — DONE 2026-06-25: **NULL**
+n12 regressed 0.542 → **0.515** (elo +10.4, even 0.533) — the diff/12 edge was n=200 noise.
+tanh-norm at 15 is already fine. **Wave D NULL.**
+
+## RETUNE COMPLETE — final v2.9.1 config = `Bmild_cap8`
+| wave | knob | verdict |
+|---|---|---|
+| A | meeple scale | null (magnitude already right) |
+| **B** | **closure cap** | **cap8 — the single win (+46 elo vs cap5, competitive-state gain)** |
+| C | closure-P | null (p060 padding) |
+| D | tanh-norm | null |
+
+`Bmild_cap8` = MILD curve (-8,-4,-1,0,2,3,4,5) + cap=8 + 3-open schedule + diff/15 norm.
+The pre-registered most-likely outcome: the curve shape captured the magnitude; the one
+genuine refinement was the anchor's cap=5 being too low (env default). **Next: the throne
+test the whole audit skipped — `Bmild_cap8` vs REAL production `v28prod` (cap12 +
+drop-3-open + flat-k2), sims=200 n=400 → h6400 depth arbiter.**
+
+### THRONE TEST — Bmild_cap8 vs REAL production v28prod @ sims=200 n=400 — DONE 2026-06-25
+| | wr | elo | z(margin) | even | behind | ahead | blowout |
+|---|---|---|---|---|---|---|---|
+| **Bmild_cap8 vs v28prod** | **0.579** | +55 | **+3.94** | **0.636** | 0.13 | 0.84 | 0.95 |
+
+**🏆 The v2.9.1 stack BEATS actual production v2.8 (cap12 + drop-3-open + flat-k2) by ~+55
+elo, gain in the competitive even-bucket (0.636 — not padding), z+3.94 significant.** This is
+the comparison the whole v2.9 audit skipped (it used the cap5/3-open env default as "v2.8").
+Margin ≈ the original Bmild-vs-cap5/3-open win (0.581) ⇒ the CURVE (meeple economy) is the
+bulk; cap8 adds a bit. Production's cap=12 vs our cap=8 didn't save it — the curve dominates.
+
+**Depth ladder (cost-disciplined):** sims=800 washout (RUNNING, ~30 min, cheap) → h6400
+arbiter (~3-5 hr, **Joshua's call** — h6400 is ~37 min/game under cluster contention).
 
 ## Standing constraints
 v2.7 frozen/bit-identical · v2.8 stays production · v2.9 opt-in · no RoD2 training on
