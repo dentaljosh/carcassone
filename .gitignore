@@ -44,3 +44,8 @@ az/
 # (regenerable from mine_label.py + the committed multiphase pool). Manifests
 # (jsonl) stay TRACKED for provenance.
 measurement/hard_policy_repair/*.log
+
+# High-gap distillation: logs ephemeral; npz (qprobe/data) already covered by
+# `data/` above (regenerable from probe_signal_density.py + the multiphase pool).
+# probe.jsonl (per-action Q provenance) stays TRACKED.
+measurement/high_gap_distillation/**/*.log
