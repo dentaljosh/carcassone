@@ -70,9 +70,16 @@ def main(argv=None):
     import torch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    man = [json.loads(l) for l in open(args.probe)]
-    boards, scalars, masks = _load_npz(Path(args.npz_dir))
-    assert boards.shape[0] == len(man), f"npz {boards.shape[0]} != probe {len(man)}"
+    probes = [p.strip() for p in args.probe.split(",")]
+    npzdirs = [d.strip() for d in args.npz_dir.split(",")]
+    assert len(probes) == len(npzdirs), "probe/npz-dir count mismatch"
+    man = []; Bs = []; Ss = []; Ms = []
+    for p, nd in zip(probes, npzdirs):
+        mi = [json.loads(l) for l in open(p)]
+        bi, si, mki = _load_npz(Path(nd))
+        assert bi.shape[0] == len(mi), f"{nd}: npz {bi.shape[0]} != jsonl {len(mi)}"
+        man += mi; Bs.append(bi); Ss.append(si); Ms.append(mki)
+    boards = np.concatenate(Bs); scalars = np.concatenate(Ss); masks = np.concatenate(Ms)
     N = len(man)
 
     gap = np.array([m["q_gap_1_2"] for m in man])
