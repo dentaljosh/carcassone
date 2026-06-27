@@ -46,6 +46,10 @@ az/
 measurement/hard_policy_repair/*.log
 
 # High-gap distillation: logs ephemeral; npz (qprobe/data) already covered by
-# `data/` above (regenerable from probe_signal_density.py + the multiphase pool).
-# probe.jsonl (per-action Q provenance) stays TRACKED.
+# `data/` above. The pilot qprobe/probe.jsonl (1.6M) stays TRACKED as provenance.
+# The SCALED artifacts are LARGE + fully regenerable (gen seed band 1.94e9 +
+# probe_signal_density.py + build_splits.py, all documented): pools (218M),
+# per-leg probe.jsonl, and the 12.7M split manifests are ignored.
 measurement/high_gap_distillation/**/*.log
+measurement/high_gap_distillation/scaled/
+measurement/high_gap_distillation/manifest_*.jsonl

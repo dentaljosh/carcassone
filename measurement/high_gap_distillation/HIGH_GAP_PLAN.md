@@ -1,5 +1,11 @@
 # High-Contrast Decision-Signal Distillation — Plan (Stage 0)
 
+> **STATUS: CONCLUDED 2026-06-26 — DECISION B.** The high-contrast signal **exists and is learnable**
+> (gate PASS; held-out prior top1 0→0.18, regret −27%) but does **NOT convert through search** to
+> strength (NMCTS washout R2=iter04=0.497; games R2 vs h6400 WR 0.409 ≤ iter04's 0.463). Bottleneck is
+> **value/search, not policy exposure**. Results: [HIGH_GAP_RESULTS.md](HIGH_GAP_RESULTS.md) ·
+> Decision: [HIGH_GAP_DECISION.md](HIGH_GAP_DECISION.md). No promotion; v2.9 evaluator unchanged.
+
 **Date:** 2026-06-26 · **Branch:** rod_v2_flywheel · **MEASUREMENT / DIAGNOSTIC ONLY.**
 No promotion · PRODUCTION.yaml unchanged · champion unchanged · v2.9 evaluator frozen + unchanged.
 

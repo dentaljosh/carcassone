@@ -12,7 +12,7 @@ mkdir -p "$SHARE"
 I04=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_04.pt
 I06=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_06.pt
 STAB="$M/data/stabilizer/iter_00"
-COMMON="--iter 0 --window 1 --epochs 15 --lr 2e-4 --batch-size 64 \
+COMMON="--iter 0 --window 1 --epochs ${EPOCHS:-15} --lr ${LR:-2e-4} --batch-size 64 \
   --aux-weight 0 --value-loss-weight 0 --val-fraction 0 --entropy-floor-frac 0"
 
 case "${1:-help}" in
