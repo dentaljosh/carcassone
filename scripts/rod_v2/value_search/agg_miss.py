@@ -23,6 +23,12 @@ SHARE_MISS = 0.10   # "low visit share on h6400 top" threshold
 REGRET_MISS = 0.02  # decision-relevant regret threshold
 
 
+def _rid(r):
+    """A root is uniquely (seed, ply) — a seed = a whole game with many plies, so
+    NEVER key/match on seed alone (conflates all roots of one game)."""
+    return (r.get("seed"), r.get("ply"))
+
+
 def _load(path):
     return [json.loads(l) for l in open(path)]
 
@@ -115,11 +121,26 @@ def cmd_missset(args):
     print("\n".join(out))
 
 
+def cmd_missprobe(args):
+    """Write the action_q-carrying probe rows restricted to the miss seeds — the
+    input Stage-2 interventions need (miss_harness re-runs NMCTS per probe row)."""
+    ids = {_rid(json.loads(l)) for l in open(args.misses)}
+    n = 0
+    with open(args.out, "w") as fh:
+        for p in args.probe.split(","):
+            for line in open(p):
+                d = json.loads(line)
+                if _rid(d) in ids:
+                    fh.write(line if line.endswith("\n") else line + "\n")
+                    n += 1
+    print(f"[missprobe] {n} probe rows for {len(ids)} miss roots -> {args.out}")
+
+
 def cmd_compare(args):
     """args.files = 'tag=path,tag=path'; all restricted to baseline miss seeds."""
-    base_seeds = set()
+    base_ids = set()
     if args.miss_seeds:
-        base_seeds = {json.loads(l)["seed"] for l in open(args.miss_seeds)}
+        base_ids = {_rid(json.loads(l)) for l in open(args.miss_seeds)}
     files = {}
     for tok in args.files.split(","):
         t, p = tok.split("=", 1)
@@ -133,16 +154,16 @@ def cmd_compare(args):
     for tag, path in files.items():
         bk = _by_ckpt(_load(path))
         for ck, rs in bk.items():
-            if base_seeds:
-                rs = [r for r in rs if r["seed"] in base_seeds]
+            if base_ids:
+                rs = [r for r in rs if _rid(r) in base_ids]
             s = _stats(rs)
             if tag == args.baseline_tag:
                 base_reg[ck] = s["regret"]
     for tag, path in files.items():
         bk = _by_ckpt(_load(path))
         for ck, rs in sorted(bk.items()):
-            if base_seeds:
-                rs = [r for r in rs if r["seed"] in base_seeds]
+            if base_ids:
+                rs = [r for r in rs if _rid(r) in base_ids]
             s = _stats(rs)
             dreg = ""
             if ck in base_reg and base_reg[ck]:
@@ -165,24 +186,24 @@ def cmd_classify(args):
       --forced      forced-move file (leaf0_picks_teacher) -> horizon
     Precedence: not-explored < undervalued, then 'fixed by' tags, then horizon, then residual-stuck.
     """
-    i0 = {r["seed"]: r for r in _load(args.i0)}
+    i0 = {_rid(r): r for r in _load(args.i0)}
 
-    def fixed_seeds(path):
+    def fixed_ids(path):
         if not path:
             return set()
-        return {r["seed"] for r in _load(path) if r.get("nmcts_top_eq_teacher")}
+        return {_rid(r) for r in _load(path) if r.get("nmcts_top_eq_teacher")}
 
-    fx_budget = fixed_seeds(args.sims_hi)
-    fx_prior = fixed_seeds(args.teacher)
-    fx_rs0 = fixed_seeds(args.rs0)
-    fx_rshi = fixed_seeds(args.rs_hi)
+    fx_budget = fixed_ids(args.sims_hi)
+    fx_prior = fixed_ids(args.teacher)
+    fx_rs0 = fixed_ids(args.rs0)
+    fx_rshi = fixed_ids(args.rs_hi)
     leaf_ranks_teacher = set()
     if args.forced:
-        leaf_ranks_teacher = {r["seed"] for r in _load(args.forced) if r.get("leaf0_picks_teacher")}
+        leaf_ranks_teacher = {_rid(r) for r in _load(args.forced) if r.get("leaf0_picks_teacher")}
 
     buckets = defaultdict(lambda: defaultdict(int))
     totals = defaultdict(int)
-    for seed, r in i0.items():
+    for rid, r in i0.items():
         ph = "endgame" if r["phase"] in ENDGAME else "non-endgame"
         # primary classification (precedence order)
         if r["teacher_best_N"] == 0:
@@ -195,13 +216,13 @@ def cmd_classify(args):
             b = "2b.explored-other"  # visited, search-Q ~ tied/higher but argmax/visit miss
         # overlay 'what fixes it' (informational; recorded as the resolving lever)
         fix = []
-        if seed in fx_prior:
+        if rid in fx_prior:
             fix.append("prior")
-        if seed in fx_budget:
+        if rid in fx_budget:
             fix.append("budget")
-        if seed in (fx_rs0 | fx_rshi):
+        if rid in (fx_rs0 | fx_rshi):
             fix.append("value")
-        if not fix and r["teacher_best_N"] > 0 and seed not in leaf_ranks_teacher:
+        if not fix and r["teacher_best_N"] > 0 and rid not in leaf_ranks_teacher:
             # leaf statically undervalues the teacher child AND nothing cheap fixed it
             b = "6.horizon/leaf-blind"
         buckets[b][ph] += 1
@@ -234,6 +255,9 @@ def main():
     p = sub.add_parser("missset"); p.add_argument("--i0", required=True)
     p.add_argument("--baseline-ckpt", default="iter04")
     p.add_argument("--out-misses", default=None); p.set_defaults(fn=cmd_missset)
+    p = sub.add_parser("missprobe"); p.add_argument("--misses", required=True)
+    p.add_argument("--probe", required=True); p.add_argument("--out", required=True)
+    p.set_defaults(fn=cmd_missprobe)
     p = sub.add_parser("compare"); p.add_argument("--files", required=True)
     p.add_argument("--miss-seeds", default=None); p.add_argument("--baseline-tag", default="I0")
     p.set_defaults(fn=cmd_compare)
