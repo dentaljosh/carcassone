@@ -23,7 +23,7 @@ export PROBE="$D/miss_probe.jsonl" CKPT04="$CKPT04" OUTDIR="$D" WORKERS=16
 export MISSES="$D/misses_iter04.jsonl"
 RL="$REPO/scripts/rod_v2/value_search/run_leg.sh"
 
-for leg in forced flat teacher rs0 rs05 s400 s800; do
+for leg in forced h200 flat teacher rs0 rs05 h800 s400 s800; do
     echo "### LEG $leg  ($(date +%H:%M:%S))"
     bash "$RL" "$leg" 2>&1 | tail -2
 done

@@ -25,6 +25,10 @@ case "$LEG" in
   forced)  nice -n 19 "$PY" "$REPO/scripts/rod_v2/value_search/forced_move.py" \
                --misses "${MISSES:?forced needs MISSES=miss rows w/ nmcts_top}" \
                --checkpoint "$CKPT04" --workers "$WORKERS" --out "$OUTDIR/I6_forced.jsonl" ;;
+  h200)    nice -n 19 "$PY" "$REPO/scripts/rod_v2/value_search/classical_leg.py" \
+               --probe "$PROBE" --sims 200 --workers "$WORKERS" --out "$OUTDIR/I5_h200.jsonl" ;;
+  h800)    nice -n 19 "$PY" "$REPO/scripts/rod_v2/value_search/classical_leg.py" \
+               --probe "$PROBE" --sims 800 --workers "$WORKERS" --out "$OUTDIR/I5_h800.jsonl" ;;
   *) echo "unknown leg $LEG"; exit 2 ;;
 esac
 echo "leg $LEG DONE -> $OUTDIR"
