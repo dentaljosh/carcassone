@@ -94,13 +94,20 @@ def _process(rec):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--probe", required=True)
+    ap.add_argument("--probe", required=True, help="comma-list of probe.jsonl")
     ap.add_argument("--sims", type=int, default=200)
+    ap.add_argument("--gap-min", type=float, default=0.0, help="prefilter q_gap_1_2 >= this")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--out", required=True)
     args = ap.parse_args(argv)
     _CFG["sims"] = args.sims
-    recs = [json.loads(l) for l in open(args.probe)]
+    recs = []
+    for p in args.probe.split(","):
+        for line in open(p):
+            d = json.loads(line)
+            if args.gap_min and float(d.get("q_gap_1_2", 0.0)) < args.gap_min:
+                continue
+            recs.append(d)
     print(f"[classical] h{args.sims}_v2.9 x {len(recs)} roots W={args.workers}", flush=True)
     t0 = time.perf_counter()
     out = open(args.out, "w"); nrow = nerr = 0
