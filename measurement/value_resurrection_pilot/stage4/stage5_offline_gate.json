@@ -1,0 +1,21 @@
+{
+  "note": "Stage 4/5 run cut short after 3 of 5 variants (V4_listwise, V2_advantage, V1_residual_mse) — all decisive (Decision B). V1_residual_mse (the residual-regression variant, the most informative) is the WORST. V1r_residual_list + V5_endgame NOT run (would only confirm; residual head already shown inert here AND by b99c9ed Decision D).",
+  "dataset": {"rows": 124842, "groups": 4000, "games": 1113, "test_groups": 637, "leaf_oracle_corr": 0.995},
+  "leaf_alone_test": {
+    "overall": {"regret": 0.02370, "top1": 0.4741, "n": 637},
+    "endgame": {"regret": 0.01213, "top1": 0.4650, "n": 357}
+  },
+  "variants": {
+    "V4_listwise":     {"arm": "B", "target": "absolute", "net_alone_tau": 0.1047, "net_alone_top1": 0.190, "best_alpha": 0.0, "best_alpha_regret": 0.02370, "regret_reduction_pct": 0.0, "beats_leaf": false},
+    "V2_advantage":    {"arm": "E", "target": "absolute", "net_alone_tau": 0.0829, "net_alone_top1": 0.165, "best_alpha": 0.0, "best_alpha_regret": 0.02370, "regret_reduction_pct": 0.0, "beats_leaf": false},
+    "V1_residual_mse": {"arm": "A", "target": "residual", "net_alone_tau": 0.0052, "net_alone_top1": 0.044, "best_alpha": 0.0, "best_alpha_regret": 0.02370, "regret_reduction_pct": 0.0, "beats_leaf": false}
+  },
+  "not_run": ["V1r_residual_list", "V5_endgame"],
+  "verdict": {
+    "any_beats_leaf": false,
+    "decision": "B",
+    "leaf_tau_vs_h6400": 0.895,
+    "cl021_armB_tau": 0.029,
+    "summary": "No learned value/ranking variant beats the v2.9 leaf on held-out sibling regret; the offline alpha-sweep selects alpha=0 (zero weight on the net) for every variant; regret rises monotonically with alpha; the endgame slice is no exception (refutes Decision F)."
+  }
+}
