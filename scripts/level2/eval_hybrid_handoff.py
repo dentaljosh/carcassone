@@ -113,6 +113,8 @@ def parse_agent(spec: str):
     spec = spec.strip()
     if spec == "iter8":
         return ("iter8", None, ITER8_SIMS)
+    if spec == "greedy":
+        return ("greedy", None, 0)   # RuleBasedPlayer 1-ply virtual_score argmax (net-free)
     if spec.startswith("heur@"):
         sims = int(spec[len("heur@"):])
         if sims <= 0:
@@ -208,6 +210,23 @@ class _HeurAgent:
         self._m.clear()
         self.heur_moves += 1
         return int(self._m.best_action(board))
+
+
+class _GreedyAgent:
+    """RuleBasedPlayer — 1-ply virtual_score (v1 leaf) argmax + rules. Net-free; the
+    weakest non-random rung (ladder R1). Mirrors ladder_rung_eval._GreedyAgent."""
+    def __init__(self, game_plain, seed):
+        from carcassonne_ai.rule_based_player import RuleBasedPlayer
+        self._p = RuleBasedPlayer(seed=seed)
+        self._g = game_plain
+        self.neural_moves = 0
+        self.heur_moves = 0
+        self.latch_k = None
+
+    def move(self, board) -> int:
+        self.heur_moves += 1
+        mask = self._g.get_valid_moves(board)
+        return int(self._p.choose_action(self._g, board, mask))
 
 
 class _HybridAgent:
@@ -317,6 +336,8 @@ def make_agent(spec: str, *, base_factory, game_farm, game_plain, seed, meeple_k
     kind, K, sims_or_mode = parse_agent(spec)
     if kind == "iter8":
         return _Iter8Agent(base_factory(game_farm), game_farm, seed, meeple_k)
+    if kind == "greedy":
+        return _GreedyAgent(game_plain, seed)
     if kind == "heur":
         return _HeurAgent(game_plain, sims_or_mode, seed, meeple_k)
     if kind == "exact":
