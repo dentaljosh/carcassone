@@ -53,3 +53,14 @@ measurement/hard_policy_repair/*.log
 measurement/high_gap_distillation/**/*.log
 measurement/high_gap_distillation/scaled/
 measurement/high_gap_distillation/manifest_*.jsonl
+
+# Value/search autopsy: logs ephemeral; the jsonl legs + miss-probe are LARGE and
+# fully regenerable (miss_harness/classical_leg/forced_move on the committed Path-3
+# qprobe + iter04). Full-pool controls live on the share. Docs (*.md) stay tracked.
+measurement/value_search_autopsy/**/*.log
+measurement/value_search_autopsy/data/
+
+# Stray review artifacts (untracked zips + extractions) — not tracked, exclude from lint
+clean_room_review_20260621/
+clean_room_review_20260621.zip
+outside_review.zip
