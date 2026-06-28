@@ -1,8 +1,9 @@
 # Feature-Graph Action Comparator Pilot — PLAN
 
-**Status:** Stage 0 COMPLETE (feasible) · Stage 1 in progress · gates ahead
+**Status:** CONCLUDED 2026-06-28 — **Decision C** (offline comparator beats v2.9 leaf, search can't use
+it; washes out under MCTS). Stages 0–5 ran; Stage 6 games gated out. See `FEATURE_GRAPH_DECISION.md`.
 **Opened:** 2026-06-28 · branch `rod_v2_flywheel`
-**Owner doc.** Live results land in the sibling `FEATURE_GRAPH_*_RESULTS.md` files; this is the map.
+**Owner doc.** Results live in the sibling `FEATURE_GRAPH_*_RESULTS.md` / `_DECISION.md`; this is the map.
 
 ---
 
