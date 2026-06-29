@@ -40,9 +40,11 @@ REPO = Path("/home/doctor/projects/carcassone")
 sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "scripts" / "level2"))
 sys.path.insert(0, str(REPO / "scripts" / "feature_graph"))
+sys.path.insert(0, str(REPO / "scripts" / "post_search_residual"))
 
 import eval_hybrid_handoff as EH                         # noqa: E402
 from gen_endgame_positions import replay_to              # noqa: E402
+from gen_mcts_selfplay import replay_actions             # noqa: E402  (lossless MCTS-game replay)
 from carcassonne_ai.game_wrapper import Game             # noqa: E402
 from carcassonne_ai.mcts import HeuristicMCTS            # noqa: E402
 
@@ -88,11 +90,12 @@ def _read_children(root, root_player):
     return out
 
 
-def _worker_init(cfg_norm):
+def _worker_init(cfg_norm, games=None):
     _W["agent"] = HeuristicMCTS(
         game=Game(enable_legal_moves_cache=True, include_farm_scalars=True),
         simulations=MAX_SIMS, heur_leaf="v2_7", leaf_cfg=EH._heur_leaf_cfg(cfg_norm), seed=0,
     )
+    _W["games"] = games or {}            # {game_id: actions} for MCTS-play roots (else greedy replay_to)
 
 
 def _snapshot_search(agent, board, levels):
@@ -117,11 +120,17 @@ def _process(root):
         agent = _W["agent"]
         agent.clear()
         agent.rng = random.Random(_mcts_seed(seed, ply))   # per-root reproducible
-        _, board = replay_to(seed, ply)
+        game_id = root.get("game_id")
+        if game_id is not None and _W["games"]:             # MCTS-play root (lossless action replay)
+            _, board = replay_actions(seed, _W["games"][int(game_id)], ply)
+        else:                                               # greedy root (replay_to)
+            _, board = replay_to(seed, ply)
+        legal_n = int(agent.game.get_valid_moves(board).sum())
         snaps, root_player = _snapshot_search(agent, board, LEVELS)
         return {
             "group_id": gid, "seed": seed, "ply": ply,
-            "phase": root["phase"], "legal_n": int(root["legal_n"]),
+            "game_id": int(game_id) if game_id is not None else None,  # for lossless re-reconstruction
+            "phase": root["phase"], "legal_n": legal_n,
             "root_player": int(root_player),
             "levels": {str(L): snaps[L] for L in LEVELS},
         }
@@ -203,6 +212,40 @@ def _load_roots(n, phase_stratified, seed):
     return roots
 
 
+def _frac_to_phase(f):
+    if f < 0.22: return "opening"
+    if f < 0.50: return "midgame"
+    if f < 0.70: return "late_mid"
+    if f < 0.90: return "pre_endgame"
+    return "endgame"
+
+
+def _load_roots_mcts(games_path, n, seed):
+    """Sample n MCTS-play roots stratified by phase (ply-fraction) from games_mcts.jsonl.
+    Returns (roots, games_dict) where games_dict={game_id: actions} for lossless replay."""
+    games = [json.loads(l) for l in Path(games_path).read_text().splitlines() if l.strip()]
+    games_dict = {int(g["game_id"]): [int(a) for a in g["actions"]] for g in games}
+    rng = np.random.default_rng(seed)
+    buckets = {ph: [] for ph in ["opening", "midgame", "late_mid", "pre_endgame", "endgame"]}
+    for g in games:
+        gid = int(g["game_id"]); gseed = int(g["seed"]); npl = int(g["n_plies"])
+        lo, hi = 4, npl - 3
+        for ply in range(lo, hi):
+            ph = _frac_to_phase(ply / npl)
+            buckets[ph].append({"game_id": gid, "seed": gseed, "ply": int(ply), "phase": ph})
+    per = max(1, n // len(buckets))
+    roots = []
+    for ph, lst in buckets.items():
+        if not lst:
+            continue
+        idx = rng.choice(len(lst), size=min(per, len(lst)), replace=False)
+        roots += [lst[i] for i in idx]
+    rng.shuffle(roots)
+    for i, r in enumerate(roots):
+        r["group_id"] = int(i)
+    return roots, games_dict
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=2500)
@@ -211,20 +254,27 @@ def main():
     ap.add_argument("--out", type=str, default=str(DATA / "roots_adaptive.jsonl"))
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--phase-stratified", action="store_true", default=True)
+    ap.add_argument("--roots-source", choices=["greedy", "mcts"], default="greedy")
+    ap.add_argument("--games-jsonl", type=str, default=str(DATA / "games_mcts.jsonl"))
     args = ap.parse_args()
 
     t0 = time.time()
     cfg = _provenance_guard()
-    roots = _load_roots(args.n, args.phase_stratified, args.seed)
+    games_dict = {}
+    if args.roots_source == "mcts":
+        roots, games_dict = _load_roots_mcts(args.games_jsonl, args.n, args.seed)
+    else:
+        roots = _load_roots(args.n, args.phase_stratified, args.seed)
     from collections import Counter
     ph_counts = Counter(r["phase"] for r in roots)
-    print(f"[roots] n={len(roots)} phases={dict(ph_counts)}")
+    print(f"[roots] source={args.roots_source} n={len(roots)} phases={dict(ph_counts)} "
+          f"games={len(games_dict)}")
 
-    if args.verify:
+    if args.verify and args.roots_source == "greedy":
         if not _verify(roots, 2.0, n=5):
             print("VERIFY FAILED — aborting build."); sys.exit(2)
 
-    rate = 0.30  # roots/s/worker rough est for 1x6400 search (smoke will correct)
+    rate = 0.176  # roots/s/worker measured (1x6400 search)
     eta = len(roots) / (rate * args.workers)
     print(f"[eta] ~{len(roots)} roots @ ~{rate}/s/worker x {args.workers}w -> ~{eta/60:.1f} min")
 
@@ -233,7 +283,8 @@ def main():
     out_path.parent.mkdir(parents=True, exist_ok=True)
     results, errs = [], []
     with out_path.open("w") as fh:
-        with ctx.Pool(args.workers, initializer=_worker_init, initargs=(2.0,)) as pool:
+        with ctx.Pool(args.workers, initializer=_worker_init,
+                      initargs=(2.0, games_dict)) as pool:
             for i, out in enumerate(pool.imap_unordered(_process, roots, chunksize=4)):
                 if "_error" in out:
                     errs.append(out["_error"])

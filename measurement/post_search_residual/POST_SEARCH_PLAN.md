@@ -1,6 +1,9 @@
 # Post-Search Residual / Adaptive Compute Pilot — PLAN
 
-**Status:** OPEN 2026-06-28 · branch `rod_v2_flywheel`
+**Status:** CONCLUDED 2026-06-28 — **Decision C** (the post-search residual is predictable and an
+oracle beats uniform compute decisively, but a single one-line heuristic captures the predictable
+part; learned ML adds no robust value, and the absolute magnitude is too small to expect game
+conversion). Stages 0–4 + Phase B ran; Stages 5–6 gated out. See `POST_SEARCH_DECISION.md`.
 **Owner doc.** Results live in the sibling `POST_SEARCH_*.md`; this is the map + the target definitions.
 
 ---

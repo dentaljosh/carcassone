@@ -1,0 +1,169 @@
+{
+  "n_usable": 10351,
+  "n_tr": 7031,
+  "n_va": 1648,
+  "n_te": 1672,
+  "feat_names": [
+    "entropy200",
+    "top_share200",
+    "top2_q_gap200",
+    "log_n_visited200",
+    "log_legal_n",
+    "ply",
+    "phase_opening",
+    "phase_midgame",
+    "phase_late_mid",
+    "phase_pre_endgame",
+    "phase_endgame",
+    "x_city_open_n_sum",
+    "x_farm_adj_city_sum",
+    "x_farm_fin_city_sum",
+    "x_k_remaining",
+    "x_meeples_free_diff",
+    "x_meeples_free_opp",
+    "x_meeples_free_self",
+    "x_n_city",
+    "x_n_city_finished",
+    "x_n_city_open",
+    "x_n_farm",
+    "x_n_road",
+    "x_n_road_open",
+    "x_open_structures",
+    "x_score_margin",
+    "x_v29_base",
+    "x_v29_closure_opp",
+    "x_v29_closure_self",
+    "x_v29_meeple_curve_delta",
+    "x_v29_meeple_flat",
+    "x_v29_pretransform"
+  ],
+  "uniform_test": {
+    "200": 0.002841330259229031,
+    "400": 0.002346317362301013,
+    "800": 0.0016903985321281795,
+    "1600": 0.00149214627211742,
+    "3200": 0.0006112077376344615,
+    "6400": 0.0
+  },
+  "models": {
+    "H0_low_top2gap": {
+      "auroc_pos_strong": 0.7254933418899406,
+      "matched": {
+        "400": {
+          "regret": 0.0020357323696783315,
+          "D": 800,
+          "uniform": 0.002346317362301013,
+          "beats_uniform": true
+        },
+        "800": {
+          "regret": 0.0015958700156831894,
+          "D": 1600,
+          "uniform": 0.0016903985321281795,
+          "beats_uniform": true
+        }
+      }
+    },
+    "M1_ridge_regret": {
+      "auroc_pos_strong": 0.6262500668484946,
+      "matched": {
+        "400": {
+          "regret": 0.0019698911983436814,
+          "D": 800,
+          "uniform": 0.002346317362301013,
+          "beats_uniform": true
+        },
+        "800": {
+          "regret": 0.0016755856781960107,
+          "D": 1600,
+          "uniform": 0.0016903985321281795,
+          "beats_uniform": true
+        }
+      }
+    },
+    "M2_logistic": {
+      "auroc_pos_strong": 0.7039681266377881,
+      "matched": {
+        "400": {
+          "regret": 0.0021233600101520462,
+          "D": 800,
+          "uniform": 0.002346317362301013,
+          "beats_uniform": true
+        },
+        "800": {
+          "regret": 0.0016903985321281795,
+          "D": 800,
+          "uniform": 0.0016903985321281795,
+          "beats_uniform": false
+        }
+      }
+    },
+    "M3_mlp": {
+      "auroc_pos_strong": 0.7797074709877534,
+      "matched": {
+        "400": {
+          "regret": 0.0017614779098684414,
+          "D": 800,
+          "uniform": 0.002346317362301013,
+          "beats_uniform": true
+        },
+        "800": {
+          "regret": 0.001605622636352121,
+          "D": 1600,
+          "uniform": 0.0016903985321281795,
+          "beats_uniform": true
+        }
+      }
+    }
+  },
+  "ceilings": {
+    "400": {
+      "uniform": 0.002346317362301013,
+      "oracle_md": 0.00017113928439379186,
+      "oracle_pairwise": 0.0007311438505162492,
+      "random": 0.0023358063371992895
+    },
+    "800": {
+      "uniform": 0.0016903985321281795,
+      "oracle_md": 2.73259946840655e-05,
+      "oracle_pairwise": 0.0004075588886975726,
+      "random": 0.0016903985321281795
+    }
+  },
+  "verdict": "C_heuristic_suffices",
+  "robust_beats_uniform": true,
+  "robust_beats_heuristic": false,
+  "best_heuristic": "H0_low_top2gap",
+  "best_learned": "M3_mlp",
+  "bootstrap": {
+    "400": {
+      "p_learned_beats_heuristic": 0.92,
+      "delta_vs_heuristic_mean": 0.00023426456508984962,
+      "delta_vs_heuristic_ci": [
+        -8.946103171822961e-05,
+        0.0005941585029365407
+      ],
+      "p_learned_beats_uniform": 0.9975,
+      "delta_vs_uniform_mean": 0.0005622735347545095,
+      "delta_vs_uniform_ci": [
+        0.00015250734820185184,
+        0.0010123629659450997
+      ]
+    },
+    "800": {
+      "p_learned_beats_heuristic": 0.5445,
+      "delta_vs_heuristic_mean": 1.240728940778787e-05,
+      "delta_vs_heuristic_ci": [
+        -0.00019038055248827302,
+        0.00021564123038089175
+      ],
+      "p_learned_beats_uniform": 0.682,
+      "delta_vs_uniform_mean": 8.750433811466462e-05,
+      "delta_vs_uniform_ci": [
+        -0.00022149155824553618,
+        0.00045594010385539667
+      ]
+    }
+  },
+  "runtime_s": 4.0,
+  "tier_b": true
+}

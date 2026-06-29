@@ -69,6 +69,10 @@ def load_roots(path):
         r = json.loads(line)
         lv = r["levels"]
         ref = lv[str(REF)]
+        # drop degenerate roots: <2 visited children at the reference = no real decision
+        # (forced moves / meeple-skip-only plies). q_gap/regret are undefined there.
+        if sum(1 for v in ref.values() if v[0] > 0) < 2:
+            continue
         ba_ref = _best_action(ref)
         if ba_ref is None:
             continue
@@ -103,6 +107,7 @@ def load_roots(path):
 
         rows.append({
             "group_id": int(r["group_id"]), "seed": int(r["seed"]),
+            "game_id": (int(r["game_id"]) if r.get("game_id") is not None else int(r["seed"])),
             "ply": int(r["ply"]), "phase": r["phase"], "legal_n": int(r["legal_n"]),
             "sel": sel, "regret": regret, "q_gap_6400": q_gap_6400,
             "agree_200_ref": bool(agree_200_ref),

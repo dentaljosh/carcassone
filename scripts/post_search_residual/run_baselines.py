@@ -111,9 +111,19 @@ def _oracle_md_at(frontier, C):
     return float(np.interp(C, xs, ys))
 
 
+TAG = ""
+
+
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--roots", default=str(DATA / "roots_adaptive.jsonl"))
+    ap.add_argument("--tag", default="")     # appended to output filenames (e.g. "_mcts")
+    args = ap.parse_args()
+    global TAG
+    TAG = args.tag
     t0 = time.time()
-    path = DATA / "roots_adaptive.jsonl"
+    path = Path(args.roots)
     rows = P.load_roots(path)
     n = len(rows)
     print(f"[load] {n} roots from {path}")
@@ -248,17 +258,18 @@ def main():
         "gate_pass": gate_pass, "gate_hits": gate_hits,
         "gate_rule": "oracle beats uniform at matched avg-compute by >=15% rel AND >=0.002 abs at >=1 anchor",
     }
-    (OUT / "baselines.json").write_text(json.dumps(payload, indent=2))
+    (OUT / f"baselines{TAG}.json").write_text(json.dumps(payload, indent=2))
     _write_md(payload, rows)
     print(f"\n[GATE] {'PASS' if gate_pass else 'FAIL (Decision A)'}  hits={gate_hits}")
-    print(f"[write] {OUT/'POST_SEARCH_BASELINES.md'}")
+    print(f"[write] {OUT/('POST_SEARCH_BASELINES'+TAG+'.md')}")
 
 
 def _write_md(p, rows):
     L = []
     L.append("# Post-Search Residual — STAGE 2 BASELINES + ORACLE ADAPTIVE-COMPUTE GATE\n")
+    dist = "Phase-B real MCTS-play distribution" if TAG else "Phase-A greedy-self-play distribution"
     L.append(f"_generated {time.strftime('%Y-%m-%d %H:%M')} · net-free · frozen v2.9 leaf · "
-             f"{p['n_roots']} roots (Phase-A greedy-self-play distribution)_\n")
+             f"{p['n_roots']} roots ({dist})_\n")
     L.append("**The make-or-break gate.** A perfect oracle (escalates exactly the roots with the "
              "largest TRUE regret-reduction) upper-bounds any predictor. If it barely beats uniform "
              "at matched average compute → **Decision A**, no adaptive-compute opportunity.\n")
@@ -331,7 +342,7 @@ def _write_md(p, rows):
                  "Stop. Do not train predictors, do not run games. Write Decision A.\n")
         L.append("_Mechanism: h200's residual error vs h6400 is too diffuse (or too small) — uniform "
                  "compute is already near-optimal per-root, so concentrating compute buys little._")
-    (OUT / "POST_SEARCH_BASELINES.md").write_text("\n".join(L) + "\n")
+    (OUT / f"POST_SEARCH_BASELINES{TAG}.md").write_text("\n".join(L) + "\n")
 
 
 if __name__ == "__main__":
