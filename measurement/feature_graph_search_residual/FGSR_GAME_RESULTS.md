@@ -1,8 +1,10 @@
 # FGSR_GAME_RESULTS.md — Tiny Game Screen
 
-> **STATUS: ⏳ PENDING — Stage 8, NOT STARTED (gated on Stage 7 PASS).**
+> **STATUS: ⛔ NOT RUN — the Stage-6 offline gate FAILED (Decision B).** Games were
+> gated on search integration, which was gated on a gate PASS. The gate failed, so no
+> games were run (no cluster, no spend). See [FGSR_DECISION.md](FGSR_DECISION.md).
 >
-> _Stub created 2026-06-29._
+> _Stub created 2026-06-29; closed unrun 2026-06-29._
 
 ## Plan (only if search integration preserves the offline win)
 

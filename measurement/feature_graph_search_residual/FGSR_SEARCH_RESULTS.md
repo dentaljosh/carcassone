@@ -1,8 +1,11 @@
 # FGSR_SEARCH_RESULTS.md — Search Integration
 
-> **STATUS: ⏳ PENDING — Stage 7, NOT STARTED (gated on Stage 6 PASS).**
+> **STATUS: ⛔ NOT RUN — the Stage-6 offline gate FAILED (Decision B).** Search
+> integration was gated on a gate PASS; the gate failed (G0/G1 beat neither
+> `low_top2gap` nor the flat MLP; graph structure inert), so per spec this stage was
+> never run. See [FGSR_DECISION.md](FGSR_DECISION.md).
 >
-> _Stub created 2026-06-29._
+> _Stub created 2026-06-29; closed unrun 2026-06-29._
 
 ## Plan (only if the offline gate passes)
 

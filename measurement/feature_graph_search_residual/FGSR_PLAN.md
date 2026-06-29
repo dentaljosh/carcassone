@@ -1,12 +1,13 @@
 # FGSR_PLAN.md — Feature-Graph Search-Residual Architecture Pilot
 
-> **STATUS: 🟢 STAGE 0.5 (cheap feasibility gate) PASSED + STAGE 2 (full dataset) BUILT — STOPPED BEFORE TRAINING.**
-> Feasibility gate PASSED (tail-signal 0.80, [FEASIBILITY.md](FEASIBILITY.md)); full
-> graph dataset built on all 10,351 roots (168,567 action rows, 0 errors, 62 s CPU)
-> → `data/rows_feat.npz` + `data/graphs.pkl` + `data/manifest.json`
-> ([FGSR_DATASET.md](FGSR_DATASET.md)). No model trained, no games run, no search run.
-> v2.9 / PRODUCTION.yaml untouched; nothing promoted. **Next gated step: train G0/G1
-> offline + the Stage-6 matched-compute + bootstrap gate (report before any games).**
+> **STATUS: 🔴 CONCLUDED — DECISION B.** Full pipeline run through the offline gate
+> (Stage 6), which **FAILED** → stopped per spec (no search integration, no games).
+> Feasibility PASSED (tail-signal 0.80); dataset built (168,567 rows); but neither
+> G0 (graph-lite) nor **G1 (typed GNN, test AUROC 0.559)** beats `low_top2gap` (0.725)
+> or the flat MLP (0.78) at matched compute, and a graph-ablation shows the relational
+> structure is **inert**. See [FGSR_DECISION.md](FGSR_DECISION.md) /
+> [FGSR_OFFLINE_RESULTS.md](FGSR_OFFLINE_RESULTS.md). v2.9 / PRODUCTION.yaml untouched;
+> nothing promoted; learned-flywheel line stays CLOSED. **CL-036.**
 >
 > _Last updated 2026-06-29._
 >

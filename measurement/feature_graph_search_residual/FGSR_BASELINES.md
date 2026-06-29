@@ -1,26 +1,29 @@
-# FGSR_BASELINES.md — Baselines
+# FGSR_BASELINES.md — Stage 3 baselines (matched-compute, TEST split)
 
-> **STATUS: ⏳ PENDING — Stage 3, NOT STARTED (gated).**
->
-> _Stub created 2026-06-29._
+_generated 2026-06-29 01:49 · net-free · frozen v2.9 leaf · TEST = 1672 roots over 66 game-seeds (tr=7031 va=1648)_
 
-## Plan (not yet executed)
+## SANITY GATE
 
-The graph model must clear these, not just the static leaf. Harness reused from
-`scripts/post_search_residual/run_baselines.py` + `run_adaptive_gate.py`.
+- **B3 `low_top2gap` AUROC(pos_strong) on TEST = 0.7255** (expected 0.72–0.73) → **REPRODUCED**.
+- B5 flat-MLP AUROC(pos_medium) = 0.7974, AUROC(pos_strong) = 0.7797 (prior pilot reported ~0.78 on pos_medium).
 
-| id | baseline | status |
-|---|---|---|
-| B0 | uniform h200 | prior numbers exist (residual pilot) |
-| B1 | uniform h800 | prior |
-| B2 | uniform h3200 | prior |
-| **B3** | **`low_top2gap` scheduler** (AUROC ~0.725) — **primary non-ML baseline to beat** | prior |
-| B4 | phase/opening scheduler (tail is opening-heavy) | to run |
-| B5 | MLP/linear over 21–50 structural scalars (prior AUROC ~0.780, **tied B3**) | prior + re-run |
-| B6 | static feature comparator (reference; not expected to help) | prior |
-| B7 | **oracle adaptive routing** — upper bound (~0.0016 removed @ C=400) | prior (`md_oracle_at`) |
+## Uniform compute curve (mean h6400-regret vs avg sims, TEST)
 
-**Metrics:** AUROC/AUPRC for h200 failure; regret captured at top-k escalation;
-regret removed per extra sim; **matched-compute regret at C ∈ {300,400,600,800,1200}**;
-vs uniform search; vs `low_top2gap`; phase/source split; tail recall. Bootstrap
-(2000 resamples) P(model beats B3) + 95 % CI.
+| sims | 200 | 400 | 800 | 1600 | 3200 | 6400 |
+|---|---|---|---|---|---|---|
+| mean regret | 0.00284 | 0.00235 | 0.00169 | 0.00149 | 0.00061 | 0.00000 |
+
+## Matched-compute regret (lower = better) — the bar to beat is **B3**
+
+| baseline | AUROC(strong) | C=300 | C=400 | C=600 | C=800 | C=1200 |
+|---|---|---|---|---|---|---|
+| B0_uniform_h200 (h200=0.00284) | — | — | — | — | — | — |
+| B1_uniform_h800 (h800=0.00169) | — | — | — | — | — | — |
+| B2_uniform_h3200 (h3200=0.00061) | — | — | — | — | — | — |
+| B3_low_top2gap | 0.725 | 0.00227 (h800) | 0.00204 (h800) | 0.00168 (h800) | 0.00160 (h1600) | 0.00130 (h3200) |
+| B4_phase_opening | 0.691 | 0.00247 (h800) | 0.00213 (h800) | 0.00174 (h800) | 0.00169 (h800) | 0.00150 (h1600) |
+| B5_flat_mlp | 0.780 | 0.00232 (h800) | 0.00176 (h800) | 0.00171 (h800) | 0.00161 (h1600) | 0.00110 (h3200) |
+| B7_oracle_md | — | 0.00039 | 0.00017 | 0.00008 | 0.00003 | — |
+
+_B0/B1/B2 are uniform constants (no escalation); the matched-compute columns apply to schedulers (B3/B4/B5) and the oracle (B7). D = the deeper level escalated to._
+
