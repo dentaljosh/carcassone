@@ -14,6 +14,7 @@
 | [ORIGINAL_PROMPT.md](ORIGINAL_PROMPT.md) | Verbatim original spec | reference (win-condition framing superseded by the 2026-05-28 goal change) |
 | [CLUSTER_OPS.md](CLUSTER_OPS.md) | 3-box cluster hardware / ssh / W / launch runbook | current |
 | [PATH_B.md](PATH_B.md) | Value-bootstrap (KataGo-style) | PARTIALLY FOLDED into the correction plan (not dead) |
+| [../scripts/measurement_infra/README.md](../scripts/measurement_infra/README.md) | **Default measurement tooling** (not a strength lever) — multi-depth snapshot search (one deep search → all sim levels, ~2× cheaper, bit-exact to standalone h_L, h12800-verified) · lossless (deck-seed+action-sequence) root replay (any policy) · h200 top-2-gap tagging · adaptive 4-strata labeling queue. Origin CL-035. | current |
 
 ## Measurement verdicts (solver/ruler-grounded strength findings)
 | Doc | Role | Status |
