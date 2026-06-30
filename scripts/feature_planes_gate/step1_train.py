@@ -113,6 +113,12 @@ def main():
     ap.add_argument("--drop-bag", action="store_true",
                     help="ABLATION: zero the bag scalars (last n_bag_scalars scalar cols). "
                          "Turns a 'both' dataset into the 'farm-only' mode without a re-dump.")
+    ap.add_argument("--dump-per-group", action="store_true",
+                    help="OVERLAP PROBE: after best-model selection, write per-TEST-group "
+                         "regret to <out>/<variant>/per_group.npz: group_id, leaf_regret, "
+                         "best_alpha_net_regret (combined leaf+best_alpha*net/sd regret at the "
+                         "OVERALL-slice best alpha), delta=leaf_regret-best_alpha_net_regret. "
+                         "Additive — does not change training or any other output.")
     args = ap.parse_args()
     dev = torch.device(args.device)
     outroot = Path(args.out); outroot.mkdir(parents=True, exist_ok=True)
@@ -280,6 +286,23 @@ def main():
                 "overall": sweep(None), "endgame": sweep(lambda p: p in ("endgame", "pre_endgame"))}
         od = outroot / variant; od.mkdir(parents=True, exist_ok=True)
         (od / "summary.json").write_text(json.dumps(summ, indent=2))
+
+        # --- overlap probe: per-TEST-group regret at the OVERALL-slice best alpha ---
+        if args.dump_per_group and summ["overall"] is not None:
+            best_a = float(summ["overall"]["best_alpha"])
+            gids, leaf_reg, net_reg = [], [], []
+            for gi, gx in enumerate(g_all["test"]):
+                rl, _, _ = group_metrics(leaf[gx], oq[gx])
+                rn, _, _ = group_metrics(leaf[gx] + best_a * preds[gi] / sd, oq[gx])
+                gids.append(int(grp[gx[0]])); leaf_reg.append(rl); net_reg.append(rn)
+            gids = np.asarray(gids); leaf_reg = np.asarray(leaf_reg, dtype=np.float64)
+            net_reg = np.asarray(net_reg, dtype=np.float64); delta = leaf_reg - net_reg
+            np.savez(od / "per_group.npz", group_id=gids, leaf_regret=leaf_reg,
+                     best_alpha_net_regret=net_reg, delta=delta,
+                     best_alpha=np.float64(best_a))
+            print(f"  [{variant:18s}] dumped per_group.npz: {len(gids)} TEST groups "
+                  f"@best_alpha={best_a} (mean delta={delta.mean():+.6f}, "
+                  f"mean leaf_regret={leaf_reg.mean():.6f})", flush=True)
         o = summ["overall"]
         if o is None:
             print(f"  [{variant:18s}] no TEST groups (smoke/too-small split)", flush=True)
