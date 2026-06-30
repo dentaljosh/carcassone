@@ -1,0 +1,89 @@
+{
+  "probe": "step2_pens_interior_tau_depth_stratified",
+  "generated_utc": "2026-06-30T21:28:45.387712+00:00",
+  "config": {
+    "scalar_ckpt": "/home/doctor/carc_step2_pens/warmstart/warmstart.pt",
+    "policy_checkpoint": "/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt",
+    "blend": 0.27,
+    "sims": 100,
+    "c_puct": 3.0,
+    "dirichlet_alpha": 0.3,
+    "dirichlet_eps": 0.25,
+    "temp_threshold": 15,
+    "value_target": "score_diff_wide",
+    "min_child_visits": 3,
+    "max_children": 16,
+    "games_requested": 40,
+    "games_ok": 40,
+    "games_failed": 0,
+    "workers": 12,
+    "net_on_cpu": true,
+    "v29_leaf_hash": "7fc930b82801cb43"
+  },
+  "method": {
+    "tau_variant": "kendall_tau_b (value_ranking_train.kendall_tau_b)",
+    "pov": "net_value parent-POV (extract_step2_features keyed to parent.current_player == _mlp_value, the pre-flip value the leaf consumes) vs backed-up child.Q flipped to parent-node POV (q if child_player==parent_player else -q). Same frame as warmstart net-alone tau.",
+    "depth_def": "plies from the search root; sibling GROUP depth = parent_node_depth + 1 (root's children = depth 1).",
+    "node_filter": "interior parent: expanded, non-terminal, board recorded, >=2 deduped non-terminal children each with N>=min_child_visits.",
+    "buckets": {
+      "d1": [
+        1,
+        1
+      ],
+      "d2_3": [
+        2,
+        3
+      ],
+      "d4_7": [
+        4,
+        7
+      ],
+      "d8p": [
+        8,
+        1000000000
+      ]
+    },
+    "warmstart_net_alone_tau_anchor_overall": 0.42692801505810024,
+    "warmstart_net_alone_tau_anchor_endgame": 0.35287901602861116
+  },
+  "depth_table": {
+    "d1": {
+      "mean_tau": 0.4182943703343044,
+      "n_groups": 4156,
+      "sd_tau": 0.4930564578363078,
+      "se_tau": 0.007648193761207399,
+      "mean_children_per_group": 6.054138594802695
+    },
+    "d2_3": {
+      "mean_tau": 0.4467889075665382,
+      "n_groups": 9126,
+      "sd_tau": 0.6845528905236968,
+      "se_tau": 0.007165834545856287,
+      "mean_children_per_group": 3.7634231865001095
+    },
+    "d4_7": {
+      "mean_tau": 0.43240744486866955,
+      "n_groups": 1327,
+      "sd_tau": 0.7663920322295732,
+      "se_tau": 0.021038536197274287,
+      "mean_children_per_group": 2.9773926149208743
+    },
+    "d8p": {
+      "mean_tau": 1.0,
+      "n_groups": 1,
+      "sd_tau": NaN,
+      "se_tau": NaN,
+      "mean_children_per_group": 2.0
+    }
+  },
+  "depth_anchor_d1_should_approx": 0.427,
+  "verdict_heuristic": "MIXED",
+  "elapsed_sec": 1304.5588598220002,
+  "counters_sum": {
+    "calls": 551402,
+    "scalar_path": 551402,
+    "plain_path": 0,
+    "dropout_path": 0,
+    "terminal_path": 0
+  }
+}

@@ -11,7 +11,7 @@
 | [MEASUREMENT_FIRST_SPEC_2026-06-18.md](MEASUREMENT_FIRST_SPEC_2026-06-18.md) | The current program — measurement-first (3 levels) | PROPOSED |
 | [CORRECTION_PLAN_2026-06-02.md](CORRECTION_PLAN_2026-06-02.md) | Master fix sequence (phases 0–3) | current path (Phases 1–2 outcome addendum 2026-06-12) |
 | [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) | Concrete staged build A→B→C | DRAFT |
-| [PeNS_SCHEMA.md](PeNS_SCHEMA.md) | Step-2 primitive substrate — triaged v0 feature shortlist (groups A–F, ~82 inputs) gating the warmstart; doctrine = encode atoms not strategies; combinatorial calc = deck-only, log-space | v0 LOCKED 2026-06-30 |
+| [PeNS_SCHEMA.md](PeNS_SCHEMA.md) | Step-2 primitive substrate — triaged v0 feature shortlist (groups A–F, ~82 inputs) gating the warmstart; doctrine = encode atoms not strategies; combinatorial calc = deck-only, log-space | Step-2 weaned-value-leaf flywheel CONCLUDED 2026-06-30 — genuine Gate-B (value can rank, can't drive the leaf); see CL-038 + DECISIONS.md 2026-06-30 (closes the value-leaf lever, not the superhuman goal) |
 | [ORIGINAL_PROMPT.md](ORIGINAL_PROMPT.md) | Verbatim original spec | reference (win-condition framing superseded by the 2026-05-28 goal change) |
 | [CLUSTER_OPS.md](CLUSTER_OPS.md) | 3-box cluster hardware / ssh / W / launch runbook | current |
 | [PATH_B.md](PATH_B.md) | Value-bootstrap (KataGo-style) | PARTIALLY FOLDED into the correction plan (not dead) |
