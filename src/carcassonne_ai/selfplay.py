@@ -87,6 +87,8 @@ def play_one_selfplay_game(
     anchor_batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     learner_player_idx: int = 0,
     on_ply: Callable[[object, object, int, int], None] | None = None,
+    on_ply_search: Callable[[object, object, object, int, int], None] | None = None,
+    record_boards_override: bool = False,
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -165,6 +167,19 @@ def play_one_selfplay_game(
                               side, mirroring `batch_evaluator`.
       learner_player_idx: 0 or 1 — which player the learner takes when
                           anchor_evaluator is set. Ignored otherwise.
+      on_ply: optional per-ply callback (parent_board, board, cur_player, ply),
+              fired in lock-step with the recorded trajectory rows (Step-2 PeNS
+              per-ply 89-vec harvest). Default None → no-op.
+      on_ply_search: optional per-ply SEARCH callback
+              (mcts, parent_board, board, cur_player, ply), fired right after
+              on_ply with the LIVE learner MCTS (search just ran, tree not yet
+              cleared) so the caller can pull the root's sibling group
+              (children + backed-up search-Q) for the in-loop ranking objective.
+              Default None → no-op.
+      record_boards_override: force record_boards=True on the learner MCTS even
+              under an outcome value_target (score_diff_wide), so the on_ply_search
+              caller can read children's boards. Default False (the eval / normal
+              self-play / MSE-gen path pays nothing).
 
     Returns:
       GameDataset with N rows: in standard self-play N = total plies; in
@@ -187,7 +202,7 @@ def play_one_selfplay_game(
     # so eval / normal self-play keep the lean per-node footprint.
     record_interior = value_target in (
         "search_value_tree", "v2_7", "search_value_rank", "residual"
-    )
+    ) or bool(record_boards_override)
     learner_mcts = NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -347,6 +362,16 @@ def play_one_selfplay_game(
             # every existing caller.
             if on_ply is not None:
                 on_ply(prev_root_board, board, cur_player, ply)
+            # Optional per-ply SEARCH hook (Step-2 PeNS ranking arm). Fires in the
+            # SAME is_learner_move guard, right after on_ply, with the live MCTS so
+            # the caller can pull the ROOT's sibling group (children + backed-up
+            # search-Q) from the tree the search just built (not yet cleared). The
+            # `mcts` here is THIS move's learner MCTS. Default None → no-op for
+            # every existing caller / the MSE path. Independent of value_target —
+            # works under outcome targets (score_diff_wide) when the caller asks
+            # for record_boards_override=True so children's boards are stored.
+            if on_ply_search is not None:
+                on_ply_search(mcts, prev_root_board, board, cur_player, ply)
             if value_target in (
                 "search_value", "search_value_tree", "search_value_rank"
             ):

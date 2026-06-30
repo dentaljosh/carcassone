@@ -204,6 +204,47 @@ def _play_one(args_tuple):
         else:
             pens_flip.append(1.0)
 
+    # --- RANKING-GROUPS harvest (arm B', --emit-ranking-groups) -------------- #
+    # Per recorded ROOT, the root's SIBLING SET: each visited child's 89-vec
+    # (parent=THIS root, matching the warmstart's child−root delta convention) +
+    # a per-child RANKING TARGET = the in-loop MCTS backed-up search-Q for that
+    # child (the AZ-faithful in-loop analog of the warmstart's h6400 oracle_q).
+    #   * child.Q is the VISIT-WEIGHTED backed-up Q (W/N), NOT the visit count and
+    #     NOT a single raw leaf eval — the mean of all sim returns routed through
+    #     the child (root_sibling_group docstring).
+    #   * child.Q is in the CHILD's own player_to_move POV; the warmstart's
+    #     oracle_q is ROOT-player POV ("Root-POV throughout" — build_dataset.py),
+    #     and the 89-vec here is keyed to the root player too. So flip child.Q to
+    #     root-POV: q if child plays = root player else -q (same flip best_action
+    #     uses). Then features + target share the root-player frame the warmstart
+    #     ranked in.
+    rank_child_feats: list[np.ndarray] = []   # (M,89) per child, parent=root
+    rank_child_q: list[float] = []            # (M,) root-POV backed-up search-Q
+    rank_group_id: list[int] = []             # (M,) shared per root; globally unique
+
+    def _harvest_rank(mcts, parent_board, board, cur_player, ply):
+        # board IS the root of the search that just ran; its children are still in
+        # the live tree (clear() fires next iteration). parent=board for the 89-vec
+        # so deltas are child−root, exactly the warmstart convention.
+        root_player = board.state.current_player
+        grp = mcts.root_sibling_group(
+            board,
+            min_child_visits=cfg["rank_min_child_visits"],
+            max_children=cfg["rank_max_children"],
+        )
+        if len(grp) < 2:
+            return
+        gid = seed * 100000 + ply  # globally unique (one root per ply; <100k plies)
+        for child_board, child_player, child_q in grp:
+            rank_child_feats.append(
+                step2_leaf.extract_step2_features(
+                    _W["game"], child_board, _W["leaf_cfg"], board
+                )
+            )
+            rank_child_q.append(child_q if child_player == root_player else -child_q)
+            rank_group_id.append(gid)
+
+    emit_rank = bool(cfg.get("emit_ranking_groups"))
     t0 = time.perf_counter()
     try:
         ds = play_one_selfplay_game(
@@ -218,6 +259,11 @@ def _play_one(args_tuple):
             batch_size=1,
             value_target=cfg["value_target"],
             on_ply=_harvest,
+            on_ply_search=_harvest_rank if emit_rank else None,
+            # The ranking harvest needs children's boards stored on the tree even
+            # under the outcome value_target (score_diff_wide). Off by default so
+            # the MSE-gen path (the cratering run) keeps its lean footprint.
+            record_boards_override=emit_rank,
         )
     except Exception as e:
         import traceback
@@ -263,6 +309,36 @@ def _play_one(args_tuple):
         blend=np.float32(cfg["blend"]),
     )
     partial.replace(pens_path)
+
+    # The RANKING companion (arm B', --emit-ranking-groups): the per-root sibling
+    # groups (each child's 89-vec parent=root + the backed-up search-Q ranking
+    # target + a shared group_id). Consumed by train_value_iter --objective ranking
+    # (listwise). A SEPARATE file from seed_*_pens.npz so the MSE path is untouched
+    # and the launcher can route only the rank companions to the ranking trainer.
+    if emit_rank:
+        if rank_child_feats:
+            rc_feats = np.stack(rank_child_feats).astype(np.float16)        # (M,89) f16
+            rc_q = np.asarray(rank_child_q, dtype=np.float32)               # (M,) f32
+            rc_g = np.asarray(rank_group_id, dtype=np.int32)                # (M,) i32
+        else:
+            rc_feats = np.empty((0, step2_leaf.N_FEAT), np.float16)
+            rc_q = np.empty((0,), np.float32)
+            rc_g = np.empty((0,), np.int32)
+        rank_path = out_dir / f"seed_{seed:06d}_rank.npz"
+        rpartial = rank_path.with_name(f".{rank_path.stem}.{os.getpid()}.partial.npz")
+        np.savez_compressed(
+            rpartial,
+            child_feats=rc_feats,                                    # (M, 89) f16
+            child_target=rc_q,                                       # (M,) f32 backed-up search-Q
+            group_id=rc_g,                                           # (M,) i32 per-root group
+            seed=np.int64(seed),
+            feat_names=np.array(step2_leaf.FEAT_NAMES, dtype="<U64"),
+            target_kind=np.array("mcts_backed_up_q_root_pov", dtype="<U32"),
+            sims=np.int32(cfg["sims"]),
+            blend=np.float32(cfg["blend"]),
+        )
+        rpartial.replace(rank_path)
+
     return (seed, "fresh", len(ds), dt, counters.as_dict(), None)
 
 
@@ -299,6 +375,23 @@ def main(argv=None):
                         "score_diff_wide = tanh(margin/40), the C6 de-sat target.")
     p.add_argument("--hidden", type=int, default=256)
     p.add_argument("--blocks", type=int, default=2)
+    p.add_argument("--emit-ranking-groups", action="store_true",
+                   help="ALSO persist a companion seed_*_rank.npz per game: the "
+                        "per-root SIBLING GROUPS (each child's 89-vec parent=root + "
+                        "the in-loop MCTS backed-up search-Q ranking target + a "
+                        "shared group_id). The in-loop analog of the warmstart's "
+                        "h6400 (children, oracle_q) sibling sets; consumed by "
+                        "train_value_iter --objective ranking. Forces record_boards "
+                        "(children's boards stored) so it's HEAVIER than the per-ply "
+                        "pens harvest — measurement-run only. seed_*_pens.npz is "
+                        "still written; the MSE path is untouched.")
+    p.add_argument("--rank-min-child-visits", type=int, default=3,
+                   help="--emit-ranking-groups: min MCTS visit count for a child to "
+                        "enter its root's sibling group (a converged Q, not N=1 "
+                        "noise). Default 3 (sane at sims=100).")
+    p.add_argument("--rank-max-children", type=int, default=16,
+                   help="--emit-ranking-groups: cap children per root group "
+                        "(top-N by visits) to bound the per-root extraction cost.")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--iter", type=int, default=0,
                    help="Iter index for the seed prefix (iter*10000 + game_idx).")
@@ -347,12 +440,16 @@ def main(argv=None):
         "blocks": args.blocks,
         "seed": args.seed,
         "shm_eval_server": args.shm_eval_server,
+        "emit_ranking_groups": bool(args.emit_ranking_groups),
+        "rank_min_child_visits": int(args.rank_min_child_visits),
+        "rank_max_children": int(args.rank_max_children),
     }
     print(f"[gen] step2 PeNS wean self-play: games={args.games} sims={args.sims} "
           f"blend={args.blend} dropout={args.dropout} value_target={args.value_target} "
           f"workers={args.workers} base={Path(args.checkpoint).name} "
           f"scalar={'RANDOM-INIT' if args.random_init else Path(args.scalar_ckpt).name} "
-          f"D={step2_leaf.N_FEAT} farm_scalars={include_farm_scalars}", flush=True)
+          f"D={step2_leaf.N_FEAT} farm_scalars={include_farm_scalars} "
+          f"ranking_groups={'ON' if args.emit_ranking_groups else 'off'}", flush=True)
 
     seeds = [args.iter * 10_000 + i for i in range(args.games)]
     pool_args = [(s, str(out_dir)) for s in seeds]
@@ -430,6 +527,33 @@ def main(argv=None):
               f"policies={ds.policies.shape} values={ds.values.shape} "
               f"masks={ds.valid_masks.shape} -> train-consumable "
               f"(GameDataset.load OK, value_target={args.value_target})")
+
+    # Confirm the RANKING companions (arm B'): present, sane group sizes.
+    if args.emit_ranking_groups:
+        rfiles = sorted(out_dir.glob("seed_*_rank.npz"))
+        if not rfiles:
+            print("[rank] WARNING: --emit-ranking-groups set but NO seed_*_rank.npz written "
+                  "(no root produced >=2 visited children at these sims? unexpected at sims>=50)")
+        else:
+            tot_groups = tot_rows = 0
+            gsizes: list[int] = []
+            for rf in rfiles:
+                with np.load(rf, allow_pickle=False) as z:
+                    g = np.asarray(z["group_id"])
+                    tot_rows += g.shape[0]
+                    if g.shape[0]:
+                        uniq, cnts = np.unique(g, return_counts=True)
+                        tot_groups += len(uniq)
+                        gsizes.extend(int(c) for c in cnts)
+            with np.load(rfiles[0], allow_pickle=False) as z0:
+                cf_shape = z0["child_feats"].shape
+                ct_shape = z0["child_target"].shape
+            gs = np.asarray(gsizes) if gsizes else np.array([0])
+            print(f"[rank] wrote {len(rfiles)} seed_*_rank.npz: {tot_groups} groups / "
+                  f"{tot_rows} child-rows; group size mean={gs.mean():.1f} "
+                  f"min={int(gs.min())} max={int(gs.max())} "
+                  f"(child_feats={cf_shape} child_target={ct_shape}) "
+                  f"-> ranking-consumable")
     return 0 if failed == 0 else 1
 
 

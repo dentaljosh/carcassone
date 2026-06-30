@@ -760,6 +760,54 @@ class NeuralMCTS:
         scored.sort(key=lambda t: t[0], reverse=True)
         return [g for (_n, g) in scored[:max_groups]]
 
+    def root_sibling_group(
+        self,
+        root_board: Board,
+        *,
+        min_child_visits: int = 3,
+        max_children: int = 16,
+    ) -> list[tuple[object, int, float]]:
+        """Harvest the ROOT's sibling group for the in-loop ranking objective
+        (Step-2 PeNS ranking arm B', the in-loop analog of the warmstart's
+        h6400 (children, oracle_q) sibling sets).
+
+        Returns `[(child_board, child_player_to_move, child_Q)]` for the root's
+        VISITED children (deduped), with child_Q = W/N in the CHILD's own POV —
+        the MCTS visit-WEIGHTED backed-up search value (the mean of all sim
+        returns routed through that child), NOT the raw single-leaf value and NOT
+        the visit count. All children of one Carcassonne node share a single
+        player_to_move (tile vs meeple actions never mix at a node), so own-POV
+        child_Q IS the order the leaf must reproduce — no per-child flip — and it
+        matches the warmstart's oracle_q sibling-ordering convention.
+
+        This is the same selection as `interior_sibling_groups` restricted to the
+        root node (so the 89-vec parent=root convention is exact — the warmstart
+        ranked the ROOT's children with parent=root). Requires record_boards=True
+        on this MCTS; the search for `root_board` must already have run (the
+        on-ply harvest calls this right after search()).
+
+        Children kept: non-terminal, board recorded, N>=min_child_visits; top
+        max_children by N. Returns [] if <2 such children (no ranking signal).
+        """
+        root_key = self.game.string_representation(root_board)
+        root = self._nodes.get(root_key)
+        if root is None:
+            return []
+        kids: list[tuple[int, object, int, float]] = []
+        for _a, child in self._deduped_children(root):
+            if (
+                child.board is None
+                or child.is_terminal
+                or child.N < min_child_visits
+            ):
+                continue
+            kids.append((child.N, child.board, child.player_to_move, float(child.Q)))
+        if len(kids) < 2:
+            return []
+        kids.sort(key=lambda t: t[0], reverse=True)
+        kids = kids[:max_children]
+        return [(b, p, q) for (_n, b, p, q) in kids]
+
     def best_action(self, root_board: Board) -> int:
         root_key = self.game.string_representation(root_board)
         root = self._nodes.get(root_key)

@@ -95,6 +95,14 @@ OW_LOCAL=${OW_LOCAL:-28}
 OW_LAPTOP=${OW_LAPTOP:-8}
 USE_LAPTOP=${USE_LAPTOP:-1}     # only honored if gen_step2 supports --shared-claim
 
+# --- in-loop VALUE objective: 'mse' (default = the cratering run, reproducible)
+#     or 'ranking' (arm B': per-group ListNet over the in-loop sibling groups'
+#     backed-up search-Q — the test that the warmstart's +43% was sibling-RANKING,
+#     not outcome-MSE). When 'ranking': gen ALSO emits seed_*_rank.npz and the value
+#     trainer consumes those listwise. EVERYTHING ELSE (blend/dropout schedule, sims,
+#     games, eval, Path-A threading, POV fix) is IDENTICAL to the MSE run. ---
+VALUE_OBJECTIVE=${VALUE_OBJECTIVE:-mse}
+
 # --- the v2.9 frozen leaf env (matches build_dataset's guard block; step2_leaf
 #     import also sets it, but we set it explicitly for the trainers' provenance) ---
 V29_CURVE="-8,-4,-1,0,2,3,4,5"
@@ -146,6 +154,7 @@ $2
 
 ---
 - Leaf value: (1-blend)*h_v2.9 + blend*scalar_mlp(feat89); blend/dropout scheduled per iter.
+- In-loop VALUE objective: $VALUE_OBJECTIVE ($([ "$VALUE_OBJECTIVE" = ranking ] && echo "arm B': per-group ListNet over in-loop backed-up search-Q" || echo "outcome-MSE on score_diff_wide — the cratering run")).
 - Recipe: GAMES $GAMES · SIMS $SIMS · policy-epochs $EPOCHS_POLICY · value-epochs $EPOCHS_VALUE · batch $BATCH · VLW $VLW · eval_n $EVAL_N
 - Seeds: policy=$(basename "$SEED_POLICY") scalar=$(basename "$SEED_SCALAR"); eval-ref=$(basename "$REF_CKPT")
 - Cluster: $([ "$USE_LAPTOP" = 1 ] && echo "2-box (local+laptop) if gen supports --shared-claim, else LOCAL-ONLY" || echo "LOCAL-ONLY")
@@ -211,10 +220,12 @@ _gen_launch_local() {
   # priors (the 85%-of-per-leaf-cost policy forward, GPU-batched), runs gen_step2
   # --shm-eval-server, and trap-cleans the server. The scalar-MLP VALUE is computed
   # in-worker on CPU (cheap). CKPT/SCALAR/OW/SIMS go via env; the rest via "$@".
+  local rank_flag=""
+  [ "$VALUE_OBJECTIVE" = "ranking" ] && rank_flag="--emit-ranking-groups"
   CKPT="$pol" SCALAR="$sca" OW="$OW_LOCAL" SIMS="$SIMS" \
     nice -n 19 bash "$REPO_LOCAL/scripts/step2_pens/gen_step2_orch.sh" \
     --games "$GAMES" --blend "$bl" --dropout "$dr" --iter "$it" --out "$od" \
-    --value-target score_diff_wide \
+    --value-target score_diff_wide $rank_flag \
     > "$OUT/logs/gen_local_it${it}.log" 2>&1
 }
 _gen_launch_laptop() {
@@ -222,8 +233,10 @@ _gen_launch_laptop() {
   local polr=${pol/$SHARE_LOCAL/$SHARE_REMOTE} odr=${od/$SHARE_LOCAL/$SHARE_REMOTE}
   # scalar ckpt may live outside the share; require it on the share for the laptop.
   local scar=${sca/$SHARE_LOCAL/$SHARE_REMOTE}
+  local rank_flag=""
+  [ "$VALUE_OBJECTIVE" = "ranking" ] && rank_flag="--emit-ranking-groups"
   timeout 45 ssh -o ConnectTimeout=20 "$LAPTOP_SSH" \
-    "setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u $REPO_LAPTOP/scripts/step2_pens/gen_step2.py --checkpoint $polr --scalar-ckpt $scar --out $odr --games $GAMES --sims $SIMS --blend $bl --dropout $dr --workers $OW_LAPTOP --value-target score_diff_wide --iter $it --shared-claim --claim-host laptop > /tmp/step2_gen_laptop_it${it}.log 2>&1 </dev/null &" \
+    "setsid nice -n 19 $REPO_LAPTOP/.venv/bin/python -u $REPO_LAPTOP/scripts/step2_pens/gen_step2.py --checkpoint $polr --scalar-ckpt $scar --out $odr --games $GAMES --sims $SIMS --blend $bl --dropout $dr --workers $OW_LAPTOP --value-target score_diff_wide $rank_flag --iter $it --shared-claim --claim-host laptop > /tmp/step2_gen_laptop_it${it}.log 2>&1 </dev/null &" \
     </dev/null >/dev/null 2>&1 || true
 }
 
@@ -280,6 +293,14 @@ for it in $(seq 1 "$ITERS"); do
   # GameDataset schema ('values' etc.) and KeyErrors on the pens companions.
   mkdir -p "$DATA/iter_00_pens"
   mv "$DATA"/iter_00/*_pens.npz "$DATA/iter_00_pens/" 2>/dev/null || true
+  # Same for the RANKING companions (arm B', VALUE_OBJECTIVE=ranking): the
+  # seed_*_rank.npz hold the per-root sibling groups (89-vec + backed-up search-Q +
+  # group_id) the listwise value trainer consumes. Separate them out of iter_00 too
+  # (train_iter globs iter_00 for the GameDataset schema and would KeyError on them).
+  if [ "$VALUE_OBJECTIVE" = "ranking" ]; then
+    mkdir -p "$DATA/iter_00_rank"
+    mv "$DATA"/iter_00/*_rank.npz "$DATA/iter_00_rank/" 2>/dev/null || true
+  fi
   GEN_SEC=$(( $(date +%s) - GEN_T0 ))
 
   # ---- 2. TRAIN POLICY (train_iter.py, v2.9 leaf env) ----
@@ -307,9 +328,17 @@ for it in $(seq 1 "$ITERS"); do
   _status "RUNNING" "iter $it — policy done. Stage: train-value. Completed: $COMPLETED."
   TRV_T0=$(date +%s)
   if [ ! -f "$SCALAR_CKPT" ]; then
-    echo "[it$it] train VALUE (scalar MLP) @ $(date)"
+    echo "[it$it] train VALUE (scalar MLP, objective=$VALUE_OBJECTIVE) @ $(date)"
+    # MSE (default): consume the per-ply 89-vec + score_diff_wide from iter_00_pens.
+    # RANKING (arm B'): consume the per-root sibling groups from iter_00_rank,
+    # listwise over backed-up search-Q (--objective ranking).
+    if [ "$VALUE_OBJECTIVE" = "ranking" ]; then
+      VAL_GEN_DIR="$DATA/iter_00_rank"; VAL_OBJ_FLAG="--objective ranking"
+    else
+      VAL_GEN_DIR="$DATA/iter_00_pens"; VAL_OBJ_FLAG="--objective mse"
+    fi
     nice -n 19 "$PY" -u "$TRAIN_VALUE" \
-      --gen-dir "$DATA/iter_00_pens" --warm-from "$PREV_SCALAR" --out "$SCALAR_CKPT" --epochs "$EPOCHS_VALUE" \
+      --gen-dir "$VAL_GEN_DIR" $VAL_OBJ_FLAG --warm-from "$PREV_SCALAR" --out "$SCALAR_CKPT" --epochs "$EPOCHS_VALUE" \
       > "$OUT/logs/train_value_it${it}.log" 2>&1
     [ -s "$SCALAR_CKPT" ] || { echo "[it$it] VALUE TRAIN FAILED — halting" >&2; tail -20 "$OUT/logs/train_value_it${it}.log" >&2; _status "ERROR" "iter $it value train FAILED (likely the gen-npz seam — check --feat-field)."; exit 1; }
   else

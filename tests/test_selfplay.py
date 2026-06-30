@@ -309,6 +309,63 @@ def test_search_value_rank_group_ids_unique_per_game() -> None:
     assert ga and gb and ga.isdisjoint(gb)
 
 
+def test_on_ply_search_hook_yields_root_sibling_groups() -> None:
+    """Step-2 PeNS ranking arm B' hook: under an OUTCOME value_target
+    (score_diff_wide) + record_boards_override=True, the on_ply_search callback
+    receives the LIVE MCTS per recorded ply, and mcts.root_sibling_group returns
+    the root's children with their backed-up Q. Contract:
+      - at least one ply yields a group with >=2 children;
+      - each child is (board, player_to_move, Q) with board recorded (not None)
+        and Q finite in [-1, 1];
+      - all children of one group share one player_to_move (Carcassonne never
+        mixes tile/meeple actors at a node).
+    """
+    g = Game(enable_legal_moves_cache=True)
+    seen_groups: list[list] = []
+
+    def _on_ply_search(mcts, parent_board, board, cur_player, ply):
+        grp = mcts.root_sibling_group(board, min_child_visits=2, max_children=8)
+        if grp:
+            seen_groups.append(grp)
+
+    play_one_selfplay_game(
+        game=g, evaluator=_varied_evaluator, sims=32, c_puct=1.5,
+        dirichlet_alpha=0.3, dirichlet_eps=0.25, temp_threshold=3, seed=11,
+        value_target="score_diff_wide", on_ply_search=_on_ply_search,
+        record_boards_override=True,
+    )
+    assert seen_groups, "expected >=1 root sibling group at sims=32"
+    for grp in seen_groups:
+        assert len(grp) >= 2
+        players = set()
+        for cb, cp, cq in grp:
+            assert cb is not None, "record_boards_override should store child boards"
+            assert -1.0 <= cq <= 1.0 and np.isfinite(cq)
+            players.add(cp)
+        assert len(players) == 1, f"one group must share one player_to_move, got {players}"
+
+
+def test_root_sibling_group_empty_without_record_boards() -> None:
+    """Without record_boards_override (the default MSE-gen path), child boards are
+    not stored, so root_sibling_group returns [] — the hook is a no-op and the MSE
+    path pays nothing."""
+    g = Game(enable_legal_moves_cache=True)
+    nonempty = 0
+
+    def _on_ply_search(mcts, parent_board, board, cur_player, ply):
+        nonlocal nonempty
+        if mcts.root_sibling_group(board, min_child_visits=2):
+            nonempty += 1
+
+    play_one_selfplay_game(
+        game=g, evaluator=_varied_evaluator, sims=32, c_puct=1.5,
+        dirichlet_alpha=0.3, dirichlet_eps=0.25, temp_threshold=3, seed=12,
+        value_target="score_diff_wide", on_ply_search=_on_ply_search,
+        # record_boards_override defaults False
+    )
+    assert nonempty == 0, "child boards must not be recorded without the override"
+
+
 def test_listwise_ranking_loss_orders_siblings() -> None:
     """The listwise loss is ~0 when predictions already order siblings like the
     targets, and large when reversed; 0 when no group has >=2 members."""

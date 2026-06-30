@@ -53,6 +53,18 @@ import torch.nn.functional as F
 
 REPO = Path(__file__).resolve().parent.parent.parent
 
+# value_ranking_train.listnet_loss / kendall_tau_b — the EXACT ranking recipe the
+# warmstart used (the +43% gate). step1_train.group_metrics is the per-group regret.
+sys.path.insert(0, str(REPO / "scripts"))
+from value_ranking_train import listnet_loss, kendall_tau_b  # noqa: E402
+
+# Index of the v2.9 LEAF value column in the 89-vec (FEAT_NAMES "T1_leaf_q_tanh").
+# This is the warmstart's `leaf_q` (tanh(vs2/15), root-POV) — the regret-reduction
+# baseline for the alpha-sweep (leaf_q + alpha*net vs leaf alone). Resolved by name
+# at runtime against build_dataset.FEAT_NAMES (not hard-coded) so a feature-ordering
+# change fails loudly instead of silently ranking the wrong column.
+ALPHAS = [0.0, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0]
+
 # Import ScalarMLP from THIS package's train_warmstart.py explicitly by path —
 # scripts/train_warmstart.py (a different file, no ScalarMLP) is also importable
 # and would shadow a plain `import train_warmstart` (same trick gen_step2.py uses).
@@ -153,6 +165,232 @@ def _load_gen(gen_dir: Path, feat_field: str | None, value_field: str | None):
     return X, Y, ff, vf, len(files)
 
 
+def _load_rank_groups(gen_dir: Path):
+    """Load the RANKING companions (seed_*_rank.npz) gen_step2 --emit-ranking-groups
+    wrote: per-root sibling groups (each child's 89-vec parent=root, the backed-up
+    search-Q ranking target, a shared group_id). Returns (X, Y, G, feat_names) with
+    X=(N,89) f32 child feats, Y=(N,) f32 search-Q target, G=(N,) i32 group id."""
+    files = sorted(gen_dir.glob("*_rank.npz"))
+    if not files:
+        raise SystemExit(
+            f"FATAL: --objective ranking but no seed_*_rank.npz under {gen_dir}.\n"
+            "  gen_step2.py must run with --emit-ranking-groups (the launcher sets "
+            "this when VALUE_OBJECTIVE=ranking), and --gen-dir must point at the dir "
+            "holding the rank companions."
+        )
+    feats, tgts, grps = [], [], []
+    fnames = None
+    for f in files:
+        with np.load(f, allow_pickle=False) as z:
+            for k in ("child_feats", "child_target", "group_id"):
+                if k not in z.files:
+                    raise SystemExit(f"FATAL: {f.name} missing {k!r} (has {list(z.files)})")
+            cf = np.asarray(z["child_feats"]).astype(np.float32)
+            ct = np.asarray(z["child_target"]).astype(np.float32).reshape(-1)
+            gg = np.asarray(z["group_id"]).astype(np.int64).reshape(-1)
+            if cf.shape[0] == 0:
+                continue
+            if not (cf.shape[0] == ct.shape[0] == gg.shape[0]):
+                raise SystemExit(
+                    f"FATAL: {f.name} row mismatch child_feats {cf.shape[0]} / "
+                    f"child_target {ct.shape[0]} / group_id {gg.shape[0]}")
+            if fnames is None and "feat_names" in z.files:
+                fnames = [str(x) for x in z["feat_names"]]
+            feats.append(cf); tgts.append(ct); grps.append(gg)
+    if not feats:
+        raise SystemExit(f"FATAL: every seed_*_rank.npz under {gen_dir} had 0 rows")
+    X = np.concatenate(feats, 0)
+    Y = np.concatenate(tgts, 0)
+    G = np.concatenate(grps, 0)
+    return X, Y, G, fnames, len(files)
+
+
+def _group_metrics(score, oq):
+    """Per-group regret + top1 + Kendall-tau (step1_train.group_metrics / the
+    warmstart's metric). regret = oq[argmax(oq)] - oq[argmax(score)]: how much
+    search-Q the head's pick leaves on the table vs the search-best child."""
+    best = int(np.argmax(oq)); pick = int(np.argmax(score))
+    return float(oq[best] - oq[pick]), int(pick == best), kendall_tau_b(score, oq)
+
+
+def _regret_sweep(groups, preds, leaf, oq):
+    """The warmstart's alpha-sweep on a set of held-out groups. `groups` is a list
+    of index arrays into preds/leaf/oq. Reports net-alone regret/top1/tau + the
+    leaf_q+alpha*net/sd sweep (regret reduction vs leaf alone = the +43% metric)."""
+    if not groups:
+        return None
+    allp = np.concatenate([preds[g] for g in groups])
+    sd = float(allp.std() + 1e-9)
+    na = {"regret": [], "top1": [], "tau": []}
+    for g in groups:
+        r, t1, ta = _group_metrics(preds[g], oq[g])
+        na["regret"].append(r); na["top1"].append(t1); na["tau"].append(ta)
+    # RANDOM-pick baseline per group: the expected regret if the leaf picked a
+    # uniformly-random sibling (oq[best] - mean(oq)). This is the discrimination
+    # floor that is ROBUST even when the leaf already ≈ the in-loop teacher (at low
+    # blend the search-Q is heuristic-dominated, so leaf-alone regret →0 and the
+    # alpha-sweep saturates at α=0 — see the smoke caveat). net_vs_random tells us
+    # the ranking head ORDERS siblings above chance regardless.
+    rnd_regret = []
+    for g in groups:
+        rnd_regret.append(float(oq[g].max() - oq[g].mean()))
+    random_regret = float(np.mean(rnd_regret))
+    net_regret = float(np.mean(na["regret"]))
+    out = {"net_alone": {"regret": net_regret,
+                         "top1": float(np.mean(na["top1"])),
+                         "tau": float(np.nanmean(na["tau"])), "n": len(groups)},
+           "random_pick_regret": random_regret,
+           "net_vs_random_reduction_pct": round(
+               100 * (random_regret - net_regret) / (random_regret + 1e-12), 2),
+           "alpha": {}}
+    for a in ALPHAS:
+        reg, t1 = [], []
+        for g in groups:
+            r, o1, _ = _group_metrics(leaf[g] + a * preds[g] / sd, oq[g])
+            reg.append(r); t1.append(o1)
+        out["alpha"][f"{a}"] = {"regret": float(np.mean(reg)), "top1": float(np.mean(t1))}
+    base = out["alpha"]["0.0"]["regret"]
+    ba = min(out["alpha"], key=lambda k: out["alpha"][k]["regret"])
+    out["leaf_alone_regret"] = base
+    out["best_alpha"] = ba
+    out["best_alpha_regret"] = out["alpha"][ba]["regret"]
+    out["regret_reduction_pct"] = round(100 * (base - out["alpha"][ba]["regret"]) / (base + 1e-12), 2)
+    out["beats_leaf"] = bool(ba != "0.0" and out["alpha"][ba]["regret"] < base - 1e-9)
+    return out
+
+
+def _train_ranking(args, dev, wf, D, hidden, blocks, feat_names, col_mean, col_std, outp):
+    """--objective ranking: train the ScalarMLP with per-group ListNet over the
+    in-loop sibling groups (the warmstart recipe), normalization HELD FIXED to
+    warm-from. Reports a HELD-OUT per-group regret-reduction (leaf_q+alpha*net vs
+    leaf alone) — the +43% metric — to confirm the ranking objective PRESERVES the
+    sibling discrimination MSE erodes. Saves the warmstart.pt format unchanged."""
+    rng = np.random.default_rng(args.seed)
+    X, Y, G, rfnames, n_files = _load_rank_groups(Path(args.gen_dir))
+    if X.shape[1] != D:
+        raise SystemExit(
+            f"FATAL: rank feature width {X.shape[1]} != warm-from D={D}.")
+    # locate the leaf_q column by name (the alpha-sweep baseline)
+    names = rfnames if rfnames else feat_names
+    if "T1_leaf_q_tanh" not in names:
+        raise SystemExit(
+            f"FATAL: 'T1_leaf_q_tanh' not in the rank-companion feat_names — the "
+            f"leaf_q baseline column for the regret-sweep is gone. names[:12]={names[:12]}")
+    leaf_col = names.index("T1_leaf_q_tanh")
+    leaf_q_all = X[:, leaf_col].astype(np.float32)
+
+    # group the rows (group_id is globally unique across files by construction)
+    by_gid: dict[int, list[int]] = {}
+    for i, g in enumerate(G):
+        by_gid.setdefault(int(g), []).append(i)
+    group_idx = [np.asarray(v, dtype=np.int64) for v in by_gid.values() if len(v) >= 2]
+    if not group_idx:
+        raise SystemExit("FATAL: no rank group with >=2 children — nothing to rank")
+    # held-out split AT THE GROUP level (regret is per-group): val_fraction of groups
+    gperm = rng.permutation(len(group_idx))
+    n_val_g = max(1, int(round(args.val_fraction * len(group_idx)))) if len(group_idx) >= 2 else 0
+    val_groups = [group_idx[i] for i in gperm[:n_val_g]]
+    tr_groups = [group_idx[i] for i in gperm[n_val_g:]]
+    if not tr_groups:  # tiny smoke: train on all, eval on all
+        tr_groups = group_idx; val_groups = group_idx
+    print(f"[rank] {n_files} rank files -> {X.shape[0]} child-rows / {len(group_idx)} groups "
+          f"(>=2 children); split train {len(tr_groups)} / heldout {len(val_groups)} groups; "
+          f"target range [{Y.min():+.3f},{Y.max():+.3f}]", flush=True)
+
+    Xn = (X - col_mean) / col_std
+    Xt = torch.from_numpy(Xn.astype(np.float32))
+    Yt = torch.from_numpy(Y.astype(np.float32))
+
+    net = ScalarMLP(D, hidden=hidden, blocks=blocks).to(dev)
+    net.load_state_dict(wf["state_dict"])
+    n_params = sum(p.numel() for p in net.parameters())
+    opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    rank_temp = float(wf.get("rank_temp", 0.25))
+    print(f"[model] ScalarMLP D={D} params={n_params/1e3:.0f}k warm-started on {dev} "
+          f"(LISTNET ranking, temp={rank_temp})", flush=True)
+
+    gpb = args.groups_per_batch
+
+    def run_epoch(groups, train):
+        net.train(train)
+        order = list(rng.permutation(len(groups)) if train else range(len(groups)))
+        tot = 0.0; nb = 0
+        for b0 in range(0, len(order), gpb):
+            batch = [groups[order[k]] for k in order[b0:b0 + gpb]]
+            flat = np.concatenate(batch)
+            if train and len(flat) < 2:
+                continue  # BatchNorm1d needs >=2
+            xb = Xt[flat].to(dev); yb = Yt[flat].to(dev)
+            with torch.set_grad_enabled(train):
+                pred = net(xb)
+                loss = 0.0; off = 0
+                for gi in batch:
+                    k = len(gi); p = pred[off:off + k]; t = yb[off:off + k]; off += k
+                    loss = loss + listnet_loss(p, t, rank_temp)
+                loss = loss / len(batch)
+                if train:
+                    opt.zero_grad(set_to_none=True); loss.backward(); opt.step()
+            tot += float(loss.detach()); nb += 1
+        return tot / max(nb, 1)
+
+    metrics = {"warm_from": str(args.warm_from), "gen_dir": str(args.gen_dir),
+               "objective": "ranking", "rank_temp": rank_temp, "n_files": n_files,
+               "n_groups": len(group_idx), "n_train_groups": len(tr_groups),
+               "n_heldout_groups": len(val_groups), "D": D, "epochs": []}
+    for ep in range(args.epochs):
+        t0 = time.time()
+        tl = run_epoch(tr_groups, True)
+        vl = run_epoch(val_groups, False)
+        metrics["epochs"].append({"epoch": ep + 1, "train_listnet": round(tl, 6),
+                                  "val_listnet": round(vl, 6), "sec": round(time.time() - t0, 1)})
+        print(f"  ep{ep+1}/{args.epochs} train_listnet={tl:.5f} val_listnet={vl:.5f} "
+              f"({time.time()-t0:.0f}s)", flush=True)
+
+    # ---- HELD-OUT per-group regret-reduction (the warmstart's +43% metric) ---- #
+    net.train(False)
+    with torch.no_grad():
+        preds = net(Xt.to(dev)).cpu().numpy()
+    sweep = _regret_sweep(val_groups, preds, leaf_q_all, Y)
+    metrics["heldout_regret_sweep"] = sweep
+    if sweep is not None:
+        s = sweep
+        print(f"\n[HELD-OUT regret] net-alone tau={s['net_alone']['tau']:+.3f} "
+              f"top1={s['net_alone']['top1']:.3f} regret={s['net_alone']['regret']:.4f} | "
+              f"random-pick regret={s['random_pick_regret']:.4f} | "
+              f"combined a*={s['best_alpha']} "
+              f"regret {s['leaf_alone_regret']:.4f}->{s['best_alpha_regret']:.4f} "
+              f"({s['regret_reduction_pct']:+.1f}%) beats_leaf={s['beats_leaf']} "
+              f"(n={s['net_alone']['n']} heldout groups)", flush=True)
+        # PRIMARY (robust) signal: net orders siblings above chance — net-alone
+        # regret vs a random pick. Stays informative at low blend where the leaf
+        # already ≈ the in-loop teacher (so the leaf+alpha sweep saturates at α=0).
+        print(f"[KEY] heldout net_vs_random_reduction_pct = "
+              f"{s['net_vs_random_reduction_pct']:+.2f}%  (tau={s['net_alone']['tau']:+.3f}); "
+              f"leaf+alpha regret_reduction_pct = {s['regret_reduction_pct']:+.2f}%  "
+              f"(POSITIVE => ranking objective PRESERVES sibling discrimination)", flush=True)
+
+    # ---- save in the EXACT warmstart.pt format (gen --scalar-ckpt loads it) ---- #
+    torch.save({
+        "state_dict": net.state_dict(),
+        "D": int(D), "feat_names": feat_names,
+        "col_mean": col_mean, "col_std": col_std,
+        "hidden": hidden, "blocks": blocks,
+        "arch": "ScalarMLP",
+        "rank_temp": rank_temp,
+        "v29_hash": wf.get("v29_hash"),
+        "step2_value_retrain": {
+            "warm_from": str(args.warm_from), "gen_dir": str(args.gen_dir),
+            "objective": "ranking", "epochs": args.epochs,
+            "n_groups": len(group_idx), "loss": "listnet_search_q",
+            "heldout_regret_reduction_pct": (sweep["regret_reduction_pct"] if sweep else None),
+        },
+    }, outp)
+    (outp.with_suffix(".value_metrics.json")).write_text(json.dumps(metrics, indent=2))
+    print(f"\n[saved] {outp}  (+ {outp.with_suffix('.value_metrics.json').name}) "
+          f"— ranking objective, warmstart format, normalization preserved", flush=True)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="train_value_iter")
     ap.add_argument("--gen-dir", required=True,
@@ -162,6 +400,16 @@ def main(argv=None):
                     help="Previous iter's ScalarMLP ckpt (warmstart.pt format). The arch "
                          "AND the FIXED col_mean/col_std normalization are taken from here.")
     ap.add_argument("--out", required=True, help="Output ScalarMLP ckpt (.pt, warmstart format).")
+    ap.add_argument("--objective", default="mse", choices=["mse", "ranking"],
+                    help="In-loop value objective. 'mse' (default) = plain MSE on "
+                         "the per-ply score_diff_wide target (the cratering run; "
+                         "reads seed_*_pens.npz). 'ranking' = per-group ListNet over "
+                         "the in-loop sibling groups' backed-up search-Q (reads "
+                         "seed_*_rank.npz from --emit-ranking-groups gen) — the arm "
+                         "B' test that the warmstart's +43% was sibling-RANKING, not "
+                         "outcome-MSE.")
+    ap.add_argument("--groups-per-batch", type=int, default=32,
+                    help="--objective ranking only: sibling groups per listwise batch.")
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--weight-decay", type=float, default=1e-4)
@@ -194,7 +442,12 @@ def main(argv=None):
     col_std = np.asarray(wf["col_std"], np.float32)
     col_std = np.where(col_std < 1e-6, 1.0, col_std).astype(np.float32)
     print(f"[warm-from] {args.warm_from}  D={D} hidden={hidden} blocks={blocks} "
-          f"(normalization HELD FIXED from warm-from)", flush=True)
+          f"objective={args.objective} (normalization HELD FIXED from warm-from)", flush=True)
+
+    # ---- RANKING objective (arm B') — separate path, MSE path below untouched ---- #
+    if args.objective == "ranking":
+        return _train_ranking(args, dev, wf, D, hidden, blocks,
+                              feat_names, col_mean, col_std, outp)
 
     # ---- gen data (the seam) ---- #
     X, Y, ff, vf, n_files = _load_gen(Path(args.gen_dir), args.feat_field, args.value_field)
