@@ -135,6 +135,7 @@ def _build_candidate_mcts(cfg, base_net, game_farm, seed, device, base_ev=None):
         game=game_farm, leaf_cfg=leaf_cfg,
         blend=cfg["blend"], dropout_p=cfg["dropout"],
         device=device, rng_seed=seed ^ 0x57E92,
+        leaf_mode=cfg.get("leaf_mode", "convex"),
     )
     return NeuralMCTS(game=game_farm, evaluator=wrapped, simulations=cfg["sims"],
                       seed=seed, c_puct=CPUCT)
@@ -330,7 +331,13 @@ def main(argv=None):
     ap.add_argument("--ckpt", required=True, help="Candidate base POLICY net (RoD2 iter_02 by default lineage).")
     ap.add_argument("--scalar-ckpt", required=True, help="Candidate scalar-MLP value ckpt (warmstart format).")
     ap.add_argument("--ref-ckpt", required=True, help="Reference net = RoD2 iter_02 (plays plain v2.9-leaf NeuralMCTS).")
-    ap.add_argument("--blend", type=float, default=0.2, help="Wean lambda for the candidate value.")
+    ap.add_argument("--blend", type=float, default=0.2, help="Wean lambda (convex) / additive coefficient beta (additive) for the candidate value.")
+    ap.add_argument("--leaf-mode", choices=("convex", "additive"), default="convex",
+                    help="Candidate leaf value combine mode. convex (default): "
+                         "(1-blend)*h + blend*v_net (the production wean — heuristic "
+                         "weaned DOWN). additive (nail-2 decoupling test): "
+                         "clip(h + blend*v_net, -1, 1) — heuristic at FULL weight, net "
+                         "added on top. The reference (RoD2 iter_02) is unchanged either way.")
     ap.add_argument("--dropout", type=float, default=0.0, help="Per-leaf pure-MLP-value dropout for the candidate.")
     ap.add_argument("--n", type=int, default=120, help="Game count (paired => even).")
     ap.add_argument("--sims", type=int, default=200, help="Simulations per move for BOTH agents — matched compute (candidate AND reference run at this depth).")
@@ -390,6 +397,7 @@ def main(argv=None):
         if results:
             summ = EH._summary(results, "step2_candidate", "rod2_iter02")
             summ.update({"blend": args.blend, "dropout": args.dropout, "sims": args.sims,
+                         "leaf_mode": args.leaf_mode,
                          "scalar_ckpt": args.scalar_ckpt, "ckpt": args.ckpt,
                          "ref_ckpt": args.ref_ckpt, "priors": "summarize-only"})
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
@@ -413,6 +421,7 @@ def main(argv=None):
     cfg = {
         "ckpt": args.ckpt, "scalar_ckpt": args.scalar_ckpt, "ref_ckpt": args.ref_ckpt,
         "blend": float(args.blend), "dropout": float(args.dropout), "sims": args.sims,
+        "leaf_mode": args.leaf_mode,
         "out": str(out), "shared_claim": bool(args.shared_claim),
         "claim_host": args.claim_host, "claim_stale": args.claim_stale_secs,
         "shm_cand": args.shm_eval_server_cand, "shm_ref": args.shm_eval_server_ref,
@@ -421,9 +430,9 @@ def main(argv=None):
     path_desc = (f"orch (cand-shm={args.shm_eval_server_cand}, ref-shm={args.shm_eval_server_ref})"
                  if orch else "net-on-CPU")
     print(f"[eval] step2 candidate (policy={Path(args.ckpt).name} + scalar="
-          f"{Path(args.scalar_ckpt).name}, blend={args.blend} dropout={args.dropout} "
-          f"sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, v2.9-leaf @{args.sims}) "
-          f"| paired n={args.n} | priors via {path_desc}", flush=True)
+          f"{Path(args.scalar_ckpt).name}, leaf_mode={args.leaf_mode} blend={args.blend} "
+          f"dropout={args.dropout} sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, "
+          f"v2.9-leaf @{args.sims}) | paired n={args.n} | priors via {path_desc}", flush=True)
 
     work = EH._build_work(args.seed_start, args.n, paired=True)
 
@@ -525,6 +534,7 @@ def main(argv=None):
     if results:
         summ = EH._summary(results, "step2_candidate", "rod2_iter02")
         summ.update({"blend": args.blend, "dropout": args.dropout, "sims": args.sims,
+                     "leaf_mode": args.leaf_mode,
                      "scalar_ckpt": args.scalar_ckpt, "ckpt": args.ckpt, "ref_ckpt": args.ref_ckpt,
                      "priors": ("orch" if orch else "net-on-cpu"),
                      "shm_eval_server_cand": args.shm_eval_server_cand,

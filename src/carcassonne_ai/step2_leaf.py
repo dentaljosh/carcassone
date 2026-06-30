@@ -36,6 +36,7 @@ features the warmstart MLP was trained on.
 from __future__ import annotations
 
 import math
+import os
 from typing import Callable
 
 import numpy as np
@@ -333,12 +334,13 @@ class _Step2Wrapped:
     # parent when this attribute is truthy; absent on every other evaluator.
     wants_parent = True
 
-    def __init__(self, fn, leaf_cfg, counters, blend, dropout_p):
+    def __init__(self, fn, leaf_cfg, counters, blend, dropout_p, leaf_mode="convex"):
         self._fn = fn
         self.leaf_cfg = leaf_cfg
         self.counters = counters
         self.blend = blend
         self.dropout_p = dropout_p
+        self.leaf_mode = leaf_mode
 
     def __call__(self, board, parent_board=None):
         return self._fn(board, parent_board)
@@ -358,18 +360,37 @@ def make_step2_value_wrapper(
     device=None,
     rng_seed: int = 0,
     counters: "_Step2Counters | None" = None,
+    leaf_mode: "str | None" = None,
 ) -> "_Step2Wrapped":
     """Wrap a POLICY-ONLY evaluator: keep its priors, replace its value with the
-    wean-blend of the v2.9 heuristic and the scalar-MLP value.
+    v2.9 heuristic combined with the scalar-MLP value. Two leaf MODES:
 
-    value:
+    CONVEX (default — the production wean leaf, UNCHANGED):
       - terminal leaf: exact terminal value (clipped to +-1); no MLP/heuristic.
       - leaf-dropout fires (prob dropout_p): value = scalar_mlp_value (pure net).
       - else: value = (1 - blend) * h + blend * scalar_mlp_value.
+      Heuristic is weaned DOWN as `blend` rises (the heuristic structural eval is
+      SUBTRACTED while the net is added).
 
-    `h = tanh(virtual_score_v2(state, current_player, leaf_cfg) / 15)`. The
-    scalar-MLP value is the MLP forward over the z-scored 89-vec
-    (`(feat - col_mean) / col_std`), already tanh-bounded by ScalarMLP.
+    ADDITIVE (opt-in, the "nail 2" decoupling test — MEASUREMENT ONLY):
+      - terminal leaf: identical exact terminal value (clipped); no MLP/heuristic.
+      - leaf-dropout fires (prob dropout_p): value = scalar_mlp_value (pure net) —
+        IDENTICAL to convex (the dropout path exercises the pure net either way).
+      - else: value = clip(h + beta * scalar_mlp_value, -1, 1).
+      Heuristic stays at FULL weight 1.0; the net is ADDED on top with coefficient
+      beta (= `blend`, reused as the additive coefficient). This decouples the two
+      effects the convex wean conflates: ADDING the net value vs SUBTRACTING the
+      heuristic's structural eval. beta=0 -> clip(h, -1, 1) == pure v2.9 h (h is
+      already in [-1,1] from tanh, so the clip is a no-op there) -> a clean
+      pure-heuristic anchor.
+
+    `h = tanh(virtual_score_v2(state, current_player, leaf_cfg) / 15)` — BYTE-
+    IDENTICAL in both modes. The scalar-MLP value is the MLP forward over the
+    z-scored 89-vec (`(feat - col_mean) / col_std`), already tanh-bounded by
+    ScalarMLP, then flipped to leaf-POV by `_v_mlp_leafpov` (identical in both
+    modes). The mode is selected by the `leaf_mode` arg, or (when None) by the env
+    var CARCASSONNE_STEP2_LEAF_MODE (default "convex"). Only "convex"/"additive"
+    are valid.
 
     `base_policy_evaluator` supplies ONLY priors (its value is discarded) — use a
     policy-only ResNet evaluator (make_single_evaluator_policy_only) for the base.
@@ -377,6 +398,23 @@ def make_step2_value_wrapper(
     asserted to match build_dataset's ordering so the col_mean/col_std align.
     """
     import torch
+
+    if leaf_mode is None:
+        leaf_mode = os.environ.get("CARCASSONNE_STEP2_LEAF_MODE", "convex")
+    leaf_mode = str(leaf_mode).strip().lower()
+    if leaf_mode not in ("convex", "additive"):
+        raise ValueError(
+            f"CARCASSONNE_STEP2_LEAF_MODE / leaf_mode must be 'convex' or "
+            f"'additive' (got {leaf_mode!r})"
+        )
+    # One-line provenance so a run's log shows which leaf mode + coefficient fired.
+    if leaf_mode == "additive":
+        print(f"[step2_leaf] LEAF MODE = additive (heuristic FULL weight 1.0 + "
+              f"beta={blend} * v_net, clipped to [-1,1]); dropout_p={dropout_p}",
+              flush=True)
+    else:
+        print(f"[step2_leaf] LEAF MODE = convex (wean: (1-blend)*h + blend*v_net, "
+              f"blend={blend}); dropout_p={dropout_p}", flush=True)
 
     if list(feat_names) != FEAT_NAMES:
         raise ValueError(
@@ -440,10 +478,22 @@ def make_step2_value_wrapper(
             return priors, _v_mlp_leafpov(board, parent_board)
 
         h = math.tanh(virtual_score_v2(st, st.current_player, leaf_cfg) / 15.0)
+        if leaf_mode == "additive":
+            # ADDITIVE (nail 2): heuristic at FULL weight + net added with coeff
+            # beta (= blend), then clipped. At beta=0 this is clip(h, -1, 1) == h
+            # (a clean pure-heuristic anchor — counted as plain_path so the
+            # provenance distinguishes it from the value-consuming path).
+            if blend > 0.0:
+                counters.scalar_path += 1
+                v = h + blend * _v_mlp_leafpov(board, parent_board)
+                return priors, max(-1.0, min(1.0, v))
+            counters.plain_path += 1
+            return priors, max(-1.0, min(1.0, h))
+        # CONVEX (default — UNCHANGED).
         if blend > 0.0:
             counters.scalar_path += 1
             return priors, (1.0 - blend) * h + blend * _v_mlp_leafpov(board, parent_board)
         counters.plain_path += 1
         return priors, h
 
-    return _Step2Wrapped(wrapped, leaf_cfg, counters, blend, dropout_p)
+    return _Step2Wrapped(wrapped, leaf_cfg, counters, blend, dropout_p, leaf_mode=leaf_mode)
