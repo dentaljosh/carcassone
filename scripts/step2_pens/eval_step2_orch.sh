@@ -74,6 +74,13 @@ echo "[step2-eval-orch] CAND=$(basename "$CAND_CKPT") n_scalar=$NS_C  |  REF=$(b
 # --- clean stale carc-orch for THESE shm-names ONLY (do NOT global-pkill carc-orch:
 #     that was BUG-2 — it kills a sibling box's / gen's orchestrator). $SRV_PID-scoped
 #     kills + unique per-agent shm-names below. ---
+# Kill a stale prior eval server bound to THESE shm-names (e.g. a previous iter's
+# server that was SIGKILL'd so its EXIT trap never ran — happens on the laptop path,
+# which runs this script directly with no prior _kill_gen). Scoped by shm-name +
+# bracket-trick (no self-match); never touches gen/sibling servers. (review round-2 BUG-NEW-4)
+pkill -f "[c]arc-orch.*--shm-name $SHMN_C" 2>/dev/null || true
+pkill -f "[c]arc-orch.*--shm-name $SHMN_R" 2>/dev/null || true
+sleep 1
 rm -f "/dev/shm/carc_$SHMN_C" /dev/shm/sem.carc_"${SHMN_C}"_* \
       "/dev/shm/carc_$SHMN_R" /dev/shm/sem.carc_"${SHMN_R}"_* 2>/dev/null || true
 
