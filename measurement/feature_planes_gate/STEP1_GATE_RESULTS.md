@@ -1,6 +1,6 @@
 # Step 1 — Representation gate: RESULTS
 
-**Date:** 2026-06-29 · **Charter:** superhuman program §7 Step 1 (the decision gate) · **Status:** 🟢 RUNNING (none + both) · **MEASUREMENT ONLY** — no production change.
+**Date:** 2026-06-29 · **Charter:** superhuman program §7 Step 1 (the decision gate) · **Status:** ✅ **GATE A PASS — Step 1 CONCLUDED** (none/both/neg-control/farm/bag all in; representation confirmed a real confound) · **MEASUREMENT ONLY** — champion/PRODUCTION.yaml/v2.7/v2.9 UNCHANGED.
 **Scripts:** `scripts/feature_planes_gate/{step1_planes,step1_dump,step1_train,run_gate}.py/.sh` · **Datasets:** `/home/doctor/carc_step1_gate/dataset_<mode>/` (ext4, streamed) · **Out:** `measurement/feature_planes_gate/stage_<mode>/`
 
 ## The question
@@ -45,14 +45,18 @@ The bar is **"indistinguishable from the `none` baseline,"** NOT merely "lower t
 | none | 0.140 | 0.05 | 0.0263→0.0258 | **+1.9%** | true | 1544 |
 | both | **0.207** | 0.05 | 0.0263→**0.0209** | **+20.5%** | true | 1544 |
 | **both_shuffled** (neg control) | **0.139** | **0.0** | 0.0263→0.0263 | **+0.0%** | **false** | 1544 |
-| farm-only (drop bag) | _running (ablation)_ | | | | | |
-| bag-only (drop farm) | _queued (ablation)_ | | | | | |
+| farm-only (drop bag scalars) | 0.180 | 0.05 | 0.0263→0.0218 | **+17.1%** | true | 1544 |
+| bag-only (drop farm planes) | 0.180 | 0.05 | 0.0263→0.0211 | **+19.7%** | true | 1544 |
 
 ## Verdict — Gate A LOCKED CLEAN (negative control passed 2026-06-29; ablation in flight)
 
 **Negative control (`both_shuffled`) PASSED all three pre-registered lock conditions decisively:** with the farm planes + bag scalars permuted off their true rows, net-τ collapsed 0.207→**0.139** (back to `none`'s 0.140), best-α dropped 0.05→**0.0** (the model correctly finds the scrambled features useless and falls back to leaf-alone), regret reduction →**+0.0%** (vs `both`'s +20.5%), and `best_val_loss`=**3.3014 ≈ `none`'s 3.3020** (no sub-`none` leak; never drifted toward `both`'s 3.2958). **The +20.5% is real and position-aligned — not a leak/artifact.** Gate A (the scientific lock: the farm/bag *representation* carries value signal the blind 78-ch net could not access) is **LOCKED**. CL-033's α=0-as-architecture-independent-law is refuted. (Gate B — search conversion — remains Step 2's open question; see the two-gate framing above.)
 
-Remaining for the full attribution story (NOT lock-blocking): the farm-only / bag-only ablation (which feature drives the +20.5%).
+**Attribution (farm/bag ablation, complete 2026-06-29):** **both features independently recover most of the signal, and they are largely REDUNDANT (substitutes, not additive)** — farm-only **+17.1%** (τ 0.180), bag-only **+19.7%** (τ 0.180), `both` only +20.5% (τ 0.207). At n=1544 the farm-vs-bag point-estimate gap (17.1 vs 19.7) is within noise — do not hard-rank — but bag-only ≈ `both` is real. This is the **"both contribute" outcome** (the broadest evidence that representation, not architecture, caused the inertness).
+
+> ⚠️ **Correction (live-call error, logged for discipline):** the val-loss *preview* during training suggested "bag carries little" (bag-only's `best_val_loss` 3.3010 barely dipped below `none`'s 3.3020). The **gate metric (regret reduction) said the opposite** — bag-only +19.7%, slightly *above* farm-only, despite bag's *higher* val-loss. The listnet val-loss and the argmax/regret metric **diverged**; selecting/early-stopping on val-loss is not even monotone with the gate metric here. Lesson (already a standing memory): do not read a verdict off a proxy when the gate metric differs. The val-loss preview was over-read mid-run; only the final regret/α is the result.
+
+**Which axis is "newly sighted" (matters for Step 2):** the v2.7/v2.9 leaf **flood-fills farms** (it already *sees* farm connectivity), so farm-only helping = the net refining a **known** axis. The leaf scores the **current board only** — it does **not** read deck composition / completability — so **bag is information the heuristic structurally cannot see**, yet bag-only alone recovers ~the whole effect. That is the cleaner "the net saw something the heuristic can't" result, and it makes **deck-composition / completability a load-bearing primitive for Step 2's substrate**, not optional.
 
 ---
 
@@ -65,7 +69,7 @@ Remaining for the full attribution story (NOT lock-blocking): the farm-only / ba
 
 **Architecture finding (answers the "lighter net?" question):** this heavy 32GB dense-CNN got +20.5%; **CL-034's cheap scalars+linear got −41%** (beat the leaf outright). The light explicit-feature model is **both faster and stronger** at this task — the dense-CNN-on-board is the wrong tool. → run the negative control + ablation via the cheap scalar/MLP path, and design Step 2's value head as **structure-aware (feature-MLP / set-transformer over tiles), not a dense CNN.**
 
-**Next:** negative control (`both_shuffled`) + farm/bag ablation (fast path) → if the control is clean, lock PASS → CL-037 + scope Step 2.
+**Next (now active):** Gate A PASS is locked (control clean + attribution complete) → register **CL-037** + 5-touch close-out → scope **Step 2** (structure-aware value head; deck-composition/completability + farm-connectivity + per-feature meeple-deltas in the substrate). Gate B (does this convert through search) is Step 2's question, NOT a Step-1 kill.
 
 ## Notes / provenance
 
