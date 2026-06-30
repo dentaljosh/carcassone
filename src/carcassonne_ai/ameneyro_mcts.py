@@ -322,18 +322,17 @@ class AmeneyroMCTSPlayer:
         ``clear()`` between root moves (it does for the MCTS family). Returns a
         guaranteed-legal action.
 
-        Robustness note (upstream bug worked around here): the shared
-        ``mcts.MCTS``/``HeuristicMCTS`` engine can occasionally surface a root
-        child action that is NOT legal at the current board. The cause is a
-        ``Game.string_representation`` transposition collision in the meeples
-        phase — two boards with different window offsets collide on one key, so
-        action indices encoded against one offset leak into a node decoded
-        against another. It reproduces identically with the production
-        HeuristicMCTS ladder opponent (action range ~2506-2507, meeples phase);
-        the existing eval harness merely raises on it (eval_rule_player.py:287).
-        Rather than fix string_representation (which would shift every prior
-        ladder result), this player restricts the pick to the live legal mask so
-        it never returns an illegal action.
+        Robustness note (defensive, NOT fixing a known bug): this player
+        restricts its root pick to the live legal mask, so it can never return
+        an illegal action regardless of engine/cache state. During development a
+        ``Game.string_representation`` window-offset cache-collision was
+        *hypothesized* as a source of illegal root actions — that hypothesis was
+        independently REFUTED 2026-06-29 (the window offset is a pure function of
+        placed_coords, which the string key fully encodes, so same-key⇒same-offset
+        by construction; an instrumented HeuristicMCTS run showed 0 wrong masks in
+        108,962 get_valid_moves calls; and meeple-phase indices are provably
+        invariant to the window origin). This guard is therefore belt-and-
+        suspenders, not a workaround for a live bug.
         """
         return self._best_legal_action(board)
 
@@ -341,13 +340,12 @@ class AmeneyroMCTSPlayer:
         """Compute the legal-action set DIRECTLY from the engine, bypassing the
         Game's legal-moves cache.
 
-        Why bypass the cache: the cache is keyed by ``string_representation``,
-        which collides across boards that differ only in window offset (the
-        meeples-phase collision documented in best_action). A collision returns a
-        mask encoded against the WRONG offset, so the cached set can be subtly
-        wrong (e.g. {2506,2508,2510} when the engine truth is {2507,2509,2510}).
-        Recomputing here makes the player's legality decision authoritative and
-        offset-correct regardless of cache state. (Cheap: one engine enumeration.)
+        Why bypass the cache: making the player's own legality decision
+        authoritative (computed straight from the engine at the board's current
+        offset) keeps it correct regardless of any cache state — pure defense in
+        depth. (The window-offset cache-collision once hypothesized here was
+        REFUTED 2026-06-29; see best_action's docstring. Cheap either way: one
+        engine enumeration.)
         """
         from wingedsheep.carcassonne.utils.action_util import ActionUtil
 
@@ -368,8 +366,8 @@ class AmeneyroMCTSPlayer:
         Picks among root children using the same priority as mcts.MCTS.best_action
         (Q from root perspective, tie-broken by visit count N), but filtered to
         the FRESH (uncached, offset-correct) legal set. Falls back to the most-
-        visited legal child, then to any legal action, so it is robust to the
-        upstream legal-moves-cache poisoning described in best_action's docstring.
+        visited legal child, then to any legal action — a defensive guarantee of
+        legality independent of cache state (see best_action's docstring).
         """
         eng = self._engine
         legal = self._fresh_legal(board)
@@ -384,7 +382,7 @@ class AmeneyroMCTSPlayer:
         seen_children: set[int] = set()
         for a in sorted(root.children):
             if a not in legal:
-                continue  # drop leaked illegal actions (upstream collision)
+                continue  # defensive: only ever pick a currently-legal action
             child = root.children[a]
             if child.N <= 0 or id(child) in seen_children:
                 continue
