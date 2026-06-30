@@ -48,11 +48,15 @@ import carcassonne_ai.step2_leaf as step2_leaf  # noqa: E402 (sets guard env)
 import argparse  # noqa: E402
 import multiprocessing as mp  # noqa: E402
 import os  # noqa: E402
+import random  # noqa: E402
+import socket  # noqa: E402
 import time  # noqa: E402
+import zlib  # noqa: E402
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from carcassonne_ai.claim import try_claim as _try_claim, is_stale as _claim_is_stale  # noqa: E402
 from carcassonne_ai.evaluators import make_single_evaluator_policy_only  # noqa: E402
 from carcassonne_ai.features import N_SCALAR_FEATURES  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
@@ -79,6 +83,14 @@ DEFAULT_BASE_CKPT = "/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt"
 
 # Per-worker globals (spawn context; CUDA can't survive forks).
 _W: dict = {}
+
+
+def counters_zero() -> dict:
+    """An all-zero provenance-counter dict (for cached/skipped seeds that never
+    play a game). Matches step2_leaf._Step2Counters().as_dict() keys so main's
+    agg-sum is a no-op for these."""
+    return {"calls": 0, "scalar_path": 0, "plain_path": 0,
+            "dropout_path": 0, "terminal_path": 0}
 
 
 def _load_base_net(ckpt_path: str, device: torch.device):
@@ -162,6 +174,21 @@ def _play_one(args_tuple):
     out_dir = Path(out_dir_str)
     path = out_dir / f"seed_{seed:06d}.npz"
     cfg = _W["cfg"]
+
+    # Resume: a completed game's .npz is the permanent done-marker. Skip it (and
+    # leave any sibling .claim alone — it's already satisfied).
+    if path.exists():
+        return (seed, "cached", 0, 0.0, counters_zero(), None)
+
+    # Work-stealing: atomically claim this seed before playing it. If another gen
+    # worker — on THIS box or the laptop — already owns it (.claim exists, fresh),
+    # skip; the pool hands us the next seed. Legacy (non-shared) runs skip entirely.
+    # The atomic final write (partial -> replace) below is the real correctness
+    # layer; the .claim is a best-effort cross-box lock (carcassonne_ai.claim).
+    if cfg.get("shared_claim"):
+        claim_path = out_dir / f"seed_{seed:06d}.claim"
+        if not _try_claim(claim_path, cfg["claim_host"], cfg["claim_stale_secs"]):
+            return (seed, "skipped", 0, 0.0, counters_zero(), None)
 
     # Fresh per-game counter so the returned counts are per-game (we sum in main).
     counters = step2_leaf._Step2Counters()
@@ -395,6 +422,29 @@ def main(argv=None):
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--iter", type=int, default=0,
                    help="Iter index for the seed prefix (iter*10000 + game_idx).")
+    # --- cross-box work-stealing (ported from run_selfplay_iter.py) --------- #
+    p.add_argument("--shared-claim", action="store_true",
+                   help="Work-stealing mode. Before playing a seed, atomically "
+                        "claim it via an O_EXCL seed_NNNNNN.claim sidecar "
+                        "(carcassonne_ai.claim). Multiple gen processes — local "
+                        "Pool + the laptop's own orch — run the SAME --iter/--games "
+                        "range against ONE shared --out and load-balance: each "
+                        "seed goes to whichever worker claims it first (no double "
+                        "play). Default off = byte-identical single-box behavior. "
+                        "The .npz atomic write is the real done-marker; the .claim "
+                        "is a best-effort lock. On (re)start, claims with no .npz "
+                        "older than --claim-stale-secs are swept (the orphan-claim "
+                        "stall: a killed claimer strands .claim files -> resume "
+                        "would stall at GAMES - n_killed; feedback_shared_claim_"
+                        "orphan_stall).")
+    p.add_argument("--claim-host", type=str, default=socket.gethostname(),
+                   help="Only with --shared-claim. Identity recorded in claim "
+                        "files (default: hostname). Distinct per box so the two "
+                        "boxes walk the seed list from different ends.")
+    p.add_argument("--claim-stale-secs", type=int, default=5400,
+                   help="Only with --shared-claim. A claim with no resulting .npz "
+                        "older than this (mtime) is treated as abandoned and "
+                        "re-claimable (default 5400 = 90 min, well over one game).")
     p.add_argument("--shm-eval-server", default=None,
                    help="carc-orch SHM server name for the POLICY net (GPU-batched "
                         "priors via the orchestrator — the production fast path). "
@@ -443,6 +493,9 @@ def main(argv=None):
         "emit_ranking_groups": bool(args.emit_ranking_groups),
         "rank_min_child_visits": int(args.rank_min_child_visits),
         "rank_max_children": int(args.rank_max_children),
+        "shared_claim": bool(args.shared_claim),
+        "claim_host": args.claim_host,
+        "claim_stale_secs": int(args.claim_stale_secs),
     }
     print(f"[gen] step2 PeNS wean self-play: games={args.games} sims={args.sims} "
           f"blend={args.blend} dropout={args.dropout} value_target={args.value_target} "
@@ -453,6 +506,37 @@ def main(argv=None):
 
     seeds = [args.iter * 10_000 + i for i in range(args.games)]
     pool_args = [(s, str(out_dir)) for s in seeds]
+
+    if args.shared_claim:
+        print(f"[gen] WORK-STEALING (--shared-claim) host={args.claim_host} "
+              f"stale_secs={args.claim_stale_secs} -> shared OUT {out_dir}", flush=True)
+        # ORPHAN-CLAIM SWEEP (feedback_shared_claim_orphan_stall): a killed
+        # --shared-claim run strands seed_*.claim files with no matching .npz. On
+        # (re)start, a stranded fresh claim would keep every box from re-playing
+        # that seed -> the run stalls at GAMES - n_orphans. Sweep claims-without-npz
+        # whose mtime is older than --claim-stale-secs (the same age try_claim uses
+        # to judge abandonment) so a resumed run can re-claim them. We only remove
+        # OUR own scope's seeds (this iter's range) and only when the .npz is
+        # absent — a completed game's claim is harmless and left alone.
+        swept = 0
+        for s in seeds:
+            npz = out_dir / f"seed_{s:06d}.npz"
+            cl = out_dir / f"seed_{s:06d}.claim"
+            if npz.exists():
+                continue
+            if cl.exists() and _claim_is_stale(cl, args.claim_stale_secs):
+                try:
+                    cl.unlink()
+                    swept += 1
+                except OSError:
+                    pass
+        if swept:
+            print(f"[gen] orphan-claim sweep: removed {swept} stale claim(s) "
+                  f"with no .npz (re-claimable now).", flush=True)
+        # Each box walks the seed list in its OWN order (keyed by claim-host) so
+        # the boxes start claiming in different regions — avoids a startup burst
+        # of every worker racing the same low seeds (run_selfplay_iter pattern).
+        random.Random(zlib.crc32(args.claim_host.encode())).shuffle(pool_args)
 
     fresh = failed = n_pos = 0
     durs: list[float] = []
@@ -483,11 +567,16 @@ def main(argv=None):
     if mgr is not None:
         mgr.shutdown()
 
+    cached = skipped = 0
     for seed, status, npos, dt, cd, err in results:
         if status == "fresh":
             fresh += 1
             n_pos += npos
             durs.append(dt)
+        elif status == "cached":
+            cached += 1            # .npz already on disk (resume) — not played here
+        elif status == "skipped":
+            skipped += 1           # another box/worker claimed this seed (work-stealing)
         else:
             failed += 1
             print(f"  [seed {seed}] FAILED in {dt:.1f}s: {err}", flush=True)
@@ -495,7 +584,8 @@ def main(argv=None):
             agg[k] += cd.get(k, 0)
 
     wall = time.perf_counter() - t0
-    print(f"\n[done] {fresh} fresh + {failed} failed, {n_pos} positions, {wall:.1f}s wallclock")
+    print(f"\n[done] {fresh} fresh + {cached} cached + {skipped} skipped (other box/worker) "
+          f"+ {failed} failed, {n_pos} positions, {wall:.1f}s wallclock")
     if durs:
         durs_s = sorted(durs)
         print(f"[per-game wallclock @ sims={args.sims}] "
@@ -506,6 +596,15 @@ def main(argv=None):
     # The wiring assertion: the scalar-MLP value path MUST have fired, and it
     # must not be ALL plain-heuristic. (terminal-path leaves are exact-value and
     # legitimately bypass both, so we assert on the non-terminal split.)
+    # SKIP the assertion when no game was actually PLAYED this run (fresh==0): a
+    # resume where the .npz already exist, or a work-stealing box whose peer
+    # claimed every seed first, legitimately fires zero leaves. The wiring is
+    # exercised by whichever box did play.
+    if fresh == 0:
+        print(f"[wiring] no fresh games this run (fresh=0, cached={cached}, "
+              f"skipped={skipped}) — scalar-path assertion skipped (resume / "
+              f"all seeds claimed by a peer box).")
+        return 0 if failed == 0 else 1
     nonterminal = agg["scalar_path"] + agg["plain_path"]
     assert agg["scalar_path"] > 0, (
         f"WIRING FAILURE: scalar_path=0 — the scalar-MLP value NEVER fired "
