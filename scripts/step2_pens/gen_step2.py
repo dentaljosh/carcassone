@@ -186,6 +186,7 @@ def _play_one(args_tuple):
     # i-th 89-vec aligns row-for-row with ds.boards[i] / ds.values[i] (the
     # score_diff_wide target). Reuse the wrapper's leaf_cfg so the cfg is identical.
     pens_feats: list[np.ndarray] = []
+    pens_flip: list[float] = []   # +1 if parent_player==leaf_player else -1 (target -> parent-POV)
 
     def _harvest(parent_board, board, cur_player, ply):
         pens_feats.append(
@@ -193,6 +194,15 @@ def _play_one(args_tuple):
                 _W["game"], board, _W["leaf_cfg"], parent_board
             )
         )
+        # The 89-vec is in PARENT(root)-player POV (extract_step2_features keys to
+        # parent_board.current_player — the build_dataset/+43%-gate convention). The
+        # value_target (score_diff_wide) is in the LEAF current_player POV, so flip
+        # it to PARENT-POV below; else the in-loop retrain learns a mixed-POV mapping
+        # (parent-POV features -> leaf-POV target) that corrupts as blend rises.
+        if parent_board is not None and parent_board.state.current_player != board.state.current_player:
+            pens_flip.append(-1.0)
+        else:
+            pens_flip.append(1.0)
 
     t0 = time.perf_counter()
     try:
@@ -230,7 +240,15 @@ def _play_one(args_tuple):
     if pens_arr.shape[0] != n_traj:
         return (seed, "failed", 0, dt, counters.as_dict(),
                 f"pens/traj misalignment: {pens_arr.shape[0]} feats vs {n_traj} trajectory rows")
-    traj_values = ds.values[:n_traj].astype(np.float32)  # score_diff_wide, current-player POV
+    # score_diff_wide is in the LEAF current-player POV; flip per ply to PARENT
+    # (root)-player POV so it matches the parent-POV 89-vec features + the warmstart
+    # convention (POV FIX 2026-06-30 — else the retrain mixes POVs on flip plies).
+    traj_values = ds.values[:n_traj].astype(np.float32)
+    pov_flip = np.asarray(pens_flip[:n_traj], dtype=np.float32)
+    if pov_flip.shape[0] != traj_values.shape[0]:
+        return (seed, "failed", 0, dt, counters.as_dict(),
+                f"pov_flip/traj misalignment: {pov_flip.shape[0]} vs {traj_values.shape[0]}")
+    traj_values = traj_values * pov_flip
     traj_policies = ds.policies[:n_traj].astype(np.float32)
     pens_path = out_dir / f"seed_{seed:06d}_pens.npz"
     partial = pens_path.with_name(f".{pens_path.stem}.{os.getpid()}.partial.npz")

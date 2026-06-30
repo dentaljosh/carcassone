@@ -407,6 +407,22 @@ def make_step2_value_wrapper(
             v = scalar_mlp(xt)
         return float(v.reshape(-1)[0].item())
 
+    def _v_mlp_leafpov(board, parent_board) -> float:
+        """The MLP value, in the LEAF player-to-move POV.
+
+        POV FIX (2026-06-30): extract_step2_features keys EVERYTHING to the PARENT
+        (root) player's POV — matching build_dataset's oracle_q convention the
+        warmstart MLP was trained under — so `_mlp_value` is a PARENT-POV value.
+        But NeuralMCTS interprets a leaf's value in the LEAF's player-to-move POV
+        (and `h` below is leaf-POV). On the player-flip transitions (MEEPLE->TILES,
+        ~half the tree) parent_player != leaf_player, so the parent-POV MLP value
+        must be NEGATED to become leaf-POV. Without this, the blend mixes h and
+        v_mlp with OPPOSITE signs on ~half the leaves (a real value corruption)."""
+        v = _mlp_value(board, parent_board)
+        if parent_board is not None and parent_board.state.current_player != board.state.current_player:
+            v = -v
+        return v
+
     def wrapped(board, parent_board=None) -> tuple[np.ndarray, float]:
         st = board.state
         priors, _v_unused = base_policy_evaluator(board)
@@ -421,13 +437,12 @@ def make_step2_value_wrapper(
         if dropout_p > 0.0 and _rng.random() < dropout_p:
             counters.dropout_path += 1
             counters.scalar_path += 1
-            return priors, _mlp_value(board, parent_board)
+            return priors, _v_mlp_leafpov(board, parent_board)
 
         h = math.tanh(virtual_score_v2(st, st.current_player, leaf_cfg) / 15.0)
         if blend > 0.0:
             counters.scalar_path += 1
-            v_mlp = _mlp_value(board, parent_board)
-            return priors, (1.0 - blend) * h + blend * v_mlp
+            return priors, (1.0 - blend) * h + blend * _v_mlp_leafpov(board, parent_board)
         counters.plain_path += 1
         return priors, h
 
