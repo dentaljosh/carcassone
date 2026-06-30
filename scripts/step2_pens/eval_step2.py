@@ -111,8 +111,14 @@ def _load_net(ckpt_path, device):
     return net, ns
 
 
-def _build_candidate_mcts(cfg, base_net, game_farm, seed, device):
-    """RoD2-iter02 POLICY net + step2 weaned scalar-MLP VALUE leaf."""
+def _build_candidate_mcts(cfg, base_net, game_farm, seed, device, base_ev=None):
+    """RoD2-iter02 POLICY net + step2 weaned scalar-MLP VALUE leaf.
+
+    `base_ev` (priors source) is injected by the caller: net-on-CPU it's the
+    local policy-only ResNet evaluator (built here when None); under the orch it's
+    a make_remote_single_evaluator over the CANDIDATE's SHM server. Either way the
+    wean wrapper KEEPS its priors and DISCARDS its value (value = the v2.9/MLP
+    wean), so swapping the priors source to the GPU orchestrator is value-neutral."""
     SMLP = _import_scalar_mlp()
     ck = torch.load(cfg["scalar_ckpt"], map_location=device, weights_only=False)
     mlp = SMLP(int(ck["D"]), hidden=int(ck["hidden"]), blocks=int(ck["blocks"])).to(device)
@@ -121,7 +127,8 @@ def _build_candidate_mcts(cfg, base_net, game_farm, seed, device):
     col_mean = np.asarray(ck["col_mean"], np.float32)
     col_std = np.asarray(ck["col_std"], np.float32)
     feat_names = [str(x) for x in ck["feat_names"]]
-    base_ev = make_single_evaluator_policy_only(base_net, device, game_farm)
+    if base_ev is None:
+        base_ev = make_single_evaluator_policy_only(base_net, device, game_farm)
     leaf_cfg = EH._heur_leaf_cfg(2.0)  # v2.9 cfg (hash-checked in main)
     wrapped = step2_leaf.make_step2_value_wrapper(
         base_ev, mlp, col_mean, col_std, feat_names,
@@ -133,22 +140,29 @@ def _build_candidate_mcts(cfg, base_net, game_farm, seed, device):
                       seed=seed, c_puct=CPUCT)
 
 
-def _build_reference_mcts(base_net, game_farm, seed, device, sims):
+def _build_reference_mcts(base_net, game_farm, seed, device, sims, base_ev=None):
     """RoD2 iter_02 plain: net policy + net value, riding the v2.9 leaf VALUE
     (make_v25_value_wrapper with the v2.9 cfg) — RoD2's native substrate.
     Reference runs at the SAME sims as the candidate (MATCHED COMPUTE). BUG-1 fix:
     a hardcoded 200-sim reference vs an N-sim candidate biased the screen by search
-    depth, not value quality (corrupted any non-200-sim eval, e.g. the sims=100 pilot)."""
+    depth, not value quality (corrupted any non-200-sim eval, e.g. the sims=100 pilot).
+
+    `base_ev` (priors source) is injected by the caller: net-on-CPU it's the local
+    ResNet evaluator (built here when None); under the orch it's a
+    make_remote_single_evaluator over the REFERENCE's SHM server. make_v25_value_wrapper
+    keeps its priors and replaces the value with the v2.9 leaf (value_blend=0, so the
+    base value is unused), so the priors-source swap is value-neutral."""
     leaf_cfg = EH._heur_leaf_cfg(2.0)  # v2.9 LeafConfig (DEFAULT_CONFIG already v2.9 via env)
-    base_ev = make_single_evaluator(base_net, device, game_farm)
+    if base_ev is None:
+        base_ev = make_single_evaluator(base_net, device, game_farm)
     leaf = make_v25_value_wrapper(base_ev, leaf_cfg)
     return NeuralMCTS(game=game_farm, evaluator=leaf, simulations=sims,
                       seed=seed, c_puct=CPUCT)
 
 
 class _CandAgent:
-    def __init__(self, cfg, base_net, game_farm, seed, device):
-        self._m = _build_candidate_mcts(cfg, base_net, game_farm, seed, device)
+    def __init__(self, cfg, base_net, game_farm, seed, device, base_ev=None):
+        self._m = _build_candidate_mcts(cfg, base_net, game_farm, seed, device, base_ev=base_ev)
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
@@ -160,8 +174,8 @@ class _CandAgent:
 
 
 class _RefAgent:
-    def __init__(self, base_net, game_farm, seed, device, sims):
-        self._m = _build_reference_mcts(base_net, game_farm, seed, device, sims)
+    def __init__(self, base_net, game_farm, seed, device, sims, base_ev=None):
+        self._m = _build_reference_mcts(base_net, game_farm, seed, device, sims, base_ev=base_ev)
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
@@ -172,20 +186,55 @@ class _RefAgent:
         return int(self._m.best_action(board))
 
 
-def _worker_init(cfg):
+def _worker_init(cfg, id_q_cand=None, id_q_ref=None):
     torch.set_num_threads(1)
-    device = torch.device("cpu")  # net-on-CPU (matches gen_step2; scalar MLP is per-worker)
-    base_net, ns = _load_net(cfg["ckpt"], device)
-    ref_net, _ = _load_net(cfg["ref_ckpt"], device)
+    device = torch.device("cpu")  # values (wean + v2.9 leaf) + scalar MLP stay on CPU
+    orch = bool(cfg.get("shm_cand") and cfg.get("shm_ref"))
+    handles_cand = handles_ref = None
+    base_net = ref_net = None
+    if orch:
+        # POLICY priors for BOTH agents come from their OWN carc-orch SHM server
+        # (GPU-batched forwards on one shared context per net — the fast path that
+        # net-on-CPU was ~85% of eval cost). Two handles in one worker is fine:
+        # connect_shm keys on shm_name (same as v28_net_vs_net_orch). The orch VALUE
+        # is discarded by both value wrappers; only its priors are used. Each agent's
+        # n_scalar must match the net it serves (peeked per-ckpt in main). The id
+        # queues are explicit Pool initargs (raw ctx.Queue, NOT a Manager proxy in
+        # cfg — that proxy died on the spawn workers: ConnectionRefused), mirroring
+        # v28_net_vs_net_orch.
+        from carcassonne_ai.shm_eval_handles import connect_shm
+        wid_cand = id_q_cand.get()
+        wid_ref = id_q_ref.get()
+        handles_cand = connect_shm(cfg["shm_cand"], wid_cand, cfg["ns_cand"])
+        handles_ref = connect_shm(cfg["shm_ref"], wid_ref, cfg["ns_ref"])
+        ns = cfg["ns_cand"]
+    else:
+        base_net, ns = _load_net(cfg["ckpt"], device)
+        ref_net, _ = _load_net(cfg["ref_ckpt"], device)
     _W.update(cfg=cfg, device=device, base_net=base_net, ref_net=ref_net,
               farm=(ns > N_SCALAR_FEATURES), out=cfg["out"],
               shared_claim=cfg["shared_claim"], claim_host=cfg["claim_host"],
-              claim_stale=cfg["claim_stale"])
+              claim_stale=cfg["claim_stale"],
+              orch=orch, handles_cand=handles_cand, handles_ref=handles_ref)
 
 
 def _make_pair(seed):
     cfg = _W["cfg"]
     dev = _W["device"]
+    if _W.get("orch"):
+        # Per-agent Game at the agent's OWN net scalar width; priors come from the
+        # agent's OWN SHM server via a fresh remote evaluator over that Game (the
+        # remote evaluator is cheap and Game-scoped, so build per-game like v28).
+        from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+        farm_cand = cfg["ns_cand"] > N_SCALAR_FEATURES
+        farm_ref = cfg["ns_ref"] > N_SCALAR_FEATURES
+        ga = Game(enable_legal_moves_cache=True, include_farm_scalars=farm_cand)
+        gb = Game(enable_legal_moves_cache=True, include_farm_scalars=farm_ref)
+        ev_cand = make_remote_single_evaluator(_W["handles_cand"], ga)
+        ev_ref = make_remote_single_evaluator(_W["handles_ref"], gb)
+        cand = _CandAgent(cfg, None, ga, seed, dev, base_ev=ev_cand)
+        ref = _RefAgent(None, gb, seed + 1, dev, cfg["sims"], base_ev=ev_ref)
+        return cand, ref
     farm = _W["farm"]
     ga = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
     gb = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
@@ -254,8 +303,23 @@ def main(argv=None):
     ap.add_argument("--shared-claim", action="store_true")
     ap.add_argument("--claim-stale-secs", type=int, default=1800)
     ap.add_argument("--claim-host", default=socket.gethostname())
+    ap.add_argument("--shm-eval-server-cand", default=None,
+                    help="carc-orch SHM server name for the CANDIDATE policy net "
+                         "(GPU-batched priors via the orchestrator — the fast path). "
+                         "Must already be running (eval_step2_orch.sh launches it). "
+                         "Requires --shm-eval-server-ref too; net-on-CPU is the "
+                         "default/fallback when neither is set. The orch VALUE is "
+                         "discarded — the candidate value stays the v2.9/MLP wean.")
+    ap.add_argument("--shm-eval-server-ref", default=None,
+                    help="carc-orch SHM server name for the REFERENCE (RoD2 iter_02) "
+                         "policy net. The orch VALUE is discarded — the reference value "
+                         "stays the in-worker v2.9 leaf (make_v25_value_wrapper).")
     ap.add_argument("--smoke", action="store_true", help="Single-process tiny paired run, print, exit.")
     args = ap.parse_args(argv)
+
+    if bool(args.shm_eval_server_cand) != bool(args.shm_eval_server_ref):
+        ap.error("--shm-eval-server-cand and --shm-eval-server-ref must be set TOGETHER "
+                 "(one SHM server per policy net) or neither (net-on-CPU).")
 
     if args.n % 2 != 0:
         ap.error("--n must be even (paired, both seats per deck)")
@@ -267,6 +331,16 @@ def main(argv=None):
     print(f"[provenance] v2.9 leaf config_hash = {cfg_hash} (frozen v2.9 = {frozen})")
     assert cfg_hash == frozen, f"LEAF NOT v2.9 (got {cfg_hash}, want {frozen})"
 
+    orch = bool(args.shm_eval_server_cand and args.shm_eval_server_ref)
+    ns_cand = ns_ref = None
+    if orch:
+        # Peek each net's scalar width SEPARATELY (the SHM handle + per-agent Game
+        # must match the net the server holds; don't assume the two share a width).
+        ns_cand = int(torch.load(args.ckpt, map_location="cpu", weights_only=False)
+                      .get("n_scalar_features", N_SCALAR_FEATURES))
+        ns_ref = int(torch.load(args.ref_ckpt, map_location="cpu", weights_only=False)
+                     .get("n_scalar_features", N_SCALAR_FEATURES))
+
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     cfg = {
@@ -274,16 +348,26 @@ def main(argv=None):
         "blend": float(args.blend), "dropout": float(args.dropout), "sims": args.sims,
         "out": str(out), "shared_claim": bool(args.shared_claim),
         "claim_host": args.claim_host, "claim_stale": args.claim_stale_secs,
+        "shm_cand": args.shm_eval_server_cand, "shm_ref": args.shm_eval_server_ref,
+        "ns_cand": ns_cand, "ns_ref": ns_ref,
     }
+    path_desc = (f"orch (cand-shm={args.shm_eval_server_cand}, ref-shm={args.shm_eval_server_ref})"
+                 if orch else "net-on-CPU")
     print(f"[eval] step2 candidate (policy={Path(args.ckpt).name} + scalar="
           f"{Path(args.scalar_ckpt).name}, blend={args.blend} dropout={args.dropout} "
           f"sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, v2.9-leaf @{args.sims}) "
-          f"| paired n={args.n}", flush=True)
+          f"| paired n={args.n} | priors via {path_desc}", flush=True)
 
     work = EH._build_work(args.seed_start, args.n, paired=True)
 
     if args.smoke:
-        _worker_init(cfg)
+        qc = qr = None
+        if orch:
+            # Single-process smoke: one worker_id per server (the worker pops 0).
+            ctx0 = get_context("spawn")
+            qc, qr = ctx0.Queue(), ctx0.Queue()
+            qc.put(0); qr.put(0)
+        _worker_init(cfg, qc, qr)
         res = [r for a in work[:4] if (r := _play_one(a)) is not None]
         for r in res:
             print(f"[smoke] seed={r.seed} a_seat={r.a_seat} scores={r.score_p0}-{r.score_p1} "
@@ -295,13 +379,24 @@ def main(argv=None):
 
     workers = args.workers or min(os.cpu_count() or 1, len(work))
     todo = [w for w in work if not EH._result_path(out, w[0], w[1]).exists()]
-    print(f"  {len(work)-len(todo)} cached, {len(todo)} to play, {workers} workers (net-on-CPU)",
-          flush=True)
+    print(f"  {len(work)-len(todo)} cached, {len(todo)} to play, {workers} workers "
+          f"({path_desc})", flush=True)
     results = []
     if todo:
         ctx = get_context("spawn")
+        # The orch path keys each worker's SHM handle on a unique worker_id PER SERVER.
+        # A raw ctx.Queue per server, pre-filled 0..W-1, hands each worker one id at
+        # init via explicit Pool initargs (NOT a Manager proxy smuggled through cfg —
+        # that proxy was unreachable from the spawn workers: ConnectionRefused).
+        # Mirrors v28_net_vs_net_orch. No-op for net-on-CPU (queues are None).
+        init_args = (cfg, None, None)
+        if orch:
+            id_q_cand, id_q_ref = ctx.Queue(), ctx.Queue()
+            for w in range(max(1, workers)):
+                id_q_cand.put(w); id_q_ref.put(w)
+            init_args = (cfg, id_q_cand, id_q_ref)
         t0 = time.perf_counter()
-        with ctx.Pool(processes=workers, initializer=_worker_init, initargs=(cfg,)) as pool:
+        with ctx.Pool(processes=workers, initializer=_worker_init, initargs=init_args) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
@@ -323,7 +418,10 @@ def main(argv=None):
     if results:
         summ = EH._summary(results, "step2_candidate", "rod2_iter02")
         summ.update({"blend": args.blend, "dropout": args.dropout, "sims": args.sims,
-                     "scalar_ckpt": args.scalar_ckpt, "ckpt": args.ckpt, "ref_ckpt": args.ref_ckpt})
+                     "scalar_ckpt": args.scalar_ckpt, "ckpt": args.ckpt, "ref_ckpt": args.ref_ckpt,
+                     "priors": ("orch" if orch else "net-on-cpu"),
+                     "shm_eval_server_cand": args.shm_eval_server_cand,
+                     "shm_eval_server_ref": args.shm_eval_server_ref})
         json.dump(summ, open(out / "summary.json", "w"), indent=2)
         print(f"[done] summary -> {out/'summary.json'}", flush=True)
     return 0
