@@ -277,7 +277,7 @@ def main(argv=None):
     }
     print(f"[eval] step2 candidate (policy={Path(args.ckpt).name} + scalar="
           f"{Path(args.scalar_ckpt).name}, blend={args.blend} dropout={args.dropout} "
-          f"sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, v2.9-leaf @200) "
+          f"sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, v2.9-leaf @{args.sims}) "
           f"| paired n={args.n}", flush=True)
 
     work = EH._build_work(args.seed_start, args.n, paired=True)
