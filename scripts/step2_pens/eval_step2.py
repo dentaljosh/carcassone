@@ -243,18 +243,14 @@ def _make_pair(seed):
     return cand, ref
 
 
-def _play_one(args):
-    seed, a_seat = args
+def _play_seat(seed, a_seat):
+    """Play ONE seat of a deck (candidate in seat a_seat) and persist its result
+    JSON. Returns the GameResult (or a cached one if the JSON already exists)."""
     out = Path(_W["out"])
     p = EH._result_path(out, seed, a_seat)
     cached = EH._try_load(p)
     if cached is not None:
         return cached
-    if _W.get("shared_claim"):
-        from carcassonne_ai.claim import try_claim as _try_claim
-        if not _try_claim(p.with_suffix(".claim"), _W["claim_host"], _W["claim_stale"]):
-            return None
-
     import random
     random.seed(seed)
     game = Game(enable_legal_moves_cache=True)
@@ -288,6 +284,47 @@ def _play_one(args):
     return r
 
 
+def _play_one(args):
+    """Pool entry. The work unit is one (seed, a_seat) pair, but claiming is at
+    DECK granularity (whole pair as a unit) so the two seats of a deck always land
+    on the SAME box — PAIRING PRESERVED, no split-deck (one seat on local + the
+    other on the laptop) and no same-box double-play.
+
+    On the FIRST seat-unit of a deck that this box wins, the worker atomically
+    claims seed_NNNNNNNNNN.deckclaim and plays BOTH seats right here, persisting
+    both result JSONs; the partner seat-unit then resolves to cached (or is swept
+    by main's final cached-gather). A peer box that lost the deckclaim skips BOTH
+    its seat-units. The .npz/.json atomic write stays the real done-marker; the
+    .deckclaim is the best-effort cross-box lock (carcassonne_ai.claim). The
+    paired-z is statistically unchanged — pairing is per-deck either way — but the
+    whole-deck claim keeps the pair physically co-located (no orphaned half-deck if
+    a box dies mid-pair)."""
+    seed, a_seat = args
+    out = Path(_W["out"])
+    p = EH._result_path(out, seed, a_seat)
+    cached = EH._try_load(p)
+    if cached is not None:
+        return cached
+    if not _W.get("shared_claim"):
+        # Legacy single-box behaviour: play just this seat.
+        return _play_seat(seed, a_seat)
+
+    from carcassonne_ai.claim import try_claim as _try_claim
+    deckclaim = out / f"seed{seed:010d}.deckclaim"
+    if not _try_claim(deckclaim, _W["claim_host"], _W["claim_stale"]):
+        # A peer box (or a sibling worker on THIS box) already owns the deck.
+        # The owner plays BOTH seats, so we skip this seat-unit entirely; the
+        # owner's JSON is the result. (Same-box sibling: harmless — the owner is
+        # one of our own workers and will write both JSONs.)
+        return None
+    # We own the whole deck — play BOTH seats here (atomic per-deck), so the pair
+    # never splits and the partner seat-unit later returns cached.
+    r0 = _play_seat(seed, 0)
+    r1 = _play_seat(seed, 1)
+    # Return THIS work-unit's seat; the partner lands via main's cached-gather.
+    return r0 if a_seat == 0 else r1
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="eval_step2")
     ap.add_argument("--ckpt", required=True, help="Candidate base POLICY net (RoD2 iter_02 by default lineage).")
@@ -315,6 +352,11 @@ def main(argv=None):
                          "policy net. The orch VALUE is discarded — the reference value "
                          "stays the in-worker v2.9 leaf (make_v25_value_wrapper).")
     ap.add_argument("--smoke", action="store_true", help="Single-process tiny paired run, print, exit.")
+    ap.add_argument("--summarize-only", action="store_true",
+                    help="Skip ALL play (and the orch). Gather every per-game result "
+                         "JSON already on disk in --out and (re)write summary.json. "
+                         "Used by the 2-box launcher post-drain to fold the laptop's "
+                         "decks into the paired-z without re-launching the orchestrator.")
     args = ap.parse_args(argv)
 
     if bool(args.shm_eval_server_cand) != bool(args.shm_eval_server_ref):
@@ -330,6 +372,31 @@ def main(argv=None):
     frozen = step2_leaf._bd.FROZEN_V29_HASH
     print(f"[provenance] v2.9 leaf config_hash = {cfg_hash} (frozen v2.9 = {frozen})")
     assert cfg_hash == frozen, f"LEAF NOT v2.9 (got {cfg_hash}, want {frozen})"
+
+    # --summarize-only: gather every result JSON on disk and (re)write summary.json,
+    # no play, no orch. The launcher's 2-box eval drain uses this to fold the laptop's
+    # claimed decks into the paired-z cheaply (the per-game JSONs from both boxes land
+    # in the shared --out; pairing is per-deck so the paired-z is exact over whatever
+    # decks completed both seats).
+    if args.summarize_only:
+        out = Path(args.out)
+        work = EH._build_work(args.seed_start, args.n, paired=True)
+        results = []
+        for w in work:
+            p = EH._result_path(out, w[0], w[1])
+            c = EH._try_load(p)
+            if c is not None:
+                results.append(c)
+        if results:
+            summ = EH._summary(results, "step2_candidate", "rod2_iter02")
+            summ.update({"blend": args.blend, "dropout": args.dropout, "sims": args.sims,
+                         "scalar_ckpt": args.scalar_ckpt, "ckpt": args.ckpt,
+                         "ref_ckpt": args.ref_ckpt, "priors": "summarize-only"})
+            json.dump(summ, open(out / "summary.json", "w"), indent=2)
+            print(f"[summarize-only] {len(results)} result JSONs -> {out/'summary.json'}", flush=True)
+        else:
+            print(f"[summarize-only] no result JSONs found in {out} — nothing to summarize", flush=True)
+        return 0
 
     orch = bool(args.shm_eval_server_cand and args.shm_eval_server_ref)
     ns_cand = ns_ref = None
@@ -379,6 +446,46 @@ def main(argv=None):
 
     workers = args.workers or min(os.cpu_count() or 1, len(work))
     todo = [w for w in work if not EH._result_path(out, w[0], w[1]).exists()]
+    if args.shared_claim:
+        # ORPHAN-CLAIM SWEEP (feedback_shared_claim_orphan_stall): a killed
+        # --shared-claim eval strands seed_*.deckclaim files with no resulting
+        # result JSON. On (re)start a stranded fresh deckclaim would keep every box
+        # from re-playing that deck -> the run stalls below n. Sweep deckclaims with
+        # NEITHER seat's JSON on disk whose mtime is older than --claim-stale-secs
+        # (the same age try_claim judges abandonment by). A completed deck's claim is
+        # harmless and left alone.
+        from carcassonne_ai.claim import is_stale as _claim_is_stale
+        swept = 0
+        for seed in {w[0] for w in work}:
+            j0 = EH._result_path(out, seed, 0)
+            j1 = EH._result_path(out, seed, 1)
+            dc = out / f"seed{seed:010d}.deckclaim"
+            if j0.exists() or j1.exists():
+                continue
+            if dc.exists() and _claim_is_stale(dc, args.claim_stale_secs):
+                # Atomic rename-aside, NOT unlink (mirrors claim.try_claim's
+                # stale-recovery): among multiple boxes sweeping the same shared
+                # dir on resume, only ONE rename of a given source wins; the rest
+                # get FileNotFoundError (caught). A bare unlink is not race-safe —
+                # two sweepers + the .claim being best-effort (the result-JSON
+                # rename-into-place is the correctness layer) means the worst case
+                # here is a deck replayed = wasted compute, never a split/double-
+                # counted pair. See feedback_shared_claim_orphan_stall.
+                try:
+                    dc.rename(dc.with_suffix(".swept")); swept += 1
+                except OSError:
+                    pass  # peer already recovered it (rename lost the race)
+        if swept:
+            print(f"  orphan-claim sweep: removed {swept} stale .deckclaim(s) with no "
+                  f"result JSON (re-claimable now).", flush=True)
+        # Each box walks the work list in its OWN order (keyed by claim-host) so the
+        # boxes start claiming decks from different regions — avoids a startup burst
+        # of every worker racing the same low seeds (gen_step2 / run_selfplay_iter
+        # pattern). Combined with warm-laptop-first this load-balances the deck pool.
+        import random as _r
+        _r.Random(__import__("zlib").crc32(args.claim_host.encode())).shuffle(todo)
+        print(f"  WORK-STEALING (--shared-claim, whole-deck) host={args.claim_host} "
+              f"stale_secs={args.claim_stale_secs} -> shared OUT {out}", flush=True)
     print(f"  {len(work)-len(todo)} cached, {len(todo)} to play, {workers} workers "
           f"({path_desc})", flush=True)
     results = []

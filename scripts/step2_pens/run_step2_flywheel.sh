@@ -37,9 +37,13 @@
 # MEASUREMENT/EXPLORATORY: NO promotion, PRODUCTION.yaml untouched, champion
 # unchanged, v2.7/v2.9 FROZEN. Authorized by Joshua (Step-2 PeNS directive).
 #
-# Launch (detached, real run):
+# Launch (detached, real run — arm B', 2-box, BENCHED W 2026-06-30):
+#   TAG=step2_pens_armBprime VALUE_OBJECTIVE=ranking USE_LAPTOP=1 \
+#   OW_LOCAL=24 OW_LAPTOP=12 EVAL_OW_LOCAL=40 EVAL_OW_LAPTOP=12 \
 #   ARM=B nohup nice -n 19 bash scripts/step2_pens/run_step2_flywheel.sh \
-#       > /tmp/step2_flywheel_B.log 2>&1 & disown
+#       > /tmp/step2_flywheel_Bprime.log 2>&1 & disown
+#   (env seeds $OUT/run_config.env on FIRST launch; thereafter EDIT run_config.env
+#    between stages to tune — no kill/restart needed. See the knob-surface block.)
 #
 # End-to-end firewall (1 iter, 8 games, sims 50, LOCAL-ONLY):
 #   bash scripts/step2_pens/run_step2_flywheel.sh --smoke
@@ -95,14 +99,20 @@ SP_BASE=${SP_BASE:-570000000}
 # way (chain continues on failure).
 USE_ORCH_EVAL=${USE_ORCH_EVAL:-1}
 
-# --- per-box gen worker counts (orch high-W; RE-BENCH before trusting: the
-#     89-feature scalar-value path is CPU-bound per worker and is a code-era change
-#     vs the v29 residual bench — feedback_worker_count_by_bottleneck. The local 28
-#     is the orch-verdict single-context optimum; the laptop's mobile 4070m is
-#     weaker (10 here, in the 8-12 band; verify with loadavg/throughput). ---
-OW_LOCAL=${OW_LOCAL:-28}
-OW_LAPTOP=${OW_LAPTOP:-10}
-USE_LAPTOP=${USE_LAPTOP:-1}     # 2-box work-stealing if gen_step2 has --shared-claim + laptop reachable
+# --- per-box GEN + EVAL worker counts (orch high-W). BENCHED 2026-06-30 on the
+#     step2 ranking-objective path (sims=100 gen + --emit-ranking-groups; 2-server
+#     orch eval) — these are the MEASURED optima, NOT the v29-residual figures.
+#     GEN local: ranking emission (record_boards + per-root sibling extraction) is
+#     CPU-heavy, so the throughput-optimal W is LOWER than the v29 gen-28 and well
+#     under 42GB. GEN laptop: 11GB WSL RAM + 8GB GPU caps it. EVAL: heavy 89-feat
+#     scalar value on 32/24 threads + TWO orch contexts on one GPU.
+#     (feedback_worker_count_by_bottleneck — re-bench after any code-era change.) ---
+OW_LOCAL=${OW_LOCAL:-24}        # gen, local 5900XT — BENCHED 2026-06-30: 24=5.91 g/min peak (20=4.91, 28=5.80, 36=2.91 craters); CPU-bound, RAM never binds (15.8GB@24)
+OW_LAPTOP=${OW_LAPTOP:-12}      # gen, laptop — BENCHED: 12=4.38 g/min, 8.96GB peak / 4.94GB free (W16 risks OOM on 11GB WSL)
+EVAL_OW_LOCAL=${EVAL_OW_LOCAL:-40}    # eval, local — BENCHED 2026-06-30: 40=8.70 g/min peak (28=7.16, 48=8.51); 21.5GB@40, scales higher than gen (orch keeps workers fed)
+EVAL_OW_LAPTOP=${EVAL_OW_LAPTOP:-12}  # eval, laptop — BENCHED: 12=5.24 g/min, 7.64GB peak / 5.09GB free
+USE_LAPTOP=${USE_LAPTOP:-1}     # 2-box work-stealing (gen AND eval) if --shared-claim + laptop reachable
+LAPTOP_WARM_SECS=${LAPTOP_WARM_SECS:-45}  # claim-balance: warm the laptop's orch+workers this long BEFORE local starts claiming, so both race fairly (else local-warm+higher-W starves the laptop)
 
 # --- in-loop VALUE objective: 'mse' (default = the cratering run, reproducible)
 #     or 'ranking' (arm B': per-group ListNet over the in-loop sibling groups'
@@ -149,6 +159,64 @@ cd "$REPO_LOCAL" || { echo "FATAL: cannot cd $REPO_LOCAL" >&2; exit 1; }
 [ -s "$SEED_POLICY" ] || { echo "FATAL: seed policy missing: $SEED_POLICY" >&2; exit 1; }
 [ -s "$SEED_SCALAR" ] || { echo "FATAL: seed scalar missing: $SEED_SCALAR" >&2; exit 1; }
 [ -s "$REF_CKPT" ]    || { echo "FATAL: eval reference missing: $REF_CKPT" >&2; exit 1; }
+
+# ============================================================================
+# LIVE-TUNABLE KNOB SURFACE — $OUT/run_config.env
+# ----------------------------------------------------------------------------
+# The recurring pain was config being env-baked at launch: changing one knob
+# (e.g. a worker count, or a blend schedule entry) meant kill + restart the whole
+# run. Fix: at launch we WRITE the tunable knobs to $OUT/run_config.env (seeded
+# from the launch-time env on FIRST write; an existing run_config.env is NOT
+# clobbered on resume). Every stage (gen / train-policy / train-value / eval) of
+# every iter RE-SOURCES this file FRESH at its start (_load_run_config), so the
+# value each stage uses is read live, not from the launch env. So you can edit
+# $OUT/run_config.env between stages — or kill, edit, relaunch (the per-stage
+# done-markers under $OUT/done make finished stages resume-skip) — and the NEXT
+# stage picks up the change WITHOUT redoing finished work.
+#
+# *** $OUT/run_config.env IS THE LIVE KNOB SURFACE — edit it, don't edit this
+#     script for a running flywheel. ***
+# Knobs: OW_LOCAL OW_LAPTOP EVAL_OW_LOCAL EVAL_OW_LAPTOP USE_LAPTOP GAMES SIMS
+#        EVAL_N VALUE_OBJECTIVE LAPTOP_WARM_SECS BLEND_SCHED[] DROPOUT_SCHED[].
+# (ITERS/ARM/TAG/seed ckpts are launch-fixed structural choices — NOT re-sourced.)
+# ============================================================================
+RUN_CONFIG="$OUT/run_config.env"
+_write_run_config_seed() {
+  # First-write only: seed run_config.env from the launch-time env. Never clobber
+  # an existing one (resume / between-stage edits must survive).
+  [ -f "$RUN_CONFIG" ] && { echo "  run_config.env exists — NOT clobbered (live-tunable; resume)"; return; }
+  {
+    echo "# Step-2 flywheel LIVE-TUNABLE knobs (re-sourced at the start of every stage)."
+    echo "# Edit between stages (or kill->edit->relaunch); finished stages resume-skip via \$OUT/done."
+    echo "# Seeded from the launch env @ $(date -u +%Y-%m-%dT%H:%M:%SZ). TAG=$TAG ARM=$ARM."
+    echo "OW_LOCAL=$OW_LOCAL"
+    echo "OW_LAPTOP=$OW_LAPTOP"
+    echo "EVAL_OW_LOCAL=$EVAL_OW_LOCAL"
+    echo "EVAL_OW_LAPTOP=$EVAL_OW_LAPTOP"
+    echo "USE_LAPTOP=$USE_LAPTOP"
+    echo "LAPTOP_WARM_SECS=$LAPTOP_WARM_SECS"
+    echo "GAMES=$GAMES"
+    echo "SIMS=$SIMS"
+    echo "EVAL_N=$EVAL_N"
+    echo "VALUE_OBJECTIVE=$VALUE_OBJECTIVE"
+    echo "EPOCHS_POLICY=$EPOCHS_POLICY"
+    echo "EPOCHS_VALUE=$EPOCHS_VALUE"
+    echo "BATCH=$BATCH"
+    echo "VLW=$VLW"
+    # Schedules as bash array literals so re-source restores them verbatim.
+    printf 'BLEND_SCHED=('; printf '%s ' "${BLEND_SCHED[@]}"; printf ')\n'
+    printf 'DROPOUT_SCHED=('; printf '%s ' "${DROPOUT_SCHED[@]}"; printf ')\n'
+  } > "$RUN_CONFIG"
+  echo "  wrote live-tunable knob surface -> $RUN_CONFIG"
+}
+_load_run_config() {
+  # Re-source the live knob surface at the start of a stage so edits between
+  # stages take effect. Sourced in the CURRENT shell (updates OW_LOCAL etc.).
+  [ -f "$RUN_CONFIG" ] || return 0
+  # shellcheck disable=SC1090
+  source "$RUN_CONFIG"
+}
+_write_run_config_seed
 
 # ----------------------------------------------------------------------------
 _status() {
@@ -214,12 +282,27 @@ if [ "$USE_LAPTOP" = 1 ]; then
         "git -C $REPO_LAPTOP fetch $SHARE_REMOTE/code_sync/carc_${BRANCH}.bundle $BRANCH && git -C $REPO_LAPTOP reset --hard FETCH_HEAD" \
         </dev/null >/dev/null 2>&1; then
     LAPTOP_OK=1
-    echo "  bundle tip: $(git rev-parse --short "$BRANCH") — laptop synced; 2-box work-stealing gen ENABLED"
+    echo "  bundle tip: $(git rev-parse --short "$BRANCH") — laptop synced; 2-box work-stealing (gen+eval) ENABLED"
   else
     echo "  WARN: laptop sync FAILED — LOCAL-ONLY gen"
   fi
 fi
-echo "    cluster mode: $([ "$LAPTOP_OK" = 1 ] && echo "2-box (local W$OW_LOCAL + laptop W$OW_LAPTOP, work-stealing)" || echo "LOCAL-ONLY (local W$OW_LOCAL)")"
+
+# Stage the SEED scalar onto the share so the laptop can read it for iter-1 gen.
+# (The seed scalar lives in local $HOME — /home/doctor/carc_step2_pens/warmstart/
+# warmstart.pt — NOT under the share, so the path-rewrite in _gen_launch_laptop
+# can't reach it. From iter 2+ the scalar is $OUT/ckpt_scalar/*.pt — already on the
+# share. Copy once so the laptop's iter-1 gen finds it.) Result ckpts (policy +
+# scalar) the eval reads also live under $OUT (share) — no extra staging there.
+SEED_SCALAR_SHARE="$OUT/ckpt_scalar/seed_scalar.pt"
+if [ "$LAPTOP_OK" = 1 ]; then
+  if [ ! -s "$SEED_SCALAR_SHARE" ] || [ "$SEED_SCALAR" -nt "$SEED_SCALAR_SHARE" ]; then
+    cp -f "$SEED_SCALAR" "$SEED_SCALAR_SHARE" 2>/dev/null \
+      && echo "  staged seed scalar -> $SEED_SCALAR_SHARE (laptop iter-1 gen)" \
+      || echo "  WARN: could not stage seed scalar to share — laptop iter-1 gen may fail to find it"
+  fi
+fi
+echo "    cluster mode: $([ "$LAPTOP_OK" = 1 ] && echo "2-box (gen: local W$OW_LOCAL + laptop W$OW_LAPTOP; eval: local W$EVAL_OW_LOCAL + laptop W$EVAL_OW_LAPTOP; work-stealing)" || echo "LOCAL-ONLY (gen W$OW_LOCAL / eval W$EVAL_OW_LOCAL)")"
 
 _status "RUNNING" "Starting iter 1 (arm $ARM). No iteration completed yet."
 
@@ -251,7 +334,15 @@ _gen_launch_laptop() {
   # reads the SAME warm policy/scalar and writes its .npz into the SAME OUT/iter
   # dir the local box is claiming against (one shared dir, atomic .claim arbitration).
   local polr=${pol/$SHARE_LOCAL/$SHARE_REMOTE} odr=${od/$SHARE_LOCAL/$SHARE_REMOTE}
-  local scar=${sca/$SHARE_LOCAL/$SHARE_REMOTE}
+  # Resolve the scalar to a SHARE-visible path for the laptop: if it's already
+  # under the share, rewrite the mount; else it's the local-$HOME seed scalar (not
+  # on the share) -> use the staged share copy ($OUT/ckpt_scalar/seed_scalar.pt).
+  local scar
+  if [ "${sca#"$SHARE_LOCAL"}" != "$sca" ]; then
+    scar=${sca/$SHARE_LOCAL/$SHARE_REMOTE}
+  else
+    scar=${SEED_SCALAR_SHARE/$SHARE_LOCAL/$SHARE_REMOTE}
+  fi
   local rank_flag=""
   [ "$VALUE_OBJECTIVE" = "ranking" ] && rank_flag="--emit-ranking-groups"
   # The laptop runs its OWN carc-orch on its GPU via gen_step2_orch.sh (net-on-CPU
@@ -268,10 +359,43 @@ _gen_launch_laptop() {
     </dev/null >/dev/null 2>&1 || true
 }
 
+# Launch the laptop's EVAL (its OWN cand+ref carc-orch servers via eval_step2_orch.sh,
+# --shared-claim --claim-host laptop, writing per-game JSON into the SAME shared eval
+# OUT the local box claims against). $1=cand_ckpt $2=ref_ckpt $3=scalar_ckpt $4=blend
+# $5=dropout $6=n $7=sims $8=seed_start $9=eval_out_dir
+_eval_launch_laptop() {
+  local cand="$1" ref="$2" sca="$3" bl="$4" dr="$5" n="$6" sims="$7" ss="$8" od="$9"
+  # Rewrite share-local paths to the laptop's share mount. Cand/ref/scalar all live
+  # under $OUT or the RoD2 share dir (both under $SHARE_LOCAL) — rewrite reaches them.
+  local candr=${cand/$SHARE_LOCAL/$SHARE_REMOTE} refr=${ref/$SHARE_LOCAL/$SHARE_REMOTE}
+  local odr=${od/$SHARE_LOCAL/$SHARE_REMOTE}
+  local scar
+  if [ "${sca#"$SHARE_LOCAL"}" != "$sca" ]; then
+    scar=${sca/$SHARE_LOCAL/$SHARE_REMOTE}
+  else
+    scar=${SEED_SCALAR_SHARE/$SHARE_LOCAL/$SHARE_REMOTE}
+  fi
+  # eval_step2_orch.sh self-cd's to its REPO; absolute-path invocation is path-stable
+  # (SSH cd-strip rule). Contract via env in front of the remote command; the eval
+  # flags (incl --shared-claim --claim-host laptop) ride "$@" of the orch script into
+  # eval_step2.py. setsid + </dev/null detaches (Mac-sleep/WSL-teardown SIGHUP-safe).
+  # The CALLER backgrounds this ssh so a hung laptop never starves local; a timeout-124
+  # means LAUNCHED (feedback_wsl_ssh_launch_pkill_traps) — never retry. The laptop runs
+  # the SAME n/seed-start range against the SAME shared eval OUT -> whole-deck claim
+  # arbitration load-balances the deck pool (pairing per-deck -> paired-z unchanged).
+  timeout 45 ssh -o ConnectTimeout=20 "$LAPTOP_SSH" \
+    "setsid env CAND_CKPT=$candr REF_CKPT=$refr SCALAR=$scar OW=$EVAL_OW_LAPTOP SIMS=$sims N=$n BLEND=$bl DROPOUT=$dr SEED_START=$ss OUT=$odr HOST=laptop nice -n 19 bash $REPO_LAPTOP/scripts/step2_pens/eval_step2_orch.sh --shared-claim --claim-host laptop > /tmp/step2_eval_laptop.log 2>&1 </dev/null &" \
+    </dev/null >/dev/null 2>&1 || true
+}
+
 COMPLETED=0
 for it in $(seq 1 "$ITERS"); do
   if [ -f "$OUT/done/iter$it" ]; then echo "[it$it] already complete — skip"; COMPLETED=$((COMPLETED+1)); continue; fi
 
+  # Re-source the live knob surface at the TOP of the iter (covers the gen stage +
+  # the per-iter blend/dropout/seed derivation below). Each subsequent stage
+  # re-sources again so a between-stage edit is picked up.
+  _load_run_config
   BLEND=${BLEND_SCHED[$((it-1))]}
   DROPOUT=${DROPOUT_SCHED[$((it-1))]}
   if [ "$it" -eq 1 ]; then
@@ -297,12 +421,21 @@ for it in $(seq 1 "$ITERS"); do
     mkdir -p "$DATA/iter_00"
     echo "[it$it] gen -> $DATA/iter_00 @ $(date)"
     _kill_gen; sleep 1
-    # 2-box work-stealing: BACKGROUND the laptop ssh launch FIRST (so a hung/flaky
-    # laptop can't starve the local arm — feedback_background_remote_launches_in_loop),
-    # then run the local arm in the FOREGROUND. Both --shared-claim against the SAME
-    # OUT/iter_00; each seed goes to whichever box claims it first (no double-play).
-    # The local arm's exit gates the iter — it NEVER blocks on the laptop.
-    [ "$LAPTOP_OK" = 1 ] && _gen_launch_laptop "$it" "$SP_SEED" "$PREV_POLICY" "$PREV_SCALAR" "$BLEND" "$DROPOUT" "$DATA/iter_00" &
+    # 2-box work-stealing with CLAIM-BALANCE (warm-laptop-first): BACKGROUND the
+    # laptop ssh launch FIRST (so a hung/flaky laptop can't starve the local arm —
+    # feedback_background_remote_launches_in_loop), then WARM-WAIT LAPTOP_WARM_SECS
+    # so the laptop's orch + workers are up and CLAIMING before the local box (warm
+    # + higher-W) starts — else local wins every early claim race and the laptop is
+    # starved to ~0 (the bug this rework fixes). Then run the local arm in the
+    # FOREGROUND. Both --shared-claim against the SAME OUT/iter_00; each seed goes to
+    # whichever box claims it first (no double-play). The local arm's exit gates the
+    # iter — it NEVER blocks on the laptop. Dynamic load-balancing is preserved (both
+    # race the shared pool); the warm-wait only removes local's cold-start head start.
+    if [ "$LAPTOP_OK" = 1 ]; then
+      _gen_launch_laptop "$it" "$SP_SEED" "$PREV_POLICY" "$PREV_SCALAR" "$BLEND" "$DROPOUT" "$DATA/iter_00" &
+      echo "[it$it] gen: laptop launched (W$OW_LAPTOP) — warming ${LAPTOP_WARM_SECS}s before local starts claiming"
+      sleep "$LAPTOP_WARM_SECS"   # allow-sleep (claim-balance warm-wait; bounded, deliberate)
+    fi
     _gen_launch_local "$it" "$SP_SEED" "$PREV_POLICY" "$PREV_SCALAR" "$BLEND" "$DROPOUT" "$DATA/iter_00"
     GEN_RC=$?
     # In 2-box mode the local pool can DRAIN (all seeds claimed) while the laptop is
@@ -325,7 +458,7 @@ for it in $(seq 1 "$ITERS"); do
       done
     fi
     _kill_gen; sleep 1
-    GEN_NPZ=$(ls "$DATA"/iter_00/seed_*.npz 2>/dev/null | wc -l)
+    GEN_NPZ=$(ls "$DATA"/iter_00/seed_*.npz 2>/dev/null | grep -cvE '_pens\.npz$|_rank\.npz$')
     if [ "$GEN_RC" != 0 ] || [ "$GEN_NPZ" -lt 1 ]; then
       echo "[it$it] GEN FAILED (rc=$GEN_RC, npz=$GEN_NPZ) — halting" >&2
       tail -25 "$OUT/logs/gen_local_it${it}.log" >&2
@@ -353,6 +486,7 @@ for it in $(seq 1 "$ITERS"); do
   GEN_SEC=$(( $(date +%s) - GEN_T0 ))
 
   # ---- 2. TRAIN POLICY (train_iter.py, v2.9 leaf env) ----
+  _load_run_config   # re-source live knobs (VLW/BATCH/EPOCHS_POLICY) at stage start
   _status "RUNNING" "iter $it — gen done ($GEN_NPZ npz). Stage: train-policy. Completed: $COMPLETED."
   TRP_T0=$(date +%s)
   if [ ! -f "$POLICY_CKPT" ]; then
@@ -374,6 +508,7 @@ for it in $(seq 1 "$ITERS"); do
   TRP_SEC=$(( $(date +%s) - TRP_T0 ))
 
   # ---- 3. TRAIN VALUE (train_value_iter.py — scalar MLP, MSE, fixed norm) ----
+  _load_run_config   # re-source live knobs (EPOCHS_VALUE/VALUE_OBJECTIVE) at stage start
   _status "RUNNING" "iter $it — policy done. Stage: train-value. Completed: $COMPLETED."
   TRV_T0=$(date +%s)
   if [ ! -f "$SCALAR_CKPT" ]; then
@@ -395,10 +530,14 @@ for it in $(seq 1 "$ITERS"); do
   fi
   TRV_SEC=$(( $(date +%s) - TRV_T0 ))
 
-  # ---- 4. EVAL (eval_step2.py — cheap paired screen vs RoD2 iter_02) ----
+  # ---- 4. EVAL (eval_step2.py — paired screen vs RoD2 iter_02) ----
+  # Applies EVAL_OW_LOCAL/EVAL_OW_LAPTOP + the 2-box laptop eval + claim-balance
+  # from iter 1 onward (no iter-1 special-case). Re-source the live knobs first.
+  _load_run_config
   _status "RUNNING" "iter $it — value done. Stage: eval. Completed: $COMPLETED."
   EV_T0=$(date +%s)
   EV_SEED_START=$(( 5715000000 + it*1000000 ))
+  EVAL_OUT="$OUT/eval/iter_${cc}"
   if [ "$USE_ORCH_EVAL" = 1 ]; then
     echo "[it$it] eval (ORCH 2-server screen) blend=$BLEND vs RoD2 iter_02, paired n=$EVAL_N @ sims=$SIMS @ $(date)"
     # eval_step2_orch.sh: 2 carc-orch SHM servers (cand + ref) batch BOTH policy
@@ -407,19 +546,63 @@ for it in $(seq 1 "$ITERS"); do
     # _kill_gen first so any prior carc-orch on this box is gone (the eval starts
     # its OWN servers with host-scoped shm-names).
     _kill_gen; sleep 1
+    # 2-box eval with CLAIM-BALANCE (warm-laptop-first), mirroring gen: WARM-LAUNCH
+    # the laptop's eval (its own cand+ref orch servers, --shared-claim --claim-host
+    # laptop, into the SAME shared EVAL_OUT) FIRST, warm-wait, then run the local
+    # eval (--shared-claim --claim-host 5800x). Whole-deck claim arbitration splits
+    # the n paired decks across boxes; paired-z is per-deck so it's statistically
+    # unchanged. LOCAL-ONLY keeps the lean non-claim path. The laptop ssh is
+    # backgrounded so a hung laptop never starves local; local's exit + drain gates.
+    local_claim=""   # plain var (not 'local' — we're in the main loop, not a function)
+    if [ "$LAPTOP_OK" = 1 ]; then
+      local_claim="--shared-claim --claim-host 5800x"
+      _eval_launch_laptop "$POLICY_CKPT" "$REF_CKPT" "$SCALAR_CKPT" "$BLEND" "$DROPOUT" \
+        "$EVAL_N" "$SIMS" "$EV_SEED_START" "$EVAL_OUT" &
+      echo "[it$it] eval: laptop launched (W$EVAL_OW_LAPTOP) — warming ${LAPTOP_WARM_SECS}s before local starts claiming"
+      sleep "$LAPTOP_WARM_SECS"   # allow-sleep (claim-balance warm-wait; bounded, deliberate)
+    fi
+    # shellcheck disable=SC2086
     CAND_CKPT="$POLICY_CKPT" REF_CKPT="$REF_CKPT" SCALAR="$SCALAR_CKPT" \
-      OW="$OW_LOCAL" SIMS="$SIMS" N="$EVAL_N" BLEND="$BLEND" DROPOUT="$DROPOUT" \
-      SEED_START="$EV_SEED_START" OUT="$OUT/eval/iter_${cc}" \
-      nice -n 19 bash "$EVAL_ORCH" \
+      OW="$EVAL_OW_LOCAL" SIMS="$SIMS" N="$EVAL_N" BLEND="$BLEND" DROPOUT="$DROPOUT" \
+      SEED_START="$EV_SEED_START" OUT="$EVAL_OUT" HOST=5800x \
+      nice -n 19 bash "$EVAL_ORCH" $local_claim \
       > "$OUT/logs/eval_it${it}.log" 2>&1
     EV_RC=$?
+    # 2-box drain: the local eval pool can drain (all decks claimed) while the laptop
+    # is still finishing its claimed decks. BOUNDED drain-wait so those land (else a
+    # half-played deck strands and n drops). Hard cap so a dead/slow laptop can't
+    # stall — local is authoritative. Poll the result-JSON count; stop at EVAL_N (one
+    # JSON per paired work-unit: _build_work makes EVAL_N units = EVAL_N//2 decks x 2
+    # seats, so the on-disk JSON target is EVAL_N, NOT 2*EVAL_N) or on plateau.
+    if [ "$LAPTOP_OK" = 1 ]; then
+      EVAL_DRAIN_CAP=${EVAL_DRAIN_CAP:-900}; EVAL_DRAIN_IDLE=${EVAL_DRAIN_IDLE:-6}
+      _need="$EVAL_N"; _dt0=$(date +%s); _last=-1; _idle=0
+      while :; do
+        _nj=$(ls "$EVAL_OUT"/seed*_a*.json 2>/dev/null | wc -l)
+        [ "$_nj" -ge "$_need" ] && { echo "[it$it] eval drain: $_nj/$_need result-json — full"; break; }
+        if [ "$_nj" -le "$_last" ]; then _idle=$((_idle+1)); else _idle=0; _last=$_nj; fi
+        [ "$_idle" -ge "$EVAL_DRAIN_IDLE" ] && { echo "[it$it] eval drain: plateaued at $_nj/$_need (laptop idle/done)"; break; }
+        [ $(( $(date +%s) - _dt0 )) -ge "$EVAL_DRAIN_CAP" ] && { echo "[it$it] eval drain: hit ${EVAL_DRAIN_CAP}s cap at $_nj/$_need — proceeding (local authoritative)"; break; }
+        sleep 5
+      done
+      # Post-drain RE-SUMMARIZE over ALL result JSONs now on disk (local + laptop)
+      # via eval_step2 --summarize-only — NO play, NO orch relaunch (cheap; just
+      # gathers the per-game JSONs and rewrites summary.json so the laptop's claimed
+      # decks land in the paired-z). The first local client already wrote a summary
+      # over its own decks; this folds the laptop's in.
+      nice -n 19 "$PY" -u "$EVAL" \
+        --ckpt "$POLICY_CKPT" --scalar-ckpt "$SCALAR_CKPT" --ref-ckpt "$REF_CKPT" \
+        --blend "$BLEND" --dropout "$DROPOUT" --n "$EVAL_N" --sims "$SIMS" \
+        --out "$EVAL_OUT" --seed-start "$EV_SEED_START" --summarize-only \
+        >> "$OUT/logs/eval_it${it}.log" 2>&1 || true
+    fi
     _kill_gen; sleep 1
   else
     echo "[it$it] eval (net-CPU screen) blend=$BLEND vs RoD2 iter_02, paired n=$EVAL_N @ sims=$SIMS @ $(date)"
     nice -n 19 "$PY" -u "$EVAL" \
       --ckpt "$POLICY_CKPT" --scalar-ckpt "$SCALAR_CKPT" --ref-ckpt "$REF_CKPT" \
       --blend "$BLEND" --dropout "$DROPOUT" --n "$EVAL_N" --sims "$SIMS" \
-      --workers "$OW_LOCAL" --out "$OUT/eval/iter_${cc}" \
+      --workers "$EVAL_OW_LOCAL" --out "$EVAL_OUT" \
       --seed-start "$EV_SEED_START" \
       > "$OUT/logs/eval_it${it}.log" 2>&1
     EV_RC=$?
