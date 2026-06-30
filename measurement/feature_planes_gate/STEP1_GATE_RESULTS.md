@@ -25,17 +25,36 @@ CL-033 found a learned value/ranker on the **78-channel** board representation c
 
 Guardrails: gate on the **held-out test split** (group-split by game_seed, never row-level); `both_shuffled` is the spuriousness check; if `both` passes, confirm no plane trivially encodes oracle_q/leaf_q (leak check).
 
+## Negative-control LOCK criteria (pre-registered 2026-06-29, BEFORE the control's number printed)
+
+The bar is **"indistinguishable from the `none` baseline,"** NOT merely "lower than +20.5%". Three conditions, all required to lock CLEAN:
+
+1. **Regret reduction collapses to the `none` noise floor:** `both_shuffled` ≤ ~**5%** (vs `none`'s +1.9%; i.e. ≥ ~75% of the +20.5%→+1.9% distance is given back). A residual ≥ ~10% (keeps half the effect) = **DIRTY**.
+2. **α returns to ~0** (0 or 0.05-with-negligible-reduction; NOT climbing).
+3. **No sub-`none` val-loss leak:** control `best_val_loss` ≈ `none`'s **3.3020** (say ≥ ~3.300), **not** drifting toward `both`'s **3.2958**. A converged plateau materially below 3.300 means the shuffled channels leak structure → the +20.5% is partly contaminated even if (1)/(2) pass.
+
+**Two-gate framing (per external review 2026-06-29 — keep these separate):**
+- **Gate A — the scientific lock (this control + ablation):** confirms the farm/bag *representation* carries value signal the blind 78-ch net could not access → refutes CL-033's "value head inert as an architecture-independent law." This is the **load-bearing result** and the only thing the control locks. We are **under** the τ>0.4 alternative bar (τ=0.207 ≪ leaf 0.895), so the lock rests on the **α>0 clause alone**: *representation was a real confound; the value head is now a weak-but-nonzero ranker* — not "rivals the leaf."
+- **Gate B — conversion through search (Step 2's question, NOT locked here):** whether this signal survives MCTS. **Open and arguably trends against a static-integration win:** CL-034's bigger −41% offline washed out at the sims=200 search screen (search alone cuts the static leaf's decisive regret ~6×). ⚠️ **A CL-034-style washout on a one-shot search screen does NOT kill Step 2** — the loop (trajectory reshaping + policy-target evolution across iters) is the arbiter, which a fixed-position screen structurally cannot test. Run a search-integrated screen only if cheap, and pre-commit that a **fail downgrades confidence, does not kill**. (Re-killing on the screen would re-commit the exact error the charter exists to undo.)
+- **Why our smaller number may be the more relevant one:** the −20.5% is a value head doing the leaf's *actual job* (ordering children by evaluated value) = the right object for Step 2's leaf, whereas CL-034's −41% was a sibling-relative ranker that doesn't transfer cleanly to a leaf evaluator. **Smaller number, more relevant object.** The α>0 flip *justifies* the Step 2 bet; it does not *de-risk* it — spend on Step 2 eyes-open.
+
 ## Results
 
 | mode | net-alone τ (V4) | best α | regret: leaf→best | reduction % | beats_leaf | n_test |
 |---|---|---|---|---|---|---|
 | none | 0.140 | 0.05 | 0.0263→0.0258 | **+1.9%** | true | 1544 |
 | both | **0.207** | 0.05 | 0.0263→**0.0209** | **+20.5%** | true | 1544 |
-| farm | _pending (ablation)_ | | | | | |
-| bag  | _pending (ablation)_ | | | | | |
-| both_shuffled | _pending (neg control)_ | | | | | |
+| **both_shuffled** (neg control) | **0.139** | **0.0** | 0.0263→0.0263 | **+0.0%** | **false** | 1544 |
+| farm-only (drop bag) | _running (ablation)_ | | | | | |
+| bag-only (drop farm) | _queued (ablation)_ | | | | | |
 
-## Verdict — CONDITIONAL POSITIVE (pending negative control + ablation)
+## Verdict — Gate A LOCKED CLEAN (negative control passed 2026-06-29; ablation in flight)
+
+**Negative control (`both_shuffled`) PASSED all three pre-registered lock conditions decisively:** with the farm planes + bag scalars permuted off their true rows, net-τ collapsed 0.207→**0.139** (back to `none`'s 0.140), best-α dropped 0.05→**0.0** (the model correctly finds the scrambled features useless and falls back to leaf-alone), regret reduction →**+0.0%** (vs `both`'s +20.5%), and `best_val_loss`=**3.3014 ≈ `none`'s 3.3020** (no sub-`none` leak; never drifted toward `both`'s 3.2958). **The +20.5% is real and position-aligned — not a leak/artifact.** Gate A (the scientific lock: the farm/bag *representation* carries value signal the blind 78-ch net could not access) is **LOCKED**. CL-033's α=0-as-architecture-independent-law is refuted. (Gate B — search conversion — remains Step 2's open question; see the two-gate framing above.)
+
+Remaining for the full attribution story (NOT lock-blocking): the farm-only / bag-only ablation (which feature drives the +20.5%).
+
+---
 
 `both` **meets the pre-registered α-criterion**: α=0.05>0 with **+20.5% regret reduction** (≥15%), vs the blind `none` baseline's noise-level **+1.9%**. Net-alone τ also lifts 0.140→0.207. **This contradicts CL-033's α=0 on the 78-channel blind representation → the representation WAS part of the value head's inertness.** A genuine positive — the first in the program that says "representation, not just heuristic ceiling."
 
