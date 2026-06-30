@@ -346,18 +346,18 @@ def _play_one(args_tuple):
         if rank_child_feats:
             rc_feats = np.stack(rank_child_feats).astype(np.float16)        # (M,89) f16
             rc_q = np.asarray(rank_child_q, dtype=np.float32)               # (M,) f32
-            rc_g = np.asarray(rank_group_id, dtype=np.int32)                # (M,) i32
+            rc_g = np.asarray(rank_group_id, dtype=np.int64)                # (M,) i64 — gid is seed-derived (>int32 at high iters); consumer reads int64
         else:
             rc_feats = np.empty((0, step2_leaf.N_FEAT), np.float16)
             rc_q = np.empty((0,), np.float32)
-            rc_g = np.empty((0,), np.int32)
+            rc_g = np.empty((0,), np.int64)
         rank_path = out_dir / f"seed_{seed:06d}_rank.npz"
         rpartial = rank_path.with_name(f".{rank_path.stem}.{os.getpid()}.partial.npz")
         np.savez_compressed(
             rpartial,
             child_feats=rc_feats,                                    # (M, 89) f16
             child_target=rc_q,                                       # (M,) f32 backed-up search-Q
-            group_id=rc_g,                                           # (M,) i32 per-root group
+            group_id=rc_g,                                           # (M,) i64 per-root group (gid=seed*100000+ply > int32)
             seed=np.int64(seed),
             feat_names=np.array(step2_leaf.FEAT_NAMES, dtype="<U64"),
             target_kind=np.array("mcts_backed_up_q_root_pov", dtype="<U32"),
