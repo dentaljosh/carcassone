@@ -642,6 +642,17 @@ print(f"  [screen it] wr={s.get('winrate'):.3f} (z={s.get('winrate_z'):+.2f}) "
 PYEOF
   fi
 
+  # Gate the done-marker on a real eval result. A MISSING summary.json means eval
+  # produced ZERO games (orch crash / export-parity FATAL / etc.) — do NOT fabricate
+  # a "complete" iter with no measurement: that silently SKIPS the iter on resume AND
+  # loses the data point the experiment exists for. HALT loudly instead. A summary
+  # that DOES exist (even with rc!=0 / partial games) is the by-design non-fatal
+  # screen → proceed. (review BUG-2 — this is the frozen-iter2 0/200 fabrication.)
+  if [ ! -f "$OUT/eval/iter_${cc}/summary.json" ]; then
+    echo "[it$it] FATAL: eval produced NO summary.json (rc=$EV_RC, 0 results) — NOT marking iter done; halting so the eval failure is noticed (likely orch / export-parity). Fix + resume." >&2
+    _status "ERROR" "iter $it: eval produced 0 results (no summary.json). Halted — fix the eval and resume."
+    exit 1
+  fi
   date > "$OUT/done/iter$it"; COMPLETED=$((COMPLETED+1))
   echo "[it$it] ✅ iter complete @ $(date) — gen ${GEN_SEC}s / pol ${TRP_SEC}s / val ${TRV_SEC}s / eval ${EV_SEC}s"
   _status "RUNNING" "Last completed: iter $it (blend $BLEND). Total: $COMPLETED. Next: iter $((it+1))."

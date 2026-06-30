@@ -525,11 +525,15 @@ def main(argv=None):
             if npz.exists():
                 continue
             if cl.exists() and _claim_is_stale(cl, args.claim_stale_secs):
+                # atomic rename-aside, NOT unlink — among boxes sweeping one shared dir
+                # on resume, only one rename of a given source wins; the rest get
+                # FileNotFoundError. A bare unlink races try_claim's stale-recovery rename
+                # (two boxes can win the same seed). Mirrors eval_step2's sweep. (review BUG-1)
                 try:
-                    cl.unlink()
+                    cl.rename(cl.with_suffix(".swept"))
                     swept += 1
                 except OSError:
-                    pass
+                    pass  # peer already recovered it
         if swept:
             print(f"[gen] orphan-claim sweep: removed {swept} stale claim(s) "
                   f"with no .npz (re-claimable now).", flush=True)

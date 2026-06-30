@@ -40,7 +40,11 @@ echo "[step2-orch] base=$(basename "$CKPT") n_scalar=$NS  exporting -> TorchScri
 "$PY" scripts/export_torchscript.py --checkpoint "$CKPT" --out "$TS" --device cuda \
   || { echo "FATAL: TorchScript export/parity failed" >&2; exit 1; }
 
-pkill carc-orch 2>/dev/null || true; sleep 1
+# Clean ONLY a stale carc-orch bound to THIS gen's shm-name (a crashed prior run on
+# this host) — do NOT global-pkill carc-orch: that kills a sibling box's / the eval's
+# orchestrator (the bug eval_step2_orch.sh already fixed). Bracket-trick avoids the
+# pkill self-match. The $SRV_PID EXIT trap (below) cleans this run's own server. (review BUG-6)
+pkill -f "[c]arc-orch.*--shm-name $SHMN" 2>/dev/null || true; sleep 1
 rm -f "/dev/shm/carc_$SHMN" /dev/shm/sem.carc_"${SHMN}"_* 2>/dev/null || true
 
 echo "[step2-orch] start carc-orch (W=$OW fwd=$FWD max_batch=$MB) shm=$SHMN"

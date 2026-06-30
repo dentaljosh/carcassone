@@ -96,7 +96,10 @@ def _export(module: torch.nn.Module, n_scalar: int):
 # algorithm than eager. A genuine logic error shows O(0.1+) diffs, ~1000x
 # above these bars. The value is additionally scaled by residual_scale (0.25)
 # on the worker before it touches the leaf, so 1e-3 on value is <<noise.
-_TOL_PRIORS = 1e-4
+_TOL_PRIORS = 5e-4   # was 1e-4 — too strict: a TRAINED policy's BatchNorm running-stats +
+                     # cudnn's nondeterministic reduction order pushed k=37 to 1.36e-4 and
+                     # FATAL-halted a frozen-tiebreak run (2026-06-30). A genuine logic error
+                     # shows O(0.1) — still ~200x above this bar, still caught. (review BUG-8)
 _TOL_VALUE = 1e-3
 
 
