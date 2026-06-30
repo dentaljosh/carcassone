@@ -1,0 +1,48 @@
+[run_gate] modes='none both' variant=V4_listwise epochs=30 W=30 ds=/home/doctor/carc_step1_gate 16:27:21
+[guard] mode=none avail=35GB 16:27:21
+=== DUMP none (W30, stream->ext4) 16:27:21 ===
+[load] mode=none shard=0/1 10067/10067 sibling sets workers=30 -> /home/doctor/carc_step1_gate/dataset_none
+  2000/10067 groups=2000 rows=62497 err=0 127s
+  4000/10067 groups=4000 rows=124479 err=0 245s
+  6000/10067 groups=6000 rows=188008 err=0 367s
+  8000/10067 groups=8000 rows=250171 err=0 489s
+  10000/10067 groups=10000 rows=312611 err=0 603s
+[done] groups=10067 rows=314911 err=0 in 608s obs_bytes=30.7GB
+meta: {"mode": "none", "shard": 0, "nshards": 1, "n_rows": 314911, "n_groups": 10067, "n_groups_avail": 10067, "n_chan": 78, "W": 25, "n_scalar": 12, "n_farm_planes": 0, "n_bag_scalars": 0, "obs_dtype": "float16", "obs_file": "child_obs.f16", "teacher": "h6400_v2.9", "leaf": "v2.9_bmild_cap8", "v29_hash": "7fc930b82801cb43", "source": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl", "n_err": 0}
+[guard post-dump] avail=35GB
+=== TRAIN none (V4_listwise, 30ep) 16:37:32 ===
+[load] 314911 rows / 10067 groups  obs=(78,25,25) n_scalar=12  (memmap, low-RAM)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+  [V4_listwise       ] net-alone tau=+0.140 top1=0.276 | combined a*=0.05 regret 0.0263->0.0258 (+1.9%) beats_leaf=True
+    (V4_listwise done in 3736s)
+
+==== STEP-1 GATE (mode=none) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.140
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/feature_planes_gate/stage_none/stage5_offline_gate.json
+[mode none COMPLETE 17:39:55]
+[guard] mode=both avail=35GB 17:39:55
+=== DUMP both (W30, stream->ext4) 17:39:55 ===
+[load] mode=both shard=0/1 10067/10067 sibling sets workers=30 -> /home/doctor/carc_step1_gate/dataset_both
+  2000/10067 groups=2000 rows=62497 err=0 132s
+  4000/10067 groups=4000 rows=124479 err=0 256s
+  6000/10067 groups=6000 rows=187903 err=0 382s
+  8000/10067 groups=8000 rows=250171 err=0 505s
+  10000/10067 groups=10000 rows=312619 err=0 624s
+[done] groups=10067 rows=314911 err=0 in 630s obs_bytes=31.9GB
+meta: {"mode": "both", "shard": 0, "nshards": 1, "n_rows": 314911, "n_groups": 10067, "n_groups_avail": 10067, "n_chan": 81, "W": 25, "n_scalar": 44, "n_farm_planes": 3, "n_bag_scalars": 32, "obs_dtype": "float16", "obs_file": "child_obs.f16", "teacher": "h6400_v2.9", "leaf": "v2.9_bmild_cap8", "v29_hash": "7fc930b82801cb43", "source": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl", "n_err": 0}
+[guard post-dump] avail=35GB
+=== TRAIN both (V4_listwise, 30ep) 17:50:29 ===
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+  [V4_listwise       ] net-alone tau=+0.207 top1=0.294 | combined a*=0.05 regret 0.0263->0.0209 (+20.5%) beats_leaf=True
+    (V4_listwise done in 3848s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.207
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/feature_planes_gate/stage_both/stage5_offline_gate.json
+[mode both COMPLETE 18:54:44]
+=== RUN_GATE ALL DONE: 'none both' 18:54:44 ===

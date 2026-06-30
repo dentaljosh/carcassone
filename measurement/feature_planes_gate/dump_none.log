@@ -1,0 +1,7 @@
+[load] mode=none 10067/10067 sibling sets workers=24
+  2000/10067 groups=2000 rows=62497 err=0 141s
+  4000/10067 groups=4000 rows=124507 err=0 275s
+  6000/10067 groups=6000 rows=188031 err=0 407s
+  8000/10067 groups=8000 rows=250118 err=0 538s
+  10000/10067 groups=10000 rows=312596 err=0 667s
+[done] groups=10067 rows=314911 err=0 in 672s

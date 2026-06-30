@@ -1,0 +1,74 @@
+[step0b] 1600 roots, K=8, workers=30, max_plies=200
+  50/1600 roots  (116s, 0.4 roots/s)
+  100/1600 roots  (125s, 0.8 roots/s)
+  150/1600 roots  (133s, 1.1 roots/s)
+  200/1600 roots  (150s, 1.3 roots/s)
+  250/1600 roots  (223s, 1.1 roots/s)
+  300/1600 roots  (243s, 1.2 roots/s)
+  350/1600 roots  (269s, 1.3 roots/s)
+  400/1600 roots  (281s, 1.4 roots/s)
+  450/1600 roots  (308s, 1.5 roots/s)
+  500/1600 roots  (356s, 1.4 roots/s)
+  550/1600 roots  (393s, 1.4 roots/s)
+  600/1600 roots  (406s, 1.5 roots/s)
+  650/1600 roots  (429s, 1.5 roots/s)
+  700/1600 roots  (465s, 1.5 roots/s)
+  750/1600 roots  (483s, 1.6 roots/s)
+  800/1600 roots  (529s, 1.5 roots/s)
+  850/1600 roots  (551s, 1.5 roots/s)
+  900/1600 roots  (570s, 1.6 roots/s)
+  950/1600 roots  (601s, 1.6 roots/s)
+  1000/1600 roots  (619s, 1.6 roots/s)
+  1050/1600 roots  (663s, 1.6 roots/s)
+  1100/1600 roots  (682s, 1.6 roots/s)
+  1150/1600 roots  (712s, 1.6 roots/s)
+  1200/1600 roots  (748s, 1.6 roots/s)
+  1250/1600 roots  (766s, 1.6 roots/s)
+  1300/1600 roots  (796s, 1.6 roots/s)
+  1350/1600 roots  (825s, 1.6 roots/s)
+  1400/1600 roots  (854s, 1.6 roots/s)
+  1450/1600 roots  (878s, 1.7 roots/s)
+  1500/1600 roots  (899s, 1.7 roots/s)
+  1550/1600 roots  (907s, 1.7 roots/s)
+  1600/1600 roots  (928s, 1.7 roots/s)
+[step0b] 1600 roots OK in 929s
+
+========== (A) VARIANCE DECOMPOSITION ==========
+  N roots                         : 1600
+  between-root Var(avg target)     : 0.37927  (predictable signal)
+  mean within-root Var (deck noise): 0.19120  (irreducible)
+  noise / (signal+noise)           : 0.335
+  corr ceiling for SINGLE target   : 0.815
+  corr(single, avg)                : 0.834
+  per-phase mean within-root Var:
+    endgame        n=  320  within=0.01250  between=0.54684
+    late_mid       n=  320  within=0.15286  between=0.41151
+    midgame        n=  320  within=0.28595  between=0.27931
+    opening        n=  320  within=0.43579  between=0.15326
+    pre_endgame    n=  320  within=0.06892  between=0.50360
+
+========== (B) TRAIN-TWO-HEADS (dev=cuda) ==========
+  head[SINGLE] vs AVG-truth: corr=+0.578±0.038 MSE=0.3695±0.0918 (seeds=3)
+  head[AVG] vs AVG-truth: corr=+0.650±0.007 MSE=0.2496±0.0016 (seeds=3)
+
+[step0b] wrote /home/doctor/projects/carcassone/measurement/step0_determinization/det_probe_full.json
+{
+  "n_roots": 1600,
+  "K": 8,
+  "max_plies": 200,
+  "between_var": 0.3792676627635956,
+  "mean_within_var": 0.19120487570762634,
+  "noise_fraction": 0.3351692900415957,
+  "corr_ceiling_single": 0.8153715165238508,
+  "corr_single_avg": 0.834176515328271,
+  "head_single_corr_mse": [
+    0.5784441271432804,
+    0.3694810171922048
+  ],
+  "head_avg_corr_mse": [
+    0.6504076916898847,
+    0.24960159262021384
+  ],
+  "policy": "RuleBasedPlayer greedy (proxy; production target is h200 self-play)",
+  "n_errors": 0
+}
