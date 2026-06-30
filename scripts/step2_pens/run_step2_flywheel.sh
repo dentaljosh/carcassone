@@ -51,7 +51,8 @@
 set -uo pipefail
 
 # --- smoke flag (parse before anything else) ---
-SMOKE=0
+# Honor an inherited SMOKE=1 env var (the documented trigger) AND the --smoke arg.
+SMOKE=${SMOKE:-0}
 [ "${1:-}" = "--smoke" ] && SMOKE=1
 
 # --- paths ---
@@ -231,7 +232,7 @@ $2
 
 ---
 - Leaf value: (1-blend)*h_v2.9 + blend*scalar_mlp(feat89); blend/dropout scheduled per iter.
-- In-loop VALUE objective: $VALUE_OBJECTIVE ($([ "$VALUE_OBJECTIVE" = ranking ] && echo "arm B': per-group ListNet over in-loop backed-up search-Q" || echo "outcome-MSE on score_diff_wide — the cratering run")).
+- In-loop VALUE objective: $VALUE_OBJECTIVE ($([ "$VALUE_OBJECTIVE" = frozen ] && echo "FROZEN: value pinned to warmstart for all iters, value-train SKIPPED — the retrain-vs-object tiebreak" || { [ "$VALUE_OBJECTIVE" = ranking ] && echo "arm B': per-group ListNet over in-loop backed-up search-Q" || echo "outcome-MSE on score_diff_wide — the cratering run"; })).
 - Recipe: GAMES $GAMES · SIMS $SIMS · policy-epochs $EPOCHS_POLICY · value-epochs $EPOCHS_VALUE · batch $BATCH · VLW $VLW · eval_n $EVAL_N
 - Seeds: policy=$(basename "$SEED_POLICY") scalar=$(basename "$SEED_SCALAR"); eval-ref=$(basename "$REF_CKPT")
 - Cluster: $([ "$USE_LAPTOP" = 1 ] && echo "2-box (local+laptop) if gen supports --shared-claim, else LOCAL-ONLY" || echo "LOCAL-ONLY")
@@ -405,11 +406,23 @@ for it in $(seq 1 "$ITERS"); do
     PREV_POLICY=$OUT/ckpt_policy/iter_${pp}.pt
     PREV_SCALAR=$OUT/ckpt_scalar/iter_${pp}.pt
   fi
+  # FROZEN-value mode (VALUE_OBJECTIVE=frozen): the scalar is NEVER retrained, so
+  # gen AND eval ALWAYS use the warmstart SEED_SCALAR for the value — never a
+  # per-iter iter_N scalar. Pin PREV_SCALAR (gen's value) to the seed regardless
+  # of iter so the wean blends the FROZEN warmstart value in. (mse/ranking: prev
+  # scalar is the prior iter's retrained ckpt, unchanged.)
+  [ "$VALUE_OBJECTIVE" = "frozen" ] && PREV_SCALAR=$SEED_SCALAR
   [ -s "$PREV_POLICY" ] || { echo "[it$it] FATAL: prev policy $PREV_POLICY missing" >&2; _status "ERROR" "iter $it: prev policy missing."; exit 1; }
   [ -s "$PREV_SCALAR" ] || { echo "[it$it] FATAL: prev scalar $PREV_SCALAR missing" >&2; _status "ERROR" "iter $it: prev scalar missing."; exit 1; }
   cc=$(printf "%02d" "$it")
   POLICY_CKPT=$OUT/ckpt_policy/iter_${cc}.pt
-  SCALAR_CKPT=$OUT/ckpt_scalar/iter_${cc}.pt
+  # FROZEN: the eval's scalar is the warmstart seed (no per-iter scalar exists).
+  # mse/ranking: the candidate scalar is this iter's freshly-trained ckpt.
+  if [ "$VALUE_OBJECTIVE" = "frozen" ]; then
+    SCALAR_CKPT=$SEED_SCALAR
+  else
+    SCALAR_CKPT=$OUT/ckpt_scalar/iter_${cc}.pt
+  fi
   DATA=$OUT/iter${it}_data
   SP_SEED=$(( SP_BASE + it*100000 ))
   echo ""; echo "########## STEP-2 ITER $it (arm $ARM) @ $(date) — blend=$BLEND dropout=$DROPOUT (warm pol=$(basename "$PREV_POLICY") sca=$(basename "$PREV_SCALAR")) ##########"
@@ -508,10 +521,17 @@ for it in $(seq 1 "$ITERS"); do
   TRP_SEC=$(( $(date +%s) - TRP_T0 ))
 
   # ---- 3. TRAIN VALUE (train_value_iter.py — scalar MLP, MSE, fixed norm) ----
+  # FROZEN mode: the value is FIXED at the warmstart for every iter, so this stage
+  # is SKIPPED entirely — no train_value_iter call, no per-iter scalar ckpt produced
+  # or required. SCALAR_CKPT already == SEED_SCALAR (set above) so gen/eval use the
+  # frozen value; resume is unaffected because the per-iter done-marker is iter$it,
+  # not a scalar ckpt. (mse/ranking: trains as before.)
   _load_run_config   # re-source live knobs (EPOCHS_VALUE/VALUE_OBJECTIVE) at stage start
   _status "RUNNING" "iter $it — policy done. Stage: train-value. Completed: $COMPLETED."
   TRV_T0=$(date +%s)
-  if [ ! -f "$SCALAR_CKPT" ]; then
+  if [ "$VALUE_OBJECTIVE" = "frozen" ]; then
+    echo "[it$it] train VALUE — SKIPPED (VALUE_OBJECTIVE=frozen; value pinned to warmstart $(basename "$SEED_SCALAR"))"
+  elif [ ! -f "$SCALAR_CKPT" ]; then
     echo "[it$it] train VALUE (scalar MLP, objective=$VALUE_OBJECTIVE) @ $(date)"
     # MSE (default): consume the per-ply 89-vec + score_diff_wide from iter_00_pens.
     # RANKING (arm B'): consume the per-root sibling groups from iter_00_rank,
