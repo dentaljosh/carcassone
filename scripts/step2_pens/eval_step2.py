@@ -92,7 +92,8 @@ def _import_scalar_mlp():
     return m.ScalarMLP
 
 
-REF_SIMS = 200
+# REF_SIMS removed (BUG-1 fix): the reference now runs at the candidate's --sims
+# (matched compute), threaded via _build_reference_mcts(sims=cfg["sims"]).
 CPUCT = 3.0
 
 _W: dict = {}
@@ -246,7 +247,7 @@ def main(argv=None):
     ap.add_argument("--blend", type=float, default=0.2, help="Wean lambda for the candidate value.")
     ap.add_argument("--dropout", type=float, default=0.0, help="Per-leaf pure-MLP-value dropout for the candidate.")
     ap.add_argument("--n", type=int, default=120, help="Game count (paired => even).")
-    ap.add_argument("--sims", type=int, default=200, help="Candidate NeuralMCTS sims (reference fixed at 200).")
+    ap.add_argument("--sims", type=int, default=200, help="Simulations per move for BOTH agents — matched compute (candidate AND reference run at this depth).")
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--seed-start", type=int, default=5_715_000_000)
     ap.add_argument("--out", required=True, help="Output dir for per-game result json + summary.")
