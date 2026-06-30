@@ -86,6 +86,7 @@ def play_one_selfplay_game(
     anchor_evaluator: Callable[[object], tuple[np.ndarray, float]] | None = None,
     anchor_batch_evaluator: Callable[[list], tuple[np.ndarray, np.ndarray]] | None = None,
     learner_player_idx: int = 0,
+    on_ply: Callable[[object, object, int, int], None] | None = None,
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -259,6 +260,13 @@ def play_one_selfplay_game(
     # action to a copy with scoring stubbed for that single call.)
     prev_board = board
     last_action: int | None = None
+    # The board at the START of the previous loop iteration (= the TREE-PARENT of
+    # the current root, one game move back). Threaded to the optional on_ply
+    # callback so a caller can compute parent->child features per recorded ply.
+    # None at the first ply (the initial root has no game-parent). Independent of
+    # the ownership-label `prev_board` (which is the immediately-pre-terminal
+    # board); kept separate to avoid coupling the two.
+    prev_root_board = None
 
     ply = 0
     while game.get_game_ended(board, 0) == 0.0 and ply < max_plies:
@@ -331,6 +339,14 @@ def play_one_selfplay_game(
             masks_arr.append(mask.astype(bool))
             players_arr.append(cur_player)
             offsets_arr.append(board.offset)
+            # Optional per-ply hook (Step-2 PeNS in-loop feature harvest). Fires
+            # in lock-step with the recorded trajectory rows (same is_learner_move
+            # guard, BEFORE the value backfill) so the caller can compute the
+            # parent-threaded 89-vec for THIS position. parent = the board one game
+            # move back (None at the first recorded ply). Default None → no-op for
+            # every existing caller.
+            if on_ply is not None:
+                on_ply(prev_root_board, board, cur_player, ply)
             if value_target in (
                 "search_value", "search_value_tree", "search_value_rank"
             ):
@@ -408,6 +424,7 @@ def play_one_selfplay_game(
 
         prev_board = board
         last_action = int(action)
+        prev_root_board = board  # becomes the tree-parent of the next root
         board, _ = game.get_next_state(board, action)
         ply += 1
         _bench_tick()

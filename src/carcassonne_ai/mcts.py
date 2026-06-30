@@ -484,6 +484,18 @@ class NeuralMCTS:
         self.batch_size = max(1, int(batch_size))
         self.batch_evaluator = batch_evaluator
         self.virtual_loss = float(virtual_loss)
+        # Optional parent-board threading (Step-2 PeNS weaned flywheel,
+        # 2026-06-30). An evaluator that needs the TREE-PARENT board (one move
+        # back) to compute parent->child delta features can advertise
+        # `wants_parent = True`; when it does, `_expand`/`_expand_with_priors`
+        # call it as `evaluator(child_board, parent_board)` instead of
+        # `evaluator(child_board)`. Default OFF (the attribute is absent on every
+        # production evaluator) → zero behaviour change for all existing callers;
+        # the descent already has the parent board in scope at each leaf, so this
+        # only forwards a reference that was being discarded. At the root (no
+        # parent) parent_board is None and the evaluator falls back to its
+        # self-referential / no-parent path.
+        self._eval_wants_parent = bool(getattr(evaluator, "wants_parent", False))
         self._nodes: dict[str, _NeuralNode] = {}
         # Roots that have already had Dirichlet noise mixed into their priors.
         # Per AlphaZero, noise is applied once per new root (= per move), not
@@ -823,9 +835,16 @@ class NeuralMCTS:
                 node.prior_bonus.get(canon, 0.0) + node.priors.get(action, 0.0)
             )
 
-    def _expand(self, node: _NeuralNode, board: Board) -> None:
+    def _expand(
+        self, node: _NeuralNode, board: Board, parent_board: Board | None = None
+    ) -> None:
         """Query the network at this state; populate node.priors, node.leaf_value,
         node.valid_actions. Idempotent — safe to call multiple times.
+
+        `parent_board` is the TREE-PARENT board (one move back). It is threaded
+        through ONLY when the evaluator advertises `wants_parent = True` (the
+        Step-2 PeNS weaned leaf); every other evaluator ignores it and is called
+        exactly as before. None = no parent (root, or a parent-unaware caller).
 
         Defensive: a bad checkpoint can return NaN/inf priors or wrong shape;
         falls back to uniform-over-legal in any of those cases. Likewise an
@@ -837,7 +856,10 @@ class NeuralMCTS:
             node.leaf_value = node.terminal_value
             node.expanded = True
             return
-        priors, value = self.evaluator(board)
+        if self._eval_wants_parent:
+            priors, value = self.evaluator(board, parent_board)
+        else:
+            priors, value = self.evaluator(board)
         self._expand_with_priors(node, board, priors, value)
 
     def _expand_with_priors(
@@ -922,7 +944,17 @@ class NeuralMCTS:
         priors_list = []
         values_list = []
         for b in boards:
-            p, v = self.evaluator(b)
+            # Parent-board threading is not plumbed through the batched/eval-board
+            # path (it deduplicates boards across paths, so a single parent board
+            # is ill-defined). A parent-aware evaluator is called with parent=None
+            # here and falls back to its no-parent path. The Step-2 PeNS gen runs
+            # batch_size=1 (the serial _simulate path), which DOES thread the
+            # parent; this branch only fires for root expansion (parent=None
+            # anyway) and tests.
+            if self._eval_wants_parent:
+                p, v = self.evaluator(b, None)
+            else:
+                p, v = self.evaluator(b)
             priors_list.append(p)
             values_list.append(float(v))
         return np.stack(priors_list), np.array(values_list, dtype=np.float32)
@@ -1093,6 +1125,9 @@ class NeuralMCTS:
         # Selection: walk down using PUCT, treating expanded nodes as internal.
         while node.expanded and not node.is_terminal:
             action = self._select_child_puct(node)
+            # Keep the tree-parent board (this node's board, one move back) so a
+            # parent-aware evaluator can compute parent->child delta features.
+            parent_board = board
             board, _ = self.game.get_next_state(board, action)
             child = node.children.get(action)
             if child is None:
@@ -1108,7 +1143,7 @@ class NeuralMCTS:
                 # leaving leaf_value at its 0.0 default and backing up a bogus
                 # zero. (Matches _select_leaf_with_vloss's needs_eval logic.)
                 if not child.expanded:
-                    self._expand(child, board)
+                    self._expand(child, board, parent_board)
                 self._link_child(node, action, child)
                 path.append(child)
                 node = child
