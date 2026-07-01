@@ -60,18 +60,32 @@ class GThetaStub:
     """Per-component value head g_theta: (n_comp, FEAT_DIM) -> (n_comp,), aggregated
     by SUM to a scalar leaf value. NUMPY (see module docstring on why not torch).
 
-    A 2-layer tanh MLP with RANDOM weights (milestone 1). The output is scaled so
-    the aggregate lands in a sane leaf range and passed through tanh at the end
-    (the leaf value must be in [-1, 1] like the heuristic `h`). Milestone 2 will
-    replace `from_random` with `from_state_dict` loading trained weights.
+    A 2-layer tanh MLP (FEAT_DIM -> H -> 1). RANDOM weights for milestone 1
+    (`from_random`); milestone 2 loads TRAINED weights via `from_trained_npz`.
+
+    LEAF AGGREGATION (milestone 2, matches the trainer + the heuristic's shape):
+
+        v_leaf = tanh( (running_diff + sum_i g_theta(comp_i)) / tanh_scale )
+
+    where `running_diff` is the exact points-already-scored offset (from
+    state.scores; NOT learned — the closed features that produced them are off
+    the board and carry no component features) and tanh_scale defaults to 15.0
+    (== the heuristic's tanh(vs/15)). The trained weights are exported with the
+    z-score NORMALIZATION FOLDED INTO the first layer, so the leaf feeds the head
+    RAW Cython features (no per-node normalization work on the hot path).
+
+    Milestone-1 back-compat: `out_scale` + `aggregate(X)` (no running offset,
+    tanh(out_scale*sum)) are retained for the random stub / old smoke.
     """
 
-    def __init__(self, W1, b1, W2, b2, out_scale=1.0):
+    def __init__(self, W1, b1, W2, b2, out_scale=1.0, tanh_scale=15.0):
         self.W1 = W1.astype(np.float32)
         self.b1 = b1.astype(np.float32)
         self.W2 = W2.astype(np.float32)
         self.b2 = b2.astype(np.float32)
         self.out_scale = float(out_scale)
+        self.tanh_scale = float(tanh_scale)
+        self._is_stub = True
 
     @classmethod
     def from_random(cls, in_dim=cf.FEAT_DIM, hidden=32, seed=0, out_scale=1.0):
@@ -84,6 +98,17 @@ class GThetaStub:
             out_scale=out_scale,
         )
 
+    @classmethod
+    def from_trained_npz(cls, path):
+        """Load the exported (normalization-folded) numpy head produced by
+        scripts/probe_a/export_gtheta.py. Feeds RAW features; adds the running
+        offset via `aggregate_with_offset`."""
+        z = np.load(str(path))
+        g = cls(W1=z["W1"], b1=z["b1"], W2=z["W2"], b2=z["b2"],
+                tanh_scale=float(z["tanh_scale"]))
+        g._is_stub = False
+        return g
+
     def per_component(self, X: np.ndarray) -> np.ndarray:
         """g_theta over each row. X is (n_comp, FEAT_DIM) float32 -> (n_comp,)."""
         if X.shape[0] == 0:
@@ -91,21 +116,39 @@ class GThetaStub:
         h = np.tanh(X @ self.W1 + self.b1)
         return (h @ self.W2 + self.b2).reshape(-1)
 
+    def component_sum(self, X: np.ndarray) -> float:
+        return float(self.per_component(X).sum())
+
     def aggregate(self, X: np.ndarray) -> float:
-        """v = tanh(out_scale * sum_i g_theta(comp_i)) in [-1, 1] (leaf range)."""
-        s = float(self.per_component(X).sum())
-        return math.tanh(self.out_scale * s)
+        """MILESTONE-1 stub aggregation: v = tanh(out_scale * sum). No running
+        offset (kept for the random-stub smoke / old speed benches)."""
+        return math.tanh(self.out_scale * self.component_sum(X))
+
+    def aggregate_with_offset(self, X: np.ndarray, running_diff: float) -> float:
+        """MILESTONE-2 leaf value: tanh((running_diff + sum_i g(comp_i))/tanh_scale),
+        the drop-in that reproduces the heuristic's own structure at leaf speed."""
+        s = self.component_sum(X)
+        return math.tanh((running_diff + s) / self.tanh_scale)
 
 
 def structured_value(board, root_player: int, g_theta: GThetaStub,
                      closure_p=None) -> float:
-    """Board-POV structured leaf value: aggregate g_theta over the board's
-    components, using the Cython feature emit (same C decompose as the scalar leaf).
+    """Board-POV structured leaf value.
+
+    Trained head (`_is_stub` False): tanh((running_diff + sum g_theta)/tanh_scale),
+    running_diff = state.scores[root]-state.scores[opp] (the exact already-scored
+    offset). Random stub: the milestone-1 tanh(out_scale*sum) (no offset), so old
+    smokes/benches are unchanged.
     """
     if closure_p is None:
         closure_p = DEFAULT_CONFIG.closure_p
-    X = _cy.component_features_cy(board.state, root_player, closure_p)
-    return g_theta.aggregate(X)
+    st = board.state
+    X = _cy.component_features_cy(st, root_player, closure_p)
+    if getattr(g_theta, "_is_stub", True):
+        return g_theta.aggregate(X)
+    opp = 1 - root_player
+    running_diff = float(int(st.scores[root_player]) - int(st.scores[opp]))
+    return g_theta.aggregate_with_offset(X, running_diff)
 
 
 def make_probe_a_value_wrapper(
