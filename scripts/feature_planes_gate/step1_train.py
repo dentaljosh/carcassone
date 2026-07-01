@@ -41,6 +41,32 @@ def bucket(seed):
     return "train" if h < 70 else "val" if h < 85 else "test"
 
 
+def align_tempo(npz_path, grp, gs, ply):
+    """Probe §5A: return the tempo.npz block in DATASET row order.
+
+    Aligns emit_tempo.py rows -> dataset rows by (game_seed, ply, within-root
+    ordinal). Dataset rows are group-contiguous in enumeration order, so the
+    k-th row of a group has child_index k. Proven bit-exact via leaf match."""
+    from collections import defaultdict
+    t = np.load(npz_path, allow_pickle=True)
+    tv = np.asarray(t["tempo"], dtype=np.float32)
+    gst, plyt, cit = t["game_seed"], t["ply"], t["child_index"]
+    names = [str(x) for x in t["tempo_names"]]
+    lut = {(int(gst[j]), int(plyt[j]), int(cit[j])): j for j in range(len(gst))}
+    ordd = np.empty(len(grp), dtype=np.int64); ctr = defaultdict(int)
+    for i in range(len(grp)):
+        g = int(grp[i]); ordd[i] = ctr[g]; ctr[g] += 1
+    out = np.zeros((len(grp), tv.shape[1]), dtype=np.float32); miss = 0
+    for i in range(len(grp)):
+        j = lut.get((int(gs[i]), int(ply[i]), int(ordd[i])))
+        if j is None:
+            miss += 1; continue
+        out[i] = tv[j]
+    if miss:
+        print(f"[tempo-align] WARNING {miss} dataset rows unmatched (zero-filled)", flush=True)
+    return out, names
+
+
 def group_metrics(score, oq):
     best = int(np.argmax(oq)); pick = int(np.argmax(score))
     return float(oq[best] - oq[pick]), int(pick == best), kendall_tau_b(score, oq)
@@ -113,6 +139,13 @@ def main():
     ap.add_argument("--drop-bag", action="store_true",
                     help="ABLATION: zero the bag scalars (last n_bag_scalars scalar cols). "
                          "Turns a 'both' dataset into the 'farm-only' mode without a re-dump.")
+    ap.add_argument("--tempo-npz", default="",
+                    help="Probe §5A: align this tempo.npz (emit_tempo.py) to dataset row "
+                         "order and APPEND its tempo scalars to child_scalars (adds n_tempo "
+                         "cols). Additive — default (empty) leaves the trainer byte-identical.")
+    ap.add_argument("--drop-tempo", action="store_true",
+                    help="Probe §5A ABLATION: zero the appended tempo scalars (last n_tempo "
+                         "cols). Used for the none / both arms (which exclude tempo).")
     ap.add_argument("--dump-per-group", action="store_true",
                     help="OVERLAP PROBE: after best-model selection, write per-TEST-group "
                          "regret to <out>/<variant>/per_group.npz: group_id, leaf_regret, "
@@ -159,6 +192,19 @@ def main():
         print(f"[drop-bag] zeroed {nb} bag scalars (mode -> farm-only)", flush=True)
     if zero_farm:                 # ablation -> bag-only
         print(f"[drop-farm] zeroing {nf} farm planes at gather (mode -> bag-only)", flush=True)
+
+    # --- Probe §5A: append the aligned tempo block (after farm/bag ablation so the
+    #     'last nb cols = bag' arithmetic above stays correct on the ORIGINAL sca). ---
+    nt = 0
+    if args.tempo_npz:
+        tempo_arr, tempo_names = align_tempo(args.tempo_npz, grp, gs, aux["ply"])
+        nt = tempo_arr.shape[1]
+        sca = np.concatenate([np.asarray(sca), tempo_arr.astype(np.asarray(sca).dtype)], axis=1)
+        n_scalar = sca.shape[1]
+        print(f"[tempo] appended {nt} tempo scalars -> n_scalar={n_scalar}: {tempo_names}", flush=True)
+        if args.drop_tempo:
+            sca = sca.copy(); sca[:, n_scalar - nt:] = 0.0
+            print(f"[drop-tempo] zeroed {nt} tempo scalars (arm excludes tempo)", flush=True)
 
     split = {g: bucket(g) for g in np.unique(gs)}
     groups = {}
