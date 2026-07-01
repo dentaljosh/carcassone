@@ -1,9 +1,21 @@
-# PROBE A — STRUCTURE-EMITTING VALUE HEAD (as the leaf) — 2026-06-30 (DRAFT, awaiting Joshua approval)
+# PROBE A — STRUCTURE-EMITTING VALUE HEAD (as the leaf) — 2026-06-30 (KILLED at §3A, 2026-06-30)
 
 Pre-registered design spec for the first of two post-Gate-B AlphaZero-family probes. Read with
 the companion [PROBE_B_FAIR_INFO_SPEC.md](PROBE_B_FAIR_INFO_SPEC.md), the Gate-B autopsy in
 [DECISIONS.md](../DECISIONS.md) (2026-06-30 entry), [PeNS_SCHEMA.md](PeNS_SCHEMA.md), and the
 charter's abandonment criteria ([PROJECT_CHARTER.md](../PROJECT_CHARTER.md) §"Abandonment / redesign").
+
+> **OUTCOME — KILLED at the §3A independence gate (2026-06-30, commit `315122d`).** Gate-zero speed passed
+> (structured leaf feasible at 2.24–2.71×), the 24-dim per-component feature contract + bit-exact Cython emit
+> built, and g_θ trained (aggregate R² 0.990). But the pre-registered **§3A farm/bag independence gate came back
+> REDUNDANT**: on the structured head, `Δ_indep = both − max(farm-only, bag-only) = +0.05pp` (paired σ 0.36pp, 95%
+> CI [−0.61, +0.78], ~8σ below the +3pp "separated" threshold) — even more decisive than CL-037's scalar
+> (+0.8pp). Emphasis flipped (farm carries the gain, bag inert — the opposite of the scalar) but the conclusion is
+> the same: **the two axes do not load onto independent directions → the game's value signal is genuinely
+> low-dimensional, the scalar was NOT the bottleneck, and the structured object extracts nothing the scalar
+> destroyed.** The value-leaf route is now dead across **both scalar (Gate-B/CL-038) and structured** objects. Per
+> §6 this routes toward the analyzer — **pending Probe B** (still live). Killed at the *cheap* gate: no crater
+> screen, no in-loop budget spent.
 
 > **Status: SPEC ONLY — no implementation, no runs, no cluster spend.** This document pre-registers
 > hypotheses, gates, and kill criteria *before* any run (boxing rule 1). Nothing here is authorized to
