@@ -37,6 +37,7 @@
 ## Lever specs — executed/closed (historical; here for trace)
 | Doc | Lever | Status (per the doc) |
 |---|---|---|
+| [PROBE_A_STRUCTURED_VALUE_SPEC.md](PROBE_A_STRUCTURED_VALUE_SPEC.md) · [PROBE_B_FAIR_INFO_SPEC.md](PROBE_B_FAIR_INFO_SPEC.md) | Post-Gate-B AZ probes: structure-emitting value leaf (A) · fair-info flywheel (B) | DRAFT — awaiting Joshua approval (spec only) |
 | [ATTEMPT2_SPEC_2026-06-08.md](ATTEMPT2_SPEC_2026-06-08.md) | Track-B flywheel attempt #2 → **iter8 champion** | COMPLETED (+67.4 elo / z2.73) |
 | [PLATEAU_DECOMP_2026-06-10.md](PLATEAU_DECOMP_2026-06-10.md) | Attempt-#2 plateau decomposition | historical analysis |
 | [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md) | Stronger/deeper teacher | CLOSED — TIE vs iter8 |
