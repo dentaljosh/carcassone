@@ -38,6 +38,7 @@
 | Doc | Lever | Status (per the doc) |
 |---|---|---|
 | [PROBE_A_STRUCTURED_VALUE_SPEC.md](PROBE_A_STRUCTURED_VALUE_SPEC.md) · [PROBE_B_FAIR_INFO_SPEC.md](PROBE_B_FAIR_INFO_SPEC.md) · [PROBE_B_4A_RESULTS.md](../measurement/probe_b_4a/PROBE_B_4A_RESULTS.md) | Post-Gate-B AZ probes: structure-emitting value leaf (A) · fair-info flywheel (B) | **BOTH CLOSED** — A KILLED §3A (redundant ~8σ `315122d`); B flywheel closed on the ledger, §4A all-inert/depth-saturated (`be538a7`), **B1 ships**. AZ-value route exhausted → analyzer. |
+| [PROBE_5A_TEMPO_AXIS_GATE.md](PROBE_5A_TEMPO_AXIS_GATE.md) | §5A — third-independent-axis gate (tempo/timing) before the autopsy's dimensionality sentence; tests whether CL-039's "low-dimensional" survives an axis uncorrelated with farm/bag | **SPEC ONLY — PROPOSED, not run.** Gate-zero correlation check → (if passes) 4-arm CL-037 head at **h6400** → `Δ_indep_tempo` read. Ship (analyzer+B1) is the same under every branch; only CL-039's dimensionality clause is at stake. |
 | [ATTEMPT2_SPEC_2026-06-08.md](ATTEMPT2_SPEC_2026-06-08.md) | Track-B flywheel attempt #2 → **iter8 champion** | COMPLETED (+67.4 elo / z2.73) |
 | [PLATEAU_DECOMP_2026-06-10.md](PLATEAU_DECOMP_2026-06-10.md) | Attempt-#2 plateau decomposition | historical analysis |
 | [DEEPER_TEACHER_SPEC_2026-06-11.md](DEEPER_TEACHER_SPEC_2026-06-11.md) | Stronger/deeper teacher | CLOSED — TIE vs iter8 |
