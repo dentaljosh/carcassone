@@ -437,6 +437,7 @@ class NeuralMCTS:
         batch_evaluator=None,  # Callable[[list[Board]], tuple[np.ndarray, np.ndarray]]
         virtual_loss: float = 1.0,
         fair_chance: bool = False,
+        fair_isolate: bool = False,
         fpu_reduction: float | None = None,
         record_boards: bool = False,
     ):
@@ -459,6 +460,33 @@ class NeuralMCTS:
         # larger change (the tree keys children by action, which assumes a
         # placement yields one child; per-draw branching needs real chance nodes).
         self.fair_chance = bool(fair_chance)
+        # fair_isolate (Probe B gate-zero fix, PROBE_B_FAIR_INFO_SPEC §3b): the
+        # LEAK GUARD for the flywheel-gen regime. When fair_chance runs with a
+        # PERSISTENT tree (K=1 search per move, no clear() between moves), an
+        # interior node created under move-t's reshuffled deck order survives in
+        # `_nodes` (deck order is not in the key) and is REUSED at move t+1 after a
+        # fresh reshuffle — backing up values conditioned on move-t's now-
+        # counterfactual future. That cross-determinization reuse is the leak that
+        # tests/test_fair_info_gate_zero.py::test_3b_flywheel_regime_leak_* detects.
+        #
+        # fair_isolate=True makes that reuse STRUCTURALLY IMPOSSIBLE: every search()
+        # under fair_chance starts from a freshly re-rooted tree (clear() first), so
+        # no node from a prior move's determinization can be descended into — the
+        # cheapest-correct PIMC fix from the spec (clear/re-root-per-determinization,
+        # the clairvoyance_gap.py pattern). This is the ANTI-PATTERN-FREE fix: it does
+        # NOT add deck order to the transposition key (that would break IS-MCTS
+        # info-set merging, spec §3). Default False → every existing caller is
+        # bit-identical; callers that never persist a fair_chance tree across moves
+        # (e.g. clairvoyance_gap.py, which clear()s itself) don't need it. It is only
+        # VALID together with fair_chance; asserting that keeps the flag from silently
+        # doing nothing on a clairvoyant search.
+        self.fair_isolate = bool(fair_isolate)
+        if self.fair_isolate and not self.fair_chance:
+            raise ValueError(
+                "fair_isolate=True requires fair_chance=True — it is the "
+                "cross-determinization leak guard for the fair-chance regime; "
+                "it has no meaning for a clairvoyant (single-true-deck) search."
+            )
         # FPU (first-play urgency) for UNVISITED children in PUCT (round-2 audit
         # G-T/F-D-FPU). None (default) = legacy optimistic-zero (q=0). A float r
         # uses q = parent.Q - r, so an unvisited child is valued near the
@@ -519,6 +547,16 @@ class NeuralMCTS:
         """Run `simulations` PUCT iterations from `root_board`. Returns a
         {action_idx: visit_count} dict for the root's children."""
         if self.fair_chance:
+            if self.fair_isolate:
+                # LEAK GUARD (spec §3b): re-root per determinization. Wipe the tree
+                # BEFORE reshuffling so this search cannot descend into any interior
+                # node created under a PRIOR move's (now-counterfactual) reshuffled
+                # future. Makes stale cross-determinization reuse structurally
+                # impossible — the cheapest-correct PIMC fix. clear() also resets the
+                # legal-moves cache; harmless, matches clairvoyance_gap.py.
+                self._nodes.clear()
+                self._noisy_roots.clear()
+                self.game.clear_caches()
             # One plausible future per move; the search can no longer see the
             # true upcoming tiles. Same root_key (deck ORDER isn't in the key),
             # so node lookup/expansion are unchanged — only the descent differs.

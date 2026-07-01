@@ -185,7 +185,7 @@ def test_3a_v5_negative_control_next_tile_changes_key():
 #     NO clear() between moves. Compare against a clear()-per-move control on the
 #     SAME game/seed and quantify stale-future node reuse + root-Q divergence.
 # =========================================================================== #
-def _make_mcts(game, *, sims, seed, evaluator):
+def _make_mcts(game, *, sims, seed, evaluator, fair_isolate=False):
     return NeuralMCTS(
         game=game,
         evaluator=evaluator,
@@ -193,6 +193,7 @@ def _make_mcts(game, *, sims, seed, evaluator):
         seed=seed,
         c_puct=3.0,
         fair_chance=True,
+        fair_isolate=fair_isolate,
     )
 
 
@@ -212,10 +213,17 @@ def _chosen_action(qmap):
     return max(qmap, key=lambda a: (qmap[a], -a)) if qmap else None
 
 
-def _run_game(*, persistent: bool, sims: int, seed: int, max_moves: int, evaluator):
+def _run_game(*, persistent: bool, sims: int, seed: int, max_moves: int, evaluator,
+              fair_isolate: bool = False):
     """Advance a real game move-by-move. `persistent`=True → the flywheel-gen
     regime (never clear() the tree). `persistent`=False → the clear()-per-move
     control. Same master deck / same search seed both ways.
+
+    `fair_isolate`=True turns on the leak GUARD (mcts.NeuralMCTS(fair_isolate=True)):
+    each fair_chance search re-roots (clear()s) internally, so even a `persistent`
+    driver cannot reuse a prior move's determinized interior node. This is the
+    FIXED flywheel-gen path — it must show 0 stale reuse and 0 divergence vs the
+    clear-per-move control.
 
     Returns per-move records:
       qmaps      : list of {action: root-Q} dicts
@@ -228,7 +236,8 @@ def _run_game(*, persistent: bool, sims: int, seed: int, max_moves: int, evaluat
     _random.seed(seed)
     g = _fresh_game()
     master = g.get_init_board()  # keeps its TRUE deck order — never reshuffled
-    mcts = _make_mcts(g, sims=sims, seed=seed, evaluator=evaluator)
+    mcts = _make_mcts(g, sims=sims, seed=seed, evaluator=evaluator,
+                      fair_isolate=fair_isolate)
 
     qmaps, chosen, reuse = [], [], []
     for _mv in range(max_moves):
@@ -238,8 +247,17 @@ def _run_game(*, persistent: bool, sims: int, seed: int, max_moves: int, evaluat
         if len(np.flatnonzero(mask)) == 0:
             break
 
-        # Snapshot pre-move tree: state_key -> N (visits so far).
-        pre = {k: node.N for k, node in mcts._nodes.items()}
+        # Snapshot pre-move tree: state_key -> (node OBJECT, N so far). We hold the
+        # actual node OBJECT (not id(node)) so that (a) reuse is detected by TRUE
+        # object identity — `node is prev_node` — and (b) the object stays ALIVE
+        # across this move's search. Holding a live reference is essential under the
+        # fair_isolate guard, which calls _nodes.clear(): if we stored only id(node),
+        # the freed node's address gets recycled by CPython (~100% of the time) and a
+        # rebuilt same-state_key node lands at the same id → a FALSE "reuse" of 1.
+        # That id()-after-free recycling was the source of the flaky stray 1. Keeping
+        # the object alive makes the rebuilt node a genuinely distinct object at a
+        # distinct address, so `is` is sound and deterministic.
+        pre = {k: (node, node.N) for k, node in mcts._nodes.items()}
 
         # The reshuffle happens INSIDE search() (fair_chance). The root KEY is
         # deck-order-blind, so the search's root node is found by the same key
@@ -250,16 +268,18 @@ def _run_game(*, persistent: bool, sims: int, seed: int, max_moves: int, evaluat
         qmaps.append(qmap)
         chosen.append(_chosen_action(qmap))
 
-        # Count stale-future reuse: nodes present BEFORE this move's search whose
-        # visit count GREW during it, excluding the root itself (the root legit
-        # accumulates across moves only in the persistent case; interior reuse is
-        # the leak). These interior nodes were created under a prior move's
-        # reshuffled deck and are now re-scored under a fresh one.
+        # Count stale-future reuse: interior nodes that are the SAME OBJECT as a
+        # node present BEFORE this move's search AND whose visit count GREW during
+        # it, excluding the root. These interior nodes were created under a prior
+        # move's reshuffled deck and are now re-scored under a fresh one — the leak.
+        # Under the fair_isolate guard the tree is wiped each search, so a same-key
+        # node is a genuinely NEW object (`node is prev_node` is False) → 0, always.
         grew = 0
         for k, node in mcts._nodes.items():
             if k == root_key:
                 continue
-            if k in pre and node.N > pre[k]:
+            prev = pre.get(k)
+            if prev is not None and node is prev[0] and node.N > prev[1]:
                 grew += 1
         reuse.append(grew)
 
@@ -381,3 +401,135 @@ def test_3b_flywheel_regime_leak_real_net():
 
     assert summ["total_stale_reuse_control"] == 0
     assert verdict in ("LEAK", "NO MATERIAL LEAK")
+
+
+# =========================================================================== #
+# 3b-FIX. The LEAK GUARD (mcts.NeuralMCTS(fair_isolate=True)) — the persistent
+#     flywheel-gen driver, WITH the fix, must reuse 0 stale cross-determinization
+#     nodes and match the clear()-per-move control bit-for-bit (0 root-Q
+#     divergence, 0 chosen-action flips). This is the regression barrier: if a
+#     future change lets the fair-chance gen loop reuse a prior move's determinized
+#     subtree, these assertions fail.
+# =========================================================================== #
+def test_3b_fix_fair_isolate_reuses_zero_stale_nodes_stub():
+    """FIXED gen loop (persistent tree + fair_isolate=True) at the SAME sims/seed
+    the stub leak test showed a LEAK. The guard re-roots each search, so:
+      - the persistent+guard path reuses 0 stale interior nodes, AND
+      - its root Q / chosen action are IDENTICAL to the clear-per-move control
+        (the guard IS the clear-per-move behavior, done inside search()).
+    """
+    sims, seed, max_moves = 60, 3, 18
+    fixed = _run_game(persistent=True, sims=sims, seed=seed, max_moves=max_moves,
+                      evaluator=_stub_evaluator, fair_isolate=True)
+    ctrl = _run_game(persistent=False, sims=sims, seed=seed, max_moves=max_moves,
+                     evaluator=_stub_evaluator)
+    summ = _summarize_divergence(fixed, ctrl)
+    verdict = _leak_verdict(summ)
+
+    print("\n=== 3b-FIX FAIR-ISOLATE GUARD (stub evaluator) ===")
+    for k, v in summ.items():
+        print(f"  {k:36s}: {v}")
+    print(f"  {'VERDICT':36s}: {verdict}")
+
+    # THE fix assertion: the persistent+guard gen loop reuses 0 stale nodes.
+    assert summ["total_stale_reuse_persistent"] == 0, (
+        "fair_isolate guard failed — the fixed gen loop still reused stale "
+        "cross-determinization interior nodes"
+    )
+    # And it is behaviorally the clear-per-move control (0 divergence, 0 flips).
+    assert summ["chosen_action_diffs"] == 0, "guard diverged from clear-per-move"
+    assert summ["max_abs_q_div"] == 0.0, "guard's root Q diverged from clear-per-move"
+    assert verdict == "NO MATERIAL LEAK"
+
+
+def test_3b_fix_fair_isolate_reroots_no_object_survives():
+    """STRUCTURAL, allocator-independent proof of the guard (does NOT use the
+    visit-growth reuse counter, so no id()-recycling can confound it).
+
+    Under fair_isolate=True the tree is wiped before every fair_chance search. So
+    the SET OF LIVE NODE OBJECTS after move t's search and after move t+1's search
+    must be DISJOINT — not one node object can survive to be re-descended under the
+    next move's fresh determinization. We hold references to move t's node objects
+    (keeping them alive so their addresses can't be recycled) and assert move t+1's
+    tree shares none of them BY OBJECT IDENTITY. This is the invariant that makes
+    stale cross-determinization reuse impossible; if a future change lets the guard
+    leak a subtree across moves, an object survives and this fails.
+    """
+    sims, seed, max_moves = 60, 3, 8
+    _random.seed(seed)
+    g = _fresh_game()
+    master = g.get_init_board()
+    mcts = _make_mcts(g, sims=sims, seed=seed, evaluator=_stub_evaluator,
+                      fair_isolate=True)
+
+    prev_objs: list = []  # hold references → old addresses cannot be recycled
+    overlaps = 0
+    checked_moves = 0
+    for _mv in range(max_moves):
+        if g.get_game_ended(master, master.state.current_player) != 0.0:
+            break
+        if len(np.flatnonzero(g.get_valid_moves(master))) == 0:
+            break
+        mcts.search(master)
+        cur_objs = list(mcts._nodes.values())
+        if prev_objs:
+            prev_ids = {id(o) for o in prev_objs}  # prev_objs still alive here
+            overlaps += sum(1 for o in cur_objs if id(o) in prev_ids)
+            checked_moves += 1
+        prev_objs = cur_objs  # keep alive across the next search
+        a = mcts.best_action(master)
+        master, _ = g.get_next_state(master, a)
+
+    print(f"\n=== 3b-FIX RE-ROOT INVARIANT: checked {checked_moves} move-pairs, "
+          f"surviving node objects = {overlaps} (must be 0) ===")
+    assert checked_moves >= 1, "test advanced too few moves to check the invariant"
+    assert overlaps == 0, (
+        "fair_isolate did NOT re-root — a node object survived across a move "
+        "(the tree was not wiped before the next fair_chance search)"
+    )
+
+
+def test_3b_fix_fair_isolate_requires_fair_chance():
+    """The guard is only meaningful under fair_chance — asserting so keeps the flag
+    from silently no-op'ing on a clairvoyant search (the anti-pattern of a guard
+    that does nothing)."""
+    g = _fresh_game()
+    with pytest.raises(ValueError, match="fair_isolate"):
+        NeuralMCTS(game=g, evaluator=_stub_evaluator, simulations=4,
+                   seed=0, c_puct=3.0, fair_chance=False, fair_isolate=True)
+
+
+@pytest.mark.skipif(not CKPT.exists(), reason="canonical checkpoint missing")
+def test_3b_fix_fair_isolate_reuses_zero_stale_nodes_real_net():
+    """Same fix verification on the REAL warmstart_canonical net path."""
+    import torch
+    from carcassonne_ai.evaluators import make_single_evaluator
+    from carcassonne_ai.network import CarcassonneNet
+
+    device = torch.device("cpu")
+    ck = torch.load(str(CKPT), map_location=device, weights_only=False)
+    ns = int(ck.get("n_scalar_features", 10))
+    net = CarcassonneNet(
+        n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+        n_scalar_features=ns,
+        value_global_pool=bool(ck.get("value_global_pool", False)),
+    ).to(device)
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+    g = Game(enable_legal_moves_cache=True, include_farm_scalars=ns > 10)
+    evaluator = make_single_evaluator(net, device, g)
+
+    sims, seed, max_moves = 40, 5, 12
+    fixed = _run_game(persistent=True, sims=sims, seed=seed, max_moves=max_moves,
+                      evaluator=evaluator, fair_isolate=True)
+    ctrl = _run_game(persistent=False, sims=sims, seed=seed, max_moves=max_moves,
+                     evaluator=evaluator)
+    summ = _summarize_divergence(fixed, ctrl)
+
+    print("\n=== 3b-FIX FAIR-ISOLATE GUARD (real net) ===")
+    for k, v in summ.items():
+        print(f"  {k:36s}: {v}")
+
+    assert summ["total_stale_reuse_persistent"] == 0
+    assert summ["chosen_action_diffs"] == 0
+    assert summ["max_abs_q_div"] == 0.0
