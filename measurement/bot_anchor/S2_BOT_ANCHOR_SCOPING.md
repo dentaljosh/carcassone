@@ -48,6 +48,27 @@ costs an engine bridge + a license ask. Carcassython is deprioritized (own engin
 - **GPL-2.0 at the repo root** — the muzero subdir is MIT; keep the port isolated to the MIT code; flag before any
   distribution (internal research use is fine).
 
+## Gate result (2026-07-01) — vs-random sanity gate: **GREEN (qualified)**
+
+Stood up the shipped MuZero in an isolated venv (**torch+numpy only** — ray/gym/tensorboard/nevergrad/PIL stubbed;
+`torch.set_num_threads(1)` gave ~9× speedup on the tiny net) and ran it vs a random-legal player **in its own
+engine** (no bridge). **Result: 74.0% winrate (37W/12L/1T, n=50, ~3.9σ)** — decisively non-random, stable across
+the run. Config: MuZero ResNet blocks=1/ch=16/**195k params**, MCTS **sims=25**, checkpoint `2021-11-03--23-49-15`
+(the sibling `20-01-49` is untrained, step=69 — discard).
+
+**Verdict: GREEN — a genuine, independent, non-trivial agent → the cross-engine bridge is worth building.**
+Qualified: 74% vs *random* is a low bar (a strong heuristic beats random ~100%), and the net is tiny → its value is
+**non-circularity, not raw strength** (expect a *weak* anchor our stack likely crushes). **Recommended next step
+before the full bridge:** a cheap **MuZero-vs-greedy/heuristic** match to size its actual strength tier.
+
+**Engine gotchas found (fixed only in the isolated driver — repo untouched):** (1) `PointsCollector.get_winning_player`
+does `int(winners[0])` on a shape-(k,1) argwhere → crashes on numpy≥1.25 (was silently swallowed into a −50 reward);
+(2) `get_possible_actions2` returns `[]` in TILES phase with no legal placement (no encoded PASS); (3) `Game.reset()`
+defaults to River+I&C+Farmers+Abbots → **must force base-only** to match our scope. Bridge entry points +
+observation/action contract documented in `scratchpad/s2_muzero/VS_RANDOM_GATE.md` (obs int32 (16,15,30); the `2`-API
+action encoding is lossy/coordinate-only in TILES → drive MuZero on *their* engine and translate, don't feed our
+richer action set directly).
+
 ## Sources
 - [SamuelScheit/carcassonne-ai](https://github.com/SamuelScheit/carcassonne-ai) (MuZero, wingedsheep engine, MIT subdir, archived 2023)
 - [33fred33/CarcassonneAI](https://github.com/33fred33/CarcassonneAI) (likely F. Valdez Ameneyro's code; MCTS-RAVE)
