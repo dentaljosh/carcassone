@@ -61,24 +61,39 @@ open-city-delta features, mean R²=0.28, ρ₁=0.76. Gate-zero did its job: it s
 redundant structural counts and kept only the genuinely-novel tempo signal.
 (`measurement/probe_5a/gate_zero_result.json`.)
 
-## Stage 2 — 4-arm head at h6400 (only if gate-zero passed)
+## Stage 2 — 4-arm head at h6400 (n_scalar=54, tempo appended to all arms)
 
-<!-- fill from scripts/probe_5a/verdict_5a.py -->
+**Single-seed (seed 0) run — INVALID as a gate read, but surfaced a strong lead:**
 
 | arm | regret-red% | best α | net-alone τ | beats leaf |
 |---|---|---|---|---|
-| none (blind) | — | — | — | — |
-| both (farm+bag) — **positive control** | — | — | — | — |
-| tempo-only | — | — | — | — |
-| all-three (farm+bag+tempo) | — | — | — | — |
+| none (blind) | +0.0 | 0.0 | +0.010 | False |
+| both (farm+bag) — **positive control** | **+0.0** | 0.0 | +0.001 | **False** ✗ |
+| tempo-only | **+44.7** | 0.25 | +0.223 | True |
+| all-three (farm+bag+tempo) | +17.5 | 0.25 | +0.120 | True |
 
-- **Positive-control guard (§4):** `both` must reproduce CL-037's non-inert −20.5%
-  (α=0.05); if inert, the gate is depth-invalid → read no null.
-- **Δ_indep_tempo = regret_red(all-three) − regret_red(both) = — pp**
-  (≥3pp CRACK · <1pp CEILING-EARNED · [1,3) WEAK LEAD).
+**Why invalid:** the `both` positive control came back **inert (+0.0%)** — but the SAME
+harness gives CL-037's `both` **+20.5%** at n_scalar=44. Appending 10 zero-variance tempo
+columns (width 44→54) flipped it, an **RNG-init / normalization fragility**. The non-monotonic
+`all_three (+17.5) < tempo_only (+44.7)` confirms single-seed training is noise-dominated.
+Per §4's invalid-gate guard, no clean Δ_indep is readable from one seed.
+
+**Leak check (`scripts/probe_5a/leak_check.py`): tempo_only's +44.7% is NOT a leak.** Every
+tempo feature correlates with `oracle_q` at |r| ≤ 0.51, far below the leaf's own +0.996
+(`lockup_diff` −0.51 is the max). So the tempo signal is genuine offline board information,
+*larger* than farm/bag's 20.5% — tempo is emphatically **not** an inert/redundant axis.
+
+**→ Seed sweep launched** (`scripts/probe_5a/run_seedsweep.sh`, 4 configs × 4 seeds, 30ep) to
+average out the init-fragility and read a trustworthy PAIRED Δ_indep (all_three − both54) with
+error bars, + a `both44` control (does farm/bag reproduce at natural width) and a `both54`-vs-`both44`
+contamination check. Read with `aggregate_seedsweep.py`.
 
 ## VERDICT
 
-<!-- one of §7's four branches; state exactly what the autopsy sentence becomes -->
+⏳ **PENDING the seed sweep.** What is already established: tempo is **not inert** (clean,
+non-leaking +44.7% offline single-seed) — so the autopsy **cannot** claim "three independent
+inert axes." Whether it is a rigorous CRACK (≥3pp seed-swept Δ_indep) or a weaker lead awaits
+the sweep. Caveat regardless: this is an OFFLINE signal; CL-034's −41% offline washed out under
+search, so even a confirmed offline crack is a recorded lead, not a loop authorization (per §7).
 
 MEASUREMENT ONLY — champion / PRODUCTION.yaml / v2.7 / v2.9 UNCHANGED.
