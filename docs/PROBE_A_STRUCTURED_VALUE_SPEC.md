@@ -133,6 +133,62 @@ games-per-hour A/B stub. **Pass/fail is read before any training compute is spen
 
 ---
 
+## 3A. Farm/bag independence pre-gate — "is there room at all" (before ANY in-loop budget)
+
+**This is the load-bearing test of whether Probe A has room at all** — cheaper than the crater screen (§4) and
+the loop (§6), so a kill here saves both. It re-runs the **CL-037 farm/bag ablation** on the *structured* head.
+
+**Established fact (the null this must break) — CL-037** (charter Step-1 representation gate, DECISIONS 2026-06-29,
+`measurement/feature_planes_gate/STEP1_GATE_RESULTS.md`): giving the *scalar/dense* value-ranker farm-connectivity
+planes **and** a bag/deck-composition histogram flipped its inertness (α 0→0.05, regret −20.5%), but the **farm/bag
+attribution came back LARGELY REDUNDANT**: farm-only **−17.1%**, bag-only **−19.7%**, both **−20.5%** — each alone
+recovers most of the signal; the second adds little (the +0.8pp increment is within the n=1544 noise). The bag axis
+is information the v2.7/v2.9 leaf **structurally cannot see** (it scores the board, not the remaining draw).
+
+**The hypothesis Probe A stakes its thesis on.** If the scalar *merged* farm and bag into one redundant direction
+*because a scalar collapses structure*, then the structured head — which preserves the per-component structure —
+should let them load onto **independent** directions: `both` should recover a meaningful gain **over the best
+single**. If instead they **stay redundant even in the structured head**, the game's value signal is genuinely
+**low-dimensional** (not a scalar-bottleneck artifact), the structured object has nothing to preserve that the
+scalar destroyed, and Probe A's whole thesis is empty.
+
+**Design implication (surface it — this is a real head-architecture addition).** To run this ablation the
+structured head must ingest **both** axes: farm-connectivity is already in the per-component features (farm
+components carry `farm_root_adj_city_roots` / farm-potential — cols 12–14 of the frozen 24-dim contract), but
+**bag-composition is NOT in the current per-component contract** (only col 18 `econ_k_remaining` ≈ deck completion).
+The 32-dim bag/deck histogram must be added as a **board-level side-input to the aggregate** (e.g. on the econ
+pseudo-row or a separate board-context vector fed alongside `Σ g_θ(comp_i)`) before this gate can run. Pre-register
+that addition as part of the head; keep the aggregate a pure sum so the leaf stays a drop-in.
+
+**Pre-registered metric + threshold.** Re-run the CL-037 ablation on the **structured head's own offline
+sibling-regret eval** — same 10,067 h6400_v2.9 sibling sets, same regret metric, same group-split (n_test=1544
+groups; scale n up if the margin below needs a tighter σ). Train/fit the structured head under three input regimes
+— **farm-only, bag-only, both** — and read the regret improvement of each.
+- **Independence statistic:** `Δ_indep = regret_gain(both) − max(regret_gain(farm-only), regret_gain(bag-only))`.
+- **"Separated" threshold:** `Δ_indep ≥ 3pp` (≈ 2σ at n=1544; CL-037's scalar `Δ_indep ≈ +0.8pp` was sub-noise =
+  redundant). Pre-register the exact margin against the measured eval σ before reading the result.
+
+**Read-out point.** Immediately after g_θ training (milestone 2 delivers the head), **before the crater screen (§4)
+and before any in-loop budget (§6).** Ordering note: gate-zero's *speed* micro-bench (§3) has already run and passed
+(additive arm 2.56×, committed `16dcd02`); this gate needs a trained head so it cannot literally precede training,
+but it is the **cheapest of the offline gates**, so it runs first among them — a kill here saves the crater screen
+and the loop, which is exactly Joshua's "cheap kill first" intent.
+
+**Kill / continue branch:**
+- **Redundant** (`Δ_indep < 3pp`, farm/bag stay substitutes in the structured head) → **KILL Probe A here.** The
+  value signal is genuinely low-dimensional; the scalar was *not* the bottleneck; the structured object extracts
+  nothing the scalar destroyed. Do **not** spend the crater screen or the loop. Combined with Probe B's outcome
+  this routes to the analyzer (§6).
+- **Separated** (`Δ_indep ≥ 3pp`, structured head gives farm and bag independent contributions) → **first real
+  evidence the scalar was the bottleneck** → proceed to the crater screen (§4) and, if it clears, the in-loop (§6).
+
+**Not a duplicate of CL-037.** CL-037 established the redundancy *in the scalar/dense ranker*; this gate tests
+whether the *structured object breaks* it — the thesis test, not a repeat. It also does not duplicate Probe B's
+fair-target bag test (§4A there): this is clairvoyant-target, scalar-vs-structured; that is fair-vs-clairvoyant
+targets on the same-arch head. Different variable held fixed in each.
+
+---
+
 ## 4. Offline pre-gate — the exact test the scalar failed
 
 Before any loop: swap the structured leaf in **at fixed sims** and check it does **not** reproduce the additive

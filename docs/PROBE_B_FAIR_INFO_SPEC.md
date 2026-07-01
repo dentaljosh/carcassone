@@ -125,6 +125,62 @@ mismatch by construction.
 
 ---
 
+## 4A. Fair-target value arm — the controlled Gate-B diagnostic (charter "Step 4")
+
+A pre-registered arm, **separate from §4's flywheel labels**: train **one value head on fair
+(determinization-averaged) targets instead of the single-true-deck clairvoyant targets, holding everything else
+identical to the Gate-B value config** — same value-head architecture, same eval/α-sweep protocol, same 10,067
+h6400_v2.9 sibling sets. **One variable changes: targets fair vs clairvoyant, nothing else.** This is a
+*diagnostic on Gate-B itself*, not part of building the deployable B1 agent (that's §4/§5). It reuses the same
+fair-label machinery §4 defines (the clairvoyance-harness determinizer — do **not** rebuild it).
+
+**Two pre-registered hypotheses, each with a metric, an n, and a branch:**
+
+**H-4A-inert — does Gate-B's "value is inert" survive fair targets?** (the potential **fourth nail**)
+- **Metric:** inert = α stays 0 in the α-sweep **and** interior-τ stays flat across search depth (the exact
+  Gate-B / Step-1 protocol — same α-sweep, same interior-τ measurement).
+- **n / read-out:** the Step-1 sibling-ranking n (n_test = 1544 groups); read **offline, after the fair-target head
+  trains, before any in-loop** (this is an offline diagnostic, not a game screen).
+- **Branch:**
+  - **Inert HOLDS on fair targets** (α≈0, τ flat) → **FOURTH NAIL**: Gate-B was *not* a clairvoyance artifact, the
+    scalar-value-leaf ceiling conclusion **strengthens**. B1 continues as a *deployable-only* artifact; the
+    flywheel bet is weaker.
+  - **Inert BREAKS on fair targets** (α>0, τ rises) → part of Gate-B was a **clairvoyance artifact**; the
+    conclusion **changes** — the fair-info regime has room the clairvoyant regime hid → strengthens the B1 in-loop
+    case (and would warrant revisiting the Gate-B verdict's scope).
+
+**H-4A-bag — does the bag-composition input's contribution GROW under fair targets?**
+- **Mechanism under test:** clairvoyant targets may **suppress** bag reasoning — the teacher already *sees* the
+  closures the bag would predict, so the bag counter has no gradient. Fair targets (teacher blind to the future
+  deck) should **restore** the gradient — *if* the mechanism is clairvoyance-suppression rather than the CL-037
+  finding of genuine heuristic-closure redundancy.
+- **Metric:** bag-contribution = the **ablation delta** (offline regret improvement) **with vs without the 32-dim
+  bag histogram**, measured **under fair targets**, compared to the same ablation delta **under clairvoyant
+  targets** (CL-037's bag-only −19.7% is the clairvoyant reference on the same sibling sets). Same n_test=1544.
+- **Branch:**
+  - **Bag-contribution GROWS under fair targets** (fair bag-delta materially exceeds the clairvoyant bag-delta) →
+    the CL-037 redundancy was **partly a clairvoyance artifact**; bag reasoning has a real fair-target gradient →
+    the fair-info agent should carry the bag input prominently.
+  - **Bag-contribution DOES NOT grow** → the redundancy is **genuine heuristic-closure redundancy**, not
+    clairvoyance-suppression — the CL-037 conclusion is regime-invariant.
+
+**Why this is NOT a repeat of the Step-0 determinization check.** Step 0 (per Joshua's framing — the exact
+DECISIONS/charter line was not pinned in this pass; verify the citation before finalizing) ran a **hygiene** check
+and found determinization **noise** "secondary, not binding" — i.e. *does injecting determinization noise perturb
+the existing pipeline*. This arm is the **stronger, different** test: a full value-head **retrain on fair
+(determinization-averaged) TARGETS** — a target-distribution swap, not a noise-robustness probe. Step 0 asked
+"does det. noise break things"; §4A asks "does training the value on *fair targets* change the inert verdict and
+revive bag reasoning." They differ in what's varied (noise-in-pipeline vs target-distribution) and in strength
+(hygiene vs full retrain).
+
+**Relationship to §4 / Probe A (not duplication).** §4 builds fair labels for the **deployable B1 agent**; §4A
+uses the *same* fair-label machinery for a **controlled diagnostic on Gate-B's inert conclusion + bag reasoning**.
+And it does not duplicate Probe A's farm/bag independence gate (PROBE_A §3A): there the variable is
+scalar-vs-structured head on **clairvoyant** targets; here it is fair-vs-clairvoyant **targets** on the
+**same-arch** (Gate-B) head. Orthogonal one-variable comparisons.
+
+---
+
 ## 5. B1 / B2 designs + what "success" measures
 
 **B1 — root-determinization / PIMC (built; reuse `clairvoyance_gap.py`).** K≈8–16 fresh permutations of the known
