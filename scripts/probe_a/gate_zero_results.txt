@@ -1,0 +1,73 @@
+==========================================================================
+PROBE A — GATE ZERO: leaf-speed feasibility bench
+==========================================================================
+
+Production entry: flat_leaf.flat_virtual_score_v2  (USE_CY_LEAF=True)
+  Cython binding : flat_leaf_cy.flat_virtual_score_v2_cy  bound=YES
+
+Generating 60 mid/late-game boards (random rollout, 40-80 tiles)...
+  tiles/board  : min 40  median 59  max 72
+  comps/board  : min 52  median 87  max 113
+
+--- BASELINE: production Cython leaf (per node) ---
+  median: 29,987 ns/leaf
+  [ref] decompose() alone: 404,574 ns  (13.49x baseline)
+  [ref] decompose()+featurize: 461,036 ns  (15.37x baseline)
+
+--- (b) numpy hand-rolled tiny-MLP (no framework dispatch) ---
+  head only (feats precomputed): 8,365 ns  (0.28x baseline)
+  full node (decompose+feat+head): 492,838 ns  (16.44x baseline)
+
+--- (a) torch tiny-MLP forward per node (batch = n_components) ---
+  head only (feats precomputed): 26,280 ns  (0.88x baseline)
+
+--- (c) MEMOIZATION lever ---
+  Component-identity keying feasibility (spec open-question 1):
+    n_transitions measured: 51
+    components CHANGED per placement (vs parent): min 1  median 3  mean 3.33  max 8
+    total components in child (median): 92
+    => memo hit rate ~= 96.3% of components reused per node
+
+  Amortized per-node cost estimate under memo:
+    decompose (unavoidable — detects changes): 404,574 ns
+    head over ~3 changed comps:               4,711 ns
+    ---
+    memo per-node total:                        409,286 ns  (13.65x baseline)
+
+==========================================================================
+SUMMARY  (budget: v_leaf must be <= 3.00x the Cython leaf per node)
+==========================================================================
+  impl                                          ns/node   xbase  note
+  ------------------------------------------------------------------------
+  BASELINE  Cython leaf                          29,987   1.00x  the bar
+  --- head in isolation (feats given) ---
+  (a) torch head only                            26,280   0.88x  dispatch overhead PASS
+  (b) numpy head only                             8,365   0.28x  the head is cheap PASS
+  --- realistic per-NODE (head+source) ---
+  PATH-PY  py-decompose + numpy head            412,940  13.77x  drop-in Python: FAILS FAIL
+  (c) memo  py-decompose + k-comp head          409,286  13.65x  memo can't help: FAILS FAIL
+  PATH-CY  baseline + numpy head                 38,352   1.28x  needs Cython feature-emit PASS
+
+==========================================================================
+VERDICT
+==========================================================================
+  Key facts:
+    - The tiny per-component head is NOT the bottleneck (numpy 8,365 ns = 0.28x; torch 26,280 ns = 0.88x). Both clear 3x with room.
+    - The bottleneck is the DECOMPOSITION. The Cython baseline computes it in C for free;
+      pure-Python flat_leaf.decompose() costs 404,574 ns = 13.5x the WHOLE compiled leaf.
+    - Memoization does NOT rescue PATH-PY: even reusing 96% of component VALUES, you still
+      must decompose() the child board to KNOW which components changed -> 13.6x. FAIL.
+
+  Component-identity keying (open-question 1): FEASIBLE. Components key
+  stably on their member-position frozensets (Decomp.city_root_positions /
+  road_root_positions / farm_root_keys) — invariant sets, ~96% reused per
+  placement. But stable keys only save the HEAD eval, not the decompose.
+
+  ==> MARGINAL / CONDITIONAL PASS.
+      The structured v_leaf clears <=3x ONLY via PATH-CY (1.28x): emit the
+      per-component features from the Cython leaf's existing C decomposition and run
+      the head (numpy or torch) on top. This is NOT the spec's drop-in `decompose()`
+      + head — it requires extending flat_leaf_cy to return per-component features
+      (bounded, ~1 day of Cython work). The naive Python drop-in (PATH-PY, 13.8x)
+      and the memo lever (13.6x) both FAIL the budget outright.
+
