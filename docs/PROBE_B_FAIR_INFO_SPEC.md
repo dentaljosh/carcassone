@@ -1,9 +1,23 @@
-# PROBE B — FAIR-INFORMATION FLYWHEEL (the deployable regime) — 2026-06-30 (DRAFT, awaiting Joshua approval)
+# PROBE B — FAIR-INFORMATION FLYWHEEL (the deployable regime) — 2026-06-30 (flywheel bet CLOSED 2026-07-01; B1 ships)
 
 Pre-registered design spec for the second of two post-Gate-B AlphaZero-family probes. Read with the companion
 [PROBE_A_STRUCTURED_VALUE_SPEC.md](PROBE_A_STRUCTURED_VALUE_SPEC.md), the fair-information measurement design in
 [MEASUREMENT_FIRST_SPEC_2026-06-18.md](MEASUREMENT_FIRST_SPEC_2026-06-18.md), the clairvoyance-gap result
 (CL-022), and the charter's abandonment criteria ([PROJECT_CHARTER.md](../PROJECT_CHARTER.md)).
+
+> **OUTCOME — flywheel bet CLOSED on the LEDGER (2026-07-01, commit `be538a7`); B1 ships as the deployable
+> artifact.** Gate zero done (`fair_isolate` leak fix, 0 stale reuse; fair-target range ADEQUATE, `451fadb`).
+> The §4A fair-target diagnostic ([measurement/probe_b_4a/PROBE_B_4A_RESULTS.md](../measurement/probe_b_4a/PROBE_B_4A_RESULTS.md))
+> ran full-n (n_test=1544): **all six arms inert**, and the n=150 preview's "clair non-inert" was 8-group noise.
+> **§4A is DEPTH-SATURATED / inconclusive on its own** — the clean H-4A-inert test needs a non-inert clair
+> baseline, but clair@800 is also inert (CL-037's α=0.05 needed the deep h6400 teacher; at play depth even
+> clairvoyant targets give the value no residual over the leaf). Clairvoyance-vs-depth is **deliberately left
+> unresolved, out-of-scope.** → **The flywheel bet closes NOT on this screen but on the accumulated
+> value-inertness ledger** (CL-029/032/033/034/036, Gate-B CL-038, Probe-A §3A — scalar+structured on
+> clairvoyant targets — plus Gate-B's offline→online mechanism; §4A only *extends* it to fair targets). The
+> AZ-value route is exhausted across scalar / structured / clairvoyant / fair → **ship the analyzer** (endgame-2),
+> **with B1 (the fair-info agent) as the deployable, human-anchorable deliverable** — Probe B's non-empty failure
+> path. Champion / PRODUCTION.yaml / v2.7 / v2.9 UNCHANGED.
 
 > **Status: SPEC ONLY — no implementation, no runs, no cluster spend.** Pre-registers hypotheses, gates, and
 > kill criteria before any run. Nothing executes until Joshua signs off on the plan and the shared time-box (§7).
