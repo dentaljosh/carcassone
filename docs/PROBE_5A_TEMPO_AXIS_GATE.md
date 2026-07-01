@@ -6,10 +6,24 @@ written. Read with the closed AZ-value probes ([PROBE_A_STRUCTURED_VALUE_SPEC.md
 the representation gate ([CL-037](../governance/CLAIM_REGISTRY.csv)), and the close entry
 ([DECISIONS.md](../DECISIONS.md) 2026-07-01 / CL-039).
 
-> **Status: SPEC ONLY — no implementation, no runs, no cluster spend.** This document pre-registers the
-> hypothesis (both directions), gate-zero, the depth requirement, thresholds, and the read-out *before*
-> any run (boxing rule 1). Nothing here executes until Joshua signs off. **No in-loop games, no cluster
-> flywheel spend** — this is a gate the same order of cost as §3A/§4A (~1 day), not a program.
+> **OUTCOME — RAN, INCONCLUSIVE on the rigorous gate, but a live OFFLINE LEAD (2026-07-01, `58262ef`→`334bef8`).**
+> Gate-zero PASSED (PARTIAL): the naive structural tempo counts (open-road/city, farmer counts) are
+> ≥0.72 reconstructible from the already-present representation and were dropped; a genuine **10-feature
+> timing-depth core survives** (depth-weighted meeple lockup Σ open_n, closure-race, contested,
+> open-city-delta — mean R²=0.28, canonical ρ₁=0.76 < 0.90). Single-seed 4-arm at h6400: **`tempo_only`
+> = +44.7% regret-reduction (τ 0.223)**, a clean monotone sweep, **leak-verified** (all tempo features
+> |r|≤0.51 vs oracle_q vs the leaf's own 0.996) — the **strongest clean offline ranker in the whole probe
+> program, larger than CL-037's farm/bag −20.5%.** So §5A **did NOT confirm H-5A-inert — tempo is NOT a
+> redundant/inert third axis.** BUT the run was single-seed with a **broken positive control** (`both`
+> came back +0.0% though the same harness gives +20.5% at n_scalar=44 — appending 10 zeroed tempo columns
+> flipped it = RNG-init fragility; non-monotonic `all_three +17.5 < tempo_only +44.7` confirms single-seed
+> noise), so the pre-registered ≥3pp seed-swept `Δ_indep` was **never obtained** — the confirming 4×4 seed
+> sweep OOM-killed the box before any run finished and was **not relaunched.** **Net: a live, unresolved
+> OFFLINE tempo lead that QUALIFIES CL-039's "genuinely low-dimensional" clause** (that close rested on two
+> known-redundant axes; the third was *not* redundant offline). **Ship decision UNCHANGED — analyzer + B1**
+> (§7 is invariant, and tempo is OFFLINE-only → CL-034's washout precedent → a recorded lead, not a loop
+> authorization). Full read: [../measurement/probe_5a/PROBE_5A_RESULTS.md](../measurement/probe_5a/PROBE_5A_RESULTS.md).
+> Governance: **CL-040** (qualifies CL-039). The pre-registration below is preserved verbatim as filed.
 
 > **Why this gate exists (the honest reason).** CL-039 closed the AZ-value route on the value-inertness
 > ledger and shipped "the residual value beyond the v2.9 leaf is low-dimensional." But the *dimensionality*

@@ -83,17 +83,32 @@ tempo feature correlates with `oracle_q` at |r| ≤ 0.51, far below the leaf's o
 (`lockup_diff` −0.51 is the max). So the tempo signal is genuine offline board information,
 *larger* than farm/bag's 20.5% — tempo is emphatically **not** an inert/redundant axis.
 
-**→ Seed sweep launched** (`scripts/probe_5a/run_seedsweep.sh`, 4 configs × 4 seeds, 30ep) to
-average out the init-fragility and read a trustworthy PAIRED Δ_indep (all_three − both54) with
-error bars, + a `both44` control (does farm/bag reproduce at natural width) and a `both54`-vs-`both44`
-contamination check. Read with `aggregate_seedsweep.py`.
+**→ Seed sweep (`scripts/probe_5a/run_seedsweep.sh`, 4 configs × 4 seeds) LAUNCHED then OOM-KILLED
+before ANY of the 16 runs finished** — concurrency-4 on the 41 GB WSL box (32 GB obs page cache +
+4 training procs) OOM-restarted the VM. **NOT relaunched** (Joshua's call — start fresh). So **no
+seed-swept Δ_indep exists.** (Aggregator `aggregate_seedsweep.py` is ready if it's ever re-run
+solo/concurrency-2.)
 
-## VERDICT
+## VERDICT — INCONCLUSIVE on the rigorous gate, but a live OFFLINE LEAD (not inertness)
 
-⏳ **PENDING the seed sweep.** What is already established: tempo is **not inert** (clean,
-non-leaking +44.7% offline single-seed) — so the autopsy **cannot** claim "three independent
-inert axes." Whether it is a rigorous CRACK (≥3pp seed-swept Δ_indep) or a weaker lead awaits
-the sweep. Caveat regardless: this is an OFFLINE signal; CL-034's −41% offline washed out under
-search, so even a confirmed offline crack is a recorded lead, not a loop authorization (per §7).
+**§5A did NOT confirm H-5A-inert.** The one axis uncorrelated-by-construction with farm/bag —
+tempo/timing — was, at the single seed measured, the **strongest clean offline ranker in the whole
+probe program** (`tempo_only` +44.7%, τ 0.223, leak-verified), *larger* than CL-037's farm/bag
+−20.5%. So the autopsy **cannot** write "ceiling earned across three independent inert axes."
 
-MEASUREMENT ONLY — champion / PRODUCTION.yaml / v2.7 / v2.9 UNCHANGED.
+**But it did NOT rigorously confirm H-5A-live either.** The single seed had a broken positive
+control (`both` +0.0% vs the harness's own +20.5%) and a non-monotonic arm ordering — init-noise —
+so the pre-registered ≥3pp seed-swept Δ_indep was **never obtained** (sweep OOMed, not relaunched).
+
+**Honest landing (maps to §7 between branch B and "gate could not fully run"):** tempo is a
+**live, unresolved offline lead** — a value direction the v2.9 heuristic (flat meeple term) treats
+crudely, which farm/bag did not capture. This **QUALIFIES CL-039's "genuinely low-dimensional"
+clause** (that close rested on two known-redundant axes; the third was *not* redundant offline).
+
+**The ship decision is UNCHANGED (analyzer + B1)** — per §7 (invariant across branches) AND because
+this is an **OFFLINE** signal: CL-034's −41% offline washed out under search, so even a seed-confirmed
+tempo crack is a *recorded lead, not a loop authorization*. If the AZ-value question is ever reopened,
+the first step is the seed-swept tempo confirmation (run solo/concurrency-2), and **tempo — not
+farm/bag — is where a future fair-from-scratch loop or scale-up would aim.**
+
+MEASUREMENT ONLY — champion / PRODUCTION.yaml / v2.7 / v2.9 UNCHANGED. Governance: **CL-040** (qualifies CL-039).
