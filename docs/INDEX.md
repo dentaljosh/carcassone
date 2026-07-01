@@ -8,6 +8,7 @@
 ## Current program & live reference
 | Doc | Role | Status |
 |---|---|---|
+| [POST_REVIEW_PLAN.md](POST_REVIEW_PLAN.md) | **The live program (2026-07-01)** — reconciles the fresh-look review (F1–F10) with live state: solver-scored gates (F4), S1/S2 ship, M1/M2/M3 reopeners, autopsy `[PENDING M1–M3]` | EXECUTING |
 | [MEASUREMENT_FIRST_SPEC_2026-06-18.md](MEASUREMENT_FIRST_SPEC_2026-06-18.md) | The current program — measurement-first (3 levels) | PROPOSED |
 | [CORRECTION_PLAN_2026-06-02.md](CORRECTION_PLAN_2026-06-02.md) | Master fix sequence (phases 0–3) | current path (Phases 1–2 outcome addendum 2026-06-12) |
 | [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) | Concrete staged build A→B→C | DRAFT |

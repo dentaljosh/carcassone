@@ -1,6 +1,14 @@
 # PROBE §5A — Tempo/timing third-axis gate — RESULTS
 
-Status: **⏳ RUNNING (2026-07-01)** — gate-zero correlation check first (free kill),
+Status: **🏁 CLOSED (2026-07-01) — INCONCLUSIVE (rigorous gate); gate-zero salvaged.**
+> **⚠️ CORRECTION 2026-07-01 (fresh-look review F4):** the h6400 oracle_q correlates **0.995**
+> with the static v2.9 leaf, so the stage-2 `tempo_only` **+44.7%** below was scored against a
+> near-copy of the leaf — the **circular frame** F4 flags as unreadable. Only **gate-zero** (the
+> tempo-vs-farm/bag residualization) survives as non-circular. The "live offline lead" reading is
+> **downgraded to circular-frame/unresolved**; §5A's valid question is **absorbed into M2**
+> ([docs/POST_REVIEW_PLAN.md](../../docs/POST_REVIEW_PLAN.md) §4), scored against the **exact solver**.
+
+Was: gate-zero correlation check first (free kill),
 then (if it passes) the 4-arm CL-037 head at h6400. Spec:
 [docs/PROBE_5A_TEMPO_AXIS_GATE.md](../../docs/PROBE_5A_TEMPO_AXIS_GATE.md).
 Emitter `scripts/probe_5a/emit_tempo.py` · gate-zero `scripts/probe_5a/gate_zero.py` ·
