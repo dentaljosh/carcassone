@@ -1,0 +1,4 @@
+[retarget] src groups=10067 | targets file roots=10067 | matched src groups=10067 | kind=clair
+[retarget] row→action replay: 10067 groups in 760s (err=0)
+[retarget] wrote 10067 groups / 314911 rows (skipped 0) kind=clair -> /home/doctor/carc_probe_b/ds_clair_full
+[retarget] oracle_q now = clair@D action target; leaf_q/obs/scalars/split UNCHANGED from CL-037.
