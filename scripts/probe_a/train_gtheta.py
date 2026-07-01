@@ -139,6 +139,22 @@ class GTheta(nn.Module):
         return self.fc2(h).squeeze(-1)         # (N_comp,)
 
 
+N_BAG = 32
+
+
+class BagHead(nn.Module):
+    """Board-level bag/deck-composition head (32 -> H_bag -> 1). Its scalar is
+    ADDED to the aggregate (pure sum), so the leaf stays a drop-in. Milestone 2.5:
+    the axis CL-037 showed EXCEEDS the v2.9 ceiling."""
+    def __init__(self, in_dim=N_BAG, hidden=16):
+        super().__init__()
+        self.fc1 = nn.Linear(in_dim, hidden)
+        self.fc2 = nn.Linear(hidden, 1)
+
+    def forward(self, bag):                    # bag: (N_boards, 32)
+        return self.fc2(torch.tanh(self.fc1(bag))).squeeze(-1)   # (N_boards,)
+
+
 def _board_sum(per_comp, offsets_t):
     """Segment-sum per_comp (N_comp,) into per-board sums (N_boards,) using a
     ragged offsets tensor (N_boards+1,)."""
@@ -166,6 +182,13 @@ def main():
     ap.add_argument("--lambda-reg", type=float, default=0.3)    # (ii) structure hold
     ap.add_argument("--patience", type=int, default=12)
     ap.add_argument("--seed", type=int, default=0)
+    # MILESTONE 2.5: bag/deck-composition side-input + exact cloister offset.
+    ap.add_argument("--bag", action="store_true",
+                    help="add the 32-dim bag side-input (stage-ii) + pull cloister "
+                         "out as an EXACT board-level offset. The CL-037 'exceed "
+                         "the ceiling' diagnostic (spec open-Q3).")
+    ap.add_argument("--bag-file", default=None, help="default <dataset>/bag_sidetable.npz")
+    ap.add_argument("--bag-hidden", type=int, default=16)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
     dev = torch.device(args.device)
@@ -187,9 +210,41 @@ def main():
     col_mean = z["col_mean"].astype(np.float32)
     col_std = z["col_std"].astype(np.float32)
     col_std = np.where(col_std < 1e-6, 1.0, col_std).astype(np.float32)
+    cloister = z["cloister_slice"].astype(np.float32)   # (Nboards,) exact cloister value
     nb = len(y_struct)
     print(f"[load] {nb} boards / {feat.shape[0]} component rows / "
           f"{len(np.unique(gs))} games  FEAT_DIM={feat.shape[1]}", flush=True)
+
+    # ---- MILESTONE 2.5: bag side-input + EXACT cloister offset. ------------- #
+    # cloister is pulled OUT of the learnable aggregate (its feature columns are
+    # reserved-0, so g_theta structurally CANNOT learn it) and added as an EXACT
+    # board-level offset, same as running_diff. The leaf then becomes:
+    #   v_leaf = tanh((running + cloister + sum g(comp) + bag_head(bag)) / 15)
+    # and the STRUCTURAL target the sum must reproduce drops the cloister slice.
+    use_bag = bool(args.bag)
+    if use_bag:
+        bagf = Path(args.bag_file) if args.bag_file else dsdir / "bag_sidetable.npz"
+        bz = np.load(bagf, allow_pickle=False)
+        bag = bz["bag"].astype(np.float32)
+        assert bag.shape == (nb, N_BAG), (bag.shape, nb)
+        assert np.allclose(bz["oracle_q"].astype(np.float32), oracle_q, atol=1e-5), \
+            "bag side-table <-> component_ds oracle_q mismatch (misaligned)"
+        if "filled" in bz.files:
+            assert bool(bz["filled"].all()), "bag side-table incomplete"
+        bag_mean = bag.mean(axis=0); bag_std = bag.std(axis=0)
+        bag_std = np.where(bag_std < 1e-6, 1.0, bag_std).astype(np.float32)
+        bag_n = ((bag - bag_mean) / bag_std).astype(np.float32)
+        # exact offset that leaves the leaf: running + cloister. y_struct becomes
+        # the part the SUM must reproduce, minus the cloister slice.
+        offset_exact = running + cloister                 # (Nboards,)
+        y_struct = y_struct - cloister                    # learnable structural part
+        print(f"[bag] bag side-input ON (H_bag={args.bag_hidden}); cloister pulled "
+              f"out as EXACT offset (abs_mean {np.abs(cloister).mean():.3f}). "
+              f"y_struct now excludes cloister.", flush=True)
+    else:
+        bag_n = None
+        offset_exact = running
+        bag_mean = bag_std = None
 
     # normalize features (z-score) — the head is well-conditioned; the export step
     # folds the normalization into the numpy head so the leaf feeds RAW features.
@@ -202,12 +257,22 @@ def main():
     print(f"[split] boards train/val/test = "
           f"{len(idx['train'])}/{len(idx['val'])}/{len(idx['test'])}", flush=True)
 
+    # When bag mode pulls cloister out, also drop the cloister slice from the
+    # ECON-ROW per-component target (its features can't represent it). The cloister
+    # slice sits on the LAST component row of each board (the econ pseudo-row).
+    if use_bag:
+        econ_rows = (offsets[1:] - 1).astype(np.int64)     # last row index per board
+        y_comp = y_comp.copy()
+        y_comp[econ_rows] = y_comp[econ_rows] - cloister    # remove cloister from econ target
+
     feat_t = torch.from_numpy(feat_n).to(dev)
     ycomp_t = torch.from_numpy(y_comp).to(dev)
     ystruct_t = torch.from_numpy(y_struct).to(dev)
-    run_t = torch.from_numpy(running).to(dev)
+    run_t = torch.from_numpy(offset_exact).to(dev)          # running (+cloister if bag)
     oq_t = torch.from_numpy(oracle_q).to(dev)
     off_t = torch.from_numpy(offsets).to(dev)
+    bag_t = torch.from_numpy(bag_n).to(dev) if use_bag else None
+    bag_head = BagHead(N_BAG, args.bag_hidden).to(dev) if use_bag else None
 
     # per-board component slices as (start,end) for gathering minibatches.
     starts = offsets[:-1]; ends = offsets[1:]
@@ -309,13 +374,25 @@ def main():
           f"rel_err={recon_test['rel_err_agg']:.4f} RMSE={recon_test['rmse_agg']:.3f} | "
           f"per-comp R2={recon_test['r2_comp']:.4f} MAE={recon_test['mae_comp']:.3f}", flush=True)
 
-    # aggregate agreement with h6400-Q (the ceiling reference).
-    def leaf_q_pred(board_ids):
-        _, aggs, _ = _forward_board_set(board_ids)
-        return np.tanh((running[board_ids] + aggs) / 15.0).astype(np.float32)
+    def _bag_scalar_np(board_ids, with_bag):
+        """bag_head over the board set -> (n,) numpy scalar (0 if no/off bag)."""
+        if bag_head is None or not with_bag:
+            return np.zeros(len(board_ids), np.float32)
+        bag_head.train(False)
+        with torch.no_grad():
+            bs = bag_head(bag_t[torch.from_numpy(board_ids).to(dev)])
+        return bs.cpu().numpy().astype(np.float32)
 
-    def q_agreement(board_ids, label):
-        pred = leaf_q_pred(board_ids)
+    # aggregate agreement with h6400-Q (the ceiling reference). Uses the EXACT
+    # offset (running (+cloister if bag mode)) + the bag scalar (only after the bag
+    # head is trained, i.e. with_bag=True in stage ii).
+    def leaf_q_pred(board_ids, with_bag):
+        _, aggs, _ = _forward_board_set(board_ids)
+        bs = _bag_scalar_np(board_ids, with_bag)
+        return np.tanh((offset_exact[board_ids] + aggs + bs) / 15.0).astype(np.float32)
+
+    def q_agreement(board_ids, label, with_bag=False):
+        pred = leaf_q_pred(board_ids, with_bag)
         oq = oracle_q[board_ids]
         mse = float(np.mean((pred - oq) ** 2))
         # also the pure-heuristic leaf's own tanh(pretransform/15) vs Q (the ceiling).
@@ -336,16 +413,25 @@ def main():
     with torch.no_grad():
         g0_comp = net(feat_t).detach().clone()   # (Ncomp,) stage-(i) g values
 
-    opt2 = torch.optim.Adam(net.parameters(), lr=args.lr * 0.5,
-                            weight_decay=args.weight_decay)
+    # stage-ii optimizes g_theta AND (if present) the bag head. The structure-hold
+    # regularizer anchors ONLY g_theta's per-component outputs (bag is a NEW,
+    # unanchored direction — that is precisely the axis we test).
+    ii_params = list(net.parameters())
+    if bag_head is not None:
+        ii_params = ii_params + list(bag_head.parameters())
+    opt2 = torch.optim.Adam(ii_params, lr=args.lr * 0.5, weight_decay=args.weight_decay)
 
     def run_ii(board_ids, train):
         net.train(train)
+        if bag_head is not None:
+            bag_head.train(train)
         tot_q = tot_reg = 0.0; nbtot = 0
         for comp_idx, local_off, bids in batch_iter(board_ids, args.boards_per_batch, train):
             with torch.set_grad_enabled(train):
                 gc = net(feat_t[comp_idx])
                 agg = _board_sum(gc, local_off)
+                if bag_head is not None:
+                    agg = agg + bag_head(bag_t[bids])
                 vleaf = torch.tanh((run_t[bids] + agg) / 15.0)
                 q_loss = torch.mean((vleaf - oq_t[bids]) ** 2)
                 reg = torch.mean((gc - g0_comp[comp_idx]) ** 2)
@@ -356,7 +442,7 @@ def main():
             tot_q += float(q_loss.detach()) * nbb; tot_reg += float(reg.detach()) * nbb; nbtot += nbb
         return tot_q / nbtot, tot_reg / nbtot
 
-    best_val2 = math.inf; best_state2 = None; stale = 0
+    best_val2 = math.inf; best_state2 = None; best_bag2 = None; stale = 0
     for ep in range(args.epochs_ii):
         te = time.time()
         trq, trr = run_ii(idx["train"], True)
@@ -369,6 +455,8 @@ def main():
         if improved:
             best_val2 = vq
             best_state2 = {k: v.detach().cpu().clone() for k, v in net.state_dict().items()}
+            best_bag2 = ({k: v.detach().cpu().clone() for k, v in bag_head.state_dict().items()}
+                         if bag_head is not None else None)
             stale = 0
         else:
             stale += 1
@@ -376,8 +464,10 @@ def main():
                 print(f"  ii early-stop ep{ep+1}", flush=True); break
     if best_state2:
         net.load_state_dict(best_state2)
+        if bag_head is not None and best_bag2 is not None:
+            bag_head.load_state_dict(best_bag2)
 
-    q_after_ii = q_agreement(idx["test"], "stage-ii TEST Q")
+    q_after_ii = q_agreement(idx["test"], "stage-ii TEST Q", with_bag=use_bag)
     recon_after_ii = eval_recon(idx["test"])
     print(f"[stage-ii TEST] agg R2={recon_after_ii['r2_agg']:.4f} "
           f"per-comp R2={recon_after_ii['r2_comp']:.4f} "
@@ -394,14 +484,21 @@ def main():
           f"({'FINE-TUNE BEATS CEILING' if beats_ceiling else 'stuck at/above the v2.9 ceiling'})", flush=True)
 
     # ---- save the STAGE-(ii) head (the fine-tuned substrate) + summary. ---- #
-    torch.save({
+    ck = {
         "state_dict": net.state_dict(),
         "stage_i_state": {k: v.cpu() for k, v in stage_i_state.items()},
         "FEAT_DIM": FEAT_DIM, "hidden": args.hidden, "arch": "GTheta",
         "col_mean": col_mean, "col_std": col_std,
         "running_offset": True, "tanh_scale": 15.0,
         "v29_hash": meta.get("v29_hash"),
-    }, outd / "gtheta.pt")
+        "use_bag": bool(use_bag), "cloister_exact_offset": bool(use_bag),
+    }
+    if use_bag:
+        ck["bag_state_dict"] = bag_head.state_dict()
+        ck["bag_hidden"] = int(args.bag_hidden)
+        ck["bag_mean"] = bag_mean.astype(np.float32)
+        ck["bag_std"] = bag_std.astype(np.float32)
+    torch.save(ck, outd / "gtheta.pt")
 
     summary = {
         "dataset": str(dsdir), "n_boards": nb, "hidden": args.hidden, "n_params": n_params,
@@ -420,6 +517,9 @@ def main():
         "cloister_residual_stats": meta.get("cloister_residual_stats"),
         "scale_stats": meta.get("scale_stats"),
         "v29_hash": meta.get("v29_hash"),
+        "use_bag": bool(use_bag),
+        "cloister_pulled_out_as_exact_offset": bool(use_bag),
+        "bag_hidden": int(args.bag_hidden) if use_bag else None,
     }
     (outd / "summary.json").write_text(json.dumps(summary, indent=2))
     print(f"\n-> {outd}/gtheta.pt  +  {outd}/summary.json", flush=True)

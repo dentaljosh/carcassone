@@ -54,6 +54,54 @@ for _p in (str(_REPO / "src"), str(_REPO / "engine"),
 import carcassonne_ai.flat_leaf_cy as _cy
 import component_features as cf
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG, virtual_score_v2
+from carcassonne_ai.flat_leaf import (
+    decompose as _decompose, _cloister_points, _surrounding_count,
+)
+from wingedsheep.carcassonne.objects.terrain_type import TerrainType as _TT
+
+# The 32-dim bag/deck-composition histogram — REUSED verbatim from the frozen
+# Step-1 census (step2_leaf's build_dataset.bag_histogram is itself imported from
+# here); we do NOT rebuild it.
+sys.path.insert(0, str(_REPO / "scripts" / "feature_planes_gate"))
+from step1_planes import bag_histogram as _bag_histogram, N_BAG as _N_BAG  # noqa: E402
+
+
+def cloister_offset(state, root_player: int, cfg=None) -> float:
+    """The heuristic's OWN cloister/monastery value as an EXACT board-level offset
+    (self-minus-opp, root-POV): cloister base (surrounding-tile count when meepled)
+    + cloister closure-anticipation (P[8-n_surround] * (8-n_surround)).
+
+    BIT-IDENTICAL to build_component_dataset._attribute's `cloister_slice`
+    (econ_base_extra + econ_closure_extra) — the same v2.9 leaf path — so the
+    dataset's stored `cloister_slice` and this leaf-time offset agree to fp. This
+    is added at leaf time the SAME way running_diff is; it is NOT learned (the
+    cloister feature columns are reserved-0, so g_theta structurally cannot see
+    it). Cloisters are not union-find components, so this needs no decompose — a
+    single pass over placed cloister meeples.
+    """
+    if cfg is None:
+        cfg = DEFAULT_CONFIG
+    closure_p = cfg.closure_p
+    board = state.board
+    H = len(board); W = len(board[0]) if H else 0
+    opp = 1 - root_player
+    base = 0.0
+    clo = 0.0
+    for pl in range(state.players):
+        sgn = 1.0 if pl == root_player else -1.0
+        for mp in state.placed_meeples[pl]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row; c = cws.coordinate.column; side = cws.side
+            terr = board[r][c].get_type(side)
+            if terr == _TT.CHAPEL or terr == _TT.FLOWERS:
+                base += sgn * _cloister_points(r, c, board, H, W)
+                n_sur = _surrounding_count(state, r, c, H, W)
+                needed = 8 - n_sur
+                if needed > 0:
+                    p = closure_p.get(needed, 0.0)
+                    if p > 0:
+                        clo += sgn * (p * needed)
+    return float(base + clo)
 
 
 class GThetaStub:
@@ -63,28 +111,51 @@ class GThetaStub:
     A 2-layer tanh MLP (FEAT_DIM -> H -> 1). RANDOM weights for milestone 1
     (`from_random`); milestone 2 loads TRAINED weights via `from_trained_npz`.
 
-    LEAF AGGREGATION (milestone 2, matches the trainer + the heuristic's shape):
+    LEAF AGGREGATION (milestone 2.5, matches the trainer + the heuristic's shape):
 
-        v_leaf = tanh( (running_diff + sum_i g_theta(comp_i)) / tanh_scale )
+        v_leaf = tanh( ( running_diff + cloister_offset
+                         + sum_i g_theta(comp_i) + bag_head(bag_hist) ) / tanh_scale )
 
-    where `running_diff` is the exact points-already-scored offset (from
-    state.scores; NOT learned — the closed features that produced them are off
-    the board and carry no component features) and tanh_scale defaults to 15.0
-    (== the heuristic's tanh(vs/15)). The trained weights are exported with the
-    z-score NORMALIZATION FOLDED INTO the first layer, so the leaf feeds the head
-    RAW Cython features (no per-node normalization work on the hot path).
+    where:
+      * `running_diff`     = exact points-already-scored offset (state.scores diff;
+                             NOT learned — the closed features that produced them are
+                             off the board and carry no component features).
+      * `cloister_offset`  = the heuristic's OWN cloister/monastery value
+                             (base + closure, self-minus-opp, root-POV) — an EXACT
+                             board-level offset (milestone-2.5), because cloisters
+                             are not union-find components and their slice (abs-mean
+                             7.52 on 84% of these boards) cannot be reconstructed
+                             from the zero cloister-feature columns. Same pattern as
+                             running_diff: computed from the v2.9 leaf, not learned.
+      * `bag_head(bag)`    = a small board-level forward on the 32-dim bag/deck
+                             histogram (the axis CL-037 showed EXCEEDS the v2.9
+                             ceiling). One forward per node. `None` on heads trained
+                             without a bag input (bag scalar = 0).
+    tanh_scale defaults to 15.0 (== the heuristic's tanh(vs/15)). The trained
+    weights are exported with the z-score NORMALIZATION FOLDED INTO the first
+    layer(s), so the leaf feeds RAW Cython features + RAW bag (no per-node
+    normalization work on the hot path). The aggregate stays a PURE SUM so v_leaf
+    is a drop-in leaf.
 
-    Milestone-1 back-compat: `out_scale` + `aggregate(X)` (no running offset,
-    tanh(out_scale*sum)) are retained for the random stub / old smoke.
+    Milestone-1 back-compat: `out_scale` + `aggregate(X)` (no running/cloister/bag
+    offset, tanh(out_scale*sum)) are retained for the random stub / old smoke.
     """
 
-    def __init__(self, W1, b1, W2, b2, out_scale=1.0, tanh_scale=15.0):
+    def __init__(self, W1, b1, W2, b2, out_scale=1.0, tanh_scale=15.0,
+                 bag_W1=None, bag_b1=None, bag_W2=None, bag_b2=None):
         self.W1 = W1.astype(np.float32)
         self.b1 = b1.astype(np.float32)
         self.W2 = W2.astype(np.float32)
         self.b2 = b2.astype(np.float32)
         self.out_scale = float(out_scale)
         self.tanh_scale = float(tanh_scale)
+        # optional board-level bag head (32 -> H_bag -> 1); None == no bag input.
+        self.has_bag = bag_W1 is not None
+        if self.has_bag:
+            self.bag_W1 = bag_W1.astype(np.float32)
+            self.bag_b1 = bag_b1.astype(np.float32)
+            self.bag_W2 = bag_W2.astype(np.float32)
+            self.bag_b2 = bag_b2.astype(np.float32)
         self._is_stub = True
 
     @classmethod
@@ -101,11 +172,16 @@ class GThetaStub:
     @classmethod
     def from_trained_npz(cls, path):
         """Load the exported (normalization-folded) numpy head produced by
-        scripts/probe_a/export_gtheta.py. Feeds RAW features; adds the running
-        offset via `aggregate_with_offset`."""
+        scripts/probe_a/export_gtheta.py. Feeds RAW features + RAW bag; adds the
+        running + cloister offsets via `aggregate_with_offset`. Bag head weights
+        (bag_W1/…) are present iff the head was trained WITH the bag input."""
         z = np.load(str(path))
+        kw = {}
+        if "bag_W1" in z.files:
+            kw = dict(bag_W1=z["bag_W1"], bag_b1=z["bag_b1"],
+                      bag_W2=z["bag_W2"], bag_b2=z["bag_b2"])
         g = cls(W1=z["W1"], b1=z["b1"], W2=z["W2"], b2=z["b2"],
-                tanh_scale=float(z["tanh_scale"]))
+                tanh_scale=float(z["tanh_scale"]), **kw)
         g._is_stub = False
         return g
 
@@ -119,25 +195,46 @@ class GThetaStub:
     def component_sum(self, X: np.ndarray) -> float:
         return float(self.per_component(X).sum())
 
+    def bag_scalar(self, bag: np.ndarray) -> float:
+        """Board-level bag-head forward (32 -> H_bag -> 1) -> scalar. 0.0 if the
+        head carries no bag input (bag axis absent). ONE tiny forward per node."""
+        if not self.has_bag or bag is None:
+            return 0.0
+        h = np.tanh(bag.astype(np.float32) @ self.bag_W1 + self.bag_b1)
+        return float((h @ self.bag_W2 + self.bag_b2).reshape(-1)[0])
+
     def aggregate(self, X: np.ndarray) -> float:
-        """MILESTONE-1 stub aggregation: v = tanh(out_scale * sum). No running
-        offset (kept for the random-stub smoke / old speed benches)."""
+        """MILESTONE-1 stub aggregation: v = tanh(out_scale * sum). No offsets
+        (kept for the random-stub smoke / old speed benches)."""
         return math.tanh(self.out_scale * self.component_sum(X))
 
-    def aggregate_with_offset(self, X: np.ndarray, running_diff: float) -> float:
-        """MILESTONE-2 leaf value: tanh((running_diff + sum_i g(comp_i))/tanh_scale),
-        the drop-in that reproduces the heuristic's own structure at leaf speed."""
+    def aggregate_with_offset(self, X: np.ndarray, running_diff: float,
+                              cloister_offset: float = 0.0,
+                              bag: np.ndarray | None = None) -> float:
+        """MILESTONE-2.5 leaf value (the drop-in reproducing the heuristic's own
+        structure at leaf speed):
+
+            tanh( (running_diff + cloister_offset
+                   + sum_i g(comp_i) + bag_head(bag)) / tanh_scale )
+
+        `cloister_offset` and `running_diff` are EXACT board-level offsets (not
+        learned); `bag` is the raw 32-dim histogram (None -> 0 bag scalar)."""
         s = self.component_sum(X)
-        return math.tanh((running_diff + s) / self.tanh_scale)
+        bs = self.bag_scalar(bag)
+        return math.tanh((running_diff + cloister_offset + s + bs) / self.tanh_scale)
 
 
 def structured_value(board, root_player: int, g_theta: GThetaStub,
-                     closure_p=None) -> float:
-    """Board-POV structured leaf value.
+                     closure_p=None, cfg=None) -> float:
+    """Board-POV structured leaf value (milestone 2.5).
 
-    Trained head (`_is_stub` False): tanh((running_diff + sum g_theta)/tanh_scale),
-    running_diff = state.scores[root]-state.scores[opp] (the exact already-scored
-    offset). Random stub: the milestone-1 tanh(out_scale*sum) (no offset), so old
+    Trained head (`_is_stub` False):
+        tanh((running_diff + cloister_offset + sum g_theta + bag_head(bag))/tanh_scale)
+      running_diff    = state.scores[root]-state.scores[opp] (exact already-scored)
+      cloister_offset = the v2.9 leaf's cloister value (exact, not learned)
+      bag             = the 32-dim bag histogram (fed to bag_head iff the head has
+                        a bag input; else the bag scalar is 0).
+    Random stub: the milestone-1 tanh(out_scale*sum) (no offsets), so old
     smokes/benches are unchanged.
     """
     if closure_p is None:
@@ -148,7 +245,9 @@ def structured_value(board, root_player: int, g_theta: GThetaStub,
         return g_theta.aggregate(X)
     opp = 1 - root_player
     running_diff = float(int(st.scores[root_player]) - int(st.scores[opp]))
-    return g_theta.aggregate_with_offset(X, running_diff)
+    clo = cloister_offset(st, root_player, cfg)
+    bag = _bag_histogram(st) if getattr(g_theta, "has_bag", False) else None
+    return g_theta.aggregate_with_offset(X, running_diff, clo, bag)
 
 
 def make_probe_a_value_wrapper(
@@ -197,8 +296,10 @@ def make_probe_a_value_wrapper(
     def _v_struct_leafpov(board) -> float:
         # Evaluate at the LEAF's own current_player POV == leaf-POV directly
         # (no parent-POV flip needed; the structured head is computed fresh per
-        # board, unlike the parent-POV-trained scalar MLP).
-        return structured_value(board, board.state.current_player, g_theta, closure_p)
+        # board, unlike the parent-POV-trained scalar MLP). leaf_cfg drives the
+        # exact cloister closure schedule.
+        return structured_value(board, board.state.current_player, g_theta,
+                                closure_p, cfg=leaf_cfg)
 
     def wrapped(board, parent_board=None):
         st = board.state
