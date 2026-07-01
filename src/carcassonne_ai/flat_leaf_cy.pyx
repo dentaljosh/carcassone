@@ -963,6 +963,239 @@ def flat_base_score_cy(state, int player):
     return running + (final[player] - final[opp])
 
 
+# ============================================================================ #
+# PROBE A — per-component feature emit (docs/PROBE_A_STRUCTURED_VALUE_SPEC.md).
+#
+# Emits the (n_comp, FEAT_DIM) feature matrix defined by
+# scripts/probe_a/component_features.py (the FROZEN A1<->A2 contract) from the
+# SAME C decomposition the scalar leaf computes — NO second decompose. Bit-exact
+# to that Python reference (gated by tests/test_probe_a_feature_emit.py).
+#
+# Row order (must match the reference): cities asc root id, roads asc root id,
+# farms asc root id, then ONE meeple-economy pseudo-row. See the reference module
+# docstring for the column semantics; the C indices below mirror its C_* consts.
+# ADDITIVE: does not touch flat_virtual_score_v2_cy.
+# ============================================================================ #
+PROBE_A_FEAT_DIM = 24
+
+# Column indices — keep in lockstep with component_features.py C_* constants.
+cdef enum:
+    _C_IS_CITY = 0
+    _C_IS_ROAD = 1
+    _C_IS_FARM = 2
+    _C_IS_ECON = 3
+    _C_N_TILES = 4
+    _C_N_SHIELDS = 5
+    _C_IS_CATHEDRAL = 6
+    _C_FINISHED = 7
+    _C_OPEN_N = 8
+    _C_CLOSURE_DELTA = 9
+    _C_SELF_MEEPLE_W = 10
+    _C_OPP_MEEPLE_W = 11
+    _C_FARM_FIN_CITIES = 12
+    _C_FARM_POTENTIAL3 = 13
+    _C_SELF_GROWTH_P_SUM = 14
+    _C_SELF_CITY_CLOSE_P = 15
+    _C_ECON_SELF_FREE = 16
+    _C_ECON_OPP_FREE = 17
+    _C_ECON_K_REMAINING = 18
+    _C_CLOISTER_IS = 19
+    _C_CLOISTER_NEEDED = 20
+    _C_CLOISTER_SELF = 21
+    _C_CLOISTER_OPP = 22
+    _C_BIAS = 23
+
+
+cdef int _k_remaining_c(state) except -12345:
+    """== component_features._k_remaining: len(deck) [+1 if a tile is drawn but
+    unplaced in the TILES phase]. Uses the engine GamePhase enum by identity."""
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+    cdef int k = len(<list>state.deck)
+    nt = getattr(state, "next_tile", None)
+    if nt is not None and state.phase is GamePhase.TILES:
+        k += 1
+    return k
+
+
+def component_features_cy(state, int root_player=0, closure_p=None):
+    """Emit the Probe-A per-component feature matrix (n_comp, FEAT_DIM) float32.
+
+    Bit-exact to scripts/probe_a/component_features.component_features. Reuses the
+    scalar leaf's C decomposition (`_decompose_c`) so there is NO second decompose.
+    `closure_p` defaults to DEFAULT_CONFIG.closure_p (production v2.9 schedule).
+    """
+    import numpy as np
+    if state.players != 2:
+        raise ValueError(f"component_features_cy is 2-player only; got {state.players}")
+    if closure_p is None:
+        from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+        closure_p = DEFAULT_CONFIG.closure_p
+
+    cdef _WS ws = _ws
+    _decompose_c(state, ws)
+    cdef int W = ws.W, H = ws.H
+    cdef int opp = 1 - root_player
+
+    # ---- distinct roots per kind, ascending (== sorted(...keys())) --------- #
+    # A root id equals its own label (a root labels itself), and every root has
+    # >=1 member node; collect distinct labels via a membership pass over nodes.
+    # We reuse ws.bstart as a "seen" stamp keyed by root id (bounded by n_*).
+    # Distinct root ids per kind, ascending (== Python sorted(...keys())). A root
+    # labels itself, so the distinct labels ARE the roots; collect + sort. Local
+    # sets keep this independent of the leaf's monotone stamp arrays (no fiddling
+    # with ws state that the scalar leaf relies on).
+    cdef int nid, root, i, j, t
+    cdef int n_city = ws.n_city
+    cdef int n_road = ws.n_road
+    cdef int n_farm = ws.n_farm
+    cdef set cseen = set()
+    for nid in range(n_city):
+        cseen.add(ws.city_lab[nid])
+    cdef list city_roots = sorted(cseen)
+    cdef set rseen = set()
+    for nid in range(n_road):
+        rseen.add(ws.road_lab[nid])
+    cdef list road_roots = sorted(rseen)
+    cdef set fseen = set()
+    for nid in range(n_farm):
+        fseen.add(ws.farm_lab[nid])
+    cdef list farm_roots = sorted(fseen)
+
+    cdef int n_city_c = len(city_roots)
+    cdef int n_road_c = len(road_roots)
+    cdef int n_farm_c = len(farm_roots)
+    cdef int n_rows = n_city_c + n_road_c + n_farm_c + 1  # + meeple-econ row
+
+    out = np.zeros((n_rows, PROBE_A_FEAT_DIM), dtype=np.float32)
+    cdef float[:, ::1] X = out
+
+    # ---- per-component self/opp weighted meeple counts --------------------- #
+    # One pass over BOTH players' placed meeples, routed to root ids exactly like
+    # _final_scores_c (city_side->city_lab, road_side->road_lab, farm pos0->farm_lab).
+    # Keyed dicts root->[self_w, opp_w].
+    cdef dict city_own = {}
+    cdef dict road_own = {}
+    cdef dict farm_own = {}
+    cdef object mp, cws, coord, side, tile, terrain, mtype
+    cdef int r, c, six, w, is_self
+    side_ix = _SIDE_IX
+    cdef list pm
+    for pl in range(2):
+        is_self = 1 if pl == root_player else 0
+        pm = <list>state.placed_meeples[pl]
+        for mp in pm:
+            cws = mp.coordinate_with_side
+            coord = cws.coordinate
+            r = <int>coord.row
+            c = <int>coord.column
+            side = cws.side
+            tile = (<list>state.board[r])[c]
+            terrain = tile.get_type(side)
+            mtype = mp.meeple_type
+            w = 2 if (mtype is _M_BIG or mtype is _M_BIG_FARMER) else 1
+            six = <int>side_ix[side]
+            if terrain is _T_CITY:
+                nid = ws.city_tab[(r * W + c) * 9 + six]
+                if nid >= 0:
+                    root = ws.city_lab[nid]
+                    e = city_own.get(root)
+                    if e is None:
+                        e = [0, 0]; city_own[root] = e
+                    e[0 if is_self else 1] += w
+            elif terrain is _T_ROAD:
+                nid = ws.road_tab[(r * W + c) * 9 + six]
+                if nid >= 0:
+                    root = ws.road_lab[nid]
+                    e = road_own.get(root)
+                    if e is None:
+                        e = [0, 0]; road_own[root] = e
+                    e[0 if is_self else 1] += w
+            elif mtype is _M_FARMER or mtype is _M_BIG_FARMER:
+                nid = ws.pos0_tab[(r * W + c) * 9 + six]
+                if nid >= 0:
+                    root = ws.farm_lab[nid]
+                    e = farm_own.get(root)
+                    if e is None:
+                        e = [0, 0]; farm_own[root] = e
+                    e[0 if is_self else 1] += w
+
+    # ---- fill city rows ---------------------------------------------------- #
+    cdef int rowi = 0
+    cdef int open_n, croot, c_open_n
+    cdef double pp
+    cdef object pobj
+    for i in range(n_city_c):
+        root = <int>city_roots[i]
+        X[rowi, _C_IS_CITY] = 1.0
+        X[rowi, _C_N_TILES] = <float>ws.city_total[root]
+        X[rowi, _C_N_SHIELDS] = <float>ws.city_shieldn[root]
+        X[rowi, _C_IS_CATHEDRAL] = 1.0 if ws.city_cath[root] else 0.0
+        X[rowi, _C_FINISHED] = 1.0 if ws.city_fin[root] else 0.0
+        open_n = ws.city_open_n[root]
+        X[rowi, _C_OPEN_N] = <float>open_n
+        X[rowi, _C_CLOSURE_DELTA] = <float>ws.city_delta[root]
+        e = city_own.get(root)
+        if e is not None:
+            X[rowi, _C_SELF_MEEPLE_W] = <float><int>e[0]
+            X[rowi, _C_OPP_MEEPLE_W] = <float><int>e[1]
+        if (not ws.city_fin[root]) and open_n > 0:
+            pobj = closure_p.get(open_n)
+            if pobj is not None:
+                X[rowi, _C_SELF_CITY_CLOSE_P] = <float><double>pobj
+        X[rowi, _C_BIAS] = 1.0
+        rowi += 1
+
+    # ---- fill road rows ---------------------------------------------------- #
+    for i in range(n_road_c):
+        root = <int>road_roots[i]
+        X[rowi, _C_IS_ROAD] = 1.0
+        X[rowi, _C_N_TILES] = <float>ws.road_total[root]
+        X[rowi, _C_FINISHED] = 1.0 if ws.road_fin[root] else 0.0
+        e = road_own.get(root)
+        if e is not None:
+            X[rowi, _C_SELF_MEEPLE_W] = <float><int>e[0]
+            X[rowi, _C_OPP_MEEPLE_W] = <float><int>e[1]
+        X[rowi, _C_BIAS] = 1.0
+        rowi += 1
+
+    # ---- fill farm rows ---------------------------------------------------- #
+    for i in range(n_farm_c):
+        root = <int>farm_roots[i]
+        X[rowi, _C_IS_FARM] = 1.0
+        X[rowi, _C_FARM_FIN_CITIES] = <float>ws.farm_fincities[root]
+        # potential3 = 3 * #distinct adjacent city roots (farm_adj_lo:hi, deduped).
+        X[rowi, _C_FARM_POTENTIAL3] = <float>(3 * (ws.farm_adj_hi[root] - ws.farm_adj_lo[root]))
+        # growth_p_sum = sum over INCOMPLETE adjacent cities of closure_p[open_n].
+        pp = 0.0
+        for t in range(ws.farm_adj_lo[root], ws.farm_adj_hi[root]):
+            croot = ws.farm_adj[t]
+            if ws.city_fin[croot]:
+                continue
+            c_open_n = ws.city_open_n[croot]
+            if c_open_n <= 0:
+                continue
+            pobj = closure_p.get(c_open_n)
+            if pobj is not None:
+                pp += <double>pobj
+        X[rowi, _C_SELF_GROWTH_P_SUM] = <float>pp
+        e = farm_own.get(root)
+        if e is not None:
+            X[rowi, _C_SELF_MEEPLE_W] = <float><int>e[0]
+            X[rowi, _C_OPP_MEEPLE_W] = <float><int>e[1]
+        X[rowi, _C_BIAS] = 1.0
+        rowi += 1
+
+    # ---- meeple-economy pseudo-row (last) ---------------------------------- #
+    meeples = state.meeples
+    X[rowi, _C_IS_ECON] = 1.0
+    X[rowi, _C_ECON_SELF_FREE] = <float><int>meeples[root_player]
+    X[rowi, _C_ECON_OPP_FREE] = <float><int>meeples[opp]
+    X[rowi, _C_ECON_K_REMAINING] = <float>_k_remaining_c(state)
+    X[rowi, _C_BIAS] = 1.0
+
+    return out
+
+
 def decompose_export(state):
     """Diagnostic: box the C decomposition into Python dicts comparable 1:1
     with flat_leaf.decompose's Decomp (same root ids — enumeration and
