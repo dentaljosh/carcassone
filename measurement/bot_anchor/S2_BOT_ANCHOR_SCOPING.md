@@ -69,6 +69,33 @@ observation/action contract documented in `scratchpad/s2_muzero/VS_RANDOM_GATE.m
 action encoding is lossy/coordinate-only in TILES → drive MuZero on *their* engine and translate, don't feed our
 richer action set directly).
 
+## Bridge result (2026-07-01) — MuZero is a DEAD END as the anchor (weak + unbridgeable)
+
+Built the cross-engine bridge on the Xeon (`bridge.py` — external-authoritative mirror + our HeuristicMCTS;
+namespaces coexist in one process, all 32 base tile names + rotation semantics match). Two blocking findings:
+
+1. **Strength: MuZero < a 1-ply greedy.** A trivial greedy player (1-ply, maximize immediate score-diff on MuZero's
+   OWN engine) beats MuZero **~75%** (n=4 smoke 3–1; n=30 confirmation in progress, 3–0 greedy at check). So MuZero
+   sits *below* a greedy heuristic — far below our v2.7/v2.9 HeuristicMCTS.
+2. **Unbridgeable: a rotation bug in SamuelScheit's `2`-API.** `apply_action2` ignores the ROTATION action and
+   places every tile **unrotated** → ~51% of placements are edge-illegal; the engine never validates adjacency, so
+   it silently builds (and scores) a malformed board, and crashes on its own board within 3 moves
+   (`IndexError` in `chapel_or_flowers_points`). MuZero trained/was-sized inside this malformed env (self-consistent
+   there). A faithful match to our **rules-correct** engine is impossible through the 2-API — the fidelity check
+   (`--fidelity-every 1`) shows disjoint legal-turn sets at every step (theirs coord-only@rot0, ours edge-legal
+   (coord,rot)). No fair MuZero-vs-our-stack winrate obtainable without breaking our engine or retraining MuZero.
+
+**Transitive bound (the usable takeaway):** MuZero < 1-ply greedy ≪ our v2.x family → a forced anchor match lands at
+~MuZero **0%** vs any production-tier agent. So it's a *floor* calibration point at best, not a discriminating ruler.
+
+**VERDICT: do NOT invest further in the SamuelScheit-MuZero anchor** (too weak + engine too buggy). Options for a
+non-circular reference going forward: (a) **the exact K≤4 solver** (M2's solver-scoring harness) — ground-truth,
+uncorrelated with the leaf, already being built = the strongest non-circular ruler; (b) a **rules-correct heuristic
+in our engine that does NOT use the v2.7/v2.9 leaf** (cheap game-playing floor; breaks leaf-circularity though not
+engine-independence); (c) **33fred33 / Ameneyro MCTS-RAVE** — classical, likely rules-correct, but own-engine bridge
++ no license + uncertain strength (high effort). Reusable harness (`run_vs_greedy.py` the strength-sizer, `bridge.py`
+ready for any rotation-correct external engine) on the share `s2_muzero/`.
+
 ## Sources
 - [SamuelScheit/carcassonne-ai](https://github.com/SamuelScheit/carcassonne-ai) (MuZero, wingedsheep engine, MIT subdir, archived 2023)
 - [33fred33/CarcassonneAI](https://github.com/33fred33/CarcassonneAI) (likely F. Valdez Ameneyro's code; MCTS-RAVE)
