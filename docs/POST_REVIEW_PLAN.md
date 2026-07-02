@@ -56,6 +56,7 @@ Humans-in-the-loop is **deferred by Joshua** — no human match protocol this we
 bot anchor (S2) proceed.
 
 ### S1 — Promote v2.9 + ship deep-classical + exact-endgame as the internal deliverable
+> **✅ FLIPPED 2026-07-02** (Joshua's 'flip s1'): h6400 arbiter = +64.3 elo/z3.77/wr0.591 (n=399) → PRODUCTION.yaml champion = deep-classical v2.9 Bmild_cap8 + exact-endgame; neural iter8 → lineage. CL-041.
 Per F7 + the unsaturated depth ladder, the strongest agent in the ecosystem is **deep HeuristicMCTS on the v2.9
 leaf (`Bmild_cap8`, h6400–h12800, Cython leaf) with the exact-solver endgame handoff** — not the sims=200 neural
 champion (`flywheel2_champion_iter8`, iter8+v2.7, still in PRODUCTION.yaml). The record's own numbers: h6400 > h3200

@@ -1,53 +1,61 @@
 # PRODUCTION.yaml — the canonical "current production champion" pointer.
-# ONE authoritative, box-portable, git-tracked place naming the net + leaf config that
-# "production play" and the next flywheel's warm-from should use. Nothing in the codebase
-# reads this yet (production is, by repo convention, set per-launcher via --checkpoint +
-# env knobs) — this file is the human/agent source of truth that those launchers cite.
-# Update it (and governance/CHECKPOINT_LINEAGE.csv) whenever the champion changes.
+# ONE authoritative, box-portable, git-tracked place naming the agent + leaf config that
+# "production play" and the reference ruler should use. Nothing in the codebase reads this
+# yet (production is set per-launcher via flags + env knobs) — this file is the human/agent
+# source of truth that those launchers cite. Update it (+ governance/CHECKPOINT_LINEAGE.csv)
+# whenever the champion changes.
 
-folded_in: "2026-06-11"
+folded_in: "2026-07-02"   # S1 flip (post-review plan §1): v2.9 Bmild_cap8 deep-classical PROMOTED
+flip_authorized_by: "Joshua, 2026-07-02 ('flip s1'), on the h6400 arbiter verdict"
 supersedes:
-  - residual (lever_seq/ckpt/residual.pt)        # prior CL-017 champion = this net's iter0
-  - stage_b_iter_01 (stage_b/ckpt/iter_01.pt)     # prior clean-base policy champion
+  - flywheel2_champion_iter8   # neural iter8 + v2.7 leaf @ sims200 — the PRIOR champion (2026-06-11 .. 2026-07-02);
+                               # now LINEAGE. Classical is the stronger agent at depth (RoD1 loses to h6400; the
+                               # sims=200 neural champion caps near strong-human). The learned-VALUE route (can a
+                               # net EXCEED this leaf?) is under separate autopsy — post-review M1/M2/M3.
 
 champion:
-  ckpt_id: flywheel2_champion_iter8
-  # CIFS share — mount path differs per box (see CLAUDE.md): local 5800x = /mnt/c/carc-shared,
-  # xeon/laptop = /mnt/carc-shared. Resolve $SHARE per box.
-  path_local:  /mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
-  path_remote: /mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
-  sha256: 0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c
-  arch: "96x6 ResNet, n_scalar_features=12, value_global_pool=False"
-
-# The full play config. Set ALL of these for production play / eval / warm-from.
-play_config:
-  agent: NeuralMCTS            # net priors + the v2.7 leaf as the VALUE (production config)
-  sims: 200                    # production play plane (the deeper-teacher experiment explores 800)
+  id: deep_classical_v29_bmild_cap8
+  kind: classical                      # HeuristicMCTS, NO learned net — the strongest agent in the ecosystem
+  agent: HeuristicMCTS
+  leaf: v2_9_1_Bmild_cap8              # v2.7 virtual_score base + Bmild meeple-liquidity curve + closure cap 8
+  leaf_hash: "7fc930b82801cb43"
+  leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
+    v29_meeple_curve: [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0]
+    bonus_cap: 8.0
+    opp_bonus_cap: 8.0
+    meeple_k: 2.0
+  sims: 6400                            # reference/deploy depth (h6400); h12800 marginally stronger (deeper=sharper)
   c_puct: 3.0
-  leaf: virtual_score_v2       # "v2.7"
+  endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — margin-correct endgame"
   env_knobs:
-    CARCASSONNE_V25_RESIDUAL_SCALE: "0.25"   # <-- the validated value-head lever, NOW folded in
-    CARCASSONNE_V25_CAP: "12"
-    CARCASSONNE_V25_DROP_THREE_OPEN: "1"
-    CARCASSONNE_V25_VALUE_BLEND: "0"
-    CARCASSONNE_USE_FLAT_LEAF: "1"           # flat-leaf rewrite (ea70fbf), bit-exact; ~2.26x per LEAF (~+8% end-to-end cluster self-play — both real, different denominators)
+    CARCASSONNE_USE_FLAT_LEAF: "1"      # flat-leaf rewrite, bit-exact
+    CARCASSONNE_USE_CY_LEAF: "1"        # Cython fast path where available
 
-# Why iter8 is the champion (the trustworthy-anchor evidence, NOT in-lineage-only):
+# Why this is the champion (the promotion evidence):
 validation:
-  ruler: "out-of-lineage HeuristicMCTS v2.7 @ heur_sims=800, deck-paired, SEALED held-out band 1.7e9, n=400"
-  iter8_vs_heur800:  "+58.7 elo"
-  iter0_vs_heur800:  "-8.7 elo"   # iter0 == residual.pt (the incumbent) on the SAME anchor + decks
-  iter8_vs_incumbent: "+67.4 elo / z=2.73 SIGNIFICANT"   # direct: both nets vs the same independent ruler
+  ruler: "HeuristicMCTS v2.8-prod (cap12 + drop-3-open + flat meeple_k2) @ h6400, deck-paired, FRESH band 4.21e9"
+  vs_v28prod_h6400: "+64.3 elo / z=3.77 / winrate 0.591 (234W/4D/161L, n=399)"   # the deferred h6400 arbiter
+  depth_robust: "throne test sims200 +55.2 (z3.94) / sims800 +34.9 (z2.77); the h6400 arbiter completes the ladder"
   results_csv_rows:
-    - flywheel2_SEALED_champ_iter8_vs_heur800_v27_n400
+    - v291_THRONE_bmild_cap8_vs_v28prod_h6400_n399     # 2026-07-02, the promotion arbiter
+    - v291_THRONE_bmild_cap8_vs_v28prod_s200_n400      # 2026-06-25
   caveat: >
-    The +67.4 is a REAL strength gain over the incumbent on an independent ruler (not the
-    anchor-lie failure mode — iter0 IS residual.pt, both scored vs the SAME heur@800 anchor).
-    BUT it is a POLICY-DISTILLATION gain bounded by the v2.7 leaf (decomp 2026-06-10: ~95%
-    policy, plateaued iter5). It is NOT a v2.7-ceiling break. Genuinely-superhuman play still
-    requires the learned components to EXCEED the heuristic, which they do not yet.
+    v2.9 Bmild_cap8 is proven stronger than v2.8-prod (the REAL production leaf) at deep search, verdict-grade
+    (z=3.77 at n=399). The champion is now the DEEP-CLASSICAL agent (classical MCTS on this leaf + exact-endgame),
+    NOT the neural iter8 — classical is stronger at depth and the neural champion capped near strong-human. This is
+    a leaf/agent promotion, not a learned-superhuman result. Whether a LEARNED value can EXCEED this leaf is the
+    open question under the post-review autopsy (M1/M2/M3); PRODUCTION here is the strongest agent, learned-or-not.
+
+lineage:
+  prior_champion:
+    ckpt_id: flywheel2_champion_iter8
+    path_local:  /mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
+    path_remote: /mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
+    sha256: 0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c
+    arch: "96x6 ResNet, n_scalar_features=12, value_global_pool=False"
+    note: "prior neural champion (+67.4 elo over its incumbent, policy-distillation bounded by the v2.7 leaf); retained for lineage."
 
 notes: >
-  The 1.7e9 sealed deck panel is SPENT — do NOT reuse it to select the next lever.
-  The next flywheel (deeper-teacher, docs/DEEPER_TEACHER_SPEC_2026-06-11.md) warm-starts
-  from THIS champion (ITER0_CKPT override), not from residual.pt.
+  Production PLAY / reference ruler / eval anchor is now deep-classical v2.9 Bmild_cap8 + exact-endgame handoff.
+  The prior neural champion iter8 is retained in governance/CHECKPOINT_LINEAGE.csv as lineage, not production.
+  For deep-search evals prefer h6400+; RoD-v2 iter_02 remains the fast game-play anchor, h6400_v2.9 the offline ruler.
