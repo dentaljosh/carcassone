@@ -130,15 +130,22 @@ def _build_candidate_mcts(cfg, base_net, game_farm, seed, device, base_ev=None):
     if base_ev is None:
         base_ev = make_single_evaluator_policy_only(base_net, device, game_farm)
     leaf_cfg = EH._heur_leaf_cfg(2.0)  # v2.9 cfg (hash-checked in main)
+    iso_map = None
+    if cfg.get("iso_map"):
+        _m = np.load(cfg["iso_map"])
+        iso_map = (np.asarray(_m["x_knots"], np.float32), np.asarray(_m["y_knots"], np.float32))
     wrapped = step2_leaf.make_step2_value_wrapper(
         base_ev, mlp, col_mean, col_std, feat_names,
         game=game_farm, leaf_cfg=leaf_cfg,
         blend=cfg["blend"], dropout_p=cfg["dropout"],
         device=device, rng_seed=seed ^ 0x57E92,
         leaf_mode=cfg.get("leaf_mode", "convex"),
+        iso_map=iso_map,
     )
+    # ARM-3 (M3): candidate-only c_puct / FPU override (reference stays CPUCT/None).
     return NeuralMCTS(game=game_farm, evaluator=wrapped, simulations=cfg["sims"],
-                      seed=seed, c_puct=CPUCT)
+                      seed=seed, c_puct=float(cfg.get("c_puct") or CPUCT),
+                      fpu_reduction=cfg.get("fpu", None))
 
 
 def _build_reference_mcts(base_net, game_farm, seed, device, sims, base_ev=None):
@@ -332,13 +339,24 @@ def main(argv=None):
     ap.add_argument("--scalar-ckpt", required=True, help="Candidate scalar-MLP value ckpt (warmstart format).")
     ap.add_argument("--ref-ckpt", required=True, help="Reference net = RoD2 iter_02 (plays plain v2.9-leaf NeuralMCTS).")
     ap.add_argument("--blend", type=float, default=0.2, help="Wean lambda (convex) / additive coefficient beta (additive) for the candidate value.")
-    ap.add_argument("--leaf-mode", choices=("convex", "additive"), default="convex",
+    ap.add_argument("--leaf-mode", choices=("convex", "additive", "additive_iso"), default="convex",
                     help="Candidate leaf value combine mode. convex (default): "
                          "(1-blend)*h + blend*v_net (the production wean — heuristic "
                          "weaned DOWN). additive (nail-2 decoupling test): "
                          "clip(h + blend*v_net, -1, 1) — heuristic at FULL weight, net "
                          "added on top. The reference (RoD2 iter_02) is unchanged either way.")
     ap.add_argument("--dropout", type=float, default=0.0, help="Per-leaf pure-MLP-value dropout for the candidate.")
+    ap.add_argument("--c-puct", type=float, default=None,
+                    help="ARM-3 (M3): PUCT exploration constant for the CANDIDATE MCTS only "
+                         "(reference stays at CPUCT=3.0). None => CPUCT default.")
+    ap.add_argument("--fpu", type=float, default=None,
+                    help="ARM-3 (M3): first-play-urgency reduction for the CANDIDATE MCTS only "
+                         "(unvisited-child q = parent.Q - fpu). None => legacy optimistic-zero. "
+                         "Reference stays None.")
+    ap.add_argument("--iso-map", default=None,
+                    help="ARM-2 (M3): path to iso_map.npz (x_knots,y_knots) isotonic "
+                         "calibration for the CANDIDATE additive_iso leaf. Required for "
+                         "--leaf-mode additive_iso.")
     ap.add_argument("--n", type=int, default=120, help="Game count (paired => even).")
     ap.add_argument("--sims", type=int, default=200, help="Simulations per move for BOTH agents — matched compute (candidate AND reference run at this depth).")
     ap.add_argument("--workers", type=int, default=None)
@@ -372,6 +390,9 @@ def main(argv=None):
 
     if args.n % 2 != 0:
         ap.error("--n must be even (paired, both seats per deck)")
+
+    if args.leaf_mode == "additive_iso" and not args.iso_map:
+        ap.error("--leaf-mode additive_iso requires --iso-map <iso_map.npz>")
 
     # provenance: the candidate's leaf cfg MUST be the frozen v2.9.
     leaf_cfg = EH._heur_leaf_cfg(2.0)
@@ -422,6 +443,9 @@ def main(argv=None):
         "ckpt": args.ckpt, "scalar_ckpt": args.scalar_ckpt, "ref_ckpt": args.ref_ckpt,
         "blend": float(args.blend), "dropout": float(args.dropout), "sims": args.sims,
         "leaf_mode": args.leaf_mode,
+        "c_puct": (float(args.c_puct) if args.c_puct is not None else None),
+        "fpu": (float(args.fpu) if args.fpu is not None else None),
+        "iso_map": args.iso_map,
         "out": str(out), "shared_claim": bool(args.shared_claim),
         "claim_host": args.claim_host, "claim_stale": args.claim_stale_secs,
         "shm_cand": args.shm_eval_server_cand, "shm_ref": args.shm_eval_server_ref,
@@ -429,6 +453,8 @@ def main(argv=None):
     }
     path_desc = (f"orch (cand-shm={args.shm_eval_server_cand}, ref-shm={args.shm_eval_server_ref})"
                  if orch else "net-on-CPU")
+    print(f"[arm3] candidate c_puct={args.c_puct if args.c_puct is not None else CPUCT} "
+          f"fpu={args.fpu} (reference c_puct={CPUCT} fpu=None)", flush=True)
     print(f"[eval] step2 candidate (policy={Path(args.ckpt).name} + scalar="
           f"{Path(args.scalar_ckpt).name}, leaf_mode={args.leaf_mode} blend={args.blend} "
           f"dropout={args.dropout} sims={args.sims}) vs RoD2 iter_02 ({Path(args.ref_ckpt).name}, "

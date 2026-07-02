@@ -361,6 +361,7 @@ def make_step2_value_wrapper(
     rng_seed: int = 0,
     counters: "_Step2Counters | None" = None,
     leaf_mode: "str | None" = None,
+    iso_map=None,  # ARM-2 (M3): (x_knots, y_knots) isotonic map on parent-POV MLP value
 ) -> "_Step2Wrapped":
     """Wrap a POLICY-ONLY evaluator: keep its priors, replace its value with the
     v2.9 heuristic combined with the scalar-MLP value. Two leaf MODES:
@@ -402,13 +403,13 @@ def make_step2_value_wrapper(
     if leaf_mode is None:
         leaf_mode = os.environ.get("CARCASSONNE_STEP2_LEAF_MODE", "convex")
     leaf_mode = str(leaf_mode).strip().lower()
-    if leaf_mode not in ("convex", "additive"):
+    if leaf_mode not in ("convex", "additive", "additive_iso"):
         raise ValueError(
-            f"CARCASSONNE_STEP2_LEAF_MODE / leaf_mode must be 'convex' or "
-            f"'additive' (got {leaf_mode!r})"
+            f"CARCASSONNE_STEP2_LEAF_MODE / leaf_mode must be 'convex', "
+            f"'additive' or 'additive_iso' (got {leaf_mode!r})"
         )
     # One-line provenance so a run's log shows which leaf mode + coefficient fired.
-    if leaf_mode == "additive":
+    if leaf_mode in ("additive", "additive_iso"):
         print(f"[step2_leaf] LEAF MODE = additive (heuristic FULL weight 1.0 + "
               f"beta={blend} * v_net, clipped to [-1,1]); dropout_p={dropout_p}",
               flush=True)
@@ -433,6 +434,11 @@ def make_step2_value_wrapper(
     cstd = np.asarray(col_std, dtype=np.float32)
     cstd = np.where(cstd < 1e-6, 1.0, cstd).astype(np.float32)
     _rng = np.random.default_rng(rng_seed)
+    # ARM-2 (M3): isotonic calibration knots (None => identity).
+    _iso_x = _iso_y = None
+    if iso_map is not None:
+        _iso_x = np.asarray(iso_map[0], dtype=np.float32)
+        _iso_y = np.asarray(iso_map[1], dtype=np.float32)
 
     def _mlp_value(board, parent_board, feat=None) -> float:
         if feat is None:
@@ -457,6 +463,10 @@ def make_step2_value_wrapper(
         must be NEGATED to become leaf-POV. Without this, the blend mixes h and
         v_mlp with OPPOSITE signs on ~half the leaves (a real value corruption)."""
         v = _mlp_value(board, parent_board)
+        # ARM-2 (M3): isotonic calibration on the RAW parent-POV value (the map g()
+        # was fit on parent-POV oracle_q), applied BEFORE the POV negation.
+        if _iso_x is not None:
+            v = float(np.interp(v, _iso_x, _iso_y))
         if parent_board is not None and parent_board.state.current_player != board.state.current_player:
             v = -v
         return v
@@ -478,7 +488,7 @@ def make_step2_value_wrapper(
             return priors, _v_mlp_leafpov(board, parent_board)
 
         h = math.tanh(virtual_score_v2(st, st.current_player, leaf_cfg) / 15.0)
-        if leaf_mode == "additive":
+        if leaf_mode in ("additive", "additive_iso"):
             # ADDITIVE (nail 2): heuristic at FULL weight + net added with coeff
             # beta (= blend), then clipped. At beta=0 this is clip(h, -1, 1) == h
             # (a clean pure-heuristic anchor — counted as plain_path so the
