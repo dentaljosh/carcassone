@@ -100,7 +100,15 @@ _TOL_PRIORS = 5e-4   # was 1e-4 — too strict: a TRAINED policy's BatchNorm run
                      # cudnn's nondeterministic reduction order pushed k=37 to 1.36e-4 and
                      # FATAL-halted a frozen-tiebreak run (2026-06-30). A genuine logic error
                      # shows O(0.1) — still ~200x above this bar, still caught. (review BUG-8)
-_TOL_VALUE = 1e-3
+_TOL_VALUE = 5e-3    # was 1e-3 — same BUG-8 class on the VALUE head (2026-07-02, M1): the
+                     # fixed-seed k=37 parity batch pushed deepteacher/iter2's traced value to
+                     # 1.32e-3 (trace vs eager fp32 reduction-order noise on random-Gaussian
+                     # inputs — deterministic per-seed; a resampled batch of the same size gives
+                     # 1.68e-4, worst across k in {1..128} is 4.0e-4). Priors were near-exact
+                     # (1.7e-6). iter8 passed cleanly (2.8e-5); only iter2's weights tipped the
+                     # too-tight 1e-3 bar. Value is additionally ×residual_scale(0.25) before it
+                     # touches the leaf, so ≤1.3e-3 raw = ≤3.3e-4 effective. A genuine logic
+                     # error shows O(0.1) — still ~20-50x above this bar, still caught.
 
 
 def _parity(net: CarcassonneNet, scripted, device: torch.device, n_scalar: int) -> bool:
