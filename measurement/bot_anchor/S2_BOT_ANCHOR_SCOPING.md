@@ -96,6 +96,29 @@ engine-independence); (c) **33fred33 / Ameneyro MCTS-RAVE** — classical, likel
 + no license + uncertain strength (high effort). Reusable harness (`run_vs_greedy.py` the strength-sizer, `bridge.py`
 ready for any rotation-correct external engine) on the share `s2_muzero/`.
 
+## 33fred33 / Ameneyro MCTS-RAVE result (2026-07-01) — rules-correct + bridgeable, but SUB-GREEDY → also NOT usable
+
+Stood up (pure-Python classical MCTS, numpy-only). Engine `Carcassonne_Game/Carcassonne.py` plays **2p Base +
+Farmers** exactly (no I&C/River/Abbots); atomic full-turn moves `(TileIndex,X,Y,Rotation,MeepleInfo)`; agents in
+`player/` (`MCTS_RAVEPlayer(iterations,c_param)`, MCTS, Star2.5, Random).
+- **Rules-correct: PASS** — 212/212 placements at the chosen rotation with correct edges, 7,703/7,703 offered moves
+  edge-legal, 0 illegal (the opposite of the MuZero rotation bug). A faithful base+Farmers bridge IS feasible
+  (rotation `turn(R//90)`, coord affine `Coordinate(6−Y,15+X)`, farmers map cleanly) ~0.5–1 day reusing `bridge.py`.
+- **Strength (its own engine, n=30, RAVE iters=200/c=3): SUB-GREEDY** — vs 1-ply greedy **0.000 (0/30)** (loses by
+  huge margins both seats); vs random ≫ (39–6). Root cause = **uniform-random rollouts** (the known-weak MCTS config
+  — precisely what motivated our v2.7 heuristic leaf). Transitive bound: RAVE < greedy ≪ our HeuristicMCTS → ~0% vs
+  any production-tier agent. Bridge NOT built (strength gate failed). Harness on the share `s2_ameneyro/`. License:
+  none → eval-only, not vendored.
+
+## S2 CONCLUSION — no usable external bot anchor exists (both candidates sub-greedy)
+
+Both readily-available open-source Carcassonne AIs — SamuelScheit MuZero (195k net) and Ameneyro MCTS-RAVE
+(random-rollout) — are **below a 1-ply greedy**, far below our v2.7/v2.9 HeuristicMCTS. A useful non-circular anchor
+must be **≥ heuristic-leaf strength**; a small net or a random-rollout MCTS structurally can't be. **So the
+full-game external-bot-anchor line is closed (clean negative).** The non-circular references that remain: **(1) the
+exact K≤4 solver** (ground truth, M2's harness — the immediate F4 de-circularization need) and **(2) human play**
+(deferred). A byproduct worth noting: our stack is comfortably above the public open-source baselines.
+
 ## Sources
 - [SamuelScheit/carcassonne-ai](https://github.com/SamuelScheit/carcassonne-ai) (MuZero, wingedsheep engine, MIT subdir, archived 2023)
 - [33fred33/CarcassonneAI](https://github.com/33fred33/CarcassonneAI) (likely F. Valdez Ameneyro's code; MCTS-RAVE)
