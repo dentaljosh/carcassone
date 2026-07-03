@@ -88,6 +88,31 @@ flat corr/τ may be **target-caused, not capability**. **M2** samples this cell,
 against §3A's competing "the residual value space is genuinely small (the leaf is a decomposable additive
 evaluator)" reading. Expect a real chance M2 returns a **kill** — this test adjudicates, it does not resurrect.
 
+### 6.1 Provenance of the five departures — deliberate vs inherited (2026-07-03 doc audit)
+
+The five non-canonical choices M2 reverses were **not uniformly deliberate** — and the split is itself the case for
+M2. Each was judged with the *other four held at their weak defaults* (correlated one-shot rejections on a blind /
+pooling-off / saturated / h6400-circular substrate), so none was ever tested in the configuration where it could pay
+off.
+
+| # | departure (what we did) | verdict | evidence |
+|---|---|---|---|
+| 1 | hand-crafted v2.7 leaf as the MCTS evaluator | **deliberate + strong evidence** | Phase-4 breakthrough (+21pp over warmstart); NN-value alternatives were re-tried and *lost* — Option 2 (NN value blend) closed as a confirmed negative 2026-05-18; the pure-NN-value leaf **cratered −800 elo** 2026-05-31. `DECISIONS.md:595`, `CLAUDE.md:102` |
+| 2 | `value_global_pool=False` (every ckpt) | **examined once, abandoned** | "Flywheel Step 2" tested a single time (2026-06-05) → "moved NOTHING, same curve" → pivot to attacking the value *loss*. But that test was on the blind rep + saturated target; never re-tried inside a real loop. `DECISIONS.md:68` |
+| 3 | blind representation (78ch/12) | **examined → refuted → reversed, never shipped** | Cheap C4a probe (2026-06-04) found oracle farm planes gained nothing → "don't build it"; **overturned 2026-06-29** — sighted planes flip the value head α=0→live (−20.5% regret, passing shuffled-control, CL-037); never reached a game-gated net until M2. `DECISIONS.md:74` → `:20` |
+| 4a | saturated `tanh(margin/15)` target | **inherited default, flagged as a bug, kept** | F-C2: pins to ±1 for typical 30–80pt margins → kills mid-range calibration where close games live; a de-sat probe (/15 vs /40) showed no proxy gain → kept anyway. Just a Phase-3 literal. `docs/research/foundational_audit_2026-06-02.md:99` |
+| 4b | near-zero-variance residual target | **deliberate + evidence** | The *first* asset-positive learned value in the investigation (2026-06-06); the residual inherits v2.7's local ranking by construction. Degeneracy (Δ std 0.071, ~0.5% of the Q signal) was measured then frozen 2026-06-08 — a side effect, not a defect at the time. `DECISIONS.md:63` |
+| 5 | low sims (100–200), no Gumbel | **mixed** | Low sims = a *deliberate* training-economy default (sims is a free inference knob raised vs a human); **Gumbel = never examined** — absent from the entire decision/backlog/governance record except this autopsy, as a departure to reverse. |
+
+**Tally: two deliberate-with-evidence (#1, #4b), two examined-once-then-abandoned on a confounded substrate (#2, #3),
+two inherited defaults (#4a saturation, #5 Gumbel).** The recurring failure mode is not bad reasoning but **correlated
+rejection on a weak substrate** — each lever judged with the others at their weak defaults — which is exactly why the
+accumulated "value is inert" reads may be **target/representation-caused, not capability**, and why M2 flips all five
+simultaneously. **Caveat retained:** #1 is genuinely evidenced (a real −800 cliff, a closed Option-2), so M2 faces a
+real prior, not a strawman — it only corrects that those failures could not separate "the value is incapable" from
+"we never gave it a target, the context to learn it, or a non-circular ruler."
+
+
 ## 7. The dimensionality / route-closure clause — **REOPENING (M1 KILL, M3 FIRES; M3-confirm + M2 pending)**
 
 *(Branches were pre-committed below; two of three have read out. The read-out landed on the "ANY fires" branch, so

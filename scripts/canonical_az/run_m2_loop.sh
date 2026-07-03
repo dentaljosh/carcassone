@@ -53,7 +53,7 @@ EVAL_N="${EVAL_N:-200}"
 # orch knobs
 USE_ORCH="${USE_ORCH:-1}"          # 1 = orch gen + dual-net eval; 0 = orch-off + h3200
 GEN_OW="${GEN_OW:-28}"             # LOCAL orch gen workers; orch-off default 14
-LAPTOP_GEN_OW="${LAPTOP_GEN_OW:-8}"  # laptop orch gen workers (8GB 4070m ceiling)
+LAPTOP_GEN_OW="${LAPTOP_GEN_OW:-12}"  # laptop orch gen workers (RAM-free @ sims200+flat-leaf+orch: <1GB used, so GPU-bound not RAM; 8->12 Joshua 2026-07-03)
 GEN_WORKERS="${GEN_WORKERS:-14}"   # orch-off per-worker self-play W (USE_ORCH=0)
 EVAL_OW="${EVAL_OW:-28}"           # dual-server eval workers/server (local 28 / laptop 16)
 REF_CKPT="${REF_CKPT:-/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt}"  # FIXED blind anchor
