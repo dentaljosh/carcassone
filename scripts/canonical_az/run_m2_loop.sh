@@ -66,10 +66,15 @@ LAPTOP_HOST="${LAPTOP_HOST:-}"                 # e.g. laptop-wsl (blank = local-
 LAPTOP_REPO="${LAPTOP_REPO:-/home/doctor/projects/carcassone}"
 
 # gen wait-for-pool barrier (self-healing; mirrors run_rod_v2_flywheel.sh)
+# STALL is TIME-based + rolling-window, NOT "0 done at time T": a heal fires only
+# when NO NEW npz has landed for STALL_SECS *and* we're past the first-game
+# GRACE_SECS. At sims=200 the first ~140-move game needs ~3-4 min, so a short
+# poll-count grace strangled a healthy startup (the 2026-07-03 heal-loop bug).
 GEN_POLL="${GEN_POLL:-30}"         # poll interval (s) for the shared-pool barrier
-STALL_GEN="${STALL_GEN:-5}"        # consecutive no-progress polls before a heal (5*30s=2.5min)
+GRACE_SECS="${GRACE_SECS:-600}"    # NO stall check for the first 10 min (export+server+first game+margin)
+STALL_SECS="${STALL_SECS:-360}"    # >=6 min with NO new npz (past grace) = genuinely stalled
 HEAL_CAP="${HEAL_CAP:-10}"         # max heals per iter before FATAL
-STALE_MIN="${STALE_MIN:-5}"        # a .claim (no .npz) older than this (min) is stranded (game<60s @sims200)
+STALE_MIN="${STALE_MIN:-5}"        # on a heal, free .claim (no .npz) older than this (min); a game is <~4min
 GEN_LOGS="${GEN_LOGS:-$OUT/logs}"; mkdir -p "$GEN_LOGS"
 
 [ -f "$WARMSTART_CKPT" ] || { echo "FATAL: warmstart ckpt not found: $WARMSTART_CKPT (train it first — see M2_ORCH_READY.md)"; exit 1; }
@@ -92,17 +97,23 @@ _clean_stranded() {
   fi
 }
 
-# Kill the M2 gen pool (carc-orch m2gen server + run_selfplay) on local AND laptop
-# + clear the local m2gen shm. Scoped to m2gen shm-names so it never touches the
-# eval servers or a sibling job. Bracket-trick patterns avoid self-match.
+# Kill the M2 gen pool on local AND laptop + clear the local m2gen shm. Kills the
+# carc-orch m2gen server, run_selfplay MAIN, gen_m2_orch, AND the mp spawn workers
+# + resource_tracker (a killed mp main does NOT reap its spawn children -> they
+# orphan on BrokenPipe and eat CPU; the 2026-07-03 heal leaked 30 of them). Scoped
+# to m2gen for the server; the spawn_main kill assumes no unrelated mp job runs
+# during M2 gen (eval is sequential, not concurrent). Bracket-tricks avoid
+# self-match. NB: only called in the gen phase, so it never hits eval workers.
 _kill_gen() {
   pkill -9 -f "[c]arc-orch.*m2gen" 2>/dev/null || true
   pkill -9 -f "[r]un_selfplay_iter" 2>/dev/null || true
   pkill -9 -f "[g]en_m2_orch" 2>/dev/null || true
+  pkill -9 -f "[s]pawn_main" 2>/dev/null || true
+  pkill -9 -f "[m]ultiprocessing.resource_tracker" 2>/dev/null || true
   rm -f /dev/shm/carc_m2gen"$HOST" /dev/shm/sem.carc_m2gen"${HOST}"_* 2>/dev/null || true
   if [ -n "$LAPTOP_HOST" ] && [ "$SHARED_CLAIM" = "1" ]; then
     timeout 20 ssh -o ConnectTimeout=10 "$LAPTOP_HOST" \
-      "pkill -9 -f '[c]arc-orch.*m2gen'; pkill -9 -f '[r]un_selfplay_iter'; pkill -9 -f '[g]en_m2_orch'; rm -f /dev/shm/carc_m2genlaptop /dev/shm/sem.carc_m2genlaptop_*" \
+      "pkill -9 -f '[c]arc-orch.*m2gen'; pkill -9 -f '[r]un_selfplay_iter'; pkill -9 -f '[g]en_m2_orch'; pkill -9 -f '[s]pawn_main'; pkill -9 -f '[m]ultiprocessing.resource_tracker'; rm -f /dev/shm/carc_m2genlaptop /dev/shm/sem.carc_m2genlaptop_*" \
       </dev/null >/dev/null 2>&1 || true
   fi
 }
@@ -158,18 +169,23 @@ for it in $(seq "$START" "$ITERS"); do
       _clean_stranded "$DATA" 0
       _kill_gen; sleep 2
       _gen_launch "$it" "$PREV"
-      glast=-1; gstall=0; gheals=0
+      # TIME-based barrier: track the last time npz INCREASED (last_progress). A
+      # heal fires only when we are BOTH past the first-game grace AND have seen
+      # no new npz for STALL_SECS — so a healthy startup (0 npz for the first few
+      # min) is never strangled, and a real wedge (all workers dead/orch stalled)
+      # still recovers.
+      gen_start=$(date +%s); last_npz=0; last_progress=$gen_start; gheals=0
       while [ "$(_npz_count "$DATA")" -lt "$GAMES" ]; do
         sleep "$GEN_POLL"  # allow-sleep
-        gcur=$(_npz_count "$DATA")
-        echo "[iter $it] gen $gcur/$GAMES @ $(date +%H:%M:%S)"
-        if [ "$gcur" -eq "$glast" ]; then gstall=$((gstall+1)); else gstall=0; glast=$gcur; fi
-        if [ "$gstall" -ge "$STALL_GEN" ]; then
+        gcur=$(_npz_count "$DATA"); now=$(date +%s)
+        echo "[iter $it] gen $gcur/$GAMES @ $(date +%H:%M:%S) (elapsed $((now-gen_start))s, since-npz $((now-last_progress))s)"
+        if [ "$gcur" -gt "$last_npz" ]; then last_npz=$gcur; last_progress=$now; fi
+        if [ $((now - gen_start)) -ge "$GRACE_SECS" ] && [ $((now - last_progress)) -ge "$STALL_SECS" ]; then
           gheals=$((gheals+1))
-          [ "$gheals" -gt "$HEAL_CAP" ] && { echo "FATAL: gen stuck $gcur/$GAMES after $HEAL_CAP heals (iter $it)"; exit 1; }
-          echo "[iter $it] gen STALLED $gcur/$GAMES — heal $gheals: kill+clean+relaunch @ $(date +%H:%M:%S)"
+          [ "$gheals" -gt "$HEAL_CAP" ] && { echo "FATAL: gen stuck $gcur/$GAMES, no new npz for $((now-last_progress))s after $HEAL_CAP heals (iter $it)"; exit 1; }
+          echo "[iter $it] gen STALLED $gcur/$GAMES (no new npz for $((now-last_progress))s) — heal $gheals: kill+clean+relaunch @ $(date +%H:%M:%S)"
           _kill_gen; sleep 2; _clean_stranded "$DATA" "$STALE_MIN"
-          _gen_launch "$it" "$PREV"; gstall=0
+          _gen_launch "$it" "$PREV"; last_progress=$(date +%s)
         fi
       done
       _kill_gen; sleep 1
