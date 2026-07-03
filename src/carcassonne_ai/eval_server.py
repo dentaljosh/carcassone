@@ -93,10 +93,17 @@ def _server_loop(
         # scalars, else 10). The worker building inputs MUST use a Game with the
         # matching include_farm_scalars so the tensor it sends is this wide.
         n_scalar = int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES))
+        # n_input_channels + value_global_pool ride in the checkpoint (defaults 78
+        # / False for pre-M2 checkpoints). Reading them fixes two latent gaps: a
+        # global-pool checkpoint previously mismatched value_fc1 here (built
+        # pool-off), and a sighted (81ch) net mismatched the stem conv.
+        n_input_channels = int(ckpt.get("n_input_channels", N_CHANNELS))
         net = CarcassonneNet(
             n_filters=ckpt["n_filters"],
             n_blocks=ckpt["n_blocks"],
+            n_input_channels=n_input_channels,
             n_scalar_features=n_scalar,
+            value_global_pool=bool(ckpt.get("value_global_pool", False)),
         ).to(device)
         net.load_state_dict(ckpt["model_state"])
         net.train(False)
@@ -106,7 +113,7 @@ def _server_loop(
         if device.type in ("cuda", "mps"):
             with torch.no_grad():
                 _ = net(
-                    torch.zeros(1, N_CHANNELS, 25, 25, device=device),
+                    torch.zeros(1, n_input_channels, 25, 25, device=device),
                     torch.zeros(1, n_scalar, device=device),
                 )
                 if device.type == "cuda":

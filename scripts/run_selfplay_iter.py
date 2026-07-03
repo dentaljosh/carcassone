@@ -58,6 +58,7 @@ from carcassonne_ai.evaluators import (
     make_v25_batch_value_wrapper,
     make_v25_value_wrapper,
 )
+from carcassonne_ai.board_repr import N_CHANNELS
 from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.network import CarcassonneNet
@@ -228,6 +229,7 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     net = CarcassonneNet(
         n_filters=ckpt["n_filters"],
         n_blocks=ckpt["n_blocks"],
+        n_input_channels=int(ckpt.get("n_input_channels", N_CHANNELS)),
         n_scalar_features=int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
         value_global_pool=bool(ckpt.get("value_global_pool", False)),
     ).to(_worker_device)
@@ -245,6 +247,7 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
         a_net = CarcassonneNet(
             n_filters=a_ckpt["n_filters"],
             n_blocks=a_ckpt["n_blocks"],
+            n_input_channels=int(a_ckpt.get("n_input_channels", N_CHANNELS)),
             n_scalar_features=int(a_ckpt.get("n_scalar_features", N_SCALAR_FEATURES)),
             value_global_pool=bool(a_ckpt.get("value_global_pool", False)),
         ).to(_worker_device)
@@ -298,6 +301,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
     game = Game(
         enable_legal_moves_cache=True,
         include_farm_scalars=cfg.get("include_farm_scalars", False),
+        sighted=cfg.get("sighted", False),
     )
     use_fp16 = cfg.get("use_fp16", False)
     # If the v2.5 leaf is going to override the value anyway, we can skip the
@@ -403,6 +407,7 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
             anchor_evaluator=anchor_evaluator,
             anchor_batch_evaluator=anchor_batch_evaluator,
             learner_player_idx=learner_player_idx,
+            fpu_reduction=cfg.get("fpu"),
         )
     except Exception as e:
         # Engine edge cases (e.g. farm_util IndexError seen 2026-05-10) shouldn't
@@ -466,6 +471,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dirichlet-alpha", type=float, default=0.3)
     p.add_argument("--dirichlet-eps", type=float, default=0.25)
     p.add_argument("--temp-threshold", type=int, default=15)
+    p.add_argument(
+        "--fpu", type=float, default=None,
+        help="First-play-urgency reduction for UNVISITED PUCT children "
+             "(q = parent.Q - fpu). None (default) = legacy optimistic-zero "
+             "(q=0), byte-identical to prior gen. M2 fixed ingredient: 0.6 "
+             "(M3 established the weaned value craters without it).")
     p.add_argument(
         "--value-target",
         choices=["score_diff", "score_diff_wide", "wl", "search_value",
@@ -745,12 +756,32 @@ def main(argv: list[str] | None = None) -> int:
     # width (the server net is sized from the same checkpoint in eval_server).
     # Off (10-scalar) for pre-Step-E checkpoints and remote-server mode.
     include_farm_scalars = False
+    sighted = False
     learner_ns = N_SCALAR_FEATURES
     if args.checkpoint is not None:
         _peek = torch.load(str(args.checkpoint), map_location="cpu", weights_only=False)
         learner_ns = int(_peek.get("n_scalar_features", N_SCALAR_FEATURES))
-        include_farm_scalars = learner_ns > N_SCALAR_FEATURES
+        # M2 sighted checkpoints persist explicit flags; fall back to the legacy
+        # width heuristic (ns>10 == farm scalars) only for pre-M2 checkpoints,
+        # where sighted is always False so the heuristic is unambiguous.
+        sighted = bool(_peek.get("sighted", False))
+        include_farm_scalars = bool(
+            _peek.get("include_farm_scalars", (learner_ns > N_SCALAR_FEATURES) and not sighted)
+        )
         del _peek
+
+    # The SHM / remote / orchestrator eval-server paths hardcode a 78-channel /
+    # 12-scalar transport layout (shm_eval_handles.py + rust/carc-orch/src/shm.rs)
+    # and a fixed-channel warmup, so the wider sighted arrays (81ch / 42-scalar)
+    # can't flow through them. M2 sighted gen runs orch-OFF (per-worker nets).
+    # Fail loud rather than silently truncate/mis-shape the sighted representation.
+    if sighted and (args.orchestrator or args.shm_eval_server or args.remote_eval_server):
+        raise SystemExit(
+            "FATAL: --checkpoint is a sighted (81ch/42-scalar) net, but an "
+            "orchestrator/SHM/remote eval-server was requested. The orch transport "
+            "layout is fixed at 78ch/12-scalar; sighted gen must run per-worker "
+            "(drop --orchestrator/--shm-eval-server/--remote-eval-server)."
+        )
 
     # Defense-in-depth (pre-launch review B1, 2026-05-31): the anchor and learner
     # MUST share scalar width. A single learner-width Game feeds BOTH evaluators,
@@ -774,6 +805,8 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = {
         "include_farm_scalars": include_farm_scalars,
+        "sighted": sighted,
+        "fpu": args.fpu,
         "sims": args.sims,
         "c_puct": args.c_puct,
         "dirichlet_alpha": args.dirichlet_alpha,

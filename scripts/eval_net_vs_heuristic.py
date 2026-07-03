@@ -52,6 +52,7 @@ import torch
 
 from carcassonne_ai.claim import try_claim as _try_claim
 from carcassonne_ai import eval_provenance as ep
+from carcassonne_ai.board_repr import N_CHANNELS
 from carcassonne_ai.evaluators import make_single_evaluator, make_v25_value_wrapper
 from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
 from carcassonne_ai.game_wrapper import Game
@@ -68,6 +69,9 @@ EVAL_ROOT = REPO / "data" / "ladder"
 _worker_net = None
 _worker_device = None
 _worker_include_farm = False
+# M2 sighted rep + FPU knob (both default-off → byte-identical to prior eval).
+_worker_sighted = False
+_worker_fpu: float | None = None
 # Leaf the HeuristicMCTS opponent uses: "v1" (legacy default) or "v2_7" (match the
 # agent's leaf so the eval isolates the policy — outside-review finding R1).
 _worker_heur_leaf: str = "v1"
@@ -131,15 +135,18 @@ def _save(p: Path, r: GameResult):
 def _worker_init(checkpoint: str, shared_claim: bool = False,
                  claim_host: str = "", claim_stale_secs: int = 5400,
                  heur_leaf: str = "v1", residual_scale: float | None = None,
-                 shm_name: str = "", id_q=None, ns: int = 10):
+                 shm_name: str = "", id_q=None, ns: int = 10,
+                 fpu: float | None = None):
     global _worker_net, _worker_device, _worker_include_farm, _worker_heur_leaf
     global _worker_shared_claim, _worker_claim_host, _worker_claim_stale_secs
     global _worker_residual_scale, _worker_orch, _worker_handles
+    global _worker_sighted, _worker_fpu
     _worker_shared_claim = shared_claim
     _worker_claim_host = claim_host
     _worker_claim_stale_secs = claim_stale_secs
     _worker_heur_leaf = heur_leaf
     _worker_residual_scale = residual_scale
+    _worker_fpu = fpu
     if shm_name:
         # Orchestrator (carc-orch SHM): the server owns the only net copy; the
         # worker is CPU-only — pop a unique slot id, attach to the SHM ring. The
@@ -153,8 +160,10 @@ def _worker_init(checkpoint: str, shared_claim: bool = False,
     _worker_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ck = torch.load(checkpoint, map_location=_worker_device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
-    _worker_include_farm = ns > 10
+    _worker_sighted = bool(ck.get("sighted", False))
+    _worker_include_farm = bool(ck.get("include_farm_scalars", (ns > 10) and not _worker_sighted))
     net = CarcassonneNet(n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+                         n_input_channels=int(ck.get("n_input_channels", N_CHANNELS)),
                          n_scalar_features=ns,
                          value_global_pool=bool(ck.get("value_global_pool", False))
                          ).to(_worker_device)
@@ -183,7 +192,8 @@ def _play_one(args) -> GameResult:
     import random
     random.seed(seed)
 
-    game = Game(enable_legal_moves_cache=True, include_farm_scalars=_worker_include_farm)
+    game = Game(enable_legal_moves_cache=True, include_farm_scalars=_worker_include_farm,
+                sighted=_worker_sighted)
     board = game.get_init_board()
     dh = deck_hash(board)  # capture the deck identity BEFORE any tile is drawn
 
@@ -202,7 +212,7 @@ def _play_one(args) -> GameResult:
         cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=float(_worker_residual_scale))
         leaf_eval = make_v25_value_wrapper(base, cfg)
     net_mcts = NeuralMCTS(game=game, evaluator=leaf_eval, simulations=sims,
-                          seed=seed, c_puct=c_puct)
+                          seed=seed, c_puct=c_puct, fpu_reduction=_worker_fpu)
 
     # Heuristic side = UCT + a virtual_score leaf, NO learned policy. Its own game
     # so its legal-cache doesn't poison the neural side. The leaf is `_worker_heur_leaf`:
@@ -291,20 +301,24 @@ def _build_work(seed_start: int, n: int, paired: bool):
 
 
 def _load_net(checkpoint, device):
-    """Load a checkpoint into a CarcassonneNet on `device`. Returns (net, include_farm)."""
+    """Load a checkpoint into a CarcassonneNet on `device`.
+    Returns (net, include_farm, sighted)."""
     ck = torch.load(checkpoint, map_location=device, weights_only=False)
     ns = int(ck.get("n_scalar_features", 10))
+    sighted = bool(ck.get("sighted", False))
+    include_farm = bool(ck.get("include_farm_scalars", (ns > 10) and not sighted))
     net = CarcassonneNet(n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+                         n_input_channels=int(ck.get("n_input_channels", N_CHANNELS)),
                          n_scalar_features=ns,
                          value_global_pool=bool(ck.get("value_global_pool", False))
                          ).to(device)
     net.load_state_dict(ck["model_state"])
     net.train(False)
-    return net, ns > 10
+    return net, include_farm, sighted
 
 
 def _make_matchup(net, device, game, heur_game, *, seed, sims, heur_sims, c_puct,
-                  heur_leaf, residual_scale, include_farm=False):
+                  heur_leaf, residual_scale, include_farm=False, fpu_reduction=None):
     """Build the (NeuralMCTS, HeuristicMCTS, leaf_eval) triple used by both the
     Pool worker logic and the single-process provenance smoke. `leaf_eval` is the
     `_V25Wrapped` whose `.counters` the smoke reads to prove the leaf path ran."""
@@ -315,7 +329,7 @@ def _make_matchup(net, device, game, heur_game, *, seed, sims, heur_sims, c_puct
         cfg = dataclasses.replace(DEFAULT_CONFIG, residual_scale=float(residual_scale))
         leaf_eval = make_v25_value_wrapper(base, cfg)
     net_mcts = NeuralMCTS(game=game, evaluator=leaf_eval, simulations=sims,
-                          seed=seed, c_puct=c_puct)
+                          seed=seed, c_puct=c_puct, fpu_reduction=fpu_reduction)
     heur_mcts = HeuristicMCTS(game=heur_game, simulations=heur_sims, seed=seed + 1,
                               heur_leaf=heur_leaf)
     return net_mcts, heur_mcts, leaf_eval
@@ -340,16 +354,19 @@ def _provenance_smoke(args, heur_sims, seed_range, out) -> int:
     leaf-path counters off both sides, asserts the claimed leaf/value path
     actually executed, and writes a manifest stamped runtime_verified.ok=true."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net, include_farm = _load_net(args.checkpoint, device)
+    net, include_farm, sighted = _load_net(args.checkpoint, device)
     print(f"[provenance-smoke] device={device} heur_leaf={args.heur_leaf} "
-          f"residual_scale={args.residual_scale} sims={args.sims}/{heur_sims}")
+          f"residual_scale={args.residual_scale} sims={args.sims}/{heur_sims} "
+          f"sighted={sighted} fpu={args.fpu}")
     # Persistent objects so counters accumulate across both seats.
-    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm)
+    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm,
+                sighted=sighted)
     heur_game = Game(enable_legal_moves_cache=True)
     net_mcts, heur_mcts, leaf_eval = _make_matchup(
         net, device, game, heur_game, seed=seed_range[0], sims=args.sims,
         heur_sims=heur_sims, c_puct=args.c_puct, heur_leaf=args.heur_leaf,
-        residual_scale=args.residual_scale, include_farm=include_farm)
+        residual_scale=args.residual_scale, include_farm=include_farm,
+        fpu_reduction=args.fpu)
     import random
     for net_player in (0, 1):
         random.seed(seed_range[0])
@@ -392,6 +409,10 @@ def main(argv=None) -> int:
     ap.add_argument("--heur-sims", type=int, default=None,
                     help="HeuristicMCTS sims (default = --sims, i.e. matched compute)")
     ap.add_argument("--c-puct", type=float, default=3.0)
+    ap.add_argument("--fpu", type=float, default=None,
+                    help="NeuralMCTS first-play-urgency reduction (q=parent.Q-fpu "
+                         "for unvisited children). None (default) = legacy q=0, "
+                         "byte-identical to prior evals. M2 fixed ingredient: 0.6.")
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--shm-eval-server", type=str, default=None,
                     help="carc-orch SHM orchestrator mode: attach to /dev/shm/carc_<NAME> for "
@@ -469,11 +490,14 @@ def main(argv=None) -> int:
     # both-sides evaluator block read off live MCTS objects) — D21 + R1/R7.
     if not args.summary_only:
         device_cpu = torch.device("cpu")  # CPU keeps the parent CUDA-clean before fork
-        _net, _farm = _load_net(args.checkpoint, device_cpu)
-        _g, _hg = Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True)
+        _net, _farm, _sighted = _load_net(args.checkpoint, device_cpu)
+        _g, _hg = (Game(enable_legal_moves_cache=True, include_farm_scalars=_farm,
+                        sighted=_sighted),
+                   Game(enable_legal_moves_cache=True))
         _nm, _hm, _ = _make_matchup(_net, device_cpu, _g, _hg, seed=args.seed_start,
                                     sims=args.sims, heur_sims=heur_sims, c_puct=args.c_puct,
-                                    heur_leaf=args.heur_leaf, residual_scale=args.residual_scale)
+                                    heur_leaf=args.heur_leaf, residual_scale=args.residual_scale,
+                                    fpu_reduction=args.fpu)
         _nspec, _hspec = _both_specs(_nm, _hm, checkpoint=args.checkpoint, sims=args.sims,
                                      heur_sims=heur_sims, paired=args.paired,
                                      seed_range=seed_range, argv=sys.argv[1:])
@@ -528,13 +552,13 @@ def main(argv=None) -> int:
                                  initargs=(str(args.checkpoint), args.shared_claim,
                                            args.claim_host, args.claim_stale_secs,
                                            args.heur_leaf, args.residual_scale,
-                                           args.shm_eval_server, _id_q, ns))
+                                           args.shm_eval_server, _id_q, ns, args.fpu))
         else:
             _pool_cm = Pool(processes=workers, initializer=_worker_init,
                             initargs=(str(args.checkpoint), args.shared_claim,
                                       args.claim_host, args.claim_stale_secs,
                                       args.heur_leaf, args.residual_scale,
-                                      "", None, ns))
+                                      "", None, ns, args.fpu))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

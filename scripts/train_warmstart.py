@@ -154,6 +154,15 @@ def main(argv: list[str] | None = None) -> int:
         "to train_iter automatically.",
     )
     p.add_argument(
+        "--sighted",
+        action="store_true",
+        help="M2 canonical-AZ: train the SIGHTED net (81 board channels = 78 + 3 "
+        "farm-connectivity planes; scalars = base(+farm) + 32 bag histogram). The "
+        "training data MUST have been dumped with the same flag "
+        "(generate_warmstart_smoke.py --sighted). n_input_channels + sighted are "
+        "saved in the checkpoint and propagate to gen/train_iter/eval.",
+    )
+    p.add_argument(
         "--aux-weight",
         type=float,
         default=0.15,
@@ -231,15 +240,23 @@ def main(argv: list[str] | None = None) -> int:
         persistent_workers=(args.num_workers > 0),
     )
 
-    from carcassonne_ai.features import N_FARM_SCALARS, N_SCALAR_FEATURES
-    n_scalar_features = N_SCALAR_FEATURES + (N_FARM_SCALARS if args.include_farm_scalars else 0)
+    # Derive net input dims from a Game built with the SAME sighted/farm flags,
+    # so the net width can never drift from what get_canonical_form emits into
+    # the training data (single source of truth).
+    from carcassonne_ai.game_wrapper import Game
+    _dims_game = Game(sighted=args.sighted, include_farm_scalars=args.include_farm_scalars)
+    n_scalar_features = _dims_game.get_scalar_feature_size()
+    n_input_channels = _dims_game.get_input_channels()
     net = CarcassonneNet(
-        n_filters=args.filters, n_blocks=args.blocks, n_scalar_features=n_scalar_features,
+        n_filters=args.filters, n_blocks=args.blocks,
+        n_input_channels=n_input_channels,
+        n_scalar_features=n_scalar_features,
         value_global_pool=args.global_pool,
     ).to(device)
     print(
         f"  net params: {net.param_count():,}  (filters={args.filters}, "
-        f"blocks={args.blocks}, scalars={n_scalar_features}, "
+        f"blocks={args.blocks}, channels={n_input_channels}, "
+        f"scalars={n_scalar_features}, sighted={args.sighted}, "
         f"global_pool={args.global_pool})"
     )
 
@@ -377,7 +394,10 @@ def main(argv: list[str] | None = None) -> int:
                     "model_state": net.state_dict(),
                     "n_filters": args.filters,
                     "n_blocks": args.blocks,
+                    "n_input_channels": n_input_channels,
                     "n_scalar_features": n_scalar_features,
+                    "sighted": bool(args.sighted),
+                    "include_farm_scalars": bool(args.include_farm_scalars),
                     "value_global_pool": args.global_pool,
                     "epoch": epoch,
                     "val_pol_loss": val_pol_loss,
@@ -393,7 +413,10 @@ def main(argv: list[str] | None = None) -> int:
             "model_state": net.state_dict(),
             "n_filters": args.filters,
             "n_blocks": args.blocks,
+            "n_input_channels": n_input_channels,
             "n_scalar_features": n_scalar_features,
+            "sighted": bool(args.sighted),
+            "include_farm_scalars": bool(args.include_farm_scalars),
             "value_global_pool": args.global_pool,
             "data_root": str(args.data_root),
             "provenance": _prov,

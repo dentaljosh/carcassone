@@ -89,6 +89,7 @@ def play_one_selfplay_game(
     on_ply: Callable[[object, object, int, int], None] | None = None,
     on_ply_search: Callable[[object, object, object, int, int], None] | None = None,
     record_boards_override: bool = False,
+    fpu_reduction: float | None = None,
 ) -> GameDataset:
     """Play one self-play game; emit a GameDataset of all positions.
 
@@ -215,6 +216,7 @@ def play_one_selfplay_game(
         batch_evaluator=batch_evaluator,
         virtual_loss=virtual_loss,
         record_boards=record_interior,
+        fpu_reduction=fpu_reduction,
     )
 
     # Anchor-fraction mode: a second MCTS for the fixed opponent. No Dirichlet
@@ -236,6 +238,7 @@ def play_one_selfplay_game(
             batch_size=batch_size,
             batch_evaluator=anchor_batch_evaluator,
             virtual_loss=virtual_loss,
+            fpu_reduction=fpu_reduction,
         )
     else:
         anchor_mcts = None

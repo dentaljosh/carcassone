@@ -356,6 +356,7 @@ def generate_one_game_dataset(
     heuristic_tau: float = DEFAULT_HEURISTIC_TAU,
     heuristic_lookahead: str = "1ply",
     include_farm_scalars: bool = False,
+    sighted: bool = False,
 ) -> GameDataset:
     """Play a random game; sample N mid-game positions; label each.
 
@@ -379,7 +380,11 @@ def generate_one_game_dataset(
     # own action choices.
     random.seed(seed)
     rng = random.Random(seed + 1)
-    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars)
+    game = Game(
+        enable_legal_moves_cache=True,
+        include_farm_scalars=include_farm_scalars,
+        sighted=sighted,
+    )
     board = game.get_init_board()
 
     # Walk the game, recording at each step the data we'd need to label
@@ -423,7 +428,11 @@ def generate_one_game_dataset(
     # we save N×Game-construction overhead.
     if label_strategy == "mcts":
         from .mcts import MCTS
-        mcts_game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars)
+        mcts_game = Game(
+            enable_legal_moves_cache=True,
+            include_farm_scalars=include_farm_scalars,
+            sighted=sighted,
+        )
 
     for idx in chosen:
         snap_board, mask, player = snapshots[idx]

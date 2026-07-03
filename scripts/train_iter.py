@@ -40,6 +40,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
+from carcassonne_ai.board_repr import N_CHANNELS
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.train_provenance import add_provenance_args, build_training_provenance
 from carcassonne_ai.warmstart import (
@@ -470,12 +471,24 @@ def main(argv: list[str] | None = None) -> int:
     # self-play .npz this trains on must carry matching-width scalars (i.e.
     # run_selfplay_iter used Game(include_farm_scalars=...) consistently).
     n_scalar_features = int(ckpt.get("n_scalar_features", 10))
+    # M2 sighted rep: the input-channel count (78 blind, 81 sighted) rides in the
+    # checkpoint (default 78 for pre-M2 checkpoints). The self-play .npz this
+    # trains on must carry matching-width boards (run_selfplay_iter derived the
+    # same sighted flag from the same warm-from checkpoint). sighted/include_farm
+    # are pure metadata carried forward so gen/eval can rebuild the matching Game.
+    n_input_channels = int(ckpt.get("n_input_channels", N_CHANNELS))
+    sighted = bool(ckpt.get("sighted", False))
+    include_farm_scalars = bool(
+        ckpt.get("include_farm_scalars", (n_scalar_features > 10) and not sighted)
+    )
     # flywheel step 2: --global-pool UPGRADES the value arch (adds the board-wide
     # global-pool summary) even when warming from a non-pool checkpoint; the
     # checkpoint's own flag is the default for plain continuation.
     value_global_pool = bool(ckpt.get("value_global_pool", False)) or args.global_pool
     net = CarcassonneNet(
-        n_filters=n_filters, n_blocks=n_blocks, n_scalar_features=n_scalar_features,
+        n_filters=n_filters, n_blocks=n_blocks,
+        n_input_channels=n_input_channels,
+        n_scalar_features=n_scalar_features,
         value_global_pool=value_global_pool,
     ).to(device)
     if args.warm_value_fresh:
@@ -751,7 +764,10 @@ def main(argv: list[str] | None = None) -> int:
             "model_state": net.state_dict(),
             "n_filters": n_filters,
             "n_blocks": n_blocks,
+            "n_input_channels": n_input_channels,
             "n_scalar_features": n_scalar_features,
+            "sighted": sighted,
+            "include_farm_scalars": include_farm_scalars,
             "value_global_pool": value_global_pool,
             "iter": args.iter_idx,
             "epochs": args.epochs,

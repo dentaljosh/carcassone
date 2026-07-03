@@ -42,10 +42,10 @@ def _seed_path(subdir: str, seed: int) -> Path:
     return DATA_ROOT / subdir / f"seed_{seed:05d}.npz"
 
 
-def _worker(args: tuple[int, str, str, int, int, float, str, bool]) -> tuple[int, str, int]:
+def _worker(args: tuple[int, str, str, int, int, float, str, bool, bool]) -> tuple[int, str, int]:
     """One-game worker. Returns (seed, status, n_positions)."""
     (seed, strategy, subdir, n_positions, mcts_sims, heuristic_tau,
-     heuristic_lookahead, include_farm_scalars) = args
+     heuristic_lookahead, include_farm_scalars, sighted) = args
     path = _seed_path(subdir, seed)
     if path.exists():
         try:
@@ -61,6 +61,7 @@ def _worker(args: tuple[int, str, str, int, int, float, str, bool]) -> tuple[int
         heuristic_tau=heuristic_tau,
         heuristic_lookahead=heuristic_lookahead,
         include_farm_scalars=include_farm_scalars,
+        sighted=sighted,
     )
     ds.save(path)
     return seed, "fresh", len(ds)
@@ -94,6 +95,13 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Path B Step E: emit 12-scalar feature vectors (10 base + 2 farm-control) "
         "in the generated data. Pair with train_warmstart --include-farm-scalars.",
+    )
+    p.add_argument(
+        "--sighted",
+        action="store_true",
+        help="M2 canonical-AZ: emit the SIGHTED representation — 81 board channels "
+        "(78 + 3 farm-connectivity planes) and +32 bag-histogram scalars. Pair "
+        "with train_warmstart --sighted. Combines with --include-farm-scalars.",
     )
     p.add_argument("--n", type=int, default=5000, help="target total positions")
     p.add_argument("--positions-per-game", type=int, default=10)
@@ -148,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
     pool_args = [
         (args.seed_start + i, args.label_strategy, subdir,
          args.positions_per_game, args.mcts_sims, args.heuristic_tau,
-         args.heuristic_lookahead, args.include_farm_scalars)
+         args.heuristic_lookahead, args.include_farm_scalars, args.sighted)
         for i in range(n_games)
     ]
     already = sum(1 for a in pool_args if _seed_path(subdir, a[0]).exists())
