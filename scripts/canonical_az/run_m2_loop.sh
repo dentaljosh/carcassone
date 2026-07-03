@@ -52,7 +52,8 @@ EVAL_N="${EVAL_N:-200}"
 
 # orch knobs
 USE_ORCH="${USE_ORCH:-1}"          # 1 = orch gen + dual-net eval; 0 = orch-off + h3200
-GEN_OW="${GEN_OW:-28}"             # orch gen workers (local 28 / laptop 8); orch-off default 14
+GEN_OW="${GEN_OW:-28}"             # LOCAL orch gen workers; orch-off default 14
+LAPTOP_GEN_OW="${LAPTOP_GEN_OW:-8}"  # laptop orch gen workers (8GB 4070m ceiling)
 GEN_WORKERS="${GEN_WORKERS:-14}"   # orch-off per-worker self-play W (USE_ORCH=0)
 EVAL_OW="${EVAL_OW:-28}"           # dual-server eval workers/server (local 28 / laptop 16)
 REF_CKPT="${REF_CKPT:-/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt}"  # FIXED blind anchor
@@ -74,15 +75,15 @@ claim_flag=""; [ "$SHARED_CLAIM" = "1" ] && claim_flag="--shared-claim --claim-h
 # /mnt/c/carc-shared share path to the laptop's /mnt/carc-shared. NOT smoke-tested
 # from the build session — verify the laptop binary is rebuilt (81ch) first.
 _kick_laptop_gen() {
-  local it="$1"
-  local lwarm="${WARMSTART_CKPT/\/mnt\/c\/carc-shared//mnt/carc-shared}"
+  local it="$1"; local prev="$2"   # prev = the CURRENT parent ckpt for THIS iter
+  # translate local share path -> laptop share path for the ckpt the laptop reads
+  local lprev="${prev/\/mnt\/c\/carc-shared//mnt/carc-shared}"
   local lout="${OUT/\/mnt\/c\/carc-shared//mnt/carc-shared}"
-  local lref="${REF_CKPT/\/mnt\/c\/carc-shared//mnt/carc-shared}"
-  echo "[m2-loop] kicking laptop gen (iter $it) on $LAPTOP_HOST"
+  echo "[m2-loop] kicking laptop gen (iter $it, parent $(basename "$prev")) on $LAPTOP_HOST OW=$LAPTOP_GEN_OW"
   ssh "$LAPTOP_HOST" 'bash -s' <<EOF &
 cd "$LAPTOP_REPO" || exit 1
-REPO="$LAPTOP_REPO" HOST=laptop WARM="$lwarm" ITER="$it" OUT="$lout/buffer" \\
-  GAMES="$GAMES" SIMS="$SIMS" FPU="$FPU" CPUCT="$CPUCT" OW=8 SEED_START="$SEED_START" \\
+REPO="$LAPTOP_REPO" HOST=laptop WARM="$lprev" ITER="$it" OUT="$lout/buffer" \\
+  GAMES="$GAMES" SIMS="$SIMS" FPU="$FPU" CPUCT="$CPUCT" OW="$LAPTOP_GEN_OW" SEED_START="$SEED_START" \\
   setsid nohup bash scripts/canonical_az/gen_m2_orch.sh --shared-claim --claim-host laptop \\
   > /tmp/m2_laptop_gen_${it}.log 2>&1 < /dev/null &
 EOF
@@ -96,7 +97,7 @@ for it in $(seq "$START" "$ITERS"); do
   # ---------- GEN ----------
   if [ "$USE_ORCH" = "1" ]; then
     echo "=== [iter $it] GEN ORCH ($GAMES games, sims=$SIMS, fpu=$FPU, $VALUE_TARGET, --leaf-eval nn) ==="
-    [ -n "$LAPTOP_HOST" ] && [ "$SHARED_CLAIM" = "1" ] && _kick_laptop_gen "$it"
+    [ -n "$LAPTOP_HOST" ] && [ "$SHARED_CLAIM" = "1" ] && _kick_laptop_gen "$it" "$PREV"
     # local orch gen (foreground; exits when the shared pool is complete). gen_m2_orch
     # exports the sighted net, launches carc-orch --n-ch 81 --n-scalar 42, runs
     # run_selfplay_iter --shm-eval-server; passes claim flags through.
