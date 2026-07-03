@@ -81,3 +81,17 @@ and superhuman-via-learned-value is the project's primary goal — the one quest
 open (every prior net had a degenerate target / pooling-off / blind rep). A clean KILL *earns* the route closure the
 autopsy currently can't write; a fire genuinely revives the flywheel. Either way it resolves §7. **Recommend: launch,
 eyes open to a likely null — but decide as an explicit ~2–3-day budget commit, not a silent continuation.**
+
+
+## Read-out protocol (PRE-REGISTERED 2026-07-03 — thresholds fixed before the numbers)
+
+After the loop, evaluate checkpoints **iter_01 / iter_03 / iter_05** (a TRAJECTORY — shows compounding, not a lone final point; Joshua's call). The per-iter in-loop eval (vs RoD-v2 iter_02) is a *policy* health check, **NOT** the verdict. The verdict is two reads:
+
+**(1) PRIMARY - solver-scored value ranking (non-circular).** `solver_score.py` (b0e7158) on each net's **value head**: sibling-ranking regret + Kendall-tau vs the exact K<=4 solver (ground truth, uncorrelated with the leaf). Read across 1->3->5 for improvement. Solve the ~1,119 K<=2 roots ONCE (~1-2 h, or reuse cache), then score 3 nets = minutes; add K=4 clairvoyant (~21 min/solve) only if K<=2 is ambiguous.
+
+**(2) CONVERSION - residual-scale game sweep.** For each of 1/3/5, blend value into the leaf at **rs in {0, 0.25, 0.5}** with **FPU=0.6**, play n=200. Opponent = a **FIXED rung, never the moving parent**: sweep vs **RoD-v2 iter_02** (net -> orch-fast) for the trajectory; confirm the winning rs at the strongest iter vs **h_v2.9@3200** (the real deep-classical bar). 3 iters x 3 rs = 9 runs, orch across local+laptop ~= 2 h.
+
+**Pre-registered verdict:**
+- **FIRE (value exceeds the leaf):** solver-tau beats the leaf AND improves 1->3->5, AND a monotone **>=2sigma paired game gain** on the rs-sweep at some iter -> first in project history -> the flywheel revives; iter_5 seeds a real Section-10(b) run. Autopsy Section-7 = reopening confirmed.
+- **KILL (ranks-but-doesn't-convert, or flat 1->3->5):** solver-tau <= leaf, or rs-sweep game effect <2sigma / non-monotone -> even the canonical AZ cell can't beat the tau~0.895 leaf -> CL-039 upgrades "premature" -> "earned, scoped closure".
+- **Total cost ~= half a day**, mostly parallel. Single read-out at the pre-registered n; no peeking/cherry-picking.
