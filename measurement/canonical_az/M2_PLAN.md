@@ -51,4 +51,33 @@ marginalized sibling subset** (cheap, non-circular).
   independent at this scale → autopsy §7 "all-kill"; CL-039 gains real support. Expect a real chance of KILL (the
   leaf may capture most of the additive value). This adjudicates; it does not resurrect.
 
-MEASUREMENT ONLY — no champion/PRODUCTION.yaml/v2.7/v2.9 change. Contributes to CL-041 (autopsy).
+MEASUREMENT ONLY — no champion/PRODUCTION.yaml/v2.7/v2.9 change. Contributes to CL-042 (autopsy; CL-041 = S1 promotion).
+
+## Cost + go/no-go (updated post-M3, 2026-07-02) — the decision Joshua weighs before launch
+
+**M3 sharpens M2's question.** M3 (n=400) showed the *weak* weaned value (τ≈0.43) craters MCTS (0.265) but recovers
+to **parity** (0.496) with FPU=0.6 — FPU removes the value's *harm* but can't manufacture *help* from a value weaker
+than the τ≈0.895 leaf. **So M2's real question is now precise: can a *better* value — sighted rep × pooled head ×
+non-degenerate target (`score_diff_wide`) — with **FPU=0.6 installed**, EXCEED the leaf (>0.50), not just tie it?**
+The FPU fix is now a *fixed ingredient* of the M2 loop, not a variable.
+
+**Cost (the "separate, larger budget decision" the plan flagged):**
+- **Build ≈ 1–2 days eng** — dominated by the sighted-plane plumbing (`encode_board`→`CarcassonneNet` 78→81ch /
+  10→42 scalars → gen → train, ~200–400 LOC + tests) + a **fresh warmstart** (the input-shape change breaks
+  arch-compat with every checkpoint → no warm-from; re-dump the sighted heuristic-labeled dataset + train warmstart).
+- **Cluster ≈ 15–25 box-hours** — fresh warmstart (~a few hr) + a 3–5-iter loop (per iter: gen ~1–1.5 h, train
+  ~30 m, per-iter eval n=200 vs h3200 ~30 m → ~2–3 h/iter) + the rs-sweep {0,0.25,0.5} game read-out. ~1 day on
+  local+laptop work-stealing.
+- **Total ≈ 2–3 days** (mostly the build).
+
+**Honest prior on the outcome — a real chance of KILL:** §3A found the residual value space collapses to ~1
+dimension across scalar AND structured heads (though h6400-scored → M2 re-checks it solver-scored); the leaf is a
+strong decomposable τ≈0.895 ranker that **nothing in the program has beaten**; and M3's "recovery" was to parity via
+FPU-*neutralization*, not value-*driving*. So M2 may well return "even the canonical cell can't exceed the leaf" →
+CL-039 gains real, earned support (scoped closure). **M2 adjudicates the reopening; it does not presume it resurrects.**
+
+**Why it's still worth it (the case for launch):** it is the **closest-to-real-AlphaZero cell never sampled** here,
+and superhuman-via-learned-value is the project's primary goal — the one question the whole ledger left structurally
+open (every prior net had a degenerate target / pooling-off / blind rep). A clean KILL *earns* the route closure the
+autopsy currently can't write; a fire genuinely revives the flywheel. Either way it resolves §7. **Recommend: launch,
+eyes open to a likely null — but decide as an explicit ~2–3-day budget commit, not a silent continuation.**
