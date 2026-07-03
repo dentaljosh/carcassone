@@ -1,7 +1,12 @@
 # M2 — Sample the never-run canonical-AZ cell, solver-scored (runbook)
 
-**Status:** SCOPED — build after M1/M3 (biggest reopener). Plan:
-[docs/POST_REVIEW_PLAN.md](../../docs/POST_REVIEW_PLAN.md) §4. Scoped 2026-07-01 (subagent read-only pass).
+**Status:** ❌ **KILL — FINAL 2026-07-03 (both pre-registered reads; verdict clause: autopsy §7).** The cell was
+built and sampled (5 iters, local+laptop orch). PRIMARY: value-head solver-τ **0.018→0.023 flat** vs the leaf's
+**0.615** on 1,119 exact K≤2 roots (paired sign-z −17). CONVERSION: rs-sweep 0/6 cells ≥2σ, non-monotone, harm at
+weight. h_v2.9@3200 confirm leg moot (no winning rs). **CL-039 → earned scoped closure (CL-042).** Numbers:
+results.csv `m2_solver_score_k2_it00_04_n1119` / `m2_rs_sweep_*` / `m2_inloop_*`; artifact
+`solver_score_m2_final_it00_04.json`. Plan: [docs/POST_REVIEW_PLAN.md](../../docs/POST_REVIEW_PLAN.md) §4.
+Scoped 2026-07-01 (subagent read-only pass).
 
 **Question.** The cell {sighted CNN × pooled value head × non-degenerate target × sound low-sim improvement} — the
 closest thing to actually running AlphaZero here — has never been sampled (every lineage net used a saturated/

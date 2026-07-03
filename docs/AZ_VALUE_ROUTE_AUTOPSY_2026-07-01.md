@@ -1,11 +1,13 @@
-# AZ-value route — autopsy (DRAFT · **REOPENING** — M1 KILL, M3 FIRES; M3-confirm + M2 pending)
+# AZ-value route — autopsy (✅ FINAL — M1 KILL · M3 FIRE-then-bounded · **M2 KILL, earned closure**)
 
-**Status:** 🚧 DRAFT — §7 is now PARTLY resolved: **M1 KILLED** (iter2's gain was band noise) and **M3 FIRED**
-(FPU recovers the Gate-B crater → Gate-B refuted as a *law*), so the read-out is a **reopening, not a death** —
-CL-039 stays QUALIFIED, not upgraded to a closure. **n=400 M3-confirm DONE** (fpu=0.6=0.496 = parity → the fire
-holds). Still pending before §7 is FINAL: **M2** (the never-run canonical-AZ cell, solver-scored). Do NOT flip CL-039
-to a hard closure.
-· **Created:** 2026-07-01 · **Updated:** 2026-07-02 (M1/M3 landed)
+**Status:** ✅ **FINAL (2026-07-03).** All three reopeners have read out: **M1 KILLED** (band noise), **M3 FIRED
+then bounded** (Gate-B refuted as a *law*; FPU recovers to parity, not exceeding — the FPU axis is closed), and
+**M2 KILLED on both pre-registered reads** (solver-τ 0.02 vs the leaf's 0.615, flat across training; rs-sweep
+conversion null). **CL-039 upgrades from "premature closure" to an EARNED, SCOPED closure** (CL-042): even the
+canonical-AZ cell — sighted rep × pooled head × non-degenerate target × FPU-installed × value-driven leaf — cannot
+rank siblings against the exact solver or convert to game strength at this scale. §7 below is the final clause.
+· **Created:** 2026-07-01 · **Updated:** 2026-07-03 (M2 read-out FINAL; verdict executed autonomously per the
+pre-registered protocol, Joshua's standing authorization)
 
 > **The one-sentence verdict-scope correction (the review's headline):** CL-039's "the AZ-value route is exhausted
 > (scalar / structured / clairvoyant / fair)" is **premature as a route closure; accurate only as "this recipe
@@ -113,10 +115,12 @@ real prior, not a strawman — it only corrects that those failures could not se
 "we never gave it a target, the context to learn it, or a non-circular ruler."
 
 
-## 7. The dimensionality / route-closure clause — **REOPENING (M1 KILL, M3 FIRES; M3-confirm + M2 pending)**
+## 7. The dimensionality / route-closure clause — **FINAL: EARNED, SCOPED CLOSURE (M1 KILL · M3 bounded · M2 KILL)**
 
-*(Branches were pre-committed below; two of three have read out. The read-out landed on the "ANY fires" branch, so
-the strong-form closure is NOT written — the autopsy records a **reopening, not a death**.)*
+*(Branches were pre-committed below; all three have read out. M3's fire refuted Gate-B as a law and reopened the
+lever; M2 — the deciding test, with the FPU fix installed as an ingredient — then returned a clean KILL on both
+pre-registered reads. So the clause closes, and it closes EARNED: not "we never tried the canonical cell," but
+"we tried it, non-circularly scored, and it cannot beat the leaf at this scale.")*
 
 **M1 — KILL (settled, 2026-07-02).** Fresh-band fixed-rung paired (each of iter2/iter8 vs heur@800-v2.7, band 5.0e9,
 sims=800, n=400): iter8 +136.0/z7.71, iter2 +138.0/z7.93, **paired Δ(iter2−iter8)=+2.0 elo, z=0.09 = TIE.** iter2 does
@@ -141,17 +145,40 @@ value CAN be blended without cratering (given FPU). Whether a value can be made 
 wide-open **M2** question. The value-leaf lever is **reopened** (Gate-B doesn't close it); the loop earns its §10(b)
 budget with FPU installed. The **full FPU curve** (2026-07-03, n=400): 0.265→0.4(0.391)→**0.6(0.496 PEAK=parity)**→0.8(0.4825)→1.0(0.476) — **peaks at parity and rolls off beyond**, confirming FPU removes the weak value's *harm* but cannot make it *exceed* the leaf; the exceed-lever is a better VALUE (M2), not more FPU. results.csv `m3_confirm_fpu0{4,6,8,10}_c3_b027_n400`.
 
-**M2 — PENDING (the never-run canonical-AZ cell, solver-scored).** The big build; becomes the where-a-future-loop-aims
-if the head shows a monotone ≥2σ paired game effect or solver-τ>0.5. The solver-scoring harness
-(`scripts/canonical_az/solver_score.py`, b0e7158) is built; M2 is the remaining reopener.
+**M2 — KILL (FINAL, 2026-07-03; both pre-registered reads; protocol committed `9cbd818` BEFORE the numbers).**
+The never-run canonical-AZ cell was sampled: 5-iter loop (400 games/iter, sims=200, local+laptop orch), sighted rep
+(81ch/42sc) × pooled value head × `score_diff_wide` × FPU=0.6 × `--leaf-eval nn` (the value DRIVING the leaf).
+- **PRIMARY (solver-scored value ranking, F4 non-circular):** on 1,119 exact-marginalized K≤2 roots (identical roots
+  per ranker, solve-once-score-many), the v2.9 leaf scores **τ=0.615 / top1=0.610 / regret 0.951**; the five nets
+  score **τ = 0.018/0.021/0.018/0.021/0.023 (iters 00→04) — ~27× below the leaf and FLAT across training**; top1
+  ~0.08; paired-vs-leaf sign-z **−17…−18** (+0.9–1.0 pts exact score margin lost per root). Artifact:
+  `measurement/canonical_az/solver_score_m2_final_it00_04.json` (de-risk run reproduces to 4 decimals).
+  **Mechanistically sharp:** the heads are NOT dead — v_nn tracks the current-player score-diff (corr 0.50→0.65,
+  rising with training) — they learn the position *level* but have **zero between-sibling discrimination**. This
+  confirms §3A's "the residual value space is ~1-D / the leaf is a decomposable additive evaluator" **non-circularly,
+  for the first time** (every prior version of that reading was h6400-scored).
+- **CONVERSION (rs-sweep, n=200/cell, fpu0.6, vs RoD-v2 iter_02):** 0/6 cells gain ≥2σ over their rs=0 baseline;
+  every ladder non-monotone; weight hurts (iter_00: −36.6/−34.9/**−68.6**; iter_02: −65.0/−19.1/−31.4; iter_04:
+  −22.6/**−68.6**/−38.4) — M3's mechanism replayed: FPU masks a contentless value at low rs, weighting it degrades
+  search. The h_v2.9@3200 confirm leg is **moot by its own precondition** (it confirms "the winning rs"; none exists).
+- **Secondary (in-loop policy, blend=0):** flat-negative ~−40 elo vs the anchor across 5 iters (−36.6/—/−65.0/−45.4/
+  −22.6), never at parity → no policy compounding either. results.csv `m2_solver_score_k2_it00_04_n1119` +
+  `m2_inloop_*` + `m2_rs_sweep_*`.
 
-**Net so far:** the strong-form "route exhausted at these resources" **cannot** be written — **M3 fired**, so Gate-B's
-generalization dissolves and the value-leaf flywheel is **"available but unproven."** CL-039 stays **QUALIFIED**
-(premature closure), not upgraded to an earned closure. Finalize this clause after the n=400 M3-confirm + M2.
+**Net (FINAL):** with M1 killed, M3 bounded (parity-not-exceeding; FPU axis closed), and M2 killed on the
+pre-registered criteria, **CL-039 upgrades from "premature" to an EARNED, SCOPED closure**: the AZ-value route —
+scalar / structured / clairvoyant / fair / **and now canonical (sighted × pooled × non-degenerate × FPU-installed ×
+value-driven)** — cannot exceed the v2.7/v2.9 leaf **at this scale** (7M net, ≤5 iters, ≤400 games/iter, sims≤200).
+The scope guard stays: this is not a proof about 10–100× scale, Gumbel search, or fundamentally different
+architectures — it is the honest exhaustion of the recipe family this program can afford to sample. The §10(b)
+flywheel does NOT launch (its pre-condition was an M2 fire).
 
 ## 8. Governance
 
-Filed as **CL-042** (pending finalization; **CL-041 is the S1 v2.9 promotion**, not this). Qualifies **CL-039** (the
-premature route-closure — stays qualified, NOT upgraded to a closure, because M3 fired) and folds **CL-040** (§5A)
-into M2. The §10(b) 20–30-iter two-band flywheel is a **separate, larger budget decision** that a positive
-M1/M2/M3 *enables* but does not auto-commit — surfaced to Joshua explicitly, not a silent continuation.
+Filed as **CL-042 — FINALIZED 2026-07-03** (**CL-041 is the S1 v2.9 promotion**, not this). **CL-039 → earned,
+scoped closure** (this document, §7). **CL-040 (§5A) folded into M2's frame** — its one surviving non-circular
+question ("does a tempo axis add signal against a non-circular target?") is being re-adjudicated with the same
+solver ruler (arm retrains + `--arm-ckpt` solver-scoring, prep `7fa6e6e`; results will amend CL-040, not this
+verdict). The §10(b) flywheel is NOT triggered (pre-condition failed). Verdict executed autonomously per the
+pre-registered protocol under Joshua's 2026-07-03 standing authorization; no PRODUCTION/champion change (the
+champion remains deep-classical v2.9 Bmild_cap8, CL-041).
