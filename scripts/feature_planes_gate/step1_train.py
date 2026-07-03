@@ -152,6 +152,12 @@ def main():
                          "best_alpha_net_regret (combined leaf+best_alpha*net/sd regret at the "
                          "OVERALL-slice best alpha), delta=leaf_regret-best_alpha_net_regret. "
                          "Additive — does not change training or any other output.")
+    ap.add_argument("--save-model", action="store_true",
+                    help="CL-040 fold-in: save the best (val-selected) RankNet weights + full "
+                         "reconstruction metadata (arch dims, drop-flags, tempo column names, "
+                         "seed) to <out>/<variant>/ranknet_best.pt, so solver_score.py "
+                         "--arm-ckpt can re-adjudicate the arm against the exact solver. "
+                         "Default OFF — behavior byte-identical without it.")
     args = ap.parse_args()
     dev = torch.device(args.device)
     outroot = Path(args.out); outroot.mkdir(parents=True, exist_ok=True)
@@ -195,7 +201,7 @@ def main():
 
     # --- Probe §5A: append the aligned tempo block (after farm/bag ablation so the
     #     'last nb cols = bag' arithmetic above stays correct on the ORIGINAL sca). ---
-    nt = 0
+    nt = 0; tempo_names: list = []
     if args.tempo_npz:
         tempo_arr, tempo_names = align_tempo(args.tempo_npz, grp, gs, aux["ply"])
         nt = tempo_arr.shape[1]
@@ -293,6 +299,36 @@ def main():
                     break
         if best_state:
             net.load_state_dict(best_state)
+
+        # --- CL-040 fold-in: persist the best RankNet + everything needed to
+        #     reconstruct it EXACTLY (solver_score.py --arm-ckpt reads this). ---
+        if args.save_model:
+            od_save = outroot / variant; od_save.mkdir(parents=True, exist_ok=True)
+            state = best_state if best_state is not None else {
+                k: v.detach().cpu().clone() for k, v in net.state_dict().items()}
+            df, db, dt = bool(args.drop_farm), bool(args.drop_bag), bool(args.drop_tempo)
+            arm_name = ("none" if (df and db and dt) else
+                        "tempo_only" if (df and db) else
+                        "both" if (dt and not df and not db) else
+                        "all_three" if not (df or db or dt) else "custom")
+            torch.save({
+                "model_state": state,
+                "arch": {"ranknet_arm": arm, "c_in": int(c_in), "w": int(w),
+                         "n_scalar": int(n_scalar),
+                         "trunk_filters": int(args.trunk_filters),
+                         "trunk_blocks": int(args.trunk_blocks)},
+                "arm": arm_name,
+                "drop_flags": {"drop_farm": df, "drop_bag": db, "drop_tempo": dt},
+                "seed": int(args.seed),
+                "n_scalar": int(n_scalar),          # total incl appended tempo cols
+                "tempo_cols": int(nt),
+                "tempo_names": [str(x) for x in tempo_names],
+                "n_farm_planes": int(nf), "n_bag_scalars": int(nb),
+                "variant": variant, "target_mode": target_mode,
+                "dataset": str(args.dataset), "dataset_mode": meta.get("mode"),
+                "best_val_loss": None if math.isinf(best_val) else float(best_val),
+            }, od_save / "ranknet_best.pt")
+            print(f"    [{variant}] saved best model -> {od_save / 'ranknet_best.pt'}", flush=True)
 
         net.train(False)
         preds = {}

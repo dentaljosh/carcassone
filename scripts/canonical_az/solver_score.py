@@ -160,6 +160,101 @@ def make_net_ranker(ckpt_path: str):
     return rank
 
 
+def make_tempo_arm_ranker(ckpt_path: str):
+    """A §5A tempo-arm RankNet (step1_train.py --save-model dict) as a ranker —
+    the CL-040 fold-in re-adjudication read-out. Returns (label, rank_fn).
+
+    Input build mirrors the CL-037/§5A training rows exactly (step1_dump.py
+    _process + emit_tempo.py): blind get_canonical_form(child, root_player)
+    (78ch + 12 scalars), + step1_planes.farm_connectivity_planes -> 81ch,
+    + bag_histogram -> 44 scalars, + the _tempo_features columns the arm was
+    trained with (selected by the saved tempo_names — 14 full or the 10-core
+    gate-zero survivors). The arm's drop-flags are applied by ZEROING the
+    corresponding blocks, matching step1_train's --drop-farm/--drop-bag/
+    --drop-tempo gather-time ablation (the net always sees the full-width
+    81ch/n_scalar layout). Features round-trip through float16 to match the
+    dataset dtype path (child_obs.f16 / f16 scalars -> float32 at gather).
+
+    POV (verdict-critical): NO flip. The RankNet target was oracle_q in
+    absolute mode (step1_train.train_one: tgt = oq for V4_listwise), and
+    oracle_q is the h6400 teacher's adjusted-Q in ROOT-PLAYER perspective
+    (probe_signal_density.py), with the encode canonicalized to root_player
+    — so the net output is already mover-oriented for the roots scored here
+    (root_player == the mover). Terminal children short-circuit to
+    get_game_ended(child, root_player), exactly like the other rankers.
+    Ranking metrics are invariant to monotone transforms, so only this
+    orientation matters, not scaling."""
+    import torch
+    sys.path.insert(0, str(REPO / "scripts"))               # value_ranking_train
+    sys.path.insert(0, str(REPO / "scripts" / "probe_5a"))  # emit_tempo
+    from value_ranking_train import RankNet
+    from emit_tempo import _tempo_features, TEMPO_NAMES
+    from step1_planes import (farm_connectivity_planes, bag_histogram,
+                              N_FARM_PLANES, N_BAG)
+    from carcassonne_ai.game_wrapper import Game
+
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    arch = ck["arch"]
+    net = RankNet(arch["ranknet_arm"], int(arch["c_in"]), int(arch["w"]),
+                  int(arch["n_scalar"]), int(arch["trunk_filters"]),
+                  int(arch["trunk_blocks"]))
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+
+    drops = ck.get("drop_flags", {})
+    drop_farm = bool(drops.get("drop_farm", False))
+    drop_bag = bool(drops.get("drop_bag", False))
+    drop_tempo = bool(drops.get("drop_tempo", False))
+    tempo_names = [str(x) for x in ck.get("tempo_names", [])]
+    tempo_idx = [TEMPO_NAMES.index(nm) for nm in tempo_names]
+    nt = int(ck.get("tempo_cols", len(tempo_idx)))
+    if nt != len(tempo_idx):
+        raise ValueError(f"{ckpt_path}: tempo_cols={nt} != len(tempo_names)={len(tempo_idx)}")
+    n_farm = int(ck.get("n_farm_planes", N_FARM_PLANES))
+    n_bag = int(ck.get("n_bag_scalars", N_BAG))
+    c_in, n_scalar = int(arch["c_in"]), int(arch["n_scalar"])
+    label = f"arm_{ck.get('arm', Path(ckpt_path).stem)}_s{ck.get('seed', '?')}"
+    # blind encode Game — same construction as step1_dump._worker_init
+    enc_game = Game(enable_legal_moves_cache=True, include_farm_scalars=True)
+
+    def rank(child, root_player, game):
+        ended = game.get_game_ended(child, root_player)
+        if ended != 0:
+            return max(-1.0, min(1.0, float(ended)))
+        obs, sca = enc_game.get_canonical_form(child, root_player)   # (78,W,W), (12,)
+        obs = obs.astype(np.float16)
+        sca = np.asarray(sca, dtype=np.float16)
+        off = child.offset; W = off.size
+        if n_farm:
+            if drop_farm:
+                fp = np.zeros((n_farm, W, W), dtype=np.float16)
+            else:
+                fp = farm_connectivity_planes(child.state, root_player, off, W).astype(np.float16)
+            obs = np.concatenate([obs, fp], axis=0)
+        if n_bag:
+            if drop_bag:
+                bag = np.zeros(n_bag, dtype=np.float16)
+            else:
+                bag = bag_histogram(child.state).astype(np.float16)
+            sca = np.concatenate([sca, bag], axis=0)
+        if nt:
+            if drop_tempo:
+                tv = np.zeros(nt, dtype=np.float16)
+            else:
+                tempo, _ = _tempo_features(child.state, root_player)
+                tv = np.asarray(tempo, dtype=np.float32)[tempo_idx].astype(np.float16)
+            sca = np.concatenate([sca, tv], axis=0)
+        if obs.shape[0] != c_in or sca.shape[0] != n_scalar:
+            raise ValueError(f"arm input mismatch: obs C={obs.shape[0]} (want {c_in}), "
+                             f"sca={sca.shape[0]} (want {n_scalar})")
+        with torch.no_grad():
+            o = torch.from_numpy(obs.astype(np.float32)[None])
+            s = torch.from_numpy(sca.astype(np.float32)[None])
+            return float(net(o, s).item())
+
+    return label, rank
+
+
 RANKERS = {"v29_leaf": make_v29_leaf_ranker}
 
 
@@ -307,6 +402,11 @@ def main(argv=None) -> int:
                     help="net checkpoint to score as an ADDITIONAL ranker (repeatable; "
                          "M2 read-out). Named after the file stem (e.g. iter_00). Every "
                          "ranker is scored on the same SolveResult per root.")
+    ap.add_argument("--arm-ckpt", action="append", default=[], metavar="PATH",
+                    help="§5A tempo-arm RankNet saved by step1_train.py --save-model "
+                         "(repeatable; the CL-040 fold-in re-adjudication). Scored as an "
+                         "ADDITIONAL ranker on the same SolveResult per root — the "
+                         "v29_leaf baseline is untouched.")
     ap.add_argument("--n", type=int, default=0,
                     help="cap #K<=max_k roots to SCORE (0=all). Roots are pre-filtered by the "
                          "records' k_remaining then verified post-replay; --n counts SOLVED roots.")
@@ -325,6 +425,12 @@ def main(argv=None) -> int:
             name = f"{Path(ck).resolve().parent.parent.name}_{name}"
         rankers[name] = make_net_ranker(ck)
         print(f"[ranker] {name} <- {ck} (net value head, CPU)", flush=True)
+    for ck in args.arm_ckpt:
+        label, rank = make_tempo_arm_ranker(ck)
+        if label in rankers:  # e.g. same arm+seed retrained into two dirs
+            label = f"{label}_{Path(ck).resolve().parent.parent.name}"
+        rankers[label] = rank
+        print(f"[ranker] {label} <- {ck} (§5A tempo-arm RankNet, CPU)", flush=True)
     recs = load_sibling_roots(args.qprobe, args.pool)
     print(f"[load] {len(recs)} sibling roots (qprobe ∩ pool)", flush=True)
 
@@ -393,6 +499,7 @@ def main(argv=None) -> int:
     report = {
         "ranker_baseline": args.ranker, "rankers": list(rankers),
         "checkpoints": [{"path": c, "sha256": _sha256(c)} for c in args.checkpoint],
+        "arm_ckpts": [{"path": c, "sha256": _sha256(c)} for c in args.arm_ckpt],
         "max_k": args.max_k, "budget": args.budget,
         "qprobe": args.qprobe, "pool": args.pool,
         "n_roots_total": len(recs), "n_candidates": len(cand),
