@@ -114,7 +114,7 @@ needs a *high* FPU (0.6) — which may mean FPU is *neutralizing* the value's in
 rather than the value *driving* search well. Either way the hard "value POISONS search" reading is dead: a learned
 value CAN be blended without cratering (given FPU). Whether a value can be made to *help* (exceed the leaf) is the
 wide-open **M2** question. The value-leaf lever is **reopened** (Gate-B doesn't close it); the loop earns its §10(b)
-budget with FPU installed. results.csv `m3_confirm_fpu0{4,6}_c3_b027_n400`.
+budget with FPU installed. The **full FPU curve** (2026-07-03, n=400): 0.265→0.4(0.391)→**0.6(0.496 PEAK=parity)**→0.8(0.4825)→1.0(0.476) — **peaks at parity and rolls off beyond**, confirming FPU removes the weak value's *harm* but cannot make it *exceed* the leaf; the exceed-lever is a better VALUE (M2), not more FPU. results.csv `m3_confirm_fpu0{4,6,8,10}_c3_b027_n400`.
 
 **M2 — PENDING (the never-run canonical-AZ cell, solver-scored).** The big build; becomes the where-a-future-loop-aims
 if the head shows a monotone ≥2σ paired game effect or solver-τ>0.5. The solver-scoring harness
