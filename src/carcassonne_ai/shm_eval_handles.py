@@ -8,6 +8,15 @@ Drop-in for remote_socket_handles.SocketServerHandles: exposes the same
 make_remote_*_evaluator factories work unchanged.
 
 LAYOUT must stay byte-identical to rust/carc-orch/src/shm.rs (mod layout).
+
+CHANNELS/SCALARS ARE RUNTIME-CONFIGURABLE (2026-07-03, M2 sighted rep): the
+obs/scalar region sizes and all offsets are computed from ``(n_ch, n_scalar)``
+via ``_Layout`` — NOT module constants. The server is told the same two numbers
+(``--n-ch``/``--n-scalar``); ``connect_shm`` receives them here. Both sides
+compute an identical layout, so blind 78ch/12-scalar nets keep their exact prior
+layout (``_Layout(78, 12)`` == the old N_CH=78/N_SCALAR_MAX=12 constants) and
+sighted 81ch/42-scalar nets get their own exact-fit layout. MAX_K/HW/A are fixed
+(locked rule set).
 """
 from __future__ import annotations
 
@@ -23,20 +32,37 @@ import numpy as np
 
 from .eval_server import EvalResponse
 
-# --- layout (must match shm.rs::layout) ---
+# --- fixed layout constants (must match shm.rs::layout) ---
 MAX_K = 8
-N_CH = 78
 HW = 25
-OBS_PER = N_CH * HW * HW           # 48750
 A = 2511
-N_SCALAR_MAX = 12
 HDR = 64
-OFF_OBS = HDR
-OFF_SCL = OFF_OBS + MAX_K * OBS_PER * 4
-OFF_MSK = OFF_SCL + MAX_K * N_SCALAR_MAX * 4
-OFF_PRI = OFF_MSK + MAX_K * A
-OFF_VAL = OFF_PRI + MAX_K * A * 4
-SLOT_SIZE = OFF_VAL + MAX_K * 4
+N_CH_CAP = 128
+N_SCALAR_CAP = 128
+
+
+class _Layout:
+    """Runtime slot layout for a given (n_ch, n_scalar). Mirrors
+    rust/carc-orch/src/shm.rs::layout::Layout byte-for-byte."""
+
+    __slots__ = ("n_ch", "n_scalar", "obs_per", "off_obs", "off_scl",
+                 "off_msk", "off_pri", "off_val", "slot_size")
+
+    def __init__(self, n_ch: int, n_scalar: int):
+        if not (1 <= n_ch <= N_CH_CAP):
+            raise ValueError(f"n_ch={n_ch} out of range 1..{N_CH_CAP}")
+        if not (1 <= n_scalar <= N_SCALAR_CAP):
+            raise ValueError(f"n_scalar={n_scalar} out of range 1..{N_SCALAR_CAP}")
+        self.n_ch = n_ch
+        self.n_scalar = n_scalar
+        self.obs_per = n_ch * HW * HW
+        self.off_obs = HDR
+        self.off_scl = self.off_obs + MAX_K * self.obs_per * 4
+        self.off_msk = self.off_scl + MAX_K * n_scalar * 4
+        self.off_pri = self.off_msk + MAX_K * A
+        self.off_val = self.off_pri + MAX_K * A * 4
+        self.slot_size = self.off_val + MAX_K * 4
+
 
 _ETIMEDOUT = 110
 _EINTR = 4
@@ -71,9 +97,12 @@ def _open_sem(name: bytes, deadline: float) -> int:
 
 class _ShmConn:
     def __init__(self, shm_name: str, worker_id: int, n_scalar: int,
-                 connect_timeout_s: float = 30.0):
+                 n_ch: int = 78, connect_timeout_s: float = 30.0):
         self.worker_id = worker_id
         self.n_scalar = n_scalar
+        self.n_ch = n_ch
+        lay = _Layout(n_ch, n_scalar)
+        self.lay = lay
         path = f"/dev/shm/carc_{shm_name}"
         deadline = time.monotonic() + connect_timeout_s
         while not os.path.exists(path):
@@ -82,19 +111,27 @@ class _ShmConn:
             time.sleep(0.05)
         fd = os.open(path, os.O_RDWR)
         size = os.fstat(fd).st_size
+        # The server sized the file at n_workers*slot_size for the SAME
+        # (n_ch, n_scalar). If our layout disagrees, base offsets would land in
+        # the wrong slot -> silent corruption. Fail loud instead.
+        if size % lay.slot_size != 0 or size < (worker_id + 1) * lay.slot_size:
+            raise ConnectionError(
+                f"shm {path} size {size} incompatible with _Layout(n_ch={n_ch}, "
+                f"n_scalar={n_scalar}) slot_size={lay.slot_size} (server/client "
+                f"n_ch/n_scalar mismatch?)")
         self.mm = mmap.mmap(fd, size)
         os.close(fd)
-        base = worker_id * SLOT_SIZE
+        base = worker_id * lay.slot_size
         # Pre-build writable numpy views into the slot (no per-call alloc).
         self.hdr = np.ndarray((8,), np.uint64, buffer=self.mm, offset=base)
-        self.obs_v = np.ndarray((MAX_K, OBS_PER), np.float32, buffer=self.mm, offset=base + OFF_OBS)
-        # scalars are packed CONTIGUOUS at width n_scalar (the server reads
-        # k*n_scalar contiguous floats), NOT strided at N_SCALAR_MAX.
-        self.scl_flat = np.ndarray((MAX_K * N_SCALAR_MAX,), np.float32, buffer=self.mm, offset=base + OFF_SCL)
-        self.msk_v = np.ndarray((MAX_K, A), np.uint8, buffer=self.mm, offset=base + OFF_MSK)
-        self.pri_v = np.ndarray((MAX_K, A), np.float32, buffer=self.mm, offset=base + OFF_PRI)
-        self.val_v = np.ndarray((MAX_K,), np.float32, buffer=self.mm, offset=base + OFF_VAL)
-        rn = shm_name.encode()
+        # obs packed CONTIGUOUS at width obs_per (=n_ch*HW*HW); server reads
+        # k*obs_per contiguous floats. (Same contiguous-pack pattern as scalars.)
+        self.obs_v = np.ndarray((MAX_K, lay.obs_per), np.float32, buffer=self.mm, offset=base + lay.off_obs)
+        # scalars packed CONTIGUOUS at width n_scalar (server reads k*n_scalar).
+        self.scl_flat = np.ndarray((MAX_K * n_scalar,), np.float32, buffer=self.mm, offset=base + lay.off_scl)
+        self.msk_v = np.ndarray((MAX_K, A), np.uint8, buffer=self.mm, offset=base + lay.off_msk)
+        self.pri_v = np.ndarray((MAX_K, A), np.float32, buffer=self.mm, offset=base + lay.off_pri)
+        self.val_v = np.ndarray((MAX_K,), np.float32, buffer=self.mm, offset=base + lay.off_val)
         self.req_sem = _open_sem(f"/carc_{shm_name}_req_{worker_id}".encode(), deadline)
         self.resp_sem = _open_sem(f"/carc_{shm_name}_resp_{worker_id}".encode(), deadline)
         self._seq = 0
@@ -104,7 +141,7 @@ class _ShmConn:
         if k > MAX_K:
             raise ValueError(f"k={k} exceeds MAX_K={MAX_K}")
         ns = self.n_scalar
-        self.obs_v[:k] = req.obs.reshape(k, OBS_PER)
+        self.obs_v[:k] = req.obs.reshape(k, self.lay.obs_per)
         self.scl_flat[: k * ns] = req.scalars.reshape(k * ns)
         self.msk_v[:k] = req.mask.reshape(k, A).astype(np.uint8, copy=False)
         self._seq += 1

@@ -196,10 +196,14 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
             # Shared-memory mode: attach to this worker's /dev/shm slot +
             # semaphores. ShmServerHandles exposes the same request_q.put() /
             # response_q.get() API, so make_remote_*_evaluator works unchanged.
-            # n_scalar follows the learner checkpoint (12 with farm scalars).
+            # (n_ch, n_scalar) follow the learner checkpoint (blind 78/12 or
+            # sighted 81/42) — peeked in main() into cfg, so the client layout
+            # matches the server's --n-ch/--n-scalar exactly.
             from carcassonne_ai.shm_eval_handles import connect_shm
-            ns = 12 if cfg.get("include_farm_scalars") else 10
-            _worker_handles = connect_shm(shm_name, global_worker_id, ns)
+            ns = int(cfg.get("orch_n_scalar",
+                             12 if cfg.get("include_farm_scalars") else 10))
+            nch = int(cfg.get("orch_n_ch", N_CHANNELS))
+            _worker_handles = connect_shm(shm_name, global_worker_id, ns, nch)
         elif remote_addr:
             # Network mode: open a TCP connection to the remote bridge. The
             # SocketServerHandles exposes the same .request_q.put() /
@@ -758,9 +762,11 @@ def main(argv: list[str] | None = None) -> int:
     include_farm_scalars = False
     sighted = False
     learner_ns = N_SCALAR_FEATURES
+    learner_n_ch = N_CHANNELS
     if args.checkpoint is not None:
         _peek = torch.load(str(args.checkpoint), map_location="cpu", weights_only=False)
         learner_ns = int(_peek.get("n_scalar_features", N_SCALAR_FEATURES))
+        learner_n_ch = int(_peek.get("n_input_channels", N_CHANNELS))
         # M2 sighted checkpoints persist explicit flags; fall back to the legacy
         # width heuristic (ns>10 == farm scalars) only for pre-M2 checkpoints,
         # where sighted is always False so the heuristic is unambiguous.
@@ -770,17 +776,24 @@ def main(argv: list[str] | None = None) -> int:
         )
         del _peek
 
-    # The SHM / remote / orchestrator eval-server paths hardcode a 78-channel /
-    # 12-scalar transport layout (shm_eval_handles.py + rust/carc-orch/src/shm.rs)
-    # and a fixed-channel warmup, so the wider sighted arrays (81ch / 42-scalar)
-    # can't flow through them. M2 sighted gen runs orch-OFF (per-worker nets).
-    # Fail loud rather than silently truncate/mis-shape the sighted representation.
-    if sighted and (args.orchestrator or args.shm_eval_server or args.remote_eval_server):
+    # SIGHTED + ORCH (2026-07-03): the carc-orch SHM transport is now
+    # channel-configurable (rust/carc-orch/src/shm.rs::layout::Layout +
+    # shm_eval_handles._Layout compute offsets from runtime (n_ch, n_scalar)), so
+    # the wider sighted arrays (81ch/42-scalar) flow through --shm-eval-server.
+    # The server MUST be launched with matching --n-ch/--n-scalar (the launcher
+    # peeks them from the ckpt; see scripts/canonical_az/gen_m2_orch.sh). The
+    # cross-box TCP (--remote-eval-server) and Python local-IPC (--orchestrator
+    # without SHM) paths are NOT verified for the sighted rep, so they stay
+    # blocked. Fail loud rather than silently mis-shape the representation.
+    if sighted and args.remote_eval_server:
         raise SystemExit(
-            "FATAL: --checkpoint is a sighted (81ch/42-scalar) net, but an "
-            "orchestrator/SHM/remote eval-server was requested. The orch transport "
-            "layout is fixed at 78ch/12-scalar; sighted gen must run per-worker "
-            "(drop --orchestrator/--shm-eval-server/--remote-eval-server)."
+            "FATAL: sighted (81ch) + --remote-eval-server (TCP) is not verified. "
+            "Use --shm-eval-server (local carc-orch, channel-configurable) instead."
+        )
+    if sighted and args.orchestrator and not args.shm_eval_server:
+        raise SystemExit(
+            "FATAL: sighted (81ch) + the Python local-IPC orchestrator is not "
+            "wired. Use --shm-eval-server (the Rust carc-orch SHM path)."
         )
 
     # Defense-in-depth (pre-launch review B1, 2026-05-31): the anchor and learner
@@ -806,6 +819,11 @@ def main(argv: list[str] | None = None) -> int:
     cfg = {
         "include_farm_scalars": include_farm_scalars,
         "sighted": sighted,
+        # Orch (SHM) transport dims — peeked from the learner ckpt so the worker's
+        # connect_shm uses the SAME (n_ch, n_scalar) the carc-orch server was
+        # launched with (blind 78/12 or sighted 81/42), not the legacy 10/12 guess.
+        "orch_n_scalar": learner_ns,
+        "orch_n_ch": learner_n_ch,
         "fpu": args.fpu,
         "sims": args.sims,
         "c_puct": args.c_puct,

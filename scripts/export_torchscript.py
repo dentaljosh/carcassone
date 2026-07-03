@@ -53,20 +53,26 @@ class _ScriptedEvaluator(torch.nn.Module):
         return priors, value
 
 
-def _load_net(checkpoint_path: str, device: torch.device) -> tuple[CarcassonneNet, int]:
+def _load_net(checkpoint_path: str, device: torch.device) -> tuple[CarcassonneNet, int, int]:
+    """Rebuild the net from the ckpt's persisted dims. Reads n_input_channels
+    (default 78 = blind) + value_global_pool so a SIGHTED (81ch/global-pool) net
+    reconstructs correctly; blind 78ch nets are byte-identical to before."""
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     n_scalar = int(ckpt.get("n_scalar_features", N_SCALAR_FEATURES))
+    n_ch = int(ckpt.get("n_input_channels", N_CHANNELS))
     net = CarcassonneNet(
         n_filters=ckpt["n_filters"],
         n_blocks=ckpt["n_blocks"],
+        n_input_channels=n_ch,
         n_scalar_features=n_scalar,
+        value_global_pool=bool(ckpt.get("value_global_pool", False)),
     ).to(device)
     net.load_state_dict(ckpt["model_state"])
     net.train(False)
-    return net, n_scalar
+    return net, n_scalar, n_ch
 
 
-def _export(module: torch.nn.Module, n_scalar: int):
+def _export(module: torch.nn.Module, n_scalar: int, n_ch: int = N_CHANNELS):
     """TorchScript the inference wrapper.
 
     `torch.jit.script` fails on CarcassonneNet (its overridden load_state_dict
@@ -77,7 +83,7 @@ def _export(module: torch.nn.Module, n_scalar: int):
     parity check afterwards (the real safety net)."""
     dev = next(module.parameters()).device
     # Trace at batch>1 so no dim is mistaken for a constant.
-    ex_obs = torch.zeros(4, N_CHANNELS, 25, 25, device=dev)
+    ex_obs = torch.zeros(4, n_ch, 25, 25, device=dev)
     ex_scl = torch.zeros(4, n_scalar, device=dev)
     with torch.no_grad():
         logits, _ = module.net(ex_obs, ex_scl)
@@ -111,17 +117,18 @@ _TOL_VALUE = 5e-3    # was 1e-3 — same BUG-8 class on the VALUE head (2026-07-
                      # error shows O(0.1) — still ~20-50x above this bar, still caught.
 
 
-def _parity(net: CarcassonneNet, scripted, device: torch.device, n_scalar: int) -> bool:
+def _parity(net: CarcassonneNet, scripted, device: torch.device, n_scalar: int,
+            n_ch: int = N_CHANNELS) -> bool:
     """Compare scripted (priors, value) vs the eager Python eval path on
     random inputs over several batch sizes. Returns True iff all match
     within fp32 batch-stacking tolerance."""
     rng = np.random.default_rng(0)
     with torch.no_grad():
-        a_size = net(torch.zeros(1, N_CHANNELS, 25, 25, device=device),
+        a_size = net(torch.zeros(1, n_ch, 25, 25, device=device),
                      torch.zeros(1, n_scalar, device=device))[0].shape[1]
     ok = True
     for k in (1, 3, 8, 37):
-        obs = torch.from_numpy(rng.standard_normal((k, N_CHANNELS, 25, 25), dtype=np.float32)).to(device)
+        obs = torch.from_numpy(rng.standard_normal((k, n_ch, 25, 25), dtype=np.float32)).to(device)
         scl = torch.from_numpy(rng.standard_normal((k, n_scalar), dtype=np.float32)).to(device)
         mnp = rng.random((k, a_size)) > 0.5
         # guarantee >=1 legal action per row so softmax isn't all -inf
@@ -151,19 +158,19 @@ def main() -> int:
     out = Path(args.out) if args.out else Path(args.checkpoint).with_suffix(".ts.pt")
 
     print(f"[export] loading {args.checkpoint} on {device}")
-    net, n_scalar = _load_net(args.checkpoint, device)
+    net, n_scalar, n_ch = _load_net(args.checkpoint, device)
     wrapper = _ScriptedEvaluator(net).to(device).eval()
 
-    print("[export] tracing...")
-    scripted = _export(wrapper, n_scalar)
+    print(f"[export] tracing... (n_ch={n_ch}, n_scalar={n_scalar})")
+    scripted = _export(wrapper, n_scalar, n_ch)
 
     print("[export] fp-parity vs eager Python eval path:")
-    if not _parity(net, scripted, device, n_scalar):
+    if not _parity(net, scripted, device, n_scalar, n_ch):
         sys.stderr.write("[export] PARITY FAILED — refusing to write. Investigate before trusting Rust.\n")
         return 1
 
     scripted.save(str(out))
-    print(f"[export] OK -> {out}  (n_scalar={n_scalar}, C={N_CHANNELS}, device={device})")
+    print(f"[export] OK -> {out}  (n_scalar={n_scalar}, C={n_ch}, device={device})")
     print("[export] Note: load this on the SAME device family in Rust (cuda).")
     return 0
 

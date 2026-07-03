@@ -37,6 +37,7 @@ struct Config {
     transport: Transport,
     shm_name: String,
     workers: usize,
+    n_ch: i64,
     n_scalar: i64,
     require_cuda: bool,
     forwarders: usize,
@@ -54,6 +55,7 @@ fn parse_args() -> Result<Config> {
     let mut transport = Transport::Tcp;
     let mut shm_name = "carc_orch".to_string();
     let mut workers = 0usize;
+    let mut n_ch = 78i64;
     let mut n_scalar = 12i64;
     let mut require_cuda = true;
     let mut forwarders = 2usize;
@@ -82,6 +84,7 @@ fn parse_args() -> Result<Config> {
             }
             "--shm-name" => shm_name = next()?,
             "--workers" => workers = next()?.parse()?,
+            "--n-ch" => n_ch = next()?.parse()?,
             "--n-scalar" => n_scalar = next()?.parse()?,
             "--forwarders" => forwarders = next()?.parse()?,
             "--watchdog-secs" => watchdog_secs = next()?.parse()?,
@@ -114,6 +117,7 @@ fn parse_args() -> Result<Config> {
         transport,
         shm_name,
         workers,
+        n_ch,
         n_scalar,
         require_cuda,
         forwarders,
@@ -151,6 +155,7 @@ fn main() -> Result<()> {
         cfg.device,
         cfg.max_batch,
         cfg.batch_timeout,
+        cfg.n_ch,
         cfg.n_scalar,
         cfg.forwarders,
         cfg.watchdog_secs,
@@ -166,7 +171,7 @@ fn main() -> Result<()> {
             if cfg.workers == 0 {
                 bail!("--transport shm requires --workers N");
             }
-            shm::serve(&cfg.shm_name, cfg.workers, cfg.n_scalar, job_tx)?
+            shm::serve(&cfg.shm_name, cfg.workers, cfg.n_ch, cfg.n_scalar, job_tx)?
         }
     }
     Ok(())

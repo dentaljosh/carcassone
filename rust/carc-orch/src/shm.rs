@@ -16,14 +16,23 @@
 //!     [8..16)   k         u64 LE  (worker writes, 1..=MAX_K)
 //!     [16..24)  resp_seq  u64 LE  (server writes, = req_seq when done)
 //!     [24..32)  request_id u64 LE (worker writes, echoed for debug)
-//!     [64..)               obs    MAX_K*OBS_PER f32
-//!                          scalars MAX_K*N_SCALAR_MAX f32
+//!     [64..)               obs    MAX_K*(n_ch*HW*HW) f32
+//!                          scalars MAX_K*n_scalar f32
 //!                          mask   MAX_K*A u8
 //!                          priors MAX_K*A f32   (server writes)
 //!                          values MAX_K  f32    (server writes)
 //!   semaphores (POSIX named, created by the server):
 //!     /carc_<name>_req_<i>   worker posts, reader i waits
 //!     /carc_<name>_resp_<i>  reader i posts, worker waits
+//!
+//! CHANNELS/SCALARS ARE RUNTIME-CONFIGURABLE (2026-07-03, M2 sighted rep): the
+//! obs/scalar region sizes and hence all offsets are computed from
+//! `(n_ch, n_scalar)` — NOT compile-time constants. The server learns them from
+//! `--n-ch`/`--n-scalar`; the Python client is told the same two numbers in
+//! `connect_shm`. Both compute an identical `Layout`, so blind 78ch/12-scalar
+//! nets get the byte-identical layout they had before (`Layout::new(78,12)` ==
+//! the old N_CH=78 / N_SCALAR_MAX=12 constants) and sighted 81ch/42-scalar nets
+//! get their own exact-fit layout. MAX_K/HW/A stay fixed (locked rule set).
 use anyhow::{bail, Context, Result};
 use crossbeam_channel::{bounded, Receiver, Sender};
 use std::ffi::CString;
@@ -32,19 +41,52 @@ use crate::batcher::{Job, RespMsg};
 
 pub mod layout {
     pub const MAX_K: usize = 8;
-    pub const N_CH: usize = 78;
     pub const HW: usize = 25;
-    pub const OBS_PER: usize = N_CH * HW * HW; // 48750 floats/board
     pub const A: usize = 2511; // action space (locked rule set)
-    pub const N_SCALAR_MAX: usize = 12;
     pub const HDR: usize = 64;
+    // Sanity caps: reject a garbage --n-ch/--n-scalar before it sizes a huge
+    // mmap. 128 is far beyond anything the featurizer emits (blind 78/12,
+    // sighted 81/42).
+    pub const N_CH_CAP: usize = 128;
+    pub const N_SCALAR_CAP: usize = 128;
 
-    pub const OFF_OBS: usize = HDR;
-    pub const OFF_SCL: usize = OFF_OBS + MAX_K * OBS_PER * 4;
-    pub const OFF_MSK: usize = OFF_SCL + MAX_K * N_SCALAR_MAX * 4;
-    pub const OFF_PRI: usize = OFF_MSK + MAX_K * A;
-    pub const OFF_VAL: usize = OFF_PRI + MAX_K * A * 4;
-    pub const SLOT_SIZE: usize = OFF_VAL + MAX_K * 4;
+    /// Runtime slot layout for a given (n_ch, n_scalar). Byte-identical to the
+    /// Python `_ShmConn` offset computation (shm_eval_handles.py).
+    #[derive(Clone, Copy)]
+    pub struct Layout {
+        pub n_ch: usize,
+        pub n_scalar: usize,
+        pub obs_per: usize, // n_ch*HW*HW floats per board
+        pub off_obs: usize,
+        pub off_scl: usize,
+        pub off_msk: usize,
+        pub off_pri: usize,
+        pub off_val: usize,
+        pub slot_size: usize,
+    }
+
+    impl Layout {
+        pub fn new(n_ch: usize, n_scalar: usize) -> Self {
+            let obs_per = n_ch * HW * HW;
+            let off_obs = HDR;
+            let off_scl = off_obs + MAX_K * obs_per * 4;
+            let off_msk = off_scl + MAX_K * n_scalar * 4;
+            let off_pri = off_msk + MAX_K * A;
+            let off_val = off_pri + MAX_K * A * 4;
+            let slot_size = off_val + MAX_K * 4;
+            Layout {
+                n_ch,
+                n_scalar,
+                obs_per,
+                off_obs,
+                off_scl,
+                off_msk,
+                off_pri,
+                off_val,
+                slot_size,
+            }
+        }
+    }
 }
 
 // Raw-pointer newtypes so we can hand disjoint slot pointers + sem handles to
@@ -55,10 +97,24 @@ unsafe impl Send for Slot {}
 struct Sem(*mut libc::sem_t);
 unsafe impl Send for Sem {}
 
-pub fn serve(name: &str, n_workers: usize, n_scalar: i64, job_tx: Sender<Job>) -> Result<()> {
+pub fn serve(
+    name: &str,
+    n_workers: usize,
+    n_ch: i64,
+    n_scalar: i64,
+    job_tx: Sender<Job>,
+) -> Result<()> {
     use layout::*;
+    if n_ch < 1 || n_ch as usize > N_CH_CAP {
+        bail!("--n-ch {n_ch} out of range 1..={N_CH_CAP}");
+    }
+    if n_scalar < 1 || n_scalar as usize > N_SCALAR_CAP {
+        bail!("--n-scalar {n_scalar} out of range 1..={N_SCALAR_CAP}");
+    }
+    let lay = Layout::new(n_ch as usize, n_scalar as usize);
+    let slot_size = lay.slot_size;
     let path = format!("/dev/shm/carc_{name}");
-    let total = n_workers * SLOT_SIZE;
+    let total = n_workers * slot_size;
 
     let file = std::fs::OpenOptions::new()
         .read(true)
@@ -85,18 +141,18 @@ pub fn serve(name: &str, n_workers: usize, n_scalar: i64, job_tx: Sender<Job>) -
     }
 
     eprintln!(
-        "[carc-orch] SHM {path} ({n_workers} slots x {SLOT_SIZE}B = {total}B), n_scalar={n_scalar} READY"
+        "[carc-orch] SHM {path} ({n_workers} slots x {slot_size}B = {total}B), n_ch={n_ch} n_scalar={n_scalar} READY"
     );
 
     let mut handles = Vec::new();
     for i in 0..n_workers {
-        let slot = Slot(unsafe { base.add(i * SLOT_SIZE) });
+        let slot = Slot(unsafe { base.add(i * slot_size) });
         let req = Sem(req_sems[i]);
         let resp = Sem(resp_sems[i]);
         let tx = job_tx.clone();
         let h = std::thread::Builder::new()
             .name(format!("shm-reader-{i}"))
-            .spawn(move || reader_loop(i, slot, req, resp, n_scalar, tx))?;
+            .spawn(move || reader_loop(i, slot, req, resp, lay, tx))?;
         handles.push(h);
     }
     drop(job_tx); // only the readers hold senders now
@@ -106,10 +162,9 @@ pub fn serve(name: &str, n_workers: usize, n_scalar: i64, job_tx: Sender<Job>) -
     Ok(())
 }
 
-fn reader_loop(i: usize, slot: Slot, req: Sem, resp: Sem, n_scalar: i64, job_tx: Sender<Job>) {
+fn reader_loop(i: usize, slot: Slot, req: Sem, resp: Sem, lay: layout::Layout, job_tx: Sender<Job>) {
     use layout::*;
     let base = slot.0;
-    let n_scalar = n_scalar as usize;
     let (resp_tx, resp_rx): (Sender<RespMsg>, Receiver<RespMsg>) = bounded(1);
     loop {
         if !sem_wait(req.0) {
@@ -127,18 +182,18 @@ fn reader_loop(i: usize, slot: Slot, req: Sem, resp: Sem, n_scalar: i64, job_tx:
         }
         let request_id = unsafe { read_u64(base, 24) } as i64;
         let req_seq = unsafe { read_u64(base, 0) };
-        let obs = unsafe { read_f32(base, OFF_OBS, k * OBS_PER) };
-        let scalars = unsafe { read_f32(base, OFF_SCL, k * n_scalar) };
-        let mask = unsafe { read_u8(base, OFF_MSK, k * A) };
+        let obs = unsafe { read_f32(base, lay.off_obs, k * lay.obs_per) };
+        let scalars = unsafe { read_f32(base, lay.off_scl, k * lay.n_scalar) };
+        let mask = unsafe { read_u8(base, lay.off_msk, k * A) };
         let _ = request_id;
 
         if job_tx
             .send(Job {
                 k: k as i64,
                 obs,
-                obs_inner: vec![N_CH as i64, HW as i64, HW as i64],
+                obs_inner: vec![lay.n_ch as i64, HW as i64, HW as i64],
                 scalars,
-                scalars_inner: vec![n_scalar as i64],
+                scalars_inner: vec![lay.n_scalar as i64],
                 mask,
                 a_size: A as i64,
                 resp_tx: resp_tx.clone(),
@@ -153,8 +208,8 @@ fn reader_loop(i: usize, slot: Slot, req: Sem, resp: Sem, n_scalar: i64, job_tx:
         };
         // Write response back into the slot, then release the worker.
         unsafe {
-            write_f32(base, OFF_PRI, &r.priors);
-            write_f32(base, OFF_VAL, &r.values);
+            write_f32(base, lay.off_pri, &r.priors);
+            write_f32(base, lay.off_val, &r.values);
             write_u64(base, 16, req_seq); // resp_seq = req_seq: response ready
         }
         if !sem_post(resp.0) {

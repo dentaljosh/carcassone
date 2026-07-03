@@ -89,6 +89,7 @@ pub fn start(
     device: Device,
     max_batch: i64,
     timeout: Duration,
+    n_ch: i64,
     n_scalar: i64,
     n_forwarders: usize,
     watchdog_secs: u64,
@@ -101,7 +102,7 @@ pub fn start(
         m.set_eval();
         modules.push(m);
     }
-    warmup(&modules[0], device, n_scalar); // primes cuDNN autotune (process-wide cache)
+    warmup(&modules[0], device, n_ch, n_scalar); // primes cuDNN autotune (process-wide cache)
 
     let (prep_tx, prep_rx) = bounded::<Prepared>(n + 1);
     let stats = Arc::new(Stats::default());
@@ -470,9 +471,9 @@ fn ivalue_tensor(v: IValue) -> Result<Tensor> {
     }
 }
 
-fn warmup(module: &CModule, device: Device, n_scalar: i64) {
+fn warmup(module: &CModule, device: Device, n_ch: i64, n_scalar: i64) {
     let res = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        let obs = Tensor::zeros([1, 78, 25, 25], (Kind::Float, device));
+        let obs = Tensor::zeros([1, n_ch, 25, 25], (Kind::Float, device));
         let scl = Tensor::zeros([1, n_scalar], (Kind::Float, device));
         let msk = Tensor::ones([1, 2511], (Kind::Bool, device));
         let _ = tch::no_grad(|| {
@@ -487,6 +488,6 @@ fn warmup(module: &CModule, device: Device, n_scalar: i64) {
         }
     }));
     if res.is_err() {
-        eprintln!("[carc-orch] warmup failed (n_scalar={n_scalar}?) — continuing");
+        eprintln!("[carc-orch] warmup failed (n_ch={n_ch} n_scalar={n_scalar}?) — continuing");
     }
 }
