@@ -1,7 +1,9 @@
 # M3 — Is Gate-B a fixable calibration/tails failure? (runbook, launch-ready)
 
-**Status:** SCOPED — launch-ready, **waiting on the box** (S1 arbiter holds local 28W ~until it finishes). Plan:
+**Status:** ✅ **DONE — FIRES → FPU axis CLOSED (2026-07-03).** Plan:
 [docs/POST_REVIEW_PLAN.md](../../docs/POST_REVIEW_PLAN.md) §3. Scoped 2026-07-01 (subagent read-only pass).
+
+> **Result (full n=400 FPU curve):** fpu=None 0.265 → 0.4 0.391 → 0.6 0.496 (PEAK = parity, z−0.15 vs the 0.500 pure-heuristic anchor) → 0.8 0.4825 → 1.0 0.476. **Gate-B (CL-038) refuted as a LAW** — isotonic recovered *less* than FPU → the mechanism is the MCTS max-operator hunting the value's optimistic tail (which FPU tames), the axis the 3 nails were blind to. BUT recovery is to PARITY, not exceeding, and rolls off beyond fpu=0.6 → FPU removes the weak value's *harm*, can't make it *exceed* the τ≈0.895 leaf. Value-leaf lever REOPENS; **M2** is the deciding "can it EXCEED" test. results.csv `m3_confirm_fpu0{4,6,8,10}_c3_b027_n400`; commits `0738450`, `1d962e6`, FPU patch `724c903`.
 
 **Question.** Gate-B (CL-038) concluded a learned value "can rank but can't drive MCTS." Its 3 nails rule out
 distribution/subtraction/retraining but are blind to **calibration / optimistic-tail** (MCTS's max-op hunts the
@@ -61,4 +63,4 @@ OUT=/mnt/c/carc-shared/step2_pens/nail2/M3_repro_addbeta027 \
 - **Kill** (all arms ≤0.30): mechanism isn't tails/calibration/knobs → "can't drive search" hardens; autopsy §7
   "all-kill" contribution. Single read-out at pre-registered n, no peeking.
 
-MEASUREMENT ONLY — no champion/PRODUCTION.yaml/v2.7/v2.9 change. Governance: contributes to CL-041 (autopsy).
+MEASUREMENT ONLY — no champion/PRODUCTION.yaml/v2.7/v2.9 change. Governance: contributes to CL-042 (autopsy; CL-041 = the S1 promotion).

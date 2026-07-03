@@ -88,6 +88,7 @@ anchor.** (The port itself is a local build, no cluster spend; only the ladder e
 ---
 
 ## §3 — M3: is Gate-B a fixable calibration failure, not a law? (~1 day, cheapest reopener)
+> **🔥 FIRES → confirmed, then FPU axis CLOSED (2026-07-03).** Full n=400 FPU curve on the additive crater: fpu=None 0.265 → 0.4 0.391 → 0.6 0.496 (PEAK=parity, z−0.15 vs the 0.500 anchor) → 0.8 0.4825 → 1.0 0.476. **Gate-B refuted as a LAW** — isotonic recovered *less* than FPU → the mechanism is the MCTS max-op hunting the value's optimistic tail (which FPU tames), the exact axis the 3 nails were blind to. BUT recovery is to PARITY, not exceeding, and rolls off beyond fpu=0.6 → FPU removes the weak value's *harm*, can't make it *exceed* the τ≈0.895 leaf. Value-leaf lever REOPENS; the exceed-lever is a better VALUE (M2), not more FPU. results.csv `m3_confirm_fpu0{4,6,8,10}_c3_b027_n400`; commits `0738450`, `1d962e6`, FPU patch `724c903`. Runbook: [../measurement/step2_calibration/M3_PLAN.md](../measurement/step2_calibration/M3_PLAN.md).
 
 **Finding.** Gate-B blended 27% of a τ≈0.43 evaluator into a τ≈0.895 one; the review argues the craters are SNR
 arithmetic amplified by MCTS's max-operator hunting the learned value's **optimistic error tail**. The 3 nails ruled
@@ -112,6 +113,7 @@ Build cost: arms 1–2 need a small σ-head/isotonic add-on; arm 3 is pure eval 
   general form gains real support.
 
 ## §2 — M1: recover the discarded deep-plane learned gain (~1–2 days)
+> **❌ KILL (2026-07-02).** Fresh-band fixed-rung paired (each of iter2/iter8 vs heur@800-v2.7, band 5.0e9, sims=800, n=400): iter8 +136.0/z7.71, iter2 +138.0/z7.93 → paired Δ(iter2−iter8)=+2.0 elo / z=0.09 = TIE. iter2 does NOT clear ≥2σ over iter8 → its prior +53.7/z2.14 (+50.4/z1.42 second band) was band-max noise/forking paths, refuted on a third fresh band → "deeper-teacher doesn't help" (CL-019) STANDS, now powered. No revival. results.csv `m1_deepteacher_iter2_vs_iter8_freshband_h800_s800_n400`; commit `0738450`.
 
 **Finding (verified against `results_csv_relevant_rows.csv`).** Row `confirm_iter2_vs_heur800_v27_s800_n400`:
 deepteacher **iter2** (sims-800-teacher continuation, warm-from-iter8) beat iter8 **+53.7 paired elo, z=2.14, at
@@ -138,6 +140,7 @@ keep-best-vs-fixed-rung is legitimate, keep-best-vs-parent is not).
   correction, the "deepteacher" verdict stands.
 
 ## §4 — M2: sample the never-run canonical-AZ cell, scored non-circularly (~3–5 days; after M1/M3)
+> **🔬 BUILT + orch-accelerated + LOOP RUNNING (2026-07-03); read-out PRE-REGISTERED.** All four ingredients fixed simultaneously: sighted rep (+3 union-find farm planes / +32 bag histogram) × `--global-pool` × `score_diff_wide` × FPU=0.6 installed × `--leaf-eval nn` (value drives the leaf). carc-orch extended to the sighted 81-ch input, gen **parity-proven bit-exact vs orch-off**; 5 iters on local+laptop. Read-out ([../measurement/canonical_az/M2_PLAN.md](../measurement/canonical_az/M2_PLAN.md), `9cbd818`) fixed before the numbers: eval iters 1/3/5 = (1) solver-scored value ranking vs the exact K≤4 solver (`scripts/canonical_az/solver_score.py`, the F4 non-circular scorer, `b0e7158`) + (2) rs-sweep {0,0.25,0.5}@FPU0.6 game effect vs RoD-v2 iter_02, confirm winner vs h_v2.9@3200. FIRE = solver-τ beats leaf + improves 1→3→5 + ≥2σ monotone rs gain; else earned CL-039 scoped closure. Commits: sighted `86f9695`/`41d49df`/`e5b6ac0`, orch `f83b38e`, stall-heal `8dd20ed`. Autopsy §7 = REOPENING pending M2 (CL-042).
 
 **Finding (F2/F4/F10).** Every game-gated lineage net trained on either the **saturated** `tanh(margin/15)` outcome
 or the **near-zero-variance residual** (residual ≈ 0.5% of the Q signal), with `value_global_pool=False` in **every**
