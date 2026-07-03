@@ -1,8 +1,10 @@
-# AZ-value route — autopsy (DRAFT · closure clause **[PENDING M1–M3]**)
+# AZ-value route — autopsy (DRAFT · **REOPENING** — M1 KILL, M3 FIRES; M3-confirm + M2 pending)
 
-**Status:** 🚧 DRAFT — everything below is draftable now EXCEPT §7 (the dimensionality/closure clause), which is
-**BLOCKED on the three reopeners M1/M2/M3** ([docs/POST_REVIEW_PLAN.md](POST_REVIEW_PLAN.md) §2/§3/§4). Do NOT
-finalize §7 or flip CL-039 to a hard route-closure until those read out. · **Created:** 2026-07-01
+**Status:** 🚧 DRAFT — §7 is now PARTLY resolved: **M1 KILLED** (iter2's gain was band noise) and **M3 FIRED**
+(FPU recovers the Gate-B crater → Gate-B refuted as a *law*), so the read-out is a **reopening, not a death** —
+CL-039 stays QUALIFIED, not upgraded to a closure. Still pending before §7 is FINAL: the **n=400 M3-confirm**
+(running laptop-only) + **M2** (the never-run canonical-AZ cell, solver-scored). Do NOT flip CL-039 to a hard closure.
+· **Created:** 2026-07-01 · **Updated:** 2026-07-02 (M1/M3 landed)
 
 > **The one-sentence verdict-scope correction (the review's headline):** CL-039's "the AZ-value route is exhausted
 > (scalar / structured / clairvoyant / fair)" is **premature as a route closure; accurate only as "this recipe
@@ -85,28 +87,39 @@ flat corr/τ may be **target-caused, not capability**. **M2** samples this cell,
 against §3A's competing "the residual value space is genuinely small (the leaf is a decomposable additive
 evaluator)" reading. Expect a real chance M2 returns a **kill** — this test adjudicates, it does not resurrect.
 
-## 7. The dimensionality / route-closure clause — **[PENDING M1–M3]**
+## 7. The dimensionality / route-closure clause — **REOPENING (M1 KILL, M3 FIRES; M3-confirm + M2 pending)**
 
-*(Do not write this until the three reopeners read out. Both branches pre-committed here so the finalization is
-mechanical, not a fresh judgment.)*
+*(Branches were pre-committed below; two of three have read out. The read-out landed on the "ANY fires" branch, so
+the strong-form closure is NOT written — the autopsy records a **reopening, not a death**.)*
 
-- **If all three KILL** (M1 fails fresh-band replication; M3 all arms ≤0.30; M2 head inert with all four ingredients
-  fixed + solver-τ<0.3): write the earned strong form — *"the AZ-value route, re-scored against the non-circular
-  solver, with Gate-B's calibration/tail mechanism tested and the never-run canonical AZ cell sampled, is exhausted
-  **at these resources**."* Still resource-scoped, not eternal; CL-039 upgraded from "premature closure" to "earned,
-  scoped closure."
-- **If ANY fires:** the flywheel is **"available but unproven"** — the autopsy records a **reopening, not a death**.
-  - **M1 fires** (iter2 ≥2σ over iter8 on a fresh band @ sims800): a real deep-plane learned gain was lost to
-    final-iterate/underpowered verdicting → revive the deeper-teacher line warm-from-iter2 with per-iterate
-    keep-best-vs-fixed-rung gating; correct the "deeper teacher doesn't help" verdict.
-  - **M3 fires** (any arm recovers to ≥0.45): Gate-B's *generalization* dissolves → the weaned loop earns its
-    pre-registered §10(b) budget **with the calibration fix installed**; Gate-B stays valid only narrowly.
-  - **M2 fires** (monotone ≥2σ paired game effect on the rs-sweep, OR solver-τ>0.5 with value-outcome corr>0.6 on
-    fresh-band games): the inertness was target/architecture-caused, not fundamental → the canonical cell is the
-    where-a-future-loop-aims.
+**M1 — KILL (settled, 2026-07-02).** Fresh-band fixed-rung paired (each of iter2/iter8 vs heur@800-v2.7, band 5.0e9,
+sims=800, n=400): iter8 +136.0/z7.71, iter2 +138.0/z7.93, **paired Δ(iter2−iter8)=+2.0 elo, z=0.09 = TIE.** iter2 does
+**not** clear ≥2σ over iter8 → its prior +53.7/z2.14 was band-max noise / forking paths (refuted on a third fresh
+band). The "deeper-teacher doesn't help" verdict **stands, now powered.** No revival of the deeper-teacher line.
+(results.csv `m1_deepteacher_iter2_vs_iter8_freshband_h800_s800_n400`.)
+
+**M3 — FIRES (n=100 screen; confirming at n=400).** The FPU sweep recovers the additive-value crater **monotonically**:
+fpu=0(0.265)→0.2(0.375)→**0.4(0.46, clears the ≥0.45 bar)**; isotonic 0.33 (< FPU despite a 5.1× offline-MSE fix).
+Two things sharpen it: the monotone trend is mechanistically coherent (not a lucky cell), and **isotonic recovering
+*less* than FPU** localizes the mechanism to the **MCTS max-operator's optimistic-tail hunting** (which FPU tames
+directly), *not* raw miscalibration — the exact mechanism the 3 nails were blind to. **⇒ Gate-B ("a learned value
+can't drive MCTS search", CL-038) is refuted as a LAW; it narrows to "an uncalibrated value with the wrong FPU
+craters."** The recovery is to ~heuristic **parity** (0.46≈0.50), not *exceeding* — so the value still doesn't beat
+the leaf; it just stops hurting. **Pending: the n=400 confirm** (fpu=0.4/0.6, running laptop-only — does 0.46 hold at
+verdict power?). If it holds, the weaned value-leaf lever (closed by CL-038) is **reopened**: the loop earns its
+pre-registered §10(b) budget **with FPU installed.**
+
+**M2 — PENDING (the never-run canonical-AZ cell, solver-scored).** The big build; becomes the where-a-future-loop-aims
+if the head shows a monotone ≥2σ paired game effect or solver-τ>0.5. The solver-scoring harness
+(`scripts/canonical_az/solver_score.py`, b0e7158) is built; M2 is the remaining reopener.
+
+**Net so far:** the strong-form "route exhausted at these resources" **cannot** be written — **M3 fired**, so Gate-B's
+generalization dissolves and the value-leaf flywheel is **"available but unproven."** CL-039 stays **QUALIFIED**
+(premature closure), not upgraded to an earned closure. Finalize this clause after the n=400 M3-confirm + M2.
 
 ## 8. Governance
 
-Filed as **CL-041** (pending). Qualifies/supersedes **CL-039** (the premature route-closure) and folds **CL-040**
-(§5A) into M2. The §10(b) 20–30-iter two-band flywheel is a **separate, larger budget decision** that a positive
+Filed as **CL-042** (pending finalization; **CL-041 is the S1 v2.9 promotion**, not this). Qualifies **CL-039** (the
+premature route-closure — stays qualified, NOT upgraded to a closure, because M3 fired) and folds **CL-040** (§5A)
+into M2. The §10(b) 20–30-iter two-band flywheel is a **separate, larger budget decision** that a positive
 M1/M2/M3 *enables* but does not auto-commit — surfaced to Joshua explicitly, not a silent continuation.
