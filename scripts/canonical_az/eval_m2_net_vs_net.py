@@ -8,10 +8,16 @@ replacement for the slow net-vs-h3200 per-iter eval.
 Each side is a NeuralMCTS: its OWN net priors (served by its OWN orch, so the
 two reps never mix — A featurizes with Game(sighted=True), B with the blind
 Game) + the v2.9 leaf VALUE via make_v25_value_wrapper (env-built DEFAULT_CONFIG;
-residual_scale/value_blend=0 -> the net VALUE head is NOT used). So this is a
-POLICY-strength health check on the shared v2.9 leaf substrate — the fixed-net
-analogue of eval_net_vs_heuristic. (The sighted VALUE-head read-out is the
-solver-scoring harness, M2_PLAN Part A — a separate step, NOT this.)
+residual_scale/value_blend=0 -> the net VALUE head is NOT used). So by default
+this is a POLICY-strength health check on the shared v2.9 leaf substrate — the
+fixed-net analogue of eval_net_vs_heuristic. (The sighted VALUE-head read-out is
+the solver-scoring harness, M2_PLAN Part A — a separate step, NOT this.)
+
+`--residual-scale S` (B1/B2 cells): with S>0 the CANDIDATE's leaf becomes
+v2.9 + S·v_nn (clip ±1) — its net VALUE head is consumed as a residual, same
+convention as eval_net_vs_heuristic --residual-scale / the old champion's
+RESIDUAL_SCALE=0.25. The REFERENCE side stays pure v2.9 always. S=0.0 (default)
+is bit-identical to the legacy path (cfg=None).
 
 The reference MUST be a FIXED rung (never iter_(N-1)) — chain elo lies. Deck-
 paired by seed (both seats each seed). Multi-box work-stealing via --shared-claim
@@ -87,7 +93,7 @@ def _peek(path):
             bool(ck.get("sighted", False)))
 
 
-def _worker_init(shm_a, shm_b, id_q_a, id_q_b, dims_a, dims_b, fpu,
+def _worker_init(shm_a, shm_b, id_q_a, id_q_b, dims_a, dims_b, fpu, residual_scale,
                  shared_claim, claim_host, claim_stale):
     from carcassonne_ai.shm_eval_handles import connect_shm
     ns_a, nch_a, sighted_a = dims_a
@@ -101,6 +107,15 @@ def _worker_init(shm_a, shm_b, id_q_a, id_q_b, dims_a, dims_b, fpu,
     _W["gb"] = Game(enable_legal_moves_cache=True, sighted=sighted_b,
                     include_farm_scalars=(ns_b > 10) and not sighted_b)
     _W["fpu"] = fpu
+    # CAND-side leaf cfg: None at rs=0 (bit-identical legacy path); else
+    # DEFAULT_CONFIG with residual_scale set (B1/B2) — the same
+    # dataclasses.replace(DEFAULT_CONFIG, residual_scale=...) convention as
+    # eval_net_vs_heuristic. REF stays None (pure v2.9) always.
+    if residual_scale > 0.0:
+        from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+        _W["cfg_a"] = dataclasses.replace(DEFAULT_CONFIG, residual_scale=float(residual_scale))
+    else:
+        _W["cfg_a"] = None
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale"] = claim_stale
@@ -121,9 +136,11 @@ def _play_one(args):
     ga, gb, fpu = _W["ga"], _W["gb"], _W["fpu"]
     base_a = make_remote_single_evaluator(_W["handles_a"], ga)
     base_b = make_remote_single_evaluator(_W["handles_b"], gb)
-    # v2.9 leaf VALUE (env-built DEFAULT_CONFIG), net PRIORS. residual/blend=0 ->
-    # net value head unused -> pure POLICY health check on the shared leaf.
-    leaf_a = make_v25_value_wrapper(base_a, None)
+    # v2.9 leaf VALUE (env-built DEFAULT_CONFIG), net PRIORS. cfg_a is None at
+    # --residual-scale 0 (net value head unused -> pure POLICY health check on
+    # the shared leaf); at rs>0 the CAND leaf is v2.9 + rs*v_nn (B1/B2). REF is
+    # ALWAYS pure v2.9.
+    leaf_a = make_v25_value_wrapper(base_a, _W["cfg_a"])
     leaf_b = make_v25_value_wrapper(base_b, None)
     mcts_a = NeuralMCTS(game=ga, evaluator=leaf_a, simulations=sims, seed=seed,
                         c_puct=c_puct, fpu_reduction=fpu)
@@ -212,6 +229,9 @@ def main(argv=None):
     ap.add_argument("--sims", type=int, default=200)
     ap.add_argument("--c-puct", type=float, default=3.0)
     ap.add_argument("--fpu", type=float, default=0.6)
+    ap.add_argument("--residual-scale", type=float, default=0.0,
+                    help="CAND leaf = v2.9 + S*v_nn (clip +/-1) when S>0 (B1/B2 cells); "
+                         "0.0 = pure v2.9 leaf, bit-identical legacy path. REF always pure v2.9.")
     ap.add_argument("--workers", type=int, default=28)
     ap.add_argument("--paired", action="store_true")
     ap.add_argument("--seed-start", type=int, default=1_906_220_000)
@@ -228,9 +248,11 @@ def main(argv=None):
 
     dims_a = _peek(args.cand_ckpt)   # (ns, n_ch, sighted)
     dims_b = _peek(args.ref_ckpt)
+    # rs tag only when >0 so existing rs=0 cells keep their dir names (resume/summary).
+    rs_tag = f"_rs{str(args.residual_scale).replace('.','')}" if args.residual_scale > 0 else ""
     sub = args.out_subdir or (
         f"m2nvn_{Path(args.cand_ckpt).stem}_vs_{Path(args.ref_ckpt).stem}"
-        f"_s{args.sims}_fpu{str(args.fpu).replace('.','')}")
+        f"_s{args.sims}_fpu{str(args.fpu).replace('.','')}{rs_tag}")
     out = Path(args.out_root) / sub
     out.mkdir(parents=True, exist_ok=True)
     json.dump({"kind": "m2_net_vs_net_orch",
@@ -240,13 +262,17 @@ def main(argv=None):
                "shm_cand": args.shm_eval_server_cand, "shm_ref": args.shm_eval_server_ref,
                "sims": args.sims, "c_puct": args.c_puct, "fpu": args.fpu,
                "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
-               "leaf": "v2.9 env-built DEFAULT_CONFIG (residual/blend=0 -> pure policy check)",
+               "residual_scale": args.residual_scale,
+               "leaf": ("v2.9 env-built DEFAULT_CONFIG (residual/blend=0 -> pure policy check)"
+                        if args.residual_scale <= 0 else
+                        f"CAND: v2.9 + {args.residual_scale}*v_nn residual (B1/B2); REF: pure v2.9"),
                "note": "value-head read-out is the solver harness, NOT this"},
               open(out / "manifest.json", "w"), indent=2)
 
     tasks = [(str(out), s, ap_, args.sims, args.c_puct)
              for s, ap_ in _build_work(args.seed_start, args.n, args.paired)]
-    label = f"CAND={Path(args.cand_ckpt).name} vs REF={Path(args.ref_ckpt).name} (v2.9 leaf, fpu {args.fpu})"
+    rs_lbl = f", cand rs={args.residual_scale}" if args.residual_scale > 0 else ""
+    label = f"CAND={Path(args.cand_ckpt).name} vs REF={Path(args.ref_ckpt).name} (v2.9 leaf{rs_lbl}, fpu {args.fpu})"
     if args.summary_only:
         res = [r for t in tasks if (r := _try_load(_result_path(out, args.sims, args.c_puct, t[1], t[2]))) is not None]
         if res:
@@ -269,7 +295,7 @@ def main(argv=None):
         t0 = time.perf_counter()
         with ctx.Pool(processes=args.workers, initializer=_worker_init,
                       initargs=(args.shm_eval_server_cand, args.shm_eval_server_ref, id_q_a, id_q_b,
-                                dims_a, dims_b, args.fpu,
+                                dims_a, dims_b, args.fpu, args.residual_scale,
                                 args.shared_claim, args.claim_host, args.claim_stale_secs)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

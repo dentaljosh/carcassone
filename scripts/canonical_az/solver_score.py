@@ -22,10 +22,12 @@ This harness scores ANY per-child ranker's REGRET AGAINST THE SOLVER (not oracle
   4. Report per-root + aggregate solver-regret / top-1 / tau, split by K and by mode.
 
 Default ranker = the static v2.9 leaf itself (the sanity baseline: its solver-regret
-is the reference number). Swap in any callable(child_board, root_player, game) -> float
-to score a learned value/feature ranker on the SAME positions the h6400 labels cover.
+is the reference number). `--checkpoint PATH` (repeatable) adds net VALUE-head rankers
+(M2 read-out): each root is solved ONCE and every ranker (baseline + all checkpoints)
+is scored on the same SolveResult, so the numbers are per-position comparable.
 
-MEASUREMENT ONLY. Pure CPU, no net (v2.9-leaf ranker). No champion/PRODUCTION change.
+MEASUREMENT ONLY. Pure CPU, no CUDA (net rankers forward on CPU). No champion/
+PRODUCTION change.
 """
 from __future__ import annotations
 
@@ -46,6 +48,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -103,7 +106,69 @@ def make_v29_leaf_ranker():
     return rank
 
 
+def make_net_ranker(ckpt_path: str):
+    """A net checkpoint's VALUE head as a ranker (the M2 non-circular read-out).
+
+    Arch is peeked from the checkpoint exactly like eval_m2_net_vs_net._peek /
+    verify_sighted_orch_parity._load_net (n_scalar / in-channels / sighted /
+    value_global_pool), the encode Game matches the net's rep (sighted 81ch or
+    blind, farm scalars iff n_scalar>10 and not sighted), and the forward runs
+    on CPU (CUDA is masked at the top of this file).
+
+    POV (verdict-critical): the ranker contract is MOVER (root_player)
+    perspective — same orientation as the v29_leaf ranker's
+    virtual_score_v2(child, root_player) and the solver_mover flip in
+    score_root. make_single_evaluator returns the value from the CHILD's
+    current_player POV. VERIFIED empirically on the qprobe_A roots: they are
+    TILES-phase, so a child is a MEEPLES-phase state with the SAME
+    current_player (the mover still to move) -> NO flip there; only flip when
+    the child's current_player is the opponent (turn-completing children).
+    Terminal children short-circuit to get_game_ended(child, root_player),
+    exactly like the v29_leaf ranker. Ranking metrics are invariant to
+    monotone transforms, so only this orientation matters, not scaling."""
+    import torch
+    from carcassonne_ai.evaluators import make_single_evaluator
+    from carcassonne_ai.game_wrapper import Game
+    from carcassonne_ai.network import CarcassonneNet
+
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    n_ch = int(ck.get("n_input_channels", 78) or 78)
+    n_scalar = int(ck.get("n_scalar_features", 10))
+    sighted = bool(ck.get("sighted", False))
+    net = CarcassonneNet(
+        n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+        n_input_channels=n_ch, n_scalar_features=n_scalar,
+        value_global_pool=bool(ck.get("value_global_pool", False)),
+    )
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+    # the encode Game must match the NET's rep, independent of the (blind)
+    # replay game — Game is a stateless view over board.state, so encoding a
+    # replayed child through this one is safe.
+    enc_game = Game(sighted=sighted,
+                    include_farm_scalars=(n_scalar > 10) and not sighted)
+    ev = make_single_evaluator(net, torch.device("cpu"), enc_game)
+
+    def rank(child, root_player, game):
+        ended = game.get_game_ended(child, root_player)
+        if ended != 0:
+            return max(-1.0, min(1.0, float(ended)))
+        _, v_nn = ev(child)
+        # v_nn is from the CHILD's current_player POV -> orient to the mover.
+        return float(v_nn) if child.state.current_player == root_player else -float(v_nn)
+
+    return rank
+
+
 RANKERS = {"v29_leaf": make_v29_leaf_ranker}
+
+
+def _sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 # --------------------------------------------------------------------------- #
@@ -124,9 +189,10 @@ def load_sibling_roots(qprobe: str, pool: str):
     return recs
 
 
-def score_root(rec, ranker, budget, max_k):
-    """Reconstruct one root, solve it, score the ranker's per-child regret vs the
-    solver. Returns a per-root dict (or {'_error': ...} / {'_skip': ...})."""
+def score_root(rec, rankers, budget, max_k):
+    """Reconstruct one root, solve it ONCE, score EVERY ranker's per-child regret
+    vs the same SolveResult. Returns a per-root dict (or {'_error': ...} /
+    {'_skip': ...}) with a per-ranker metrics sub-dict."""
     seed, ply = int(rec["seed"]), int(rec["ply"])
     try:
         game, board = replay_to(seed, ply)
@@ -166,12 +232,19 @@ def score_root(rec, ranker, budget, max_k):
     # child_values are P0-perspective -> flip sign when the mover is P1.
     actions = list(cv.keys())
     solver_mover = np.array([(cv[a] if tm == 0 else -cv[a]) for a in actions], dtype=np.float64)
-    score = np.empty(len(actions), dtype=np.float64)
-    for i, a in enumerate(actions):
-        child, _ = game.get_next_state(board, int(a))
-        score[i] = float(ranker(child, root_player, game))
+    # children built ONCE, scored by every ranker (solve-once-score-many).
+    children = [game.get_next_state(board, int(a))[0] for a in actions]
 
-    regret, top1, tau = group_metrics(score, solver_mover)
+    per_ranker = {}
+    for name, ranker in rankers.items():
+        score = np.array([float(ranker(child, root_player, game)) for child in children],
+                         dtype=np.float64)
+        regret, top1, tau = group_metrics(score, solver_mover)
+        per_ranker[name] = {
+            "solver_regret": round(float(regret), 4),
+            "top1": int(top1), "tau": float(tau),
+            "pick": int(actions[int(np.argmax(score))]),  # same argmax as group_metrics
+        }
 
     # position-difficulty context (mover-perspective spectrum), mirrors _eval_one
     sm_sorted = np.sort(solver_mover)[::-1]
@@ -180,11 +253,26 @@ def score_root(rec, ranker, budget, max_k):
         "seed": seed, "ply": ply, "phase": rec.get("phase", "?"),
         "k": k, "mode": mode, "n_legal": len(actions), "to_move": tm,
         "nodes": res.nodes, "solve_secs": round(solve_secs, 2),
-        "solver_regret": round(float(regret), 4),
-        "top1": int(top1), "tau": float(tau),
+        "rankers": per_ranker,
         "best_vs_second_gap": round(gap, 4) if gap is not None else None,
         "value_spread": round(float(solver_mover.max() - solver_mover.min()), 4),
     }
+
+
+def _ranker_rows(scored, name):
+    """Flatten one ranker's metrics (+ the shared solve stats) for _agg."""
+    return [{**r["rankers"][name], "solve_secs": r["solve_secs"]} for r in scored]
+
+
+# fork-inherited worker context. A main()-local closure can't be pickled through
+# Pool.imap_unordered's task queue (the pre-fix --workers>1 path crashed on
+# exactly that); a module-level fn + fork-inherited globals is the standard
+# pattern here (cf. eval_m2_net_vs_net._W).
+_POOL_CTX: dict = {}
+
+
+def _pool_worker(rec):
+    return score_root(rec, _POOL_CTX["rankers"], _POOL_CTX["budget"], _POOL_CTX["max_k"])
 
 
 def _agg(rows):
@@ -214,7 +302,11 @@ def main(argv=None) -> int:
                     help="sibling-set source with checksum (pool_A.jsonl)")
     ap.add_argument("--max-k", type=int, default=4, help="K filter (root k_remaining <= this)")
     ap.add_argument("--ranker", default="v29_leaf", choices=list(RANKERS),
-                    help="per-child ranker to score (default: the static v2.9 leaf baseline)")
+                    help="baseline per-child ranker (default: the static v2.9 leaf)")
+    ap.add_argument("--checkpoint", action="append", default=[], metavar="PATH",
+                    help="net checkpoint to score as an ADDITIONAL ranker (repeatable; "
+                         "M2 read-out). Named after the file stem (e.g. iter_00). Every "
+                         "ranker is scored on the same SolveResult per root.")
     ap.add_argument("--n", type=int, default=0,
                     help="cap #K<=max_k roots to SCORE (0=all). Roots are pre-filtered by the "
                          "records' k_remaining then verified post-replay; --n counts SOLVED roots.")
@@ -226,7 +318,13 @@ def main(argv=None) -> int:
                     help="shuffle roots with this seed before the --n cap (for a random subset)")
     args = ap.parse_args(argv)
 
-    ranker = RANKERS[args.ranker]()
+    rankers = {args.ranker: RANKERS[args.ranker]()}
+    for ck in args.checkpoint:
+        name = Path(ck).stem
+        if name in rankers:  # e.g. two iter_00.pt from different runs
+            name = f"{Path(ck).resolve().parent.parent.name}_{name}"
+        rankers[name] = make_net_ranker(ck)
+        print(f"[ranker] {name} <- {ck} (net value head, CPU)", flush=True)
     recs = load_sibling_roots(args.qprobe, args.pool)
     print(f"[load] {len(recs)} sibling roots (qprobe ∩ pool)", flush=True)
 
@@ -241,9 +339,7 @@ def main(argv=None) -> int:
     print(f"[filter] {len(cand)} roots with record k_remaining<={args.max_k} "
           f"({100*len(cand)/max(len(recs),1):.1f}%); K-dist={dict(sorted(kdist.items()))}", flush=True)
 
-    def _worker(rec):
-        return score_root(rec, ranker, args.budget, args.max_k)
-
+    _POOL_CTX.update(rankers=rankers, budget=args.budget, max_k=args.max_k)
     scored, errs, skips = [], [], []
     t0 = time.perf_counter()
 
@@ -260,7 +356,7 @@ def main(argv=None) -> int:
     # single-process by default (cheap, safe alongside the running evals); optional pool.
     if args.workers <= 1:
         for rec in cand:
-            _handle(_worker(rec))
+            _handle(_pool_worker(rec))
             if args.n and len(scored) >= args.n:
                 break
             if len(scored) and len(scored) % 10 == 0 and (len(scored) + len(skips) + len(errs)) % 10 == 0:
@@ -274,7 +370,7 @@ def main(argv=None) -> int:
         # (already small) candidate list and cut after. For the full run this is a no-op.
         sub = cand[: args.n * 3] if args.n else cand   # 3x headroom for skips
         with ctx.Pool(args.workers) as pool:
-            for out in pool.imap_unordered(_worker, sub, chunksize=1):
+            for out in pool.imap_unordered(_pool_worker, sub, chunksize=1):
                 _handle(out)
                 if args.n and len(scored) >= args.n:
                     break
@@ -286,14 +382,22 @@ def main(argv=None) -> int:
     if skips:
         print("  skip reasons:", dict(Counter(s["_skip"] for s in skips)), flush=True)
 
-    by_k = {k: _agg([r for r in scored if r["k"] == k]) for k in sorted({r["k"] for r in scored})}
-    by_mode = {m: _agg([r for r in scored if r["mode"] == m]) for m in sorted({r["mode"] for r in scored})}
+    ks = sorted({r["k"] for r in scored})
+    modes = sorted({r["mode"] for r in scored})
+    # one entry PER RANKER (all scored on the same solved roots)
+    aggregate = {n: _agg(_ranker_rows(scored, n)) for n in rankers}
+    by_k = {n: {k: _agg(_ranker_rows([r for r in scored if r["k"] == k], n)) for k in ks}
+            for n in rankers}
+    by_mode = {n: {m: _agg(_ranker_rows([r for r in scored if r["mode"] == m], n)) for m in modes}
+               for n in rankers}
     report = {
-        "ranker": args.ranker, "max_k": args.max_k, "budget": args.budget,
+        "ranker_baseline": args.ranker, "rankers": list(rankers),
+        "checkpoints": [{"path": c, "sha256": _sha256(c)} for c in args.checkpoint],
+        "max_k": args.max_k, "budget": args.budget,
         "qprobe": args.qprobe, "pool": args.pool,
         "n_roots_total": len(recs), "n_candidates": len(cand),
         "n_scored": len(scored), "n_skipped": len(skips), "n_errors": len(errs),
-        "aggregate": _agg(scored), "by_k": by_k, "by_mode": by_mode,
+        "aggregate": aggregate, "by_k": by_k, "by_mode": by_mode,
         "per_root": scored,
     }
     if args.out:
@@ -301,17 +405,18 @@ def main(argv=None) -> int:
         Path(args.out).write_text(json.dumps(report, indent=2))
         print(f"[out] wrote {args.out}", flush=True)
 
-    print(f"\n==== SOLVER-SCORE ({args.ranker}) ====")
-    a = report["aggregate"]
-    if a:
-        print(f"AGG  n={a['n']}  solver_regret mean={a['solver_regret_mean']} "
-              f"median={a['solver_regret_median']} max={a['solver_regret_max']}  "
-              f"top1={a['top1_rate']}  tau={a['tau_mean']}")
-    for k, ag in by_k.items():
-        if ag:
-            print(f"  K={k} ({'marg' if k <= MARG_MAX_K else 'clair'})  n={ag['n']}  "
-                  f"regret={ag['solver_regret_mean']}  top1={ag['top1_rate']}  "
-                  f"tau={ag['tau_mean']}  {ag['solve_secs_mean']}s/solve")
+    for name in rankers:
+        print(f"\n==== SOLVER-SCORE ({name}) ====")
+        a = aggregate[name]
+        if a:
+            print(f"AGG  n={a['n']}  solver_regret mean={a['solver_regret_mean']} "
+                  f"median={a['solver_regret_median']} max={a['solver_regret_max']}  "
+                  f"top1={a['top1_rate']}  tau={a['tau_mean']}")
+        for k, ag in by_k[name].items():
+            if ag:
+                print(f"  K={k} ({'marg' if k <= MARG_MAX_K else 'clair'})  n={ag['n']}  "
+                      f"regret={ag['solver_regret_mean']}  top1={ag['top1_rate']}  "
+                      f"tau={ag['tau_mean']}  {ag['solve_secs_mean']}s/solve")
     return 0
 
 
