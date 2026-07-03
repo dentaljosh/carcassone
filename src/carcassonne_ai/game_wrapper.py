@@ -118,6 +118,7 @@ class Game:
         window_size: int = DEFAULT_WINDOW_SIZE,
         enable_legal_moves_cache: bool = False,
         include_farm_scalars: bool = False,
+        sighted: bool = False,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -146,6 +147,14 @@ class Game:
         # net the Game feeds — a 12-scalar Game with a 10-scalar net (or vice
         # versa) is a shape error at the policy_fc/value_fc1 cat.
         self.include_farm_scalars = bool(include_farm_scalars)
+        # M2 canonical-AZ "sighted" representation (opt-in; DEFAULT OFF). When on,
+        # get_canonical_form appends +3 farm-connectivity planes to the board
+        # tensor (78 -> 81 channels) and the +32 bag/deck histogram to the scalar
+        # vector. The net must be built with matching dims (n_input_channels=81,
+        # n_scalar_features = base(+farm) + 32). MEASUREMENT ONLY — with sighted
+        # False the branch is never taken and the featurizer is byte-identical to
+        # the production path. See measurement/canonical_az/M2_PLAN.md.
+        self.sighted = bool(sighted)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -187,14 +196,26 @@ class Game:
         total_tiles = len(state.deck) + 1
         return Board.from_state(state, total_tiles, self.window_size)
 
+    def get_input_channels(self) -> int:
+        """Board-tensor channel count the net must accept (78, or 81 sighted)."""
+        n = N_CHANNELS
+        if self.sighted:
+            from .sighted_planes import N_FARM_PLANES
+            n += N_FARM_PLANES
+        return n
+
     def get_board_shape(self) -> tuple[int, int, int]:
-        return (N_CHANNELS, self.window_size, self.window_size)
+        return (self.get_input_channels(), self.window_size, self.window_size)
 
     def get_action_size(self) -> int:
         return action_size(self.window_size)
 
     def get_scalar_feature_size(self) -> int:
-        return N_SCALAR_FEATURES + (N_FARM_SCALARS if self.include_farm_scalars else 0)
+        n = N_SCALAR_FEATURES + (N_FARM_SCALARS if self.include_farm_scalars else 0)
+        if self.sighted:
+            from .sighted_planes import N_BAG
+            n += N_BAG
+        return n
 
     # --- Transitions -----------------------------------------------------
 
@@ -370,6 +391,20 @@ class Game:
         scalars = encode_scalars(
             board.state, player, board.total_tiles, include_farm=self.include_farm_scalars
         )
+        if self.sighted:
+            # M2 sighted cell: append +3 farm-connectivity planes to the board
+            # (78 -> 81 ch) and the +32 bag/deck histogram to the scalars. Both
+            # are STRUCTURAL functions of state (no label leak). encode_board may
+            # return via the Cython fast path (USE_CY_REPR) — we concatenate the
+            # Python-computed planes onto whatever the first 78 channels are, so
+            # the sighted path is fast-path-agnostic and the first 78 channels
+            # stay byte-identical to the blind path.
+            from .sighted_planes import bag_histogram, farm_connectivity_planes
+            fp = farm_connectivity_planes(
+                board.state, player, board.offset, board.offset.size
+            )
+            arr = np.concatenate([arr, fp], axis=0)
+            scalars = np.concatenate([scalars, bag_histogram(board.state)])
         return arr, scalars
 
     encode_observation = get_canonical_form
