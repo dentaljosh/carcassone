@@ -2,8 +2,9 @@
 
 **Status:** 🚧 DRAFT — §7 is now PARTLY resolved: **M1 KILLED** (iter2's gain was band noise) and **M3 FIRED**
 (FPU recovers the Gate-B crater → Gate-B refuted as a *law*), so the read-out is a **reopening, not a death** —
-CL-039 stays QUALIFIED, not upgraded to a closure. Still pending before §7 is FINAL: the **n=400 M3-confirm**
-(running laptop-only) + **M2** (the never-run canonical-AZ cell, solver-scored). Do NOT flip CL-039 to a hard closure.
+CL-039 stays QUALIFIED, not upgraded to a closure. **n=400 M3-confirm DONE** (fpu=0.6=0.496 = parity → the fire
+holds). Still pending before §7 is FINAL: **M2** (the never-run canonical-AZ cell, solver-scored). Do NOT flip CL-039
+to a hard closure.
 · **Created:** 2026-07-01 · **Updated:** 2026-07-02 (M1/M3 landed)
 
 > **The one-sentence verdict-scope correction (the review's headline):** CL-039's "the AZ-value route is exhausted
@@ -105,9 +106,15 @@ Two things sharpen it: the monotone trend is mechanistically coherent (not a luc
 directly), *not* raw miscalibration — the exact mechanism the 3 nails were blind to. **⇒ Gate-B ("a learned value
 can't drive MCTS search", CL-038) is refuted as a LAW; it narrows to "an uncalibrated value with the wrong FPU
 craters."** The recovery is to ~heuristic **parity** (0.46≈0.50), not *exceeding* — so the value still doesn't beat
-the leaf; it just stops hurting. **Pending: the n=400 confirm** (fpu=0.4/0.6, running laptop-only — does 0.46 hold at
-verdict power?). If it holds, the weaned value-leaf lever (closed by CL-038) is **reopened**: the loop earns its
-pre-registered §10(b) budget **with FPU installed.**
+the leaf; it just stops hurting. **CONFIRMED @ n=400 (2026-07-02):** fpu=0.4=**0.391** (z−4.35, partial — does NOT clear the bar; the n=100 0.46 was
+screen-optimistic) but **fpu=0.6=0.496 (z−0.15) = statistical PARITY with the 0.500 pure-heuristic anchor** → the
+monotone recovery **0.265→0.391→0.496 clears the ≥0.45 bar decisively**. So the crater is a fixable FPU/
+optimistic-tail artifact and Gate-B is refuted as a law. **Honest caveat:** recovery is to PARITY, not exceeding, and
+needs a *high* FPU (0.6) — which may mean FPU is *neutralizing* the value's influence (agent plays ≈ pure-heuristic)
+rather than the value *driving* search well. Either way the hard "value POISONS search" reading is dead: a learned
+value CAN be blended without cratering (given FPU). Whether a value can be made to *help* (exceed the leaf) is the
+wide-open **M2** question. The value-leaf lever is **reopened** (Gate-B doesn't close it); the loop earns its §10(b)
+budget with FPU installed. results.csv `m3_confirm_fpu0{4,6}_c3_b027_n400`.
 
 **M2 — PENDING (the never-run canonical-AZ cell, solver-scored).** The big build; becomes the where-a-future-loop-aims
 if the head shows a monotone ≥2σ paired game effect or solver-τ>0.5. The solver-scoring harness
