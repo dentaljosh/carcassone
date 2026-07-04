@@ -575,6 +575,15 @@ def virtual_score_v2(
         # flat_virtual_score_v2 applies the curve bit-exactly (and skips the cy
         # leaf, which doesn't know the curve). Other v2.9 terms fall through.
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
+    if flat_leaf.V210_BAG_CLOSE:
+        # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC
+        # Track B) — fail loudly rather than silently dropping the gate on the
+        # engine/object path (USE_FLAT_LEAF=0, or a deck-aware/v28/v29-non-curve
+        # cfg forcing the fallthrough).
+        raise NotImplementedError(
+            "CARCASSONNE_V210_BAG_CLOSE=1 requires the flat leaf path "
+            "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
     opp = 1 - player
     # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region
     # memo (`_farm_cache`) and ONE lazy city-component memo (`_city_cache`) across

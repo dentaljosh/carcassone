@@ -62,6 +62,22 @@ USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF", "1") != "0"  # FOLDED 2026-06-17: default ON (all 3 boxes built+reconciled bit-exact); set =0 to force the Python path
 _CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
 _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind time
+_CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
+
+# v2.10 bag-aware closure gate (2026-07-04, docs/V210_LEAF_SPEC_2026-07-04.md Track B;
+# BACKLOG 2026-05-16 item 1). When ON, the closure-anticipation bonus consults the
+# REMAINING-TILE MULTISET (state.deck, + the in-hand next_tile in the TILES phase):
+# a feature the bag can no longer complete gets P(closure)=0 EXACTLY (stuck meeple) —
+# cities via a per-open-cell city-edge-supply feasibility check (Hall's condition on
+# the nested >=k-city-edge tile classes), cloisters via remaining-tile count. Default
+# OFF == bit-identical production v2.9 flat leaf (gate-tested). Deliberately a MODULE
+# flag, not a LeafConfig field: the frozen v2.9 substrate config-hash guards
+# (governance/LEAF_SUBSTRATES.yaml, snapshot.frozen_v29_cfg, step2 provenance) pin the
+# LeafConfig dataclass schema — adding a field would flip every asdict-hash. Same
+# read-at-import pattern as USE_FLAT_LEAF so spawned workers inherit the env flip;
+# explicit per-call override via flat_virtual_score_v2(..., bag_close=...) (the
+# solver-screen A/B path — no env/global mutation).
+V210_BAG_CLOSE = os.environ.get("CARCASSONNE_V210_BAG_CLOSE") == "1"
 
 # --- geometry (gate-validated against the engine) ----------------------------
 # Stage 4a: the decomposition hot path int-encodes sides. Enum dict keys cost a
@@ -561,6 +577,76 @@ def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp |
     return running + (final[player] - final[opp])
 
 
+# --- v2.10 bag-aware closure gate helpers ------------------------------------ #
+def _bag_stats(state) -> tuple:
+    """Remaining-tile-multiset stats for the bag-aware closure gate:
+    ``(n_tiles, ge1, ge2, ge3, ge4)`` where ge_k = #remaining tiles with >= k
+    cardinal CITY edges (rotation is free, so edge COUNT is the placeability
+    proxy — deliberately permissive, same spirit as the old _deck_city_supply).
+
+    Remaining = ``state.deck`` plus the in-hand ``next_tile`` iff the state is in
+    the TILES phase (the tile is drawn but not yet placed — it can still close a
+    feature). In the MEEPLES phase ``next_tile`` is a stale ref to the
+    just-placed tile (StateUpdater only pops the next draw at turn end), so it
+    must NOT be counted."""
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+
+    n = 0
+    ge1 = ge2 = ge3 = ge4 = 0
+    deck = state.deck
+    nt = state.next_tile
+    extra = (nt,) if (nt is not None and state.phase == GamePhase.TILES) else ()
+    for tile in (*deck, *extra):
+        n += 1
+        city_groups_ix = _tile_features(tile)[0]
+        ne = 0
+        for g in city_groups_ix:
+            ne += len(g)
+        if ne >= 1:
+            ge1 += 1
+            if ne >= 2:
+                ge2 += 1
+                if ne >= 3:
+                    ge3 += 1
+                    if ne >= 4:
+                        ge4 += 1
+    return (n, ge1, ge2, ge3, ge4)
+
+
+def _city_faces_ge(decomp: Decomp, board, H: int, W: int, root) -> tuple:
+    """Per-open-cell face requirements of one city component: how many of the
+    component's open city edges point INTO each empty adjacent cell (a filling
+    tile must present that many city edges). Returns ``(ge2, ge3, ge4)`` = the
+    number of open cells needing >= 2/3/4 city faces (ge1 == the component's
+    ``city_root_open_n``). Recomputed lazily (only when the bag gate is ON and
+    the component is a candidate) so the OFF path does zero extra work."""
+    faces: dict = {}
+    for (r, c, side) in decomp.city_root_positions[root]:
+        dr, dc, _o = _OPP[_SIDE_IX[side]]
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < H and 0 <= nc < W and board[nr][nc] is None:
+            key = nr * W + nc
+            faces[key] = faces.get(key, 0) + 1
+    ge2 = ge3 = ge4 = 0
+    for v in faces.values():
+        if v >= 2:
+            ge2 += 1
+            if v >= 3:
+                ge3 += 1
+                if v >= 4:
+                    ge4 += 1
+    return (ge2, ge3, ge4)
+
+
+def _bag_city_ok(open_n: int, faces_ge: tuple, bag: tuple) -> bool:
+    """Can the bag still close this city? Each open cell with k faces needs a
+    distinct tile with >= k city edges; the >=k tile classes are NESTED, so a
+    perfect matching exists iff Hall's condition holds on each class:
+    #cells needing >= k  <=  #tiles with >= k city edges, for k = 1..4."""
+    return (open_n <= bag[1] and faces_ge[0] <= bag[2]
+            and faces_ge[1] <= bag[3] and faces_ge[2] <= bag[4])
+
+
 # --- closure-anticipation bonus (Stage 3) ----------------------------------- #
 def _surrounding_count(state, r: int, c: int, H: int, W: int) -> int:
     """Placed tiles among the 8 cells around (r, c), excluding the centre
@@ -577,7 +663,7 @@ def _surrounding_count(state, r: int, c: int, H: int, W: int) -> int:
     return n
 
 
-def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
+def flat_closure_bonus(state, player: int, decomp: Decomp, cfg, bag: tuple | None = None) -> float:
     """== virtual_score_v2._closure_anticipation_bonus(state, player, cfg), UNCAPPED.
 
     Mirrors the engine pass but works off the flat decomposition: it iterates the
@@ -587,6 +673,11 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
     (order-independent / correctly-rounded) — i.e. the CANONICAL_BONUS_SUM
     semantics, which the flat leaf targets from the start so it is a well-defined
     function of the board (the naive set-iteration sum is hash-seed dependent).
+
+    `bag` (v2.10 Track B): pass `_bag_stats(state)` to apply the bag-aware closure
+    gate — a city/cloister the remaining-tile multiset can no longer complete
+    contributes NOTHING (P=0 exactly, the stuck-meeple case). None == gate off ==
+    bit-identical v2.9 behaviour.
 
     Only the v2.7 schedule path is implemented (closure_p lookup, no deck-aware
     gate/continuous ramp); a cfg requesting those raises rather than silently
@@ -600,6 +691,13 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
     H = len(board)
     W = len(board[0]) if H else 0
     closure_p = cfg.closure_p
+    _faces_memo: dict = {}  # city root -> (ge2, ge3, ge4), bag-gate only
+
+    def _bag_ok(croot) -> bool:
+        fg = _faces_memo.get(croot)
+        if fg is None:
+            fg = _faces_memo[croot] = _city_faces_ge(decomp, board, H, W, croot)
+        return _bag_city_ok(decomp.city_root_open_n[croot], fg, bag)
 
     # Partition the player's meeples into the three feature kinds (same
     # discrimination as count_final_scores / the engine bonus).
@@ -633,7 +731,7 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
         if open_n <= 0:  # D16: unclosable board-edge city
             continue
         p = closure_p.get(open_n, 0.0)
-        if p > 0:
+        if p > 0 and (bag is None or _bag_ok(root)):
             contribs.append(p * decomp.city_root_delta[root])
 
     # Cloister completion.
@@ -642,7 +740,9 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
         needed = 8 - n_surround
         if needed > 0:
             p = closure_p.get(needed, 0.0)
-            if p > 0:
+            # bag gate: any tile can neighbour a cloister — feasible iff enough
+            # tiles remain to fill the needed cells.
+            if p > 0 and (bag is None or needed <= bag[0]):
                 contribs.append(p * needed)
 
     # Farm growth: incomplete cities adjacent to the player's fields, deduped
@@ -657,7 +757,7 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg) -> float:
         if open_n <= 0:
             continue
         p = closure_p.get(open_n, 0.0)
-        if p > 0:
+        if p > 0 and (bag is None or _bag_ok(croot)):
             contribs.append(p * 3)
 
     return math.fsum(contribs)
@@ -678,40 +778,51 @@ def _flat_curve_lookup(curve, n: int) -> float:
     return float(curve[n])
 
 
-def flat_virtual_score_v2(state, player: int, cfg=None) -> int:
+def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     """== virtual_score_v2(state, player, cfg) under CANONICAL_BONUS_SUM, computed
     entirely flat (no deepcopy, no count_final_scores, no engine Farm/City BFS).
 
     Bit-exact to the engine leaf when the engine runs with CANONICAL_BONUS_SUM=True
     (order-independent fsum); against the naive-sum production path it differs only
-    by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09)."""
+    by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09).
+
+    `bag_close` (v2.10 Track B): None -> the module/env flag V210_BAG_CLOSE
+    (production gate); explicit True/False overrides it per call (the in-process
+    A/B path — no env/global mutation). OFF is bit-identical v2.9."""
     if cfg is None:
         from .virtual_score_v2 import DEFAULT_CONFIG
         cfg = DEFAULT_CONFIG
+    if bag_close is None:
+        bag_close = V210_BAG_CLOSE
     # v2.9 meeple curve (Candidate B). The cy leaf implements it when the loaded .so
     # advertises SUPPORTS_V29_CURVE; a STALE .so (no curve support) would silently
     # DROP the curve, so for curve configs we fall back to the pure-Python curve path
-    # below unless the build supports it. No curve -> cy as before.
+    # below unless the build supports it. No curve -> cy as before. Same
+    # capability-flag pattern for the v2.10 bag-close gate (SUPPORTS_V210_BAG_CLOSE).
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_SUPPORTS_CURVE  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
             try:
                 from . import flat_leaf_cy as _cy
                 _CY_FLAT_V2 = _cy.flat_virtual_score_v2_cy
                 _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
+                _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
             except ImportError:
                 _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
                 _CY_SUPPORTS_CURVE = False
-        if _CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE):
-            return _CY_FLAT_V2(state, player, cfg)
+                _CY_SUPPORTS_BAG_CLOSE = False
+        if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
+                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)):
+            return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     decomp = decompose(state)
     opp = 1 - player
+    bag = _bag_stats(state) if bag_close else None
     base = flat_base_score(state, player, decomp)
-    bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg), cfg.bonus_cap)
-    bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg), cfg.opp_bonus_cap)
+    bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg, bag), cfg.bonus_cap)
+    bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg, bag), cfg.opp_bonus_cap)
     score = base + bonus_self - bonus_opp
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term

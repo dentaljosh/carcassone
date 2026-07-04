@@ -4,6 +4,10 @@
 # STALE .so (no curve support) can never silently drop the curve — it falls back to
 # the pure-Python flat path instead. Bump/rename if the curve semantics ever change.
 SUPPORTS_V29_CURVE = True
+# Same pattern for the v2.10 bag-aware closure gate (docs/V210_LEAF_SPEC_2026-07-04.md
+# Track B): flat_leaf.py routes bag_close=True here only when this flag is present,
+# so a stale .so can never silently drop the gate.
+SUPPORTS_V210_BAG_CLOSE = True
 """Cython port of the production flat leaf (`flat_leaf.flat_virtual_score_v2`).
 
 DEV-ONLY (2026-06-12, stage-b-wiring worktree). Default OFF — nothing imports
@@ -41,12 +45,14 @@ from libc.string cimport memset
 import math
 
 from wingedsheep.carcassonne.objects.farmer_side import FarmerSide
+from wingedsheep.carcassonne.objects.game_phase import GamePhase
 from wingedsheep.carcassonne.objects.meeple_type import MeepleType
 from wingedsheep.carcassonne.objects.side import Side
 from wingedsheep.carcassonne.objects.terrain_type import TerrainType
 from wingedsheep.carcassonne.utils.side_modification_util import SideModificationUtil
 
 _fsum = math.fsum
+_PHASE_TILES = GamePhase.TILES
 
 # --- boundary enum tables (mirror flat_leaf._SIDE_IX / _FS_IX / _OPP / _FS_*) --
 _SIDE_IX = {s: i for i, s in enumerate(Side)}   # TOP0 RIGHT1 BOTTOM2 LEFT3 CENTER4 TL5 TR6 BL7 BR8
@@ -183,6 +189,12 @@ cdef class _WS:
     cdef int *city_shieldn
     cdef char *city_cath
     cdef int *city_delta
+    # v2.10 bag gate: #open cells needing >=2/3/4 city faces (ge1 == city_open_n),
+    # + per-cell face counter scratch (valid only under the current root's stamp)
+    cdef int *city_ge2
+    cdef int *city_ge3
+    cdef int *city_ge4
+    cdef int *cell_cnt
     cdef char *road_fin
     cdef int *road_total
     cdef char *road_inn
@@ -248,6 +260,10 @@ cdef class _WS:
         self.city_shieldn = <int *>malloc(c4 * sizeof(int))
         self.city_cath = <char *>malloc(c4)
         self.city_delta = <int *>malloc(c4 * sizeof(int))
+        self.city_ge2 = <int *>malloc(c4 * sizeof(int))
+        self.city_ge3 = <int *>malloc(c4 * sizeof(int))
+        self.city_ge4 = <int *>malloc(c4 * sizeof(int))
+        self.cell_cnt = <int *>malloc(nc * sizeof(int))
         self.road_fin = <char *>malloc(c4)
         self.road_total = <int *>malloc(c4 * sizeof(int))
         self.road_inn = <char *>malloc(c4)
@@ -260,7 +276,8 @@ cdef class _WS:
         self.stamp_farm = <long *>malloc(c8 * sizeof(long))
         if (self.city_tab == NULL or self.farm_tab == NULL or self.pos0_tab == NULL
                 or self.anypos_tab == NULL or self.cell_occ == NULL
-                or self.stamp_farm == NULL or self.farm_adj_hi == NULL):
+                or self.stamp_farm == NULL or self.farm_adj_hi == NULL
+                or self.city_ge4 == NULL or self.cell_cnt == NULL):
             raise MemoryError("flat_leaf_cy workspace allocation failed")
         memset(self.stamp_cell, 0, nc * sizeof(long))
         memset(self.stamp_city, 0, c4 * sizeof(long))
@@ -290,6 +307,8 @@ cdef class _WS:
         free(self.parent); free(self.order); free(self.bstart)
         free(self.city_fin); free(self.city_open_n); free(self.city_total)
         free(self.city_shieldn); free(self.city_cath); free(self.city_delta)
+        free(self.city_ge2); free(self.city_ge3); free(self.city_ge4)
+        free(self.cell_cnt)
         free(self.road_fin); free(self.road_total); free(self.road_inn)
         free(self.farm_fincities); free(self.farm_adj)
         free(self.farm_adj_lo); free(self.farm_adj_hi)
@@ -538,7 +557,7 @@ cdef int _decompose_c(object state, _WS ws) except -1:
 
     # ---- city facts -----------------------------------------------------------
     _bucket_by_root(n_city, ws.city_lab, ws.bstart, ws.order)
-    cdef int root, m, i0, i1, total, shn, open_n
+    cdef int root, m, i0, i1, total, shn, open_n, ge2, ge3, ge4
     cdef char fin, cath
     cdef long stamp
     root = 0
@@ -548,6 +567,7 @@ cdef int _decompose_c(object state, _WS ws) except -1:
             ws.counter += 1
             stamp = ws.counter
             fin = 1; total = 0; shn = 0; cath = 0; open_n = 0
+            ge2 = 0; ge3 = 0; ge4 = 0
             for m in range(i0, i1):
                 nid = ws.order[m]
                 if ws.city_openb[nid]:
@@ -560,19 +580,34 @@ cdef int _decompose_c(object state, _WS ws) except -1:
                     shn += ws.cell_shield[rc]
                     if ws.cell_inn[rc]:
                         cath = 1
-                # closure proximity: distinct EMPTY outward neighbours
+                # closure proximity: distinct EMPTY outward neighbours. cell_cnt
+                # counts the component's open FACES into each cell (v2.10 bag
+                # gate needs the >=2/3/4 histogram; value-neutral when gate off).
                 nr2 = r + _OPP_DR[six]; nc2 = c + _OPP_DC[six]
                 if 0 <= nr2 < H and 0 <= nc2 < W:
                     rc = nr2 * W + nc2
-                    if not ws.cell_occ[rc] and ws.stamp_cell[rc] != stamp:
-                        ws.stamp_cell[rc] = stamp
-                        open_n += 1
+                    if not ws.cell_occ[rc]:
+                        if ws.stamp_cell[rc] != stamp:
+                            ws.stamp_cell[rc] = stamp
+                            ws.cell_cnt[rc] = 1
+                            open_n += 1
+                        else:
+                            ws.cell_cnt[rc] += 1
+                            if ws.cell_cnt[rc] == 2:
+                                ge2 += 1
+                            elif ws.cell_cnt[rc] == 3:
+                                ge3 += 1
+                            elif ws.cell_cnt[rc] == 4:
+                                ge4 += 1
             ws.city_fin[root] = fin
             ws.city_open_n[root] = open_n
             ws.city_total[root] = total
             ws.city_shieldn[root] = shn
             ws.city_cath[root] = cath
             ws.city_delta[root] = (3 * total + 3 * shn) if cath else (total + shn)
+            ws.city_ge2[root] = ge2
+            ws.city_ge3[root] = ge3
+            ws.city_ge4[root] = ge4
         root += 1
 
     # ---- road facts -----------------------------------------------------------
@@ -782,9 +817,14 @@ cdef int _final_scores_c(object state, _WS ws, long *out) except -1:
     return 0
 
 
-cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p) except? -12345.0:
+cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p,
+                             int bag_on, int bag_n, int bag_ge1, int bag_ge2,
+                             int bag_ge3, int bag_ge4) except? -12345.0:
     """== flat_leaf.flat_closure_bonus (UNCAPPED): same multiset of float
-    contributions, reduced with math.fsum (order-independent)."""
+    contributions, reduced with math.fsum (order-independent).
+
+    bag_* (v2.10): the remaining-tile-multiset gate (== flat_leaf._bag_city_ok /
+    the cloister needed<=bag_n check). bag_on=0 -> bit-identical v2.9 path."""
     cdef list board = <list>state.board
     cdef int W = ws.W
     cdef int knroots[16]
@@ -853,6 +893,9 @@ cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p)
             continue
         pd = <double>pobj
         if pd > 0:
+            if bag_on and (open_n > bag_ge1 or ws.city_ge2[root] > bag_ge2
+                           or ws.city_ge3[root] > bag_ge3 or ws.city_ge4[root] > bag_ge4):
+                continue  # bag can no longer close this city -> P=0 (stuck meeple)
             contribs.append(pd * ws.city_delta[root])
 
     # cloisters
@@ -864,6 +907,8 @@ cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p)
             if pobj is not None:
                 pd = <double>pobj
                 if pd > 0:
+                    if bag_on and needed > bag_n:
+                        continue  # not enough tiles left to surround the cloister
                     contribs.append(pd * needed)
 
     # farm growth (incomplete adjacent cities, deduped across the player's farms)
@@ -886,6 +931,9 @@ cdef double _closure_bonus_c(object state, int player, _WS ws, object closure_p)
                 continue
             pd = <double>pobj
             if pd > 0:
+                if bag_on and (open_n > bag_ge1 or ws.city_ge2[nid] > bag_ge2
+                               or ws.city_ge3[nid] > bag_ge3 or ws.city_ge4[nid] > bag_ge4):
+                    continue  # bag can no longer close this growth city -> P=0
                 contribs.append(pd * 3.0)
 
     return <double>_fsum(contribs)
@@ -902,13 +950,19 @@ cdef inline double _curve_lookup_c(object curve, long n):
     return <double>curve[n]
 
 
-def flat_virtual_score_v2_cy(state, int player, cfg=None):
-    """Cython drop-in for flat_leaf.flat_virtual_score_v2 (bit-exact)."""
+def flat_virtual_score_v2_cy(state, int player, cfg=None, bag_close=None):
+    """Cython drop-in for flat_leaf.flat_virtual_score_v2 (bit-exact).
+
+    `bag_close` (v2.10): None -> flat_leaf.V210_BAG_CLOSE (the module/env flag,
+    so direct callers match the wrapper); explicit True/False overrides."""
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     if cfg is None:
         from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
         cfg = DEFAULT_CONFIG
+    if bag_close is None:
+        from carcassonne_ai import flat_leaf as _fl
+        bag_close = _fl.V210_BAG_CLOSE
     if cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0:
         raise NotImplementedError(
             "flat_closure_bonus implements only the v2.7 schedule path "
@@ -923,9 +977,41 @@ def flat_virtual_score_v2_cy(state, int player, cfg=None):
     cdef long running = <long>int(scores[player]) - <long>int(scores[opp])
     cdef long base = running + (final[player] - final[opp])
 
+    # v2.10 bag stats (== flat_leaf._bag_stats): remaining = deck + in-hand
+    # next_tile iff TILES phase (in MEEPLES phase next_tile is a stale ref to
+    # the just-placed tile). ge_k = #tiles with >= k cardinal city edges.
+    cdef int bag_on = 1 if bag_close else 0
+    cdef int bag_n = 0, bag_ge1 = 0, bag_ge2 = 0, bag_ge3 = 0, bag_ge4 = 0
+    cdef int ne_city
+    cdef tuple bfeat, bcg, bgrp
+    if bag_on:
+        nt = state.next_tile
+        bag_tiles = list(state.deck)
+        if nt is not None and state.phase == _PHASE_TILES:
+            bag_tiles.append(nt)
+        for btile in bag_tiles:
+            bag_n += 1
+            bfeat = _tile_features(btile)
+            bcg = <tuple>bfeat[0]
+            ne_city = 0
+            for bgrp in bcg:
+                ne_city += len(<tuple>bgrp)
+            if ne_city >= 1:
+                bag_ge1 += 1
+                if ne_city >= 2:
+                    bag_ge2 += 1
+                    if ne_city >= 3:
+                        bag_ge3 += 1
+                        if ne_city >= 4:
+                            bag_ge4 += 1
+
     closure_p = cfg.closure_p
-    cdef double bonus_self = _closure_bonus_c(state, player, ws, closure_p)
-    cdef double bonus_opp = _closure_bonus_c(state, opp, ws, closure_p)
+    cdef double bonus_self = _closure_bonus_c(state, player, ws, closure_p,
+                                              bag_on, bag_n, bag_ge1, bag_ge2,
+                                              bag_ge3, bag_ge4)
+    cdef double bonus_opp = _closure_bonus_c(state, opp, ws, closure_p,
+                                             bag_on, bag_n, bag_ge1, bag_ge2,
+                                             bag_ge3, bag_ge4)
     cdef double cap = <double>cfg.bonus_cap
     cdef double opp_cap = <double>cfg.opp_bonus_cap
     if bonus_self > cap:
