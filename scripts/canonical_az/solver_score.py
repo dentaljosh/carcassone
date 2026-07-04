@@ -258,6 +258,129 @@ def make_tempo_arm_ranker(ckpt_path: str):
 RANKERS = {"v29_leaf": make_v29_leaf_ranker}
 
 
+# --------------------------------------------------------------------------- #
+# Leaf-variant rankers (v2.10 leaf arc, docs/V210_LEAF_SPEC_2026-07-04.md).    #
+# Each --leaf-variant NAME:JSON becomes a ranker identical in shape to        #
+# v29_leaf but evaluated under its OWN explicit LeafConfig. NO env mutation:  #
+# virtual_score_v2 / flat_virtual_score_v2 / the cy leaf all read the cfg     #
+# object PER CALL, so per-variant configs cannot cross-contaminate (the env   #
+# only feeds DEFAULT_CONFIG once at import, which we never touch).            #
+# --------------------------------------------------------------------------- #
+# JSON keys = env-knob names sans the CARCASSONNE_ prefix (values str or num).
+LEAF_VARIANT_KNOBS = (
+    "V25_CAP", "V25_OPP_CAP", "V25_MEEPLE_K",
+    "V25_DROP_THREE_OPEN", "V25_ONE_OPEN_ONLY",
+    "V29_MEEPLE_CURVE", "V210_BAG_CLOSE",
+)
+
+
+def leaf_cfg_from_overrides(overrides: dict):
+    """Baseline cfg (EH._heur_leaf_cfg(2.0) == the v29_leaf ranker's cfg) with the
+    JSON knob overrides applied. Returns (LeafConfig, bag_close: bool | None).
+
+    Semantics mirror virtual_score_v2._config_from_env exactly:
+      V25_CAP            -> bonus_cap (and opp_bonus_cap follows unless V25_OPP_CAP
+                            is ALSO overridden — the env default OPP_CAP=CAP)
+      V25_OPP_CAP        -> opp_bonus_cap
+      V25_MEEPLE_K       -> meeple_k  (⚠️ INERT while a v29 curve is set — the curve
+                            REPLACES the flat term; pass V29_MEEPLE_CURVE:"" to use it)
+      V25_ONE_OPEN_ONLY / V25_DROP_THREE_OPEN -> closure_p schedule (precedence as
+                            in _config_from_env; always a FRESH dict, never shared)
+      V29_MEEPLE_CURVE   -> v29_meeple_curve ("a,b,..." or list; ""/null -> None)
+      V210_BAG_CLOSE     -> NOT a LeafConfig field (the frozen v2.9 config-hash
+                            guards pin the dataclass schema); returned separately and
+                            routed via flat_leaf.flat_virtual_score_v2(bag_close=...).
+    """
+    unknown = set(overrides) - set(LEAF_VARIANT_KNOBS)
+    if unknown:
+        raise ValueError(f"unknown leaf-variant knobs {sorted(unknown)}; "
+                         f"supported: {LEAF_VARIANT_KNOBS}")
+    import dataclasses
+    kw = {}
+    if "V25_CAP" in overrides:
+        cap = float(overrides["V25_CAP"])
+        kw["bonus_cap"] = cap
+        if "V25_OPP_CAP" not in overrides:
+            kw["opp_bonus_cap"] = cap
+    if "V25_OPP_CAP" in overrides:
+        kw["opp_bonus_cap"] = float(overrides["V25_OPP_CAP"])
+    if "V25_MEEPLE_K" in overrides:
+        kw["meeple_k"] = float(overrides["V25_MEEPLE_K"])
+    if "V25_ONE_OPEN_ONLY" in overrides or "V25_DROP_THREE_OPEN" in overrides:
+        ooo = str(overrides.get(
+            "V25_ONE_OPEN_ONLY", os.environ.get("CARCASSONNE_V25_ONE_OPEN_ONLY", "0"))) == "1"
+        d3o = str(overrides.get(
+            "V25_DROP_THREE_OPEN", os.environ.get("CARCASSONNE_V25_DROP_THREE_OPEN", "0"))) == "1"
+        if ooo:
+            kw["closure_p"] = {1: 1.0}
+        elif d3o:
+            kw["closure_p"] = {1: 0.5, 2: 0.2}
+        else:
+            kw["closure_p"] = {1: 0.5, 2: 0.2, 3: 0.05}
+    if "V29_MEEPLE_CURVE" in overrides:
+        cv = overrides["V29_MEEPLE_CURVE"]
+        if cv is None or cv == "":
+            kw["v29_meeple_curve"] = None
+        elif isinstance(cv, str):
+            kw["v29_meeple_curve"] = tuple(float(x) for x in cv.split(","))
+        else:  # list/tuple of numbers
+            kw["v29_meeple_curve"] = tuple(float(x) for x in cv)
+    bag_close = None
+    if "V210_BAG_CLOSE" in overrides:
+        bag_close = str(overrides["V210_BAG_CLOSE"]) in ("1", "true", "True")
+    cfg = dataclasses.replace(EH._heur_leaf_cfg(2.0), **kw)
+    return cfg, bag_close
+
+
+def make_variant_leaf_ranker(cfg, bag_close=None):
+    """A v29_leaf-shaped ranker under an explicit per-variant LeafConfig.
+    Same terminal clamp + tanh(vs2/15) as make_v29_leaf_ranker — with an
+    all-default overrides dict this is bit-identical to the baseline ranker.
+
+    bag_close (v2.10 Track B) routes through the flat leaf's explicit
+    `bag_close` parameter — again no global/env mutation. Requires the
+    bag-close-capable flat_leaf build."""
+    from carcassonne_ai import flat_leaf
+
+    if bag_close is None:
+        def rank(child, root_player, game):
+            ended = game.get_game_ended(child, root_player)
+            if ended != 0:
+                return max(-1.0, min(1.0, float(ended)))
+            return math.tanh(virtual_score_v2(child.state, root_player, cfg) / 15.0)
+        return rank
+
+    import inspect
+    if "bag_close" not in inspect.signature(flat_leaf.flat_virtual_score_v2).parameters:
+        raise RuntimeError(
+            "V210_BAG_CLOSE variant needs the v2.10 bag-close flat leaf "
+            "(flat_leaf.flat_virtual_score_v2 has no bag_close param in this tree)")
+    if not flat_leaf.USE_FLAT_LEAF:
+        raise RuntimeError("V210_BAG_CLOSE variant requires CARCASSONNE_USE_FLAT_LEAF=1")
+
+    def rank(child, root_player, game):
+        ended = game.get_game_ended(child, root_player)
+        if ended != 0:
+            return max(-1.0, min(1.0, float(ended)))
+        # Direct flat call == virtual_score_v2's redirect for these (curve-only /
+        # plain) cfgs under USE_FLAT_LEAF=1, plus the explicit bag_close flag.
+        return math.tanh(
+            flat_leaf.flat_virtual_score_v2(child.state, root_player, cfg,
+                                            bag_close=bag_close) / 15.0)
+    return rank
+
+
+def parse_leaf_variant_arg(spec: str):
+    """'NAME:{json}' -> (name, overrides dict). NAME must precede the first ':'."""
+    name, sep, payload = spec.partition(":")
+    if not sep or not name:
+        raise ValueError(f"--leaf-variant expects NAME:JSON, got {spec!r}")
+    overrides = json.loads(payload)
+    if not isinstance(overrides, dict):
+        raise ValueError(f"--leaf-variant {name}: JSON must be an object, got {type(overrides)}")
+    return name, overrides
+
+
 def _sha256(path):
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -407,6 +530,12 @@ def main(argv=None) -> int:
                          "(repeatable; the CL-040 fold-in re-adjudication). Scored as an "
                          "ADDITIONAL ranker on the same SolveResult per root — the "
                          "v29_leaf baseline is untouched.")
+    ap.add_argument("--leaf-variant", action="append", default=[], metavar="NAME:JSON",
+                    help="leaf-config variant ranker (repeatable; v2.10 leaf arc). JSON "
+                         "holds env-knob overrides sans the CARCASSONNE_ prefix, e.g. "
+                         '\'cap12:{"V25_CAP":"12"}\'. Each variant is a v29_leaf-shaped '
+                         "ranker under its OWN explicit LeafConfig (no env mutation, no "
+                         "cross-contamination); the baseline ranker is untouched.")
     ap.add_argument("--n", type=int, default=0,
                     help="cap #K<=max_k roots to SCORE (0=all). Roots are pre-filtered by the "
                          "records' k_remaining then verified post-replay; --n counts SOLVED roots.")
@@ -431,6 +560,23 @@ def main(argv=None) -> int:
             label = f"{label}_{Path(ck).resolve().parent.parent.name}"
         rankers[label] = rank
         print(f"[ranker] {label} <- {ck} (§5A tempo-arm RankNet, CPU)", flush=True)
+    leaf_variants = {}
+    for spec in args.leaf_variant:
+        vname, overrides = parse_leaf_variant_arg(spec)
+        if vname in rankers:
+            raise ValueError(f"--leaf-variant name {vname!r} collides with an existing ranker")
+        vcfg, bag_close = leaf_cfg_from_overrides(overrides)
+        rankers[vname] = make_variant_leaf_ranker(vcfg, bag_close)
+        leaf_variants[vname] = {
+            "overrides": overrides, "bag_close": bag_close,
+            "resolved": {"closure_p": {str(k): v for k, v in vcfg.closure_p.items()},
+                         "bonus_cap": vcfg.bonus_cap, "opp_bonus_cap": vcfg.opp_bonus_cap,
+                         "meeple_k": vcfg.meeple_k,
+                         "v29_meeple_curve": (list(vcfg.v29_meeple_curve)
+                                              if vcfg.v29_meeple_curve else None)},
+        }
+        print(f"[ranker] {vname} <- leaf variant {overrides} (explicit LeafConfig"
+              f"{', bag_close=' + str(bag_close) if bag_close is not None else ''})", flush=True)
     recs = load_sibling_roots(args.qprobe, args.pool)
     print(f"[load] {len(recs)} sibling roots (qprobe ∩ pool)", flush=True)
 
@@ -500,6 +646,7 @@ def main(argv=None) -> int:
         "ranker_baseline": args.ranker, "rankers": list(rankers),
         "checkpoints": [{"path": c, "sha256": _sha256(c)} for c in args.checkpoint],
         "arm_ckpts": [{"path": c, "sha256": _sha256(c)} for c in args.arm_ckpt],
+        "leaf_variants": leaf_variants,
         "max_k": args.max_k, "budget": args.budget,
         "qprobe": args.qprobe, "pool": args.pool,
         "n_roots_total": len(recs), "n_candidates": len(cand),
