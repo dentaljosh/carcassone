@@ -1,0 +1,34 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-bag] zeroed 32 bag scalars (mode -> farm-only)
+[drop-farm] zeroing 3 farm planes at gather (mode -> bag-only)
+[tempo] appended 10 tempo scalars -> n_scalar=54: ['lockup_self', 'lockup_opp', 'lockup_diff', 'lockup_depth_self', 'lockup_depth_opp', 'lockup_depth_diff', 'open_city_delta_self', 'open_city_delta_opp', 'contested_open_count', 'closure_race_diff']
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/40 train=3.3030 val=3.2953 (110s) *
+    [V4_listwise] ep2/40 train=3.2986 val=3.2955 (109s)
+    [V4_listwise] ep3/40 train=3.2980 val=3.2947 (109s) *
+    [V4_listwise] ep4/40 train=3.2991 val=3.2943 (108s) *
+    [V4_listwise] ep5/40 train=3.2985 val=3.2937 (109s) *
+    [V4_listwise] ep6/40 train=3.2979 val=3.2935 (109s) *
+    [V4_listwise] ep7/40 train=3.2981 val=3.2933 (109s) *
+    [V4_listwise] ep8/40 train=3.2976 val=3.2938 (109s)
+    [V4_listwise] ep9/40 train=3.2978 val=3.2930 (109s) *
+    [V4_listwise] ep10/40 train=3.2975 val=3.2928 (109s) *
+    [V4_listwise] ep11/40 train=3.2972 val=3.2928 (109s) *
+    [V4_listwise] ep12/40 train=3.2983 val=3.2928 (109s)
+    [V4_listwise] ep13/40 train=3.2977 val=3.2924 (109s) *
+    [V4_listwise] ep14/40 train=3.2963 val=3.2928 (109s)
+    [V4_listwise] ep15/40 train=3.2966 val=3.2937 (109s)
+    [V4_listwise] ep16/40 train=3.2972 val=3.2927 (109s)
+    [V4_listwise] ep17/40 train=3.2967 val=3.2930 (109s)
+    [V4_listwise] ep18/40 train=3.2970 val=3.2936 (109s)
+    [V4_listwise] ep19/40 train=3.2968 val=3.2933 (109s)
+    [V4_listwise] early-stop ep19 (no val gain in 6 epochs)
+    [V4_listwise] saved best model -> measurement/probe_5a/arms_retrain/tempo_only_s1/V4_listwise/ranknet_best.pt
+  [V4_listwise       ] net-alone tau=+0.131 top1=0.253 | combined a*=0.25 regret 0.0263->0.0208 (+21.1%) beats_leaf=True
+    (V4_listwise done in 2092s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.131
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/probe_5a/arms_retrain/tempo_only_s1/stage5_offline_gate.json

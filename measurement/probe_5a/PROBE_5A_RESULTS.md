@@ -1,6 +1,18 @@
 # PROBE §5A — Tempo/timing third-axis gate — RESULTS
 
-Status: **🏁 CLOSED (2026-07-01) — INCONCLUSIVE (rigorous gate); gate-zero salvaged.**
+Status: **✅ RESOLVED (2026-07-04) — REAL-BUT-DOMINATED (non-circular, solver-scored; CL-040 Supported/high).**
+> **RESOLUTION 2026-07-04:** 4 arms × 3 seeds retrained with saved weights (`7fa6e6e`) and scored vs the
+> **exact K≤2 solver** on the same 1,119 roots as the M2 verdict (leaf baseline reproduces τ=0.6153 exactly).
+> **tempo_only solver-τ 0.116/0.144/0.173 (mean 0.145)** = genuine non-circular sibling signal, ~7× the M2
+> canonical value heads (0.02) → H-5A-inert stays refuted. **BUT dominated by the leaf everywhere** — best seed
+> paired sign-z **−9.2** (112 better / 299 worse, +0.587 pts exact margin/root), τ 4× below the leaf's 0.615.
+> The circular **+44.7% was a tail draw** (h6400-frame retrain spread +17.5/+21.1/+38.8). The `both` control
+> bimodality **replicates in both frames** (s1 learns +21.4%/τ 0.110; s0/s2 collapse) → width-54 optimization
+> fragility, not data corruption → the original single-seed cross-arm Δ_indep was never interpretable. **No route
+> implication** (CL-034 washout precedent; the M2 KILL stands). Artifacts:
+> `arms_retrain/solver_score_5a_arms.json` + per-run `summary.json`; results.csv `probe5a_arms_solver_rescore_4x3_n1119`.
+
+Prior status: 🏁 CLOSED (2026-07-01) — INCONCLUSIVE (rigorous gate); gate-zero salvaged.
 > **⚠️ CORRECTION 2026-07-01 (fresh-look review F4):** the h6400 oracle_q correlates **0.995**
 > with the static v2.9 leaf, so the stage-2 `tempo_only` **+44.7%** below was scored against a
 > near-copy of the leaf — the **circular frame** F4 flags as unreadable. Only **gate-zero** (the

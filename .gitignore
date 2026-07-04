@@ -65,3 +65,6 @@ clean_room_review_20260621/
 clean_room_review_20260621.zip
 outside_review.zip
 measurement/post_search_residual/data/
+
+# 5A arm-retrain weights (reproducible via scripts/probe_5a/run_arm_retrains.sh; evidence = summary/solver JSONs)
+measurement/probe_5a/arms_retrain/**/ranknet_best.pt

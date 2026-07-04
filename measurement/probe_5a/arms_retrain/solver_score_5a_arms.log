@@ -1,0 +1,68 @@
+[ranker] arm_tempo_only_s0 <- measurement/probe_5a/arms_retrain/tempo_only_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_tempo_only_s1 <- measurement/probe_5a/arms_retrain/tempo_only_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_tempo_only_s2 <- measurement/probe_5a/arms_retrain/tempo_only_s2/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_both_s0 <- measurement/probe_5a/arms_retrain/both_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_both_s1 <- measurement/probe_5a/arms_retrain/both_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_both_s2 <- measurement/probe_5a/arms_retrain/both_s2/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s0 <- measurement/probe_5a/arms_retrain/all_three_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1 <- measurement/probe_5a/arms_retrain/all_three_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s2 <- measurement/probe_5a/arms_retrain/all_three_s2/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_none_s0 <- measurement/probe_5a/arms_retrain/none_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_none_s1 <- measurement/probe_5a/arms_retrain/none_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_none_s2 <- measurement/probe_5a/arms_retrain/none_s2/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=1119 skipped=0 errors=0 in 1752.1s
+[out] wrote measurement/probe_5a/arms_retrain/solver_score_5a_arms.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  13.03s/solve
+
+==== SOLVER-SCORE (arm_tempo_only_s0) ====
+AGG  n=1119  solver_regret mean=1.8168 median=1.0 max=28.0  top1=0.168  tau=0.1163
+  K=2 (marg)  n=1119  regret=1.8168  top1=0.168  tau=0.1163  13.03s/solve
+
+==== SOLVER-SCORE (arm_tempo_only_s1) ====
+AGG  n=1119  solver_regret mean=1.7069 median=1.0 max=28.0  top1=0.2029  tau=0.1443
+  K=2 (marg)  n=1119  regret=1.7069  top1=0.2029  tau=0.1443  13.03s/solve
+
+==== SOLVER-SCORE (arm_tempo_only_s2) ====
+AGG  n=1119  solver_regret mean=1.538 median=0.0 max=28.0  top1=0.2082  tau=0.1732
+  K=2 (marg)  n=1119  regret=1.538  top1=0.2082  tau=0.1732  13.03s/solve
+
+==== SOLVER-SCORE (arm_both_s0) ====
+AGG  n=1119  solver_regret mean=2.0965 median=1.0 max=26.0  top1=0.0581  tau=0.0016
+  K=2 (marg)  n=1119  regret=2.0965  top1=0.0581  tau=0.0016  13.03s/solve
+
+==== SOLVER-SCORE (arm_both_s1) ====
+AGG  n=1119  solver_regret mean=1.5049 median=1.0 max=25.0  top1=0.1626  tau=0.11
+  K=2 (marg)  n=1119  regret=1.5049  top1=0.1626  tau=0.11  13.03s/solve
+
+==== SOLVER-SCORE (arm_both_s2) ====
+AGG  n=1119  solver_regret mean=2.1037 median=1.0 max=26.0  top1=0.067  tau=-0.0044
+  K=2 (marg)  n=1119  regret=2.1037  top1=0.067  tau=-0.0044  13.03s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0) ====
+AGG  n=1119  solver_regret mean=1.6452 median=1.0 max=24.0  top1=0.1993  tau=0.13
+  K=2 (marg)  n=1119  regret=1.6452  top1=0.1993  tau=0.13  13.03s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1) ====
+AGG  n=1119  solver_regret mean=1.6738 median=1.0 max=25.0  top1=0.202  tau=0.1278
+  K=2 (marg)  n=1119  regret=1.6738  top1=0.202  tau=0.1278  13.03s/solve
+
+==== SOLVER-SCORE (arm_all_three_s2) ====
+AGG  n=1119  solver_regret mean=1.7766 median=1.0 max=25.0  top1=0.1957  tau=0.1117
+  K=2 (marg)  n=1119  regret=1.7766  top1=0.1957  tau=0.1117  13.03s/solve
+
+==== SOLVER-SCORE (arm_none_s0) ====
+AGG  n=1119  solver_regret mean=2.1573 median=1.0 max=26.0  top1=0.0581  tau=0.0078
+  K=2 (marg)  n=1119  regret=2.1573  top1=0.0581  tau=0.0078  13.03s/solve
+
+==== SOLVER-SCORE (arm_none_s1) ====
+AGG  n=1119  solver_regret mean=2.0831 median=1.0 max=25.0  top1=0.0554  tau=-0.006
+  K=2 (marg)  n=1119  regret=2.0831  top1=0.0554  tau=-0.006  13.03s/solve
+
+==== SOLVER-SCORE (arm_none_s2) ====
+AGG  n=1119  solver_regret mean=1.7328 median=1.0 max=27.0  top1=0.1305  tau=0.0643
+  K=2 (marg)  n=1119  regret=1.7328  top1=0.1305  tau=0.0643  13.03s/solve

@@ -1,0 +1,21 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[tempo] appended 10 tempo scalars -> n_scalar=54: ['lockup_self', 'lockup_opp', 'lockup_diff', 'lockup_depth_self', 'lockup_depth_opp', 'lockup_depth_diff', 'open_city_delta_self', 'open_city_delta_opp', 'contested_open_count', 'closure_race_diff']
+[drop-tempo] zeroed 10 tempo scalars (arm excludes tempo)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/40 train=3.3125 val=3.3102 (108s) *
+    [V4_listwise] ep2/40 train=3.3125 val=3.3102 (105s)
+    [V4_listwise] ep3/40 train=3.3125 val=3.3102 (109s)
+    [V4_listwise] ep4/40 train=3.3121 val=3.3102 (109s)
+    [V4_listwise] ep5/40 train=3.3125 val=3.3102 (109s)
+    [V4_listwise] ep6/40 train=3.3128 val=3.3102 (109s)
+    [V4_listwise] ep7/40 train=3.3123 val=3.3103 (109s)
+    [V4_listwise] early-stop ep7 (no val gain in 6 epochs)
+    [V4_listwise] saved best model -> measurement/probe_5a/arms_retrain/both_s2/V4_listwise/ranknet_best.pt
+  [V4_listwise       ] net-alone tau=+0.000 top1=0.051 | combined a*=0.0 regret 0.0263->0.0263 (+0.0%) beats_leaf=False
+    (V4_listwise done in 779s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.000
+ANY variant beats leaf (leaf+a*net < leaf): False
+-> measurement/probe_5a/arms_retrain/both_s2/stage5_offline_gate.json
