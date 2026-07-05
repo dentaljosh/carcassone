@@ -1,6 +1,27 @@
 # Fairness decision probe — exact-solver move regret, clairvoyant vs fair (stage 1)
 
-**Status: RUNNING 2026-07-04** (`fairness_decision_s1600_k8_n300.json` + `.log`).
+**Status: ✅ DONE 2026-07-04 — machinery validated; reframed as fair-mode validation, NOT a tax number**
+(`fairness_decision_s1600_k8_n300.json`). The game-level fair-vs-clair n=400 was **cancelled** — Joshua:
+fair is mandatory for deployment, so no tax number changes the decision (we just switch). This probe's
+lasting value is (a) it proved the PIMC machinery correct and (b) it fixed the production aggregation rule.
+
+## Result (n=300, sims=1600, K=8)
+
+| arm | regret mean | top1 vs solver |
+|---|---|---|
+| CLAIR (champion) | 0.447 | 0.793 |
+| FAIR pooled-N | 0.393 | 0.803 |
+| **FAIR pooled-Q** | **0.383** | **0.807** |
+
+Paired fair(pooled-N)−clair Δ = **−0.053, z=−1.27 (NS)**; differ-rate 23% (70/300), but on differing roots
+regret is equal on 61/70 → the arms overwhelmingly agree, and where they differ it's a wash. **Two
+conclusions, both as pre-registered:** (1) **no decision-level tax at K≤2** — expected and structurally
+guaranteed (deck_len==1 = identity permutation; see caveat 2); the honest tax needs deck_len≥2 (K≥3) roots,
+which the marginalized solver can't reach — so it stays unmeasured, and per the deploy decision, unneeded.
+(2) **pooled-Q ⪰ clairvoyant here and never blunders** (vs pooled-N's smoke 11-pt miss) → **production fair
+mode uses pooled-Q** (implemented in `src/carcassonne_ai/fair_agent.py`, commit `2903dd6`).
+
+Prior status: RUNNING 2026-07-04 (`fairness_decision_s1600_k8_n300.json` + `.log`).
 
 ## Question
 
