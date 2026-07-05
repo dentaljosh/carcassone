@@ -79,10 +79,12 @@ def candidate_cfg(name: str):
     if name == "v28":
         return V28                                            # null control (A vs B both v28)
     if name.startswith("Bmild_"):
-        scale, cap, cp = 1.0, None, None
+        scale, cap, bcap, cp = 1.0, None, None, None
         for mod in name.split("_")[1:]:
             if mod.startswith("x"):
                 scale = int(mod[1:]) / 100.0
+            elif mod.startswith("bcap"):
+                bcap = float(mod[4:])   # bonus_cap ONLY, opp_bonus_cap untouched — the exact v2.10 track-A screen change (V25_CAP)
             elif mod.startswith("cap"):
                 cap = float(mod[3:])
             elif mod.startswith("p"):
@@ -92,6 +94,8 @@ def candidate_cfg(name: str):
         cfg = dc.replace(V28, v29_meeple_curve=_scale_curve(MILD_CURVE, scale))
         if cap is not None:
             cfg = dc.replace(cfg, bonus_cap=cap, opp_bonus_cap=cap)
+        if bcap is not None:
+            cfg = dc.replace(cfg, bonus_cap=bcap)   # opp_bonus_cap stays at the baseline (screen changed V25_CAP only)
         if cp is not None:
             cfg = dc.replace(cfg, closure_p=cp)
         return cfg
