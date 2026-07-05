@@ -25,7 +25,8 @@ SPEC = os.path.join(os.path.dirname(__file__), "..", "governance", "LEAF_SUBSTRA
 
 
 def _cfg_hash(cfg):
-    d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()}
+    d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()
+         if not (k == "bag_close" and v is False)}  # v2.10 bag_close default-off == frozen v2.9 substrate
     return hashlib.sha256(json.dumps(d, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
 
 

@@ -128,6 +128,20 @@ class LeafConfig:
     v29_meeple_curve: tuple | None = None
     v29_punish_k: float = 0.0
     v29_farm_access_k: float = 0.0
+    # --- v2.10 bag-aware closure (Track B, 2026-07-04) --------------------------
+    # bag_close: when True, the FLAT closure-anticipation bonus consults the
+    # REMAINING-TILE MULTISET (docs/V210_LEAF_SPEC_2026-07-04.md) — a feature the
+    # bag can no longer complete gets P(closure)=0 EXACTLY. Flat-path ONLY
+    # (flat_leaf implements it via _bag_stats; the object/engine path fails loud).
+    # Default False == bit-identical v2.9. Promotes the CARCASSONNE_V210_BAG_CLOSE
+    # module/env flag to a per-side LeafConfig knob so the game-gate harness can
+    # toggle it asymmetrically; the module/env flag still applies when cfg is None
+    # (back-compat) and DEFAULT_CONFIG mirrors it (see _config_from_env).
+    # ⚠️ Adding this field CHANGES dataclasses.asdict(cfg) -> the frozen v2.9
+    # config_hash (7fc930b82801cb43, governance/LEAF_SUBSTRATES.yaml) shifts; the
+    # step2_pens/feature_graph provenance asserts pin that hash and must be
+    # re-frozen if bag_close is ever folded into a frozen substrate.
+    bag_close: bool = False
 
 
 def _config_from_env() -> LeafConfig:
@@ -170,6 +184,11 @@ def _config_from_env() -> LeafConfig:
         v28_farm_majority=(os.environ.get("CARCASSONNE_V28_FARM_MAJORITY") == "1"),
         v28_meeple_k=float(os.environ.get("CARCASSONNE_V28_MEEPLE_K", "0.0")),
         v28_meeple_recovery_t0=int(os.environ.get("CARCASSONNE_V28_MEEPLE_RECOVERY_T0", "0")),
+        # v2.10 Track B: env-global bag-aware closure (back-compat with the module
+        # flag). Default off == unchanged production DEFAULT_CONFIG. Mirroring the
+        # env flag here keeps the env-global gate working through virtual_score_v2,
+        # which always forwards a (non-None) cfg to flat_virtual_score_v2.
+        bag_close=(os.environ.get("CARCASSONNE_V210_BAG_CLOSE") == "1"),
     )
 
 
@@ -575,14 +594,16 @@ def virtual_score_v2(
         # flat_virtual_score_v2 applies the curve bit-exactly (and skips the cy
         # leaf, which doesn't know the curve). Other v2.9 terms fall through.
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
-    if flat_leaf.V210_BAG_CLOSE:
+    if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC
         # Track B) — fail loudly rather than silently dropping the gate on the
         # engine/object path (USE_FLAT_LEAF=0, or a deck-aware/v28/v29-non-curve
-        # cfg forcing the fallthrough).
+        # cfg forcing the fallthrough). Covers BOTH the env-global flag and an
+        # explicit LeafConfig.bag_close=True.
         raise NotImplementedError(
-            "CARCASSONNE_V210_BAG_CLOSE=1 requires the flat leaf path "
-            "(set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+            "bag-aware closure (CARCASSONNE_V210_BAG_CLOSE=1 or LeafConfig.bag_close=True) "
+            "requires the flat leaf path (set CARCASSONNE_USE_FLAT_LEAF=1 and use a "
+            "flat-eligible LeafConfig)"
         )
     opp = 1 - player
     # Leaf-pass flood-fill sharing (2026-05-29 speedup): share ONE lazy farm-region

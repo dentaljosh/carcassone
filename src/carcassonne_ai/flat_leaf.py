@@ -786,14 +786,19 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     (order-independent fsum); against the naive-sum production path it differs only
     by the known ~1e-4 ±1 hash-seed reorder flips (DECISIONS 2026-06-09).
 
-    `bag_close` (v2.10 Track B): None -> the module/env flag V210_BAG_CLOSE
-    (production gate); explicit True/False overrides it per call (the in-process
-    A/B path — no env/global mutation). OFF is bit-identical v2.9."""
+    `bag_close` (v2.10 Track B): explicit True/False overrides everything (the
+    in-process A/B path — no env/global mutation). None -> resolve from
+    `cfg.bag_close` when a cfg was passed (the per-side game-gate harness path),
+    else the module/env flag V210_BAG_CLOSE (back-compat, cfg is None).
+    DEFAULT_CONFIG.bag_close mirrors the env flag, so the env-global gate also
+    survives the always-forward-cfg dispatch in virtual_score_v2. OFF is
+    bit-identical v2.9."""
+    cfg_was_none = cfg is None
     if cfg is None:
         from .virtual_score_v2 import DEFAULT_CONFIG
         cfg = DEFAULT_CONFIG
     if bag_close is None:
-        bag_close = V210_BAG_CLOSE
+        bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
     # v2.9 meeple curve (Candidate B). The cy leaf implements it when the loaded .so
     # advertises SUPPORTS_V29_CURVE; a STALE .so (no curve support) would silently
     # DROP the curve, so for curve configs we fall back to the pure-Python curve path

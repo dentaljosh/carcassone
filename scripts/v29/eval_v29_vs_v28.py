@@ -71,6 +71,7 @@ def candidate_cfg(name: str):
     Bmild local-retune variants (composable modifiers, '_'-joined onto 'Bmild'):
       _x<NNN>      scale the curve by NNN/100   (Wave A: Bmild_x075, Bmild_x125)
       _cap<N>      bonus_cap = opp_bonus_cap = N (Wave B: Bmild_cap8, Bmild_x125_cap16)
+      _bag         bag_close=True — v2.10 Track B bag-aware closure (Bmild_cap8_bag)
       _p<AA>-<BB>      closure_p = {1:AA/100, 2:BB/100} — DROPS the anchor's 3-open ticket
       _p<AA>-<BB>-<CC> closure_p = {1:AA/100, 2:BB/100, 3:CC/100} — structure-preserving
                        (Bmild_p050-020-005 == anchor; the clean Wave-C control)
@@ -79,7 +80,7 @@ def candidate_cfg(name: str):
     if name == "v28":
         return V28                                            # null control (A vs B both v28)
     if name.startswith("Bmild_"):
-        scale, cap, bcap, cp = 1.0, None, None, None
+        scale, cap, bcap, cp, bag = 1.0, None, None, None, False
         for mod in name.split("_")[1:]:
             if mod.startswith("x"):
                 scale = int(mod[1:]) / 100.0
@@ -87,6 +88,8 @@ def candidate_cfg(name: str):
                 bcap = float(mod[4:])   # bonus_cap ONLY, opp_bonus_cap untouched — the exact v2.10 track-A screen change (V25_CAP)
             elif mod.startswith("cap"):
                 cap = float(mod[3:])
+            elif mod == "bag":
+                bag = True              # v2.10 Track B: bag-aware closure ON for THIS side (LeafConfig.bag_close)
             elif mod.startswith("p"):
                 # _p<AA>-<BB>       -> {1:AA, 2:BB}        (drops the anchor's 3-open ticket)
                 # _p<AA>-<BB>-<CC>  -> {1:AA, 2:BB, 3:CC}  (keeps 3-open; structure-preserving)
@@ -98,6 +101,8 @@ def candidate_cfg(name: str):
             cfg = dc.replace(cfg, bonus_cap=bcap)   # opp_bonus_cap stays at the baseline (screen changed V25_CAP only)
         if cp is not None:
             cfg = dc.replace(cfg, closure_p=cp)
+        if bag:
+            cfg = dc.replace(cfg, bag_close=True)   # e.g. Bmild_cap8_bag = Bmild_cap8 + bag-aware closure
         return cfg
     if name.startswith("A") and name[1:].isdigit():
         return dc.replace(V28, v29_util_tanh_t=float(name[1:]))   # Candidate A: win-shape T
