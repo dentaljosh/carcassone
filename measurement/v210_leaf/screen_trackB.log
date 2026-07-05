@@ -1,0 +1,3 @@
+[ranker] cap6 <- leaf variant {'V25_CAP': '6'} (explicit LeafConfig)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
