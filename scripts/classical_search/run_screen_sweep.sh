@@ -14,7 +14,18 @@ PY=$REPO/.venv/bin/python
 HARNESS=$REPO/scripts/classical_search/eval_puct_priors.py
 N=100; CHAMP=6400; K=2
 # cell = "c tau quant select [sims]"  (sims optional; defaults to $CAND)
-if [ "$ROUND" = 5 ]; then
+if [ "$ROUND" = 6 ]; then
+  # CONFIRM (pre-registered, PLAN.md): single cell, n=400, FRESH band 9.4e9, K=2.
+  # c* via CONF_C (default 1.5 = interior/robust choice). CONF_N/CONF_K/CONF_BAND override
+  # for the K=4 n=200 follow-up. Gate: paired-elo >= +35 (2sigma) -> PROPOSE champion flip.
+  N=${CONF_N:-400}
+  CAND=2750
+  K=${CONF_K:-2}
+  CC=${CONF_C:-1.5}
+  CELLS=("$CC 5 float visits 2750")
+  BAND_BASE=${CONF_BAND:-9400000000}
+  PROG=$REPO/measurement/classical_search/CONFIRM_PROGRESS.tsv
+elif [ "$ROUND" = 5 ]; then
   # Fable-guided: fix tau=5, selector=visits, quant=float. Sweep c at the DEPLOYABLE 2750
   # sims (visits), + a Q cross-check at 2750, + the matching visits@800 cells for the free
   # "does more sims help" read (paired same-band). Pick c* by neighbor-smoothing, not argmax.
