@@ -37,6 +37,13 @@ Confirm the **single best cell** at **n=400** on a FRESH band.
 - **KILL:** if **every** screened cell ≤ **+17 elo (1σ)** → Phase 1.1 fails; heuristic-prior PUCT is not a lever at equal time.
 - **AMBIGUOUS:** best cell in **(+17, +35)** at n=400 → proceed to Phase 1.2 (ID-alpha-beta), which is gated on this outcome. Surface the go/no-go + cost to Joshua before launching 1.2.
 
+## Overnight decision tree (pre-registered 2026-07-06, BEFORE the n=400 confirm ran; executed by `scripts/classical_search/overnight_orchestrator.sh`)
+Confirm cell = `c1.5/τ5/visits/float/2750` (c\* locked by the pre-committed rule in PUCT_PRIORS_RESULTS.md), n=400, fresh band 9.4e9, K=2. Then, **automatically, single read-out each**:
+- **elo ≥ +35 (FIRE)** → launch the **K=4 n=200 check on the SAME 9.4e9 band** (first 100 decks) = a CRN-paired contrast vs the K=2 confirm that isolates the endgame-depth effect; both sides matched at K=4. RAM-safety: W=12 local / W=8 laptop (inside the production K≤4 envelope; the 2026-06 W=18 OOM was the full-solve ruler, not handoff).
+- **elo ∈ (0, +35)** → extend the SAME band to **n=800** (cached 400 reused; gate at n=800 = **+25**). No band re-roll.
+- **elo ≤ 0** → full stop, launch nothing; audit the 800↔2750 band parity next session.
+Deferred to next-day (NOT run overnight): a `τ_p ∈ {3, 8}` bracket at c1.5/2750/visits, n=100, screen band — the only axis fixed from 800-sims data and never re-checked at deployable sims. Expectation: flat (more sims ⇒ less prior-sensitivity). It gates nothing; curiosity/robustness only.
+
 ## Reporting
 `measurement/classical_search/PUCT_PRIORS_RESULTS.md` (screen table + confirm), a `results.csv` row per game-eval (with manifest: full resolved config, leaf hash, code rev, seeds, both sims counts, ms/move), and the go/no-go paragraph. If any finding contradicts a `governance/CLAIM_REGISTRY.csv` claim, a proposed (not applied) registry amendment.
 
