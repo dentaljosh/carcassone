@@ -61,6 +61,7 @@ USE_FLAT_LEAF = os.environ.get("CARCASSONNE_USE_FLAT_LEAF") == "1"
 # on the next leaf call).
 USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF", "1") != "0"  # FOLDED 2026-06-17: default ON (all 3 boxes built+reconciled bit-exact); set =0 to force the Python path
 _CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
+_CY_FLAT_V2_FLOAT = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy_float (pre-round)
 _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind time
 _CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
 
@@ -806,15 +807,17 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # capability-flag pattern for the v2.10 bag-close gate (SUPPORTS_V210_BAG_CLOSE).
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
             try:
                 from . import flat_leaf_cy as _cy
                 _CY_FLAT_V2 = _cy.flat_virtual_score_v2_cy
+                _CY_FLAT_V2_FLOAT = getattr(_cy, "flat_virtual_score_v2_cy_float", None) or False
                 _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
                 _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
             except ImportError:
                 _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
+                _CY_FLAT_V2_FLOAT = False
                 _CY_SUPPORTS_CURVE = False
                 _CY_SUPPORTS_BAG_CLOSE = False
         if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
@@ -836,3 +839,63 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     return int(round(score))
+
+
+def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) -> float:
+    """PRE-ROUND float variant of flat_virtual_score_v2: IDENTICAL computation,
+    returns the raw float score BEFORE the terminal ``int(round(...))``.
+
+    Motivation: the PUCT heuristic-prior candidate (heuristic_prior_mcts.py)
+    builds priors from ``softmax(Δleaf / τ)`` over per-child afterstates —
+    int-rounding the leaf merges close siblings and throws away sub-integer prior
+    resolution. This exposes the SAME v2.9 leaf at full float resolution via the
+    Cython flat leaf (or the pure-Python flat float when the .so is absent), so
+    the candidate leaf runs at Cython speed instead of the ~30× slower pure-Python
+    reproduction (``heuristic_prior_mcts.leaf_score_float``).
+
+    ``int(round(flat_virtual_score_v2_float(...)))`` == ``flat_virtual_score_v2(...)``
+    by construction (same operations, same order). `bag_close` resolves exactly as
+    in flat_virtual_score_v2 (None -> cfg.bag_close if a cfg was passed, else the
+    env/module V210_BAG_CLOSE flag)."""
+    cfg_was_none = cfg is None
+    if cfg is None:
+        from .virtual_score_v2 import DEFAULT_CONFIG
+        cfg = DEFAULT_CONFIG
+    if bag_close is None:
+        bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
+    curve = cfg.v29_meeple_curve
+    if USE_CY_LEAF:
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
+        if _CY_FLAT_V2_FLOAT is None:
+            if _CY_FLAT_V2 is False:
+                _CY_FLAT_V2_FLOAT = False  # .so already known-missing; don't retry
+            else:
+                try:
+                    from . import flat_leaf_cy as _cy
+                    _CY_FLAT_V2 = _cy.flat_virtual_score_v2_cy
+                    _CY_FLAT_V2_FLOAT = getattr(_cy, "flat_virtual_score_v2_cy_float", None) or False
+                    _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
+                    _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
+                except ImportError:
+                    _CY_FLAT_V2 = False
+                    _CY_FLAT_V2_FLOAT = False
+                    _CY_SUPPORTS_CURVE = False
+                    _CY_SUPPORTS_BAG_CLOSE = False
+        if (_CY_FLAT_V2_FLOAT and (curve is None or _CY_SUPPORTS_CURVE)
+                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)):
+            return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
+    # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
+    if state.players != 2:
+        raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
+    decomp = decompose(state)
+    opp = 1 - player
+    bag = _bag_stats(state) if bag_close else None
+    base = flat_base_score(state, player, decomp)
+    bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg, bag), cfg.bonus_cap)
+    bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg, bag), cfg.opp_bonus_cap)
+    score = base + bonus_self - bonus_opp
+    if curve is not None:
+        score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+    elif cfg.meeple_k > 0.0:
+        score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
+    return float(score)

@@ -166,13 +166,26 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
     tau = float(cfg.tau_p)
     norm = float(cfg.value_norm)
     action_size = game.get_action_size()
+    # bag_close resolved from the leaf cfg (production v2.9 Bmild_cap8 -> False),
+    # mirroring leaf_score_float; passed explicitly so the CYTHON leaf takes the
+    # same v2.9/v2.10 branch as the pure-Python reference.
+    bag_close = bool(getattr(leaf_cfg, "bag_close", False))
 
     if cfg.leaf_quantize == "int":
+        # Cython int leaf via flat_leaf dispatch (== the production v2.9 leaf, the
+        # SAME call the champion HeuristicMCTS._rollout makes) — falls back to the
+        # pure-Python flat path only if the .so is absent. ~30x faster per leaf
+        # than int(round(leaf_score_float(...))); int-rounds so it loses sub-point
+        # prior resolution (the reference/quantized cell).
         def leaf(state, player: int) -> float:
-            return float(int(round(leaf_score_float(state, player, leaf_cfg))))
+            return float(flat_leaf.flat_virtual_score_v2(state, player, leaf_cfg, bag_close))
     else:  # "float" — validated in HeuristicPriorConfig.__post_init__
+        # Cython PRE-ROUND float leaf: same v2.9 semantics, full sub-integer
+        # resolution for the softmax priors, at Cython speed. `leaf_score_float`
+        # (pure-Python) stays as the reference/fallback; flat_virtual_score_v2_float
+        # falls back to it automatically when the .so is missing.
         def leaf(state, player: int) -> float:
-            return leaf_score_float(state, player, leaf_cfg)
+            return flat_leaf.flat_virtual_score_v2_float(state, player, leaf_cfg, bag_close)
 
     def evaluator(board: Board):
         st = board.state

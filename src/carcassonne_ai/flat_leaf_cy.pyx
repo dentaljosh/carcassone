@@ -950,11 +950,14 @@ cdef inline double _curve_lookup_c(object curve, long n):
     return <double>curve[n]
 
 
-def flat_virtual_score_v2_cy(state, int player, cfg=None, bag_close=None):
-    """Cython drop-in for flat_leaf.flat_virtual_score_v2 (bit-exact).
+cdef double _flat_score_v2_c(state, int player, cfg, bag_close) except *:
+    """Shared PRE-ROUND float body of the flat v2 leaf.
 
-    `bag_close` (v2.10): None -> flat_leaf.V210_BAG_CLOSE (the module/env flag,
-    so direct callers match the wrapper); explicit True/False overrides."""
+    The int leaf (``flat_virtual_score_v2_cy``) rounds this with Python ``round``;
+    the float sibling (``flat_virtual_score_v2_cy_float``) returns it raw. One
+    source of truth so the int/float leaves differ ONLY by the terminal round —
+    bit-exact to flat_leaf.flat_virtual_score_v2 by construction (gated by
+    scripts/reconcile_cy_leaf.py)."""
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     if cfg is None:
@@ -1029,10 +1032,32 @@ def flat_virtual_score_v2_cy(state, int player, cfg=None, bag_close=None):
     elif meeple_k > 0.0:
         meeples = state.meeples
         score += meeple_k * (<long>int(meeples[player]) - <long>int(meeples[opp]))
+    return score
+
+
+def flat_virtual_score_v2_cy(state, int player, cfg=None, bag_close=None):
+    """Cython drop-in for flat_leaf.flat_virtual_score_v2 (bit-exact).
+
+    `bag_close` (v2.10): None -> flat_leaf.V210_BAG_CLOSE (the module/env flag,
+    so direct callers match the wrapper); explicit True/False overrides."""
+    cdef double score = _flat_score_v2_c(state, player, cfg, bag_close)
     # Python round semantics (banker's rounding) on a boxed float — exact match
     # with flat_leaf's `int(round(score))`.
     score_obj = score
     return int(round(score_obj))
+
+
+def flat_virtual_score_v2_cy_float(state, int player, cfg=None, bag_close=None):
+    """PRE-ROUND float sibling of flat_virtual_score_v2_cy — identical computation,
+    skips the terminal ``int(round(...))``.
+
+    Used by the PUCT heuristic-prior candidate (heuristic_prior_mcts.py), whose
+    softmax(Δleaf / τ) priors need sub-integer leaf resolution: int-rounding
+    merges close afterstate siblings and discards prior signal. This gives the
+    SAME v2.9 leaf semantics as production at full float resolution AND Cython
+    speed. ``int(round(...))`` of this == flat_virtual_score_v2_cy by
+    construction (shared ``_flat_score_v2_c`` body)."""
+    return _flat_score_v2_c(state, player, cfg, bag_close)
 
 
 def flat_base_score_cy(state, int player):
