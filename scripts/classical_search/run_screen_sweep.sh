@@ -25,6 +25,17 @@ if [ "$ROUND" = 6 ]; then
   CELLS=("$CC 5 float visits 2750")
   BAND_BASE=${CONF_BAND:-9400000000}
   PROG=$REPO/measurement/classical_search/CONFIRM_PROGRESS.tsv
+elif [ "$ROUND" = 7 ]; then
+  # TAU BRACKET (robustness, gates NOTHING): tau in {3,8} at c1.5/2750/visits, n=100,
+  # band 9.031e9 (= round-5's c1.5 band) so BOTH cells share decks with the existing
+  # tau=5/2750 cell (+168.4) -> clean 3-point CRN tau curve at the deployable sims.
+  # The only axis fixed from 800-sims data + never re-checked at 2750.
+  N=100
+  CAND=2750
+  K=2
+  CELLS=("1.5 3 float visits 2750" "1.5 8 float visits 2750")
+  BAND_BASE=9031000000
+  PROG=$REPO/measurement/classical_search/TAU_BRACKET_PROGRESS.tsv
 elif [ "$ROUND" = 5 ]; then
   # Fable-guided: fix tau=5, selector=visits, quant=float. Sweep c at the DEPLOYABLE 2750
   # sims (visits), + a Q cross-check at 2750, + the matching visits@800 cells for the free
@@ -94,6 +105,8 @@ for cell in "${CELLS[@]}"; do
     # and c1.0/1.5 visits@800 reuse round-4's cached same-band results.
     case "$c" in 1.0) ci=0;; 1.5) ci=1;; 2.5) ci=2;; *) ci=$i;; esac
     band=$((BAND_BASE + ci*1000000))
+  elif [ "$ROUND" = 7 ]; then
+    band=$BAND_BASE          # both tau cells share the c1.5 band -> CRN-paired with tau=5
   else
     band=$((BAND_BASE + i*1000000))
   fi
