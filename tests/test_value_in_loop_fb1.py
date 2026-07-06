@@ -18,11 +18,28 @@ import random
 import zlib
 
 import numpy as np
+import pytest
 
 from carcassonne_ai.evaluators import make_v25_value_wrapper
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import NeuralMCTS
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
+
+
+@pytest.fixture(autouse=True)
+def _deterministic_global_rng():
+    # The engine shuffles the tile deck with the GLOBAL `random` module
+    # (carcassonne_game_state.py). get_init_board() therefore yields a deck order
+    # that depends on the ambient global-RNG state, which prior tests leave in an
+    # arbitrary place — so the board built below (and thus whether the root has a
+    # transposition-aliased symmetric-tile decision) is import-order-dependent.
+    # NeuralMCTS.search() returns the RAW {action: N} dict, which double-counts
+    # aliased children (see mcts._deduped_children), so `sum == simulations` only
+    # holds on a non-aliased root. Seed the global RNG deterministically so the
+    # deck (and the assertion below) are reproducible regardless of test order.
+    random.seed(20260625)
+    np.random.seed(20260625)
+    yield
 
 
 def _stub_base(game):

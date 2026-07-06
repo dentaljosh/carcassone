@@ -22,6 +22,14 @@ from __future__ import annotations
 import os
 
 DEFAULT_LEVELS = (200, 400, 800, 1600, 3200, 6400)
+# The frozen v2.9 substrate hash. The config_hash EXCLUDES the default-off v2.10
+# `bag_close` field so the value stays 7fc930b82801cb43 across the v2.10 field
+# addition (commit 1f521dd added LeafConfig.bag_close, which would otherwise shift
+# the full-asdict hash to f34a53bd5067ac16 with NO change to the leaf values). This
+# mirrors the bag_close exclusion in tests/test_v29_flat_curve.py and
+# tests/test_frozen_substrates.py, and keeps this consistent with the ~10 scripts +
+# governance/LEAF_SUBSTRATES.yaml that pin 7fc930b82801cb43. `frozen_v29_cfg()`
+# computes the hash the same way (drops the default-off bag_close key).
 FROZEN_V29_HASH = "7fc930b82801cb43"
 FROZEN_V29_ENV = {
     "CARCASSONNE_V25_CAP": "8", "CARCASSONNE_V25_OPP_CAP": "8",
@@ -42,15 +50,68 @@ def set_frozen_v29_env() -> None:
     os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 
+# The full leaf-shape env that pins the frozen v2.9 LeafConfig. Split into keys we
+# SET and keys we CLEAR so the config is built from an EXPLICIT, complete override
+# of every CARCASSONNE_V25_*/V28_*/V29_*/V210_* var that _config_from_env() reads —
+# never from the once-cached global DEFAULT_CONFIG, which is baked from whatever env
+# happened to be set at first import (sibling test modules pollute it via setdefault).
+# (CARCASSONNE_V25_MEEPLE_K is set from the value_norm arg; the leaf-PATH vars
+# USE_FLAT_LEAF/USE_CY_REPR don't enter LeafConfig, so they're irrelevant here.)
+_FROZEN_CFG_ENV_SET = {
+    "CARCASSONNE_V25_CAP": "8", "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",   # -> 3-open closure {1:.5, 2:.2, 3:.05}
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+}
+_FROZEN_CFG_ENV_CLEAR = (
+    "CARCASSONNE_V25_ONE_OPEN_ONLY", "CARCASSONNE_V25_RESIDUAL_SCALE",
+    "CARCASSONNE_V25_TILE_COUNTING", "CARCASSONNE_V25_CLOSURE_SLACK",
+    "CARCASSONNE_V28_FARM_MAJORITY", "CARCASSONNE_V28_MEEPLE_K",
+    "CARCASSONNE_V28_MEEPLE_RECOVERY_T0", "CARCASSONNE_V210_BAG_CLOSE",
+)
+
+
+def _frozen_config_hash(cfg) -> str:
+    """config_hash of a LeafConfig, EXCLUDING the default-off v2.10 `bag_close`
+    field (so the frozen v2.9 substrate keeps its historical hash across the field
+    addition — see FROZEN_V29_HASH). Mirrors the exclusion in
+    tests/test_v29_flat_curve.py::_cfg_hash and tests/test_frozen_substrates.py."""
+    import dataclasses as dc, hashlib, json
+    d = {k: (list(v) if isinstance(v, tuple) else v)
+         for k, v in dc.asdict(cfg).items()
+         if not (k == "bag_close" and v is False)}
+    return hashlib.sha256(
+        json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()[:16]
+
+
 def frozen_v29_cfg(value_norm: float = 2.0):
-    """Build the frozen v2.9 LeafConfig and assert its config_hash == FROZEN_V29_HASH. Loud on drift."""
-    import dataclasses as dc, hashlib, json, sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "level2"))
-    import eval_hybrid_handoff as EH
-    cfg = EH._heur_leaf_cfg(value_norm)
-    d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()}
-    h = hashlib.sha256(json.dumps(d, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
+    """Build the frozen v2.9 LeafConfig DETERMINISTICALLY and assert its
+    config_hash == FROZEN_V29_HASH. Loud on drift.
+
+    Built from an EXPLICIT full leaf-shape env override (not the once-cached global
+    DEFAULT_CONFIG), so session env pollution from sibling test modules cannot change
+    it: identical config whether run alone or in a polluted in-group session.
+    `value_norm` is the flat meeple_k (2.0 for the frozen substrate)."""
+    import os
+    from carcassonne_ai import virtual_score_v2 as _vs
+
+    keys = list(_FROZEN_CFG_ENV_SET) + list(_FROZEN_CFG_ENV_CLEAR) + ["CARCASSONNE_V25_MEEPLE_K"]
+    saved = {k: os.environ.get(k) for k in keys}
+    try:
+        for k, v in _FROZEN_CFG_ENV_SET.items():
+            os.environ[k] = v
+        os.environ["CARCASSONNE_V25_MEEPLE_K"] = str(float(value_norm))
+        for k in _FROZEN_CFG_ENV_CLEAR:
+            os.environ.pop(k, None)
+        cfg = _vs._config_from_env()
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    h = _frozen_config_hash(cfg)
     assert h == FROZEN_V29_HASH, f"leaf is not frozen v2.9 (config_hash {h} != {FROZEN_V29_HASH})"
     return cfg
 
