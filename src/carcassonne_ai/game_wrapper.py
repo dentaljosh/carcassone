@@ -56,6 +56,158 @@ from .features import N_FARM_SCALARS, N_SCALAR_FEATURES, encode_scalars
 SCORE_NORM_SCALE = 15.0  # see DECISIONS.md (validated against 1000 random games)
 
 
+# --- Window-overflow audit (measurement-only, DEFAULT OFF) -------------------
+# Phase 0.2 post-review measurement. `get_valid_moves` already computes
+# n_total / n_overflow (how many legal actions the centered window drops) but
+# exposes them nowhere, and `encode_board` silently skips placed tiles outside
+# the window. When CARCASSONNE_WINDOW_AUDIT=1, `get_valid_moves` appends one
+# per-decision record to `_WINDOW_AUDIT_LOG` so an offline replay can quantify
+# both effects. When the env var is unset (the default) the audit block is
+# skipped entirely — the mask, the raise condition, and every leaf/eval
+# semantic are byte-for-byte identical to before this change (asserted in the
+# audit script by confirming the log stays empty with the flag off). This is
+# read-only instrumentation: it NEVER alters the returned mask.
+_WINDOW_AUDIT = os.environ.get("CARCASSONNE_WINDOW_AUDIT", "0") == "1"
+_WINDOW_AUDIT_LOG: list = []
+
+# --- Legal-cache collision detector (Phase 0.3, DEFAULT OFF) -----------------
+# When CARCASSONNE_CACHE_COLLIDE_CHECK=1, every legal-moves-cache HIT recomputes
+# the mask fresh and, if it disagrees with the cached one, logs a full repro
+# (two distinct boards sharing one `string_representation` key) to
+# CARCASSONNE_CLIP_TRACE_DIR/cache_collision_<pid>.jsonl. Read-only diagnostic:
+# it returns the FRESH (correct) mask on a detected collision so the run is not
+# itself corrupted, but the mask/raise semantics are otherwise unchanged.
+_CACHE_COLLIDE_CHECK = os.environ.get("CARCASSONNE_CACHE_COLLIDE_CHECK", "0") == "1"
+
+
+def _state_fingerprint(state) -> dict:
+    """A DEEP fingerprint of the engine state — captures fields that
+    `string_representation` may omit, so a collision's two boards can be diffed
+    to find the missing key component. Diagnostic-only."""
+    def _tile_full(t):
+        if t is None:
+            return None
+        from wingedsheep.carcassonne.objects.side import Side
+        farms = []
+        for fc in getattr(t, "farms", ()) or ():
+            farms.append({
+                "farmer_positions": [getattr(s, "value", str(s)) for s in fc.farmer_positions],
+                "tile_connections": [getattr(s, "value", str(s)) for s in fc.tile_connections],
+                "city_sides": [getattr(s, "value", str(s)) for s in fc.city_sides],
+            })
+        return {
+            "desc": t.description,
+            "edges": [t.get_type(s).value for s in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)],
+            "shield": bool(t.shield), "chapel": bool(t.chapel), "flowers": bool(t.flowers),
+            "farms": farms,
+        }
+    placed = []
+    for coord in sorted(state.placed_coords, key=lambda c: (c.row, c.column)):
+        placed.append((coord.row, coord.column, _tile_full(state.board[coord.row][coord.column])))
+    meeples = []
+    for p, lst in enumerate(state.placed_meeples):
+        for mp in lst:
+            cws = mp.coordinate_with_side
+            meeples.append({
+                "player": p, "type": mp.meeple_type.value,
+                "row": cws.coordinate.row, "col": cws.coordinate.column,
+                "side": cws.side.value, "repr": repr(mp),
+            })
+    lta = state.last_tile_action
+    return {
+        "phase": state.phase.value,
+        "current_player": state.current_player,
+        "scores": list(state.scores),
+        "meeples_hand": list(state.meeples),
+        "abbots": list(getattr(state, "abbots", []) or []),
+        "deck_len": len(state.deck),
+        "deck_order": [t.description for t in state.deck],
+        "next_tile": _tile_full(state.next_tile),
+        "last_tile_action_repr": repr(lta),
+        "last_tile_coord": (
+            (lta.coordinate.row, lta.coordinate.column) if lta is not None else None
+        ),
+        "last_tile_full": (_tile_full(getattr(lta, "tile", None)) if lta is not None else None),
+        "placed": placed,
+        "meeples_placed": meeples,
+    }
+
+
+def _log_cache_collision(game, board, key, cached_mask, fresh_mask) -> None:
+    import hashlib
+    import json
+    import time
+    d = os.environ.get("CARCASSONNE_CLIP_TRACE_DIR")
+    cached_legal = sorted(int(i) for i in np.flatnonzero(cached_mask))
+    fresh_legal = sorted(int(i) for i in np.flatnonzero(fresh_mask))
+    this_fp = _state_fingerprint(board.state)
+    other_fp = getattr(game, "_collide_shadow", {}).get(key)
+    # Field-level diff of the two colliding boards' fingerprints.
+    fp_diff = {}
+    if other_fp is not None:
+        for k in set(this_fp) | set(other_fp):
+            if this_fp.get(k) != other_fp.get(k):
+                fp_diff[k] = {"hit_board": this_fp.get(k), "cached_board": other_fp.get(k)}
+    rec = {
+        "ts": time.time(),
+        "pid": os.getpid(),
+        "key": key,
+        "key_hash": hashlib.blake2b(key.encode(), digest_size=8).hexdigest(),
+        "board_offset": [board.offset.origin_row, board.offset.origin_col, board.offset.size],
+        "phase": board.state.phase.value,
+        "cur_player": board.state.current_player,
+        "cached_legal": cached_legal,
+        "fresh_legal": fresh_legal,
+        "cached_minus_fresh": sorted(set(cached_legal) - set(fresh_legal)),
+        "fresh_minus_cached": sorted(set(fresh_legal) - set(cached_legal)),
+        "has_other_board": other_fp is not None,
+        "fingerprint_diff_fields": sorted(fp_diff.keys()),
+        "fingerprint_diff": fp_diff,
+    }
+    if d:
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, f"cache_collision_{os.getpid()}.jsonl"), "a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+
+
+def window_audit_enabled() -> bool:
+    """True iff CARCASSONNE_WINDOW_AUDIT=1 was set at import time."""
+    return _WINDOW_AUDIT
+
+
+def drain_window_audit() -> list:
+    """Return the accumulated per-decision audit records and clear the buffer.
+
+    Each record is a dict:
+      phase           'tiles' | 'meeples'
+      n_total         legal actions the engine emitted at this decision
+      n_overflow      how many of those the centered window dropped
+      k_remaining     tiles left to place (total_tiles - tile_count); stage proxy
+      n_oow_tiles     placed tiles outside the window (what encode_board skips)
+      window_size     live window edge length (board.offset.size)
+    """
+    global _WINDOW_AUDIT_LOG
+    out = _WINDOW_AUDIT_LOG
+    _WINDOW_AUDIT_LOG = []
+    return out
+
+
+def _count_out_of_window_tiles(state, off) -> int:
+    """Count placed tiles outside the centered window — exactly the tiles
+    `encode_board` / `get_canonical_form` silently skip. Read-only; used only by
+    the audit block (mirrors board_repr.board_overflows_window but counts)."""
+    n = 0
+    origin_row, origin_col, size = off.origin_row, off.origin_col, off.size
+    for r, row in enumerate(state.board):
+        for c, tile in enumerate(row):
+            if tile is None:
+                continue
+            wr, wc = r - origin_row, c - origin_col
+            if not (0 <= wr < size and 0 <= wc < size):
+                n += 1
+    return n
+
+
 @dataclass
 class Board:
     """Container for engine state plus the cached window offset.
@@ -170,6 +322,8 @@ class Game:
             self._legal_cache.clear()
         self._legal_cache_hits = 0
         self._legal_cache_misses = 0
+        if hasattr(self, "_collide_shadow"):
+            self._collide_shadow.clear()
 
     def cache_stats(self) -> dict:
         """Returns hits/misses/size for the legal-moves cache."""
@@ -319,9 +473,31 @@ class Game:
             cached = self._legal_cache.get(key)
             if cached is not None:
                 self._legal_cache_hits += 1
+                if _CACHE_COLLIDE_CHECK:
+                    # DIAGNOSTIC (Phase 0.3): recompute the mask fresh and, if it
+                    # disagrees with the cached one, we have TWO distinct boards
+                    # sharing one string_representation key — a cache-corrupting
+                    # collision. Log a full repro, then return the FRESH mask so
+                    # the diagnostic run itself is not corrupted.
+                    fresh = self._compute_mask(board)
+                    if not np.array_equal(fresh, cached):
+                        _log_cache_collision(self, board, key, cached, fresh)
+                        return fresh
                 return cached
             self._legal_cache_misses += 1
 
+        mask = self._compute_mask(board)
+        if self._legal_cache is not None:
+            mask.flags.writeable = False  # protect cached masks from mutation
+            self._legal_cache[key] = mask
+            if _CACHE_COLLIDE_CHECK:
+                if not hasattr(self, "_collide_shadow"):
+                    self._collide_shadow = {}
+                self._collide_shadow[key] = _state_fingerprint(board.state)
+        return mask
+
+    def _compute_mask(self, board: Board) -> np.ndarray:
+        """Enumerate the engine's legal actions into a bool mask (no cache)."""
         mask = np.zeros(self.get_action_size(), dtype=bool)
         n_total = 0
         n_overflow = 0
@@ -334,6 +510,21 @@ class Game:
                 continue
             mask[idx] = True
 
+        # Window-overflow audit (measurement-only; skipped byte-for-byte when
+        # CARCASSONNE_WINDOW_AUDIT is unset). Records the already-computed
+        # n_total / n_overflow plus the out-of-window placed-tile count so an
+        # offline replay can quantify how often either bug site fires. Placed
+        # before the all-overflow raise so the pathological case is recorded too.
+        if _WINDOW_AUDIT:
+            _WINDOW_AUDIT_LOG.append({
+                "phase": board.state.phase.value,
+                "n_total": n_total,
+                "n_overflow": n_overflow,
+                "k_remaining": board.total_tiles - board.tile_count,
+                "n_oow_tiles": _count_out_of_window_tiles(board.state, board.offset),
+                "window_size": board.offset.size,
+            })
+
         # If every legal action is outside the window, surface a clear signal
         # so the caller can drop the game (rather than seeing an empty mask
         # and confusing it with a genuine no-legal-moves terminal).
@@ -345,9 +536,6 @@ class Game:
                 f"Caller should drop this game from training."
             )
 
-        if self._legal_cache is not None:
-            mask.flags.writeable = False  # protect cached masks from mutation
-            self._legal_cache[key] = mask
         return mask
 
     # --- Termination / value ---------------------------------------------

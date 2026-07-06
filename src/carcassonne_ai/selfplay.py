@@ -30,6 +30,7 @@ from .aux_targets import (
     extract_terminal_ownership,
     ownership_planes,
 )
+from . import clip_trace
 from .game_wrapper import Game
 from .mcts import NeuralMCTS
 from .warmstart import GameDataset
@@ -289,44 +290,90 @@ def play_one_selfplay_game(
     ply = 0
     while game.get_game_ended(board, 0) == 0.0 and ply < max_plies:
         cur_player = board.state.current_player
-        mask = game.get_valid_moves(board)
-        legal = np.flatnonzero(mask)
-        if legal.size == 0:
-            break
 
         # Route by player when in anchor-fraction mode; otherwise the learner
         # plays both sides as in standard self-play.
         is_learner_move = (anchor_mcts is None) or (cur_player == learner_player_idx)
         mcts = learner_mcts if is_learner_move else anchor_mcts
 
+        # ROOT-CAUSE FIX (Phase 0.3, invalid-visit clip): clear the tree AND the
+        # legal-moves cache BEFORE snapshotting the mask below. The mask is used
+        # both to build the policy target (clip) and as the stored training mask,
+        # so it MUST equal the mask the search's root uses. `get_valid_moves` is a
+        # function of the board *instance*, not of `string_representation`:
+        # rotationally-symmetric tiles (e.g. straight_road via turn(1) vs turn(3))
+        # yield edge-identical boards with the SAME key but `.farms` in a rotated
+        # order, so the engine's `possible_meeple_actions` picks a different
+        # representative farmer corner (`farmer_positions[0]`) — the same legal
+        # field encodes to a different action index. The legal-moves cache is
+        # keyed by `string_representation`, which abstracts symmetric rotations,
+        # so a stale entry left in the cache by the PREVIOUS ply's search (a
+        # different rotation-instance of this position) would be served to the
+        # snapshot here, producing a mask whose farmer indices differ from the
+        # ones the fresh search actually visits → the clip. Clearing the cache
+        # now makes the snapshot compute on THIS board's own instance, identical
+        # to what `search` recomputes from the same object. See
+        # measurement/invalid_visit_clip/ROOT_CAUSE.md.
+        mcts.clear()
+
+        mask = game.get_valid_moves(board)
+        legal = np.flatnonzero(mask)
+        if legal.size == 0:
+            break
+
         # Snapshot the canonical board encoding from the current player's POV.
         # (Only used if we actually record this move.)
         if is_learner_move:
             obs, scalars = game.get_canonical_form(board, cur_player)
 
-        # Run MCTS, build policy target from visit counts.
-        mcts.clear()
+        # Run MCTS from the same board instance the snapshot mask was taken on
+        # (the cache is already cleared, so the search's root recomputes an
+        # identical mask). NOTE: do NOT clear() again here — that would re-run on
+        # the same board (harmless) but the clear must precede the snapshot.
         mcts.search(board)
 
         if is_learner_move:
             counts, actions = mcts.root_visit_distribution(board)
             policy = np.zeros(A, dtype=np.float32)
-            # Defensive: intersect MCTS-produced visits with the snapshot mask
-            # before normalizing. In rare cases NeuralMCTS produces a visit on
-            # an action the outer `get_valid_moves(board)` call doesn't include
-            # (most likely a stale legal-moves-cache entry from a prior search;
-            # not yet root-caused). Without this clip, the trainer's policy-CE
-            # validator (which checks "no mass on masked-off actions") aborts
-            # the run. Dropping such visits is correct: the snapshot mask is
-            # the contract for legality at this position. If everything got
-            # filtered we fall back to uniform-over-legal.
+            # Build the policy target from the root visit distribution. Every
+            # visited action MUST be in the snapshot mask: the mask was computed
+            # (above, after clear()) on this exact board instance, and the
+            # search's root recomputes an identical mask from the same object, so
+            # `root_visit_distribution` cannot return an action the mask omits.
+            # This was previously a silent DROP guarding against a stale
+            # legal-cache entry from a different rotation-instance of the position
+            # (root-caused Phase 0.3; the clear() move above eliminates it). It is
+            # now a HARD ASSERT with a full-repro telemetry dump (clip_trace):
+            # if a masked-off visit ever appears again, a real invariant broke
+            # (e.g. cross-ply cache reuse reintroduced) and we fail loudly rather
+            # than silently corrupt the policy/mask training targets.
+            clip_trace.LEARNER_MOVE_COUNT += 1
             kept = 0.0
+            offending: list[tuple[int, float]] = []
             if counts.sum() > 0:
                 for a, c in zip(actions, counts):
                     ai = int(a)
                     if mask[ai]:
                         policy[ai] = float(c)
                         kept += float(c)
+                    elif c > 0:
+                        offending.append((ai, float(c)))
+            if offending:
+                clip_trace.CLIP_MOVE_COUNT += 1
+                clip_trace.CLIP_COUNT += len(offending)
+                rec = clip_trace.capture_clip_repro(
+                    game=game, board=board, mcts=mcts, mask=mask,
+                    offending=offending, ply=ply, cur_player=cur_player,
+                )
+                raise AssertionError(
+                    "self-play policy target: MCTS visited action(s) "
+                    f"{[a for a, _ in offending]} outside the snapshot legality "
+                    f"mask at ply {ply} (k_remaining={rec.get('k_remaining')}). "
+                    "This is the invalid-visit-clip invariant (Phase 0.3): the "
+                    "snapshot mask must equal the search's root mask. A repro was "
+                    "written under CARCASSONNE_CLIP_TRACE_DIR. See "
+                    "measurement/invalid_visit_clip/ROOT_CAUSE.md."
+                )
             if kept > 0:
                 policy /= kept
             else:
