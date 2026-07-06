@@ -1,6 +1,6 @@
 # PHASE 1.1 — PUCT-with-heuristic-priors vs the deep-classical champion — RESULTS
 
-**Status (2026-07-06): SCREEN FIRING HARD; confirm pending.** MEASUREMENT ONLY — PRODUCTION.yaml / champion / v2.7 / v2.9 leaf UNCHANGED. A champion-flip is *proposed only* after the pre-registered n=400 confirm.
+**Status (2026-07-06): CONFIRM FIRED — +148.2 elo / z10.17 / n=400 fresh band (see CONFIRM section below).** MEASUREMENT ONLY — PRODUCTION.yaml / champion / v2.7 / v2.9 leaf UNCHANGED. Champion-flip is *proposed only* ([PHASE1.1_FLIP_PROPOSAL_DRAFT.md](PHASE1.1_FLIP_PROPOSAL_DRAFT.md)), pending Joshua's review. K=4 endgame check + τ bracket auto-running.
 
 Pre-registration: [PLAN.md](PLAN.md). Hypothesis (MT-1, the highest-EV review item): production `HeuristicMCTS` uses random-expansion UCT (C=3.0, no priors, one-random-child-per-sim, int leaf) — well below the classical frontier at equal compute. Adding PUCT + heuristic-leaf priors + expand-all should beat it at equal wall-clock.
 
@@ -37,8 +37,9 @@ Fix τ=5/visits/float. Cells: `visits@{800,2750} × c{1.0,1.5,2.5}` (same-c cell
 
 **800 visits landscape (n=100, per-cell bands → cross-c contrasts carry band noise):** c1.0 **+135** (z3.58) · c1.5 **+52.5** (z1.99) · c2.5 **+92.5** (z1.79) — non-monotonic and jumpy = noise/band-dominated, consistent with a common ~+90 plateau. The "selector = +72" headline (round-4) was measured at c=1.0 only; this landscape shows the selector×c effect is not a clean constant. The clean selector read is the *paired* Q-vs-visits at 2750/c1.5 (same decks), pending.
 
-## Pre-registered CONFIRM (pending round-5)
-Config `c*/τ5/visits/float/2750` at **n=400 on a FRESH band (9.4e9)**, gate **paired-elo ≥ +35 (2σ) → propose champion flip**. Expected landing **+60–100** (winner's-curse-shrunk). If (0,+35): extend the SAME band to n=800, gate +25 (do NOT re-roll bands). If ≤0: the plateau was band-luck — audit the 800/2750 parity first. Then a **K=4 n=200** check (real champion endgame). 
+## CONFIRM — FIRED (2026-07-06 18:54)
+Config `c1.5/τ5/visits/float/2750` at **n=400 on FRESH band 9.4e9**: **+148.2 elo (±19.0 1σ unpaired; paired z=10.17), W276/D9/L115, wr 0.701** vs h6400. Gate was +35 (2σ) → **FIRES, cleared by ~8σ.** Landed *above* the winner's-curse-shrunk prediction (+60–100): the effect is larger/more robust than the max-of-k model implied — expected, since c1.5 was a pre-specified interior point, not a fished argmax. Source: `CONFIRM_PROGRESS_K2.tsv` + cell `summary.json`. **→ champion-flip PROPOSAL is live** ([PHASE1.1_FLIP_PROPOSAL_DRAFT.md](PHASE1.1_FLIP_PROPOSAL_DRAFT.md), pending Joshua's review — MEASUREMENT ONLY, nothing executed).
+Auto-continuing (orchestrator): **K=4 n=200** same-band CRN endgame check (does the win survive the real champion endgame) → then the τ∈{3,8} robustness bracket. Results append here on landing.
 
 ## Implications if the confirm holds (PROPOSE, do not execute)
 1. **Champion flip** to the PUCT-priors agent (a search-algorithm win, not a learned-value win). 2. **The whole ruler ladder is calibrated to HeuristicMCTS** (the thing this beats) → **Phase 3 re-anchoring becomes load-bearing**; historical "parity with deep search" verdicts must be re-read against the new rung. 3. **Phase 1.2 (ID-alpha-beta)** — the review gated it on "1.1 fires" — is now worth doing. 4. **Phase 5 (Gumbel) warm-start** distills from this winner. 5. This **overturns the program's "strength arc converged / every lever closed" headline** (STATUS 2026-07-05): a classical-search lever the reviews flagged as highest-EV was not closed.

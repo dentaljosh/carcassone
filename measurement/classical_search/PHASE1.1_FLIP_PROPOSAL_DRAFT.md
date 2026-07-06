@@ -2,7 +2,7 @@
 
 **Status: DRAFT decision doc — PROPOSE ONLY.** Written 2026-07-06, pre-registered ahead of the n=400 confirm so it is ready when the number lands. **MEASUREMENT ONLY: nothing here changes `governance/PRODUCTION.yaml`, the champion pointer, or the v2.7/v2.9 leaf. A champion flip is *proposed*, never executed, and only after Joshua's explicit go.**
 
-Confirm read-out (fill on landing): `<FILL: confirm n=400 elo ± / z / K=4 n=200 result>`. Gate = **paired-elo ≥ +35 (2σ) → this proposal is live** (`measurement/classical_search/PLAN.md`, pre-registered thresholds).
+**Confirm read-out (2026-07-06 18:54): n=400, FRESH band 9.4e9, +148.2 elo (±19.0 1σ unpaired; paired z=10.17), W276/D9/L115, wr 0.701 → FIRES** (gate was +35/2σ; cleared by ~8σ). This is the official pre-registered number and the proposal is **LIVE, pending Joshua's review**. It landed *above* the winner's-curse-shrunk prediction (+60–100) — the effect is larger and more robust than the max-of-k model suggested, consistent with c1.5 being a pre-specified interior point (not a fished argmax). **K=4 n=200 same-band endgame check: running** (does the win survive the real champion endgame — result pending). Source: `measurement/classical_search/CONFIRM_PROGRESS_K2.tsv` + cell `summary.json`; `PLAN.md` pre-registered thresholds.
 
 ---
 
