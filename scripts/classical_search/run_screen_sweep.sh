@@ -13,8 +13,29 @@ REPO=/home/doctor/projects/carcassone
 PY=$REPO/.venv/bin/python
 HARNESS=$REPO/scripts/classical_search/eval_puct_priors.py
 N=100; CHAMP=6400; K=2
-# cell = "c tau quant select"
-if [ "$ROUND" = 3 ]; then
+# cell = "c tau quant select [sims]"  (sims optional; defaults to $CAND)
+if [ "$ROUND" = 5 ]; then
+  # Fable-guided: fix tau=5, selector=visits, quant=float. Sweep c at the DEPLOYABLE 2750
+  # sims (visits), + a Q cross-check at 2750, + the matching visits@800 cells for the free
+  # "does more sims help" read (paired same-band). Pick c* by neighbor-smoothing, not argmax.
+  CAND=2750
+  CELLS=("1.0 5 float visits 800" "1.5 5 float visits 800" "2.5 5 float visits 800" \
+         "1.0 5 float visits 2750" "1.5 5 float visits 2750" "2.5 5 float visits 2750" \
+         "1.5 5 float Q 2750")
+  BAND_BASE=9030000000    # SAME band as round-4 so visits@800 c1.0 (=+135) is reused + paired
+  PROG=$REPO/measurement/classical_search/SCREEN_PROGRESS_R5.tsv
+elif [ "$ROUND" = 4 ]; then
+  # BROADEN at CYTHON 800 sims (bit-exact to round-1's pure-Python 800, so directly comparable
+  # to round-1's +107 landscape; Cython makes 800-sim games faster). Untested axes only
+  # (round-1 already covered c×τ @ 800): the `visits` selector, higher tau (8,12), int-quant,
+  # finer/higher c. Winner(s) get pumped to 2750 (equal-time) + confirmed.
+  CAND=800
+  CELLS=("1.0 5 float visits" "1.5 5 float visits" "2.5 5 float visits" \
+         "1.5 8 float Q" "2.5 8 float Q" "1.5 12 float Q" \
+         "2.0 5 float Q" "3.0 5 float Q" "1.5 5 int Q")
+  BAND_BASE=9030000000
+  PROG=$REPO/measurement/classical_search/SCREEN_PROGRESS_R4.tsv
+elif [ "$ROUND" = 3 ]; then
   # CYTHON candidate @ equal-time 2750 sims (float-Cython, bit-exact). Focused best-region
   # re-screen: locate the Cython optimum in c, test the untested `visits` selector + softer tau.
   CAND=2750
@@ -55,9 +76,17 @@ fi
 
 i=0
 for cell in "${CELLS[@]}"; do
-  read -r c tau quant select <<< "$cell"
-  band=$((BAND_BASE + i*1000000))
-  sub="c${c}_tau${tau}_${quant}_${select}_s${CAND}_k${K}"
+  read -r c tau quant select sims <<< "$cell"
+  sims="${sims:-$CAND}"
+  if [ "$ROUND" = 5 ]; then
+    # per-c band so same-c cells (800 vs 2750, visits vs Q) share decks -> paired reads,
+    # and c1.0/1.5 visits@800 reuse round-4's cached same-band results.
+    case "$c" in 1.0) ci=0;; 1.5) ci=1;; 2.5) ci=2;; *) ci=$i;; esac
+    band=$((BAND_BASE + ci*1000000))
+  else
+    band=$((BAND_BASE + i*1000000))
+  fi
+  sub="c${c}_tau${tau}_${quant}_${select}_s${sims}_k${K}"
   dir="$OUT_ROOT/$sub"
   mkdir -p "$dir"
   t0=$(date +%s)
@@ -67,7 +96,7 @@ for cell in "${CELLS[@]}"; do
   iter=0
   while [ "$(count_results "$dir")" -lt "$N" ] && [ $iter -lt 80 ]; do
     $PY "$HARNESS" --c-puct "$c" --tau-p "$tau" --leaf-quantize "$quant" --final-select "$select" \
-      --cand-sims $CAND --champ-sims $CHAMP --exact-k $K --n $N --paired \
+      --cand-sims $sims --champ-sims $CHAMP --exact-k $K --n $N --paired \
       --workers "$WORKERS" --shared-claim --claim-host "$ROLE-$HOST" --claim-stale-secs 300 \
       --no-results-csv --seed-start $band --out-root "$OUT_ROOT" --out-subdir "$sub" \
       > /tmp/sweep_${ROLE}_${sub}.log 2>&1
@@ -78,7 +107,7 @@ for cell in "${CELLS[@]}"; do
   if [ "$ROLE" = primary ]; then
     # aggregate (all cached -> summary.json + results.csv row + printed block)
     $PY "$HARNESS" --c-puct "$c" --tau-p "$tau" --leaf-quantize "$quant" --final-select "$select" \
-      --cand-sims $CAND --champ-sims $CHAMP --exact-k $K --n $N --paired \
+      --cand-sims $sims --champ-sims $CHAMP --exact-k $K --n $N --paired \
       --seed-start $band --out-root "$OUT_ROOT" --out-subdir "$sub" > /tmp/agg_${sub}.log 2>&1
     secs=$(( $(date +%s) - t0 ))
     $PY - "$dir/summary.json" "$sub" "$c" "$tau" "$secs" >> "$PROG" 2>/tmp/parse_${sub}.log <<'PYEOF'
