@@ -1,7 +1,20 @@
 # PHASE 1.1b — TRANSITIVITY ROUND-ROBIN (the RPS test) — PRE-REGISTRATION
 
-**Status: PRE-REGISTERED 2026-07-06, not yet launched (pending Joshua's go + box assignment).**
-**Question:** is the confirmed +148.2 (z10.17, n=400, `b3d3312`) a *transitive* strength gain, or a non-transitive matchup exploit (RPS) against the one opponent we measured — the HeuristicMCTS champion the whole ruler is calibrated to?
+**Status: COMPLETE 2026-07-07 06:31 — BOTH GATES PASS. RPS hypothesis RETIRED; +148.2 is transitive strength.**
+
+| candidate | vs neural iter_02 (band 9.5e9) | vs h12800 (band 9.6e9) |
+|---|---|---|
+| **PUCT@2750** | **M1 = +230.2** (155/6/39, z11.0) | **M3 = +149.3** (139/3/58, z6.7) |
+| **h6400 champion** | **M2 = +36.6** (109/3/88, z1.4) | **M4 = −8.7** (96/3/101, z−1.0) |
+
+- **G1 (RPS gate) PASS:** M1−M2 = +193.6 (σ_diff≈39) vs transitivity's predicted ~+148 — PUCT *over*-delivers by ~1σ against the independent neural lineage. An h6400-specific exploit would show M1 *under* M2's implied level; the opposite happened.
+- **G2 (compute-odds) PASS:** PUCT@2750 beats h12800 (+149.3, z6.7) while giving it ~2.3× compute. The kicker — **M4 = −8.7 (tie): the champion cannot beat a doubled version of itself.** HeuristicMCTS is search-SATURATED; the +148 is algorithmic (priors+expand-all+visit-select), not a compute or depth artifact. (M4 also n=200-confirms — and REVERSES the sign of — the old h12800>h6400 screen wr0.605: at equal *leaf/config* vs our candidate's decks, more sims of random-expansion buys nothing.)
+- M2 (+36.6) independently replicates the historical h6400-vs-rodv2 margin (+22..+32, chain autopsy) → harness measures the same world.
+
+Numbers: `ROUND_ROBIN_PROGRESS.tsv` + per-cell `summary.json` under `puct_roundrobin/rr_rr{1..4}_k2/`. **Consequence: the champion-flip proposal is on transitive footing; proceed to sign + K=3 + re-anchor.**
+
+---
+**Original question (2026-07-06):** is the confirmed +148.2 (z10.17, n=400, `b3d3312`) a *transitive* strength gain, or a non-transitive matchup exploit (RPS) against the one opponent we measured — the HeuristicMCTS champion the whole ruler is calibrated to? **→ ANSWERED: transitive.**
 
 **Why this outranks everything else:** if non-transitive, the champion flip, the ruler re-anchor, and any further config tuning are all built on a matchup artifact. Establish the advantage is real before optimizing or acting on it. (Config sweeps: DROPPED — within-plateau tuning ≤~20 elo, gates nothing, re-opens the multiple-comparisons surface. τ bracket: DROPPED per Joshua 2026-07-06. `value_norm` is the only mechanistically distinct axis and is deferred until after this test.)
 

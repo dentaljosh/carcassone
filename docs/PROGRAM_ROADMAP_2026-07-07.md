@@ -6,9 +6,9 @@
 
 ---
 
-## NOW (in flight, autonomous — survives session limits; the RR orchestrator is a detached OS process)
-- 🔄 **RR-3/RR-4** (PUCT & h6400 vs h12800, W52) → auto gate-math (G2) → boxes free ~04:15. G1 already **PASSED** (M1 +230.2 vs M2 +36.6 shared decks — transitive, not RPS). [ROUND_ROBIN_PLAN.md](../measurement/classical_search/ROUND_ROBIN_PLAN.md)
-- ⏸️ **Stage-0 adapter** — agent died on session limits (resets 3:20am ET) leaving `scripts/canonical_az/solver_score_agent.py` + test **uncommitted, extraction UNVERIFIED** ("per-child numbers not yet trusted"). Resume/verify before any measurement. [TEACHER_TAU_PLAN.md](../measurement/classical_search/TEACHER_TAU_PLAN.md)
+## NOW (boxes FREE as of 06:31 — nothing running; next launch is gated on Joshua)
+- ✅ **ROUND-ROBIN COMPLETE — both gates PASS, RPS retired.** M1 +230.2 / M2 +36.6 / M3 +149.3 / M4 −8.7 (champion ties its own double = search-saturated; PUCT's win is algorithmic). [ROUND_ROBIN_PLAN.md](../measurement/classical_search/ROUND_ROBIN_PLAN.md). Close-out: table stamped; results.csv rows for rr3/rr4 pending (A3).
+- ⏸️ **Stage-0 adapter** — agent died on session limits (reset 3:20am ET) leaving `scripts/canonical_az/solver_score_agent.py` + test **uncommitted, extraction UNVERIFIED** ("per-child numbers not yet trusted"). Resume/verify before any measurement. [TEACHER_TAU_PLAN.md](../measurement/classical_search/TEACHER_TAU_PLAN.md)
 
 ## GATE — Joshua decisions needed (nothing below executes without them)
 1. **Sign the champion flip** (G1 passed; proposal live): [PHASE1.1_FLIP_PROPOSAL_DRAFT.md](../measurement/classical_search/PHASE1.1_FLIP_PROPOSAL_DRAFT.md). Recommend: sign after K=3 check (A1). Execution = PRODUCTION.yaml + CHECKPOINT_LINEAGE row + CL-041 amendment + close-out.
