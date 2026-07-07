@@ -2,6 +2,8 @@
 
 > **Current state only.** A fresh thread reads [CLAUDE.md](CLAUDE.md) → here and takes over. The historical "Right now" narrative (carc-orch saga, hardware investigation, cluster-wiring epochs) is frozen in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md); the durable record is dated [DECISIONS.md](DECISIONS.md) entries + git log. **Do NOT re-stack old epochs here** — update the blocks below in place, and run the 5-touch close-out (CLAUDE.md) when a run concludes.
 
+> **📋 The full work queue now lives in [docs/PROGRAM_ROADMAP_2026-07-07.md](docs/PROGRAM_ROADMAP_2026-07-07.md)** (created 2026-07-07 after Phase 1.1 fired + the transitivity round-robin + the Fable premise-expiration audit stacked ~3-5 box-days of gated work). This block stays the live-state snapshot; the roadmap is the queue. Update BOTH on close-out.
+
 ## Right now (2026-07-06) — 🚀 **POST-REVIEW PROGRAM: Phase 0 gates DONE; Phase 1.1 (classical search, MT-1) CONFIRMED FIRED — a PUCT-heuristic-priors agent beats the deep-classical h6400 champion by +148.2 elo (z10.17, n=400 fresh band) at equal wall-clock. This OVERTURNS the 2026-07-05 "converged / everything closed" headline below.** Executing the combined external-review implementation prompt. MEASUREMENT ONLY — PRODUCTION.yaml/champion/v2.7/v2.9 UNCHANGED; champion flip is *proposed* ([measurement/classical_search/PHASE1.1_FLIP_PROPOSAL_DRAFT.md](measurement/classical_search/PHASE1.1_FLIP_PROPOSAL_DRAFT.md)), pending Joshua's review.
 
 **Committed this session (8 commits, `2d292ce`..`b9ad65d` on `rod_v2_flywheel`):**
