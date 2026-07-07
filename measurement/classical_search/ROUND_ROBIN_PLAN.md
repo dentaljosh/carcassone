@@ -30,7 +30,8 @@ Under transitivity: **M1 ≈ M2 + ~148** and **M3 ≈ 148 − M4**.
 - No peeking, no band re-rolls, no extra cells without a new pre-registration line.
 
 ## Cost / ops
-- ETA (per confirm-calibrated game costs: h6400-equivalent side ≈ 650s/game): RR-1/2 ≈ ~80 min each at W30; RR-3/4 (h12800 side ~1300s) ≈ ~3.5h each at W30. **Total ≈ 9h local-only; ~5h split local+laptop.** GPU (orch) needed for RR-1/2 only.
+- **APPROVED (Joshua 2026-07-06): local + laptop, work-stealing. W30 local / W22 laptop for the CPU-only cells (RR-3/4); W48 local / W26 laptop under the rust orchestrator for the neural-opponent cells (RR-1/2).** Launcher: `scripts/classical_search/run_round_robin.sh`.
+- ETA (per confirm-calibrated game costs: h6400-equivalent side ≈ 650s/game): RR-1/2 ≈ ~35–45 min each at orch W74 combined; RR-3/4 (h12800 side ~1300s) ≈ ~2h each at W52 combined. **Total ≈ ~5h split local+laptop.** Order: RR-1/2 first (fast + RPS-decisive), RR-3/4 overnight.
 - **Prerequisites:** (1) laptop bundle-sync to `b3d3312` (it's at `b9ad65d`; confirm games were still clean — no game-code commits in between — but sync before any new run). (2) Harness: `eval_puct_priors.py` grows an `--opponent {h<sims>|net:<ckpt>}` flag (or the rod_v2 net-vs-net harness gains the PUCT-priors agent) + smoke at production knobs. (3) Pre-launch census both boxes.
 - **RAM guard (the 2026-07-06 WSL-crash lesson):** K stays ≤2 here (cheap). Any future K≥3 run: `CARCASSONNE_TT_CAP` set + W sized to VM RAM (the K=4 W10 run grew TTs ~3.5h until the WSL VM died — it was memory, not thermal).
 
