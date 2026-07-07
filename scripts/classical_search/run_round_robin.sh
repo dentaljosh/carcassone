@@ -34,8 +34,17 @@ PROG=$REPO/measurement/classical_search/ROUND_ROBIN_PROGRESS.tsv
 export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
 export CARCASSONNE_V29_MEEPLE_CURVE=-8,-4,-1,0,2,3,4,5 CARCASSONNE_V25_MEEPLE_K=2.0
 export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_V25_VALUE_BLEND=0
+ORCH_FLAGS=""
 if [ "$ORCH" = 1 ]; then
-  : # orch env/flag per harness build — filled in after the subagent reports (CARC_ORCH=...)
+  # carc-orch SHM client (harness --shm-eval-server). Start the server on THIS box first
+  # (it owns the GPU; the harness workers are CPU-only SHM clients), then export
+  # CARC_ORCH_SHM=<shm-name> before running this launcher. Server recipe (per box):
+  #   $PY scripts/export_torchscript.py --checkpoint $NET_CKPT --out /tmp/carc_rr_iter02.ts.pt --device cuda
+  #   nice -n 19 rust/carc-orch/run_server.sh --model /tmp/carc_rr_iter02.ts.pt --transport shm \
+  #     --shm-name <shm-name> --workers <W> --n-scalar 12 --device cuda --max-batch 16 \
+  #     --batch-timeout-ms 2.0 --forwarders 4 --watchdog-secs 30
+  # (iter_02.pt n_scalar_features=12. Without CARC_ORCH_SHM the cell still runs, net-on-CPU.)
+  [ -n "${CARC_ORCH_SHM:-}" ] && ORCH_FLAGS="--shm-eval-server ${CARC_ORCH_SHM}"
 else
   export CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 fi
@@ -48,7 +57,8 @@ clean_stale() { find "$1" -name 'seed*.claim' -mmin +4 2>/dev/null | while read 
 echo "[$ROLE $HOST] $CELL start W=$W ($(count_results "$DIR")/$N cached)"
 t0=$(date +%s); iter=0
 while [ "$(count_results "$DIR")" -lt "$N" ] && [ $iter -lt 80 ]; do
-  $PY "$HARNESS" --candidate "$CAND" --opponent "$OPP" \
+  # shellcheck disable=SC2086
+  $PY "$HARNESS" --candidate "$CAND" --opponent "$OPP" $ORCH_FLAGS \
     --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits \
     --cand-sims 2750 --champ-sims 6400 --exact-k $K --n $N --paired \
     --workers "$W" --shared-claim --claim-host "$ROLE-$HOST" --claim-stale-secs 300 \
@@ -58,7 +68,8 @@ while [ "$(count_results "$DIR")" -lt "$N" ] && [ $iter -lt 80 ]; do
   [ "$(count_results "$DIR")" -lt "$N" ] && sleep 5
 done
 if [ "$ROLE" = primary ]; then
-  $PY "$HARNESS" --candidate "$CAND" --opponent "$OPP" \
+  # shellcheck disable=SC2086
+  $PY "$HARNESS" --candidate "$CAND" --opponent "$OPP" $ORCH_FLAGS \
     --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits \
     --cand-sims 2750 --champ-sims 6400 --exact-k $K --n $N --paired \
     --seed-start $BAND --out-root "$OUT_ROOT" --out-subdir "$SUB" > /tmp/rr_agg_${CELL}.log 2>&1

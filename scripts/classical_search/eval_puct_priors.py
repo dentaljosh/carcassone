@@ -30,6 +30,22 @@ Usage:
       --cand-sims 800 --champ-sims 6400 --exact-k 4 --n 100 --paired \
       --seed-start 9000000000 --workers 14 \
       --out-root /mnt/c/carc-shared/classical_search --shared-claim
+
+Phase 1.1b transitivity round-robin (measurement/classical_search/ROUND_ROBIN_PLAN.md)
+adds two OPTIONAL flags (legacy invocations are byte-identical without them):
+  --candidate {puct|h<sims>}   h<sims> = plain HeuristicMCTS candidate (same v2.9 leaf
+                               + exact-K handoff as the champion side); puct = default.
+  --opponent {h<sims>|net:<ckpt.pt>}
+                               h<sims> = HeuristicMCTS opponent (+ exact-K handoff).
+                               net:<ckpt> = NeuralMCTS opponent, play knobs PINNED to
+                               the rod_v2 anchor harness (scripts/level2/
+                               eval_hybrid_handoff.py ITER8_*): sims=200, c_puct=3.0,
+                               v2.9 leaf + residual_scale=0.25, BARE (no exact tail —
+                               the anchor rows were played bare). Net-on-CPU per worker
+                               by default; pass --shm-eval-server <NAME> to attach the
+                               workers to a running carc-orch SHM orchestrator.
+  New-flag cells get rr_* out-subdirs (e.g. rr_puct2750_vs_net-iter02_k2); seat pairing,
+  deck seeds, claims, aggregation and summary.json ride the existing machinery.
 """
 from __future__ import annotations
 
@@ -96,6 +112,18 @@ except Exception:  # pragma: no cover
 EVAL_ROOT = REPO / "data" / "classical_search"
 CHAMP_C = 3.0  # production UCT exploration constant for HeuristicMCTS
 EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
+
+# Neural-opponent play knobs — PINNED to the rod_v2 anchor construction
+# (scripts/level2/eval_hybrid_handoff.py: ITER8_SIMS / ITER8_CPUCT /
+# ITER8_RESIDUAL_SCALE + _make_iter8_mcts), the harness behind the rod_v2 iter_02
+# anchor rows (results.csv rodv2_iter02_vs_heur6400_v29_n200 /
+# rodv2_iter02_vs_heur3200_v29_n200, launched via scripts/rod_v2/run_heur_eval_v29.sh).
+# NET_MEEPLE_K matches that wrapper's --meeple-k-a 2.0 (inert under the v2.9 curve —
+# the curve replaces the flat term — kept for byte-parity with the anchor harness).
+NET_SIMS = 200
+NET_CPUCT = 3.0
+NET_RESIDUAL_SCALE = 0.25
+NET_MEEPLE_K = 2.0
 
 
 # --------------------------------------------------------------------------- #
@@ -177,6 +205,136 @@ class _ChampPrefix:
         return int(self._m.best_action(board))
 
 
+# --------------------------------------------------------------------------- #
+# Round-robin extension: candidate/opponent specs + the neural opponent         #
+# (measurement/classical_search/ROUND_ROBIN_PLAN.md). Torch is imported lazily  #
+# so the legacy pure-CPU cells never pay for it.                                #
+# --------------------------------------------------------------------------- #
+def _parse_candidate(tok: str):
+    """'puct' -> ("puct", None); 'h<sims>' -> ("heur", sims)."""
+    tok = tok.strip()
+    if tok == "puct":
+        return ("puct", None)
+    if tok.startswith("h") and tok[1:].isdigit() and int(tok[1:]) > 0:
+        return ("heur", int(tok[1:]))
+    raise ValueError(f"bad --candidate {tok!r}; expected puct|h<sims> (e.g. h6400)")
+
+
+def _parse_opponent(tok: str):
+    """'h<sims>' -> ("heur", sims, None); 'net:<ckpt>' -> ("net", NET_SIMS, path)."""
+    tok = tok.strip()
+    if tok.startswith("net:"):
+        path = tok[len("net:"):]
+        if not path:
+            raise ValueError("net: opponent needs a checkpoint path (net:/abs/iter.pt)")
+        return ("net", NET_SIMS, path)
+    if tok.startswith("h") and tok[1:].isdigit() and int(tok[1:]) > 0:
+        return ("heur", int(tok[1:]), None)
+    raise ValueError(f"bad --opponent {tok!r}; expected h<sims>|net:<ckpt.pt>")
+
+
+def _resolve_specs(args):
+    """Resolve --candidate/--opponent -> (cand_kind, opp_kind, opp_sims, net_ckpt,
+    new_mode). Sets args.cand_sims from an h<sims> candidate token (the token wins).
+    Raises ValueError on a bad/missing spec (callers map it to an argparse error)."""
+    cand_kind, cand_tok_sims = _parse_candidate(args.candidate)
+    if cand_kind == "heur":
+        args.cand_sims = cand_tok_sims
+    elif args.cand_sims is None:
+        raise ValueError("--cand-sims is required for --candidate puct")
+    if args.opponent is None:
+        opp_kind, opp_sims, net_ckpt = "heur", args.champ_sims, None
+    else:
+        opp_kind, opp_sims, net_ckpt = _parse_opponent(args.opponent)
+    new_mode = (args.candidate != "puct") or (args.opponent is not None)
+    return cand_kind, opp_kind, opp_sims, net_ckpt, new_mode
+
+
+def _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode) -> str:
+    """Out-subdir cell tag. LEGACY invocations (no --candidate/--opponent) keep the
+    historical naming byte-identical; round-robin invocations get rr_* names
+    (e.g. rr_puct2750_vs_net-iter02_k2, rr_h6400_vs_h12800_k2)."""
+    if not new_mode:
+        return (f"puct_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}_{args.final_select}"
+                f"_s{args.cand_sims}_vs_h{args.champ_sims}_k{args.exact_k}")
+    cand_tok = f"puct{args.cand_sims}" if cand_kind == "puct" else f"h{args.cand_sims}"
+    opp_tok = (f"h{opp_sims}" if opp_kind == "heur"
+               else "net-" + Path(net_ckpt).stem.replace("_", ""))
+    return f"rr_{cand_tok}_vs_{opp_tok}_k{args.exact_k}"
+
+
+class _NetPrefix:
+    """Neural opponent prefix: NeuralMCTS @ NET_SIMS, c_puct=NET_CPUCT, priors+value
+    from the net with the value replaced by the v2.9 leaf + net-value residual at
+    NET_RESIDUAL_SCALE. Construction mirrors eval_hybrid_handoff._make_iter8_mcts
+    (the rod_v2 anchor) byte-for-byte: dataclasses.replace(DEFAULT_CONFIG,
+    residual_scale, meeple_k) -> make_v25_value_wrapper -> NeuralMCTS."""
+
+    def __init__(self, base_eval, game_farm, seed):
+        from carcassonne_ai.evaluators import make_v25_value_wrapper
+        from carcassonne_ai.mcts import NeuralMCTS
+        cfg = dc.replace(DEFAULT_CONFIG, residual_scale=NET_RESIDUAL_SCALE,
+                         meeple_k=NET_MEEPLE_K)
+        leaf = make_v25_value_wrapper(base_eval, cfg)
+        self._m = NeuralMCTS(game=game_farm, evaluator=leaf, simulations=NET_SIMS,
+                             seed=seed, c_puct=NET_CPUCT)
+
+    def move(self, board) -> int:
+        self._m.clear()
+        return int(self._m.best_action(board))
+
+
+def _read_ckpt_meta(ckpt_path: str) -> dict:
+    """Checkpoint architecture metadata (parent-side; needed for SHM connect width,
+    the farm-scalar flag and the manifest)."""
+    import torch
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    meta = {"n_filters": int(ck["n_filters"]), "n_blocks": int(ck["n_blocks"]),
+            "n_scalar_features": int(ck.get("n_scalar_features", 10)),
+            "value_global_pool": bool(ck.get("value_global_pool", False))}
+    del ck
+    return meta
+
+
+def _file_sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _load_net_cpu(ckpt_path: str):
+    """Load the checkpoint into a CPU CarcassonneNet (eval mode). Mirrors
+    eval_hybrid_handoff._worker_init's non-orch path. -> (net, device, n_scalar)."""
+    import torch
+    from carcassonne_ai.network import CarcassonneNet
+    torch.set_num_threads(1)
+    dev = torch.device("cpu")
+    ck = torch.load(ckpt_path, map_location=dev, weights_only=False)
+    ns = int(ck.get("n_scalar_features", 10))
+    net = CarcassonneNet(n_filters=ck["n_filters"], n_blocks=ck["n_blocks"],
+                         n_scalar_features=ns,
+                         value_global_pool=bool(ck.get("value_global_pool", False))).to(dev)
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+    return net, dev, ns
+
+
+def _make_net_prefix(seed: int) -> "_NetPrefix":
+    """Per-game neural opponent from worker state: fresh farm-width Game + a base
+    evaluator over the worker's local CPU net OR its carc-orch SHM handles."""
+    farm = _W["net_ns"] > 10
+    gf = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
+    if _W.get("net_handles") is not None:
+        from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+        base = make_remote_single_evaluator(_W["net_handles"], gf)
+    else:
+        from carcassonne_ai.evaluators import make_single_evaluator
+        base = make_single_evaluator(_W["net"], _W["net_dev"], gf)
+    return _NetPrefix(base, gf, seed)
+
+
 def _leaf_hash(cfg) -> str:
     """Stable short hash of the resolved LeafConfig (provenance)."""
     payload = {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()}
@@ -236,7 +394,9 @@ _W: dict = {}
 
 
 def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
-                 shared_claim, claim_host, claim_stale):
+                 shared_claim, claim_host, claim_stale,
+                 cand_kind="puct", opp_kind="heur", opp_sims=None,
+                 net_ckpt="", net_ns=10, shm_name="", id_q=None):
     _W["cand_cfg_dict"] = cand_cfg_dict
     _W["cand_sims"] = cand_sims
     _W["champ_sims"] = champ_sims
@@ -244,6 +404,23 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale"] = claim_stale
+    _W["cand_kind"] = cand_kind
+    _W["opp_kind"] = opp_kind
+    _W["opp_sims"] = opp_sims if opp_sims is not None else champ_sims
+    _W["net"] = None
+    _W["net_dev"] = None
+    _W["net_handles"] = None
+    _W["net_ns"] = net_ns
+    if opp_kind == "net":
+        import torch
+        torch.set_num_threads(1)
+        if shm_name:
+            # carc-orch SHM orchestrator: the server owns the only net copy; this
+            # worker is CPU-only and gets forwards over SHM (== eval_hybrid_handoff).
+            from carcassonne_ai.shm_eval_handles import connect_shm
+            _W["net_handles"] = connect_shm(shm_name, id_q.get(), net_ns)
+        else:
+            _W["net"], _W["net_dev"], _W["net_ns"] = _load_net_cpu(net_ckpt)
 
 
 def _make_cand_cfg():
@@ -275,14 +452,24 @@ def _play_one(args) -> GameResult | None:
     dh = deck_hash(board)
 
     K = _W["exact_k"]
-    cfg = _make_cand_cfg()
-    # candidate side (prefix = PUCT+heur priors), champion side (prefix = HeuristicMCTS)
-    cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
-                                      simulations=_W["cand_sims"], seed=seed)
-    champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["champ_sims"],
-                                seed + 1, DEFAULT_CONFIG)
+    # candidate side (prefix = PUCT+heur priors, or plain HeuristicMCTS for h<sims>)
+    if _W.get("cand_kind", "puct") == "heur":
+        cand_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["cand_sims"],
+                                   seed, DEFAULT_CONFIG)
+    else:
+        cfg = _make_cand_cfg()
+        cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
+                                          simulations=_W["cand_sims"], seed=seed)
+    # opponent side (prefix = HeuristicMCTS, or the pinned rod_v2-anchor NeuralMCTS)
+    if _W.get("opp_kind", "heur") == "net":
+        champ_prefix = _make_net_prefix(seed + 1)
+        opp_K = 0   # BARE net (pinned anchor config): K=0 never latches the exact tail
+    else:
+        champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["opp_sims"],
+                                    seed + 1, DEFAULT_CONFIG)
+        opp_K = K
     cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), K)
-    champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), K)
+    champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
 
     t0 = time.perf_counter()
     moves = 0
@@ -297,7 +484,7 @@ def _play_one(args) -> GameResult | None:
     diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
     latch_k = cand.latch_k if cand.latch_k is not None else champ.latch_k
     r = GameResult(
-        seed=seed, a_seat=a_seat, cand_sims=_W["cand_sims"], champ_sims=_W["champ_sims"],
+        seed=seed, a_seat=a_seat, cand_sims=_W["cand_sims"], champ_sims=_W["opp_sims"],
         score_p0=int(s0), score_p1=int(s1), diff=int(diff),
         won_by_cand=(diff > 0), drew=(diff == 0), elapsed_s=round(elapsed, 3), moves=moves,
         deck_hash=dh,
@@ -329,7 +516,7 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
-def _summary(results, cand_sims, champ_sims):
+def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
     n = len(results)
     w = sum(1 for r in results if r.won_by_cand)
     d = sum(1 for r in results if r.drew)
@@ -351,7 +538,9 @@ def _summary(results, cand_sims, champ_sims):
                 max(1, sum(r.champ_prefix_moves for r in results))) * 1e3
     solver_pergame = sum(r.cand_solver_secs + r.champ_solver_secs for r in results) / n
     print()
-    print(f"=== PUCT-heur-priors(cand s{cand_sims}) vs champion(heur h{champ_sims}) ===")
+    cl = cand_label or f"PUCT-heur-priors(cand s{cand_sims})"
+    ol = opp_label or f"champion(heur h{champ_sims})"
+    print(f"=== {cl} vs {ol} ===")
     print(f"games: {n}   candidate: {w}W / {d}D / {losses}L   winrate {wr:.3f} (z={wr_z:+.2f})")
     print(f"avg score diff (cand - champ): {avg:+.2f}")
     print(f"ELO: {elo:+.1f}  (+/- {elo_sig:.1f} 1sigma)")
@@ -395,27 +584,56 @@ def _append_results_csv(csv_path: Path, row: dict):
 
 
 # --------------------------------------------------------------------------- #
-def _smoke(args) -> int:
+def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None,
+           new_mode=False) -> int:
     """Single-process plumbing + handoff-fires proof: play 2 paired games, print
-    move/handoff counts, assert both sides latched to the exact endgame, exit."""
-    cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
-                               leaf_quantize=args.leaf_quantize, final_select=args.final_select,
-                               leaf_cfg=DEFAULT_CONFIG)
+    move/handoff counts, assert both sides latched to the exact endgame, exit.
+    Honors --candidate/--opponent; a net: opponent is loaded on CPU (no orch)."""
+    if opp_sims is None:
+        opp_sims = args.champ_sims
+    cfg = None
+    if cand_kind == "puct":
+        cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
+                                   leaf_quantize=args.leaf_quantize, final_select=args.final_select,
+                                   leaf_cfg=DEFAULT_CONFIG)
+    net = net_dev = net_ns = None
+    if opp_kind == "net":
+        net, net_dev, net_ns = _load_net_cpu(net_ckpt)
     import random
-    print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
-          f"select={args.final_select} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
+    if not new_mode:
+        print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
+              f"select={args.final_select} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
+    else:
+        cand_desc = (f"puct c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
+                     f"select={args.final_select} sims={args.cand_sims}" if cand_kind == "puct"
+                     else f"heur h{args.cand_sims}")
+        opp_desc = (f"heur h{opp_sims}" if opp_kind == "heur"
+                    else f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)")
+        print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k}")
     t0 = time.perf_counter()
     for a_seat in (0, 1):
         seed = args.seed_start
         random.seed(seed)
         game = Game(enable_legal_moves_cache=True)
         board = game.get_init_board()
-        cand = _ExactHandoff(HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
-                                                 simulations=args.cand_sims, seed=seed),
-                             Game(enable_legal_moves_cache=True), args.exact_k)
-        champ = _ExactHandoff(_ChampPrefix(Game(enable_legal_moves_cache=True), args.champ_sims,
-                                           seed + 1, DEFAULT_CONFIG),
-                              Game(enable_legal_moves_cache=True), args.exact_k)
+        if cand_kind == "heur":
+            cand_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), args.cand_sims,
+                                       seed, DEFAULT_CONFIG)
+        else:
+            cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
+                                              simulations=args.cand_sims, seed=seed)
+        opp_K = args.exact_k
+        if opp_kind == "net":
+            farm = net_ns > 10
+            gf = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
+            from carcassonne_ai.evaluators import make_single_evaluator
+            champ_prefix = _NetPrefix(make_single_evaluator(net, net_dev, gf), gf, seed + 1)
+            opp_K = 0   # bare net (pinned anchor config)
+        else:
+            champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
+                                        seed + 1, DEFAULT_CONFIG)
+        cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), args.exact_k)
+        champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
         moves = 0
         while game.get_game_ended(board, 0) == 0.0:
             cur = board.state.current_player
@@ -432,8 +650,10 @@ def _smoke(args) -> int:
               f"solver={cand.solver_secs:.1f}s to={cand.n_timeouts} ; "
               f"champ prefix/exact={champ.prefix_moves}/{champ.exact_moves} latch_k={champ.latch_k} "
               f"solver={champ.solver_secs:.1f}s")
-        assert cand.exact_moves > 0, "candidate never reached the exact endgame (K too small?)"
-        assert champ.exact_moves > 0, "champion never reached the exact endgame"
+        if args.exact_k > 0:
+            assert cand.exact_moves > 0, "candidate never reached the exact endgame (K too small?)"
+        if opp_K > 0:
+            assert champ.exact_moves > 0, "champion never reached the exact endgame"
         assert cand.prefix_moves > 0 and champ.prefix_moves > 0, "prefix search never ran (K too big?)"
     print(f"[smoke] OK — plumbing + exact handoff verified ({time.perf_counter()-t0:.1f}s for 2 games)")
     return 0
@@ -446,9 +666,24 @@ def main(argv=None) -> int:
     ap.add_argument("--leaf-quantize", choices=("int", "float"), default="float")
     ap.add_argument("--final-select", choices=("Q", "visits"), default="Q")
     ap.add_argument("--value-norm", type=float, default=15.0)
-    ap.add_argument("--cand-sims", type=int, required=True,
-                    help="candidate PUCT sims (from the equal-time bench match)")
+    ap.add_argument("--cand-sims", type=int, default=None,
+                    help="candidate PUCT sims (from the equal-time bench match); required "
+                         "for --candidate puct, ignored for --candidate h<sims>")
     ap.add_argument("--champ-sims", type=int, default=6400)
+    ap.add_argument("--candidate", type=str, default="puct",
+                    help="candidate side: 'puct' (default; PUCT-heur-priors @ --cand-sims) or "
+                         "'h<sims>' (plain HeuristicMCTS @ <sims>, same v2.9 leaf + exact-K "
+                         "handoff as the champion side; puct flags ignored/recorded null)")
+    ap.add_argument("--opponent", type=str, default=None,
+                    help="opponent side (default: h<champ-sims>, the legacy champion). "
+                         "'h<sims>' = HeuristicMCTS @ <sims> (+ exact-K handoff). "
+                         "'net:<ckpt.pt>' = NeuralMCTS opponent pinned to the rod_v2 anchor "
+                         f"config (sims={NET_SIMS}, c_puct={NET_CPUCT}, v2.9 leaf + residual "
+                         f"{NET_RESIDUAL_SCALE}, bare/no exact tail); net-on-CPU unless "
+                         "--shm-eval-server is given")
+    ap.add_argument("--shm-eval-server", type=str, default=None,
+                    help="carc-orch SHM orchestrator name for the net: opponent (workers "
+                         "attach to /dev/shm/carc_<NAME>); omit for net-on-CPU per worker")
     ap.add_argument("--exact-k", type=int, default=4, help="exact clairvoyant endgame handoff at k_remaining<=K")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
@@ -470,11 +705,25 @@ def main(argv=None) -> int:
     if args.paired and args.n % 2 != 0:
         ap.error("--paired requires an even --n")
 
+    try:
+        cand_kind, opp_kind, opp_sims, net_ckpt, new_mode = _resolve_specs(args)
+    except ValueError as e:
+        ap.error(str(e))
+    if args.shm_eval_server and opp_kind != "net":
+        ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
+
     if args.smoke:
-        return _smoke(args)
+        return _smoke(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
 
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
+
+    net_meta = net_sha = None
+    if opp_kind == "net" and not args.summary_only:
+        if not Path(net_ckpt).is_file():
+            ap.error(f"net opponent checkpoint not found: {net_ckpt}")
+        net_meta = _read_ckpt_meta(net_ckpt)
+        net_sha = _file_sha256(net_ckpt)
 
     cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                leaf_quantize=args.leaf_quantize, final_select=args.final_select,
@@ -483,8 +732,7 @@ def main(argv=None) -> int:
                      "leaf_quantize": args.leaf_quantize, "final_select": args.final_select,
                      "value_norm": args.value_norm}
 
-    tag = (f"puct_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}_{args.final_select}"
-           f"_s{args.cand_sims}_vs_h{args.champ_sims}_k{args.exact_k}")
+    tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
     sub = args.out_subdir or tag
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
@@ -493,27 +741,75 @@ def main(argv=None) -> int:
     tasks = [(str(out), seed, a_seat)
              for seed, a_seat in _build_work(args.seed_start, args.n, args.paired)]
 
+    # summary labels: legacy None -> byte-identical header; rr cells name both sides.
+    cand_label = opp_label = None
+    if new_mode:
+        cand_label = (f"PUCT-heur-priors(cand s{args.cand_sims})" if cand_kind == "puct"
+                      else f"candidate(heur h{args.cand_sims})")
+        opp_label = (f"opponent(heur h{opp_sims})" if opp_kind == "heur"
+                     else f"opponent(net:{Path(net_ckpt).stem}@{NET_SIMS})")
+
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, t[1], t[2]))) is not None]
         if results:
-            summ = _summary(results, args.cand_sims, args.champ_sims)
+            summ = _summary(results, args.cand_sims, args.champ_sims, cand_label, opp_label)
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
         else:
             print("no cached results yet")
         return 0
 
     leaf_cfg = cfg.resolved_leaf_cfg()
+    man_cfg = {"candidate": cfg.as_manifest(),
+               "cand_sims": args.cand_sims, "champ_sims": args.champ_sims,
+               "champion": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7",
+                            "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
+               "exact_k": args.exact_k, "exact_mode": "clairvoyant",
+               "exact_budget": EXACT_BUDGET,
+               "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
+               "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
+               "env": {k: os.environ.get(k) for k in _CANON_ENV}}
+    if new_mode:
+        # Round-robin cell: resolved candidate + opponent specs (ROUND_ROBIN_PLAN.md).
+        if cand_kind == "puct":
+            cand_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
+                          "sims": args.cand_sims, "exact_k": args.exact_k,
+                          **cfg.as_manifest()}
+        else:
+            # puct-specific knobs ignored for an h<sims> candidate -> recorded as null.
+            cand_block = {"kind": "heur", "agent": "HeuristicMCTS", "heur_leaf": "v2_7",
+                          "c": CHAMP_C, "sims": args.cand_sims,
+                          "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
+                          "exact_k": args.exact_k,
+                          "c_puct": None, "tau_p": None, "leaf_quantize": None,
+                          "final_select": None, "value_norm": None}
+        if opp_kind == "heur":
+            opp_block = {"kind": "heur", "agent": "HeuristicMCTS", "heur_leaf": "v2_7",
+                         "c": CHAMP_C, "sims": opp_sims,
+                         "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
+                         "exact_k": args.exact_k}
+        else:
+            opp_block = {"kind": "net", "agent": "NeuralMCTS",
+                         "ckpt": str(net_ckpt), "ckpt_sha256": net_sha,
+                         "sims": NET_SIMS, "c_puct": NET_CPUCT,
+                         "residual_scale": NET_RESIDUAL_SCALE, "meeple_k": NET_MEEPLE_K,
+                         "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG) + net value residual "
+                                 "(make_v25_value_wrapper)",
+                         "exact_k": 0,   # bare prefix: NO exact tail (anchor rows were bare)
+                         "include_farm_scalars": net_meta["n_scalar_features"] > 10,
+                         "orch_shm": args.shm_eval_server,
+                         "pinned_from": "scripts/level2/eval_hybrid_handoff.py ITER8_SIMS/"
+                                        "ITER8_CPUCT/ITER8_RESIDUAL_SCALE (rod_v2 anchor "
+                                        "harness; results.csv rodv2_iter02_vs_heur*_v29_n200)",
+                         **net_meta}
+        man_cfg.update({"rr_cell": tag,
+                        "candidate_spec": args.candidate,
+                        "opponent_spec": args.opponent or f"h{args.champ_sims}",
+                        "candidate": cand_block,
+                        "opponent": opp_block,
+                        "champ_sims": opp_sims})
+        del man_cfg["champion"]   # replaced by the resolved "opponent" block
     write_manifest(out, kind="eval_puct_priors", game=game_tag(Game()),
-                   config={"candidate": cfg.as_manifest(),
-                           "cand_sims": args.cand_sims, "champ_sims": args.champ_sims,
-                           "champion": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7",
-                                        "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
-                           "exact_k": args.exact_k, "exact_mode": "clairvoyant",
-                           "exact_budget": EXACT_BUDGET,
-                           "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
-                           "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
-                           "env": {k: os.environ.get(k) for k in _CANON_ENV}},
-                   overwrite=True)
+                   config=man_cfg, overwrite=True)
 
     todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
@@ -524,9 +820,21 @@ def main(argv=None) -> int:
     results = []
     if todo:
         t0 = time.perf_counter()
+        id_q = None
+        if args.shm_eval_server:
+            from multiprocessing import Queue
+            id_q = Queue()
+            for w in range(workers):
+                id_q.put(w)
+            print(f"  [orch] SHM eval-server '{args.shm_eval_server}': {workers} CPU workers "
+                  f"attach to /dev/shm/carc_{args.shm_eval_server} "
+                  f"(n_scalar={net_meta['n_scalar_features']})", flush=True)
         with Pool(processes=workers, initializer=_worker_init,
                   initargs=(cand_cfg_dict, args.cand_sims, args.champ_sims, args.exact_k,
-                            args.shared_claim, args.claim_host, args.claim_stale_secs)) as pool:
+                            args.shared_claim, args.claim_host, args.claim_stale_secs,
+                            cand_kind, opp_kind, opp_sims, net_ckpt or "",
+                            (net_meta or {}).get("n_scalar_features", 10),
+                            args.shm_eval_server or "", id_q)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
@@ -547,27 +855,55 @@ def main(argv=None) -> int:
     if not results:
         print("no results")
         return 0
-    summ = _summary(results, args.cand_sims, args.champ_sims)
+    summ = _summary(results, args.cand_sims, args.champ_sims, cand_label, opp_label)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
 
     if not args.no_results_csv:
-        note = (f"Phase 1.1 PUCT-heur-priors vs champion (search-only, both exact-K<={args.exact_k}). "
-                f"c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
-                f"select={args.final_select}. cand ms/move {summ['cand_prefix_ms_per_move']:.0f} "
-                f"vs champ {summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
-        _append_results_csv(REPO / "experiments" / "results.csv", {
+        if not new_mode:
+            note = (f"Phase 1.1 PUCT-heur-priors vs champion (search-only, both exact-K<={args.exact_k}). "
+                    f"c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
+                    f"select={args.final_select}. cand ms/move {summ['cand_prefix_ms_per_move']:.0f} "
+                    f"vs champ {summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
+            row = {
+                "new_ckpt": f"puct_prior_{args.leaf_quantize}_{args.final_select}",
+                "new_c": args.c_puct, "new_var": "puct_heur_prior",
+                "old_ckpt": "heur_h6400_champion", "old_c": CHAMP_C,
+                "old_var": "v2_9_champion", "old_sims": args.champ_sims,
+            }
+        else:
+            cand_desc = (f"PUCT-heur-priors(c_puct={args.c_puct} tau_p={args.tau_p} "
+                         f"quant={args.leaf_quantize} select={args.final_select} s{args.cand_sims})"
+                         if cand_kind == "puct" else f"HeuristicMCTS h{args.cand_sims}")
+            opp_desc = (f"HeuristicMCTS h{opp_sims} (exact-K<={args.exact_k})" if opp_kind == "heur"
+                        else f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
+                             f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
+                             f"{', orch ' + args.shm_eval_server if args.shm_eval_server else ', net-on-CPU'})")
+            note = (f"Phase 1.1b transitivity round-robin cell {tag} "
+                    f"(measurement/classical_search/ROUND_ROBIN_PLAN.md): candidate {cand_desc} "
+                    f"exact-K<={args.exact_k} vs opponent {opp_desc}. "
+                    f"cand ms/move {summ['cand_prefix_ms_per_move']:.0f} vs opp "
+                    f"{summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
+            row = {
+                "new_ckpt": (f"puct_prior_{args.leaf_quantize}_{args.final_select}"
+                             if cand_kind == "puct" else f"heur_h{args.cand_sims}_champion"),
+                "new_c": args.c_puct if cand_kind == "puct" else CHAMP_C,
+                "new_var": "puct_heur_prior" if cand_kind == "puct" else "v2_9_champion",
+                "old_ckpt": (f"heur_h{opp_sims}" if opp_kind == "heur" else str(net_ckpt)),
+                "old_c": CHAMP_C if opp_kind == "heur" else NET_CPUCT,
+                "old_var": "v2_9_champion" if opp_kind == "heur" else "v2_9_rodv2_anchor",
+                "old_sims": opp_sims,
+            }
+        row.update({
             "exp_id": tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
             "code_rev": code_rev(), "n": summ["n"],
-            "new_ckpt": f"puct_prior_{args.leaf_quantize}_{args.final_select}",
-            "new_c": args.c_puct, "new_cap": leaf_cfg.bonus_cap, "new_var": "puct_heur_prior",
-            "new_sims": args.cand_sims,
-            "old_ckpt": "heur_h6400_champion", "old_c": CHAMP_C, "old_cap": leaf_cfg.bonus_cap,
-            "old_var": "v2_9_champion", "old_sims": args.champ_sims,
+            "new_cap": leaf_cfg.bonus_cap, "new_sims": args.cand_sims,
+            "old_cap": leaf_cfg.bonus_cap,
             "W": summ["W"], "L": summ["L"], "D": summ["D"],
             "elo": round(summ["elo"], 1), "sigma": round(summ["elo_sig_1sigma"], 1),
             "avg_diff": round(summ["avg_diff"], 2), "src_dir": str(out),
             "confidence": "screen" if summ["n"] < 400 else "high", "note": note,
         })
+        _append_results_csv(REPO / "experiments" / "results.csv", row)
         print(f"[results.csv] appended row exp_id={tag}")
     return 0
 
