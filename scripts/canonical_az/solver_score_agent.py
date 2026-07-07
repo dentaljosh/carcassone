@@ -48,6 +48,15 @@ Secondary per-root stats (TEACHER_TAU_PLAN "also record"): visit top-share
 (max deduped child visits / total), n_children, and Q-vs-visits rank agreement
 (the SAME kendall_tau_b group_metrics uses), plus root_q / search_secs.
 
+TEACHER_TAU_PLAN "NEXT" diagnostic (b) — TOP-M-VISITED tau: per root, ALONGSIDE
+the full-ranking tau, each ranker (leaf + puct_q + puct_visits) ALSO gets a
+Kendall-tau restricted to the top-m MOST-VISITED children (--top-m, default 5) —
+the charitable value reading: does search-Q out-rank the leaf once the noisy
+unvisited tail is ignored? Same m children for all rankers (a paired read); the
+full-ranking tau is byte-untouched. Aggregate/bootstrap gain tau_topm_mean +
+the paired dtau_topm vs the leaf; per_root records gain rankers[*].tau_topm and
+agent.top_m / agent.n_topm.
+
 Aggregate adds the pre-registered read's uncertainty: BOOTSTRAP-OVER-ROOTS
 sigma for each ranker's mean tau, the PAIRED per-root delta-tau vs the v29_leaf
 baseline (bootstrap sigma + z), and the paired sign-z on solver_regret
@@ -121,6 +130,29 @@ def load_solve_cache(path: str) -> dict:
         e = json.loads(line)
         cache[(int(e["seed"]), int(e["ply"]), e["mode"])] = e
     return cache
+
+
+# --------------------------------------------------------------------------- #
+# Top-m-visited tau (diagnostic (b)) — pure, hand-testable helpers.            #
+# --------------------------------------------------------------------------- #
+def topm_indices(n_vec, m):
+    """Indices (into the child/action arrays) of the top-m MOST-VISITED children,
+    VISITED-only (N>0), most-visited first, stable on visit ties (index order).
+    Returns fewer than m when fewer than m children were visited."""
+    n = np.asarray(n_vec, dtype=np.float64)
+    vis = np.flatnonzero(n > 0)
+    order = vis[np.argsort(-n[vis], kind="stable")]
+    return order[: int(m)]
+
+
+def topm_tau(score, solver_mover, top_idx):
+    """Kendall-tau-b (solver_score's kendall_tau_b, imported) of a ranker's scores
+    vs the solver mover-POV values, RESTRICTED to top_idx. NaN if <2 children."""
+    if np.asarray(top_idx).size < 2:
+        return float("nan")
+    s = np.asarray(score, dtype=np.float64)[top_idx]
+    v = np.asarray(solver_mover, dtype=np.float64)[top_idx]
+    return float(ST.kendall_tau_b(s, v))
 
 
 # --------------------------------------------------------------------------- #
@@ -253,6 +285,20 @@ def _score_one(rec):
         }
     per_ranker["puct_q"]["n_unvisited"] = int(n_unvisited)
 
+    # --- top-m-visited tau (TEACHER_TAU_PLAN "NEXT" diagnostic (b)): the most
+    # CHARITABLE value reading — restrict tau to the m children the search
+    # actually explored (highest visit counts) so the noisy unvisited/low-visit
+    # tail can't drag search-Q's ranking down. Computed on the SAME m children
+    # for ALL rankers (the leaf too), so "does search-Q beat the leaf when you
+    # ignore the tail?" is a paired read on identical children. The full-ranking
+    # tau above is UNTOUCHED. NaN when <2 children were visited (no top-m tau).
+    top_idx = topm_indices(n_vec, int(_CTX["top_m"]))
+    n_topm = int(top_idx.size)
+    for name, score in (("v29_leaf", leaf_score),
+                        ("puct_q", q_vec),
+                        ("puct_visits", n_vec)):
+        per_ranker[name]["tau_topm"] = topm_tau(score, solver_mover, top_idx)
+
     sm_sorted = np.sort(solver_mover)[::-1]
     gap = float(sm_sorted[0] - sm_sorted[1]) if len(sm_sorted) >= 2 else None
     out = {
@@ -273,6 +319,8 @@ def _score_one(rec):
             "n_tree_children": len(dedup),
             "n_unvisited": int(n_unvisited),
             "q_visits_tau": q_visits_tau if math.isfinite(q_visits_tau) else None,
+            "top_m": int(_CTX["top_m"]),
+            "n_topm": n_topm,
         },
     }
     if fresh_solve is not None:
@@ -296,17 +344,29 @@ def bootstrap_block(scored, names, baseline="v29_leaf", B=10_000, seed=0):
     idx = rng.integers(0, n, size=(B, n))
     taus = {nm: np.array([r["rankers"][nm]["tau"] for r in scored], dtype=np.float64)
             for nm in names}
+    # top-m-visited tau (diagnostic (b)); .get keeps back-compat with any resumed
+    # pre-top-m record (falls back to NaN, dropped by the paired-finite mask).
+    taus_topm = {nm: np.array([r["rankers"][nm].get("tau_topm", float("nan"))
+                               for r in scored], dtype=np.float64) for nm in names}
     regs = {nm: np.array([r["rankers"][nm]["solver_regret"] for r in scored],
                          dtype=np.float64) for nm in names}
     out = {"B": B, "seed": seed, "n_roots": n, "baseline": baseline}
     base_t, base_r = taus[baseline], regs[baseline]
+    base_tt = taus_topm[baseline]
     for nm in names:
         t = taus[nm]
         boot_means = np.nanmean(t[idx], axis=1)
+        tt = taus_topm[nm]
+        tt_boot = np.nanmean(tt[idx], axis=1) if np.isfinite(tt).any() else None
         ent = {
             "tau_mean": round(float(np.nanmean(t)), 4),
             "tau_sigma_boot": round(float(np.nanstd(boot_means)), 5),
             "n_tau_nan": int(np.isnan(t).sum()),
+            "tau_topm_mean": (round(float(np.nanmean(tt)), 4)
+                              if np.isfinite(tt).any() else None),
+            "tau_topm_sigma_boot": (round(float(np.nanstd(tt_boot)), 5)
+                                    if tt_boot is not None else None),
+            "n_tau_topm_nan": int(np.isnan(tt).sum()),
         }
         if nm != baseline:
             ok = np.isfinite(t) & np.isfinite(base_t)
@@ -319,6 +379,17 @@ def bootstrap_block(scored, names, baseline="v29_leaf", B=10_000, seed=0):
                 ent["dtau_sigma_boot"] = round(dsig, 5)
                 ent["dtau_z"] = round(float(dt.mean() / dsig), 2) if dsig > 0 else None
                 ent["n_paired"] = int(dt.size)
+            # paired top-m dtau vs the leaf on the SAME roots (both top-m taus finite)
+            ok_tt = np.isfinite(tt) & np.isfinite(base_tt)
+            dtt = tt[ok_tt] - base_tt[ok_tt]
+            if dtt.size:
+                idx3 = rng.integers(0, dtt.size, size=(B, dtt.size))
+                dttboot = dtt[idx3].mean(axis=1)
+                dttsig = float(dttboot.std())
+                ent["dtau_topm_vs_baseline_mean"] = round(float(dtt.mean()), 4)
+                ent["dtau_topm_sigma_boot"] = round(dttsig, 5)
+                ent["dtau_topm_z"] = round(float(dtt.mean() / dttsig), 2) if dttsig > 0 else None
+                ent["n_paired_topm"] = int(dtt.size)
             d = regs[nm] - base_r
             better, worse = int((d < 0).sum()), int((d > 0).sum())
             ent["regret_better"] = better
@@ -350,6 +421,10 @@ def _agent_agg(scored):
         "unvisited_frac_mean": round(float(np.mean(
             [r["agent"]["n_unvisited"] / max(r["agent"]["n_children"], 1)
              for r in scored])), 4),
+        "n_topm_mean": round(float(np.mean(
+            [r["agent"].get("n_topm", 0) for r in scored])), 2),
+        "top_m": int(scored[0]["agent"].get("top_m")) if scored and
+        scored[0]["agent"].get("top_m") is not None else None,
     }
 
 
@@ -380,6 +455,10 @@ def main(argv=None) -> int:
     ap.add_argument("--tau-p", type=float, default=5.0)
     ap.add_argument("--leaf-quantize", choices=("int", "float"), default="float")
     ap.add_argument("--value-norm", type=float, default=15.0)
+    ap.add_argument("--top-m", type=int, default=5,
+                    help="diagnostic (b): ALSO compute Kendall-tau restricted to the "
+                         "top-m MOST-VISITED children (the charitable value reading). "
+                         "Full-ranking tau is untouched.")
     ap.add_argument("--n", type=int, default=0, help="cap #roots to score (0=all)")
     ap.add_argument("--roots", default="",
                     help="explicit 'seed:ply,seed:ply' subset (tests/smoke)")
@@ -455,6 +534,7 @@ def main(argv=None) -> int:
                   "factory": "make_heuristic_prior_mcts",
                   "sims": args.sims, **cfg.as_manifest()},
         "rankers": ["v29_leaf", "puct_q", "puct_visits"],
+        "top_m": args.top_m,
         "ranking_conventions": {
             "puct_q": "root child search-Q, mover POV (best_action flip); "
                       "unvisited children tied below all visited",
@@ -477,7 +557,8 @@ def main(argv=None) -> int:
                    config=config, overwrite=True)
 
     _CTX.update(cfg=cfg, sims=args.sims, budget=args.budget, max_k=args.max_k,
-                solve_cache=solve_cache, leaf_ranker=SS.make_v29_leaf_ranker())
+                solve_cache=solve_cache, leaf_ranker=SS.make_v29_leaf_ranker(),
+                top_m=args.top_m)
 
     cache_fh = open(args.solve_cache, "a")
     progress_fh = open(progress_path, "a")
@@ -538,6 +619,13 @@ def main(argv=None) -> int:
     names = ["v29_leaf", "puct_q", "puct_visits"]
     ks = sorted({r["k"] for r in scored})
     aggregate = {nm: SS._agg(SS._ranker_rows(scored, nm)) for nm in names}
+    # SS._agg predates diagnostic (b); fold the top-m tau mean into each ranker.
+    for nm in names:
+        if aggregate[nm] is not None and scored:
+            tt = np.array([r["rankers"][nm].get("tau_topm", float("nan"))
+                           for r in scored], dtype=np.float64)
+            aggregate[nm]["tau_topm_mean"] = (round(float(np.nanmean(tt)), 4)
+                                              if np.isfinite(tt).any() else None)
     by_k = {nm: {k: SS._agg(SS._ranker_rows([r for r in scored if r["k"] == k], nm))
                  for k in ks} for nm in names}
     boot = bootstrap_block(scored, names, baseline="v29_leaf",
@@ -565,6 +653,8 @@ def main(argv=None) -> int:
         line = (f"==== SOLVER-SCORE ({nm}) ====  n={a['n']}  "
                 f"regret mean={a['solver_regret_mean']} median={a['solver_regret_median']}  "
                 f"top1={a['top1_rate']}  tau={a['tau_mean']}")
+        if a.get("tau_topm_mean") is not None:
+            line += f"  tau_topm(m={args.top_m})={a['tau_topm_mean']}"
         if boot and nm in boot:
             b = boot[nm]
             line += f"  (tau sigma_boot={b['tau_sigma_boot']}"
@@ -572,6 +662,9 @@ def main(argv=None) -> int:
                 line += (f"; dtau vs leaf={b['dtau_vs_baseline_mean']}"
                          f"±{b['dtau_sigma_boot']} z={b['dtau_z']}"
                          f"; regret sign-z={b['regret_sign_z']}")
+            if "dtau_topm_vs_baseline_mean" in b:
+                line += (f"; dtau_topm vs leaf={b['dtau_topm_vs_baseline_mean']}"
+                         f"±{b['dtau_topm_sigma_boot']} z={b['dtau_topm_z']}")
             line += ")"
         print(line)
     aa = report["agent_aggregate"]

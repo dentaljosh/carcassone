@@ -83,6 +83,7 @@ SSA._CTX.update(
                                  final_select="Q", value_norm=15.0),
     sims=32, budget=5_000_000, max_k=2,
     solve_cache={}, leaf_ranker=SSA.SS.make_v29_leaf_ranker(),
+    top_m=5,
 )
 
 outs = []
@@ -117,6 +118,26 @@ for a in ent["actions"]:
          if c is not None and c.N > 0 else None)
     rows.append([int(a), mover[int(a)], q, int(c.N) if c is not None else 0])
 res["C"] = {"rec": o, "rows": rows, "entry": ent}
+
+# ---- D: top-m-visited tau (diagnostic (b)) on 3-child synthetics ---------------
+# Reuses solver_score's kendall_tau_b (== SSA.ST.kendall_tau_b) so the top-m
+# numbers land on the SAME ruler as the full-ranking tau.
+kt = SSA.ST.kendall_tau_b
+d_score = np.array([0.9, 0.1, -0.5]); d_mover = np.array([1.0, -1.0, 0.0])
+i_all = SSA.topm_indices(np.array([10.0, 5.0, 2.0]), 5)   # all 3 visited
+i_top2 = SSA.topm_indices(np.array([10.0, 5.0, 2.0]), 2)  # cap m=2
+i_vis2 = SSA.topm_indices(np.array([10.0, 3.0, 0.0]), 5)  # child 2 unvisited -> excluded
+i_one = SSA.topm_indices(np.array([7.0, 0.0, 0.0]), 5)    # only 1 visited
+res["D"] = {
+    "i_all": i_all.tolist(), "i_top2": i_top2.tolist(),
+    "i_vis2": i_vis2.tolist(), "i_one": i_one.tolist(),
+    "tau_all": SSA.topm_tau(d_score, d_mover, i_all),
+    "tau_top2": SSA.topm_tau(d_score, d_mover, i_top2),
+    "tau_vis2": SSA.topm_tau(d_score, d_mover, i_vis2),
+    "tau_one": SSA.topm_tau(d_score, d_mover, i_one),
+    "hand_full": float(kt(d_score, d_mover)),
+    "hand_top2": float(kt(d_score[[0, 1]], d_mover[[0, 1]])),
+}
 
 json.dump(res, open(out_path, "w"))
 print("SUBPROC_OK")
@@ -165,10 +186,15 @@ def test_agent_scorer_valid_ranking_on_tiny_roots(sub):
             assert (isinstance(m["tau"], float)
                     and (math.isnan(m["tau"]) or -1.0 <= m["tau"] <= 1.0))
             assert m["pick"] in actions, f"{name} pick not a solver child"
+            # diagnostic (b): every ranker carries a top-m-visited tau (NaN ok).
+            assert "tau_topm" in m
+            assert (isinstance(m["tau_topm"], float)
+                    and (math.isnan(m["tau_topm"]) or -1.0 <= m["tau_topm"] <= 1.0))
         ag = rec["agent"]
         assert ag["sims"] == 32
         assert ag["n_children"] == rec["n_legal"]
         assert 0 <= ag["n_unvisited"] <= ag["n_children"]
+        assert ag["top_m"] == 5 and 0 <= ag["n_topm"] <= ag["n_children"]
         assert ag["top_share"] is None or 0.0 < ag["top_share"] <= 1.0
         assert -1.0 <= ag["root_q"] <= 1.0
         # THE comparability check: the re-scored v29_leaf baseline reproduces
@@ -213,3 +239,24 @@ def test_sign_convention_not_inverted(sub):
     pick_val = mover[q["pick"]]
     med = sorted(mover.values())[len(mover) // 2]
     assert pick_val >= med, (pick_val, med)
+
+
+def test_topm_tau_matches_hand(sub):
+    """Diagnostic (b): topm_indices selects the top-m MOST-VISITED (visited-only)
+    children, and topm_tau restricted to them matches a hand kendall_tau_b."""
+    d = sub["D"]
+    # index selection: most-visited first, unvisited excluded, capped at m.
+    assert d["i_all"] == [0, 1, 2]      # visits 10,5,2 all>0, m=5
+    assert d["i_top2"] == [0, 1]        # cap m=2 -> the two most-visited
+    assert d["i_vis2"] == [0, 1]        # visits 10,3,0 -> child 2 (N=0) dropped
+    assert d["i_one"] == [0]            # only one visited
+
+    # score=[0.9,0.1,-0.5] vs mover=[1,-1,0]: full tau = 1/3 (one discordant pair).
+    assert abs(d["tau_all"] - d["hand_full"]) < 1e-12
+    assert abs(d["tau_all"] - 1.0 / 3.0) < 1e-12
+    # restricted to the top-2 visited (indices 0,1): concordant -> tau = +1.
+    assert abs(d["tau_top2"] - d["hand_top2"]) < 1e-12
+    assert d["tau_top2"] == 1.0
+    assert d["tau_vis2"] == 1.0
+    # <2 children in the subset -> NaN.
+    assert math.isnan(d["tau_one"])
