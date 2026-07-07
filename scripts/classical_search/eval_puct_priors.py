@@ -206,6 +206,32 @@ class _ChampPrefix:
         return int(self._m.best_action(board))
 
 
+def _champ_puct_cfg(shared: dict) -> "HeuristicPriorConfig":
+    """Build the flag-OFF champion PUCT-heuristic-priors config, taking only the
+    SHARED axes (c_puct/tau_p/leaf_quantize) from `shared` (the candidate's
+    cand_cfg_dict) and forcing every variant knob to its champion-off value. This
+    is the --opponent puct sibling of the variant candidate."""
+    return HeuristicPriorConfig(
+        c_puct=shared["c_puct"], tau_p=shared["tau_p"],
+        leaf_quantize=shared["leaf_quantize"],
+        final_select=CHAMP_PUCT_FINAL_SELECT, value_norm=CHAMP_PUCT_VALUE_NORM,
+        c_lcb=CHAMP_PUCT_C_LCB, reuse_tree=False,
+        leaf_cfg=DEFAULT_CONFIG,
+    )
+
+
+class _PuctPrefix:
+    """Champion PUCT-heuristic-priors prefix (flags OFF) — the --opponent puct
+    baseline for a variant-ON-vs-variant-OFF A/B. HeuristicPriorAgent already
+    clear()s its tree each move (reuse_tree=False), so a fresh .move() per ply."""
+
+    def __init__(self, game, cfg, sims, seed):
+        self._a = HeuristicPriorAgent(game, cfg, simulations=sims, seed=seed)
+
+    def move(self, board) -> int:
+        return int(self._a.move(board))
+
+
 # --------------------------------------------------------------------------- #
 # Round-robin extension: candidate/opponent specs + the neural opponent         #
 # (measurement/classical_search/ROUND_ROBIN_PLAN.md). Torch is imported lazily  #
@@ -221,9 +247,22 @@ def _parse_candidate(tok: str):
     raise ValueError(f"bad --candidate {tok!r}; expected puct|h<sims> (e.g. h6400)")
 
 
+# The champion PUCT-heuristic-priors config (flags OFF), used as the --opponent
+# puct baseline for a variant-ON-vs-variant-OFF A/B (task 2026-07-06). "visits" is
+# the champion-of-record final selector; value_norm 15 / c_lcb 1.0 / reuse_tree off
+# are the flag-off defaults. Only the SHARED axes (c_puct/tau_p/leaf_quantize/sims)
+# are taken from the candidate so the sole measured difference is the variant flag.
+CHAMP_PUCT_FINAL_SELECT = "visits"
+CHAMP_PUCT_VALUE_NORM = 15.0
+CHAMP_PUCT_C_LCB = 1.0
+
+
 def _parse_opponent(tok: str):
-    """'h<sims>' -> ("heur", sims, None); 'net:<ckpt>' -> ("net", NET_SIMS, path)."""
+    """'h<sims>' -> ("heur", sims, None); 'net:<ckpt>' -> ("net", NET_SIMS, path);
+    'puct' -> ("puct", None, None) (sims resolved to cand_sims in _resolve_specs)."""
     tok = tok.strip()
+    if tok == "puct":
+        return ("puct", None, None)
     if tok.startswith("net:"):
         path = tok[len("net:"):]
         if not path:
@@ -231,7 +270,7 @@ def _parse_opponent(tok: str):
         return ("net", NET_SIMS, path)
     if tok.startswith("h") and tok[1:].isdigit() and int(tok[1:]) > 0:
         return ("heur", int(tok[1:]), None)
-    raise ValueError(f"bad --opponent {tok!r}; expected h<sims>|net:<ckpt.pt>")
+    raise ValueError(f"bad --opponent {tok!r}; expected h<sims>|net:<ckpt.pt>|puct")
 
 
 def _resolve_specs(args):
@@ -247,20 +286,51 @@ def _resolve_specs(args):
         opp_kind, opp_sims, net_ckpt = "heur", args.champ_sims, None
     else:
         opp_kind, opp_sims, net_ckpt = _parse_opponent(args.opponent)
+        if opp_kind == "puct":
+            # champion PUCT opponent plays at the SAME nominal sims as the
+            # candidate (equal-sims variant A/B); --champ-sims is ignored.
+            opp_sims = args.cand_sims
+            if cand_kind != "puct":
+                raise ValueError("--opponent puct requires --candidate puct "
+                                 "(it is the flag-OFF sibling of the PUCT candidate)")
     new_mode = (args.candidate != "puct") or (args.opponent is not None)
     return cand_kind, opp_kind, opp_sims, net_ckpt, new_mode
+
+
+def _variant_sig(args) -> str:
+    """Compact signature of the candidate's ACTIVE variant knobs vs the champion
+    (final_select "visits", value_norm 15, c_lcb 1.0, reuse off). Empty when the
+    candidate IS the champion. Keeps distinct variant A/Bs from sharing an out-dir
+    (which would silently MIX their per-seed result json)."""
+    parts = []
+    if args.final_select != CHAMP_PUCT_FINAL_SELECT:
+        parts.append(args.final_select
+                     + (f"clcb{args.c_lcb:g}" if args.final_select == "lcb" else ""))
+    if args.reuse_tree:
+        parts.append("reuse")
+    if args.value_norm != CHAMP_PUCT_VALUE_NORM:
+        parts.append(f"vn{args.value_norm:g}")
+    return "".join("-" + p for p in parts)
 
 
 def _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode) -> str:
     """Out-subdir cell tag. LEGACY invocations (no --candidate/--opponent) keep the
     historical naming byte-identical; round-robin invocations get rr_* names
-    (e.g. rr_puct2750_vs_net-iter02_k2, rr_h6400_vs_h12800_k2)."""
+    (e.g. rr_puct2750_vs_net-iter02_k2, rr_h6400_vs_h12800_k2,
+    rr_puct2750-reuse_vs_puctchamp2750_k4)."""
     if not new_mode:
         return (f"puct_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}_{args.final_select}"
                 f"_s{args.cand_sims}_vs_h{args.champ_sims}_k{args.exact_k}")
     cand_tok = f"puct{args.cand_sims}" if cand_kind == "puct" else f"h{args.cand_sims}"
-    opp_tok = (f"h{opp_sims}" if opp_kind == "heur"
-               else "net-" + Path(net_ckpt).stem.replace("_", ""))
+    if opp_kind == "heur":
+        opp_tok = f"h{opp_sims}"
+    elif opp_kind == "puct":
+        # the candidate's variant signature rides on the cand token so
+        # variant-ON-vs-champion cells never collide.
+        cand_tok += _variant_sig(args)
+        opp_tok = f"puctchamp{opp_sims}"
+    else:
+        opp_tok = "net-" + Path(net_ckpt).stem.replace("_", "")
     return f"rr_{cand_tok}_vs_{opp_tok}_k{args.exact_k}"
 
 
@@ -432,6 +502,7 @@ def _make_cand_cfg():
         c_puct=d["c_puct"], tau_p=d["tau_p"],
         leaf_quantize=d["leaf_quantize"], final_select=d["final_select"],
         value_norm=d["value_norm"], leaf_cfg=DEFAULT_CONFIG,
+        c_lcb=d.get("c_lcb", 1.0), reuse_tree=d.get("reuse_tree", False),
     )
 
 
@@ -461,10 +532,17 @@ def _play_one(args) -> GameResult | None:
         cfg = _make_cand_cfg()
         cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                           simulations=_W["cand_sims"], seed=seed)
-    # opponent side (prefix = HeuristicMCTS, or the pinned rod_v2-anchor NeuralMCTS)
-    if _W.get("opp_kind", "heur") == "net":
+    # opponent side (prefix = HeuristicMCTS, the flag-OFF champion PUCT sibling, or
+    # the pinned rod_v2-anchor NeuralMCTS)
+    opp_kind = _W.get("opp_kind", "heur")
+    if opp_kind == "net":
         champ_prefix = _make_net_prefix(seed + 1)
         opp_K = 0   # BARE net (pinned anchor config): K=0 never latches the exact tail
+    elif opp_kind == "puct":
+        champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
+                                   _champ_puct_cfg(_W["cand_cfg_dict"]),
+                                   _W["opp_sims"], seed + 1)
+        opp_K = K
     else:
         champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["opp_sims"],
                                     seed + 1, DEFAULT_CONFIG)
@@ -596,20 +674,29 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
     if cand_kind == "puct":
         cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                    leaf_quantize=args.leaf_quantize, final_select=args.final_select,
-                                   leaf_cfg=DEFAULT_CONFIG)
+                                   value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
+                                   c_lcb=args.c_lcb, reuse_tree=args.reuse_tree)
     net = net_dev = net_ns = None
     if opp_kind == "net":
         net, net_dev, net_ns = _load_net_cpu(net_ckpt)
     import random
+    _knob_extra = (f" c_lcb={args.c_lcb}" if args.final_select == "lcb" else "") + \
+                  (" reuse_tree=ON" if args.reuse_tree else "") + \
+                  (f" value_norm={args.value_norm}" if args.value_norm != 15.0 else "")
     if not new_mode:
         print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
-              f"select={args.final_select} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
+              f"select={args.final_select}{_knob_extra} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
     else:
         cand_desc = (f"puct c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
-                     f"select={args.final_select} sims={args.cand_sims}" if cand_kind == "puct"
+                     f"select={args.final_select}{_knob_extra} sims={args.cand_sims}" if cand_kind == "puct"
                      else f"heur h{args.cand_sims}")
-        opp_desc = (f"heur h{opp_sims}" if opp_kind == "heur"
-                    else f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)")
+        if opp_kind == "heur":
+            opp_desc = f"heur h{opp_sims}"
+        elif opp_kind == "puct":
+            opp_desc = (f"puct-CHAMPION(flags OFF: select={CHAMP_PUCT_FINAL_SELECT} "
+                        f"value_norm={CHAMP_PUCT_VALUE_NORM:g} reuse=off) sims={opp_sims}")
+        else:
+            opp_desc = f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)"
         print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k}")
     t0 = time.perf_counter()
     for a_seat in (0, 1):
@@ -630,6 +717,11 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
             from carcassonne_ai.evaluators import make_single_evaluator
             champ_prefix = _NetPrefix(make_single_evaluator(net, net_dev, gf), gf, seed + 1)
             opp_K = 0   # bare net (pinned anchor config)
+        elif opp_kind == "puct":
+            shared = {"c_puct": args.c_puct, "tau_p": args.tau_p,
+                      "leaf_quantize": args.leaf_quantize}
+            champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
+                                       _champ_puct_cfg(shared), opp_sims, seed + 1)
         else:
             champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
                                         seed + 1, DEFAULT_CONFIG)
@@ -651,6 +743,12 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
               f"solver={cand.solver_secs:.1f}s to={cand.n_timeouts} ; "
               f"champ prefix/exact={champ.prefix_moves}/{champ.exact_moves} latch_k={champ.latch_k} "
               f"solver={champ.solver_secs:.1f}s")
+        if args.reuse_tree and cand_kind == "puct":
+            hp = cand._prefix  # the HeuristicPriorAgent behind the exact handoff
+            print(f"[smoke]   reuse_tree: hits={hp.reuse_hits} fresh={hp.reuse_fresh} "
+                  f"collide={hp.reuse_collide}")
+            assert hp.reuse_hits + hp.reuse_fresh + hp.reuse_collide == hp.neural_moves, \
+                "reuse counters must account for every prefix move"
         if args.exact_k > 0:
             assert cand.exact_moves > 0, "candidate never reached the exact endgame (K too small?)"
         if opp_K > 0:
@@ -665,8 +763,18 @@ def main(argv=None) -> int:
     ap.add_argument("--c-puct", type=float, default=1.5)
     ap.add_argument("--tau-p", type=float, default=5.0)
     ap.add_argument("--leaf-quantize", choices=("int", "float"), default="float")
-    ap.add_argument("--final-select", choices=("Q", "visits"), default="Q")
+    ap.add_argument("--final-select", choices=("Q", "visits", "lcb"), default="Q")
+    ap.add_argument("--c-lcb", type=float, default=1.0,
+                    help="LCB exploration penalty coefficient; ONLY used with "
+                         "--final-select lcb: score(a)=Q(a)-c_lcb*sqrt(ln(ΣN)/N(a)) "
+                         "(default 1.0)")
     ap.add_argument("--value-norm", type=float, default=15.0)
+    ap.add_argument("--reuse-tree", action="store_true",
+                    help="candidate persists+re-roots the PUCT tree across moves "
+                         "(keeps the played subtree's statistics; falls back to a "
+                         "fresh search when the next board isn't in the retained "
+                         "tree or on a rotation-key collision). Default OFF "
+                         "(byte-for-byte the champion).")
     ap.add_argument("--cand-sims", type=int, default=None,
                     help="candidate PUCT sims (from the equal-time bench match); required "
                          "for --candidate puct, ignored for --candidate h<sims>")
@@ -678,6 +786,11 @@ def main(argv=None) -> int:
     ap.add_argument("--opponent", type=str, default=None,
                     help="opponent side (default: h<champ-sims>, the legacy champion). "
                          "'h<sims>' = HeuristicMCTS @ <sims> (+ exact-K handoff). "
+                         "'puct' = the flag-OFF CHAMPION PUCT-heur-priors sibling of the "
+                         f"candidate (select={CHAMP_PUCT_FINAL_SELECT}, value_norm="
+                         f"{CHAMP_PUCT_VALUE_NORM:g}, reuse off; shares c_puct/tau_p/"
+                         "leaf-quantize/cand-sims; + same exact-K handoff) — use this for a "
+                         "variant-ON-vs-variant-OFF A/B. "
                          "'net:<ckpt.pt>' = NeuralMCTS opponent pinned to the rod_v2 anchor "
                          f"config (sims={NET_SIMS}, c_puct={NET_CPUCT}, v2.9 leaf + residual "
                          f"{NET_RESIDUAL_SCALE}, bare/no exact tail); net-on-CPU unless "
@@ -728,10 +841,12 @@ def main(argv=None) -> int:
 
     cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                leaf_quantize=args.leaf_quantize, final_select=args.final_select,
-                               value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG)
+                               value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
+                               c_lcb=args.c_lcb, reuse_tree=args.reuse_tree)
     cand_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                      "leaf_quantize": args.leaf_quantize, "final_select": args.final_select,
-                     "value_norm": args.value_norm}
+                     "value_norm": args.value_norm,
+                     "c_lcb": args.c_lcb, "reuse_tree": args.reuse_tree}
 
     tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
     sub = args.out_subdir or tag
@@ -745,10 +860,14 @@ def main(argv=None) -> int:
     # summary labels: legacy None -> byte-identical header; rr cells name both sides.
     cand_label = opp_label = None
     if new_mode:
-        cand_label = (f"PUCT-heur-priors(cand s{args.cand_sims})" if cand_kind == "puct"
-                      else f"candidate(heur h{args.cand_sims})")
-        opp_label = (f"opponent(heur h{opp_sims})" if opp_kind == "heur"
-                     else f"opponent(net:{Path(net_ckpt).stem}@{NET_SIMS})")
+        cand_label = (f"PUCT-heur-priors(cand s{args.cand_sims}{_variant_sig(args)})"
+                      if cand_kind == "puct" else f"candidate(heur h{args.cand_sims})")
+        if opp_kind == "heur":
+            opp_label = f"opponent(heur h{opp_sims})"
+        elif opp_kind == "puct":
+            opp_label = f"opponent(PUCT-champion flags-OFF s{opp_sims})"
+        else:
+            opp_label = f"opponent(net:{Path(net_ckpt).stem}@{NET_SIMS})"
 
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, t[1], t[2]))) is not None]
@@ -788,6 +907,13 @@ def main(argv=None) -> int:
                          "c": CHAMP_C, "sims": opp_sims,
                          "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
                          "exact_k": args.exact_k}
+        elif opp_kind == "puct":
+            # flag-OFF champion PUCT sibling of the variant candidate (shares
+            # c_puct/tau_p/leaf_quantize/sims; variant knobs forced to champion).
+            opp_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
+                         "role": "champion (variant flags OFF)",
+                         "sims": opp_sims, "exact_k": args.exact_k,
+                         **_champ_puct_cfg(cand_cfg_dict).as_manifest()}
         else:
             opp_block = {"kind": "net", "agent": "NeuralMCTS",
                          "ckpt": str(net_ckpt), "ckpt_sha256": net_sha,
@@ -874,25 +1000,39 @@ def main(argv=None) -> int:
             }
         else:
             cand_desc = (f"PUCT-heur-priors(c_puct={args.c_puct} tau_p={args.tau_p} "
-                         f"quant={args.leaf_quantize} select={args.final_select} s{args.cand_sims})"
+                         f"quant={args.leaf_quantize} select={args.final_select}{_variant_sig(args)} "
+                         f"s{args.cand_sims})"
                          if cand_kind == "puct" else f"HeuristicMCTS h{args.cand_sims}")
-            opp_desc = (f"HeuristicMCTS h{opp_sims} (exact-K<={args.exact_k})" if opp_kind == "heur"
-                        else f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
-                             f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
-                             f"{', orch ' + args.shm_eval_server if args.shm_eval_server else ', net-on-CPU'})")
+            if opp_kind == "heur":
+                opp_desc = f"HeuristicMCTS h{opp_sims} (exact-K<={args.exact_k})"
+            elif opp_kind == "puct":
+                opp_desc = (f"PUCT-heur-priors CHAMPION flags-OFF "
+                            f"(select={CHAMP_PUCT_FINAL_SELECT} value_norm={CHAMP_PUCT_VALUE_NORM:g} "
+                            f"reuse=off) s{opp_sims} (exact-K<={args.exact_k})")
+            else:
+                opp_desc = (f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
+                            f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
+                            f"{', orch ' + args.shm_eval_server if args.shm_eval_server else ', net-on-CPU'})")
             note = (f"Phase 1.1b transitivity round-robin cell {tag} "
                     f"(measurement/classical_search/ROUND_ROBIN_PLAN.md): candidate {cand_desc} "
                     f"exact-K<={args.exact_k} vs opponent {opp_desc}. "
                     f"cand ms/move {summ['cand_prefix_ms_per_move']:.0f} vs opp "
                     f"{summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
+            if opp_kind == "heur":
+                old_ckpt, old_c, old_var = f"heur_h{opp_sims}", CHAMP_C, "v2_9_champion"
+            elif opp_kind == "puct":
+                old_ckpt = f"puct_prior_champion{_variant_sig(args)}"
+                old_c, old_var = args.c_puct, "puct_heur_prior_champion"
+            else:
+                old_ckpt, old_c, old_var = str(net_ckpt), NET_CPUCT, "v2_9_rodv2_anchor"
             row = {
-                "new_ckpt": (f"puct_prior_{args.leaf_quantize}_{args.final_select}"
+                "new_ckpt": (f"puct_prior_{args.leaf_quantize}_{args.final_select}{_variant_sig(args)}"
                              if cand_kind == "puct" else f"heur_h{args.cand_sims}_champion"),
                 "new_c": args.c_puct if cand_kind == "puct" else CHAMP_C,
                 "new_var": "puct_heur_prior" if cand_kind == "puct" else "v2_9_champion",
-                "old_ckpt": (f"heur_h{opp_sims}" if opp_kind == "heur" else str(net_ckpt)),
-                "old_c": CHAMP_C if opp_kind == "heur" else NET_CPUCT,
-                "old_var": "v2_9_champion" if opp_kind == "heur" else "v2_9_rodv2_anchor",
+                "old_ckpt": old_ckpt,
+                "old_c": old_c,
+                "old_var": old_var,
                 "old_sims": opp_sims,
             }
         row.update({

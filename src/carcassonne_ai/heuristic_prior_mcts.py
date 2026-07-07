@@ -107,10 +107,28 @@ class HeuristicPriorConfig:
     tau_p         prior softmax temperature over Δleaf (afterstate gains).
     leaf_quantize "int" (round) | "float" (raw pre-round leaf).
     final_select  "Q" (NeuralMCTS.best_action's Q-then-N rule) |
-                  "visits" (argmax root visit count).
+                  "visits" (argmax root visit count) |
+                  "lcb" (max of a lower-confidence bound on Q, see c_lcb).
     value_norm    tanh denominator for the leaf value (matches HeuristicMCTS).
     leaf_cfg      virtual_score_v2.LeafConfig; None -> env-built DEFAULT_CONFIG
                   (= the v2.9 Bmild_cap8 leaf when the production env is set).
+    c_lcb         LCB exploration penalty coefficient — ONLY read when
+                  final_select == "lcb". score(a) = Q(a) - c_lcb * sqrt(ln(ΣN)/N(a)),
+                  ΣN = sum of the (deduped) root children's visit counts; children
+                  with N(a)==0 score -inf (never selected). Default 1.0 (a standard
+                  LCB weight; halfway between greedy Q and pure visits). This ONLY
+                  changes the FINAL root move choice — never the search itself.
+    reuse_tree    False (default) -> the agent clear()s the tree before every move
+                  (byte-for-byte the champion). True -> the agent PERSISTS the PUCT
+                  tree across moves and RE-ROOTS into the node for the next board it
+                  is asked about, keeping that subtree's statistics (falls back to a
+                  fresh clear()ed search when the board isn't in the retained tree,
+                  or when a transposition-key collision would serve a wrong-rotation
+                  subtree). See HeuristicPriorAgent._reroot_or_clear.
+
+    NOTE: c_lcb / reuse_tree DEFAULT to a no-op (final_select stays "Q"/"visits",
+    reuse stays off); the defaults reproduce the champion byte-for-byte
+    (tests/test_heuristic_prior_mcts.py::test_bit_exact_all_flags_off).
     """
 
     c_puct: float = DEFAULT_PUCT_C
@@ -119,15 +137,17 @@ class HeuristicPriorConfig:
     final_select: str = "Q"
     value_norm: float = HEURISTIC_VALUE_NORM
     leaf_cfg: object = None
+    c_lcb: float = 1.0
+    reuse_tree: bool = False
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
             raise ValueError(
                 f"leaf_quantize must be 'int'|'float'; got {self.leaf_quantize!r}"
             )
-        if self.final_select not in ("Q", "visits"):
+        if self.final_select not in ("Q", "visits", "lcb"):
             raise ValueError(
-                f"final_select must be 'Q'|'visits'; got {self.final_select!r}"
+                f"final_select must be 'Q'|'visits'|'lcb'; got {self.final_select!r}"
             )
 
     def resolved_leaf_cfg(self):
@@ -148,6 +168,8 @@ class HeuristicPriorConfig:
             "leaf_quantize": self.leaf_quantize,
             "final_select": self.final_select,
             "value_norm": self.value_norm,
+            "c_lcb": self.c_lcb,
+            "reuse_tree": self.reuse_tree,
             "leaf_cfg": leaf,
         }
 
@@ -242,11 +264,16 @@ class HeuristicPriorAgent:
         cfg: HeuristicPriorConfig,
         simulations: int,
         seed: int | None = None,
+        reuse_tree: bool | None = None,
     ):
         self.game = game
         self.cfg = cfg
         self.simulations = int(simulations)
         self._final_select = cfg.final_select
+        # reuse_tree resolves from the config unless overridden at construction
+        # (the override lets tests / direct callers flip it without a new cfg).
+        # Default None -> cfg.reuse_tree (False) -> byte-for-byte the champion.
+        self._reuse_tree = bool(cfg.reuse_tree) if reuse_tree is None else bool(reuse_tree)
         self.evaluator = make_heuristic_prior_evaluator(game, cfg)
         self.mcts = NeuralMCTS(
             game=game,
@@ -259,6 +286,13 @@ class HeuristicPriorAgent:
         self.neural_moves = 0
         self.heur_moves = 0
         self.latch_k = None
+        # Tree-reuse bookkeeping (introspection / tests): per-move outcome of the
+        # re-root attempt. reuse_hits = re-rooted into a retained subtree;
+        # reuse_fresh = board absent from the tree -> fresh search; reuse_collide =
+        # transposition-key collision (wrong-rotation subtree) -> fresh search.
+        self.reuse_hits = 0
+        self.reuse_fresh = 0
+        self.reuse_collide = 0
 
     def clear(self) -> None:
         self.mcts.clear()
@@ -268,12 +302,128 @@ class HeuristicPriorAgent:
         if self._final_select == "visits":
             counts, actions = self.mcts.root_visit_distribution(board)
             return int(actions[int(np.argmax(counts))])
+        if self._final_select == "lcb":
+            return self._lcb_action(board)
         return int(self.mcts.best_action(board))
 
+    def _lcb_action(self, board: Board) -> int:
+        """Pick the root child maximizing a lower-confidence bound on Q:
+
+            score(a) = Q(a) - c_lcb * sqrt( ln(ΣN) / N(a) )
+
+        where Q(a) is from the ROOT's POV (same flip convention as
+        ``NeuralMCTS.best_action``), ΣN is the sum of the deduped root children's
+        visit counts, and children with N(a)==0 are excluded (score -inf, never
+        selected). Cheap: reads the already-computed root; runs no extra sims and
+        cannot affect the tree — LCB only changes the final move choice.
+        """
+        m = self.mcts
+        root_key = m.game.string_representation(board)
+        root = m._nodes.get(root_key)
+        if root is None or root.N == 0:  # defensive; best_action already searched
+            m.search(board)
+            root = m._nodes[root_key]
+        visited = [(a, c) for a, c in m._deduped_children(root) if c.N > 0]
+        if not visited:
+            return next(iter(root.children))
+        total_n = sum(c.N for _, c in visited)
+        log_total = math.log(total_n) if total_n > 0 else 0.0
+        c_lcb = float(self.cfg.c_lcb)
+        best_a = None
+        best_score = -math.inf
+        for a, child in visited:
+            q = child.Q if child.player_to_move == root.player_to_move else -child.Q
+            lcb = q - c_lcb * math.sqrt(log_total / child.N)
+            if lcb > best_score:
+                best_score = lcb
+                best_a = int(a)
+        return int(best_a)
+
     def move(self, board: Board) -> int:
-        self.clear()
+        if self._reuse_tree:
+            self._reroot_or_clear(board)
+        else:
+            self.clear()
         self.neural_moves += 1
         return self.best_action(board)
+
+    # --- tree reuse (reuse_tree=True) -------------------------------------- #
+    def _reroot_or_clear(self, board: Board) -> None:
+        """Re-root the persisted PUCT tree into the node for ``board`` (the
+        position the agent is now asked about), keeping that subtree's statistics.
+
+        Falls back to a fresh clear()ed search when:
+          (b) ``board`` is not in the retained tree (opponent played an
+              unsearched/low-visit move) — this is normal, counted in reuse_fresh;
+          (a) the retained node under ``board``'s transposition key is a
+              wrong-rotation SIBLING (same string_representation key but different
+              farmer meeple-action indices — the Phase-0.3 legal-cache rotation
+              family). Re-using it would silently descend into a wrong subtree with
+              the wrong action indices, so we DON'T — counted in reuse_collide.
+
+        The legal-moves cache is always dropped (correctness-neutral; avoids the
+        Phase-0.3 stale cross-ply mask serving). Only the ``_nodes`` search
+        statistics are what tree-reuse retains.
+        """
+        m = self.mcts
+        game = m.game
+        game.clear_caches()  # drop the legal-moves cache every move (Phase-0.3 safe)
+        next_key = game.string_representation(board)
+        retained = m._nodes.get(next_key)
+        if (
+            retained is None
+            or not retained.expanded
+            or retained.is_terminal
+            or retained.N == 0
+        ):
+            # (b) not usefully in the retained tree -> fresh search
+            m._nodes.clear()
+            m._noisy_roots.clear()
+            self.reuse_fresh += 1
+            return
+        # (a) COLLISION GUARD: discriminate a wrong-rotation sibling from the true
+        # position by the FRESH legal mask (identical iff the same physical board;
+        # a rotation-sibling has different farmer meeple indices — test_invalid_
+        # visit_clip). retained.valid_actions was frozen from the board that first
+        # created this node during the prior search.
+        fresh_actions = {int(a) for a in np.flatnonzero(game.get_valid_moves(board))}
+        if set(retained.valid_actions) != fresh_actions:
+            m._nodes.clear()
+            m._noisy_roots.clear()
+            self.reuse_collide += 1
+            return
+        # SAFE: prune _nodes to the subtree reachable from the retained root and
+        # re-root there (its accumulated visit stats carry over; the search adds
+        # `simulations` more sims on top).
+        self._prune_to_subtree(retained)
+        # Tripwire: after re-root the root's cached valid_actions MUST equal the
+        # board's fresh legal set. Can only fail if a collision slipped past the
+        # guard above -> fail loud rather than serve a wrong subtree.
+        assert set(retained.valid_actions) == fresh_actions, (
+            "tree-reuse re-root would serve a wrong-rotation subtree "
+            "(collision guard bypassed) — must never happen"
+        )
+        self.reuse_hits += 1
+
+    def _prune_to_subtree(self, new_root) -> None:
+        """Rebuild ``mcts._nodes`` to hold ONLY the subtree reachable from
+        ``new_root`` (drop every other retained node). Bounds memory and makes a
+        stale cross-move transposition collision structurally impossible (an
+        unrelated stale node can no longer be looked up)."""
+        m = self.mcts
+        reachable: dict = {}
+        stack = [new_root]
+        while stack:
+            node = stack.pop()
+            k = node.state_key
+            if k in reachable:
+                continue
+            reachable[k] = node
+            for child in node.children.values():
+                if child.state_key not in reachable:
+                    stack.append(child)
+        m._nodes = reachable
+        m._noisy_roots = set()
 
 
 def make_heuristic_prior_mcts(
