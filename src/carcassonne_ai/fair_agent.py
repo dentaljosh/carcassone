@@ -80,7 +80,11 @@ import numpy as np
 from wingedsheep.carcassonne.objects.game_phase import GamePhase
 
 from .game_wrapper import Board, Game
-from .mcts import HeuristicMCTS
+from .mcts import HeuristicMCTS, NeuralMCTS
+from .heuristic_prior_mcts import (
+    HeuristicPriorConfig,
+    make_heuristic_prior_evaluator,
+)
 
 # Marginalized-solver handoff band. NOT a tuning knob: K<=2 is both the
 # tractability frontier of the no-alpha-beta expectiminimax AND the L2-3 band
@@ -281,4 +285,185 @@ class FairHeuristicMCTSAgent:
         return self._pimc_move(board, move_idx)
 
     # eval_hybrid_handoff harness convention (`agent.move(board) -> int`).
+    move = choose_action
+
+
+class FairHeuristicPriorAgent:
+    """Production fair-play PIMC wrapper around the PUCT-with-heuristic-priors
+    CHAMPION (``heuristic_prior_mcts.HeuristicPriorAgent``'s ``NeuralMCTS`` core).
+
+    WHY THIS EXISTS: as of the 2026-07-06 champion flip, production strength is
+    ``HeuristicPriorAgent`` — PUCT selection with softmax(Δleaf/τ_p) heuristic
+    priors + a v2.9 leaf value (``src/carcassonne_ai/heuristic_prior_mcts.py``;
+    c_puct=1.5, τ_p=5, leaf_quantize=float, final_select=visits, ~2750 sims). But
+    as shipped it plays CLAIRVOYANT — its ``NeuralMCTS`` descends the engine's
+    pre-shuffled TRUE ``state.deck``, so every simulation sees the actual upcoming
+    tiles. A deployed/fair player (any human/superhuman strength claim) must not.
+    This is the fair (imperfect-information / PIMC) mode for that champion — the
+    PUCT sibling of ``FairHeuristicMCTSAgent`` above, reusing its VALIDATED
+    determinization + pooled-Q + marginalized-endgame machinery verbatim.
+
+    MECHANISM — identical to ``FairHeuristicMCTSAgent`` (root-determinization
+    PIMC), only the per-determinization search engine differs (a fresh
+    heuristic-prior ``NeuralMCTS`` instead of ``HeuristicMCTS``):
+      per move, ``k_dets`` determinizations; each one:
+        1. deepcopy the board (the caller's board is NEVER mutated);
+        2. rng.shuffle ONLY the unseen ``state.deck`` (multiset preserved;
+           ``next_tile`` untouched — the ``NeuralMCTS._reshuffled_root`` semantics,
+           reused via ``FairHeuristicMCTSAgent.reshuffled_determinization``);
+        3. run a FRESH ``NeuralMCTS`` wired with the SAME heuristic-prior evaluator
+           on that copy (fresh tree per determinization = fair_isolate discipline;
+           the search itself is CLAIRVOYANT on the *reshuffled* deck, which is the
+           point — one plausible world per determinization);
+        4. harvest its deduped root-child stats into pooled (N, W) accumulators
+           (``pool_root_stats`` — the ``_NeuralNode`` root has the same
+           ``children``/``N``/``W``/``player_to_move`` fields + id-dedup as the
+           ``HeuristicMCTS`` node, so the harvester is engine-agnostic).
+      Then pick by POOLED-Q (``pooled_q_argmax``).
+
+    NOTE — ``cfg.final_select`` is INERT in fair mode: the champion's
+    ``final_select`` ("visits") only governs a *single-search* root pick; the fair
+    ensemble aggregates across ``k_dets`` worlds by pooled-Q (the probe-validated
+    PIMC rule). The knobs that DO shape the search — ``c_puct``, ``τ_p``,
+    ``leaf_quantize``, ``value_norm``, ``leaf_cfg`` — ride on ``cfg`` unchanged.
+
+    ENDGAME (``exact_endgame=True`` default): the SAME fair marginalized exact
+    handoff as ``FairHeuristicMCTSAgent`` — latch on the first TILES decision with
+    ``k_remaining <= exact_max_k`` and play the marginalized (honest hidden-bag)
+    expectiminimax solver for the rest of the game. ``exact_max_k`` is a knob here
+    (``FairHeuristicMCTSAgent`` hard-codes 2) so the A2 grid can sweep the fair
+    endgame depth K∈{2,4,8}; K>2 marginalized solves are expensive (no alpha-beta
+    over chance nodes) → BudgetExceeded falls back to the fair PIMC move for that
+    decision (counted in ``n_timeouts``; the agent stays latched). There is NO
+    clairvoyant solve here (that would be the cheating path).
+
+    DETERMINISM / INTERFACE / instrumentation: identical contract to
+    ``FairHeuristicMCTSAgent`` (``choose_action``/``move``; per-move seeds from
+    ``det_seed_base``; the neural_moves/heur_moves/latch_k/exact_moves/n_timeouts/
+    solver_secs/solver_nodes/max_solve_secs counters). ``heur_moves`` counts fair
+    PIMC (prefix) decisions.
+
+    Parameters
+    ----------
+    game : Game                 shared engine wrapper (referee/eval owns its own).
+    cfg : HeuristicPriorConfig  the champion's resolved knobs (c_puct/τ_p/leaf).
+    sims : int                  PUCT sims PER determinization.
+    k_dets : int                number of root determinizations per move (PIMC K).
+    seed : int                  base seed; the agent is deterministic given it.
+    min_pooled_visits : int     pooled-Q eligibility floor (see pooled_q_argmax).
+    exact_endgame : bool        True (default) -> marginalized solver at k<=exact_max_k.
+    exact_max_k : int           fair-endgame handoff depth K (default 2).
+    exact_budget : int          solver node budget per solve (BudgetExceeded -> PIMC).
+    """
+
+    def __init__(self, game: Game, cfg: HeuristicPriorConfig | None = None,
+                 sims: int = 344, k_dets: int = 8, seed: int | None = None,
+                 min_pooled_visits: int = DEFAULT_MIN_POOLED_VISITS,
+                 exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
+                 exact_budget: int = DEFAULT_EXACT_BUDGET):
+        if k_dets < 1:
+            raise ValueError(f"k_dets must be >= 1, got {k_dets}")
+        if exact_max_k < 0:
+            raise ValueError(f"exact_max_k must be >= 0, got {exact_max_k}")
+        self._game = game
+        self._cfg = cfg if cfg is not None else HeuristicPriorConfig()
+        self._sims = int(sims)
+        self._k_dets = int(k_dets)
+        self._c_puct = float(self._cfg.c_puct)
+        self._seed = 0 if seed is None else int(seed)
+        self._min_pooled_visits = int(min_pooled_visits)
+        self._exact_endgame = bool(exact_endgame)
+        self._exact_max_k = int(exact_max_k)
+        self._exact_budget = int(exact_budget)
+        # The heuristic-prior evaluator is STATELESS (a pure Callable[[Board],
+        # (priors, value)] over `game`), so build it ONCE and share it across the
+        # fresh per-determinization NeuralMCTS trees — exactly how HeuristicPriorAgent
+        # wires it. Reshuffled determinizations are the SAME position (deck order is
+        # not in the transposition key), so sharing `game`'s legal-move cache is
+        # correctness-neutral.
+        self._evaluator = make_heuristic_prior_evaluator(game, self._cfg)
+        self._move_idx = 0
+        self._latched = False
+        # eval-harness-compatible instrumentation (mirrors FairHeuristicMCTSAgent).
+        self.neural_moves = 0        # always 0 — harness symmetry only
+        self.heur_moves = 0          # PIMC (fair search) decisions
+        self.latch_k = None
+        self.exact_moves = 0
+        self.n_timeouts = 0
+        self.solver_secs = 0.0
+        self.solver_nodes = 0
+        self.max_solve_secs = 0.0
+
+    # --- deterministic per-move seed derivation (mirrors FairHeuristicMCTSAgent) --
+    def det_seed_base(self, move_idx: int) -> int:
+        return (self._seed * 1_000_003 + move_idx * 8191) & 0x7FFFFFFF
+
+    def det_search_seed(self, move_idx: int, det_idx: int) -> int:
+        return self.det_seed_base(move_idx) + 100 + det_idx
+
+    # --- the fair PIMC move -------------------------------------------------
+    def _pimc_move(self, board: Board, move_idx: int) -> int:
+        self.heur_moves += 1
+        legal = np.flatnonzero(self._game.get_valid_moves(board))
+        if legal.size == 0:
+            raise ValueError("fair agent asked to move with no legal actions")
+        if legal.size == 1:
+            return int(legal[0])   # forced move: skip the K searches
+        base = self.det_seed_base(move_idx)
+        det_rng = random.Random(base + 1)          # deck reshuffles
+        root_key = self._game.string_representation(board)
+        agg_n: dict[int, float] = defaultdict(float)
+        agg_w: dict[int, float] = defaultdict(float)
+        for i in range(self._k_dets):
+            b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
+            m = NeuralMCTS(game=self._game, evaluator=self._evaluator,
+                           simulations=self._sims, c_puct=self._c_puct,
+                           seed=base + 100 + i)
+            m.search(b)
+            # deck order isn't in the key, so the reshuffled root shares the
+            # original board's key (same fallback as FairHeuristicMCTSAgent).
+            root = m._nodes.get(root_key) or m._nodes[self._game.string_representation(b)]
+            pool_root_stats(root, agg_n, agg_w)
+            m.clear()
+        if not agg_n:                              # pathological: nothing visited
+            return int(legal[0])
+        return pooled_q_argmax(agg_n, agg_w, self._min_pooled_visits)
+
+    # --- the fair exact endgame (marginalized; identical to FairHeuristicMCTSAgent
+    #     but with the configurable exact_max_k band) --------------------------
+    def _exact_move(self, board: Board) -> int | None:
+        S = _import_solver()
+        t0 = time.perf_counter()
+        try:
+            res = S.solve(self._game, board, mode="marginalized",
+                          budget=self._exact_budget, alphabeta=False)
+        except S.BudgetExceeded:
+            self.solver_secs += time.perf_counter() - t0
+            self.n_timeouts += 1
+            return None
+        dt = time.perf_counter() - t0
+        self.solver_secs += dt
+        self.max_solve_secs = max(self.max_solve_secs, dt)
+        self.solver_nodes += res.nodes
+        self.exact_moves += 1
+        return int(min(res.optimal_actions))
+
+    # --- public API ----------------------------------------------------------
+    def choose_action(self, board: Board) -> int:
+        """Pick the fair move for `board`. Never mutates the caller's board."""
+        move_idx = self._move_idx
+        self._move_idx += 1
+        if self._exact_endgame and not self._latched:
+            st = board.state
+            k = k_remaining(st)
+            if st.phase == GamePhase.TILES and k <= self._exact_max_k:
+                self._latched = True
+                self.latch_k = k
+        if self._latched:
+            a = self._exact_move(board)
+            if a is not None:
+                return a
+            # BudgetExceeded: fair PIMC fallback for THIS decision only.
+        return self._pimc_move(board, move_idx)
+
     move = choose_action
