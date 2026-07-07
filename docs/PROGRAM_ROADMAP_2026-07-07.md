@@ -6,16 +6,15 @@
 
 ---
 
-## NOW (running as of 2026-07-07 ~08:15)
-- 🔄 **K=3 endgame confirm** (A1): PUCT-priors@2750 vs h6400 @ exact-K=3, n=200, band 9.4e9 (CRN vs the K=2 confirm), **W30 local + W22 laptop, CARCASSONNE_TT_CAP=500000** (the K=4 crash was WSL-VM TT memory — now bounded). Local clean; laptop had 24 RR-4 `exact-k 2` orphans self-draining (watcher armed). → /tmp/k3_primary.log, CONFIRM_PROGRESS.tsv.
-- ✅ **ROUND-ROBIN COMPLETE — both gates PASS, RPS retired.** M1 +230.2 / M2 +36.6 / M3 +149.3 / M4 −8.7. rr1-4 rows in results.csv.
-- ✅ **CHAMPION FLIPPED** (see GATE #1).
-- ⏸️ **Stage-0 adapter** — agent died on session limits (reset 3:20am ET) leaving `scripts/canonical_az/solver_score_agent.py` + test **uncommitted, extraction UNVERIFIED** ("per-child numbers not yet trusted"). Resume/verify before any measurement. [TEACHER_TAU_PLAN.md](../measurement/classical_search/TEACHER_TAU_PLAN.md)
+## NOW (2026-07-07) — champion arc DONE; MAX-SEARCH campaign starting
+- ✅ **CHAMPION FLIPPED** (`b2ff08f`) · **ROUND-ROBIN** RPS-retired (M1+230/M2+37/M3+149/M4−8.7, `ef95711`) · **K=3** +108.1/z6.11 (`74f23b0`, holds at deeper handoff) · **Stage-0 teacher-τ** KILL-CONFIRM value route (`f77a5da`) · **policy-distillation diagnostics** NO (4.75% real midgame headroom + CL-031 washout; `71c6ae8`+run).
+- 🔄 **BUILDING: cheap search variants** (subagent `af78bf4`) — LCB final-select + tree-reuse + value_norm knob, flag-gated bit-exact-off (it's editing `heuristic_prior_mcts.py`/`mcts.py`/`eval_puct_priors.py`). On return: A/B each vs champion (c1.5/τ5/visits/2750, equal wall-clock, n=400 paired, fresh bands, keep+stack winners). See **Track C**.
+- Boxes FREE (local + laptop-net-free). Learned-track net experiments DEFERRED per Joshua (search first) — see **Track B**.
 
-## GATE — Joshua decisions needed (nothing below executes without them)
-1. ✅ **Champion flip EXECUTED 2026-07-07** ("flip and go"): PRODUCTION.yaml → `puct_priors_v29_bmild_cap8`, CL-041 SUPERSEDED / CL-043 PROMOTED, docs stamped. (No CHECKPOINT_LINEAGE row — classical agent-config, not a `.pt`.) K=3 confirm running concurrently (does NOT gate the flip; Joshua flipped without waiting).
-2. **Approve Track-B Stage 1 spend** if Stage 0 reads REOPEN (one box-day).
-3. **Priority call** if compute contends: recommended order below interleaves cheap-decisive first.
+## GATE / decisions — RESOLVED this session
+1. ✅ **Champion flip EXECUTED** ("flip and go"): PRODUCTION.yaml → `puct_priors_v29_bmild_cap8`, CL-041 SUPERSEDED / CL-043 PROMOTED. (No CHECKPOINT_LINEAGE row — classical agent-config.)
+2. ✅ **Stage-1 policy-distillation NOT funded** — diagnostics gate failed (4.75% real midgame headroom « 20%) + CL-031 washout. Value route also closed (Stage-0 τ). The learned track is closed **at 7M-warmstart** only.
+3. ✅ **Strategic direction (Joshua): MAX SEARCH FIRST**, then revisit the net. The two untested learned-track cells — **from-scratch/tabula-rasa** (never run) and **bigger nets** (capacity probe crashed) — are DEFERRED behind the search-maxing (they're Fable's "scale/architecture" blocker-#2 path; cheaper capacity probe first if/when we return). Rationale: cheap ceiling-raising + re-anchor first tells us where we stand vs strong-human → informs whether the expensive net bets are worth it.
 
 ---
 
