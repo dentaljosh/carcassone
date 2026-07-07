@@ -124,6 +124,7 @@ NET_SIMS = 200
 NET_CPUCT = 3.0
 NET_RESIDUAL_SCALE = 0.25
 NET_MEEPLE_K = 2.0
+NET_N_CH = 78   # iter_02-family input planes; MUST match the orch server export (n_ch=78)
 
 
 # --------------------------------------------------------------------------- #
@@ -418,7 +419,7 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
             # carc-orch SHM orchestrator: the server owns the only net copy; this
             # worker is CPU-only and gets forwards over SHM (== eval_hybrid_handoff).
             from carcassonne_ai.shm_eval_handles import connect_shm
-            _W["net_handles"] = connect_shm(shm_name, id_q.get(), net_ns)
+            _W["net_handles"] = connect_shm(shm_name, id_q.get(), net_ns, NET_N_CH)
         else:
             _W["net"], _W["net_dev"], _W["net_ns"] = _load_net_cpu(net_ckpt)
 
@@ -797,6 +798,7 @@ def main(argv=None) -> int:
                          "exact_k": 0,   # bare prefix: NO exact tail (anchor rows were bare)
                          "include_farm_scalars": net_meta["n_scalar_features"] > 10,
                          "orch_shm": args.shm_eval_server,
+                         "net_n_ch": NET_N_CH,
                          "pinned_from": "scripts/level2/eval_hybrid_handoff.py ITER8_SIMS/"
                                         "ITER8_CPUCT/ITER8_RESIDUAL_SCALE (rod_v2 anchor "
                                         "harness; results.csv rodv2_iter02_vs_heur*_v29_n200)",

@@ -33,8 +33,9 @@ HELP
   echo "[rr-orch $(ts)] CELL $cell primary exited -> $(tail -1 "$MDIR/ROUND_ROBIN_PROGRESS.tsv" 2>/dev/null)"
 }
 
-# ---- Phase A: orch servers on both boxes ----
+# ---- Phase A: orch servers on both boxes (idempotent: kill stale servers first) ----
 echo "[rr-orch $(ts)] exporting torchscript + starting orch servers"
+pkill -f "carc-orch --model.*$SHM" 2>/dev/null; sleep 1; rm -f /dev/shm/carc_$SHM
 $PY $REPO/scripts/export_torchscript.py --checkpoint $SHARE/rod_v2_flywheel/ckpt/iter_02.pt --out /tmp/carc_rr_iter02.ts.pt --device cuda \
   && echo "[rr-orch $(ts)] local TS export OK" || { echo "[rr-orch $(ts)] FATAL local TS export failed"; exit 1; }
 setsid nice -n 19 bash $REPO/rust/carc-orch/run_server.sh --model /tmp/carc_rr_iter02.ts.pt --transport shm \
@@ -45,6 +46,7 @@ grep -qiE 'listening|ready|serving' /tmp/rr_orch_server_local.log && echo "[rr-o
   || echo "[rr-orch $(ts)] WARN local orch server status unclear (log tail: $(tail -1 /tmp/rr_orch_server_local.log))"
 ssh laptop-wsl 'bash -s' <<'LSRV'
 cd /home/doctor/projects/carcassone || exit 1
+pkill -f 'carc-orch --model.*rrIter02' 2>/dev/null; sleep 1; rm -f /dev/shm/carc_rrIter02
 .venv/bin/python scripts/export_torchscript.py --checkpoint /mnt/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt --out /tmp/carc_rr_iter02.ts.pt --device cuda \
   && echo "laptop TS export OK" || { echo "laptop TS export FAILED"; exit 1; }
 setsid nice -n 19 bash rust/carc-orch/run_server.sh --model /tmp/carc_rr_iter02.ts.pt --transport shm \
@@ -56,15 +58,18 @@ LSRV
 echo "[rr-orch $(ts)] laptop server phase done"
 
 # ---- Phase B: pre-flight smoke (production knobs, n=4, throwaway band, local only) ----
-echo "[rr-orch $(ts)] PRE-FLIGHT: n=4 RR-1 smoke (orch, throwaway band 9.99e9)"
-CARC_ORCH_SHM=$SHM nice -n 19 $PY $SC/eval_puct_priors.py --candidate puct --opponent net:$SHARE/rod_v2_flywheel/ckpt/iter_02.pt \
+echo "[rr-orch $(ts)] PRE-FLIGHT: n=4 RR-1 smoke (orch, throwaway band 9.99e9, 40min hang-guard)"
+rm -rf "$SHARE/puct_rr_smoke/preflight"   # fresh smoke every launch (stale summary must not pass the gate)
+CARC_ORCH_SHM=$SHM timeout 2400 nice -n 19 $PY $SC/eval_puct_priors.py --candidate puct --opponent net:$SHARE/rod_v2_flywheel/ckpt/iter_02.pt \
   --shm-eval-server $SHM --c-puct 1.5 --tau-p 5 --leaf-quantize float --final-select visits \
   --cand-sims 2750 --champ-sims 6400 --exact-k 2 --n 4 --paired --workers 4 \
   --no-results-csv --seed-start 9990000000 --out-root "$SHARE/puct_rr_smoke" --out-subdir preflight >/tmp/rr_preflight.log 2>&1
 if $PY -c "import json;s=json.load(open('$SHARE/puct_rr_smoke/preflight/summary.json'));assert s['n']==4;print('preflight OK n=4')"; then
   echo "[rr-orch $(ts)] PRE-FLIGHT OK -> full cells"
 else
-  echo "[rr-orch $(ts)] PRE-FLIGHT FAILED -> stop before burning real bands. tail: $(tail -3 /tmp/rr_preflight.log)"; exit 1
+  echo "[rr-orch $(ts)] PRE-FLIGHT FAILED (or hung->timeout) -> stop before burning real bands. tail: $(tail -3 /tmp/rr_preflight.log)"
+  pkill -f 'eval_puct_priors.*puct_rr_smoke' 2>/dev/null   # reap orphaned pool children
+  exit 1
 fi
 
 # ---- Phase C: the orch cells (RPS-decisive) ----

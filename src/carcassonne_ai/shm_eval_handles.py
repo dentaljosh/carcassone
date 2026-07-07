@@ -185,6 +185,11 @@ class ShmServerHandles:
 
 
 def connect_shm(shm_name: str, worker_id: int, n_scalar: int,
-                connect_timeout_s: float = 30.0) -> ShmServerHandles:
-    conn = _ShmConn(shm_name, worker_id, n_scalar, connect_timeout_s)
+                n_ch: int = 78, connect_timeout_s: float = 30.0) -> ShmServerHandles:
+    # NOTE (2026-07-06 fix): n_ch was added to _ShmConn's signature (before
+    # connect_timeout_s) during the M2 sighted-net work, but this wrapper kept
+    # forwarding 4 positionals — so 3-arg callers got n_ch=30.0 (the timeout!)
+    # and 4-arg callers' n_ch only worked by landing in the timeout slot and
+    # being re-forwarded. Signature now mirrors _ShmConn exactly.
+    conn = _ShmConn(shm_name, worker_id, n_scalar, n_ch, connect_timeout_s)
     return ShmServerHandles(request_q=conn, response_q=conn, worker_id=worker_id, _conn=conn)
