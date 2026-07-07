@@ -6,12 +6,14 @@
 
 ---
 
-## NOW (boxes FREE as of 06:31 — nothing running; next launch is gated on Joshua)
-- ✅ **ROUND-ROBIN COMPLETE — both gates PASS, RPS retired.** M1 +230.2 / M2 +36.6 / M3 +149.3 / M4 −8.7 (champion ties its own double = search-saturated; PUCT's win is algorithmic). [ROUND_ROBIN_PLAN.md](../measurement/classical_search/ROUND_ROBIN_PLAN.md). Close-out: table stamped; results.csv rows for rr3/rr4 pending (A3).
+## NOW (running as of 2026-07-07 ~08:15)
+- 🔄 **K=3 endgame confirm** (A1): PUCT-priors@2750 vs h6400 @ exact-K=3, n=200, band 9.4e9 (CRN vs the K=2 confirm), **W30 local + W22 laptop, CARCASSONNE_TT_CAP=500000** (the K=4 crash was WSL-VM TT memory — now bounded). Local clean; laptop had 24 RR-4 `exact-k 2` orphans self-draining (watcher armed). → /tmp/k3_primary.log, CONFIRM_PROGRESS.tsv.
+- ✅ **ROUND-ROBIN COMPLETE — both gates PASS, RPS retired.** M1 +230.2 / M2 +36.6 / M3 +149.3 / M4 −8.7. rr1-4 rows in results.csv.
+- ✅ **CHAMPION FLIPPED** (see GATE #1).
 - ⏸️ **Stage-0 adapter** — agent died on session limits (reset 3:20am ET) leaving `scripts/canonical_az/solver_score_agent.py` + test **uncommitted, extraction UNVERIFIED** ("per-child numbers not yet trusted"). Resume/verify before any measurement. [TEACHER_TAU_PLAN.md](../measurement/classical_search/TEACHER_TAU_PLAN.md)
 
 ## GATE — Joshua decisions needed (nothing below executes without them)
-1. **Sign the champion flip** (G1 passed; proposal live): [PHASE1.1_FLIP_PROPOSAL_DRAFT.md](../measurement/classical_search/PHASE1.1_FLIP_PROPOSAL_DRAFT.md). Recommend: sign after K=3 check (A1). Execution = PRODUCTION.yaml + CHECKPOINT_LINEAGE row + CL-041 amendment + close-out.
+1. ✅ **Champion flip EXECUTED 2026-07-07** ("flip and go"): PRODUCTION.yaml → `puct_priors_v29_bmild_cap8`, CL-041 SUPERSEDED / CL-043 PROMOTED, docs stamped. (No CHECKPOINT_LINEAGE row — classical agent-config, not a `.pt`.) K=3 confirm running concurrently (does NOT gate the flip; Joshua flipped without waiting).
 2. **Approve Track-B Stage 1 spend** if Stage 0 reads REOPEN (one box-day).
 3. **Priority call** if compute contends: recommended order below interleaves cheap-decisive first.
 

@@ -1,6 +1,6 @@
 # PHASE 1.1 — PUCT-with-heuristic-priors vs the deep-classical champion — RESULTS
 
-**Status (2026-07-06): CONFIRM FIRED — +148.2 elo / z10.17 / n=400 fresh band (see CONFIRM section below).** MEASUREMENT ONLY — PRODUCTION.yaml / champion / v2.7 / v2.9 leaf UNCHANGED. Champion-flip is *proposed only* ([PHASE1.1_FLIP_PROPOSAL_DRAFT.md](PHASE1.1_FLIP_PROPOSAL_DRAFT.md)), pending Joshua's review. K=4 endgame check + τ bracket auto-running.
+**Status (2026-07-07): ✅ FLIP EXECUTED — PUCT-priors is the production champion.** Confirm +148.2/z10.17/n400 (fresh band) + transitivity round-robin (RPS retired: [ROUND_ROBIN_PLAN.md](ROUND_ROBIN_PLAN.md)) → Joshua authorized the flip ("flip and go", 2026-07-07). `governance/PRODUCTION.yaml` champion → `puct_priors_v29_bmild_cap8`; CL-041 SUPERSEDED, CL-043 PROMOTED. The v2.9 leaf is UNCHANGED (pure search win). Open follow-ups gating full trust: K=3 endgame confirm (IN FLIGHT) + fair-PIMC verdict ([ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) A2).
 
 Pre-registration: [PLAN.md](PLAN.md). Hypothesis (MT-1, the highest-EV review item): production `HeuristicMCTS` uses random-expansion UCT (C=3.0, no priors, one-random-child-per-sim, int leaf) — well below the classical frontier at equal compute. Adding PUCT + heuristic-leaf priors + expand-all should beat it at equal wall-clock.
 

@@ -5,57 +5,85 @@
 # source of truth that those launchers cite. Update it (+ governance/CHECKPOINT_LINEAGE.csv)
 # whenever the champion changes.
 
-folded_in: "2026-07-02"   # S1 flip (post-review plan §1): v2.9 Bmild_cap8 deep-classical PROMOTED
-flip_authorized_by: "Joshua, 2026-07-02 ('flip s1'), on the h6400 arbiter verdict"
+folded_in: "2026-07-07"   # Phase 1.1 flip: PUCT-heuristic-priors search PROMOTED over random-expansion UCT
+flip_authorized_by: "Joshua, 2026-07-07 ('flip and go'), on the +148.2 confirm + transitivity round-robin"
 supersedes:
-  - flywheel2_champion_iter8   # neural iter8 + v2.7 leaf @ sims200 — the PRIOR champion (2026-06-11 .. 2026-07-02);
-                               # now LINEAGE. Classical is the stronger agent at depth (RoD1 loses to h6400; the
-                               # sims=200 neural champion caps near strong-human). The learned-VALUE route (can a
-                               # net EXCEED this leaf?) is under separate autopsy — post-review M1/M2/M3.
+  - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
+                                     # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
+                                     # leaf; this flip is a pure SEARCH-algorithm win (+148.2 elo at equal wall-clock),
+                                     # transitivity-verified. The dethroned agent is search-SATURATED (ties its own h12800 double).
+  - flywheel2_champion_iter8         # neural iter8 + v2.7 leaf @ sims200 — the champion two epochs back (2026-06-11 .. 07-02); lineage.
 
 champion:
-  id: deep_classical_v29_bmild_cap8
-  kind: classical                      # HeuristicMCTS, NO learned net — the strongest agent in the ecosystem
-  agent: HeuristicMCTS
-  leaf: v2_9_1_Bmild_cap8              # v2.7 virtual_score base + Bmild meeple-liquidity curve + closure cap 8
+  id: puct_priors_v29_bmild_cap8
+  kind: classical                      # PUCT with heuristic-leaf priors — NO learned net. A search change over the SAME leaf.
+  agent: HeuristicPriorAgent           # src/carcassonne_ai/heuristic_prior_mcts.py — the tested NeuralMCTS PUCT machinery
+                                        # (PUCT selection + expand-all-children) wired with a heuristic-leaf evaluator:
+                                        # priors P(a)=softmax(dLeaf(a)/tau_p) over per-child afterstates (mover POV),
+                                        # value=tanh(leaf/norm). NOT HeuristicMCTS random-expansion UCT.
+  agent_knobs:
+    c_puct: 1.5                         # re-swept AT the deployable 2750 sims (interior plateau; the champion's C=3.0 was a random-rollout default)
+    tau_p: 5                            # prior temperature (soft priors ~= +38 mean over tau=2)
+    final_select: visits               # visit-argmax, not Q-max (a low-sims artifact at 2750: Q and visits tie there, but visits is the pinned choice)
+    leaf_quantize: float               # pre-round leaf (Cython flat_virtual_score_v2_cy_float; bit-exact to int off)
+    value_norm: 15                     # HEURISTIC_VALUE_NORM (inherited; flagged for a {8,15,30} bracket — audit #4, ROADMAP C4)
+  leaf: v2_9_1_Bmild_cap8              # UNCHANGED from the prior champion — this flip does NOT touch the leaf
   leaf_hash: "7fc930b82801cb43"
   leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
     v29_meeple_curve: [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0]
     bonus_cap: 8.0
     opp_bonus_cap: 8.0
     meeple_k: 2.0
-  sims: 6400                            # reference/deploy depth (h6400); h12800 marginally stronger (deeper=sharper)
-  c_puct: 3.0
-  endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — margin-correct endgame"
+  sims: "~2750 (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box; the sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number)"
+  c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
+  endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — UNCHANGED; identical both sides so it does not affect the search-A/B margin"
   env_knobs:
-    CARCASSONNE_USE_FLAT_LEAF: "1"      # flat-leaf rewrite, bit-exact
-    CARCASSONNE_USE_CY_LEAF: "1"        # Cython fast path where available
+    CARCASSONNE_USE_FLAT_LEAF: "1"
+    CARCASSONNE_USE_CY_LEAF: "1"
+    CARCASSONNE_USE_CY_REPR: "1"
 
 # Why this is the champion (the promotion evidence):
 validation:
-  ruler: "HeuristicMCTS v2.8-prod (cap12 + drop-3-open + flat meeple_k2) @ h6400, deck-paired, FRESH band 4.21e9"
-  vs_v28prod_h6400: "+64.3 elo / z=3.77 / winrate 0.591 (234W/4D/161L, n=399)"   # the deferred h6400 arbiter
-  depth_robust: "throne test sims200 +55.2 (z3.94) / sims800 +34.9 (z2.77); the h6400 arbiter completes the ladder"
+  confirm: "c1.5/tau5/visits/float @ ~2750 sims (equal wall-clock) vs the prior champion h6400, deck-paired, FRESH band 9.4e9"
+  vs_prior_champion_h6400: "+148.2 elo / paired z=10.17 / winrate 0.701 (276W/9D/115L, n=400)"   # b3d3312, the pre-registered confirm
+  transitivity: >
+    Round-robin (2026-07-07, ROUND_ROBIN_PLAN.md) RETIRES the RPS hypothesis: on shared decks the new champion beats the
+    independent neural lineage (rod_v2 iter_02) by +230.2 where the prior champion manages only +36.6; and it beats h12800
+    by +149.3 while the prior champion TIES its own double (-8.7, z-0.96) = search-saturated. The +148 is algorithmic
+    (priors + expand-all + visit-select), not a compute/depth artifact or an h6400-specific exploit.
   results_csv_rows:
-    - v291_THRONE_bmild_cap8_vs_v28prod_h6400_n399     # 2026-07-02, the promotion arbiter
-    - v291_THRONE_bmild_cap8_vs_v28prod_s200_n400      # 2026-06-25
+    - puct_c1.5_tau5_float_visits_s2750_vs_h6400_k2   # confirm (fresh band 9.4e9)
+    - rr_puct2750_vs_net-iter02_k2                    # M1 +230.2
+    - rr_h6400_vs_net-iter02_k2                       # M2 +36.6
+    - rr_puct2750_vs_h12800_k2                        # M3 +149.3
+    - rr_h6400_vs_h12800_k2                           # M4 -8.7
   caveat: >
-    v2.9 Bmild_cap8 is proven stronger than v2.8-prod (the REAL production leaf) at deep search, verdict-grade
-    (z=3.77 at n=399). The champion is now the DEEP-CLASSICAL agent (classical MCTS on this leaf + exact-endgame),
-    NOT the neural iter8 — classical is stronger at depth and the neural champion capped near strong-human. This is
-    a leaf/agent promotion, not a learned-superhuman result. Whether a LEARNED value can EXCEED this leaf is the
-    open question under the post-review autopsy (M1/M2/M3); PRODUCTION here is the strongest agent, learned-or-not.
+    (1) SELF-ANCHORED: this is a search win over the prior CLASSICAL champion, measured on our own ruler — NOT an absolute
+    superhuman result and it does NOT move the two structural blockers (no non-saturated external reference; no learned
+    component exceeding the leaf). It RAISES the classical ceiling (and thus the Phase-5 distillation teacher). (2) Measured
+    at K<=2 endgame handoff on both sides; production runs K<=4 (identical both sides, so the margin is midgame) — a K=3 n=200
+    confirmation is IN FLIGHT (2026-07-07). (3) CLAIRVOYANT matched-mode; the fair-PIMC deployable verdict at champion config
+    is PENDING (ROADMAP A2) and is what any human-facing claim will be graded on.
 
 lineage:
   prior_champion:
+    id: deep_classical_v29_bmild_cap8
+    agent: "HeuristicMCTS (random-expansion UCT, C=3.0) @ h6400 + exact-K<=4"
+    reign: "2026-07-02 .. 2026-07-07"
+    note: >
+      The v2.9 Bmild_cap8 leaf it used is UNCHANGED and remains excellent — the flip replaced only the SEARCH wrapper
+      (random one-child-per-sim expansion -> PUCT + heuristic priors + expand-all). This agent is still the reference the
+      ruler ladder is calibrated to; the Phase-3 re-anchor (now load-bearing) re-draws the ladder around the new top.
+      Retained as the ruler/anchor and for lineage.
+  prior_neural_champion:
     ckpt_id: flywheel2_champion_iter8
     path_local:  /mnt/c/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
-    path_remote: /mnt/carc-shared/flywheel_residual_attempt2/ckpt/iter8.pt
     sha256: 0d355002e26a968e913396858aa51b52c95a1903db324c4fbab6849cc279ee2c
-    arch: "96x6 ResNet, n_scalar_features=12, value_global_pool=False"
-    note: "prior neural champion (+67.4 elo over its incumbent, policy-distillation bounded by the v2.7 leaf); retained for lineage."
+    note: "neural champion 2026-06-11 .. 07-02; retained for lineage."
 
 notes: >
-  Production PLAY / reference ruler / eval anchor is now deep-classical v2.9 Bmild_cap8 + exact-endgame handoff.
-  The prior neural champion iter8 is retained in governance/CHECKPOINT_LINEAGE.csv as lineage, not production.
-  For deep-search evals prefer h6400+; RoD-v2 iter_02 remains the fast game-play anchor, h6400_v2.9 the offline ruler.
+  Production PLAY is now the PUCT-heuristic-priors classical agent (same v2.9 Bmild_cap8 leaf + exact-K<=4 endgame).
+  The dethroned deep_classical_v29 (random-expansion HeuristicMCTS h6400) is RETAINED as the reference RULER pending the
+  Phase-3 re-anchor, and as lineage. This is a search-algorithm promotion over the same leaf, transitivity-verified,
+  self-anchored (not superhuman). Open follow-ups gating full trust: K=3 endgame confirm (in flight) + the fair-PIMC
+  deployable verdict (ROADMAP A2). Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.
