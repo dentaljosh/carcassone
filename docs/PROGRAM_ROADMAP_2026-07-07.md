@@ -20,7 +20,7 @@
 ---
 
 ## Track A — Champion aftermath (mostly compute, this week)
-- **A1. K=3 n=200 endgame check** (~4h W52; K=4 crashed at 40h-misscope + WSL-VM memory — K=4 n=100 TT-capped is a weekend option only if K=3 moves the margin). Runs next after RR.
+- **A1. K=3 endgame check — ✅ DONE 2026-07-07: +108.1/z6.11/n199.** +148 holds at the deeper handoff (shrinks from +148 K=2 as expected, stays 6σ). Flip robust toward production K≤4. K=4 not run (~40h/run; K=3 answers it). results.csv `..._k3`; PUCT_PRIORS_RESULTS.md.
 - **A2. Fair/PIMC deployable config derivation** (audit #2): equal-wall-clock grid K∈{2,4,8} × matched sims for fair-PUCT vs a fixed rung, n=100 screens → n=400 confirm (~6-10h). Needs a small launcher (STATUS 2026-07-05 rec #1) + PUCT adapter into `fair_agent.py`. **This is the config any human/superhuman claim is graded on**; also refreshes the stale iter8-only clairvoyance tax (~26.6, CL-022).
 - **A3. Close-out for confirm + RR** (attended, ~30min): verify results.csv rows (RR-1/2 rows confirmed present 02:40), DECISIONS index lines, doc stamps, governance touches, `doc_lint.py`.
 - **A4. results.csv/manifest spot-check** of the flip proposal's agent-pulled historical citations before any external use.
