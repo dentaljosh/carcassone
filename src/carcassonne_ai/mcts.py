@@ -1202,15 +1202,29 @@ class NeuralMCTS:
                 else:
                     n.W -= leaf_value
 
-    def _simulate(self, root_board: Board, root: _NeuralNode) -> None:
-        """One PUCT iteration: select → (expand) → backprop with leaf_value."""
+    def _simulate(
+        self,
+        root_board: Board,
+        root: _NeuralNode,
+        forced_root_action: int | None = None,
+    ) -> None:
+        """One PUCT iteration: select → (expand) → backprop with leaf_value.
+
+        `forced_root_action` (Gumbel-root / sequential-halving driver ONLY): when
+        set, the FIRST descent edge (out of the root) is the given action instead of
+        the PUCT pick; every INTERIOR edge below the root still uses PUCT, byte-for-
+        byte. Default None → the whole descent is PUCT (the untouched champion path).
+        """
         path: list[_NeuralNode] = [root]
         board = root_board
         node = root
 
         # Selection: walk down using PUCT, treating expanded nodes as internal.
         while node.expanded and not node.is_terminal:
-            action = self._select_child_puct(node)
+            if forced_root_action is not None and node is root:
+                action = forced_root_action
+            else:
+                action = self._select_child_puct(node)
             # Keep the tree-parent board (this node's board, one move back) so a
             # parent-aware evaluator can compute parent->child delta features.
             parent_board = board

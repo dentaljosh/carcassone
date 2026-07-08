@@ -125,9 +125,23 @@ class HeuristicPriorConfig:
                   fresh clear()ed search when the board isn't in the retained tree,
                   or when a transposition-key collision would serve a wrong-rotation
                   subtree). See HeuristicPriorAgent._reroot_or_clear.
+    root_select   "puct" (default) -> the ROOT edge of every simulation is chosen by
+                  the SAME PUCT rule as interior nodes (byte-for-byte the champion).
+                  "gumbel" -> Gumbel-root / sequential-halving action selection
+                  (Danihelka et al. 2022): sample m candidate root actions by
+                  Gumbel-top-k on the true logits, then spend the simulation budget
+                  via sequential halving with FORCED root actions (interior descent
+                  stays PUCT). Simple-regret-correct at the root; gains are largest at
+                  LOW budget. Overrides final_select (Gumbel IS the final choice).
+    gumbel_m      Gumbel top-m candidate count (clamped to n_legal). Default 16.
+    gumbel_c_visit  σ-transform visit constant c_visit. Default 50.0 (mctx default).
+    gumbel_c_scale  σ-transform value scale c_scale. Default 1.0 (mctx default).
+                  σ(q) = (c_visit + max_b N_b) * c_scale * q — the monotone map that
+                  puts the completed-Q on the logit scale.
 
-    NOTE: c_lcb / reuse_tree DEFAULT to a no-op (final_select stays "Q"/"visits",
-    reuse stays off); the defaults reproduce the champion byte-for-byte
+    NOTE: c_lcb / reuse_tree / root_select DEFAULT to a no-op (final_select stays
+    "Q"/"visits", reuse stays off, root_select stays "puct"); the defaults reproduce
+    the champion byte-for-byte
     (tests/test_heuristic_prior_mcts.py::test_bit_exact_all_flags_off).
     """
 
@@ -139,6 +153,10 @@ class HeuristicPriorConfig:
     leaf_cfg: object = None
     c_lcb: float = 1.0
     reuse_tree: bool = False
+    root_select: str = "puct"
+    gumbel_m: int = 16
+    gumbel_c_visit: float = 50.0
+    gumbel_c_scale: float = 1.0
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -149,6 +167,12 @@ class HeuristicPriorConfig:
             raise ValueError(
                 f"final_select must be 'Q'|'visits'|'lcb'; got {self.final_select!r}"
             )
+        if self.root_select not in ("puct", "gumbel"):
+            raise ValueError(
+                f"root_select must be 'puct'|'gumbel'; got {self.root_select!r}"
+            )
+        if int(self.gumbel_m) < 1:
+            raise ValueError(f"gumbel_m must be >= 1; got {self.gumbel_m!r}")
 
     def resolved_leaf_cfg(self):
         return self.leaf_cfg if self.leaf_cfg is not None else DEFAULT_CONFIG
@@ -170,6 +194,10 @@ class HeuristicPriorConfig:
             "value_norm": self.value_norm,
             "c_lcb": self.c_lcb,
             "reuse_tree": self.reuse_tree,
+            "root_select": self.root_select,
+            "gumbel_m": self.gumbel_m,
+            "gumbel_c_visit": self.gumbel_c_visit,
+            "gumbel_c_scale": self.gumbel_c_scale,
             "leaf_cfg": leaf,
         }
 
@@ -209,24 +237,35 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
         def leaf(state, player: int) -> float:
             return flat_leaf.flat_virtual_score_v2_float(state, player, leaf_cfg, bag_close)
 
-    def evaluator(board: Board):
+    def _legal_deltas(board: Board):
+        """Return (legal_actions, deltas, leaf_parent) for `board`.
+
+        ``deltas[i] = leaf(child_a_i.state, mover) - leaf_parent`` is the per-child
+        afterstate leaf gain Δleaf(a) from the MOVER's POV, in ``legal`` order
+        (``np.flatnonzero`` ascending). Shared by the softmax-prior evaluator and
+        the Gumbel driver's ``root_logits`` so the pre-softmax logits ``z=Δleaf/τ``
+        need no re-derivation from log(softmax). Never mutates ``board`` (steps via
+        ``game.get_next_state``, which leaves the legal-move cache untouched)."""
         st = board.state
         mover = st.current_player
         leaf_parent = leaf(st, mover)
-        value = math.tanh(leaf_parent / norm)
-
         mask = game.get_valid_moves(board)
         legal = np.flatnonzero(mask)
+        deltas = np.empty(legal.size, dtype=np.float64)
+        for i, a in enumerate(legal):
+            child, _ = game.get_next_state(board, int(a))
+            deltas[i] = leaf(child.state, mover) - leaf_parent
+        return legal, deltas, leaf_parent
+
+    def evaluator(board: Board):
+        legal, deltas, leaf_parent = _legal_deltas(board)
+        value = math.tanh(leaf_parent / norm)
+
         priors = np.zeros(action_size, dtype=np.float32)
         if legal.size == 0:
             # NeuralMCTS._expand_with_priors handles legal.size==0 itself
             # (leaf_value=0, ignores these priors); return a valid shape anyway.
             return priors, value
-
-        deltas = np.empty(legal.size, dtype=np.float64)
-        for i, a in enumerate(legal):
-            child, _ = game.get_next_state(board, int(a))
-            deltas[i] = leaf(child.state, mover) - leaf_parent
 
         # softmax(Δleaf / τ) over legal actions (numerically stabilized).
         z = deltas / tau
@@ -236,10 +275,22 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
         priors[legal] = w.astype(np.float32)
         return priors, value
 
+    def root_logits(board: Board):
+        """Return (legal_actions, z) with z = Δleaf/τ — the TRUE pre-softmax logits.
+
+        The Gumbel-root driver needs the *unnormalized* logits (NOT log(softmax),
+        which silently rescales by the softmax normalizer): the completed-Q term
+        logits + σ(completedQ) is scale-sensitive, so the constant the softmax
+        subtracts would corrupt the improved-policy ranking. Recomputed fresh at the
+        root once per move (n_legal extra leaf evals, negligible vs the sim budget)."""
+        legal, deltas, _ = _legal_deltas(board)
+        return legal, (deltas / tau)
+
     # Provenance / introspection hooks (mirrors evaluators._V25Wrapped).
     evaluator.heur_prior_cfg = cfg
     evaluator.leaf_cfg = leaf_cfg
     evaluator.leaf_name = f"v29_prior_{cfg.leaf_quantize}"
+    evaluator.root_logits = root_logits
     return evaluator
 
 
@@ -298,6 +349,11 @@ class HeuristicPriorAgent:
         self.mcts.clear()
 
     def best_action(self, board: Board) -> int:
+        if self.cfg.root_select == "gumbel":
+            # Gumbel-root / sequential-halving IS the final selection (it overrides
+            # final_select) and runs its own forced-root sim budget instead of the
+            # PUCT-root self.mcts.search.
+            return self._gumbel_root_search(board)
         self.mcts.search(board)  # runs exactly `simulations` PUCT sims
         if self._final_select == "visits":
             counts, actions = self.mcts.root_visit_distribution(board)
@@ -338,6 +394,114 @@ class HeuristicPriorAgent:
                 best_score = lcb
                 best_a = int(a)
         return int(best_a)
+
+    # --- Gumbel root / sequential halving (root_select="gumbel") ----------- #
+    def _completed_q(self, root, action: int) -> float:
+        """Completed action value q̂(a) from the ROOT / mover POV.
+
+        Visited child -> its Q flipped into the root player's POV (the same flip
+        convention as best_action / _lcb_action). Unvisited (child absent or N==0)
+        -> the value-approx = ``root.leaf_value`` (already the mover-POV leaf value
+        at the root). [Simplification vs the paper's v_mix; unvisited only occurs at
+        very low budget — flagged in the build report.]"""
+        child = root.children.get(int(action))
+        if child is None or child.N == 0:
+            return float(root.leaf_value)
+        return float(
+            child.Q if child.player_to_move == root.player_to_move else -child.Q
+        )
+
+    def _gumbel_root_search(self, board: Board) -> int:
+        """Gumbel-root / sequential-halving action selection (Track C1).
+
+        Returns the chosen ROOT action. Runs on the SERIAL forced-sim path
+        (``_simulate(..., forced_root_action=a)``) — NOT ``_run_batch`` — so the
+        root visit count is never double-counted by virtual loss. Composes with
+        tree reuse: ``move()`` has already re-rooted/cleared ``_nodes``, so we look
+        the root up (or expand it) exactly as ``search()`` would, then add the
+        forced budget on top of any retained statistics.
+
+        Algorithm (Danihelka et al. 2022, "Policy improvement by planning with
+        Gumbel"), per the C1 build spec:
+          * draw g(a)~Gumbel(0,1) per legal root action via the SEEDED
+            ``self.mcts._np_rng`` (determinism given seed+deck);
+          * candidates = top-m of (g + logits), m = min(gumbel_m, n_legal), where
+            logits = the TRUE pre-softmax z = Δleaf/τ (NOT log(softmax));
+          * sequential halving over ⌈log₂m⌉ phases: a deterministic integer slice
+            of the total sim budget per phase (leftover +1 to the EARLIEST phases),
+            split as evenly as possible across the current candidates (leftover +1
+            to the earliest in the current order); each sim forces its candidate as
+            the root edge and descends with PUCT below;
+          * after each phase, re-rank survivors by  logits + σ(completedQ),
+            σ(q)=(c_visit + max_b N_b)·c_scale·q, and keep the top ⌈k/2⌉;
+          * the final single survivor is the winner.
+
+        Budget invariant: the total number of forced sims == ``self.simulations``
+        exactly (Σ phase budgets), so on a fresh tree ``root.N == simulations``.
+        """
+        m_mcts = self.mcts
+        game = m_mcts.game
+
+        # 1. Ensure the root exists + is expanded (mirror NeuralMCTS.search's serial
+        #    expansion; reuse_tree may already have re-rooted an expanded node here).
+        root_key = game.string_representation(board)
+        root = m_mcts._nodes.get(root_key)
+        if root is None:
+            root = m_mcts._create_node(board)
+            m_mcts._nodes[root_key] = root
+        if not root.expanded and not root.is_terminal:
+            priors_b, values_b = m_mcts._eval_boards([board])
+            m_mcts._expand_with_priors(root, board, priors_b[0], float(values_b[0]))
+
+        # Degenerate roots: terminal, no legal move, or a forced single move.
+        legal = [int(a) for a in root.valid_actions]
+        if root.is_terminal or not legal:
+            return int(next(iter(root.children))) if root.children else 0
+        if len(legal) == 1:
+            return int(legal[0])   # 1-legal short-circuit (spec)
+
+        # 2. TRUE pre-softmax logits z = Δleaf/τ (scale-sensitive completed-Q term).
+        logit_actions, z = self.evaluator.root_logits(board)
+        logits = {int(a): float(zz) for a, zz in zip(logit_actions, z)}
+        for a in legal:  # defensive: never KeyError on a legal action
+            logits.setdefault(a, 0.0)
+
+        # 3. Gumbel-top-m candidate set (SEEDED RNG; deterministic action-index
+        #    tiebreak). g+logits argmax is invariant to the softmax constant, so the
+        #    top-m only needs the (constant-shifted) logits — but the halving term
+        #    below is scale-sensitive, hence the true z.
+        n_legal = len(legal)
+        g = m_mcts._np_rng.gumbel(0.0, 1.0, size=n_legal)
+        gl = [float(g[i]) + logits[legal[i]] for i in range(n_legal)]
+        order = sorted(range(n_legal), key=lambda i: (-gl[i], legal[i]))
+        m = min(int(self.cfg.gumbel_m), n_legal)
+        cand = [legal[i] for i in order[:m]]
+        if m == 1:
+            return int(cand[0])
+
+        # 4. Sequential halving over ⌈log₂m⌉ phases (budget sums to `simulations`).
+        c_visit = float(self.cfg.gumbel_c_visit)
+        c_scale = float(self.cfg.gumbel_c_scale)
+        total = int(self.simulations)
+        num_phases = max(1, math.ceil(math.log2(m)))
+        base, extra = divmod(total, num_phases)   # phase split; sums to total
+        A = list(cand)                            # current candidates, ordered
+        for phase in range(num_phases):
+            phase_budget = base + (1 if phase < extra else 0)
+            k = len(A)
+            per, rem = divmod(phase_budget, k)    # split across arms; +1 to first rem
+            for idx, a in enumerate(A):
+                n_sims = per + (1 if idx < rem else 0)
+                for _ in range(n_sims):
+                    m_mcts._simulate(board, root, forced_root_action=a)
+            # re-rank by logits + σ(completedQ); keep the top ⌈k/2⌉ survivors.
+            max_N = max((c.N for c in root.children.values()), default=0)
+            sigma_coeff = (c_visit + max_N) * c_scale
+            scores = {
+                a: logits[a] + sigma_coeff * self._completed_q(root, a) for a in A
+            }
+            A = sorted(A, key=lambda a: (-scores[a], a))[: math.ceil(k / 2)]
+        return int(A[0])
 
     def move(self, board: Board) -> int:
         if self._reuse_tree:
