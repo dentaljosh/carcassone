@@ -6,10 +6,11 @@
 
 ---
 
-## NOW (2026-07-07) — champion arc DONE; MAX-SEARCH campaign starting
+## NOW (2026-07-08) — champion arc DONE; first search-squeeze cells RESOLVED (reuse FOLDED); ruler re-anchor now load-bearing
 - ✅ **CHAMPION FLIPPED** (`b2ff08f`) · **ROUND-ROBIN** RPS-retired (M1+230/M2+37/M3+149/M4−8.7, `ef95711`) · **K=3** +108.1/z6.11 (`74f23b0`, holds at deeper handoff) · **Stage-0 teacher-τ** KILL-CONFIRM value route (`f77a5da`) · **policy-distillation diagnostics** NO (4.75% real midgame headroom + CL-031 washout; `71c6ae8`+run).
-- 🔄 **BUILDING: cheap search variants** (subagent `af78bf4`) — LCB final-select + tree-reuse + value_norm knob, flag-gated bit-exact-off (it's editing `heuristic_prior_mcts.py`/`mcts.py`/`eval_puct_priors.py`). On return: A/B each vs champion (c1.5/τ5/visits/2750, equal wall-clock, n=400 paired, fresh bands, keep+stack winners). See **Track C**.
-- Boxes FREE (local + laptop-net-free). Learned-track net experiments DEFERRED per Joshua (search first) — see **Track B**.
+- ✅ **TRACK-C search variants RESOLVED** (2026-07-08): **C3 tree-reuse FIRED → FOLDED into the champion** (`reuse_tree: true` in PRODUCTION.yaml, CL-044; +39.3/z2.81 n=400 equal-time, ms 1.06); **C2 LCB CLOSED** (wash vs visits, 0.0/z0.11); **C4 value_norm CLOSED** (15 optimal — both {8,30} wings negative, −24.4/−36.6). Screen null seat-bias clean. Numbers: `results.csv rr_puct2750-*`; see **Track C**.
+- ✅ **A2 fair-PIMC SCREEN DONE** (2026-07-08, CL-045): fair **+49.0/z2.86** (champion blind beats a clairvoyant h800 rung), clair **+205.0/z6.68**, **clairvoyance tax ~156 elo** → clairvoyant ladders OVERSTATE deployable strength; graded-FAIR is mandatory for any human claim. See **Track A2/D**.
+- Boxes FREE (local + laptop-net-free). Next cheap-decisive: **ruler re-anchor (Track D — now LOAD-BEARING)** + **human-anchor arc (E4, unblocked by A2's fair config)**; then Gumbel C1 / ID-alpha-beta C6. Learned-track net experiments DEFERRED per Joshua (search first) — see **Track B**.
 
 ## GATE / decisions — RESOLVED this session
 1. ✅ **Champion flip EXECUTED** ("flip and go"): PRODUCTION.yaml → `puct_priors_v29_bmild_cap8`, CL-041 SUPERSEDED / CL-043 PROMOTED. (No CHECKPOINT_LINEAGE row — classical agent-config.)
@@ -20,7 +21,7 @@
 
 ## Track A — Champion aftermath (mostly compute, this week)
 - **A1. K=3 endgame check — ✅ DONE 2026-07-07: +108.1/z6.11/n199.** +148 holds at the deeper handoff (shrinks from +148 K=2 as expected, stays 6σ). Flip robust toward production K≤4. K=4 not run (~40h/run; K=3 answers it). results.csv `..._k3`; PUCT_PRIORS_RESULTS.md.
-- **A2. Fair/PIMC deployable config derivation** (audit #2): equal-wall-clock grid K∈{2,4,8} × matched sims for fair-PUCT vs a fixed rung, n=100 screens → n=400 confirm (~6-10h). Needs a small launcher (STATUS 2026-07-05 rec #1) + PUCT adapter into `fair_agent.py`. **This is the config any human/superhuman claim is graded on**; also refreshes the stale iter8-only clairvoyance tax (~26.6, CL-022).
+- **A2. Fair/PIMC deployable config — ✅ SCREEN DONE 2026-07-08 (CL-045).** K=2 n=100 both arms at the champion config (k_dets=8×sims=344=2752, exact-K=2 marginalized) vs a fixed clairvoyant h800 rung: **fair +49.0/z2.86** (champion blind still beats a deck-sighted rung → genuinely > h800 under honest play) · **clair +205.0/z6.68** · **clairvoyance tax ~156 elo** (~6× the stale iter8 CL-022 ~26.6). This is the config any human/superhuman claim is graded on. `results.csv fair_puct2752_*`; `scripts/classical_search/eval_fair_puct.py`. Follow-ups: n=400 fair confirm + a **determinized-rung** fair-vs-fair variant (cleaner deployable number); K∈{4,8} rows RAM/attended-only; re-check reuse×determinization (reuse now champion but was OFF in this run).
 - **A3. Close-out for confirm + RR** (attended, ~30min): verify results.csv rows (RR-1/2 rows confirmed present 02:40), DECISIONS index lines, doc stamps, governance touches, `doc_lint.py`.
 - **A4. results.csv/manifest spot-check** of the flip proposal's agent-pulled historical citations before any external use.
 
@@ -33,14 +34,14 @@
 
 ## Track C — Search squeeze (each = pre-registered 1-2 cell A/B vs the confirmed c1.5/τ5/float/visits@2750)
 - **C1. Gumbel root / sequential halving** — highest EV (simple-regret-correct at root; low-sims gains) AND is the Phase-5 build. Build ~1-2d attended/agent, then ~2h A/B.
-- **C2. LCB final selection** (KataGo-style) — cheap add, closes the visits-vs-Q question properly.
-- **C3. Tree reuse between moves** — confirmed absent (clear() per move, heuristic_prior_mcts.py:274); realistic ~1.1-1.3×; flag-gated re-root + hard assert + one n=200 cell. Cache-collision risk noted (Phase 0.3 family).
-- **C4. VALUE_NORM bracket {8,15,30}** (audit #4): /15 calibrated on 1000 RANDOM games 2026-04-27; its own pre-registered revisit ("switch to 10") never ran. 2 cells n=100 → confirm a wing only if it wins (~2h).
+- **C2. LCB final selection — ✅ CLOSED 2026-07-08 (wash).** LCB (c_lcb=1) vs visits-argmax = 0.0/z0.11 (n=200 screen) → visits stays; LCB adds nothing at 2750. `results.csv rr_puct2750-lcbclcb1_*`.
+- **C3. Tree reuse between moves — ✅ FIRED + FOLDED 2026-07-08 (CL-044).** Screen +47.2/z1.73 → confirm **+39.3/z2.81 n=400** at equal wall-clock (ms 1.06) → **`reuse_tree: true` in PRODUCTION.yaml.** Search-efficiency win (free effective depth on the reused subtree; dodges sims-washout). `results.csv rr_puct2750-reuse_*`. Open: reuse×fair-PIMC determinization re-check (A2 ran reuse-OFF).
+- **C4. VALUE_NORM bracket {8,15,30} — ✅ CLOSED 2026-07-08 (15 optimal).** Both wings negative: vn8 −24.4/z−0.80, vn30 −36.6/z−0.66 (n=200 screen) → value_norm=15 confirmed. `results.csv rr_puct2750-vn8_*`/`vn30_*`.
 - **C5. Leaf re-tune under PUCT** ("v2.11-for-PUCT"): v2.9 caps/weights tuned under random expansion — consumer changed. Biggest candidate, slowest (re-sweep + confirm, ~1-2 box-days). After C1-C4.
 - **C6. Phase 1.2: ID-alpha-beta + TT** (gate met) — the one family that might BEAT PUCT (deterministic clairvoyant game + µs leaf = chess-engine territory). Attended build, surface cost first (~2-4d).
 
-## Track D — Measurement validity (Phase 3, now load-bearing)
-- **D1. Ruler re-anchor** (flip proposal §3 lists the HIGH rows: CL-041/LADDER/HYBRID/CLEAN_EVAL) — after flip signed.
+## Track D — Measurement validity (Phase 3, NOW LOAD-BEARING — A2/CL-045's ~156-elo clairvoyance tax + fair≠clair prove the clairvoyant HeuristicMCTS-calibrated ladders overstate deployable strength)
+- **D1. Ruler re-anchor** (flip proposal §3 lists the HIGH rows: CL-041/LADDER/HYBRID/CLEAN_EVAL) — flip is signed → **re-anchor is now the top cheap-decisive item** (CL-045 shows the ladder overstates by ~156 elo under fair play).
 - **D2. Rung-compression cell** (audit #5): PUCT rung @equal-time-h800 vs h800/h1600 rungs, shared decks, n=200 each (~2h) — are ladder *spacings* denominated in weak-search units? Fix the c=1.5-rungs vs c=3.0-champion inconsistency in the same pass.
 - **D3. Original Phase 3 scope:** solve K=3 bulk + K=4 subset, TAU_VS_K doc (was "fix the ruler" MT-2).
 
@@ -48,7 +49,7 @@
 - **E1. Phase 2.1:** win-probability endgame objective + pre-registered exact-K winrate re-run.
 - **E2. Phase 2.2:** fair midgame tax probe (K-sweep {4,8,16,32} + conservative estimator) — partially superseded by A2; reconcile scopes before running.
 - **E3. Phase 5:** Gumbel flywheel BUILD ONLY then STOP+surface — warm-start premise CHANGED twice (from 1.1 winner; possibly distill-from-classical if B1 fires). Re-spec before building; C1 is its first component.
-- **E4. Human-anchor arc** (Phase 4 infra ✅): expert suite runs + logged play + the 200-1300-game superhuman protocol ([LUCK_FLOOR.md](../measurement/human_anchor/LUCK_FLOOR.md)) — gated on A2 (fair config) + D1 (honest ruler).
+- **E4. Human-anchor arc** (Phase 4 infra ✅): expert suite runs + logged play + the 200-1300-game superhuman protocol ([LUCK_FLOOR.md](../measurement/human_anchor/LUCK_FLOOR.md)) — **A2 fair-config gate now CLEARED (CL-045: fair +49/z2.86 is the deployable config); remaining gate = D1 (honest ruler).**
 
 ## Parking lot (small / deferred / notes)
 - `deck_hash` omits the first drawn tile (provenance-hash blind spot only; harness audit 2026-07-06).

@@ -2,6 +2,8 @@
 
 **Status (2026-07-07): ✅ FLIP EXECUTED — PUCT-priors is the production champion.** Confirm +148.2/z10.17/n400 (fresh band) + transitivity round-robin (RPS retired: [ROUND_ROBIN_PLAN.md](ROUND_ROBIN_PLAN.md)) → Joshua authorized the flip ("flip and go", 2026-07-07). `governance/PRODUCTION.yaml` champion → `puct_priors_v29_bmild_cap8`; CL-041 SUPERSEDED, CL-043 PROMOTED. The v2.9 leaf is UNCHANGED (pure search win). Open follow-ups gating full trust: K=3 endgame confirm (IN FLIGHT) + fair-PIMC verdict ([ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) A2).
 
+**Update (2026-07-08): search-squeeze cells + A2 resolved.** Track-C: **tree-reuse FOLDED into the champion** (`reuse_tree: true`, +39.3/z2.81 n=400 equal-time, ms 1.06 — CL-044); **LCB CLOSED** (wash) and **value_norm=15 CONFIRMED** (both {8,30} wings negative — C4 CLOSED). **A2 fair-PIMC SCREEN** (CL-045): fair +49.0/z2.86, clair +205.0/z6.68, **clairvoyance tax ~156 elo**. Tables in the [Search-variant screen + reuse confirm + A2 fair-PIMC](#search-variant-screen--reuse-confirm--a2-fair-pimc-2026-07-08) section below. K=3 confirm also landed (+108.1/z6.11).
+
 Pre-registration: [PLAN.md](PLAN.md). Hypothesis (MT-1, the highest-EV review item): production `HeuristicMCTS` uses random-expansion UCT (C=3.0, no priors, one-random-child-per-sim, int leaf) — well below the classical frontier at equal compute. Adding PUCT + heuristic-leaf priors + expand-all should beat it at equal wall-clock.
 
 ## The candidate (`src/carcassonne_ai/heuristic_prior_mcts.py`)
@@ -45,3 +47,31 @@ Config `c1.5/τ5/visits/float/2750` at **n=400 on FRESH band 9.4e9**: **+148.2 e
 1. **Champion flip** to the PUCT-priors agent (a search-algorithm win, not a learned-value win). 2. **The whole ruler ladder is calibrated to HeuristicMCTS** (the thing this beats) → **Phase 3 re-anchoring becomes load-bearing**; historical "parity with deep search" verdicts must be re-read against the new rung. 3. **Phase 1.2 (ID-alpha-beta)** — the review gated it on "1.1 fires" — is now worth doing. 4. **Phase 5 (Gumbel) warm-start** distills from this winner. 5. This **overturns the program's "strength arc converged / every lever closed" headline** (STATUS 2026-07-05): a classical-search lever the reviews flagged as highest-EV was not closed.
 
 Commits: `c1fd320` (build+bench+harness), `d4e3157` (Cython candidate), `b9ad65d` (launcher + round-1 table). Launcher: `scripts/classical_search/run_screen_sweep.sh` (rounds 1–5). Harness: `scripts/classical_search/eval_puct_priors.py`.
+
+## Search-variant screen + reuse confirm + A2 fair-PIMC (2026-07-08)
+
+Track-C "search squeeze": pre-registered A/B cells vs the confirmed champion (c1.5/τ5/visits/float @ 2750, reuse OFF), each flag-gated bit-exact-off, deck-paired, K=2, both boxes. Numbers are in `experiments/results.csv` (`rr_puct2750-*` + `fair_puct2752_*` rows); this interprets. **The equal-wall-clock guard (ms-ratio ∈ [0.9,1.1]) makes every screen a valid same-compute A/B — a positive elo is free effective depth, not a time discount.**
+
+### Screen — n=200 paired, K=2 (band per finding; `--no-results-csv`)
+| cell | elo | paired-z | ms-ratio | W/D/L | verdict |
+|---|---|---|---|---|---|
+| **reuse (`reuse_tree`)** | **+47.2** | **1.73** | 1.065 ✓ | 112/3/85 | **WINNER → confirm** |
+| lcb (`final-select lcb`) | 0.0 | 0.11 | 1.001 | 96/8/96 | DROP — wash vs visits (**C2 CLOSED**) |
+| vn8 (`value_norm 8`) | −24.4 | −0.80 | 0.996 | 91/4/105 | DROP |
+| vn30 (`value_norm 30`) | −36.6 | −0.66 | 0.983 | 88/3/109 | DROP — {8,30} both < 0 → **vn15 optimal, C4 CLOSED** |
+| null (champ vs champ) | 0.0 | — (nan) | 1.000 | 96/8/96 | seat-bias CLEAN |
+
+(elo ± ~25 1σ per cell.) tree-reuse is the only mover; LCB adds nothing at 2750 (visits stays); value_norm=15 is confirmed optimal (both wings negative).
+
+### Reuse CONFIRM — n=400 paired, K=2, fresh band 1.1e10, both boxes → **FIRED**
+Config `reuse_tree ON` vs champion `reuse OFF` (c1.5/τ5/visits/float/2750): **+39.3 elo (±17.5 1σ; paired z=2.81), wr 0.556 (W217/D11/L172), ms-ratio 1.060 (equal-wall-clock VALID).** Clears the ≥+15 keep-gate decisively. Screen +47.2 → confirm +39.3 (mild winner's-curse shrink; z rose 1.73→2.81 at higher n). **→ FOLDED into the champion: `governance/PRODUCTION.yaml` `agent_knobs.reuse_tree: true` (CL-044).** A search-efficiency knob on the SAME agent (re-root the tree between moves instead of `clear()` per move), not a new agent — the reused subtree gives free effective depth, so it dodges the sims-washout that kills prior/value tweaks. (The finding-doc snapshot was n=378/+38.8 mid-aggregation; the run completed to n=400/+39.3 — same conclusion.) Open: reuse × fair-PIMC determinization re-check (the re-root assumes a stable transposition table across moves; fair PIMC resamples the deck each move — A2 below ran the reuse-OFF champion). `results.csv rr_puct2750-reuse_confirm_n400_k2`; summary.json in `/mnt/c/carc-shared/classical_search/rr_puct2750-reuse_confirm_n400_k2/`.
+
+### A2 fair-PIMC deployable screen — n=100/arm, K=2 (ROADMAP A2 → CL-045)
+Champion PUCT-priors, k_dets=8 × sims=344 = 2752 total (≈ champion 2750), exact-K=2 marginalized (honest hidden-bag) endgame, vs a **clairvoyant HeuristicMCTS h800** (c=3.0, v2.9 leaf) rung fixed in BOTH arms. Seed band 1.3e10.
+
+| arm | champion mode | elo vs h800 | paired-z | W/D/L | wr |
+|---|---|---|---|---|---|
+| **fair** | blind, 8 determinizations | **+49.0** (±35.1) | **2.86** | 56/2/42 | 0.570 |
+| **clair** | descends the true deck | **+205.0** (±41.0) | **6.68** | 76/1/23 | 0.765 |
+
+**Clairvoyance tax = clair − fair = 205 − 49 ≈ 156 elo** (~6× the stale iter8 CL-022 ~26.6). Reading: the champion plays BLIND against a deck-SIGHTED rung and still wins (+49/z2.86 → genuinely > h800 under honest play; conservative — fair-vs-fair would score higher), but ~156 elo of its clairvoyant dominance is deck-knowledge it cannot use in a real match. **Measurement-validity:** any superhuman/human claim must be graded FAIR; the clairvoyant HeuristicMCTS-calibrated strength ladders OVERSTATE deployable strength for this champion → Phase-3 ruler re-anchor ([ROADMAP](../../docs/PROGRAM_ROADMAP_2026-07-07.md) Track D) is now load-bearing. **n=100 is a SCREEN (±35 1σ/arm)** — the tax magnitude is screen-grade; the paired z (2.86/6.68) is the strong part. Follow-ups: n=400 fair confirm + a determinized-rung fair-vs-fair variant (cleaner deployable number); K∈{4,8} rows RAM/attended-only. `results.csv fair_puct2752_kd8_s344_vs_h800clair_k2_{fair,clair}`; launcher `scripts/classical_search/{eval_fair_puct.py,run_fair_grid.sh}` (`cf40ca5`); tests `67470f1`.

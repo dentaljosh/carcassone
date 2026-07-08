@@ -26,7 +26,13 @@ champion:
     tau_p: 5                            # prior temperature (soft priors ~= +38 mean over tau=2)
     final_select: visits               # visit-argmax, not Q-max (a low-sims artifact at 2750: Q and visits tie there, but visits is the pinned choice)
     leaf_quantize: float               # pre-round leaf (Cython flat_virtual_score_v2_cy_float; bit-exact to int off)
-    value_norm: 15                     # HEURISTIC_VALUE_NORM (inherited; flagged for a {8,15,30} bracket — audit #4, ROADMAP C4)
+    value_norm: 15                     # HEURISTIC_VALUE_NORM — CONFIRMED optimal (ROADMAP C4 CLOSED 2026-07-08: {8,30} wings both negative, vn8 −24.4 / vn30 −36.6 screen)
+    reuse_tree: true                   # ADDED 2026-07-08 (ROADMAP C3 FIRED): re-root the search tree between moves instead of clear() per move.
+                                        # +39.3 elo at VERIFIED equal wall-clock (ms-ratio 1.060 ∈[0.9,1.1] → free effective depth on the reused subtree,
+                                        # not a time discount), paired z=2.81, n=400 confirm (finding-doc snapshot was n=378/+38.8 mid-aggregation; screen +47.2/z1.73).
+                                        # Search-efficiency win → dodges sims-washout.
+                                        # HeuristicPriorConfig.reuse_tree; bit-exact-OFF pinned; 0 rotation-collisions in re-root smoke.
+                                        # Caveat: A2's fair-PIMC resamples the deck each move → re-check reuse × determinization before any FAIR-mode deploy.
   leaf: v2_9_1_Bmild_cap8              # UNCHANGED from the prior champion — this flip does NOT touch the leaf
   leaf_hash: "7fc930b82801cb43"
   leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
@@ -61,9 +67,10 @@ validation:
     (1) SELF-ANCHORED: this is a search win over the prior CLASSICAL champion, measured on our own ruler — NOT an absolute
     superhuman result and it does NOT move the two structural blockers (no non-saturated external reference; no learned
     component exceeding the leaf). It RAISES the classical ceiling (and thus the Phase-5 distillation teacher). (2) Measured
-    at K<=2 endgame handoff on both sides; production runs K<=4 (identical both sides, so the margin is midgame) — a K=3 n=200
-    confirmation is IN FLIGHT (2026-07-07). (3) CLAIRVOYANT matched-mode; the fair-PIMC deployable verdict at champion config
-    is PENDING (ROADMAP A2) and is what any human-facing claim will be graded on.
+    at K<=2 endgame handoff on both sides; production runs K<=4 (identical both sides, so the margin is midgame) — the K=3
+    confirmation LANDED (+108.1/z6.11, holds at the deeper handoff). (3) CLAIRVOYANT matched-mode; the fair-PIMC deployable
+    verdict at champion config is now MEASURED as a SCREEN (ROADMAP A2, n=100): fair +49.0/z2.86 vs a clairvoyant h800 rung,
+    clairvoyance tax ~156 elo — any human-facing claim is graded FAIR; an n=400 fair confirm is the remaining tightening.
 
 lineage:
   prior_champion:
@@ -82,8 +89,13 @@ lineage:
     note: "neural champion 2026-06-11 .. 07-02; retained for lineage."
 
 notes: >
-  Production PLAY is now the PUCT-heuristic-priors classical agent (same v2.9 Bmild_cap8 leaf + exact-K<=4 endgame).
-  The dethroned deep_classical_v29 (random-expansion HeuristicMCTS h6400) is RETAINED as the reference RULER pending the
-  Phase-3 re-anchor, and as lineage. This is a search-algorithm promotion over the same leaf, transitivity-verified,
-  self-anchored (not superhuman). Open follow-ups gating full trust: K=3 endgame confirm (in flight) + the fair-PIMC
-  deployable verdict (ROADMAP A2). Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.
+  Production PLAY is now the PUCT-heuristic-priors classical agent (same v2.9 Bmild_cap8 leaf + exact-K<=4 endgame),
+  WITH tree-reuse ON (reuse_tree: true, added 2026-07-08 — the ROADMAP Track-C search-squeeze winner: +39.3 elo at
+  equal wall-clock, ms-ratio 1.06, paired z=2.81, n=400 confirm; a search-efficiency knob on the SAME agent, not a new
+  agent). The dethroned deep_classical_v29 (random-expansion HeuristicMCTS h6400) is RETAINED as the reference RULER
+  pending the Phase-3 re-anchor, and as lineage. K=3 endgame confirm DONE (+108.1/z6.11 — holds at the deeper handoff).
+  This is a search-algorithm promotion over the same leaf, transitivity-verified, self-anchored (not superhuman). The
+  fair-PIMC deployable verdict is now MEASURED at the champion config (ROADMAP A2, screen n=100): fair +49.0/z2.86 over
+  a clairvoyant h800 rung while playing BLIND, clairvoyance tax ~156 elo (clair +205 − fair +49) → any human-facing
+  claim must be graded FAIR and the clairvoyant ladders overstate deployable strength (Phase-3 re-anchor now load-bearing).
+  Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.
