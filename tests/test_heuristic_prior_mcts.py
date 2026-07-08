@@ -256,6 +256,7 @@ def _flags_off_sequence(seed, sims, final_select):
         leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
         final_select=final_select,
         value_norm=15.0, c_lcb=1.0, reuse_tree=False,   # variant flags OFF
+        root_select="puct",                             # Gumbel OFF (default)
     )
     game = _new_game()
     random.seed(9_000_000)
@@ -442,6 +443,143 @@ def test_reuse_tree_default_off_is_champion_move_path():
     assert agent._reuse_tree is False
     agent.move(board)
     assert agent.reuse_hits == 0 and agent.reuse_fresh == 0 and agent.reuse_collide == 0
+
+
+# =========================================================================== #
+# Gumbel root / sequential-halving (root_select="gumbel") — DEFAULT-OFF lever  #
+# =========================================================================== #
+def _gumbel_selfplay_sequence(seed, sims, gumbel_m=16, reuse_tree=False):
+    """Full self-play move sequence with root_select='gumbel'. Both seats are
+    Gumbel agents; asserts every played move is legal along the way."""
+    cfg = HeuristicPriorConfig(
+        leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+        root_select="gumbel", gumbel_m=gumbel_m,
+    )
+    game = _new_game()
+    random.seed(9_000_000)
+    board = game.get_init_board()
+    a0 = HeuristicPriorAgent(game, cfg, simulations=sims, seed=seed, reuse_tree=reuse_tree)
+    a1 = HeuristicPriorAgent(_new_game(), cfg, simulations=sims, seed=seed + 1, reuse_tree=reuse_tree)
+    seq = []
+    while game.get_game_ended(board, 0) == 0.0:
+        agent = a0 if board.state.current_player == 0 else a1
+        act = agent.move(board)
+        assert game.get_valid_moves(board)[act], f"gumbel returned illegal action {act}"
+        seq.append(int(act))
+        board, _ = game.get_next_state(board, act)
+    return seq
+
+
+def test_gumbel_plays_full_legal_game_and_deterministic():
+    """Gumbel-root plays a full legal game to termination and is DETERMINISTIC
+    given a fixed seed + fixed deck."""
+    s1 = _gumbel_selfplay_sequence(42, 32)
+    s2 = _gumbel_selfplay_sequence(42, 32)
+    assert s1 == s2, "gumbel must be deterministic given seed+deck"
+    assert len(s1) > 50, "a real base+farmers game is ~150-170 decisions"
+
+
+def test_gumbel_differs_from_puct_on_some_low_sims_root():
+    """On at least one constructed low-sims root the Gumbel choice DIFFERS from the
+    PUCT-root champion choice (the lever actually changes the policy)."""
+    boards = _midgame_boards(n=8, plies=40)
+    diffs = 0
+    for i, (game, board) in enumerate(boards):
+        mask = game.get_valid_moves(board)
+        pc = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+                                  root_select="puct", final_select="visits")
+        gc = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+                                  root_select="gumbel", gumbel_m=8)
+        pa = HeuristicPriorAgent(_new_game(), pc, simulations=8, seed=3).best_action(board)
+        ga = HeuristicPriorAgent(_new_game(), gc, simulations=8, seed=100 + i).best_action(board)
+        assert mask[pa] and mask[ga], "both selectors must return a legal move"
+        diffs += int(pa != ga)
+    assert diffs >= 1, "gumbel never diverged from puct on any low-sims root"
+
+
+def test_gumbel_budget_accounting():
+    """(i) Total forced sims == simulations exactly (root.N on a fresh tree);
+    (ii) gumbel_m >= n_legal visits EVERY legal child (each root child N>=1);
+    (iii) gumbel_m==1 (degenerate) runs without crashing and plays legal."""
+    game, board = _midgame_boards(n=1, plies=40)[0]
+    n_legal = int(game.get_valid_moves(board).sum())
+    key = game.string_representation(board)
+
+    # (i) exact budget: every _simulate bumps root.N once -> root.N == simulations.
+    sims = 240
+    ag = HeuristicPriorAgent(
+        _new_game(),
+        HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel", gumbel_m=16),
+        simulations=sims, seed=5,
+    )
+    ag.clear()
+    a = ag.best_action(board)
+    assert game.get_valid_moves(board)[a]
+    assert ag.mcts._nodes[key].N == sims, "forced-sim budget must sum to simulations"
+
+    # (ii) gumbel_m >= n_legal -> all legal actions are candidates -> all visited.
+    sims2 = max(400, n_legal * 20)
+    ag2 = HeuristicPriorAgent(
+        _new_game(),
+        HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel", gumbel_m=n_legal + 50),
+        simulations=sims2, seed=6,
+    )
+    ag2.clear()
+    ag2.best_action(board)
+    root2 = ag2.mcts._nodes[key]
+    assert root2.N == sims2
+    for aa in map(int, np.flatnonzero(game.get_valid_moves(board))):
+        assert aa in root2.children and root2.children[aa].N >= 1, \
+            f"gumbel_m>=n_legal must visit every child; action {aa} unvisited"
+
+    # (iii) m==1 degenerate: no crash, legal move, still spends 0 forced sims.
+    ag3 = HeuristicPriorAgent(
+        _new_game(),
+        HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel", gumbel_m=1),
+        simulations=50, seed=7,
+    )
+    ag3.clear()
+    a3 = ag3.best_action(board)
+    assert game.get_valid_moves(board)[a3]
+
+
+def test_gumbel_composes_with_reuse_tree():
+    """Gumbel must compose with tree reuse: a reuse-ON Gumbel agent plays a full
+    legal game, re-roots at least once, is deterministic, and its per-move reuse
+    counters account for every move."""
+    cfg = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+                               root_select="gumbel", gumbel_m=16)
+    game = _new_game()
+    random.seed(9_000_000)
+    board = game.get_init_board()
+    a0 = HeuristicPriorAgent(game, cfg, simulations=48, seed=5, reuse_tree=True)
+    a1 = HeuristicPriorAgent(_new_game(), cfg, simulations=48, seed=6)  # reuse OFF
+    plies = 0
+    while game.get_game_ended(board, 0) == 0.0 and plies < 60:
+        agent = a0 if board.state.current_player == 0 else a1
+        act = agent.move(board)
+        assert game.get_valid_moves(board)[act], f"reuse+gumbel illegal action {act}"
+        board, _ = game.get_next_state(board, act)
+        plies += 1
+    assert a0.reuse_hits >= 1, "expected at least one reuse hit under gumbel+reuse"
+    assert a0.reuse_hits + a0.reuse_fresh + a0.reuse_collide == a0.neural_moves
+    # determinism under reuse
+    assert _gumbel_selfplay_sequence(42, 32, reuse_tree=True) == \
+        _gumbel_selfplay_sequence(42, 32, reuse_tree=True)
+
+
+def test_gumbel_config_validation_and_manifest():
+    """root_select/gumbel_m validate; defaults are the OFF no-op; manifest records
+    every Gumbel knob."""
+    assert HeuristicPriorConfig(leaf_cfg=BMILD_CAP8).root_select == "puct"
+    with pytest.raises(ValueError):
+        HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="nope")
+    with pytest.raises(ValueError):
+        HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, gumbel_m=0)
+    man = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel",
+                               gumbel_m=24, gumbel_c_visit=40.0, gumbel_c_scale=2.0).as_manifest()
+    assert man["root_select"] == "gumbel" and man["gumbel_m"] == 24
+    assert man["gumbel_c_visit"] == 40.0 and man["gumbel_c_scale"] == 2.0
 
 
 if __name__ == "__main__":
