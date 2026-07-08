@@ -315,6 +315,8 @@ def _variant_sig(args) -> str:
         parts.append(f"vn{args.value_norm:g}")
     if args.root_select != "puct":
         g = f"gumbel{args.gumbel_m}"
+        if not args.gumbel_retain_g:
+            g += "ng"   # g-dropped-in-elimination variant (paper-exact = default, no tag)
         if args.gumbel_c_visit != 50.0:
             g += f"cv{args.gumbel_c_visit:g}"
         if args.gumbel_c_scale != 1.0:
@@ -516,6 +518,7 @@ def _make_cand_cfg():
         root_select=d.get("root_select", "puct"), gumbel_m=d.get("gumbel_m", 16),
         gumbel_c_visit=d.get("gumbel_c_visit", 50.0),
         gumbel_c_scale=d.get("gumbel_c_scale", 1.0),
+        gumbel_retain_g=d.get("gumbel_retain_g", True),
     )
 
 
@@ -691,7 +694,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                                    c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
                                    root_select=args.root_select, gumbel_m=args.gumbel_m,
                                    gumbel_c_visit=args.gumbel_c_visit,
-                                   gumbel_c_scale=args.gumbel_c_scale)
+                                   gumbel_c_scale=args.gumbel_c_scale,
+                                   gumbel_retain_g=args.gumbel_retain_g)
     net = net_dev = net_ns = None
     if opp_kind == "net":
         net, net_dev, net_ns = _load_net_cpu(net_ckpt)
@@ -699,7 +703,7 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
     _knob_extra = (f" c_lcb={args.c_lcb}" if args.final_select == "lcb" else "") + \
                   (" reuse_tree=ON" if args.reuse_tree else "") + \
                   (f" value_norm={args.value_norm}" if args.value_norm != 15.0 else "") + \
-                  (f" root_select=gumbel(m={args.gumbel_m})" if args.root_select != "puct" else "")
+                  (f" root_select=gumbel(m={args.gumbel_m},retain_g={args.gumbel_retain_g})" if args.root_select != "puct" else "")
     if not new_mode:
         print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
               f"select={args.final_select}{_knob_extra} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
@@ -803,6 +807,11 @@ def main(argv=None) -> int:
                     help="Gumbel σ-transform visit constant (mctx default 50).")
     ap.add_argument("--gumbel-c-scale", type=float, default=1.0,
                     help="Gumbel σ-transform value scale (mctx default 1.0).")
+    ap.add_argument("--gumbel-retain-g", action=argparse.BooleanOptionalAction, default=True,
+                    help="retain the Gumbel noise g through sequential-halving "
+                         "elimination (--gumbel-retain-g, default = paper-exact / "
+                         "Danihelka 2022) vs use g only for the initial top-m draw "
+                         "(--no-gumbel-retain-g). ONLY used with --root-select gumbel.")
     ap.add_argument("--cand-sims", type=int, default=None,
                     help="candidate PUCT sims (from the equal-time bench match); required "
                          "for --candidate puct, ignored for --candidate h<sims>")
@@ -873,14 +882,16 @@ def main(argv=None) -> int:
                                c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
                                root_select=args.root_select, gumbel_m=args.gumbel_m,
                                gumbel_c_visit=args.gumbel_c_visit,
-                               gumbel_c_scale=args.gumbel_c_scale)
+                               gumbel_c_scale=args.gumbel_c_scale,
+                               gumbel_retain_g=args.gumbel_retain_g)
     cand_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                      "leaf_quantize": args.leaf_quantize, "final_select": args.final_select,
                      "value_norm": args.value_norm,
                      "c_lcb": args.c_lcb, "reuse_tree": args.reuse_tree,
                      "root_select": args.root_select, "gumbel_m": args.gumbel_m,
                      "gumbel_c_visit": args.gumbel_c_visit,
-                     "gumbel_c_scale": args.gumbel_c_scale}
+                     "gumbel_c_scale": args.gumbel_c_scale,
+                     "gumbel_retain_g": args.gumbel_retain_g}
 
     tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
     sub = args.out_subdir or tag

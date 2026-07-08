@@ -138,6 +138,15 @@ class HeuristicPriorConfig:
     gumbel_c_scale  σ-transform value scale c_scale. Default 1.0 (mctx default).
                   σ(q) = (c_visit + max_b N_b) * c_scale * q — the monotone map that
                   puts the completed-Q on the logit scale.
+    gumbel_retain_g  Whether the per-candidate Gumbel noise g is RETAINED through the
+                  sequential-halving elimination. True (default, paper-exact /
+                  Danihelka 2022) -> each phase keeps the top-half by
+                  g + logits + σ(completedQ) using the SAME g drawn for the initial
+                  top-m, so the surviving action carries g (a proper Gumbel-top-k
+                  argmax over the sampled set). False -> g is used ONLY for the
+                  initial top-m draw; halving/elimination ranks by logits +
+                  σ(completedQ) without g. A/B'd via --gumbel-retain-g /
+                  --no-gumbel-retain-g. Only read when root_select == "gumbel".
 
     NOTE: c_lcb / reuse_tree / root_select DEFAULT to a no-op (final_select stays
     "Q"/"visits", reuse stays off, root_select stays "puct"); the defaults reproduce
@@ -157,6 +166,7 @@ class HeuristicPriorConfig:
     gumbel_m: int = 16
     gumbel_c_visit: float = 50.0
     gumbel_c_scale: float = 1.0
+    gumbel_retain_g: bool = True
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -198,6 +208,7 @@ class HeuristicPriorConfig:
             "gumbel_m": self.gumbel_m,
             "gumbel_c_visit": self.gumbel_c_visit,
             "gumbel_c_scale": self.gumbel_c_scale,
+            "gumbel_retain_g": self.gumbel_retain_g,
             "leaf_cfg": leaf,
         }
 
@@ -432,8 +443,11 @@ class HeuristicPriorAgent:
             split as evenly as possible across the current candidates (leftover +1
             to the earliest in the current order); each sim forces its candidate as
             the root edge and descends with PUCT below;
-          * after each phase, re-rank survivors by  logits + σ(completedQ),
-            σ(q)=(c_visit + max_b N_b)·c_scale·q, and keep the top ⌈k/2⌉;
+          * after each phase, re-rank survivors by  [g +] logits + σ(completedQ),
+            σ(q)=(c_visit + max_b N_b)·c_scale·q, and keep the top ⌈k/2⌉ — the g
+            term is included iff cfg.gumbel_retain_g (True default = paper-exact:
+            the SAME per-candidate g from the top-m draw persists through
+            elimination; False = g only picks the top-m, elimination drops it);
           * the final single survivor is the winner.
 
         Budget invariant: the total number of forced sims == ``self.simulations``
@@ -472,7 +486,8 @@ class HeuristicPriorAgent:
         #    below is scale-sensitive, hence the true z.
         n_legal = len(legal)
         g = m_mcts._np_rng.gumbel(0.0, 1.0, size=n_legal)
-        gl = [float(g[i]) + logits[legal[i]] for i in range(n_legal)]
+        g_by_action = {legal[i]: float(g[i]) for i in range(n_legal)}
+        gl = [g_by_action[legal[i]] + logits[legal[i]] for i in range(n_legal)]
         order = sorted(range(n_legal), key=lambda i: (-gl[i], legal[i]))
         m = min(int(self.cfg.gumbel_m), n_legal)
         cand = [legal[i] for i in order[:m]]
@@ -482,6 +497,7 @@ class HeuristicPriorAgent:
         # 4. Sequential halving over ⌈log₂m⌉ phases (budget sums to `simulations`).
         c_visit = float(self.cfg.gumbel_c_visit)
         c_scale = float(self.cfg.gumbel_c_scale)
+        retain_g = bool(self.cfg.gumbel_retain_g)   # paper-exact: g rides elimination
         total = int(self.simulations)
         num_phases = max(1, math.ceil(math.log2(m)))
         base, extra = divmod(total, num_phases)   # phase split; sums to total
@@ -494,11 +510,14 @@ class HeuristicPriorAgent:
                 n_sims = per + (1 if idx < rem else 0)
                 for _ in range(n_sims):
                     m_mcts._simulate(board, root, forced_root_action=a)
-            # re-rank by logits + σ(completedQ); keep the top ⌈k/2⌉ survivors.
+            # re-rank by [g +] logits + σ(completedQ); keep the top ⌈k/2⌉ survivors.
             max_N = max((c.N for c in root.children.values()), default=0)
             sigma_coeff = (c_visit + max_N) * c_scale
             scores = {
-                a: logits[a] + sigma_coeff * self._completed_q(root, a) for a in A
+                a: (g_by_action[a] if retain_g else 0.0)
+                + logits[a]
+                + sigma_coeff * self._completed_q(root, a)
+                for a in A
             }
             A = sorted(A, key=lambda a: (-scores[a], a))[: math.ceil(k / 2)]
         return int(A[0])

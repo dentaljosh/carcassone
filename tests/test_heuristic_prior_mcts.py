@@ -448,12 +448,12 @@ def test_reuse_tree_default_off_is_champion_move_path():
 # =========================================================================== #
 # Gumbel root / sequential-halving (root_select="gumbel") — DEFAULT-OFF lever  #
 # =========================================================================== #
-def _gumbel_selfplay_sequence(seed, sims, gumbel_m=16, reuse_tree=False):
+def _gumbel_selfplay_sequence(seed, sims, gumbel_m=16, reuse_tree=False, retain_g=True):
     """Full self-play move sequence with root_select='gumbel'. Both seats are
     Gumbel agents; asserts every played move is legal along the way."""
     cfg = HeuristicPriorConfig(
         leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
-        root_select="gumbel", gumbel_m=gumbel_m,
+        root_select="gumbel", gumbel_m=gumbel_m, gumbel_retain_g=retain_g,
     )
     game = _new_game()
     random.seed(9_000_000)
@@ -477,6 +477,53 @@ def test_gumbel_plays_full_legal_game_and_deterministic():
     s2 = _gumbel_selfplay_sequence(42, 32)
     assert s1 == s2, "gumbel must be deterministic given seed+deck"
     assert len(s1) > 50, "a real base+farmers game is ~150-170 decisions"
+
+
+def test_gumbel_retain_g_both_variants_valid():
+    """BOTH g-retention variants (retain_g True paper-exact / False) are
+    deterministic given seed+deck, play a full legal game, and keep the exact
+    forced-sim budget (root.N == simulations on a fresh tree)."""
+    game, board = _midgame_boards(n=1, plies=40)[0]
+    key = game.string_representation(board)
+    for retain_g in (True, False):
+        # deterministic + full legal game
+        s1 = _gumbel_selfplay_sequence(42, 32, retain_g=retain_g)
+        s2 = _gumbel_selfplay_sequence(42, 32, retain_g=retain_g)
+        assert s1 == s2, f"retain_g={retain_g} must be deterministic"
+        assert len(s1) > 50, f"retain_g={retain_g} played a stub game"
+        # exact budget accounting
+        sims = 200
+        ag = HeuristicPriorAgent(
+            _new_game(),
+            HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel",
+                                 gumbel_m=16, gumbel_retain_g=retain_g),
+            simulations=sims, seed=5,
+        )
+        ag.clear()
+        a = ag.best_action(board)
+        assert game.get_valid_moves(board)[a]
+        assert ag.mcts._nodes[key].N == sims, \
+            f"retain_g={retain_g} forced-sim budget must sum to simulations"
+
+
+def test_gumbel_retain_g_changes_the_choice():
+    """retain_g is NOT a no-op: on >=1 constructed low-sims root the paper-exact
+    (retain_g=True) choice DIFFERS from the g-dropped (retain_g=False) choice,
+    holding board+seed (hence the SAME g draw) fixed."""
+    boards = _midgame_boards(n=8, plies=40)
+    diffs = 0
+    for i, (game, board) in enumerate(boards):
+        mask = game.get_valid_moves(board)
+        for seed in range(4):
+            ct = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+                                      root_select="gumbel", gumbel_m=8, gumbel_retain_g=True)
+            cf = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, c_puct=1.5, tau_p=5.0,
+                                      root_select="gumbel", gumbel_m=8, gumbel_retain_g=False)
+            at = HeuristicPriorAgent(_new_game(), ct, simulations=12, seed=seed).best_action(board)
+            af = HeuristicPriorAgent(_new_game(), cf, simulations=12, seed=seed).best_action(board)
+            assert mask[at] and mask[af], "both g-variants must return a legal move"
+            diffs += int(at != af)
+    assert diffs >= 1, "retain_g had no effect on any root — the flag is a no-op (bug)"
 
 
 def test_gumbel_differs_from_puct_on_some_low_sims_root():
@@ -572,14 +619,17 @@ def test_gumbel_config_validation_and_manifest():
     """root_select/gumbel_m validate; defaults are the OFF no-op; manifest records
     every Gumbel knob."""
     assert HeuristicPriorConfig(leaf_cfg=BMILD_CAP8).root_select == "puct"
+    assert HeuristicPriorConfig(leaf_cfg=BMILD_CAP8).gumbel_retain_g is True  # paper-exact default
     with pytest.raises(ValueError):
         HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="nope")
     with pytest.raises(ValueError):
         HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, gumbel_m=0)
-    man = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel",
-                               gumbel_m=24, gumbel_c_visit=40.0, gumbel_c_scale=2.0).as_manifest()
+    man = HeuristicPriorConfig(leaf_cfg=BMILD_CAP8, root_select="gumbel", gumbel_m=24,
+                               gumbel_c_visit=40.0, gumbel_c_scale=2.0,
+                               gumbel_retain_g=False).as_manifest()
     assert man["root_select"] == "gumbel" and man["gumbel_m"] == 24
     assert man["gumbel_c_visit"] == 40.0 and man["gumbel_c_scale"] == 2.0
+    assert man["gumbel_retain_g"] is False
 
 
 if __name__ == "__main__":
