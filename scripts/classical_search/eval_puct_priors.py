@@ -216,6 +216,7 @@ def _champ_puct_cfg(shared: dict) -> "HeuristicPriorConfig":
         leaf_quantize=shared["leaf_quantize"],
         final_select=CHAMP_PUCT_FINAL_SELECT, value_norm=CHAMP_PUCT_VALUE_NORM,
         c_lcb=CHAMP_PUCT_C_LCB, reuse_tree=False,
+        root_select="puct",   # the flag-OFF baseline: PUCT root, never Gumbel
         leaf_cfg=DEFAULT_CONFIG,
     )
 
@@ -303,13 +304,22 @@ def _variant_sig(args) -> str:
     candidate IS the champion. Keeps distinct variant A/Bs from sharing an out-dir
     (which would silently MIX their per-seed result json)."""
     parts = []
-    if args.final_select != CHAMP_PUCT_FINAL_SELECT:
+    # final_select is a no-op under Gumbel (Gumbel IS the final choice) -> only
+    # tag it on the PUCT-root path so a gumbel cell tag stays clean.
+    if args.root_select == "puct" and args.final_select != CHAMP_PUCT_FINAL_SELECT:
         parts.append(args.final_select
                      + (f"clcb{args.c_lcb:g}" if args.final_select == "lcb" else ""))
     if args.reuse_tree:
         parts.append("reuse")
     if args.value_norm != CHAMP_PUCT_VALUE_NORM:
         parts.append(f"vn{args.value_norm:g}")
+    if args.root_select != "puct":
+        g = f"gumbel{args.gumbel_m}"
+        if args.gumbel_c_visit != 50.0:
+            g += f"cv{args.gumbel_c_visit:g}"
+        if args.gumbel_c_scale != 1.0:
+            g += f"cs{args.gumbel_c_scale:g}"
+        parts.append(g)
     return "".join("-" + p for p in parts)
 
 
@@ -503,6 +513,9 @@ def _make_cand_cfg():
         leaf_quantize=d["leaf_quantize"], final_select=d["final_select"],
         value_norm=d["value_norm"], leaf_cfg=DEFAULT_CONFIG,
         c_lcb=d.get("c_lcb", 1.0), reuse_tree=d.get("reuse_tree", False),
+        root_select=d.get("root_select", "puct"), gumbel_m=d.get("gumbel_m", 16),
+        gumbel_c_visit=d.get("gumbel_c_visit", 50.0),
+        gumbel_c_scale=d.get("gumbel_c_scale", 1.0),
     )
 
 
@@ -675,14 +688,18 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                    leaf_quantize=args.leaf_quantize, final_select=args.final_select,
                                    value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
-                                   c_lcb=args.c_lcb, reuse_tree=args.reuse_tree)
+                                   c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
+                                   root_select=args.root_select, gumbel_m=args.gumbel_m,
+                                   gumbel_c_visit=args.gumbel_c_visit,
+                                   gumbel_c_scale=args.gumbel_c_scale)
     net = net_dev = net_ns = None
     if opp_kind == "net":
         net, net_dev, net_ns = _load_net_cpu(net_ckpt)
     import random
     _knob_extra = (f" c_lcb={args.c_lcb}" if args.final_select == "lcb" else "") + \
                   (" reuse_tree=ON" if args.reuse_tree else "") + \
-                  (f" value_norm={args.value_norm}" if args.value_norm != 15.0 else "")
+                  (f" value_norm={args.value_norm}" if args.value_norm != 15.0 else "") + \
+                  (f" root_select=gumbel(m={args.gumbel_m})" if args.root_select != "puct" else "")
     if not new_mode:
         print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
               f"select={args.final_select}{_knob_extra} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
@@ -775,6 +792,17 @@ def main(argv=None) -> int:
                          "fresh search when the next board isn't in the retained "
                          "tree or on a rotation-key collision). Default OFF "
                          "(byte-for-byte the champion).")
+    ap.add_argument("--root-select", choices=("puct", "gumbel"), default="puct",
+                    help="candidate root-action selection: 'puct' (default; the "
+                         "champion path) or 'gumbel' (Gumbel-root / sequential-halving, "
+                         "Track C1). Gumbel overrides --final-select.")
+    ap.add_argument("--gumbel-m", type=int, default=16,
+                    help="Gumbel top-m candidate count (clamped to n_legal); "
+                         "ONLY used with --root-select gumbel. Default 16.")
+    ap.add_argument("--gumbel-c-visit", type=float, default=50.0,
+                    help="Gumbel σ-transform visit constant (mctx default 50).")
+    ap.add_argument("--gumbel-c-scale", type=float, default=1.0,
+                    help="Gumbel σ-transform value scale (mctx default 1.0).")
     ap.add_argument("--cand-sims", type=int, default=None,
                     help="candidate PUCT sims (from the equal-time bench match); required "
                          "for --candidate puct, ignored for --candidate h<sims>")
@@ -842,11 +870,17 @@ def main(argv=None) -> int:
     cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                leaf_quantize=args.leaf_quantize, final_select=args.final_select,
                                value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
-                               c_lcb=args.c_lcb, reuse_tree=args.reuse_tree)
+                               c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
+                               root_select=args.root_select, gumbel_m=args.gumbel_m,
+                               gumbel_c_visit=args.gumbel_c_visit,
+                               gumbel_c_scale=args.gumbel_c_scale)
     cand_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                      "leaf_quantize": args.leaf_quantize, "final_select": args.final_select,
                      "value_norm": args.value_norm,
-                     "c_lcb": args.c_lcb, "reuse_tree": args.reuse_tree}
+                     "c_lcb": args.c_lcb, "reuse_tree": args.reuse_tree,
+                     "root_select": args.root_select, "gumbel_m": args.gumbel_m,
+                     "gumbel_c_visit": args.gumbel_c_visit,
+                     "gumbel_c_scale": args.gumbel_c_scale}
 
     tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
     sub = args.out_subdir or tag
