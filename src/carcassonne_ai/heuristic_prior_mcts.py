@@ -306,6 +306,132 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
 
 
 # --------------------------------------------------------------------------- #
+# Deck-aware NET-value evaluator (C-cheap) — IDENTICAL heuristic priors, but the #
+# leaf value is a learned deck-aware net value on the sighted (81ch/42-scalar)   #
+# representation. See docs C_CHEAP spec §3: "the C-cheap swap = replace the value #
+# line, keep the priors." The priors path is BYTE-IDENTICAL to                   #
+# make_heuristic_prior_evaluator (we reuse it verbatim and discard only its       #
+# heuristic value), so a fair A/B isolates the value component.                   #
+# --------------------------------------------------------------------------- #
+def make_heuristic_prior_evaluator_with_net_value(
+    game: Game, cfg: HeuristicPriorConfig, net, sighted_game: Game | None = None,
+    device=None,
+):
+    """Return a ``Callable[[Board], (priors[A], value)]`` whose PRIORS are
+    byte-identical to ``make_heuristic_prior_evaluator(game, cfg)`` but whose
+    VALUE is the learned deck-aware net value
+    ``net_value(sighted_encode(board.state, mover))`` — the mover-POV sighted
+    (81ch / 42-scalar) observation fed through ``net``'s value head.
+
+    The priors are guaranteed identical because we build the base heuristic
+    evaluator and REUSE its ``(priors, _)`` output verbatim, only substituting
+    the value — there is no re-derivation of the softmax(Δleaf/τ) logits, so the
+    only measured difference vs the heuristic-value fair champion is the value.
+
+    Parameters
+    ----------
+    game : Game            the SAME (blind) engine wrapper the owning NeuralMCTS
+                           steps children through — passed straight to the base
+                           heuristic evaluator (priors path unchanged).
+    cfg : HeuristicPriorConfig  champion knobs (c_puct/τ_p/leaf/value_norm).
+    net : CarcassonneNet   an 81ch / 42-scalar sighted net (policy+value); only
+                           the value head is read. Put it in eval() mode.
+    sighted_game : Game    a ``Game(sighted=True)`` used ONLY to encode the board
+                           into the deck-aware observation (board.offset/state/
+                           total_tiles are on the Board, so a separate encoder
+                           Game is correctness-neutral). Built here if None.
+    device                 torch device for the forward; defaults to the net's
+                           own parameter device (CPU under the eval env, which
+                           sets CUDA_VISIBLE_DEVICES="").
+
+    NOTE — the net value is a SINGLE-board eager forward per leaf (the NeuralMCTS
+    serial evaluator contract, ``batch_size=1``). For the real n≈100 fair A/B this
+    is the perf bottleneck; batching (orch / GPU) is a follow-up, not needed for
+    correctness or the plumbing smoke.
+    """
+    import torch
+
+    if net is None:
+        raise ValueError("make_heuristic_prior_evaluator_with_net_value: net is None")
+
+    base = make_heuristic_prior_evaluator(game, cfg)
+
+    if sighted_game is None:
+        sighted_game = Game(
+            players=game.players,
+            tile_sets=list(game.tile_sets),
+            supplementary_rules=list(game.supplementary_rules),
+            window_size=game.window_size,
+            sighted=True,
+        )
+    if not getattr(sighted_game, "sighted", False):
+        raise ValueError(
+            "sighted_game must be a Game(sighted=True) — the deck-aware net value "
+            "reads the +3 farm planes / +32 bag scalars"
+        )
+
+    # Fail loudly on a rep/net dim mismatch rather than a cryptic cat/matmul error.
+    exp_ch = sighted_game.get_input_channels()
+    exp_scl = sighted_game.get_scalar_feature_size()
+    net_ch = int(getattr(net, "stem", [None])[0].in_channels) if hasattr(net, "stem") else None
+    if net_ch is not None and net_ch != exp_ch:
+        raise ValueError(
+            f"net input channels ({net_ch}) != sighted encode channels ({exp_ch}); "
+            "the net must be an 81ch sighted net"
+        )
+    net_scl = int(getattr(net, "value_fc1").in_features) if hasattr(net, "value_fc1") else None
+    # value_fc1 in_features = value_flat + n_scalar (+ 2*n_filters if global pool),
+    # so we can only *lower-bound* n_scalar from it; assert the exact scalar count
+    # via the policy_fc instead (policy_flat + n_scalar), which has no global-pool add.
+    if hasattr(net, "policy_fc") and hasattr(net, "policy_project"):
+        try:
+            pol_project_ch = net.policy_project[0].out_channels
+            policy_flat = pol_project_ch * sighted_game.window_size * sighted_game.window_size
+            net_scl_exact = int(net.policy_fc.in_features) - policy_flat
+            if net_scl_exact != exp_scl:
+                raise ValueError(
+                    f"net scalar features ({net_scl_exact}) != sighted scalars ({exp_scl}); "
+                    "the net must be a 42-scalar sighted net"
+                )
+        except (AttributeError, IndexError):
+            pass
+
+    if device is None:
+        try:
+            device = next(net.parameters()).device
+        except StopIteration:
+            device = torch.device("cpu")
+    net.eval()
+
+    def _net_value(board: Board) -> float:
+        mover = board.state.current_player
+        obs, scl = sighted_game.get_canonical_form(board, mover)
+        obs_t = torch.from_numpy(np.ascontiguousarray(obs, dtype=np.float32)).unsqueeze(0).to(device)
+        scl_t = torch.from_numpy(np.ascontiguousarray(scl, dtype=np.float32)).unsqueeze(0).to(device)
+        with torch.no_grad():
+            _logits, value = net(obs_t, scl_t)
+        return float(value.reshape(-1)[0].item())
+
+    def evaluator(board: Board):
+        # Byte-identical priors (base returns (priors, heuristic_value)); we keep
+        # the priors and swap ONLY the value.
+        priors, _heur_value = base(board)
+        return priors, _net_value(board)
+
+    # Provenance / introspection hooks (mirror the heuristic evaluator + expose the
+    # net-value wiring for tests). root_logits is inherited so the Gumbel driver
+    # keeps working if this evaluator is ever used clairvoyantly.
+    evaluator.heur_prior_cfg = cfg
+    evaluator.leaf_cfg = base.leaf_cfg
+    evaluator.leaf_name = f"{base.leaf_name}_netvalue"
+    evaluator.root_logits = base.root_logits
+    evaluator.net = net
+    evaluator.sighted_game = sighted_game
+    evaluator.heuristic_base = base  # tests assert priors == base priors
+    return evaluator
+
+
+# --------------------------------------------------------------------------- #
 # Agent                                                                        #
 # --------------------------------------------------------------------------- #
 class HeuristicPriorAgent:

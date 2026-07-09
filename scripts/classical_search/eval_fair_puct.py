@@ -12,13 +12,19 @@ champion under imperfect information (root-determinization PIMC). This script
 derives that fair config and refreshes the stale iter8-only clairvoyance tax
 (CL-022, ~26.6 elo) at the champion's OWN config.
 
-TWO ARMS (--info), both vs the SAME fixed rung on the SAME decks so their paired
-Δ isolates clairvoyance:
-  - fair  : FairHeuristicPriorAgent (fair PIMC prefix; k_dets determinizations per
-            move, pooled-Q) — the deployable config. DEFAULT.
-  - clair : the clairvoyant champion (HeuristicPriorAgent on the true deck) — the
-            as-shipped strength; the CL-022 CLAIR arm at champion config.
-BOTH arms get the IDENTICAL fair MARGINALIZED exact endgame handoff (latched on the
+THREE ARMS (--info), all vs the SAME fixed rung on the SAME decks so their paired
+Δ isolates the one variable that changes:
+  - fair     : FairHeuristicPriorAgent (fair PIMC prefix; k_dets determinizations per
+               move, pooled-Q) — the deployable config. DEFAULT.
+  - clair    : the clairvoyant champion (HeuristicPriorAgent on the true deck) — the
+               as-shipped strength; the CL-022 CLAIR arm at champion config.
+  - fair-net : the fair PIMC prefix with IDENTICAL heuristic priors but a LEARNED
+               deck-aware net leaf value (C-cheap; needs --net <sighted ckpt>). vs the
+               `fair` arm on the same decks it isolates the VALUE component: does a
+               deck-aware learned value shrink the clairvoyance tax? (Gate: fair-elo
+               of fair-net minus fair >= +35 elo; C_CHEAP_SPEC §4.) The priors are
+               byte-identical to `fair` (make_heuristic_prior_evaluator_with_net_value).
+ALL arms get the IDENTICAL fair MARGINALIZED exact endgame handoff (latched on the
 first TILES decision with k_remaining<=K), so the only measured difference is the
 SEARCH PREFIX (fair PIMC vs clairvoyant). The endgame is marginalized (honest
 hidden-bag value), NOT clairvoyant — a clairvoyant K=3-4 solve would be the cheating
@@ -45,6 +51,17 @@ Usage:
   # plumbing + K=2 handoff smoke (single process, tiny):
   nice -n 19 .venv/bin/python scripts/classical_search/eval_fair_puct.py \
       --info fair --exact-k 2 --k-dets 2 --sims 64 --games 2 --smoke
+
+  # C-cheap fair-net plumbing smoke (RANDOM 81ch/42-scalar net, no training):
+  nice -n 19 .venv/bin/python scripts/classical_search/eval_fair_puct.py \
+      --info fair-net --exact-k 2 --k-dets 2 --sims 32 --games 2 --smoke
+
+  # C-cheap fair-net A/B cell (n=100 deck-paired, vs the CL-045 fair baseline):
+  CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
+      scripts/classical_search/eval_fair_puct.py \
+      --info fair-net --net <sighted_value.pt> --exact-k 2 --k-dets 8 --sims 344 \
+      --rung-sims 800 --n 100 --paired --seed-start 13000000000 --workers 14 \
+      --out-root /mnt/c/carc-shared/classical_search --shared-claim --no-results-csv
 
   # one K=2 fair screen cell (n=100 deck-paired):
   CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
@@ -116,6 +133,47 @@ try:
     _TILES_PHASE = GamePhase.TILES
 except Exception:  # pragma: no cover
     _TILES_PHASE = None
+
+
+# --------------------------------------------------------------------------- #
+# C-cheap deck-aware NET value (the `fair-net` arm). torch + CarcassonneNet are   #
+# imported lazily (only this arm needs them) so the fair/clair arms keep their    #
+# net-free, torch-free startup.                                                   #
+# --------------------------------------------------------------------------- #
+def _load_net(path, device="cpu"):
+    """Load a sighted (81ch/42-scalar) CarcassonneNet checkpoint for value read-out.
+    Mirrors verify_sighted_orch_parity._load_net (arch dims live in the ckpt)."""
+    import torch
+    from carcassonne_ai.network import CarcassonneNet
+    ck = torch.load(path, map_location=device, weights_only=False)
+    n_ch = int(ck.get("n_input_channels", 78))
+    n_scalar = int(ck.get("n_scalar_features", 10))
+    net = CarcassonneNet(
+        n_filters=ck.get("n_filters", 96), n_blocks=ck.get("n_blocks", 6),
+        n_input_channels=n_ch, n_scalar_features=n_scalar,
+        value_global_pool=bool(ck.get("value_global_pool", False)),
+    ).to(device)
+    net.load_state_dict(ck["model_state"])
+    net.eval()
+    if n_ch != 81 or n_scalar != 42 or not bool(ck.get("sighted", False)):
+        print(f"[warn] --net is not an 81ch/42-scalar sighted net "
+              f"(n_ch={n_ch} n_scalar={n_scalar} sighted={ck.get('sighted')}); "
+              "the deck-aware fair-net arm expects the sighted rep.", file=sys.stderr)
+    return net
+
+
+def _random_sighted_net(device="cpu", value_global_pool=True, seed=0):
+    """A randomly-initialized 81ch/42-scalar sighted net — the --smoke plumbing
+    net (proves the fair-net path end-to-end without any training)."""
+    import torch
+    from carcassonne_ai.network import CarcassonneNet
+    torch.manual_seed(seed)
+    net = CarcassonneNet(
+        n_input_channels=81, n_scalar_features=42,
+        value_global_pool=value_global_pool,
+    ).to(device)
+    net.eval()
+    return net
 
 EVAL_ROOT = REPO / "data" / "classical_search"
 RUNG_C = DEFAULT_C  # 3.0 — the CL-022 rung's HeuristicMCTS exploration constant
@@ -201,15 +259,23 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm):
     )
 
 
-def _make_champion(info, cfg, sims, k_dets, K, seed, game):
+def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
-    info=="fair"  -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
-                     the _MarginalizedHandoff owns the endgame so both arms share it).
-    info=="clair" -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
+    info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
+                        the _MarginalizedHandoff owns the endgame so both arms share it).
+    info=="fair-net" -> FairHeuristicPriorAgent prefix with IDENTICAL heuristic priors
+                        but the learned deck-aware net value (C-cheap). Same fair PIMC
+                        + shared endgame as `fair`; ONLY the leaf value differs.
+    info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     if info == "fair":
         prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
                                          seed=seed, exact_endgame=False)
+    elif info == "fair-net":
+        if net is None:
+            raise ValueError("info=fair-net requires a loaded net (--net)")
+        prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
+                                         seed=seed, exact_endgame=False, net=net)
     else:  # clair
         prefix = HeuristicPriorAgent(game, cfg, simulations=(sims * k_dets), seed=seed)
     return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
@@ -274,7 +340,7 @@ _W: dict = {}
 
 
 def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
-                 shared_claim, claim_host, claim_stale):
+                 shared_claim, claim_host, claim_stale, net_ckpt=None):
     _W["info"] = info
     _W["champ_cfg_dict"] = champ_cfg_dict
     _W["sims"] = sims
@@ -284,6 +350,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale"] = claim_stale
+    # fair-net: each worker loads its OWN net-on-CPU copy (the eval env hides CUDA;
+    # a 7M net is ~30MB/worker). Loaded once per process, reused across games.
+    _W["net"] = _load_net(net_ckpt, device="cpu") if (info == "fair-net" and net_ckpt) else None
 
 
 def _cfg_from_dict(d):
@@ -310,7 +379,7 @@ def _play_one(args) -> GameResult | None:
 
     cfg = _cfg_from_dict(_W["champ_cfg_dict"])
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
-                           seed, Game(enable_legal_moves_cache=True))
+                           seed, Game(enable_legal_moves_cache=True), net=_W.get("net"))
     rung = _RungPrefix(Game(enable_legal_moves_cache=True), _W["rung_sims"],
                        seed + 1, DEFAULT_CONFIG)
 
@@ -429,6 +498,15 @@ def _smoke(args) -> int:
     and print an elo/z summary. Exits 0 on success."""
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm)
+    # fair-net smoke: load --net if given, else a randomly-initialized 81ch/42-scalar
+    # net (pure plumbing proof — NO training). Other arms ignore the net.
+    smoke_net = None
+    if args.info == "fair-net":
+        smoke_net = (_load_net(args.net, device="cpu") if args.net
+                     else _random_sighted_net(device="cpu",
+                                              value_global_pool=args.value_global_pool))
+        print(f"[smoke] fair-net value = {'ckpt ' + args.net if args.net else 'RANDOM'} "
+              f"81ch/42-scalar net (value_global_pool={args.value_global_pool})")
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
           f"(total~{args.k_dets*args.sims}) | rung h{args.rung_sims} c{RUNG_C}")
     import random
@@ -442,7 +520,7 @@ def _smoke(args) -> int:
         board = game.get_init_board()
         dh = deck_hash(board)
         champ = _make_champion(args.info, cfg, args.sims, args.k_dets, args.exact_k,
-                               seed, Game(enable_legal_moves_cache=True))
+                               seed, Game(enable_legal_moves_cache=True), net=smoke_net)
         rung = _RungPrefix(Game(enable_legal_moves_cache=True), args.rung_sims,
                            seed + 1, DEFAULT_CONFIG)
         moves = 0
@@ -493,9 +571,18 @@ def _smoke(args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="eval_fair_puct")
-    ap.add_argument("--info", choices=("fair", "clair"), default="fair",
+    ap.add_argument("--info", choices=("fair", "clair", "fair-net"), default="fair",
                     help="fair = FairHeuristicPriorAgent PIMC (deployable, default); "
-                         "clair = clairvoyant champion (CL-022 CLAIR arm at champion config)")
+                         "clair = clairvoyant champion (CL-022 CLAIR arm at champion config); "
+                         "fair-net = fair PIMC with IDENTICAL heuristic priors but a learned "
+                         "deck-aware net leaf value (C-cheap; needs --net)")
+    ap.add_argument("--net", type=str, default=None,
+                    help="fair-net arm: path to the sighted (81ch/42-scalar) value-net "
+                         "checkpoint. Under --smoke this may be omitted (a random net is used).")
+    ap.add_argument("--value-global-pool", action="store_true", default=True,
+                    help="fair-net --smoke random net: build with KataGo-style value global "
+                         "pooling (the recommended C-cheap arch; default True)")
+    ap.add_argument("--no-value-global-pool", dest="value_global_pool", action="store_false")
     ap.add_argument("--exact-k", type=int, default=2,
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
     ap.add_argument("--k-dets", type=int, default=8, help="determinizations per move (fair PIMC)")
@@ -534,6 +621,9 @@ def main(argv=None) -> int:
     if args.smoke:
         return _smoke(args)
 
+    if args.info == "fair-net" and not args.net:
+        ap.error("--info fair-net requires --net <sighted checkpoint> (except under --smoke)")
+
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
@@ -563,15 +653,22 @@ def main(argv=None) -> int:
         return 0
 
     leaf_cfg = cfg.resolved_leaf_cfg()
+    _AGENT_NAME = {
+        "fair": "FairHeuristicPriorAgent",
+        "fair-net": "FairHeuristicPriorAgent + deck-aware net value (C-cheap)",
+        "clair": "HeuristicPriorAgent (clairvoyant)",
+    }
     man_cfg = {
         "info": args.info,
-        "champion": {"agent": ("FairHeuristicPriorAgent" if args.info == "fair"
-                               else "HeuristicPriorAgent (clairvoyant)"),
+        "champion": {"agent": _AGENT_NAME[args.info],
                      **cfg.as_manifest(),
                      "k_dets": args.k_dets, "sims_per_det": args.sims,
                      "total_sims": args.k_dets * args.sims,
-                     "aggregation": ("pooled-Q over k_dets determinizations (final_select inert)"
-                                     if args.info == "fair" else "single clairvoyant search (final_select)")},
+                     "net": (args.net if args.info == "fair-net" else None),
+                     "value_source": ("learned deck-aware net (sighted 81ch/42-scalar)"
+                                      if args.info == "fair-net" else "v2.9 heuristic leaf"),
+                     "aggregation": ("single clairvoyant search (final_select)" if args.info == "clair"
+                                     else "pooled-Q over k_dets determinizations (final_select inert)")},
         "endgame": {"mode": "marginalized", "exact_k": args.exact_k,
                     "exact_budget": EXACT_BUDGET, "shared_by_both_arms": True,
                     "tt_cap": os.environ.get("CARCASSONNE_TT_CAP")},
@@ -602,7 +699,7 @@ def main(argv=None) -> int:
         with Pool(processes=workers, initializer=_worker_init,
                   initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets,
                             args.exact_k, args.rung_sims, args.shared_claim,
-                            args.claim_host, args.claim_stale_secs)) as pool:
+                            args.claim_host, args.claim_stale_secs, args.net)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:

@@ -84,6 +84,7 @@ from .mcts import HeuristicMCTS, NeuralMCTS
 from .heuristic_prior_mcts import (
     HeuristicPriorConfig,
     make_heuristic_prior_evaluator,
+    make_heuristic_prior_evaluator_with_net_value,
 )
 
 # Marginalized-solver handoff band. NOT a tuning knob: K<=2 is both the
@@ -354,13 +355,28 @@ class FairHeuristicPriorAgent:
     exact_endgame : bool        True (default) -> marginalized solver at k<=exact_max_k.
     exact_max_k : int           fair-endgame handoff depth K (default 2).
     exact_budget : int          solver node budget per solve (BudgetExceeded -> PIMC).
+    net                         OPTIONAL deck-aware value net (C-cheap). When given
+                                (and evaluator is None), the per-determinization
+                                search uses IDENTICAL heuristic priors but the
+                                learned net value as the leaf value
+                                (make_heuristic_prior_evaluator_with_net_value). The
+                                net must be an 81ch/42-scalar sighted net.
+    evaluator                   OPTIONAL pre-built evaluator override (takes
+                                precedence over net). Callable[[Board],(priors,val)].
+    sighted_game                OPTIONAL Game(sighted=True) encoder for `net`
+                                (built internally if None). Ignored unless net.
+
+    ⚠️ BIT-EXACT DEFAULT: with net=None AND evaluator=None (the default) the agent
+    builds the SAME make_heuristic_prior_evaluator as before — byte-for-byte the
+    heuristic-value fair champion. The net/evaluator hooks are purely additive.
     """
 
     def __init__(self, game: Game, cfg: HeuristicPriorConfig | None = None,
                  sims: int = 344, k_dets: int = 8, seed: int | None = None,
                  min_pooled_visits: int = DEFAULT_MIN_POOLED_VISITS,
                  exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
-                 exact_budget: int = DEFAULT_EXACT_BUDGET):
+                 exact_budget: int = DEFAULT_EXACT_BUDGET,
+                 net=None, evaluator=None, sighted_game: Game | None = None):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -381,7 +397,19 @@ class FairHeuristicPriorAgent:
         # wires it. Reshuffled determinizations are the SAME position (deck order is
         # not in the transposition key), so sharing `game`'s legal-move cache is
         # correctness-neutral.
-        self._evaluator = make_heuristic_prior_evaluator(game, self._cfg)
+        #
+        # C-cheap value swap (additive; default OFF): an explicit `evaluator` wins;
+        # else a `net` builds the deck-aware net-value evaluator (identical priors,
+        # learned value); else the byte-for-byte heuristic-value evaluator. With
+        # net=None and evaluator=None this is EXACTLY the pre-C-cheap agent.
+        self._net = net
+        if evaluator is not None:
+            self._evaluator = evaluator
+        elif net is not None:
+            self._evaluator = make_heuristic_prior_evaluator_with_net_value(
+                game, self._cfg, net, sighted_game=sighted_game)
+        else:
+            self._evaluator = make_heuristic_prior_evaluator(game, self._cfg)
         self._move_idx = 0
         self._latched = False
         # eval-harness-compatible instrumentation (mirrors FairHeuristicMCTSAgent).
