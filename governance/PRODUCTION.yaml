@@ -32,7 +32,11 @@ champion:
                                         # not a time discount), paired z=2.81, n=400 confirm (finding-doc snapshot was n=378/+38.8 mid-aggregation; screen +47.2/z1.73).
                                         # Search-efficiency win → dodges sims-washout.
                                         # HeuristicPriorConfig.reuse_tree; bit-exact-OFF pinned; 0 rotation-collisions in re-root smoke.
-                                        # Caveat: A2's fair-PIMC resamples the deck each move → re-check reuse × determinization before any FAIR-mode deploy.
+                                        # FAIR RE-CONFIRM 2026-07-09 (ROADMAP B/D-recon) — RESOLVED BY MECHANISM, not by run: reuse is CLAIRVOYANT-ONLY.
+                                        # The +39 amortizes a single fixed true deck; fair PIMC resamples the deck each move + runs k_dets FRESH trees →
+                                        # no fixed future to reuse → fair value ~0. FairHeuristicPriorAgent has NO reuse knob (fresh tree/determinization) →
+                                        # reuse_tree is a NO-OP in fair deploy. Keep ON for CLAIRVOYANT dev only (self-play/dev-eval/clair-ruler: cheaper/deeper);
+                                        # it contributes 0 to deployable (fair) strength. Do NOT build a "fair reuse" (sticky-determinization would leak future info). CL-044 scoped clairvoyant/dev.
   leaf: v2_9_1_Bmild_cap8              # UNCHANGED from the prior champion — this flip does NOT touch the leaf
   leaf_hash: "7fc930b82801cb43"
   leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
