@@ -1,6 +1,6 @@
 # C-cheap v2 — RESIDUAL deck-aware value — IN-FLIGHT RUNBOOK
 
-**Status: IN FLIGHT (2026-07-10). Gen ✅ + Train ✅ + Offline-gate ✅ PASSED (A≈B: deck thesis weak, general leaf-correction survives) → ONLINE eval running (orch smoke → λ-bracket → n=200 CRN, +35 gate).**
+**Status: ✅ CLOSED 2026-07-10 — VERDICT = NULL (CL-050). C-cheap is DEAD.** Full pipeline ran clean end-to-end: gen 3000 ✅ → train A+B ✅ → offline gate PASSED (A beats null ~25% MSE, but A≈B = deck-awareness ~5% of signal) → orch parity ✅ (1.4e-5/4.2e-5) → smoke ✅ → λ-bracket ✅ (all arms positive; λ=0.25 by pre-reg margin) → **n=200 CRN: fair-net +90.6 vs fair +81.4 = +9.2 elo (gate ≥+35 FAIL), paired Δz +0.18 (FAIL)**. The 25% offline gain translated to ~0 online at pooled-Q deploy knobs — value-inertness #8, strongest form. `results.csv fairnet_v2_*`; CL-049 falsifier tested exactly and NOT met. Champion untouched throughout.
 Code merged `69ac3f7` (evaluator+gen+trainer+eval+kill-gate) on top of scaffold `a89b0f5`. Champion PRODUCTION.yaml UNCHANGED; all new paths default-OFF / bit-exact when no net supplied.
 
 ## Why v2 (the fix for CL-049's botch)

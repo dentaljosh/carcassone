@@ -6,7 +6,7 @@
 
 ---
 
-## NOW (2026-07-09) — 🧭 B ✅ DONE (fair ruler-of-record BUILT; FLIP transfers fair, REUSE doesn't; tax persists ~120 elo across sims). NEXT = **E4 human-anchor** (the fair exam D0 enables) + **A-small / C-cheap**, which B sized as **BOTH LIVE** (search raises fair strength — A; only learned value attacks the ~120 tax residual — C). B re-priced the choice, did NOT collapse it. Hard kill-gate at each.
+## NOW (2026-07-10) — 🧭 B ✅ DONE · A-small ❌ DECLINED · **C-cheap ❌ CLOSED (CL-050, 2026-07-10: the v2 residual redo ran the full pre-registered pipeline — offline gate passed but A≈B; n=200 CRN verdict +9.2 elo vs the +35 gate, paired Δz +0.18 = NULL; value-inertness #8; no live lever attacks the ~120 tax).** NEXT = **E4 human-anchor** (attended, needs Joshua — the top item) · **C5 leaf re-tune** (autonomous, S1 screens launched 2026-07-10 overnight; design + S0 harness + launcher all committed). Hard kill-gate at each.
 
 **The pivot in one line:** the champion arc + the first search-squeeze cells are DONE — but they were graded in the **wrong currency.** The +148 flip and the +39 reuse win (and the whole clair sub-ladder) were measured **clairvoyant-matched** (both sides see the deck). Deployable strength is **FAIR** (blind PIMC). The exchange rate for THIS agent is ≈ **4:1** (A2/CL-045: +205 clair → +49 fair vs h800; tax ~156 elo). So before spending more on search or learning, **re-price everything in fair elo.**
 
