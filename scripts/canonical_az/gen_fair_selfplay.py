@@ -195,10 +195,15 @@ def play_fair_game_to_dataset(
         info["clip_rate"] = clip_rate
         info["z"] = z_arr                    # sidecar diagnostics
         info["leaf_tanh"] = leaf_tanh_arr
-        # LOUD tripwire: a residual sign/scale bug clips ~half the rows or more.
-        assert clip_rate <= _CLIP_RATE_TRIPWIRE, (
-            f"residual clip rate {clip_rate:.3f} > {_CLIP_RATE_TRIPWIRE} (seed={seed}) — "
-            "likely a leaf-norm/sign bug in the residual target")
+        # NOTE: a SINGLE lopsided game (the norm-15 leaf saturates ±1, then the
+        # outcome flips) can legitimately clip a large fraction. A SYSTEMATIC
+        # sign/scale bug clips ~half of EVERY game -> caught by the AGGREGATE
+        # tripwire in the main loop (mean clip rate over many games). Only warn
+        # on a near-total single game here; do NOT halt the whole run on one game.
+        if clip_rate > 0.90:
+            print(f"  [warn] seed={seed} residual clip_rate {clip_rate:.3f} "
+                  "(lopsided single game; aggregate tripwire is the real guard)",
+                  flush=True)
 
     N = len(obs_list)
     A = game.get_action_size()
@@ -336,6 +341,14 @@ def main(argv=None) -> int:
             if "clip_rate" in r:
                 clip_rate_sum += r["clip_rate"]
                 clip_rate_n += 1
+                # AGGREGATE tripwire (the real systematic-bug guard): a residual
+                # sign/scale bug clips ~half of EVERY game -> the running mean stays
+                # high; single lopsided games (leaf saturates, outcome flips) don't
+                # move it. Threshold 0.15 (expected ~0.03-0.04 from leaf saturation).
+                if clip_rate_n >= 30 and clip_rate_sum / clip_rate_n > 0.15:
+                    raise SystemExit(
+                        f"residual AGGREGATE clip rate {clip_rate_sum/clip_rate_n:.3f} > 0.15 "
+                        f"over {clip_rate_n} games — systematic leaf-norm/sign bug; HALTED")
             if played % 10 == 0 or played == len(todo):
                 el = time.perf_counter() - t0
                 cr = (f", clip_rate {clip_rate_sum/clip_rate_n:.4f}" if clip_rate_n else "")
