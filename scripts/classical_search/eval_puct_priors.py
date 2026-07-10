@@ -418,10 +418,82 @@ def _make_net_prefix(seed: int) -> "_NetPrefix":
     return _NetPrefix(base, gf, seed)
 
 
+def _leaf_dict(cfg) -> dict:
+    """JSON-serializable dict of a resolved LeafConfig (tuples -> lists)."""
+    return {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()}
+
+
 def _leaf_hash(cfg) -> str:
     """Stable short hash of the resolved LeafConfig (provenance)."""
-    payload = {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()}
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
+    return hashlib.sha256(
+        json.dumps(_leaf_dict(cfg), sort_keys=True, default=str).encode()
+    ).hexdigest()[:16]
+
+
+def _load_cand_leaf_cfg(spec):
+    """Parse --cand-leaf-json into a candidate LeafConfig by replacing ONLY the
+    named fields on the env-resolved DEFAULT_CONFIG (v2.9 Bmild_cap8). `spec` is
+    inline JSON (a `{...}` object) or a path to a JSON file. Returns None for a
+    falsy spec (flag absent -> the candidate side stays DEFAULT_CONFIG, so the run
+    is byte-identical to today). Overrides ONLY the CANDIDATE leaf; the champion
+    side always keeps DEFAULT_CONFIG.
+
+    Field coercions (JSON -> LeafConfig):
+      closure_p       object with string keys -> {int: float} (the schedule dict)
+      v29_meeple_curve  list -> tuple(float); null -> None (curve OFF)
+      everything else passes through (floats / bools / ints).
+    Unknown field names raise (fail-loud on a typo silently running the wrong leaf).
+    """
+    if not spec:
+        return None
+    import dataclasses as _dc
+
+    txt = spec.strip()
+    if not txt.startswith(("{", "[")):   # else a path to a JSON file
+        txt = Path(spec).read_text()
+    raw = json.loads(txt)
+    if not isinstance(raw, dict):
+        raise ValueError("--cand-leaf-json must be a JSON object (LeafConfig field -> value)")
+    valid = {f.name for f in _dc.fields(DEFAULT_CONFIG)}
+    over = {}
+    for k, v in raw.items():
+        if k not in valid:
+            raise ValueError(
+                f"--cand-leaf-json: unknown LeafConfig field {k!r} (valid: {sorted(valid)})"
+            )
+        if k == "closure_p" and v is not None:
+            over[k] = {int(kk): float(vv) for kk, vv in v.items()}
+        elif k == "v29_meeple_curve":
+            over[k] = None if v is None else tuple(float(x) for x in v)
+        else:
+            over[k] = v
+    return _dc.replace(DEFAULT_CONFIG, **over)
+
+
+def _assert_cy_float_path(cfg) -> None:
+    """S0 cy-path guard (design Stage 0, item 3): the candidate leaf MUST stay on
+    the Cython float flat-leaf path, else it silently runs the ~30x slower pure-
+    Python object leaf (v2.8/v2.9-non-curve terms) or a non-cy path (tile-counting
+    / continuous-slack). Curve-only and bag_close are cy-float-supported by this
+    build; everything the screen sweeps use qualifies by construction."""
+    from carcassonne_ai import virtual_score_v2 as _vs2
+    if _vs2._v28_active(cfg):
+        raise ValueError("--cand-leaf-json: v2.8 terms (v28_farm_majority/v28_meeple_k) "
+                         "force the object path — not a Cython float leaf")
+    if _vs2._v29_active(cfg) and not _vs2._v29_curve_only(cfg):
+        raise ValueError("--cand-leaf-json: v2.9 non-curve terms (util_tanh/punish/farm_access) "
+                         "force the object path — only v29_meeple_curve stays on the cy float path")
+    if cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0:
+        raise ValueError("--cand-leaf-json: tile_counting_closure / closure_continuous_slack "
+                         "force the non-cy path")
+    if cfg.bag_close:
+        try:
+            from carcassonne_ai import flat_leaf_cy as _cy
+            if not bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False)):
+                raise ValueError("--cand-leaf-json: bag_close set but the compiled cy leaf "
+                                 "lacks SUPPORTS_V210_BAG_CLOSE (rebuild flat_leaf_cy)")
+        except ImportError as e:
+            raise ValueError("--cand-leaf-json: bag_close set but flat_leaf_cy is not built") from e
 
 
 # --------------------------------------------------------------------------- #
@@ -479,8 +551,11 @@ _W: dict = {}
 def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  shared_claim, claim_host, claim_stale,
                  cand_kind="puct", opp_kind="heur", opp_sims=None,
-                 net_ckpt="", net_ns=10, shm_name="", id_q=None):
+                 net_ckpt="", net_ns=10, shm_name="", id_q=None,
+                 cand_leaf_cfg=None):
     _W["cand_cfg_dict"] = cand_cfg_dict
+    # candidate-side leaf override (None -> DEFAULT_CONFIG); champion stays DEFAULT.
+    _W["cand_leaf_cfg"] = cand_leaf_cfg
     _W["cand_sims"] = cand_sims
     _W["champ_sims"] = champ_sims
     _W["exact_k"] = exact_k
@@ -508,12 +583,14 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
 
 def _make_cand_cfg():
     d = _W["cand_cfg_dict"]
-    # rebuild the LeafConfig from DEFAULT_CONFIG (env-resolved Bmild_cap8) — the
-    # cfg dict only carries the agent knobs; the leaf is the production default.
+    # rebuild the LeafConfig — the cfg dict only carries the agent knobs; the leaf
+    # is the candidate override (--cand-leaf-json) or DEFAULT_CONFIG (env-resolved
+    # Bmild_cap8) when no override was passed (byte-identical to the legacy path).
+    leaf_cfg = _W.get("cand_leaf_cfg") or DEFAULT_CONFIG
     return HeuristicPriorConfig(
         c_puct=d["c_puct"], tau_p=d["tau_p"],
         leaf_quantize=d["leaf_quantize"], final_select=d["final_select"],
-        value_norm=d["value_norm"], leaf_cfg=DEFAULT_CONFIG,
+        value_norm=d["value_norm"], leaf_cfg=leaf_cfg,
         c_lcb=d.get("c_lcb", 1.0), reuse_tree=d.get("reuse_tree", False),
         root_select=d.get("root_select", "puct"), gumbel_m=d.get("gumbel_m", 16),
         gumbel_c_visit=d.get("gumbel_c_visit", 50.0),
@@ -686,11 +763,15 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
     Honors --candidate/--opponent; a net: opponent is loaded on CPU (no orch)."""
     if opp_sims is None:
         opp_sims = args.champ_sims
+    cand_leaf_cfg = _load_cand_leaf_cfg(getattr(args, "cand_leaf_json", None))
+    if cand_leaf_cfg is not None:
+        _assert_cy_float_path(cand_leaf_cfg)
     cfg = None
     if cand_kind == "puct":
         cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                    leaf_quantize=args.leaf_quantize, final_select=args.final_select,
-                                   value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
+                                   value_norm=args.value_norm,
+                                   leaf_cfg=(cand_leaf_cfg if cand_leaf_cfg is not None else DEFAULT_CONFIG),
                                    c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
                                    root_select=args.root_select, gumbel_m=args.gumbel_m,
                                    gumbel_c_visit=args.gumbel_c_visit,
@@ -816,6 +897,16 @@ def main(argv=None) -> int:
                     help="candidate PUCT sims (from the equal-time bench match); required "
                          "for --candidate puct, ignored for --candidate h<sims>")
     ap.add_argument("--champ-sims", type=int, default=6400)
+    ap.add_argument("--cand-leaf-json", type=str, default=None,
+                    help="override ONLY the CANDIDATE side's leaf LeafConfig — inline "
+                         "JSON (a '{...}' object of field->value, replace-fields on the "
+                         "env DEFAULT_CONFIG) or a path to such a JSON file. The champion/"
+                         "opponent side always keeps env DEFAULT_CONFIG (v2.9 Bmild_cap8). "
+                         "Absent -> byte-identical to today (all new paths default-OFF). "
+                         "closure_p keys are coerced to int, v29_meeple_curve to a tuple "
+                         "(null -> curve OFF). e.g. '{\"bonus_cap\": 5, \"opp_bonus_cap\": 5}'. "
+                         "The candidate must stay on the Cython float leaf (curve-only or "
+                         "curve-None, bag_close ok); object-forcing terms are rejected.")
     ap.add_argument("--candidate", type=str, default="puct",
                     help="candidate side: 'puct' (default; PUCT-heur-priors @ --cand-sims) or "
                          "'h<sims>' (plain HeuristicMCTS @ <sims>, same v2.9 leaf + exact-K "
@@ -863,6 +954,17 @@ def main(argv=None) -> int:
     if args.shm_eval_server and opp_kind != "net":
         ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
 
+    # candidate-side leaf override (--cand-leaf-json). None -> DEFAULT_CONFIG both
+    # sides (byte-identical to today). The champion/opponent side NEVER takes it.
+    try:
+        cand_leaf_cfg = _load_cand_leaf_cfg(args.cand_leaf_json)
+        if cand_leaf_cfg is not None:
+            _assert_cy_float_path(cand_leaf_cfg)
+    except ValueError as e:
+        ap.error(str(e))                       # messages already carry the flag name
+    except (OSError, json.JSONDecodeError) as e:
+        ap.error(f"--cand-leaf-json: {e}")
+
     if args.smoke:
         return _smoke(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
 
@@ -878,7 +980,8 @@ def main(argv=None) -> int:
 
     cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                leaf_quantize=args.leaf_quantize, final_select=args.final_select,
-                               value_norm=args.value_norm, leaf_cfg=DEFAULT_CONFIG,
+                               value_norm=args.value_norm,
+                               leaf_cfg=(cand_leaf_cfg if cand_leaf_cfg is not None else DEFAULT_CONFIG),
                                c_lcb=args.c_lcb, reuse_tree=args.reuse_tree,
                                root_select=args.root_select, gumbel_m=args.gumbel_m,
                                gumbel_c_visit=args.gumbel_c_visit,
@@ -894,6 +997,11 @@ def main(argv=None) -> int:
                      "gumbel_retain_g": args.gumbel_retain_g}
 
     tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
+    if cand_leaf_cfg is not None:
+        # a leaf A/B: keep the auto exp_id / default out-dir distinct per candidate
+        # leaf so cells never silently share a directory (Trap 1). An explicit
+        # --out-subdir (the Stage-1 launcher path) still owns the on-disk dir name.
+        tag = f"{tag}-leaf{_leaf_hash(cand_leaf_cfg)[:8]}"
     sub = args.out_subdir or tag
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
@@ -923,7 +1031,8 @@ def main(argv=None) -> int:
             print("no cached results yet")
         return 0
 
-    leaf_cfg = cfg.resolved_leaf_cfg()
+    leaf_cfg = cfg.resolved_leaf_cfg()          # candidate side (override or DEFAULT_CONFIG)
+    champ_leaf_cfg = DEFAULT_CONFIG             # champion/opponent side is ALWAYS env default
     man_cfg = {"candidate": cfg.as_manifest(),
                "cand_sims": args.cand_sims, "champ_sims": args.champ_sims,
                "champion": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7",
@@ -932,6 +1041,14 @@ def main(argv=None) -> int:
                "exact_budget": EXACT_BUDGET,
                "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
                "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
+               # C5 S0 per-side leaf provenance (Trap 1: a worker missing the env
+               # exports silently runs the wrong leaf — the per-side leaf_hash is the
+               # mitigation). cand_leaf_json is the raw override spec (None if absent).
+               "cand_leaf_json": args.cand_leaf_json,
+               "cand_leaf_cfg": _leaf_dict(leaf_cfg),
+               "cand_leaf_hash": _leaf_hash(leaf_cfg),
+               "champ_leaf_cfg": _leaf_dict(champ_leaf_cfg),
+               "champ_leaf_hash": _leaf_hash(champ_leaf_cfg),
                "env": {k: os.environ.get(k) for k in _CANON_ENV}}
     if new_mode:
         # Round-robin cell: resolved candidate + opponent specs (ROUND_ROBIN_PLAN.md).
@@ -1007,7 +1124,7 @@ def main(argv=None) -> int:
                             args.shared_claim, args.claim_host, args.claim_stale_secs,
                             cand_kind, opp_kind, opp_sims, net_ckpt or "",
                             (net_meta or {}).get("n_scalar_features", 10),
-                            args.shm_eval_server or "", id_q)) as pool:
+                            args.shm_eval_server or "", id_q, cand_leaf_cfg)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
@@ -1084,7 +1201,7 @@ def main(argv=None) -> int:
             "exp_id": tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
             "code_rev": code_rev(), "n": summ["n"],
             "new_cap": leaf_cfg.bonus_cap, "new_sims": args.cand_sims,
-            "old_cap": leaf_cfg.bonus_cap,
+            "old_cap": champ_leaf_cfg.bonus_cap,   # champion side = env DEFAULT_CONFIG
             "W": summ["W"], "L": summ["L"], "D": summ["D"],
             "elo": round(summ["elo"], 1), "sigma": round(summ["elo_sig_1sigma"], 1),
             "avg_diff": round(summ["avg_diff"], 2), "src_dir": str(out),
