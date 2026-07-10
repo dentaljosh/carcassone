@@ -56,10 +56,26 @@ Usage:
   nice -n 19 .venv/bin/python scripts/classical_search/eval_fair_puct.py \
       --info fair-net --exact-k 2 --k-dets 2 --sims 32 --games 2 --smoke
 
-  # C-cheap fair-net A/B cell (n=100 deck-paired, vs the CL-045 fair baseline):
+  # C-cheap v2 RESIDUAL fair-net A/B cell (n=100 deck-paired, CPU net per worker):
   CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
       scripts/classical_search/eval_fair_puct.py \
-      --info fair-net --net <sighted_value.pt> --exact-k 2 --k-dets 8 --sims 344 \
+      --info fair-net --net <sighted_value.pt> --net-mode residual --net-lambda 0.25 \
+      --exact-k 2 --k-dets 8 --sims 344 --rung-sims 800 --n 100 --paired \
+      --seed-start 13000000000 --workers 14 \
+      --out-root /mnt/c/carc-shared/classical_search --shared-claim --no-results-csv
+
+  # SAME cell but GPU-batched via the carc-orch SHM server (much faster; the server
+  # (81ch/42-scalar) is started SEPARATELY and verify_sighted_orch_parity MUST pass):
+  #   .venv/bin/python scripts/canonical_az/verify_sighted_orch_parity.py --checkpoint <ckpt>
+  #   TS=/tmp/fairnet.ts.pt; .venv/bin/python scripts/export_torchscript.py \
+  #       --checkpoint <ckpt> --out $TS --device cuda
+  #   nice -n 19 rust/carc-orch/run_server.sh --model $TS --transport shm \
+  #       --shm-name fairnet --workers 14 --n-ch 81 --n-scalar 42 --device cuda \
+  #       --max-batch 16 --batch-timeout-ms 2.0 --forwarders 4 --watchdog-secs 30 &
+  CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
+      scripts/classical_search/eval_fair_puct.py \
+      --info fair-net --net <sighted_value.pt> --orch-shm-name fairnet \
+      --net-mode residual --net-lambda 0.25 --exact-k 2 --k-dets 8 --sims 344 \
       --rung-sims 800 --n 100 --paired --seed-start 13000000000 --workers 14 \
       --out-root /mnt/c/carc-shared/classical_search --shared-claim --no-results-csv
 
@@ -97,6 +113,7 @@ import argparse
 import hashlib
 import json
 import math
+import multiprocessing as mp
 import socket
 import sys
 import time
@@ -121,6 +138,9 @@ from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorAgent,
     HeuristicPriorConfig,
+    make_heuristic_prior_evaluator,
+    make_heuristic_prior_evaluator_with_residual_value,
+    make_sighted_net_value_fn,
 )
 from carcassonne_ai.mcts import DEFAULT_C, HeuristicMCTS  # noqa: E402
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
@@ -259,23 +279,77 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm):
     )
 
 
-def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None):
+def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
+                             handles=None, sighted_game=None):
+    """C-cheap fair-net leaf evaluator: heuristic priors (BYTE-IDENTICAL to the
+    `fair` arm) + a SWAPPED value. ``value_fn`` = the mover-POV sighted net value,
+    sourced from EITHER a per-worker CPU net OR the carc-orch SHM handles (the
+    server owns the only net; the worker discards the remote priors — the fair
+    champion's heuristic softmax priors are unchanged).
+
+    net_mode == "residual" -> value = heur_value + λ·value_fn(board), clipped (v2).
+    net_mode == "replace"  -> value = value_fn(board) (the CL-049 REPLACE path,
+                              generalized over net OR orch, kept for the A/B)."""
+    if handles is not None:
+        from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+        if sighted_game is None:
+            sighted_game = Game(sighted=True)
+        remote = make_remote_single_evaluator(handles, sighted_game)
+
+        def value_fn(board):
+            return float(remote(board)[1])   # keep ONLY the value, discard priors
+    elif net is not None:
+        value_fn, sighted_game = make_sighted_net_value_fn(
+            game, net, sighted_game=sighted_game)
+    else:
+        raise ValueError("fair-net evaluator needs a CPU net or orch handles")
+
+    if net_mode == "residual":
+        return make_heuristic_prior_evaluator_with_residual_value(
+            game, cfg, value_fn, net_lambda)
+    if net_mode == "replace":
+        base = make_heuristic_prior_evaluator(game, cfg)
+
+        def evaluator(board):
+            priors, _heur = base(board)
+            return priors, float(value_fn(board))
+
+        evaluator.heur_prior_cfg = cfg
+        evaluator.leaf_cfg = base.leaf_cfg
+        evaluator.leaf_name = f"{base.leaf_name}_netvalue_replace"
+        evaluator.root_logits = base.root_logits
+        evaluator.heuristic_base = base
+        evaluator.value_fn = value_fn
+        return evaluator
+    raise ValueError(f"unknown net_mode {net_mode!r}")
+
+
+def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
+                   net_mode="residual", net_lambda=0.25, handles=None,
+                   sighted_game=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
                         the _MarginalizedHandoff owns the endgame so both arms share it).
     info=="fair-net" -> FairHeuristicPriorAgent prefix with IDENTICAL heuristic priors
-                        but the learned deck-aware net value (C-cheap). Same fair PIMC
-                        + shared endgame as `fair`; ONLY the leaf value differs.
+                        but the learned deck-aware net value (C-cheap), wired via the
+                        `evaluator=` hook. RESIDUAL (default) blends heur+λ·net; REPLACE
+                        swaps the value outright. Value from a CPU net OR orch handles.
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     if info == "fair":
         prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
                                          seed=seed, exact_endgame=False)
     elif info == "fair-net":
-        if net is None:
-            raise ValueError("info=fair-net requires a loaded net (--net)")
+        if net is None and handles is None:
+            raise ValueError(
+                "info=fair-net requires a loaded net (--net) or orch handles "
+                "(--orch-shm-name)")
+        evaluator = _build_fairnet_evaluator(
+            game, cfg, net_mode, net_lambda, net=net, handles=handles,
+            sighted_game=sighted_game)
         prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
-                                         seed=seed, exact_endgame=False, net=net)
+                                         seed=seed, exact_endgame=False,
+                                         evaluator=evaluator)
     else:  # clair
         prefix = HeuristicPriorAgent(game, cfg, simulations=(sims * k_dets), seed=seed)
     return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
@@ -340,7 +414,8 @@ _W: dict = {}
 
 
 def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
-                 shared_claim, claim_host, claim_stale, net_ckpt=None):
+                 shared_claim, claim_host, claim_stale, net_ckpt=None,
+                 net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None):
     _W["info"] = info
     _W["champ_cfg_dict"] = champ_cfg_dict
     _W["sims"] = sims
@@ -350,9 +425,23 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["shared_claim"] = shared_claim
     _W["claim_host"] = claim_host
     _W["claim_stale"] = claim_stale
-    # fair-net: each worker loads its OWN net-on-CPU copy (the eval env hides CUDA;
-    # a 7M net is ~30MB/worker). Loaded once per process, reused across games.
-    _W["net"] = _load_net(net_ckpt, device="cpu") if (info == "fair-net" and net_ckpt) else None
+    _W["net_mode"] = net_mode
+    _W["net_lambda"] = net_lambda
+    _W["net"] = None
+    _W["handles"] = None
+    _W["sighted_game"] = None
+    if info == "fair-net" and orch_shm_name:
+        # carc-orch SHM orchestrator: the server owns the only (GPU) net; this worker
+        # is CPU-only and reads the sighted (81ch/42-scalar) VALUE over shared memory.
+        # Each worker pops a unique SHM slot from id_q (mirrors clairvoyance_gap /
+        # eval_m2_net_vs_net). Keep CUDA hidden (the _CANON_ENV sets it "").
+        from carcassonne_ai.shm_eval_handles import connect_shm
+        _W["handles"] = connect_shm(orch_shm_name, id_q.get(), 42, 81)
+        _W["sighted_game"] = Game(sighted=True)
+    elif info == "fair-net" and net_ckpt:
+        # per-worker net-on-CPU copy (the eval env hides CUDA; a 7M net ~30MB/worker),
+        # loaded once per process, reused across games.
+        _W["net"] = _load_net(net_ckpt, device="cpu")
 
 
 def _cfg_from_dict(d):
@@ -379,7 +468,10 @@ def _play_one(args) -> GameResult | None:
 
     cfg = _cfg_from_dict(_W["champ_cfg_dict"])
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
-                           seed, Game(enable_legal_moves_cache=True), net=_W.get("net"))
+                           seed, Game(enable_legal_moves_cache=True),
+                           net=_W.get("net"), net_mode=_W["net_mode"],
+                           net_lambda=_W["net_lambda"], handles=_W.get("handles"),
+                           sighted_game=_W.get("sighted_game"))
     rung = _RungPrefix(Game(enable_legal_moves_cache=True), _W["rung_sims"],
                        seed + 1, DEFAULT_CONFIG)
 
@@ -506,7 +598,8 @@ def _smoke(args) -> int:
                      else _random_sighted_net(device="cpu",
                                               value_global_pool=args.value_global_pool))
         print(f"[smoke] fair-net value = {'ckpt ' + args.net if args.net else 'RANDOM'} "
-              f"81ch/42-scalar net (value_global_pool={args.value_global_pool})")
+              f"81ch/42-scalar net (value_global_pool={args.value_global_pool}) "
+              f"net_mode={args.net_mode} net_lambda={args.net_lambda:g}")
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
           f"(total~{args.k_dets*args.sims}) | rung h{args.rung_sims} c{RUNG_C}")
     import random
@@ -520,7 +613,8 @@ def _smoke(args) -> int:
         board = game.get_init_board()
         dh = deck_hash(board)
         champ = _make_champion(args.info, cfg, args.sims, args.k_dets, args.exact_k,
-                               seed, Game(enable_legal_moves_cache=True), net=smoke_net)
+                               seed, Game(enable_legal_moves_cache=True), net=smoke_net,
+                               net_mode=args.net_mode, net_lambda=args.net_lambda)
         rung = _RungPrefix(Game(enable_legal_moves_cache=True), args.rung_sims,
                            seed + 1, DEFAULT_CONFIG)
         moves = 0
@@ -578,7 +672,21 @@ def main(argv=None) -> int:
                          "deck-aware net leaf value (C-cheap; needs --net)")
     ap.add_argument("--net", type=str, default=None,
                     help="fair-net arm: path to the sighted (81ch/42-scalar) value-net "
-                         "checkpoint. Under --smoke this may be omitted (a random net is used).")
+                         "checkpoint. Under --smoke this may be omitted (a random net is used). "
+                         "With --orch-shm-name it is NOT loaded per-worker (the server owns the "
+                         "net) but is still recorded in the manifest for provenance.")
+    ap.add_argument("--net-mode", choices=("replace", "residual"), default="residual",
+                    help="fair-net value combiner: residual (default, C-cheap v2) = "
+                         "heur_value + net_lambda*net_value (clipped); replace (CL-049) = "
+                         "net_value fully replaces the heuristic leaf value.")
+    ap.add_argument("--net-lambda", type=float, default=0.25,
+                    help="residual blend weight λ (net_mode=residual only). λ=0 is "
+                         "byte-identical to the `fair` arm (a catastrophe pre-check).")
+    ap.add_argument("--orch-shm-name", type=str, default=None,
+                    help="fair-net arm: connect workers to the carc-orch SHM eval-server "
+                         "(GPU-batched value) instead of loading a CPU net per worker. The "
+                         "server (81ch/42-scalar sighted, --n-ch 81 --n-scalar 42) must be "
+                         "started separately; run verify_sighted_orch_parity.py FIRST.")
     ap.add_argument("--value-global-pool", action="store_true", default=True,
                     help="fair-net --smoke random net: build with KataGo-style value global "
                          "pooling (the recommended C-cheap arch; default True)")
@@ -618,10 +726,18 @@ def main(argv=None) -> int:
     if args.paired and args.n % 2 != 0:
         ap.error("--paired requires an even --n")
 
+    if args.orch_shm_name and args.info != "fair-net":
+        ap.error("--orch-shm-name only applies to --info fair-net")
+
     if args.smoke:
+        if args.orch_shm_name:
+            ap.error("--smoke does not drive the orch path (single-process CPU only); "
+                     "run verify_sighted_orch_parity.py + an --orch-shm-name n=20 eval instead")
         return _smoke(args)
 
     if args.info == "fair-net" and not args.net:
+        # --net is required even under --orch-shm-name: the worker does NOT load it
+        # (the server owns the net), but it is recorded in the manifest for provenance.
         ap.error("--info fair-net requires --net <sighted checkpoint> (except under --smoke)")
 
     if not args.summary_only and not args.allow_selfplay_seeds:
@@ -665,8 +781,18 @@ def main(argv=None) -> int:
                      "k_dets": args.k_dets, "sims_per_det": args.sims,
                      "total_sims": args.k_dets * args.sims,
                      "net": (args.net if args.info == "fair-net" else None),
-                     "value_source": ("learned deck-aware net (sighted 81ch/42-scalar)"
-                                      if args.info == "fair-net" else "v2.9 heuristic leaf"),
+                     "net_mode": (args.net_mode if args.info == "fair-net" else None),
+                     "net_lambda": (args.net_lambda if (args.info == "fair-net"
+                                    and args.net_mode == "residual") else None),
+                     "value_transport": (("carc-orch SHM (" + args.orch_shm_name + ")")
+                                         if (args.info == "fair-net" and args.orch_shm_name)
+                                         else ("per-worker CPU net" if args.info == "fair-net"
+                                               else None)),
+                     "value_source": (
+                         ("learned deck-aware net (sighted 81ch/42-scalar), "
+                          + ("residual heur+%g*net" % args.net_lambda
+                             if args.net_mode == "residual" else "replace net-only"))
+                         if args.info == "fair-net" else "v2.9 heuristic leaf"),
                      "aggregation": ("single clairvoyant search (final_select)" if args.info == "clair"
                                      else "pooled-Q over k_dets determinizations (final_select inert)")},
         "endgame": {"mode": "marginalized", "exact_k": args.exact_k,
@@ -693,13 +819,34 @@ def main(argv=None) -> int:
           f"{len(todo)} to play, {workers} workers, out={out}")
     sys.stdout.flush()
 
+    orch = bool(args.orch_shm_name) and args.info == "fair-net"
     results = []
     if todo:
         t0 = time.perf_counter()
-        with Pool(processes=workers, initializer=_worker_init,
-                  initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets,
-                            args.exact_k, args.rung_sims, args.shared_claim,
-                            args.claim_host, args.claim_stale_secs, args.net)) as pool:
+        if orch:
+            # carc-orch SHM: spawn context (CUDA-clean re-import) + a worker-id Queue
+            # so each CPU worker pops a unique SHM slot (mirrors clairvoyance_gap / eval_m2).
+            _ctx = mp.get_context("spawn")
+            _id_q = _ctx.Queue()
+            for _w in range(workers):
+                _id_q.put(_w)
+            print(f"  [orch] SHM eval-server '{args.orch_shm_name}': {workers} CPU workers "
+                  f"attach to /dev/shm/carc_{args.orch_shm_name} (81ch/42-scalar sighted value)",
+                  flush=True)
+            _pool_cm = _ctx.Pool(
+                processes=workers, initializer=_worker_init,
+                initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
+                          args.rung_sims, args.shared_claim, args.claim_host,
+                          args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
+                          args.orch_shm_name, _id_q))
+        else:
+            _pool_cm = Pool(
+                processes=workers, initializer=_worker_init,
+                initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
+                          args.rung_sims, args.shared_claim, args.claim_host,
+                          args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
+                          "", None))
+        with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:

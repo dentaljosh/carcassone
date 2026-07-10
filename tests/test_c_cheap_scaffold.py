@@ -48,6 +48,8 @@ from carcassonne_ai.heuristic_prior_mcts import (
     HeuristicPriorConfig,
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_net_value,
+    make_heuristic_prior_evaluator_with_residual_value,
+    make_sighted_net_value_fn,
 )
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.sighted_planes import N_BAG, N_FARM_PLANES
@@ -120,6 +122,49 @@ def test_net_value_evaluator_priors_identical_value_differs():
         if abs(v_n - v_h) > 1e-6:
             value_diffs += 1
     assert value_diffs >= 1, "net value never differed from the heuristic value"
+
+
+# --------------------------------------------------------------------------- #
+# 1b. RESIDUAL evaluator: λ=0 is BYTE-IDENTICAL (value AND priors); λ>0 nudges.
+# --------------------------------------------------------------------------- #
+def test_residual_evaluator_lambda0_byte_identical():
+    """C-cheap v2 core invariant: λ=0 residual == the heuristic-value evaluator,
+    byte-for-byte (value exactly equal, priors exactly equal) on >=3 midgame boards.
+    A random (finite) net proves heur + 0*net == heur and the clip is a no-op."""
+    net = _random_sighted_net()
+    boards = _midgame_boards(n=4)
+    assert len(boards) >= 3, "need >=3 mid-game boards"
+    for game, board in boards:
+        heur_ev = make_heuristic_prior_evaluator(game, _cfg())
+        value_fn, _ = make_sighted_net_value_fn(game, net)
+        res_ev = make_heuristic_prior_evaluator_with_residual_value(
+            game, _cfg(), value_fn, lam=0.0)
+        p_h, v_h = heur_ev(board)
+        p_r, v_r = res_ev(board)
+        assert np.array_equal(p_h, p_r), "λ=0 residual perturbed the priors"
+        assert v_r == v_h, f"λ=0 residual value {v_r!r} != heuristic value {v_h!r}"
+
+
+def test_residual_evaluator_lambda_nudges_value_only():
+    """λ>0 keeps priors byte-identical but shifts the value by λ·net_value; the
+    shift equals λ·(net_value) and the result stays in [-1, 1]."""
+    net = _random_sighted_net()
+    boards = _midgame_boards(n=4)
+    nudged = 0
+    for game, board in boards:
+        heur_ev = make_heuristic_prior_evaluator(game, _cfg())
+        value_fn, _ = make_sighted_net_value_fn(game, net)
+        res_ev = make_heuristic_prior_evaluator_with_residual_value(
+            game, _cfg(), value_fn, lam=0.25)
+        p_h, v_h = heur_ev(board)
+        p_r, v_r = res_ev(board)
+        assert np.array_equal(p_h, p_r), "residual perturbed the priors"
+        assert -1.0 <= v_r <= 1.0
+        expected = min(1.0, max(-1.0, v_h + 0.25 * value_fn(board)))
+        assert abs(v_r - expected) < 1e-6
+        if abs(v_r - v_h) > 1e-6:
+            nudged += 1
+    assert nudged >= 1, "λ=0.25 never moved the value off the heuristic value"
 
 
 def test_net_value_evaluator_provenance_and_dim_guard():

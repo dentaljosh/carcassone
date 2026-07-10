@@ -432,6 +432,136 @@ def make_heuristic_prior_evaluator_with_net_value(
 
 
 # --------------------------------------------------------------------------- #
+# C-cheap v2 — sighted mover-POV net VALUE forward, factored out so the         #
+# residual evaluator (and the orch/CPU eval harness) build the SAME forward the  #
+# replace-mode `_net_value` uses. This does NOT touch                            #
+# make_heuristic_prior_evaluator_with_net_value (CL-049 provenance): it is a      #
+# byte-identical re-construction of that factory's `_net_value` body, exposed as  #
+# a reusable `value_fn(board) -> float`.                                          #
+# --------------------------------------------------------------------------- #
+def make_sighted_net_value_fn(
+    game: Game, net, sighted_game: Game | None = None, device=None,
+):
+    """Return ``(value_fn, sighted_game)`` where ``value_fn(board) -> float`` is the
+    mover-POV sighted (81ch/42-scalar) net value — the SAME forward the replace-mode
+    ``make_heuristic_prior_evaluator_with_net_value._net_value`` computes
+    (``get_canonical_form(board, mover)`` → net → ``value``). Used to build the
+    residual evaluator's ``value_fn`` for the CPU net path (the orch path builds its
+    own ``value_fn`` from the SHM handles).
+    """
+    import torch
+
+    if net is None:
+        raise ValueError("make_sighted_net_value_fn: net is None")
+
+    if sighted_game is None:
+        sighted_game = Game(
+            players=game.players,
+            tile_sets=list(game.tile_sets),
+            supplementary_rules=list(game.supplementary_rules),
+            window_size=game.window_size,
+            sighted=True,
+        )
+    if not getattr(sighted_game, "sighted", False):
+        raise ValueError(
+            "sighted_game must be a Game(sighted=True) — the deck-aware net value "
+            "reads the +3 farm planes / +32 bag scalars"
+        )
+
+    # Loud fail on a rep/net channel mismatch (mirrors the replace factory's guard).
+    exp_ch = sighted_game.get_input_channels()
+    net_ch = int(getattr(net, "stem", [None])[0].in_channels) if hasattr(net, "stem") else None
+    if net_ch is not None and net_ch != exp_ch:
+        raise ValueError(
+            f"net input channels ({net_ch}) != sighted encode channels ({exp_ch}); "
+            "the net must be an 81ch sighted net"
+        )
+
+    if device is None:
+        try:
+            device = next(net.parameters()).device
+        except StopIteration:
+            device = torch.device("cpu")
+    net.eval()
+
+    def value_fn(board: Board) -> float:
+        mover = board.state.current_player
+        obs, scl = sighted_game.get_canonical_form(board, mover)
+        obs_t = torch.from_numpy(np.ascontiguousarray(obs, dtype=np.float32)).unsqueeze(0).to(device)
+        scl_t = torch.from_numpy(np.ascontiguousarray(scl, dtype=np.float32)).unsqueeze(0).to(device)
+        with torch.no_grad():
+            _logits, value = net(obs_t, scl_t)
+        return float(value.reshape(-1)[0].item())
+
+    value_fn.net = net
+    value_fn.sighted_game = sighted_game
+    return value_fn, sighted_game
+
+
+# --------------------------------------------------------------------------- #
+# C-cheap v2 — RESIDUAL deck-aware value. Sibling of the CL-049 REPLACE factory   #
+# (make_heuristic_prior_evaluator_with_net_value). The priors are BYTE-IDENTICAL  #
+# to make_heuristic_prior_evaluator (reused verbatim); the value is the SHARP      #
+# heuristic leaf value PLUS a small learned nudge:                                 #
+#     v = tanh(leaf/norm) + λ · value_fn(board)     (CLIPPED to [-1,1], NOT re-tanh)#
+# Rationale (C_CHEAP v2): v1 REPLACE nuked the local afterstate discrimination the #
+# fair pooled-Q agent needs (W0/L100). The RESIDUAL keeps the heuristic's local     #
+# ranking and only lets the net move subtree-level Q. λ=0 ⇒ BYTE-IDENTICAL to the  #
+# heuristic-value evaluator (value AND priors), so a fair A/B isolates the nudge.   #
+# --------------------------------------------------------------------------- #
+def make_heuristic_prior_evaluator_with_residual_value(
+    game: Game, cfg: HeuristicPriorConfig, value_fn, lam,
+):
+    """Return a ``Callable[[Board], (priors[A], value)]`` whose PRIORS are
+    byte-identical to ``make_heuristic_prior_evaluator(game, cfg)`` and whose VALUE
+    is ``heur_value + λ · value_fn(board)``, clipped to [-1, 1] (NOT re-tanh'd).
+
+    Parameters
+    ----------
+    game : Game            the SAME (blind) engine wrapper the owning NeuralMCTS
+                           steps children through (priors path unchanged).
+    cfg : HeuristicPriorConfig  champion knobs (c_puct/τ_p/leaf/value_norm).
+    value_fn : Callable[[Board], float]  the learned mover-POV nudge — the sighted
+                           net value forward (build via make_sighted_net_value_fn for
+                           a CPU net, or the orch remote single evaluator's value).
+    lam : float            residual blend weight λ (a plain float).
+
+    INVARIANT: with ``lam == 0.0`` the evaluator output is BYTE-IDENTICAL to
+    ``make_heuristic_prior_evaluator(game, cfg)`` — value AND priors — because the
+    base heuristic value is already in (-1, 1) so the clip is a no-op, and
+    ``heur + 0.0 * value_fn(board) == heur`` for any finite forward.
+    """
+    if value_fn is None:
+        raise ValueError(
+            "make_heuristic_prior_evaluator_with_residual_value: value_fn is None"
+        )
+
+    base = make_heuristic_prior_evaluator(game, cfg)
+    lam_f = float(lam)
+
+    def evaluator(board: Board):
+        # Byte-identical priors (base returns (priors, heuristic_value)); keep the
+        # priors, nudge ONLY the value by λ · value_fn(board), then clip (no re-tanh).
+        priors, heur_value = base(board)
+        v = heur_value + lam_f * value_fn(board)
+        return priors, min(1.0, max(-1.0, v))
+
+    # Provenance / introspection hooks (mirror the net-value evaluator).
+    evaluator.heur_prior_cfg = cfg
+    evaluator.leaf_cfg = base.leaf_cfg
+    evaluator.leaf_name = f"{base.leaf_name}_residual_lam{lam_f:g}"
+    evaluator.root_logits = base.root_logits
+    evaluator.heuristic_base = base  # tests assert priors == base priors
+    evaluator.value_fn = value_fn
+    evaluator.net_lambda = lam_f
+    if hasattr(value_fn, "net"):
+        evaluator.net = value_fn.net
+    if hasattr(value_fn, "sighted_game"):
+        evaluator.sighted_game = value_fn.sighted_game
+    return evaluator
+
+
+# --------------------------------------------------------------------------- #
 # Agent                                                                        #
 # --------------------------------------------------------------------------- #
 class HeuristicPriorAgent:

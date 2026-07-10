@@ -43,6 +43,7 @@ FULL run:
 from __future__ import annotations
 
 import argparse
+import copy
 import sys
 import time
 from pathlib import Path
@@ -101,19 +102,32 @@ def main(argv=None) -> int:
     p.add_argument("--warm-from", type=Path, required=True,
                    help="blind champion ckpt to warm the TRUNK from (flywheel iter8.pt)")
     p.add_argument("--output", type=Path, required=True, help="output ckpt path")
-    p.add_argument("--epochs", type=int, default=8)
+    p.add_argument("--epochs", type=int, default=20,
+                   help="MAX epochs; early-stop (--patience on val MSE) usually stops sooner.")
     p.add_argument("--max-steps", type=int, default=0,
                    help="SMOKE: stop after N optimizer steps (0 = full --epochs)")
     p.add_argument("--batch-size", type=int, default=512)
-    p.add_argument("--lr", type=float, default=1e-3)
+    p.add_argument("--lr", type=float, default=1e-3,
+                   help="LR for the RE-INITIALIZED tensors (stem + value head).")
+    p.add_argument("--warm-lr", type=float, default=1e-4,
+                   help="LR for the WARM-TRANSFERRED tensors (the iter8 trunk).")
+    p.add_argument("--patience", type=int, default=3,
+                   help="early-stop patience (epochs w/o val-MSE improvement).")
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument("--value-loss-weight", type=float, default=1.0,
                    help="scales the value MSE (the only loss term here)")
+    p.add_argument("--zero-bag-scalars", action="store_true",
+                   help="DECK-BLIND control: zero scalars[:,10:42] (the 32 bag-histogram "
+                        "features) in BOTH train and val, from the SAME shards. The B arm "
+                        "of the offline kill-gate (no deck info -> can't beat null if the "
+                        "signal is deck-awareness).")
     p.add_argument("--freeze-trunk", action="store_true",
-                   help="freeze stem+trunk, train ONLY the value head (default OFF: "
-                        "train stem+trunk+value on the value MSE so the re-init 81ch "
-                        "stem can learn the farm-connectivity planes).")
-    p.add_argument("--val-fraction", type=float, default=0.05)
+                   help="BROKEN / FOOTGUN — do NOT use. It freezes stem.+trunk., but the "
+                        "81ch stem is RE-INITIALIZED here, so freezing it strands the "
+                        "farm-connectivity planes at random init. Kept only for flag "
+                        "symmetry; a loud warning fires if set.")
+    p.add_argument("--val-fraction", type=float, default=0.10,
+                   help="val split fraction, BY SHARD (never within-game).")
     p.add_argument("--num-workers", type=int, default=6)
     p.add_argument("--filters", type=int, default=96)
     p.add_argument("--blocks", type=int, default=6)
@@ -141,10 +155,12 @@ def main(argv=None) -> int:
     print(f"[warm] re-init     {len(reinit)} tensors (81ch stem + value head + policy_fc)")
 
     if args.freeze_trunk:
+        print("[warm] ⚠️  --freeze-trunk is BROKEN: it freezes the RE-INITIALIZED 81ch "
+              "stem, stranding the farm-connectivity planes at random init. Proceeding "
+              "anyway (flag symmetry) — the resulting ckpt is a footgun.", file=sys.stderr)
         for name, param in net.named_parameters():
             if name.startswith("stem.") or name.startswith("trunk."):
                 param.requires_grad_(False)
-        print("[warm] --freeze-trunk: stem+trunk frozen (training value head only)")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -168,18 +184,41 @@ def main(argv=None) -> int:
                             pin_memory=(device.type == "cuda"),
                             persistent_workers=(args.num_workers > 0))
 
-    opt = torch.optim.AdamW([q for q in net.parameters() if q.requires_grad],
-                            lr=args.lr, weight_decay=args.weight_decay)
+    # Two LR param-groups: the RE-INITIALIZED tensors (81ch stem + value head, listed
+    # in _REINIT_PREFIXES) learn fast (--lr, 1e-3); the WARM-TRANSFERRED iter8 trunk is
+    # nudged gently (--warm-lr, 1e-4) so it isn't wrecked. (policy_* heads take no
+    # gradient under the value-only loss, so their group is irrelevant.)
+    reinit_params = [q for n, q in net.named_parameters()
+                     if q.requires_grad and n.startswith(_REINIT_PREFIXES)]
+    warm_params = [q for n, q in net.named_parameters()
+                   if q.requires_grad and not n.startswith(_REINIT_PREFIXES)]
+    opt = torch.optim.AdamW(
+        [{"params": reinit_params, "lr": args.lr},
+         {"params": warm_params, "lr": args.warm_lr}],
+        weight_decay=args.weight_decay)
+    print(f"[train] param-groups: {len(reinit_params)} re-init tensors @ lr={args.lr:g}, "
+          f"{len(warm_params)} warm tensors @ lr={args.warm_lr:g}")
 
     def _run_value_forward(board_b, scalar_b):
         # value head only; policy/ownership heads are never in the loss (value-only).
         _policy_logits, value = net(board_b, scalar_b)
         return value
 
+    def _maybe_zero_bag(scalar_b):
+        # DECK-BLIND control (--zero-bag-scalars): zero the 32 bag-histogram scalars
+        # (indices 10:42), keeping the 10 base scalars. In-place on the device tensor.
+        if args.zero_bag_scalars:
+            scalar_b[:, 10:42] = 0.0
+        return scalar_b
+
     step = 0
     epoch_train_mse: list[float] = []
     t0 = time.perf_counter()
     stop = False
+    best_val = float("inf")
+    best_state = None        # BEST-VAL model_state (CPU clone) — NOT the final epoch
+    best_epoch = -1
+    epochs_no_improve = 0
     for epoch in range(args.epochs):
         if hasattr(train_ds, "set_epoch"):
             train_ds.set_epoch(epoch)
@@ -187,7 +226,7 @@ def main(argv=None) -> int:
         run_loss = run_n = 0
         for board_b, scalar_b, _pol, value_b, _mask, _own, _aux, _grp in train_loader:
             board_b = board_b.to(device, non_blocking=True)
-            scalar_b = scalar_b.to(device, non_blocking=True)
+            scalar_b = _maybe_zero_bag(scalar_b.to(device, non_blocking=True))
             value_b = value_b.to(device, non_blocking=True)
             value_pred = _run_value_forward(board_b, scalar_b)
             loss = args.value_loss_weight * F.mse_loss(value_pred, value_b)
@@ -204,24 +243,50 @@ def main(argv=None) -> int:
             if args.max_steps and step >= args.max_steps:
                 stop = True
                 break
-        # validation MSE
+        # validation MSE + null-MSE baseline (val MSE of predicting 0 = the kill-gate
+        # denominator: a value that can't beat predict-0 has learned nothing).
         net.eval()
         vloss = vn = 0
+        null_sq = 0.0
         with torch.no_grad():
             for board_b, scalar_b, _pol, value_b, _mask, _own, _aux, _grp in val_loader:
                 board_b = board_b.to(device, non_blocking=True)
-                scalar_b = scalar_b.to(device, non_blocking=True)
+                scalar_b = _maybe_zero_bag(scalar_b.to(device, non_blocking=True))
                 value_b = value_b.to(device, non_blocking=True)
                 vp = _run_value_forward(board_b, scalar_b)
                 vloss += float(F.mse_loss(vp, value_b, reduction="sum").cpu())
+                null_sq += float((value_b * value_b).sum().cpu())
                 vn += value_b.shape[0]
         tr = run_loss / max(1, run_n)
         va = vloss / max(1, vn)
+        null_mse = null_sq / max(1, vn)
         epoch_train_mse.append(tr)
+        improved = va < best_val - 1e-6
+        if improved:
+            best_val = va
+            best_epoch = epoch
+            best_state = {k: v.detach().cpu().clone() for k, v in net.state_dict().items()}
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
         print(f"[epoch {epoch}] train_value_mse={tr:.5f}  val_value_mse={va:.5f}  "
+              f"null_mse={null_mse:.5f}  (val/null={va/max(1e-9,null_mse):.3f}) "
+              f"{'*BEST*' if improved else f'no-improve {epochs_no_improve}/{args.patience}'} "
               f"(steps={step}, {time.perf_counter()-t0:.1f}s)", flush=True)
         if stop:
             break
+        if epochs_no_improve >= args.patience:
+            print(f"[early-stop] no val improvement for {args.patience} epochs "
+                  f"(best val_mse={best_val:.5f} @ epoch {best_epoch})", flush=True)
+            break
+
+    # BEST-VAL state is what we ship (v1's bug was saving the overfit final epoch). If
+    # val was empty (e.g. a 1-shard smoke) best_state stays None -> fall back to final.
+    if best_state is not None:
+        net.load_state_dict(best_state)
+        print(f"[save] loaded BEST-VAL weights (val_mse={best_val:.5f} @ epoch {best_epoch})")
+    else:
+        print("[save] no val improvement recorded (empty val split?) — saving final weights")
 
     # --- save (arch dims match eval_fair_puct._load_net expectations) -----------
     ckpt = {
@@ -232,6 +297,10 @@ def main(argv=None) -> int:
         "value_target": "score_diff_wide", "warm_from": str(args.warm_from),
         "trunk_transferred": len(transferred), "reinit_tensors": len(reinit),
         "freeze_trunk": bool(args.freeze_trunk), "train_steps": step,
+        "lr_reinit": args.lr, "lr_warm": args.warm_lr, "patience": args.patience,
+        "zero_bag_scalars": bool(args.zero_bag_scalars),
+        "best_val_mse": (best_val if best_state is not None else None),
+        "best_epoch": best_epoch, "is_best_val_ckpt": best_state is not None,
         "provenance": "C-cheap value-only train (deck-aware fair value; policy=heuristic at play time)",
     }
     torch.save(ckpt, args.output)
