@@ -940,6 +940,13 @@ def main(argv=None) -> int:
     ap.add_argument("--claim-host", type=str, default=socket.gethostname())
     ap.add_argument("--summary-only", action="store_true")
     ap.add_argument("--no-results-csv", action="store_true")
+    ap.add_argument("--exp-id", type=str, default=None,
+                    help="override the results.csv exp_id (default: the auto cell tag, "
+                         "incl. any -leaf<hash8> suffix). Use for PRE-REGISTERED ids — "
+                         "e.g. the C5 leaf-retune cells c5_*_vs_puctchamp2750_k2 "
+                         "(measurement/classical_search/C5_LEAF_RETUNE_DESIGN.md). Also "
+                         "recorded in the manifest; no effect on out-dir naming "
+                         "(--out-subdir owns that) or on play.")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args(argv)
     if args.games is not None:
@@ -1039,6 +1046,7 @@ def main(argv=None) -> int:
                             "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
                "exact_k": args.exact_k, "exact_mode": "clairvoyant",
                "exact_budget": EXACT_BUDGET,
+               "exp_id": args.exp_id or tag,
                "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
                "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
                # C5 S0 per-side leaf provenance (Trap 1: a worker missing the env
@@ -1175,8 +1183,10 @@ def main(argv=None) -> int:
                 opp_desc = (f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
                             f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
                             f"{', orch ' + args.shm_eval_server if args.shm_eval_server else ', net-on-CPU'})")
-            note = (f"Phase 1.1b transitivity round-robin cell {tag} "
-                    f"(measurement/classical_search/ROUND_ROBIN_PLAN.md): candidate {cand_desc} "
+            head = (f"pre-registered cell {args.exp_id} [auto tag {tag}]" if args.exp_id
+                    else f"Phase 1.1b transitivity round-robin cell {tag} "
+                         f"(measurement/classical_search/ROUND_ROBIN_PLAN.md)")
+            note = (f"{head}: candidate {cand_desc} "
                     f"exact-K<={args.exact_k} vs opponent {opp_desc}. "
                     f"cand ms/move {summ['cand_prefix_ms_per_move']:.0f} vs opp "
                     f"{summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
@@ -1198,7 +1208,7 @@ def main(argv=None) -> int:
                 "old_sims": opp_sims,
             }
         row.update({
-            "exp_id": tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
+            "exp_id": args.exp_id or tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
             "code_rev": code_rev(), "n": summ["n"],
             "new_cap": leaf_cfg.bonus_cap, "new_sims": args.cand_sims,
             "old_cap": champ_leaf_cfg.bonus_cap,   # champion side = env DEFAULT_CONFIG
@@ -1208,7 +1218,7 @@ def main(argv=None) -> int:
             "confidence": "screen" if summ["n"] < 400 else "high", "note": note,
         })
         _append_results_csv(REPO / "experiments" / "results.csv", row)
-        print(f"[results.csv] appended row exp_id={tag}")
+        print(f"[results.csv] appended row exp_id={args.exp_id or tag}")
     return 0
 
 
