@@ -1,6 +1,6 @@
 # C-cheap v2 — RESIDUAL deck-aware value — IN-FLIGHT RUNBOOK
 
-**Status: IN FLIGHT (started 2026-07-10). Gen running; train→offline-gate→orch-eval pending.**
+**Status: IN FLIGHT (2026-07-10). Gen ✅ + Train ✅ + Offline-gate ✅ PASSED (A≈B: deck thesis weak, general leaf-correction survives) → ONLINE eval running (orch smoke → λ-bracket → n=200 CRN, +35 gate).**
 Code merged `69ac3f7` (evaluator+gen+trainer+eval+kill-gate) on top of scaffold `a89b0f5`. Champion PRODUCTION.yaml UNCHANGED; all new paths default-OFF / bit-exact when no net supplied.
 
 ## Why v2 (the fix for CL-049's botch)
@@ -15,8 +15,11 @@ C-cheap **v1 = DEAD (CL-049)**: a net FULLY REPLACED the sharp v2.9 heuristic le
 - `scripts/classical_search/crn_delta_fairnet.py`: CRN-paired verdict vs the cached baseline.
 
 ## LIVE STATE (update as it advances)
-- **Gen RUNNING**: 3000 games, `--k-dets 4 --sims 128 --value-target residual --exact-endgame`, seed band **40e9**, out `/mnt/c/carc-shared/c_cheap_fairgen_v2`. Both boxes (local W30 + laptop W20, --shared-claim); xeon SKIPPED (stale Cython). clip_rate healthy ~0.033. ~exact-endgame ~2× slower (~4s/game) → ~3h total. Waiter watches `classical_search/gen_v2_laptop.log` for "fair gen DONE".
-- Champion baseline to beat: **D0 fair +81 vs h800** (`fair_ladder_s2752_vs_h800_k2`, n=200 band 15e9) — the CRN paired denominator.
+- **Gen ✅ DONE** (2026-07-10): 3000 shards + 3000 meta sidecars, 0 skipped, clip 0.034, out `/mnt/c/carc-shared/c_cheap_fairgen_v2`. Both boxes drained it (local 2707 + laptop 137 this run + laptop's pre-drop games). (Laptop WSL flapped mid-gen; rebooted + rejoined shared-claim.)
+- **Train ✅ DONE** (GPU, warm iter8): A (deck-aware) best val_mse **0.16014** @ ep1, B (bag-blind) **0.16130** @ ep3, null (predict-0) **0.21508**. Both beat null ~25%. `/mnt/c/carc-shared/c_cheap_value_v2/value_A.pt` + `value_B_zerobag.pt`. (⚠️ fixed `iter_game_dataset_files` to skip `*.meta.npz` — commit `e189e6f`.)
+- **Offline kill-gate ✅ PASSED** (2026-07-10): A beats null (blended λ=0.5 +18.8%) AND A's gain > B's (+0.0403 vs +0.0382). **BUT A≈B → deck-awareness adds only ~5% of the signal; the residual net is mostly a general leaf-correction, NOT deck-exploiting. C's deck thesis largely falsified offline.** Gate is necessary-not-sufficient → PROCEED to online eval, LOW prior stands + A≈B yellow flag. Offline-best λ=0.5 monotone; online-best λ TBD (bigger λ lowers global MSE but can corrupt local pooled-Q ranking → the bracket is the real test).
+- **Online eval IN FLIGHT**: Stage 4 orch bring-up + n=20 smoke (value_A, λ=0.25) delegated to subagent (local orch, W48). Then λ-bracket n=40, then n=200 CRN.
+- Champion baseline to beat: **D0 fair +81 vs h800** (`fair_ladder_s2752_vs_h800_k2`, n=200 band 15e9) — the CRN paired denominator. GATE to fire: online elo(fair-net) − elo(fair) ≥ +35.
 
 ## REMAINING STAGED PIPELINE (exact commands; `.venv/bin/python`, `nice -n 19`, detach long runs)
 **Stage 2 — train A + B (GPU, 5900XT):**
