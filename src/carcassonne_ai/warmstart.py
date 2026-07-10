@@ -476,8 +476,14 @@ def generate_one_game_dataset(
 
 
 def iter_game_dataset_files(root: Path) -> Iterator[Path]:
-    """Yield all .npz files in the warmstart root, sorted by name."""
-    yield from sorted(root.glob("seed_*.npz"))
+    """Yield all .npz data shards in the root, sorted by name.
+
+    Excludes `*.meta.npz` diagnostic sidecars (e.g. gen_fair_selfplay.py's
+    per-game `{z, leaf_tanh}` files) — those are NOT training data and lack the
+    `values`/`obs` keys, so loading them as shards raises KeyError.
+    """
+    yield from (p for p in sorted(root.glob("seed_*.npz"))
+                if not p.name.endswith(".meta.npz"))
 
 
 # ---------------------------------------------------------------------------
