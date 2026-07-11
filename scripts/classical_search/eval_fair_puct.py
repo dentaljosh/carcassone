@@ -110,7 +110,6 @@ for _k, _v in _CANON_ENV.items():
     os.environ.setdefault(_k, _v)
 
 import argparse
-import hashlib
 import json
 import math
 import multiprocessing as mp
@@ -126,6 +125,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "scripts" / "level2"))  # endgame_solver
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # c5_leaf_override (sibling)
 
 from carcassonne_ai import eval_provenance as ep  # noqa: E402
 from carcassonne_ai.claim import try_claim as _try_claim  # noqa: E402
@@ -145,6 +145,17 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
 from carcassonne_ai.mcts import DEFAULT_C, HeuristicMCTS  # noqa: E402
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
+
+# C5 candidate-leaf override helpers — SHARED with eval_puct_priors.py (see
+# c5_leaf_override.py); imported (not copy-pasted) so the two harnesses can never
+# diverge on the --cand-leaf-json parse/coercion/cy-guard semantics. `_leaf_hash`
+# is bit-identical to the old local definition (same asdict/json-sort/sha256[:16]).
+from c5_leaf_override import (  # noqa: E402
+    _assert_cy_float_path,
+    _leaf_dict,
+    _leaf_hash,
+    _load_cand_leaf_cfg,
+)
 
 import endgame_solver as S  # noqa: E402
 
@@ -272,10 +283,15 @@ class _RungPrefix:
         return int(self._m.best_action(board))
 
 
-def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm):
+def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
+                     leaf_cfg=None):
+    # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
+    # non-None value is the --cand-leaf-json CANDIDATE override for the FAIR agent
+    # ONLY (the h800 rung always keeps DEFAULT_CONFIG — see _RungPrefix callers).
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
-        final_select=final_select, value_norm=value_norm, leaf_cfg=DEFAULT_CONFIG,
+        final_select=final_select, value_norm=value_norm,
+        leaf_cfg=(leaf_cfg if leaf_cfg is not None else DEFAULT_CONFIG),
     )
 
 
@@ -355,9 +371,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
     return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
 
 
-def _leaf_hash(cfg) -> str:
-    payload = {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()}
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
+# _leaf_hash / _leaf_dict / _load_cand_leaf_cfg / _assert_cy_float_path are imported
+# from the shared c5_leaf_override module (above) — identical to eval_puct_priors.py.
 
 
 # --------------------------------------------------------------------------- #
@@ -415,9 +430,13 @@ _W: dict = {}
 
 def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  shared_claim, claim_host, claim_stale, net_ckpt=None,
-                 net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None):
+                 net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
+                 cand_leaf_cfg=None):
     _W["info"] = info
     _W["champ_cfg_dict"] = champ_cfg_dict
+    # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
+    # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
+    _W["cand_leaf_cfg"] = cand_leaf_cfg
     _W["sims"] = sims
     _W["k_dets"] = k_dets
     _W["exact_k"] = exact_k
@@ -444,9 +463,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
         _W["net"] = _load_net(net_ckpt, device="cpu")
 
 
-def _cfg_from_dict(d):
+def _cfg_from_dict(d, leaf_cfg=None):
     return _build_champ_cfg(d["c_puct"], d["tau_p"], d["leaf_quantize"],
-                            d["final_select"], d["value_norm"])
+                            d["final_select"], d["value_norm"], leaf_cfg)
 
 
 def _play_one(args) -> GameResult | None:
@@ -466,7 +485,7 @@ def _play_one(args) -> GameResult | None:
     board = game.get_init_board()
     dh = deck_hash(board)
 
-    cfg = _cfg_from_dict(_W["champ_cfg_dict"])
+    cfg = _cfg_from_dict(_W["champ_cfg_dict"], _W.get("cand_leaf_cfg"))
     champ = _make_champion(_W["info"], cfg, _W["sims"], _W["k_dets"], _W["exact_k"],
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
@@ -588,8 +607,11 @@ def _smoke(args) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success."""
+    cand_leaf_cfg = _load_cand_leaf_cfg(getattr(args, "cand_leaf_json", None))
+    if cand_leaf_cfg is not None:
+        _assert_cy_float_path(cand_leaf_cfg)
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
-                           args.final_select, args.value_norm)
+                           args.final_select, args.value_norm, cand_leaf_cfg)
     # fair-net smoke: load --net if given, else a randomly-initialized 81ch/42-scalar
     # net (pure plumbing proof — NO training). Other arms ignore the net.
     smoke_net = None
@@ -702,6 +724,16 @@ def main(argv=None) -> int:
     ap.add_argument("--leaf-quantize", choices=("int", "float"), default="float")
     ap.add_argument("--final-select", choices=("Q", "visits", "lcb"), default="visits")
     ap.add_argument("--value-norm", type=float, default=15.0)
+    ap.add_argument("--cand-leaf-json", type=str, default=None,
+                    help="C5 Stage-3: override ONLY the FAIR champion's leaf LeafConfig — "
+                         "inline JSON (a '{...}' object of field->value, replace-fields on the "
+                         "env DEFAULT_CONFIG) or a path to such a JSON file. The h800 rung ALWAYS "
+                         "keeps env DEFAULT_CONFIG (the CL-022 ruler must not move). Absent -> "
+                         "byte-identical to today (default-OFF). closure_p keys coerced to int, "
+                         "v29_meeple_curve to a tuple (null -> curve OFF); the candidate must stay "
+                         "on the Cython float leaf (object-forcing terms are rejected). Shares the "
+                         "parser/guard with eval_puct_priors.py (c5_leaf_override.py). "
+                         "e.g. curve125: '{\"v29_meeple_curve\": [-10,-5,-1.25,0,2.5,3.75,5,6.25]}'.")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -729,6 +761,17 @@ def main(argv=None) -> int:
     if args.orch_shm_name and args.info != "fair-net":
         ap.error("--orch-shm-name only applies to --info fair-net")
 
+    # C5 Stage-3 candidate-leaf override (--cand-leaf-json). None -> the FAIR champion
+    # keeps env DEFAULT_CONFIG (byte-identical to today). The h800 rung NEVER takes it.
+    try:
+        cand_leaf_cfg = _load_cand_leaf_cfg(args.cand_leaf_json)
+        if cand_leaf_cfg is not None:
+            _assert_cy_float_path(cand_leaf_cfg)
+    except ValueError as e:
+        ap.error(str(e))                       # messages already carry the flag name
+    except (OSError, json.JSONDecodeError) as e:
+        ap.error(f"--cand-leaf-json: {e}")
+
     if args.smoke:
         if args.orch_shm_name:
             ap.error("--smoke does not drive the orch path (single-process CPU only); "
@@ -744,13 +787,18 @@ def main(argv=None) -> int:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
-                           args.final_select, args.value_norm)
+                           args.final_select, args.value_norm, cand_leaf_cfg)
     champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
 
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
            f"_kd{args.k_dets}_s{args.sims}_vs_h{args.rung_sims}_k{args.exact_k}")
+    if cand_leaf_cfg is not None:
+        # a leaf A/B: keep the auto tag / default out-dir distinct per candidate leaf
+        # so cells never silently share a directory (Trap 1). An explicit --out-subdir
+        # (the Stage-3 launcher path, e.g. c5_s3_curve125_fair) still owns the dir name.
+        tag = f"{tag}-leaf{_leaf_hash(cand_leaf_cfg)[:8]}"
     sub = args.out_subdir or tag
     root = Path(args.out_root) if args.out_root else EVAL_ROOT
     out = root / sub
@@ -768,7 +816,12 @@ def main(argv=None) -> int:
             print("no cached results yet")
         return 0
 
-    leaf_cfg = cfg.resolved_leaf_cfg()
+    leaf_cfg = cfg.resolved_leaf_cfg()          # FAIR champion side (override or DEFAULT_CONFIG)
+    rung_leaf_cfg = DEFAULT_CONFIG              # h800 rung is ALWAYS env DEFAULT_CONFIG (the ruler)
+    # human label for the champion leaf: reflects the --cand-leaf-json override when active
+    # (the Trap-1 mislabel mitigation — a candidate cell is NOT "v2.9 Bmild_cap8").
+    _champ_leaf_label = ("v2.9 Bmild_cap8 (DEFAULT_CONFIG)" if cand_leaf_cfg is None
+                         else f"candidate override --cand-leaf-json (leaf{_leaf_hash(leaf_cfg)[:8]})")
     _AGENT_NAME = {
         "fair": "FairHeuristicPriorAgent",
         "fair-net": "FairHeuristicPriorAgent + deck-aware net value (C-cheap)",
@@ -788,11 +841,14 @@ def main(argv=None) -> int:
                                          if (args.info == "fair-net" and args.orch_shm_name)
                                          else ("per-worker CPU net" if args.info == "fair-net"
                                                else None)),
+                     "leaf": _champ_leaf_label,
                      "value_source": (
                          ("learned deck-aware net (sighted 81ch/42-scalar), "
                           + ("residual heur+%g*net" % args.net_lambda
                              if args.net_mode == "residual" else "replace net-only"))
-                         if args.info == "fair-net" else "v2.9 heuristic leaf"),
+                         if args.info == "fair-net"
+                         else ("v2.9 heuristic leaf" if cand_leaf_cfg is None
+                               else "v2.9 heuristic leaf, CANDIDATE override (--cand-leaf-json)")),
                      "aggregation": ("single clairvoyant search (final_select)" if args.info == "clair"
                                      else "pooled-Q over k_dets determinizations (final_select inert)")},
         "endgame": {"mode": "marginalized", "exact_k": args.exact_k,
@@ -800,10 +856,20 @@ def main(argv=None) -> int:
                     "tt_cap": os.environ.get("CARCASSONNE_TT_CAP")},
         "rung": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7", "c": RUNG_C,
                  "sims": args.rung_sims, "endgame": None,
-                 "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
+                 # the ruler NEVER takes the candidate override — always env DEFAULT_CONFIG.
+                 "leaf": f"v2.9 Bmild_cap8 (DEFAULT_CONFIG, leaf{_leaf_hash(rung_leaf_cfg)[:8]})",
+                 "leaf_hash": _leaf_hash(rung_leaf_cfg),
                  "provenance": "CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"},
         "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
         "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
+        # C5 Stage-3 per-side leaf provenance (Trap 1: a worker missing the env exports
+        # silently runs the wrong leaf — the per-side leaf_hash is the mitigation). The
+        # FAIR champion side carries the --cand-leaf-json override; the rung is DEFAULT.
+        "cand_leaf_json": args.cand_leaf_json,
+        "cand_leaf_cfg": _leaf_dict(leaf_cfg),
+        "cand_leaf_hash": _leaf_hash(leaf_cfg),
+        "rung_leaf_cfg": _leaf_dict(rung_leaf_cfg),
+        "rung_leaf_hash": _leaf_hash(rung_leaf_cfg),
         "equal_wall_clock_note": ("champion total per-move budget k_dets*sims targets the "
                                   "deployed clairvoyant champion ~2750 sims (equal wall-clock; "
                                   "k_dets root expansions add a little fixed overhead)"),
@@ -838,14 +904,14 @@ def main(argv=None) -> int:
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          args.orch_shm_name, _id_q))
+                          args.orch_shm_name, _id_q, cand_leaf_cfg))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          "", None))
+                          "", None, cand_leaf_cfg))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
