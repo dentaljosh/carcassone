@@ -54,7 +54,11 @@ CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750   # champion-sibling A/B
 # the 10 cells, design's budget-squeeze priority order: caps -> closure_p -> opp_cap
 # -> curve -> bag. Short id <cell>; full pre-registered exp_id = c5_<cell>_vs_puctchamp2750_k2;
 # leaf json = measurement/classical_search/c5_cells/c5_<cell>_vs_puctchamp2750_k2.json.
-CELLS_ALL="cap5 cap12 pclose080 pclose120 oppcap4 oppcap12 curve075 curve125 nocurve_mk2 bagclose"
+CELLS_ALL="cap5 cap12 pclose080 pclose120 oppcap4 oppcap12 curve075 curve125 nocurve_mk2 bagclose curve150 curve175 curve200"
+# curve150/175/200 = the S1b UPWARD curve-scale extension (2026-07-12): the S1 curve axis was
+# MONOTONE increasing through x1.25 (+81.4); bracket-above-and-below discipline (the c=3 lesson)
+# says find the peak. Run with: --cells "curve150 curve175 curve200" (same band 12e9 => CRN-shares
+# decks with curve075/125, so the full x0.75..x2.0 axis plots on identical decks). NOT auto-run.
 
 case "$BOX_TAG" in
   local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared ;;
