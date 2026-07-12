@@ -1,6 +1,6 @@
 # C5 curve125 — promotion proposal (DRAFT — Joshua's call, PRODUCTION.yaml untouched)
 
-**Status: DRAFT 2026-07-11 — S1+S2 clair evidence in; S3 fair re-confirm RUNNING; S4 τ-interaction probe queued.**
+**Status: EVIDENCE COMPLETE 2026-07-12 (S1→S5 all measured) — AWAITING JOSHUA'S ADOPTION CALL (3 options in the S3 block). PRODUCTION.yaml untouched.**
 **Proposed change:** `v29_meeple_curve: (-8,-4,-1,0,2,3,4,5) → (-10,-5,-1.25,0,2.5,3.75,5,6.25)` (production curve ×1.25 exactly; every other leaf tunable unchanged). One-line LeafConfig constant change; compute-neutral (S2 ms ratio 1.00x).
 
 ## Why it's believable (in order of strength)
@@ -11,8 +11,7 @@
 ## Pre-registered remaining gates
 - **S3 fair re-confirm — ✅ RAN, verdict = POSITIVE-UNRESOLVED (2026-07-12):** fair curve125 **+115.2** vs h800 (131W/2D/67L) against the cached fair **+81.4** on the same 200 decks → **Δ +33.9 elo; CRN paired Δ +1.07 pts/deck, z = +0.58** (`c5_s3_curve125_fair/crn_delta.json`; results.csv row). **The pre-registered z≥2.0 fair gate is NOT met — but this is NOT the reuse/CLAIR-ONLY pattern:** there is no mechanism for a zero fair effect (the fair agent evaluates every leaf of every determinization with the same LeafConfig; a better leaf ranker transfers by construction, only the *magnitude* is uncertain under the ~120-elo tax), and the point estimate sits at half the clair effect, exactly where a real transfer would land. It is an **underpowered positive**: per-deck margin σ≈18 pts → resolving ~1 pt/deck at z≥2 needs **~1200 decks ≈ 3+ box-days** (both arms must extend to stay CRN-paired). **Decision for Joshua:** (a) fund the fair extension, (b) adopt on clair evidence + mechanism (the deployed agent shares the leaf; S2 is z4.6), or (c) adopt for the clair/dev config only. My read: (b) is defensible — unlike reuse there's no transfer-breaking mechanism — but it's a governance call above my pay grade.
 - **S4 τ×curve interaction probe — ✅ CLEAN (2026-07-12): no interaction, τ5 stands.** Leaf-Δ(τ3) = +54.3±24.9 (paired_z 2.54) · leaf-Δ(τ5) = +66.8±17.7 (S2, z4.59) · leaf-Δ(τ8) = +56.1±24.9 (z1.38) — statistically indistinguishable, stable dose across the τ bracket (also retires the never-run R7 τ item). `results.csv c5_s4_*`.
-- **S5 c_puct×curve probe (bonus, RUNNING on idle boxes):** leaf-Δ at c_puct∈{1.0, 2.25} vs leaf-Δ(c1.5)=+66.8, band 1.26e10 — the proposal's "post-adoption follow-up" pulled forward. Stable ⇒ c1.5 stands and the re-sweep box is fully closed pre-adoption.
-  - S5 result: **[PENDING]**
+- **S5 c_puct×curve probe — ✅ RAN (2026-07-12): c1.5 stands; mild attenuation flag at high c.** Leaf-Δ(c1.0) = +36.6±24.9 (z1.84) · leaf-Δ(**c1.5**) = **+66.8**±17.7 (S2) · leaf-Δ(c2.25) = +8.7±24.9 (z1.09). The gain is strongest at the production c1.5; the c2.25 attenuation is ~1.9σ vs the center — logged as a *possible* c×curve interaction (if c_puct is ever re-tuned, re-check the curve, and vice versa), not a blocker: the champion runs c1.5. Re-sweep box closed pre-adoption. `results.csv c5_s5_*`.
 
 ## If adopted (Joshua's decision, not before S3+S4 read out)
 - PRODUCTION.yaml leaf block: the curve constant (+ note in `reuse_tree`-style provenance comment). New leaf tag = the S0 hash suffix (`leaf96d2c075`).
