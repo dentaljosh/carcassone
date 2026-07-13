@@ -104,6 +104,10 @@ sys.path.insert(0, str(REPO / "scripts" / "level2"))  # endgame_solver
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # c5_leaf_override (sibling)
 
 from carcassonne_ai import eval_provenance as ep  # noqa: E402
+from carcassonne_ai.alphabeta_agent import (  # noqa: E402
+    AlphaBetaAgent,
+    AlphaBetaConfig,
+)
 from carcassonne_ai.claim import try_claim as _try_claim  # noqa: E402
 from carcassonne_ai.eval_provenance import deck_hash  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
@@ -244,16 +248,20 @@ class _ChampPrefix:
         return int(self._m.best_action(board))
 
 
-def _champ_puct_cfg(shared: dict) -> "HeuristicPriorConfig":
+def _champ_puct_cfg(shared: dict, reuse: bool = False) -> "HeuristicPriorConfig":
     """Build the flag-OFF champion PUCT-heuristic-priors config, taking only the
     SHARED axes (c_puct/tau_p/leaf_quantize) from `shared` (the candidate's
     cand_cfg_dict) and forcing every variant knob to its champion-off value. This
-    is the --opponent puct sibling of the variant candidate."""
+    is the --opponent puct sibling of the variant candidate.
+
+    `reuse` (default False = byte-for-byte the flag-OFF sibling) is the C6
+    --opp-reuse-tree relaxation: the Stage-2 confirm runs vs the champion OF RECORD,
+    which is reuse_tree=True (CL-044). Left False for the Stage-1 screen."""
     return HeuristicPriorConfig(
         c_puct=shared["c_puct"], tau_p=shared["tau_p"],
         leaf_quantize=shared["leaf_quantize"],
         final_select=CHAMP_PUCT_FINAL_SELECT, value_norm=CHAMP_PUCT_VALUE_NORM,
-        c_lcb=CHAMP_PUCT_C_LCB, reuse_tree=False,
+        c_lcb=CHAMP_PUCT_C_LCB, reuse_tree=bool(reuse),
         root_select="puct",   # the flag-OFF baseline: PUCT root, never Gumbel
         leaf_cfg=DEFAULT_CONFIG,
     )
@@ -271,19 +279,35 @@ class _PuctPrefix:
         return int(self._a.move(board))
 
 
+class _AbPrefix:
+    """C6 ID-alpha-beta candidate prefix (design §8). Wraps AlphaBetaAgent for
+    _ExactHandoff — exposes `.move`, clear()s the TT once at construction (game
+    start; the TT then PERSISTS across the game's moves, §3). The search game is
+    cache-free (the agent builds its own if handed a cached game)."""
+
+    def __init__(self, game, cfg: "AlphaBetaConfig", seed=None):
+        self.agent = AlphaBetaAgent(game, cfg, seed=seed)
+        self.agent.clear()
+
+    def move(self, board) -> int:
+        return int(self.agent.move(board))
+
+
 # --------------------------------------------------------------------------- #
 # Round-robin extension: candidate/opponent specs + the neural opponent         #
 # (measurement/classical_search/ROUND_ROBIN_PLAN.md). Torch is imported lazily  #
 # so the legacy pure-CPU cells never pay for it.                                #
 # --------------------------------------------------------------------------- #
 def _parse_candidate(tok: str):
-    """'puct' -> ("puct", None); 'h<sims>' -> ("heur", sims)."""
+    """'puct' -> ("puct", None); 'h<sims>' -> ("heur", sims); 'ab' -> ("ab", None)."""
     tok = tok.strip()
     if tok == "puct":
         return ("puct", None)
+    if tok == "ab":                       # C6 ID-alpha-beta candidate (design §8)
+        return ("ab", None)
     if tok.startswith("h") and tok[1:].isdigit() and int(tok[1:]) > 0:
         return ("heur", int(tok[1:]))
-    raise ValueError(f"bad --candidate {tok!r}; expected puct|h<sims> (e.g. h6400)")
+    raise ValueError(f"bad --candidate {tok!r}; expected puct|h<sims>|ab (e.g. h6400)")
 
 
 # The champion PUCT-heuristic-priors config (flags OFF), used as the --opponent
@@ -319,19 +343,34 @@ def _resolve_specs(args):
     cand_kind, cand_tok_sims = _parse_candidate(args.candidate)
     if cand_kind == "heur":
         args.cand_sims = cand_tok_sims
+    elif cand_kind == "ab":
+        pass                                   # αβ has no sims axis (child-step budget)
     elif args.cand_sims is None:
         raise ValueError("--cand-sims is required for --candidate puct")
     if args.opponent is None:
-        opp_kind, opp_sims, net_ckpt = "heur", args.champ_sims, None
+        # legacy champion side: HeuristicMCTS h<champ-sims> (default 6400).
+        opp_kind = "heur"
+        opp_sims = args.champ_sims if args.champ_sims is not None else 6400
+        net_ckpt = None
     else:
         opp_kind, opp_sims, net_ckpt = _parse_opponent(args.opponent)
         if opp_kind == "puct":
-            # champion PUCT opponent plays at the SAME nominal sims as the
-            # candidate (equal-sims variant A/B); --champ-sims is ignored.
-            opp_sims = args.cand_sims
-            if cand_kind != "puct":
-                raise ValueError("--opponent puct requires --candidate puct "
-                                 "(it is the flag-OFF sibling of the PUCT candidate)")
+            if cand_kind == "puct":
+                # champion PUCT opponent plays at the SAME nominal sims as the
+                # candidate (equal-sims variant A/B); --champ-sims is ignored.
+                opp_sims = args.cand_sims
+            elif cand_kind == "ab":
+                # C6: ab candidate vs the champion-of-record PUCT sibling. αβ has no
+                # cand_sims, so the champion budget comes from --champ-sims (mandatory).
+                if args.champ_sims is None:
+                    raise ValueError("--champ-sims is required for "
+                                     "--candidate ab --opponent puct")
+                opp_sims = args.champ_sims
+            else:
+                raise ValueError("--opponent puct requires --candidate puct or ab "
+                                 "(it is the flag-OFF sibling of the search candidate)")
+    if args.champ_sims is None:                # backfill for downstream tags/display
+        args.champ_sims = 6400
     new_mode = (args.candidate != "puct") or (args.opponent is not None)
     return cand_kind, opp_kind, opp_sims, net_ckpt, new_mode
 
@@ -363,22 +402,45 @@ def _variant_sig(args) -> str:
     return "".join("-" + p for p in parts)
 
 
+def _ab_variant_sig(args) -> str:
+    """Compact signature of the C6 ab candidate's ACTIVE variant knobs vs the v1
+    defaults (asp 3.0, pvs on, killers 2, lmr off, futility off). Empty at defaults;
+    rides on the cand token so Stage-1.5 knob cells never collide (design §8)."""
+    parts = []
+    if args.cand_ab_lmr:
+        parts.append("lmr")
+    if args.cand_ab_asp != 3.0:
+        parts.append(f"asp{args.cand_ab_asp:g}")
+    if args.cand_ab_no_pvs:
+        parts.append("nopvs")
+    if args.cand_ab_killers != 2:
+        parts.append(f"k{args.cand_ab_killers}")
+    if args.cand_ab_futility != 0.0:
+        parts.append(f"fut{args.cand_ab_futility:g}")
+    return "".join("-" + p for p in parts)
+
+
 def _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode) -> str:
     """Out-subdir cell tag. LEGACY invocations (no --candidate/--opponent) keep the
     historical naming byte-identical; round-robin invocations get rr_* names
     (e.g. rr_puct2750_vs_net-iter02_k2, rr_h6400_vs_h12800_k2,
-    rr_puct2750-reuse_vs_puctchamp2750_k4)."""
+    rr_ab28000_vs_puctchamp2750_k2, rr_ab28000_vs_puctchampreuse2750_k2)."""
     if not new_mode:
         return (f"puct_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}_{args.final_select}"
                 f"_s{args.cand_sims}_vs_h{args.champ_sims}_k{args.exact_k}")
-    cand_tok = f"puct{args.cand_sims}" if cand_kind == "puct" else f"h{args.cand_sims}"
+    if cand_kind == "ab":
+        cand_tok = f"ab{args.cand_ab_steps}"
+    elif cand_kind == "puct":
+        cand_tok = f"puct{args.cand_sims}"
+    else:
+        cand_tok = f"h{args.cand_sims}"
     if opp_kind == "heur":
         opp_tok = f"h{opp_sims}"
     elif opp_kind == "puct":
         # the candidate's variant signature rides on the cand token so
         # variant-ON-vs-champion cells never collide.
-        cand_tok += _variant_sig(args)
-        opp_tok = f"puctchamp{opp_sims}"
+        cand_tok += _ab_variant_sig(args) if cand_kind == "ab" else _variant_sig(args)
+        opp_tok = f"puctchamp{'reuse' if args.opp_reuse_tree else ''}{opp_sims}"
     else:
         opp_tok = "net-" + Path(net_ckpt).stem.replace("_", "")
     return f"rr_{cand_tok}_vs_{opp_tok}_k{args.exact_k}"
@@ -490,6 +552,17 @@ class GameResult:
     latch_k: int | None = None
     game_timeout: bool = False   # True = abandoned by the per-game wall watchdog
                                  # (partial board; excluded from win/elo/paired stats)
+    # C6 ab-candidate per-game telemetry (0 unless the candidate is --candidate ab;
+    # depth_completed feeds the §9 depth-truncation gate). Defaulted so every legacy
+    # cell serializes byte-identically.
+    cand_ab_depth_med: float = 0.0
+    cand_ab_depth_min: int = 0
+    cand_ab_nodes: int = 0
+    cand_ab_steps: int = 0
+    cand_ab_tt_probes: int = 0
+    cand_ab_tt_exact_hits: int = 0
+    cand_ab_tt_cross_parent_hits: int = 0
+    cand_ab_moves: int = 0
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -505,24 +578,61 @@ def _try_load(p: Path):
     return None
 
 
+# C6 ab-candidate telemetry fields — OMITTED from the serialized per-game JSON for
+# non-ab cells (all zero there) so every legacy/non-ab cell stays byte-identical to
+# today's schema (the default-OFF / result-neutral gate). _try_load re-fills them from
+# the dataclass defaults, so a reload is lossless either way.
+_AB_RESULT_FIELDS = (
+    "cand_ab_depth_med", "cand_ab_depth_min", "cand_ab_nodes", "cand_ab_steps",
+    "cand_ab_tt_probes", "cand_ab_tt_exact_hits", "cand_ab_tt_cross_parent_hits",
+    "cand_ab_moves",
+)
+
+
 def _save(p: Path, r: GameResult):
     p.parent.mkdir(parents=True, exist_ok=True)
+    d = asdict(r)
+    if not d.get("cand_ab_moves"):          # non-ab cell -> omit ab keys (schema-identical)
+        for k in _AB_RESULT_FIELDS:
+            d.pop(k, None)
     tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
-    json.dump(asdict(r), open(tmp, "w"))
+    json.dump(d, open(tmp, "w"))
     tmp.replace(p)
 
 
 _W: dict = {}
 
 
+def _ab_telemetry(prefix) -> dict:
+    """Per-game C6 ab-candidate telemetry read off the AlphaBetaAgent behind an
+    _AbPrefix (design §8). depth_completed -> per-game median/min feeds the §9
+    depth-truncation gate. Empty for non-ab candidates."""
+    ag = getattr(prefix, "agent", None)
+    if ag is None:
+        return {}
+    dcs = list(ag.depth_completed)
+    return {
+        "cand_ab_depth_med": float(np.median(dcs)) if dcs else 0.0,
+        "cand_ab_depth_min": int(min(dcs)) if dcs else 0,
+        "cand_ab_nodes": int(ag.nodes),
+        "cand_ab_steps": int(ag.steps_used),
+        "cand_ab_tt_probes": int(ag.tt_probes),
+        "cand_ab_tt_exact_hits": int(ag.tt_exact_hits),
+        "cand_ab_tt_cross_parent_hits": int(ag.tt_cross_parent_hits),
+        "cand_ab_moves": len(dcs),
+    }
+
+
 def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  shared_claim, claim_host, claim_stale,
                  cand_kind="puct", opp_kind="heur", opp_sims=None,
                  net_ckpt="", net_ns=10, shm_name="", id_q=None,
-                 cand_leaf_cfg=None):
+                 cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False):
     _W["cand_cfg_dict"] = cand_cfg_dict
     # candidate-side leaf override (None -> DEFAULT_CONFIG); champion stays DEFAULT.
     _W["cand_leaf_cfg"] = cand_leaf_cfg
+    _W["ab_cfg_dict"] = ab_cfg_dict            # C6 AlphaBetaConfig knobs (None unless ab)
+    _W["opp_reuse"] = bool(opp_reuse)          # --opp-reuse-tree (Stage-2 confirm only)
     _W["cand_sims"] = cand_sims
     _W["champ_sims"] = champ_sims
     _W["exact_k"] = exact_k
@@ -546,6 +656,18 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
             _W["net_handles"] = connect_shm(shm_name, id_q.get(), net_ns, NET_N_CH)
         else:
             _W["net"], _W["net_dev"], _W["net_ns"] = _load_net_cpu(net_ckpt)
+
+
+def _make_ab_cfg():
+    """Rebuild the C6 AlphaBetaConfig from the worker's ab knob dict. The leaf is the
+    candidate override (--cand-leaf-json) or DEFAULT_CONFIG (env curve125) — the SAME
+    resolution the champion side uses, so a valid A/B (design §6 row 12)."""
+    d = _W["ab_cfg_dict"]
+    leaf_cfg = _W.get("cand_leaf_cfg") or DEFAULT_CONFIG
+    return AlphaBetaConfig(
+        step_budget=d["step_budget"], max_depth=d["max_depth"], asp=d["asp"],
+        pvs=d["pvs"], tt_cap=d["tt_cap"], killers=d["killers"], lmr=d["lmr"],
+        futility=d["futility"], leaf_cfg=leaf_cfg)
 
 
 def _make_cand_cfg():
@@ -584,10 +706,15 @@ def _play_one(args) -> GameResult | None:
     dh = deck_hash(board)
 
     K = _W["exact_k"]
-    # candidate side (prefix = PUCT+heur priors, or plain HeuristicMCTS for h<sims>)
-    if _W.get("cand_kind", "puct") == "heur":
+    cand_kind = _W.get("cand_kind", "puct")
+    # candidate side (prefix = PUCT+heur priors, plain HeuristicMCTS for h<sims>, or
+    # the C6 ID-alpha-beta agent for ab). ab gets a cache-free search game (§2).
+    if cand_kind == "heur":
         cand_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["cand_sims"],
                                    seed, DEFAULT_CONFIG)
+    elif cand_kind == "ab":
+        cand_prefix = _AbPrefix(Game(enable_legal_moves_cache=False), _make_ab_cfg(),
+                                seed=seed)
     else:
         cfg = _make_cand_cfg()
         cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
@@ -600,7 +727,8 @@ def _play_one(args) -> GameResult | None:
         opp_K = 0   # BARE net (pinned anchor config): K=0 never latches the exact tail
     elif opp_kind == "puct":
         champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
-                                   _champ_puct_cfg(_W["cand_cfg_dict"]),
+                                   _champ_puct_cfg(_W["cand_cfg_dict"],
+                                                   reuse=_W.get("opp_reuse", False)),
                                    _W["opp_sims"], seed + 1)
         opp_K = K
     else:
@@ -646,6 +774,7 @@ def _play_one(args) -> GameResult | None:
         champ_prefix_moves=champ.prefix_moves, champ_exact_moves=champ.exact_moves,
         champ_prefix_secs=round(champ.prefix_secs, 3), champ_solver_secs=round(champ.solver_secs, 3),
         champ_timeouts=champ.n_timeouts, latch_k=latch_k, game_timeout=game_timed_out,
+        **(_ab_telemetry(cand_prefix) if cand_kind == "ab" else {}),
     )
     _save(p, r)
     return r
@@ -721,6 +850,28 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
               f"(>{GAME_WALL_SECS:.0f}s) — excluded from the stats above")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
+    # C6 ab-candidate depth/TT aggregation (design §8/§9 telemetry into summary.json).
+    ab_summary = {}
+    ab_games = [r for r in results if getattr(r, "cand_ab_moves", 0) > 0]
+    if ab_games:
+        med_depths = [r.cand_ab_depth_med for r in ab_games]
+        ab_probes = sum(r.cand_ab_tt_probes for r in ab_games)
+        ab_summary = {
+            "ab_depth_med": float(np.median(med_depths)),
+            "ab_depth_p10": float(np.percentile(med_depths, 10)),
+            "ab_depth_min": int(min(r.cand_ab_depth_min for r in ab_games)),
+            "ab_nodes_per_game": sum(r.cand_ab_nodes for r in ab_games) / len(ab_games),
+            "ab_steps_per_move": (sum(r.cand_ab_steps for r in ab_games)
+                                  / max(1, sum(r.cand_ab_moves for r in ab_games))),
+            "ab_tt_exact_hit_frac": (sum(r.cand_ab_tt_exact_hits for r in ab_games)
+                                     / ab_probes) if ab_probes else 0.0,
+            "ab_tt_cross_parent_frac": (sum(r.cand_ab_tt_cross_parent_hits for r in ab_games)
+                                        / ab_probes) if ab_probes else 0.0,
+        }
+        print(f"ab telemetry: median depth {ab_summary['ab_depth_med']:.0f} "
+              f"(p10 {ab_summary['ab_depth_p10']:.0f}, min {ab_summary['ab_depth_min']}), "
+              f"{ab_summary['ab_steps_per_move']:.0f} steps/move, "
+              f"cross-parent hit frac {ab_summary['ab_tt_cross_parent_frac']:.4f}")
     return {
         "n": n, "W": w, "D": d, "L": losses, "winrate": wr, "winrate_z": wr_z,
         "elo": elo, "elo_sig_1sigma": elo_sig, "avg_diff": avg,
@@ -728,6 +879,7 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
         "cand_prefix_ms_per_move": cand_ms, "champ_prefix_ms_per_move": champ_ms,
         "cand_latched_games": cand_latched, "solver_secs_per_game": solver_pergame,
         "game_timeouts": game_timeouts,
+        **ab_summary,
     }
 
 
@@ -764,7 +916,7 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
     cand_leaf_cfg = _load_cand_leaf_cfg(getattr(args, "cand_leaf_json", None))
     if cand_leaf_cfg is not None:
         _assert_cy_float_path(cand_leaf_cfg)
-    cfg = None
+    cfg = ab_cfg = None
     if cand_kind == "puct":
         cfg = HeuristicPriorConfig(c_puct=args.c_puct, tau_p=args.tau_p,
                                    leaf_quantize=args.leaf_quantize, final_select=args.final_select,
@@ -775,6 +927,12 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                                    gumbel_c_visit=args.gumbel_c_visit,
                                    gumbel_c_scale=args.gumbel_c_scale,
                                    gumbel_retain_g=args.gumbel_retain_g)
+    elif cand_kind == "ab":
+        ab_cfg = AlphaBetaConfig(
+            leaf_cfg=(cand_leaf_cfg if cand_leaf_cfg is not None else DEFAULT_CONFIG),
+            step_budget=args.cand_ab_steps, max_depth=args.cand_ab_max_depth,
+            asp=args.cand_ab_asp, pvs=not args.cand_ab_no_pvs, tt_cap=args.cand_ab_tt_cap,
+            killers=args.cand_ab_killers, lmr=args.cand_ab_lmr, futility=args.cand_ab_futility)
     net = net_dev = net_ns = None
     if opp_kind == "net":
         net, net_dev, net_ns = _load_net_cpu(net_ckpt)
@@ -787,14 +945,21 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         print(f"[smoke] cand: c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
               f"select={args.final_select}{_knob_extra} sims={args.cand_sims} | champ h{args.champ_sims} | exact-K={args.exact_k}")
     else:
-        cand_desc = (f"puct c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
-                     f"select={args.final_select}{_knob_extra} sims={args.cand_sims}" if cand_kind == "puct"
-                     else f"heur h{args.cand_sims}")
+        if cand_kind == "puct":
+            cand_desc = (f"puct c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
+                         f"select={args.final_select}{_knob_extra} sims={args.cand_sims}")
+        elif cand_kind == "ab":
+            cand_desc = (f"ID-alpha-beta steps={args.cand_ab_steps} asp={args.cand_ab_asp:g} "
+                         f"pvs={not args.cand_ab_no_pvs} killers={args.cand_ab_killers} "
+                         f"lmr={args.cand_ab_lmr}")
+        else:
+            cand_desc = f"heur h{args.cand_sims}"
         if opp_kind == "heur":
             opp_desc = f"heur h{opp_sims}"
         elif opp_kind == "puct":
-            opp_desc = (f"puct-CHAMPION(flags OFF: select={CHAMP_PUCT_FINAL_SELECT} "
-                        f"value_norm={CHAMP_PUCT_VALUE_NORM:g} reuse=off) sims={opp_sims}")
+            opp_desc = (f"puct-CHAMPION(select={CHAMP_PUCT_FINAL_SELECT} "
+                        f"value_norm={CHAMP_PUCT_VALUE_NORM:g} "
+                        f"reuse={'ON' if args.opp_reuse_tree else 'off'}) sims={opp_sims}")
         else:
             opp_desc = f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)"
         print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k}")
@@ -807,6 +972,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         if cand_kind == "heur":
             cand_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), args.cand_sims,
                                        seed, DEFAULT_CONFIG)
+        elif cand_kind == "ab":
+            cand_prefix = _AbPrefix(Game(enable_legal_moves_cache=False), ab_cfg, seed=seed)
         else:
             cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                               simulations=args.cand_sims, seed=seed)
@@ -821,7 +988,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
             shared = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize}
             champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
-                                       _champ_puct_cfg(shared), opp_sims, seed + 1)
+                                       _champ_puct_cfg(shared, reuse=args.opp_reuse_tree),
+                                       opp_sims, seed + 1)
         else:
             champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
                                         seed + 1, DEFAULT_CONFIG)
@@ -894,7 +1062,10 @@ def main(argv=None) -> int:
     ap.add_argument("--cand-sims", type=int, default=None,
                     help="candidate PUCT sims (from the equal-time bench match); required "
                          "for --candidate puct, ignored for --candidate h<sims>")
-    ap.add_argument("--champ-sims", type=int, default=6400)
+    ap.add_argument("--champ-sims", type=int, default=None,
+                    help="champion/opponent sims (default 6400 for a heur opponent). "
+                         "MANDATORY for --candidate ab --opponent puct (the ab child-step "
+                         "budget has no sims axis, so the champion budget is set here).")
     ap.add_argument("--cand-leaf-json", type=str, default=None,
                     help="override ONLY the CANDIDATE side's leaf LeafConfig — inline "
                          "JSON (a '{...}' object of field->value, replace-fields on the "
@@ -924,6 +1095,29 @@ def main(argv=None) -> int:
     ap.add_argument("--shm-eval-server", type=str, default=None,
                     help="carc-orch SHM orchestrator name for the net: opponent (workers "
                          "attach to /dev/shm/carc_<NAME>); omit for net-on-CPU per worker")
+    # --- C6 ID-alpha-beta candidate knobs (--candidate ab; design §6/§8) -------- #
+    ap.add_argument("--cand-ab-steps", type=int, default=None,
+                    help="child-step (get_next_state) budget per DECISION for the ab "
+                         "candidate — the equal-wall-clock normalizer (calibrated Stage 0). "
+                         "REQUIRED with --candidate ab.")
+    ap.add_argument("--cand-ab-max-depth", type=int, default=64,
+                    help="ab ID ply safety cap (the budget binds first; default 64)")
+    ap.add_argument("--cand-ab-tt-cap", type=int, default=2_000_000,
+                    help="ab transposition-table entry cap (freeze-at-cap; default 2e6)")
+    ap.add_argument("--cand-ab-asp", type=float, default=3.0,
+                    help="ab aspiration half-width in points (0 = off; default 3.0)")
+    ap.add_argument("--cand-ab-no-pvs", action="store_true",
+                    help="ab: disable principal-variation search (value-preserving ablation)")
+    ap.add_argument("--cand-ab-killers", type=int, default=2,
+                    help="ab killer slots per ply level (0 = off; default 2)")
+    ap.add_argument("--cand-ab-lmr", action="store_true",
+                    help="ab: enable late-move reductions (move-changing; default OFF)")
+    ap.add_argument("--cand-ab-futility", type=float, default=0.0,
+                    help="ab frontier futility margin in points (0 = off; default OFF)")
+    ap.add_argument("--opp-reuse-tree", action="store_true",
+                    help="let the --opponent puct sibling run reuse_tree=True (the "
+                         "champion OF RECORD; C6 Stage-2 confirm). Default OFF = the "
+                         "flag-OFF sibling used by the Stage-1 screen (byte-for-byte today).")
     ap.add_argument("--exact-k", type=int, default=4, help="exact clairvoyant endgame handoff at k_remaining<=K")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
@@ -958,6 +1152,10 @@ def main(argv=None) -> int:
         ap.error(str(e))
     if args.shm_eval_server and opp_kind != "net":
         ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
+    if cand_kind == "ab" and (args.cand_ab_steps is None or args.cand_ab_steps <= 0):
+        ap.error("--cand-ab-steps INT (>0) is required for --candidate ab")
+    if args.opp_reuse_tree and opp_kind != "puct":
+        ap.error("--opp-reuse-tree only applies to --opponent puct")
 
     # candidate-side leaf override (--cand-leaf-json). None -> DEFAULT_CONFIG both
     # sides (byte-identical to today). The champion/opponent side NEVER takes it.
@@ -1000,6 +1198,17 @@ def main(argv=None) -> int:
                      "gumbel_c_visit": args.gumbel_c_visit,
                      "gumbel_c_scale": args.gumbel_c_scale,
                      "gumbel_retain_g": args.gumbel_retain_g}
+    # C6 ID-alpha-beta candidate config (None unless --candidate ab). The leaf is the
+    # candidate override or env DEFAULT_CONFIG (curve125) — same as the champion side.
+    ab_cfg_dict = ab_cfg = None
+    if cand_kind == "ab":
+        ab_cfg_dict = {"step_budget": args.cand_ab_steps, "max_depth": args.cand_ab_max_depth,
+                       "asp": args.cand_ab_asp, "pvs": not args.cand_ab_no_pvs,
+                       "tt_cap": args.cand_ab_tt_cap, "killers": args.cand_ab_killers,
+                       "lmr": args.cand_ab_lmr, "futility": args.cand_ab_futility}
+        ab_cfg = AlphaBetaConfig(
+            leaf_cfg=(cand_leaf_cfg if cand_leaf_cfg is not None else DEFAULT_CONFIG),
+            **ab_cfg_dict)
 
     tag = _cell_tag(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
     if cand_leaf_cfg is not None:
@@ -1018,12 +1227,17 @@ def main(argv=None) -> int:
     # summary labels: legacy None -> byte-identical header; rr cells name both sides.
     cand_label = opp_label = None
     if new_mode:
-        cand_label = (f"PUCT-heur-priors(cand s{args.cand_sims}{_variant_sig(args)})"
-                      if cand_kind == "puct" else f"candidate(heur h{args.cand_sims})")
+        if cand_kind == "puct":
+            cand_label = f"PUCT-heur-priors(cand s{args.cand_sims}{_variant_sig(args)})"
+        elif cand_kind == "ab":
+            cand_label = f"ID-alpha-beta(cand ab{args.cand_ab_steps}{_ab_variant_sig(args)})"
+        else:
+            cand_label = f"candidate(heur h{args.cand_sims})"
         if opp_kind == "heur":
             opp_label = f"opponent(heur h{opp_sims})"
         elif opp_kind == "puct":
-            opp_label = f"opponent(PUCT-champion flags-OFF s{opp_sims})"
+            opp_label = (f"opponent(PUCT-champion{' reuse' if args.opp_reuse_tree else ' flags-OFF'}"
+                         f" s{opp_sims})")
         else:
             opp_label = f"opponent(net:{Path(net_ckpt).stem}@{NET_SIMS})"
 
@@ -1064,6 +1278,12 @@ def main(argv=None) -> int:
             cand_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
                           "sims": args.cand_sims, "exact_k": args.exact_k,
                           **cfg.as_manifest()}
+        elif cand_kind == "ab":
+            # C6 ID-alpha-beta candidate: the FULL resolved AlphaBetaConfig + leaf_hash
+            # (design §8; per-side leaf_hash is the Trap-1 wrong-leaf mitigation).
+            cand_block = {"kind": "ab", "agent": "AlphaBetaAgent",
+                          "step_budget": args.cand_ab_steps, "exact_k": args.exact_k,
+                          **ab_cfg.as_manifest()}
         else:
             # puct-specific knobs ignored for an h<sims> candidate -> recorded as null.
             cand_block = {"kind": "heur", "agent": "HeuristicMCTS", "heur_leaf": "v2_7",
@@ -1078,12 +1298,15 @@ def main(argv=None) -> int:
                          "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
                          "exact_k": args.exact_k}
         elif opp_kind == "puct":
-            # flag-OFF champion PUCT sibling of the variant candidate (shares
-            # c_puct/tau_p/leaf_quantize/sims; variant knobs forced to champion).
+            # flag-OFF champion PUCT sibling (shares c_puct/tau_p/leaf_quantize; variant
+            # knobs forced to champion). --opp-reuse-tree -> the champion OF RECORD
+            # (reuse_tree=True, CL-044) for the C6 Stage-2 confirm.
             opp_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
-                         "role": "champion (variant flags OFF)",
+                         "role": ("champion of record (reuse_tree ON)"
+                                  if args.opp_reuse_tree else "champion (variant flags OFF)"),
                          "sims": opp_sims, "exact_k": args.exact_k,
-                         **_champ_puct_cfg(cand_cfg_dict).as_manifest()}
+                         "reuse_tree": bool(args.opp_reuse_tree),
+                         **_champ_puct_cfg(cand_cfg_dict, reuse=args.opp_reuse_tree).as_manifest()}
         else:
             opp_block = {"kind": "net", "agent": "NeuralMCTS",
                          "ckpt": str(net_ckpt), "ckpt_sha256": net_sha,
@@ -1132,7 +1355,8 @@ def main(argv=None) -> int:
                             args.shared_claim, args.claim_host, args.claim_stale_secs,
                             cand_kind, opp_kind, opp_sims, net_ckpt or "",
                             (net_meta or {}).get("n_scalar_features", 10),
-                            args.shm_eval_server or "", id_q, cand_leaf_cfg)) as pool:
+                            args.shm_eval_server or "", id_q, cand_leaf_cfg,
+                            ab_cfg_dict, args.opp_reuse_tree)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
@@ -1169,16 +1393,25 @@ def main(argv=None) -> int:
                 "old_var": "v2_9_champion", "old_sims": args.champ_sims,
             }
         else:
-            cand_desc = (f"PUCT-heur-priors(c_puct={args.c_puct} tau_p={args.tau_p} "
-                         f"quant={args.leaf_quantize} select={args.final_select}{_variant_sig(args)} "
-                         f"s{args.cand_sims})"
-                         if cand_kind == "puct" else f"HeuristicMCTS h{args.cand_sims}")
+            if cand_kind == "puct":
+                cand_desc = (f"PUCT-heur-priors(c_puct={args.c_puct} tau_p={args.tau_p} "
+                             f"quant={args.leaf_quantize} select={args.final_select}"
+                             f"{_variant_sig(args)} s{args.cand_sims})")
+            elif cand_kind == "ab":
+                cand_desc = (f"ID-alpha-beta(steps={args.cand_ab_steps} "
+                             f"max_depth={args.cand_ab_max_depth} asp={args.cand_ab_asp:g} "
+                             f"pvs={not args.cand_ab_no_pvs} killers={args.cand_ab_killers} "
+                             f"lmr={args.cand_ab_lmr} futility={args.cand_ab_futility:g}"
+                             f"{_ab_variant_sig(args)})")
+            else:
+                cand_desc = f"HeuristicMCTS h{args.cand_sims}"
             if opp_kind == "heur":
                 opp_desc = f"HeuristicMCTS h{opp_sims} (exact-K<={args.exact_k})"
             elif opp_kind == "puct":
-                opp_desc = (f"PUCT-heur-priors CHAMPION flags-OFF "
+                opp_desc = (f"PUCT-heur-priors CHAMPION "
                             f"(select={CHAMP_PUCT_FINAL_SELECT} value_norm={CHAMP_PUCT_VALUE_NORM:g} "
-                            f"reuse=off) s{opp_sims} (exact-K<={args.exact_k})")
+                            f"reuse={'ON' if args.opp_reuse_tree else 'off'}) s{opp_sims} "
+                            f"(exact-K<={args.exact_k})")
             else:
                 opp_desc = (f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
                             f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
@@ -1193,15 +1426,26 @@ def main(argv=None) -> int:
             if opp_kind == "heur":
                 old_ckpt, old_c, old_var = f"heur_h{opp_sims}", CHAMP_C, "v2_9_champion"
             elif opp_kind == "puct":
-                old_ckpt = f"puct_prior_champion{_variant_sig(args)}"
+                # for the ab candidate the opponent variant sig is only reuse (the PUCT
+                # _variant_sig reflects the candidate's PUCT knobs, meaningless for ab).
+                reuse_sig = "_reuse" if args.opp_reuse_tree else ""
+                old_ckpt = (f"puct_prior_champion{reuse_sig}" if cand_kind == "ab"
+                            else f"puct_prior_champion{_variant_sig(args)}{reuse_sig}")
                 old_c, old_var = args.c_puct, "puct_heur_prior_champion"
             else:
                 old_ckpt, old_c, old_var = str(net_ckpt), NET_CPUCT, "v2_9_rodv2_anchor"
+            if cand_kind == "puct":
+                new_ckpt = f"puct_prior_{args.leaf_quantize}_{args.final_select}{_variant_sig(args)}"
+                new_c, new_var = args.c_puct, "puct_heur_prior"
+            elif cand_kind == "ab":
+                new_ckpt = f"ab{args.cand_ab_steps}{_ab_variant_sig(args)}"
+                new_c, new_var = "", "ab_idalphabeta"
+            else:
+                new_ckpt, new_c, new_var = f"heur_h{args.cand_sims}_champion", CHAMP_C, "v2_9_champion"
             row = {
-                "new_ckpt": (f"puct_prior_{args.leaf_quantize}_{args.final_select}{_variant_sig(args)}"
-                             if cand_kind == "puct" else f"heur_h{args.cand_sims}_champion"),
-                "new_c": args.c_puct if cand_kind == "puct" else CHAMP_C,
-                "new_var": "puct_heur_prior" if cand_kind == "puct" else "v2_9_champion",
+                "new_ckpt": new_ckpt,
+                "new_c": new_c,
+                "new_var": new_var,
                 "old_ckpt": old_ckpt,
                 "old_c": old_c,
                 "old_var": old_var,
@@ -1212,7 +1456,8 @@ def main(argv=None) -> int:
         row.update({
             "exp_id": args.exp_id or tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
             "code_rev": code_rev(), "n": summ["n"],
-            "new_cap": leaf_cfg.bonus_cap, "new_sims": args.cand_sims,
+            "new_cap": leaf_cfg.bonus_cap,
+            "new_sims": (args.cand_ab_steps if cand_kind == "ab" else args.cand_sims),
             "old_cap": champ_leaf_cfg.bonus_cap,   # champion side = env DEFAULT_CONFIG
             "W": summ["W"], "L": summ["L"], "D": summ["D"],
             "elo": round(summ["elo"], 1), "sigma": round(summ["elo_sig_1sigma"], 1),
