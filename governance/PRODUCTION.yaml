@@ -7,6 +7,18 @@
 
 folded_in: "2026-07-07"   # Phase 1.1 flip: PUCT-heuristic-priors search PROMOTED over random-expansion UCT
 flip_authorized_by: "Joshua, 2026-07-07 ('flip and go'), on the +148.2 confirm + transitivity round-robin"
+leaf_folded_in: "2026-07-13"   # C5 leaf re-tune: v29_meeple_curve ×1.25 (curve125). FIRST leaf change to the champion.
+leaf_adopt_authorized_by: >
+  Joshua, 2026-07-13 ('adopt'), on CL-051: the meeple curve ×1.25 CONFIRMED on BOTH rulers — clair +66.8/z4.59 (n=400
+  fresh band) AND fair +48.8/z3.13 (CRN vs the D0 baseline). Peak-find (clean n=400 across ×0.75–2.0) ruled out any
+  higher scale (top is a noisy +45–78 plateau; ×1.75's scary +134 was an OpenBLAS-oversubscription hang-bias, since
+  root-caused+fixed). The v2.9 curve was tuned for random-expansion UCT; PUCT+priors visit meeple-heavy lines more
+  selectively → the old curve under-weighted meeple commitment. See measurement/classical_search/C5_CURVE125_PROPOSAL.md.
+  ⚠️ OPERATIONAL WIRING PENDING: production runs read the curve from env CARCASSONNE_V29_MEEPLE_CURVE (currently the OLD
+  "-8,-4,-1,0,2,3,4,5" in frozen-cfg defaults). To make production PLAY use curve125, launchers must export
+  CARCASSONNE_V29_MEEPLE_CURVE="-10,-5,-1.25,0,2.5,3.75,5,6.25" — WITHOUT changing the FROZEN v2.9 substrate 7fc930b8
+  (many provenance guards assert it as the historical anchor/ruler; curve125 is a NEW substrate, see LEAF_SUBSTRATES.yaml).
+  No production/E4 run is active as of adoption, so nothing is mis-serving in the interim.
 supersedes:
   - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
                                      # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
@@ -37,13 +49,17 @@ champion:
                                         # no fixed future to reuse → fair value ~0. FairHeuristicPriorAgent has NO reuse knob (fresh tree/determinization) →
                                         # reuse_tree is a NO-OP in fair deploy. Keep ON for CLAIRVOYANT dev only (self-play/dev-eval/clair-ruler: cheaper/deeper);
                                         # it contributes 0 to deployable (fair) strength. Do NOT build a "fair reuse" (sticky-determinization would leak future info). CL-044 scoped clairvoyant/dev.
-  leaf: v2_9_1_Bmild_cap8              # UNCHANGED from the prior champion — this flip does NOT touch the leaf
-  leaf_hash: "7fc930b82801cb43"
+  leaf: v2_9_2_Bmild_cap8_curve125     # CHANGED 2026-07-13 (C5, CL-051): meeple curve ×1.25. FIRST leaf change to
+                                        # the champion (all prior flips were pure search over the frozen v2.9 leaf).
+  leaf_hash: "158f17ff76adaa02"        # RECOMPUTED via the frozen-cfg recipe (scripts/measurement_infra/snapshot.py
+                                        # _frozen_config_hash); NOT the eval-manifest hash (96d2c075, a different fn).
+                                        # Prior leaf was 7fc930b82801cb43 (v2_9_1_Bmild_cap8), now lineage.
   leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
-    v29_meeple_curve: [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0]
-    bonus_cap: 8.0
-    opp_bonus_cap: 8.0
-    meeple_k: 2.0
+    v29_meeple_curve: [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]   # C5 curve125 = prior ×1.25 exactly
+    bonus_cap: 8.0                      # UNCHANGED (C5 confirmed cap8 optimal: opp_cap wings both negative)
+    opp_bonus_cap: 8.0                  # UNCHANGED
+    meeple_k: 2.0                       # INERT — the curve (non-null) REPLACES the flat meeple_k term
+                                        # (flat_leaf.py:838, `if curve is not None`). Kept for record; not load-bearing.
   sims: "~2750 (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box; the sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number)"
   c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
   endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — UNCHANGED; identical both sides so it does not affect the search-A/B margin"

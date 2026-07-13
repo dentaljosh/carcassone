@@ -1,6 +1,6 @@
 # C5 curve125 — promotion proposal (DRAFT — Joshua's call, PRODUCTION.yaml untouched)
 
-**Status: ✅ ALL GATES PASSED 2026-07-12 — clair (S2 z4.59) AND fair (confirm z3.13, +48.8 elo) both confirmed. A clean deployable leaf win. AWAITING ONLY JOSHUA'S APPLY (exact diff below). PRODUCTION.yaml untouched.**
+**Status: ✅ ADOPTED 2026-07-13 (Joshua "adopt").** All gates passed — clair (S2 z4.59) + fair (confirm z3.13, +48.8 elo), peak-find ruled out higher. Champion leaf → `v2_9_2_Bmild_cap8_curve125` (hash `158f17ff76adaa02`) in `governance/PRODUCTION.yaml` + `LEAF_SUBSTRATES.yaml` + DECISIONS (2026-07-13). ⚠️ Operational env-wiring (`CARCASSONNE_V29_MEEPLE_CURVE`) still pending — see the PRODUCTION.yaml `leaf_adopt_authorized_by` note; no production run active.
 **Proposed change:** `v29_meeple_curve: (-8,-4,-1,0,2,3,4,5) → (-10,-5,-1.25,0,2.5,3.75,5,6.25)` (production curve ×1.25 exactly; every other leaf tunable unchanged). One-line LeafConfig constant change; compute-neutral (S2 ms ratio 1.00x).
 
 ## Why it's believable (in order of strength)

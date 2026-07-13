@@ -52,3 +52,29 @@ substrates:
     status: >
       Confirmed depth-robust CLASSICAL-leaf win over production. NOT promoted. h6400 arbiter
       deferred to promotion-time; neural-champion transfer UNTESTED (needs orch + retrain).
+      SUPERSEDED as the production leaf 2026-07-13 by v2_9_2_curve125 (below); RETAINED as the
+      frozen historical anchor + ruler (provenance guards still assert 7fc930b82801cb43).
+
+  v2_9_2_curve125:
+    role: PRODUCTION leaf substrate (C5 re-tune output, adopted 2026-07-13 — CL-051)
+    harness_name: curve125
+    config_hash: 158f17ff76adaa02              # frozen-cfg recipe (snapshot._frozen_config_hash); NOT the eval hash 96d2c075
+    env: CARCASSONNE_V29_MEEPLE_CURVE="-10,-5,-1.25,0,2.5,3.75,5,6.25"   # how a run selects it
+    bonus_cap: 8.0                              # UNCHANGED from Bmild_cap8 (C5 confirmed cap8 optimal)
+    opp_bonus_cap: 8.0                          # UNCHANGED
+    closure_schedule: {1: 0.5, 2: 0.2, 3: 0.05} # UNCHANGED
+    meeple_k: 2.0                               # present but INERT (curve replaces it)
+    v29_meeple_curve: [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]   # = Bmild_cap8 curve × 1.25 exactly (the ONE change)
+    tanh_value_norm: 15.0                       # UNCHANGED
+    evidence: >
+      The ONLY change from v2_9_bmild_cap8 is the meeple curve ×1.25. Confirmed on BOTH rulers:
+      clair +66.8 elo / paired_z 4.59 (n=400 fresh band vs champion-sibling, compute-neutral 1.00×) AND
+      fair +48.8 elo / paired_z 3.13 (CRN vs the D0 fair baseline, 451 decks). Peak-find (clean n=400
+      across ×0.75–2.0) = noisy plateau top ~+45–78, no scale cleanly beats ×1.25. τ (S4) + c_puct (S5)
+      re-checked at the winner: unchanged (τ5/c1.5). results.csv c5_* ; C5_CURVE125_PROPOSAL.md ; CL-051.
+    mechanism: >
+      The v2.9 curve was tuned under random-expansion UCT; the champion consumes it inside PUCT+priors,
+      which visit meeple-heavy lines more selectively → the old curve under-weighted meeple commitment.
+    status: >
+      ADOPTED as the production champion leaf (governance/PRODUCTION.yaml, 2026-07-13). Operational wiring
+      (launcher env CARCASSONNE_V29_MEEPLE_CURVE) pending; no production run active at adoption.
