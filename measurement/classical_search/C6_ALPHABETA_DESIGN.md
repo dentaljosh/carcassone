@@ -1,6 +1,6 @@
 # C6 — Full-game ID-alpha-beta + TT ("clairvoyant chess-engine gambit") — PRE-REGISTERED DESIGN
 
-> **STATUS: DESIGN / PRE-REGISTERED 2026-07-13 — NOT BUILT, NOT LAUNCHED.** No code exists, no compute has run.
+> **STATUS: CLOSED 2026-07-13 (CL-053) — clair-only dead-end.** Stage-0 cost bench = GO (median depth 6). Stage-1 built (`src/carcassonne_ai/alphabeta_agent.py`, gauntlet-green vs the exact solver) + n=100 screen = αβ **+34.9 elo / paired_z 2.94 / 53W-4D-43L** vs the PUCT champion (the +206/+190 calibration smokes were small-n draws that regressed to +35). CLOSED without the n=400 confirm/escalation: αβ is CLAIRVOYANT-ONLY BY CONSTRUCTION (below), so a win can never deploy fair → strategically inert for the superhuman-fair goal. Build default-OFF, champion untouched. This design retained as the record.
 > Roadmap: [docs/PROGRAM_ROADMAP_2026-07-07.md](../../docs/PROGRAM_ROADMAP_2026-07-07.md) Track C, item C6 ("the one
 > family that might BEAT PUCT — attended build, **surface cost first**, ~2–4d"). Design-only; `governance/PRODUCTION.yaml`
 > untouched by anything in this document. **CLAIRVOYANT-ONLY by construction** — alpha-beta cannot run in the fair
