@@ -66,6 +66,19 @@ _CANON_ENV = {
     "CUDA_VISIBLE_DEVICES": "",
     "OMP_NUM_THREADS": "1",
     "MKL_NUM_THREADS": "1",
+    # ⚠️ The installed numpy is scipy-OpenBLAS (DYNAMIC_ARCH), NOT MKL — so the
+    # OMP/MKL pins above are INERT for the real BLAS backend. Left unpinned,
+    # OpenBLAS spawns a busy-waiting thread POOL sized to the box (32 on the
+    # 5900XT) in EVERY worker. With W30(local)+W22(laptop) that is 30×32 threads
+    # spin-waiting on 32 cores → the whole box thrashes and forward progress
+    # stalls ("54 workers at 100% CPU, R state, no game completes for hours" —
+    # the curve175 n=400 hang, 2026-07-06). Pinning to 1 makes each net-free CPU
+    # worker truly single-threaded; numerics are UNCHANGED (BLAS thread count is
+    # result-neutral). MUST precede `import numpy` (below) — OpenBLAS reads these
+    # at first BLAS call; forked Pool workers inherit the env.
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
 }
 for _k, _v in _CANON_ENV.items():
     os.environ.setdefault(_k, _v)
@@ -123,6 +136,20 @@ except Exception:  # pragma: no cover
 EVAL_ROOT = REPO / "data" / "classical_search"
 CHAMP_C = 3.0  # production UCT exploration constant for HeuristicMCTS
 EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
+
+# Per-game wall-clock watchdog (safety net). A single game that runs longer than
+# this many seconds is ABANDONED and recorded as a `game_timeout` (excluded from
+# win/elo/paired stats, counted+printed separately) so one pathological/stuck deck
+# can never wedge a Pool worker indefinitely and stall the whole eval — mirrors the
+# solver's BudgetExceeded→timeout accounting, one level up. The check is between
+# moves (each move is individually bounded), so it fires within one move of the
+# deadline. Default 3600s is a safety net far above any legitimate game (the
+# heaviest observed c5 game ~1370s wall, ~525s single-thread); it only ever bites a
+# genuine hang, so it is a no-op when nothing hangs. Set CARCASSONNE_GAME_WALL_SECS=0
+# to disable, or lower it to tighten. Independent of the OpenBLAS pin above (which is
+# the actual fix for the 2026-07-06 oversubscription hang); this bounds the residual
+# tail risk of a genuinely expensive deck.
+GAME_WALL_SECS = float(os.environ.get("CARCASSONNE_GAME_WALL_SECS", "3600"))
 
 # Neural-opponent play knobs — PINNED to the rod_v2 anchor construction
 # (scripts/level2/eval_hybrid_handoff.py: ITER8_SIMS / ITER8_CPUCT /
@@ -461,6 +488,8 @@ class GameResult:
     champ_solver_secs: float = 0.0
     champ_timeouts: int = 0
     latch_k: int | None = None
+    game_timeout: bool = False   # True = abandoned by the per-game wall watchdog
+                                 # (partial board; excluded from win/elo/paired stats)
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -583,7 +612,14 @@ def _play_one(args) -> GameResult | None:
 
     t0 = time.perf_counter()
     moves = 0
+    game_timed_out = False
     while game.get_game_ended(board, 0) == 0.0:
+        # Per-game wall watchdog: abandon (don't wedge the worker) if this single
+        # game blows past the budget. Checked between moves — each move is
+        # individually bounded — so it fires within one move of the deadline.
+        if GAME_WALL_SECS > 0 and (time.perf_counter() - t0) > GAME_WALL_SECS:
+            game_timed_out = True
+            break
         cur = board.state.current_player
         agent = cand if cur == a_seat else champ
         action = agent.move(board)
@@ -591,8 +627,14 @@ def _play_one(args) -> GameResult | None:
         moves += 1
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
+    # On a watchdog abandon the board is NON-terminal: scores/diff are partial and
+    # MUST NOT be scored as an outcome. game_timeout=True flags it out of every stat.
     diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
     latch_k = cand.latch_k if cand.latch_k is not None else champ.latch_k
+    if game_timed_out:
+        print(f"[watchdog] seed={seed} a_seat={a_seat} ABANDONED after "
+              f"{elapsed:.0f}s / {moves} moves (>{GAME_WALL_SECS:.0f}s); recorded as "
+              f"game_timeout", flush=True)
     r = GameResult(
         seed=seed, a_seat=a_seat, cand_sims=_W["cand_sims"], champ_sims=_W["opp_sims"],
         score_p0=int(s0), score_p1=int(s1), diff=int(diff),
@@ -603,7 +645,7 @@ def _play_one(args) -> GameResult | None:
         cand_timeouts=cand.n_timeouts,
         champ_prefix_moves=champ.prefix_moves, champ_exact_moves=champ.exact_moves,
         champ_prefix_secs=round(champ.prefix_secs, 3), champ_solver_secs=round(champ.solver_secs, 3),
-        champ_timeouts=champ.n_timeouts, latch_k=latch_k,
+        champ_timeouts=champ.n_timeouts, latch_k=latch_k, game_timeout=game_timed_out,
     )
     _save(p, r)
     return r
@@ -627,6 +669,20 @@ def _paired_z(results):
 
 
 def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
+    # Watchdog-abandoned games carry a partial (non-terminal) board — drop them from
+    # every strength stat (win/elo/paired) and report the count separately.
+    game_timeouts = sum(1 for r in results if getattr(r, "game_timeout", False))
+    results = [r for r in results if not getattr(r, "game_timeout", False)]
+    if not results:
+        print(f"\n(no completed games to summarize; {game_timeouts} game_timeouts)")
+        return {"n": 0, "W": 0, "D": 0, "L": 0, "winrate": float("nan"),
+                "winrate_z": float("nan"), "elo": float("nan"),
+                "elo_sig_1sigma": float("nan"), "avg_diff": float("nan"),
+                "paired_mean_margin": None, "paired_z": None, "n_paired": 0,
+                "cand_prefix_ms_per_move": float("nan"),
+                "champ_prefix_ms_per_move": float("nan"),
+                "cand_latched_games": 0, "solver_secs_per_game": float("nan"),
+                "game_timeouts": game_timeouts}
     n = len(results)
     w = sum(1 for r in results if r.won_by_cand)
     d = sum(1 for r in results if r.drew)
@@ -660,6 +716,9 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
           f"(ratio {cand_ms/max(1e-9,champ_ms):.2f}x)")
     print(f"exact endgame: latched {cand_latched}/{n} games, {solver_pergame:.2f}s solver/game, "
           f"timeouts cand={sum(r.cand_timeouts for r in results)} champ={sum(r.champ_timeouts for r in results)}")
+    if game_timeouts:
+        print(f"game_timeouts: {game_timeouts} game(s) ABANDONED by the wall watchdog "
+              f"(>{GAME_WALL_SECS:.0f}s) — excluded from the stats above")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
     return {
@@ -668,6 +727,7 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
         "paired_mean_margin": mean_d, "paired_z": z, "n_paired": npair,
         "cand_prefix_ms_per_move": cand_ms, "champ_prefix_ms_per_move": champ_ms,
         "cand_latched_games": cand_latched, "solver_secs_per_game": solver_pergame,
+        "game_timeouts": game_timeouts,
     }
 
 
@@ -984,6 +1044,8 @@ def main(argv=None) -> int:
                             "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
                "exact_k": args.exact_k, "exact_mode": "clairvoyant",
                "exact_budget": EXACT_BUDGET,
+               "game_wall_secs": GAME_WALL_SECS,
+               "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS"),
                "exp_id": args.exp_id or tag,
                "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
                "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
@@ -1145,6 +1207,8 @@ def main(argv=None) -> int:
                 "old_var": old_var,
                 "old_sims": opp_sims,
             }
+        if summ.get("game_timeouts"):
+            note += f" game_timeouts={summ['game_timeouts']}."
         row.update({
             "exp_id": args.exp_id or tag, "date": time.strftime("%Y-%m-%d"), "game": "base",
             "code_rev": code_rev(), "n": summ["n"],
