@@ -34,12 +34,14 @@ The S1 curve axis was still positive at ×1.25, so I screened ×1.5/1.75/2.0 (n=
 |---|---|---|
 | ×1.25 | +81.4 (z2.05) | **+66.8 (z4.59)** ← CONFIRMED (clair) + fair z3.13 |
 | ×1.5 | +49.0 (z1.67) | **+44.5 (z3.06)** ← confirmed, below ×1.25 |
-| ×1.75 | +119.1 (z4.01) | **+134.5 (z3.21) @ n=141 PARTIAL, run HUNG** |
+| ×1.75 | +119.1 (z4.01) | **+77.7 (z4.19)** ← CLEAN n=400 (post-fix, 0 timeouts) |
 | ×2.0 | +10.4 (z0.56) | — |
 
-- **×1.5 < ×1.25** at n=400 (clean). **×2.0/×0.75** are clear falloffs. So the only cell that could beat ×1.25 is **×1.75**.
+- **×1.5 < ×1.25** at n=400 (clean). **×2.0/×0.75** are clear falloffs.
+- **×1.75 CLEAN n=400 = +77.7** (the hang-biased +134.5 partial REGRESSED once the OpenBLAS fix let all 400 games run). vs ×1.25's +66.8 that's **+11 elo = under 1σ = STATISTICALLY TIED.** The plateau top (×1.25 +67 / ×1.5 +45 / ×1.75 +78) is a noisy ~+45-78 band — **no cell cleanly beats ×1.25.**
+- **PEAK-FIND RESOLVED → adopt ×1.25.** It's the only cell confirmed on BOTH clair (+66.8) and fair (+48.8); ×1.75's nominal +11 clair edge is noise and it has no fair confirmation, so a ×1.75 fair re-confirm isn't worth ~15h for an expected ~0 gain. ×1.25 is validated as at/near the peak.
 - **×1.75's n=400 confirm HUNG at 141/400 — root-caused (e006036): OpenBLAS thread oversubscription, NOT the leaf, NOT the solver.** numpy=scipy-OpenBLAS; the canon env pinned OMP/MKL but NOT `OPENBLAS_NUM_THREADS`, so each of the 52 workers spawned a 32-thread busy-wait pool (~1600 spinning threads on 32 cores) → scheduler thrash → the stall (curve150 was the same run just not tipping over). **×1.75 EXONERATED — not leaf-triggered** (the stuck seeds complete fine single-process; ×1.75 isn't even systematically heavier; safe as a production leaf, endgame solver is leaf-independent). Fix = pin OPENBLAS=1 (result-neutral: clair games barely touch BLAS → all prior numbers stand + a game-wall watchdog safety-net). The 141 partial (+134.5) was hang-biased/UNTRUSTED — **clean n=400 RESUME in flight** (keeps the 141 valid games). ⚠️ same pin needed on `eval_fair_puct.py` before any ×1.75 fair re-confirm.
-- **Recommendation:** **adopt ×1.25** — it's the fully-confirmed win (clair z4.59 + fair z3.13) and the safe pick. Do NOT switch to ×1.75 on the hung/biased +134 (that's the c=3 spike-chasing trap). If ×1.75 later gets a CLEAN n=400 that cleanly beats ×1.25 AND isn't leaf-hang-prone, it becomes a *separate future* upgrade needing its own fair re-confirm — a follow-up, not a blocker on banking ×1.25 now.
+- **Recommendation (FINAL): adopt ×1.25.** Fully confirmed clair (z4.59) + fair (z3.13); the peak-find (clean n=400 across ×0.75–2.0) ruled out any cell that cleanly beats it. ×1.75's clean +77.7 is within noise of ×1.25 and fair-unconfirmed — not worth chasing. The exact PRODUCTION.yaml diff is above; **apply is Joshua's call, PRODUCTION.yaml still untouched.**
 
 ## Paper trail
 Design: [C5_LEAF_RETUNE_DESIGN.md](C5_LEAF_RETUNE_DESIGN.md) · S0 harness `7605ef9` · cells+launcher `d3b0b73` · fair-harness override `f541323` (rung-side proven untouched) · S1 close-out `3f09fd5` · S2 confirm `f284681`. All rows in `experiments/results.csv` (`c5_*`); per-run manifests carry per-side leaf hashes.
