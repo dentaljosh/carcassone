@@ -54,7 +54,7 @@ for i in "${!KDETS[@]}"; do
     --cand-leaf-json "$CAND_LEAF" \
     --n "$N" --paired --seed-start "$BAND" --workers "$W" \
     --out-root "$OUT_ROOT" --out-subdir "kdets_k${K}x${S}_tot2752_curve125champ_vs_h800_k2_b17e9" \
-    --shared-claim --no-results-csv
+    --shared-claim --claim-stale-secs 300 --no-results-csv
   echo "=== cell k$K DONE rc=$? $(date -u +%H:%M:%S) ==="
 done
 echo "=== kdets-screen ALL CELLS DONE W=$W $(date -u +%H:%M:%S) ==="
