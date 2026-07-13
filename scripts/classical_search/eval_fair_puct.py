@@ -105,6 +105,19 @@ _CANON_ENV = {
     "CUDA_VISIBLE_DEVICES": "",
     "OMP_NUM_THREADS": "1",
     "MKL_NUM_THREADS": "1",
+    # ⚠️ The installed numpy is scipy-OpenBLAS (DYNAMIC_ARCH), NOT MKL — so the
+    # OMP/MKL pins above are INERT for the real BLAS backend. Left unpinned,
+    # OpenBLAS spawns a box-sized busy-waiting thread pool in EVERY worker; with
+    # W30(local)+W22(laptop) that thrashes the scheduler and stalls forward
+    # progress (the curve175 n=400 clair hang, root-caused 2026-07-13, commit
+    # e006036 fixed the sibling eval_puct_priors the same way). This harness
+    # shares the multi-worker --shared-claim pattern, so it has the same latent
+    # hang risk. Pin to 1 — result-neutral (fair games are net-free CPU: Cython
+    # leaf + PUCT tree, no BLAS matmul). MUST precede any numpy import; forked
+    # workers inherit the env.
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
 }
 for _k, _v in _CANON_ENV.items():
     os.environ.setdefault(_k, _v)
