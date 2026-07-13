@@ -28,5 +28,18 @@
 - Close-out (6 touches): results.csv rows (per-stage already written; add the confirm rows) · DECISIONS entry · **CL-051** · CHECKPOINT_LINEAGE note (leaf-era change, net unchanged) · STATUS · roadmap C5 line → FIRED/FOLDED.
 - **Re-sweep note (bug-fix-shifts-optima rule):** τ covered by S4 (clean), c_puct by S5 (c1.5 best, mild high-c flag) — both boxes closed pre-adoption.
 
+## S1b upward-scale peak-find (2026-07-12) — ×1.25 is safe; ×1.75 is an UNRESOLVED possible-higher-peak
+The S1 curve axis was still positive at ×1.25, so I screened ×1.5/1.75/2.0 (n=100, band 12e9) then confirmed the top at n=400. Result — **the axis is NOISY / non-monotone**, not a clean peak:
+| scale | screen n=100 | confirm n=400 |
+|---|---|---|
+| ×1.25 | +81.4 (z2.05) | **+66.8 (z4.59)** ← CONFIRMED (clair) + fair z3.13 |
+| ×1.5 | +49.0 (z1.67) | **+44.5 (z3.06)** ← confirmed, below ×1.25 |
+| ×1.75 | +119.1 (z4.01) | **+134.5 (z3.21) @ n=141 PARTIAL, run HUNG** |
+| ×2.0 | +10.4 (z0.56) | — |
+
+- **×1.5 < ×1.25** at n=400 (clean). **×2.0/×0.75** are clear falloffs. So the only cell that could beat ×1.25 is **×1.75**.
+- **×1.75's n=400 confirm HUNG at 141/400** (curve175-specific endgame-solver/search hang; ×1.5 ran clean). The 141 completed games (biased subsample) show **+134.5** — *above* ×1.25 — but this is UNTRUSTED (hang-selection-bias + small n + the non-monotone ×1.5 dip = noise still in play). Hang diagnosis delegated (is it LEAF-TRIGGERED? — that would be a production red flag for ×1.75, which uses the same exact-K endgame in play).
+- **Recommendation:** **adopt ×1.25** — it's the fully-confirmed win (clair z4.59 + fair z3.13) and the safe pick. Do NOT switch to ×1.75 on the hung/biased +134 (that's the c=3 spike-chasing trap). If ×1.75 later gets a CLEAN n=400 that cleanly beats ×1.25 AND isn't leaf-hang-prone, it becomes a *separate future* upgrade needing its own fair re-confirm — a follow-up, not a blocker on banking ×1.25 now.
+
 ## Paper trail
 Design: [C5_LEAF_RETUNE_DESIGN.md](C5_LEAF_RETUNE_DESIGN.md) · S0 harness `7605ef9` · cells+launcher `d3b0b73` · fair-harness override `f541323` (rung-side proven untouched) · S1 close-out `3f09fd5` · S2 confirm `f284681`. All rows in `experiments/results.csv` (`c5_*`); per-run manifests carry per-side leaf hashes.
