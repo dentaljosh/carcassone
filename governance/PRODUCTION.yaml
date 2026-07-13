@@ -14,11 +14,12 @@ leaf_adopt_authorized_by: >
   higher scale (top is a noisy +45–78 plateau; ×1.75's scary +134 was an OpenBLAS-oversubscription hang-bias, since
   root-caused+fixed). The v2.9 curve was tuned for random-expansion UCT; PUCT+priors visit meeple-heavy lines more
   selectively → the old curve under-weighted meeple commitment. See measurement/classical_search/C5_CURVE125_PROPOSAL.md.
-  ⚠️ OPERATIONAL WIRING PENDING: production runs read the curve from env CARCASSONNE_V29_MEEPLE_CURVE (currently the OLD
-  "-8,-4,-1,0,2,3,4,5" in frozen-cfg defaults). To make production PLAY use curve125, launchers must export
-  CARCASSONNE_V29_MEEPLE_CURVE="-10,-5,-1.25,0,2.5,3.75,5,6.25" — WITHOUT changing the FROZEN v2.9 substrate 7fc930b8
-  (many provenance guards assert it as the historical anchor/ruler; curve125 is a NEW substrate, see LEAF_SUBSTRATES.yaml).
-  No production/E4 run is active as of adoption, so nothing is mis-serving in the interim.
+  ✅ OPERATIONAL WIRING DONE (2026-07-13): production play reads the curve from env CARCASSONNE_V29_MEEPLE_CURVE, wired in
+  scripts/human_anchor/env_preamble.py — the production-leaf preamble imported-first by the human-anchor play harness (the
+  only real production-play path; the classical champion has no separate launcher). VERIFIED: play resolves curve125 AND the
+  frozen v2.9 substrate 7fc930b8 stays on the OLD curve (frozen_v29_cfg hard-sets+restores it; each eval ruler keeps its own
+  _CANON_ENV old curve). ⚠️ Do NOT export CARCASSONNE_V29_MEEPLE_CURVE globally — the rulers setdefault, so an ambient
+  curve125 would silently move the fixed ruler/anchor side and contaminate baselines. No production/E4 run active; E4 deferred.
 supersedes:
   - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
                                      # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9

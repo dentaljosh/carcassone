@@ -76,5 +76,6 @@ substrates:
       The v2.9 curve was tuned under random-expansion UCT; the champion consumes it inside PUCT+priors,
       which visit meeple-heavy lines more selectively → the old curve under-weighted meeple commitment.
     status: >
-      ADOPTED as the production champion leaf (governance/PRODUCTION.yaml, 2026-07-13). Operational wiring
-      (launcher env CARCASSONNE_V29_MEEPLE_CURVE) pending; no production run active at adoption.
+      ADOPTED as the production champion leaf (governance/PRODUCTION.yaml, 2026-07-13). Operational wiring DONE
+      2026-07-13 (scripts/human_anchor/env_preamble.py wires production play to curve125; frozen 7fc930b8 anchor
+      verified unmoved; do NOT export the curve env globally -- eval rulers setdefault). No production run active.

@@ -7,7 +7,9 @@ solver use the exact production leaf shape. `setdefault` = a caller who already
 exported these (e.g. an orchestrator) wins; we only fill blanks.
 
 Source of the knob values: the task's "Production leaf env preamble" +
-governance/PRODUCTION.yaml (as of 2026-06-11: FLAT_LEAF, cap 8, meeple curve).
+governance/PRODUCTION.yaml. Updated 2026-07-13: meeple curve -> C5 curve125
+(x1.25, leaf_hash 158f17ff; champion leaf adopted 2026-07-13, CL-051). FLAT_LEAF,
+cap 8, meeple_k=2 (INERT, curve replaces it) unchanged.
 """
 from __future__ import annotations
 
@@ -17,7 +19,7 @@ PROD_ENV: dict[str, str] = {
     "CARCASSONNE_V25_CAP": "8",
     "CARCASSONNE_V25_OPP_CAP": "8",
     "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",  # C5 curve125 (x1.25); champion leaf 2026-07-13, CL-051. Frozen 7fc930b8 anchor stays on the OLD curve via each eval ruler's own _CANON_ENV — do NOT export this var globally (rulers setdefault -> ambient would contaminate them).
     "CARCASSONNE_V25_MEEPLE_K": "2.0",
     "CARCASSONNE_USE_FLAT_LEAF": "1",
     "CARCASSONNE_USE_CY_REPR": "1",
