@@ -291,8 +291,14 @@ seed anywhere in results.csv/scripts/measurement; the seed guard is floor-only s
 - **(e) Env/provenance gate.** The launcher exports the curve125 champion env (c7_s1_launcher.sh
   lines 80–83 verbatim — the harness `_CANON_ENV` still setdefaults the OLD curve100, so a missing
   export silently runs the WRONG champion side). Proof: any S0 manifest must show
-  `champ_leaf_hash == 96d2c075f85e9583` (the curve125 eval-manifest hash, C5 lineage). C7 adopted
-  nothing (CL-055), so this constant stands as-is.
+  `champ_leaf_hash == a36d2e15a3b3d71d` (the curve125 eval-manifest hash). **⚠️ CORRECTION
+  (orchestrator + Opus, 2026-07-14):** the design originally cited `96d2c075f85e9583` here — that
+  was a STALE mis-citation from the C5 proposal prose; the actual current-code eval-manifest hash
+  for curve125 is `a36d2e15a3b3d71d`, ground-truthed against every real C7 curve125 manifest
+  (`/mnt/c/carc-shared/classical_search/c7_s1_*/manifest.json`, all show champ_leaf_hash a36d2e15)
+  + direct HEAD computation. curve100 = `42af12fce22e1a0f` (distinct → the gate still discriminates
+  the wrong-champion trap). Hard-coded as `EXPECTED_CHAMP_LEAF_HASH` in the driver + pytest. C7
+  adopted nothing (CL-055), so curve125 stands as the baseline.
 - **(f) Optuna availability.** ✅ Already satisfied — `.venv` has optuna 4.8.0 (orchestrator
   verified 2026-07-14). The check runs and passes; no install. Driver runs local-only; the laptop
   never imports optuna.
