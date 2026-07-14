@@ -64,6 +64,7 @@ _CY_FLAT_V2 = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy
 _CY_FLAT_V2_FLOAT = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy_float (pre-round)
 _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind time
 _CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
+_CY_SUPPORTS_C7 = False  # set from flat_leaf_cy.SUPPORTS_V29_C7_TERMS at bind time (Term R + Term F)
 
 # v2.10 bag-aware closure gate (2026-07-04, docs/V210_LEAF_SPEC_2026-07-04.md Track B;
 # BACKLOG 2026-05-16 item 1). When ON, the closure-anticipation bonus consults the
@@ -179,6 +180,7 @@ class Decomp:
     road_root_positions: dict     # root -> frozenset((r, c, Side))
     road_root_coords: dict        # root -> set((r, c))
     road_root_finished: dict      # root -> bool
+    road_root_open_n: dict        # root -> #distinct empty adjacent cells (C7 Term R; == _open_road_positions)
     # FARM
     farm_pos0_root: dict          # (r, c, farmer_positions[0]) -> root  (base meeple match: find_meeples)
     farm_anypos_root: dict        # (r, c, any farmer_position) -> root  (bonus match: find_farm_by_coordinate)
@@ -346,6 +348,7 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
     road_root_positions: dict = {}
     road_root_coords: dict = {}
     road_root_open: set = set()
+    road_root_emptyadj: dict = {}   # root -> set of distinct empty neighbour cells (C7 Term R)
     for nid in range(len(road_nodes)):
         r, c, ix = road_nodes[nid]
         root = road_labels[nid]
@@ -355,7 +358,16 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
         road_root_coords.setdefault(root, set()).add((r, c))
         if road_open[nid]:
             road_root_open.add(root)
+        # closure-proximity: distinct empty cells across the outward neighbours of
+        # the component's road edges (== _open_road_positions; same stamp/dedup
+        # pattern as the city one). Empty (None) neighbours only -> can't collide
+        # with an occupied tile cell of the same component.
+        dr, dc, _o = _OPP[ix]
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < H and 0 <= nc < W and board[nr][nc] is None:
+            road_root_emptyadj.setdefault(root, set()).add((nr, nc))
     road_root_finished = {root: root not in road_root_open for root in road_root_positions}
+    road_root_open_n = {root: len(road_root_emptyadj.get(root, ())) for root in road_root_positions}
     road_root_positions = {root: frozenset(s) for root, s in road_root_positions.items()}
 
     # ---- farm facts -------------------------------------------------------- #
@@ -406,6 +418,7 @@ def decompose(state: "CarcassonneGameState") -> Decomp:
         road_root_positions=road_root_positions,
         road_root_coords=road_root_coords,
         road_root_finished=road_root_finished,
+        road_root_open_n=road_root_open_n,
         farm_pos0_root=farm_pos0_root,
         farm_anypos_root=farm_anypos_root,
         farm_root_keys=farm_root_keys,
@@ -779,6 +792,143 @@ def _flat_curve_lookup(curve, n: int) -> float:
     return float(curve[n])
 
 
+# --- C7 wave-2 leaf terms (opt-in; default-OFF == bit-identical champion) ------ #
+# Pre-registered module constants (NOT LeafConfig fields — fewer hash-churn keys);
+# a β/ramp sweep is a possible wave-3 only if Term F fires.
+_FLIP_BETA = 0.5
+_FLIP_RAMP = 2.0
+
+
+def _flat_dcurve(curve, n: int) -> float:
+    """Marginal curve value of recovering ONE meeple at current free count `n`:
+    ``curve[min(n+1, L-1)] - curve[min(max(n,0), L-1)]`` (0 at n == L-1). == the
+    object-path _dcurve and the cy _dcurve_c."""
+    L = len(curve)
+    hi = n + 1
+    if hi > L - 1:
+        hi = L - 1
+    lo = n
+    if lo < 0:
+        lo = 0
+    if lo > L - 1:
+        lo = L - 1
+    return float(curve[hi]) - float(curve[lo])
+
+
+def flat_return_term(state, player: int, decomp: Decomp, cfg) -> float:
+    """C7 Term R — meeple-return liquidity, UNCAPPED differential ``ret(player) -
+    ret(opp)`` (§1 of C7_LEAF_TERMS_DESIGN.md). PER-MEEPLE (no feature dedup): every
+    committed, returnable meeple credits P(feature closes) from the closure schedule,
+    the whole ΣP scaled by ``dcurve(free-meeple-count)`` (marginal value of one more
+    free meeple). Farmers never return (skipped). Requires a curve."""
+    curve = cfg.v29_meeple_curve
+    if curve is None:
+        raise ValueError(
+            "v29_meeple_return_k requires v29_meeple_curve (Term R prices the "
+            "marginal step of the liquidity curve)"
+        )
+    closure_p = cfg.closure_p
+    board = state.board
+    H = len(board)
+    W = len(board[0]) if H else 0
+
+    def _ret(p: int) -> float:
+        plist: list = []
+        for mp in state.placed_meeples[p]:
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            terrain = board[r][c].get_type(side)
+            if terrain == TerrainType.CITY:
+                root = decomp.city_side_root.get((r, c, side))
+                if root is None or decomp.city_root_finished[root]:
+                    continue
+                open_n = decomp.city_root_open_n[root]
+                if open_n <= 0:
+                    continue
+                pr = closure_p.get(open_n, 0.0)
+                if pr > 0:
+                    plist.append(pr)
+            elif terrain == TerrainType.ROAD:
+                root = decomp.road_side_root.get((r, c, side))
+                if root is None or decomp.road_root_finished[root]:
+                    continue
+                open_n = decomp.road_root_open_n[root]
+                if open_n <= 0:
+                    continue
+                pr = closure_p.get(open_n, 0.0)
+                if pr > 0:
+                    plist.append(pr)
+            elif terrain == TerrainType.CHAPEL or terrain == TerrainType.FLOWERS:
+                n_surround = _surrounding_count(state, r, c, H, W)
+                needed = 8 - n_surround
+                if needed <= 0:
+                    continue
+                pr = closure_p.get(needed, 0.0)
+                if pr > 0:
+                    plist.append(pr)
+            # FARMER / BIG_FARMER: terrain is not city/road/cloister -> skip (never returns)
+        return _flat_dcurve(curve, state.meeples[p]) * math.fsum(plist)
+
+    opp = 1 - player
+    return _ret(player) - _ret(opp)
+
+
+def flat_farm_flip_term(state, player: int, decomp: Decomp, cfg) -> float:
+    """C7 Term F — farm majority-flip anticipation, player-POV antisymmetric fsum of
+    per-contested-field contributions (§2 of C7_LEAF_TERMS_DESIGN.md). Field
+    membership + weights use base-scoring (pos0) semantics — F adjusts base's award,
+    so it must see exactly base's fields. Smooths base's hard ``sign(margin)·V`` step
+    by weighted margin AND free-meeple liquidity; contested fields only."""
+    opp = 1 - player
+    field_counts: dict = {}   # pos0 root -> [w_p0, w_p1]  (big farmer = 2)
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            mt = mp.meeple_type
+            if mt != MeepleType.FARMER and mt != MeepleType.BIG_FARMER:
+                continue
+            cws = mp.coordinate_with_side
+            r = cws.coordinate.row
+            c = cws.coordinate.column
+            side = cws.side
+            root = decomp.farm_pos0_root.get((r, c, side))
+            if root is None:
+                continue
+            ent = field_counts.get(root)
+            if ent is None:
+                ent = [0, 0]
+                field_counts[root] = ent
+            ent[pl] += 2 if mt == MeepleType.BIG_FARMER else 1
+    free_d = state.meeples[player] - state.meeples[opp]
+    if free_d > 1:
+        free_d = 1
+    elif free_d < -1:
+        free_d = -1
+    contribs: list = []
+    for root, cnt in field_counts.items():
+        w_me = cnt[player]
+        w_opp = cnt[opp]
+        if w_me >= 1 and w_opp >= 1:   # contested only
+            V = float(3 * decomp.farm_root_finished_cities[root])
+            m = w_me - w_opp
+            step = 1.0 if m > 0 else (-1.0 if m < 0 else 0.0)
+            m_eff = m + _FLIP_BETA * free_d
+            ramp = m_eff / _FLIP_RAMP
+            if ramp > 1.0:
+                ramp = 1.0
+            elif ramp < -1.0:
+                ramp = -1.0
+            contribs.append(V * (ramp - step))
+    return math.fsum(contribs)
+
+
+def _c7_off(cfg) -> bool:
+    """True iff both C7 term knobs are OFF — then the cy route need not advertise
+    SUPPORTS_V29_C7_TERMS (a stale .so still runs the champion leaf bit-exactly)."""
+    return cfg.v29_meeple_return_k == 0.0 and cfg.v29_farm_flip_k == 0.0
+
+
 def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     """== virtual_score_v2(state, player, cfg) under CANONICAL_BONUS_SUM, computed
     entirely flat (no deepcopy, no count_final_scores, no engine Farm/City BFS).
@@ -807,7 +957,7 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # capability-flag pattern for the v2.10 bag-close gate (SUPPORTS_V210_BAG_CLOSE).
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
             try:
                 from . import flat_leaf_cy as _cy
@@ -815,13 +965,16 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 _CY_FLAT_V2_FLOAT = getattr(_cy, "flat_virtual_score_v2_cy_float", None) or False
                 _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
                 _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
+                _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
             except ImportError:
                 _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
                 _CY_FLAT_V2_FLOAT = False
                 _CY_SUPPORTS_CURVE = False
                 _CY_SUPPORTS_BAG_CLOSE = False
+                _CY_SUPPORTS_C7 = False
         if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
-                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)):
+                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
+                and (_c7_off(cfg) or _CY_SUPPORTS_C7)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -838,6 +991,12 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
         score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
+    # C7: Term R then Term F, two SEPARATE gated adds in this fixed order (float
+    # addition is non-associative — a fused add would break 3-way bit-exactness).
+    if cfg.v29_meeple_return_k != 0.0:
+        score += cfg.v29_meeple_return_k * flat_return_term(state, player, decomp, cfg)
+    if cfg.v29_farm_flip_k != 0.0:
+        score += cfg.v29_farm_flip_k * flat_farm_flip_term(state, player, decomp, cfg)
     return int(round(score))
 
 
@@ -865,7 +1024,7 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7  # noqa: PLW0603
         if _CY_FLAT_V2_FLOAT is None:
             if _CY_FLAT_V2 is False:
                 _CY_FLAT_V2_FLOAT = False  # .so already known-missing; don't retry
@@ -876,13 +1035,16 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                     _CY_FLAT_V2_FLOAT = getattr(_cy, "flat_virtual_score_v2_cy_float", None) or False
                     _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
                     _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
+                    _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
                 except ImportError:
                     _CY_FLAT_V2 = False
                     _CY_FLAT_V2_FLOAT = False
                     _CY_SUPPORTS_CURVE = False
                     _CY_SUPPORTS_BAG_CLOSE = False
+                    _CY_SUPPORTS_C7 = False
         if (_CY_FLAT_V2_FLOAT and (curve is None or _CY_SUPPORTS_CURVE)
-                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)):
+                and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
+                and (_c7_off(cfg) or _CY_SUPPORTS_C7)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -898,4 +1060,9 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
+    # C7: Term R then Term F (two separate gated adds, fixed order — see the int sibling).
+    if cfg.v29_meeple_return_k != 0.0:
+        score += cfg.v29_meeple_return_k * flat_return_term(state, player, decomp, cfg)
+    if cfg.v29_farm_flip_k != 0.0:
+        score += cfg.v29_farm_flip_k * flat_farm_flip_term(state, player, decomp, cfg)
     return float(score)
