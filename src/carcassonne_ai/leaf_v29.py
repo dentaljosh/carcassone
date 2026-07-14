@@ -181,6 +181,142 @@ def _farm_access_signal(state, player: int, opp: int, cfg: "LeafConfig") -> floa
 
 
 # ---------------------------------------------------------------------------
+# C7 wave-2 — Term R (meeple-return liquidity) + Term F (farm majority-flip)
+# ---------------------------------------------------------------------------
+# Object-path reference implementations (CityUtil/RoadUtil/FarmUtil + the engine
+# base-scoring calls). Bit-exact to flat_leaf.flat_return_term / flat_farm_flip_term
+# under fsum (the reconcile + object-vs-flat gates are the arbiter). Pre-registered
+# module constants (NOT LeafConfig fields — like V_PUNISH); mirror flat_leaf's.
+FLIP_BETA = 0.5
+FLIP_RAMP = 2.0
+
+
+def _dcurve(curve, n: int) -> float:
+    """Marginal curve value of recovering ONE meeple at free count `n`:
+    ``curve[min(n+1, L-1)] - curve[min(max(n,0), L-1)]`` (0 at n == L-1). ==
+    flat_leaf._flat_dcurve / the cy _dcurve_c."""
+    L = len(curve)
+    hi = n + 1
+    if hi > L - 1:
+        hi = L - 1
+    lo = n
+    if lo < 0:
+        lo = 0
+    if lo > L - 1:
+        lo = L - 1
+    return float(curve[hi]) - float(curve[lo])
+
+
+def _return_liquidity(state, player: int, cfg: "LeafConfig") -> float:
+    """Term R per-player ``ret(p) = dcurve(free) * ΣP(feature closes)`` (§1). PER
+    MEEPLE (no dedup); city/road/cloister meeples on incomplete features credit the
+    closure-schedule P; farmers never return (skip). Requires a curve. The caller in
+    apply_v29 forms the differential ``ret(player) - ret(opp)``."""
+    from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+    from wingedsheep.carcassonne.utils.city_util import CityUtil
+    from wingedsheep.carcassonne.utils.road_util import RoadUtil
+    from .virtual_score_v2 import (
+        _open_city_positions,
+        _open_road_positions,
+        _surrounding_count,
+    )
+
+    curve = cfg.v29_meeple_curve
+    if curve is None:
+        raise ValueError(
+            "v29_meeple_return_k requires v29_meeple_curve (Term R prices the "
+            "marginal step of the liquidity curve)"
+        )
+    closure_p = cfg.closure_p
+    plist: list = []
+    for mp in state.placed_meeples[player]:
+        coord_side = mp.coordinate_with_side
+        coord = coord_side.coordinate
+        tile = state.board[coord.row][coord.column]
+        if tile is None:
+            continue
+        terrain = tile.get_type(coord_side.side)
+        if terrain == TerrainType.CITY:
+            city = CityUtil.find_city(game_state=state, city_position=coord_side)
+            if city.finished:
+                continue
+            open_n = _open_city_positions(state, city)
+            if open_n <= 0:
+                continue
+            p = closure_p.get(open_n, 0.0)
+            if p > 0:
+                plist.append(p)
+        elif terrain == TerrainType.ROAD:
+            road = RoadUtil.find_road(game_state=state, road_position=coord_side)
+            if road.finished:
+                continue
+            open_n = _open_road_positions(state, road)
+            if open_n <= 0:
+                continue
+            p = closure_p.get(open_n, 0.0)
+            if p > 0:
+                plist.append(p)
+        elif terrain == TerrainType.CHAPEL or terrain == TerrainType.FLOWERS:
+            n_surround = _surrounding_count(state, coord)
+            needed = 8 - n_surround
+            if needed <= 0:
+                continue
+            p = closure_p.get(needed, 0.0)
+            if p > 0:
+                plist.append(p)
+        # FARMER / BIG_FARMER: terrain is not city/road/cloister -> skip (never returns)
+    return _dcurve(curve, state.meeples[player]) * math.fsum(plist)
+
+
+def _farm_flip_term(state, player: int, opp: int, cfg: "LeafConfig") -> float:
+    """Term F player-POV antisymmetric fsum of per-contested-field contributions (§2).
+    Field membership + weights use the ENGINE base-scoring path (find_farm_by_coordinate
+    region + find_meeples pos0 counts + count_farm_points) so it sees exactly what base
+    awards. Smooths base's hard sign(margin)·V step by weighted margin + free-meeple
+    liquidity; contested fields only."""
+    from wingedsheep.carcassonne.objects.meeple_type import MeepleType
+    from wingedsheep.carcassonne.utils.farm_util import FarmUtil
+    from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+
+    fields: dict = {}  # region key -> (counts[c0,c1], V)
+    for pl in (0, 1):
+        for mp in state.placed_meeples[pl]:
+            if mp.meeple_type not in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+                continue
+            farm = FarmUtil.find_farm_by_coordinate(
+                game_state=state, position=mp.coordinate_with_side
+            )
+            key = frozenset(farm.farmer_connections_with_coordinate)
+            if key in fields:
+                continue
+            meeples = FarmUtil.find_meeples(game_state=state, farm=farm)
+            counts = PointsCollector.get_meeple_counts_per_player(meeples)
+            V = float(PointsCollector.count_farm_points(game_state=state, farm=farm))
+            fields[key] = (counts, V)
+
+    free_d = state.meeples[player] - state.meeples[opp]
+    if free_d > 1:
+        free_d = 1
+    elif free_d < -1:
+        free_d = -1
+    contribs: list = []
+    for counts, V in fields.values():
+        w_me = counts[player]
+        w_opp = counts[opp]
+        if w_me >= 1 and w_opp >= 1:  # contested only
+            m = w_me - w_opp
+            step = 1.0 if m > 0 else (-1.0 if m < 0 else 0.0)
+            m_eff = m + FLIP_BETA * free_d
+            ramp = m_eff / FLIP_RAMP
+            if ramp > 1.0:
+                ramp = 1.0
+            elif ramp < -1.0:
+                ramp = -1.0
+            contribs.append(V * (ramp - step))
+    return math.fsum(contribs)
+
+
+# ---------------------------------------------------------------------------
 # Entry points
 # ---------------------------------------------------------------------------
 def apply_v29(state, player: int, opp: int, cfg: "LeafConfig", score: float) -> float:
@@ -191,6 +327,14 @@ def apply_v29(state, player: int, opp: int, cfg: "LeafConfig", score: float) -> 
     already omitted the flat meeple_k term iff a curve is set."""
     if cfg.v29_meeple_curve is not None:          # B (replaces flat meeple)
         score += _meeple_curve_term(state, player, opp, cfg.v29_meeple_curve)
+    # C7 Term R then Term F — two SEPARATE gated adds in this fixed order (float add
+    # is non-associative; matches the flat/cy sites exactly for 3-way bit-exactness).
+    if cfg.v29_meeple_return_k != 0.0:            # R (meeple-return liquidity)
+        score += cfg.v29_meeple_return_k * (
+            _return_liquidity(state, player, cfg) - _return_liquidity(state, opp, cfg)
+        )
+    if cfg.v29_farm_flip_k != 0.0:                # F (farm majority-flip)
+        score += cfg.v29_farm_flip_k * _farm_flip_term(state, player, opp, cfg)
     if cfg.v29_punish_k != 0.0:                   # D (stub)
         score += cfg.v29_punish_k * _punish_signal(state, player, opp, cfg)
     if cfg.v29_farm_access_k != 0.0:              # E (stub)
@@ -250,12 +394,21 @@ def decompose_v29(state, player: int, cfg: "LeafConfig") -> dict:
             rf = min(1.0, len(state.deck) / cfg.v28_meeple_recovery_t0)
         v28_meeple = cfg.v28_meeple_k * (m_self - m_opp) * rf
 
+    # C7 Term R / Term F deltas (added in apply_v29 between the curve and punish
+    # blocks — mirror that order here so pretransform matches production).
+    meeple_return_delta = cfg.v29_meeple_return_k * (
+        _return_liquidity(state, player, cfg) - _return_liquidity(state, opp, cfg)
+    ) if cfg.v29_meeple_return_k != 0.0 else 0.0
+    farm_flip_delta = cfg.v29_farm_flip_k * _farm_flip_term(state, player, opp, cfg) \
+        if cfg.v29_farm_flip_k != 0.0 else 0.0
+
     tactical_punish_delta = cfg.v29_punish_k * _punish_signal(state, player, opp, cfg) \
         if cfg.v29_punish_k != 0.0 else 0.0
     farm_access_delta = cfg.v29_farm_access_k * _farm_access_signal(state, player, opp, cfg) \
         if cfg.v29_farm_access_k != 0.0 else 0.0
 
     pretransform = (base + closure_self - closure_opp + meeple_contribution + v28_meeple
+                    + meeple_return_delta + farm_flip_delta
                     + tactical_punish_delta + farm_access_delta)
     if cfg.v29_util_tanh_t > 0.0:
         total = _util_transform(pretransform, cfg.v29_util_tanh_t)
@@ -270,6 +423,8 @@ def decompose_v29(state, player: int, cfg: "LeafConfig") -> dict:
         "meeple_flat": meeple_flat,
         "meeple_curve_delta": meeple_curve_delta,
         "v28_meeple": v28_meeple,
+        "meeple_return_delta": meeple_return_delta,
+        "farm_flip_delta": farm_flip_delta,
         "deck_completion_delta": 0.0,
         "tactical_punish_delta": tactical_punish_delta,
         "threat_block_delta": 0.0,
