@@ -71,15 +71,30 @@ _FROZEN_CFG_ENV_CLEAR = (
 )
 
 
+# Default-off LeafConfig fields the frozen-cfg recipe EXCLUDES so the frozen v2.9
+# substrate (7fc930b8) and the PRODUCTION champion (158f17ff) keep their historical
+# hashes across additive, default-off field additions (bag_close 2026-07-04; the C7
+# Term R / Term F knobs 2026-07-13). A field is dropped ONLY when it holds its
+# default-off value; a SET knob (candidate leaf) still shifts the hash. Mirror this
+# set in every _cfg_hash consumer (tests/test_v29_flat_curve.py, tests/
+# test_frozen_substrates.py, and the ~6 provenance scripts that pin FROZEN_V29_HASH).
+_FROZEN_HASH_DEFAULT_OFF = {
+    "bag_close": False,
+    "v29_meeple_return_k": 0.0,
+    "v29_farm_flip_k": 0.0,
+}
+
+
 def _frozen_config_hash(cfg) -> str:
-    """config_hash of a LeafConfig, EXCLUDING the default-off v2.10 `bag_close`
-    field (so the frozen v2.9 substrate keeps its historical hash across the field
-    addition — see FROZEN_V29_HASH). Mirrors the exclusion in
-    tests/test_v29_flat_curve.py::_cfg_hash and tests/test_frozen_substrates.py."""
+    """config_hash of a LeafConfig, EXCLUDING the default-off fields in
+    `_FROZEN_HASH_DEFAULT_OFF` (so the frozen v2.9 substrate keeps its historical
+    hash across additive default-off field additions — see FROZEN_V29_HASH). Mirrors
+    the exclusion in tests/test_v29_flat_curve.py::_cfg_hash and
+    tests/test_frozen_substrates.py."""
     import dataclasses as dc, hashlib, json
     d = {k: (list(v) if isinstance(v, tuple) else v)
          for k, v in dc.asdict(cfg).items()
-         if not (k == "bag_close" and v is False)}
+         if not (k in _FROZEN_HASH_DEFAULT_OFF and v == _FROZEN_HASH_DEFAULT_OFF[k])}
     return hashlib.sha256(
         json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()[:16]

@@ -128,6 +128,22 @@ class LeafConfig:
     v29_meeple_curve: tuple | None = None
     v29_punish_k: float = 0.0
     v29_farm_access_k: float = 0.0
+    # --- v2.9 C7 second wave (opt-in, measurement/classical_search/C7_LEAF_TERMS_DESIGN.md) ---
+    # TWO new leaf terms, both default OFF == bit-identical champion (curve125). Unlike the
+    # A/D/E stubs above, these are FLAT-implementable (curve/return/flip stay on the fast cy
+    # float path); only util_tanh/punish/farm_access still force the object path. Added as
+    # two SEPARATE gated adds (float add is non-associative) in a fixed order R-then-F.
+    #   v29_meeple_return_k: Term R. Meeple-return liquidity — credits each committed,
+    #     RETURNABLE meeple with P(feature closes) × marginal-curve-value-of-one-free-meeple
+    #     (the dcurve step). REQUIRES a curve (raises ValueError if set with curve None).
+    #   v29_farm_flip_k: Term F. Farm majority-flip anticipation — smooths base's hard
+    #     sign(margin)·V step on CONTESTED fields by margin + free-meeple liquidity.
+    # ⚠️ Adding these fields changes dataclasses.asdict(cfg); the frozen-cfg recipe
+    # (snapshot._frozen_config_hash + its 8 mirrors) EXCLUDES the default-off set
+    # {bag_close:False, v29_meeple_return_k:0.0, v29_farm_flip_k:0.0} so 7fc930b8 / 158f17ff
+    # recompute UNCHANGED. Full-asdict manifest/golden hashes DO shift (expected).
+    v29_meeple_return_k: float = 0.0
+    v29_farm_flip_k: float = 0.0
     # --- v2.10 bag-aware closure (Track B, 2026-07-04) --------------------------
     # bag_close: when True, the FLAT closure-anticipation bonus consults the
     # REMAINING-TILE MULTISET (docs/V210_LEAF_SPEC_2026-07-04.md) — a feature the
@@ -230,7 +246,8 @@ def _v29_active(cfg: "LeafConfig") -> bool:
     path — leaf_v29.py builds on the object helpers; flat_leaf does not implement it.
     Off by default, so production/v2.8 cfgs return False (flat fast path unchanged)."""
     return (cfg.v29_util_tanh_t > 0.0 or cfg.v29_meeple_curve is not None
-            or cfg.v29_punish_k != 0.0 or cfg.v29_farm_access_k != 0.0)
+            or cfg.v29_punish_k != 0.0 or cfg.v29_farm_access_k != 0.0
+            or cfg.v29_meeple_return_k != 0.0 or cfg.v29_farm_flip_k != 0.0)
 
 
 def _v29_curve_only(cfg: "LeafConfig") -> bool:
@@ -242,6 +259,20 @@ def _v29_curve_only(cfg: "LeafConfig") -> bool:
     force the object path."""
     return (cfg.v29_meeple_curve is not None
             and cfg.v29_util_tanh_t <= 0.0
+            and cfg.v29_punish_k == 0.0
+            and cfg.v29_farm_access_k == 0.0
+            and cfg.v29_meeple_return_k == 0.0
+            and cfg.v29_farm_flip_k == 0.0)
+
+
+def _v29_flat_eligible(cfg: "LeafConfig") -> bool:
+    """True iff every ACTIVE v2.9 term is one the flat/cy path implements (the
+    curve, C7 Term R meeple-return, C7 Term F farm-flip). The object-only terms
+    (A util_tanh / D punish / E farm_access) still force the engine path. Used by
+    the flat-redirect condition (generalizes `_v29_curve_only`, which stays for the
+    tests that import it). Not gated by `_v29_active` itself — callers AND it with
+    `_v29_active` so a wholly-inactive cfg still routes flat by the outer USE_FLAT_LEAF."""
+    return (cfg.v29_util_tanh_t <= 0.0
             and cfg.v29_punish_k == 0.0
             and cfg.v29_farm_access_k == 0.0)
 
@@ -340,6 +371,22 @@ def _open_city_positions(state, city: "City") -> int:
     of city-side positions, deduplicated."""
     seen: set[tuple[int, int]] = set()
     for pos in city.city_positions:
+        neighbor = _neighbor_coord(pos.coordinate, pos.side)
+        if neighbor is None:
+            continue
+        if 0 <= neighbor.row < len(state.board) and 0 <= neighbor.column < len(state.board[0]):
+            if state.board[neighbor.row][neighbor.column] is None:
+                seen.add((neighbor.row, neighbor.column))
+    return len(seen)
+
+
+def _open_road_positions(state, road) -> int:
+    """Number of unique adjacent empty board cells across the road component's
+    edges — the road analog of `_open_city_positions` (over `road.road_positions`).
+    Used by the C7 Term R (meeple-return liquidity) object path + reconcile
+    reference. Deduplicated distinct empty neighbours."""
+    seen: set[tuple[int, int]] = set()
+    for pos in road.road_positions:
         neighbor = _neighbor_coord(pos.coordinate, pos.side)
         if neighbor is None:
             continue
@@ -588,11 +635,11 @@ def virtual_score_v2(
     if flat_leaf.USE_FLAT_LEAF and not (
         cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0
         or _v28_active(cfg)
-        or (_v29_active(cfg) and not _v29_curve_only(cfg))
+        or (_v29_active(cfg) and not _v29_flat_eligible(cfg))
     ):
-        # Curve-only v2.9 configs (Candidate B) stay on the fast flat path —
-        # flat_virtual_score_v2 applies the curve bit-exactly (and skips the cy
-        # leaf, which doesn't know the curve). Other v2.9 terms fall through.
+        # Flat-eligible v2.9 configs (curve / C7 Term R return / Term F flip) stay
+        # on the fast flat path — flat_virtual_score_v2 applies them bit-exactly.
+        # Only the object-only v2.9 terms (util_tanh/punish/farm_access) fall through.
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC
