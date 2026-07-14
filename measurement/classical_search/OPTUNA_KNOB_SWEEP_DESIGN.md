@@ -39,6 +39,8 @@ tool → returned inline); the orchestrator materialized it and verified its loa
 
 **All six open questions resolved → design is GO for coding.** PRODUCTION.yaml untouched.
 
+**AMENDMENT 2026-07-14 (pre-data, no rankings observed):** rung-A n 40→52 to match the 52-worker capacity (30 local + 22 laptop; at n=40, 12 workers sat idle). One wave either way, ~0 wall-clock cost, tightens rung-A σ ±38→±33. Rung B(120)/C(240), keep-counts (top-10/top-4), and the +30/z≥2.0 gate UNCHANGED.
+
 ---
 
 ## Premise

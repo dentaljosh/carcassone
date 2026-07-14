@@ -573,7 +573,7 @@ def main(argv=None) -> int:
     ap.add_argument("--stage", choices=("s1", "micro"), default="s1",
                     help="s1 = full Stage-1 (rungs A/B/C); micro = rung-A only (S0b smoke)")
     ap.add_argument("--n-trials", type=int, default=32, help="total trials (§6: 32)")
-    ap.add_argument("--rung-a-n", type=int, default=40)
+    ap.add_argument("--rung-a-n", type=int, default=52)
     ap.add_argument("--rung-b-n", type=int, default=120)
     ap.add_argument("--rung-c-n", type=int, default=240)
     ap.add_argument("--rung-b-keep", type=int, default=10)
