@@ -208,8 +208,21 @@ class FairHeuristicMCTSAgent:
         """A deepcopy of `board` whose UNSEEN `state.deck` is reshuffled
         (multiset preserved). `next_tile` and every other field are untouched;
         the caller's board is never mutated. The NeuralMCTS._reshuffled_root /
-        probe semantics."""
+        probe semantics.
+
+        HARDENING (fair-handoff audit 2026-07-06, probe C): the unseen deck is
+        CANONICALIZED (sorted by tile description) BEFORE the reshuffle, so the
+        sampled determinization is a pure function of the unseen *multiset* + the
+        rng — invariant to the engine's (unobservable) TRUE deck order. Without
+        the sort, `random.Random.shuffle` yields a different permutation from a
+        different INPUT order, so a fair decision could depend on the hidden order
+        (the audit saw 19% of permutation trials flip a PIMC move) even though the
+        order *signal* is destroyed in expectation. This closes the last
+        order-dependency for reproducibility + honest imperfect information; it
+        changes nothing about legality or expected play (tied-description tiles
+        are interchangeable, and deck order is not in the transposition key)."""
         b = copy.deepcopy(board)
+        b.state.deck.sort(key=lambda t: t.description)   # canonical order (audit hardening)
         rng.shuffle(b.state.deck)
         b._str_repr_cache = None   # deck order isn't in the key; be safe
         return b
