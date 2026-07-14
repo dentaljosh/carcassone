@@ -71,13 +71,15 @@ removal to eliminate the trap. Flagged for Joshua to choose delete-vs-keep.
 
 ---
 
-## (c) PIMC determinization fairness leak — CHAMPION-BEHAVIOR fix (CODE, not YAML) — APPLIED THEN REVERTED, needs approval
+## (c) PIMC determinization fairness leak — CHAMPION-BEHAVIOR fix (CODE, not YAML) — ✅ APPROVED by Joshua 2026-07-14 + APPLIED (commit 249f5b9)
 
 **⚠️ This one is NOT config hygiene — it changes the DEPLOYED FAIR CHAMPION's play**, so unlike
 (a)/(b) it is not behavior-neutral. The T4 hygiene subagent applied it (commit `2f97361`); I
 **reverted it** (`180138c`) because the standing rule is that the champion is never changed
 without Joshua's explicit approval, and "run the hygiene bundle" is not that. Staged here with a
-strong recommendation to approve.
+strong recommendation to approve. **UPDATE 2026-07-14: Joshua APPROVED it; re-applied as commit
+`249f5b9` (reapply of `2f97361`). 17 fair_agent tests green; `test_determinization_invariant_to_input_deck_order`
+pins it. (a)/(b) remain PROPOSED — unapplied, PRODUCTION.yaml untouched.**
 
 **The bug (fair-handoff audit 2026-07-06, probe C).** `fair_agent.py::reshuffled_determinization`
 reshuffles the unseen `state.deck` in the engine's TRUE (pre-shuffled = hidden-future) input
@@ -87,7 +89,7 @@ order it must not see** — a genuine clairvoyance leak. Probe C: **19% of permu
 flipped the chosen move.** The deployed fair champion (`FairHeuristicPriorAgent` reuses the same
 method) was slightly peeking.
 
-**The fix (commit `2f97361`, reverted in `180138c` — re-apply to restore):** canonically sort the
+**The fix (commit `2f97361`, reverted in `180138c`, RE-APPLIED 2026-07-14 as `249f5b9`):** canonically sort the
 unseen deck by tile description BEFORE the reshuffle, so a determinization is a pure function of
 (unseen multiset, rng) — invariant to the hidden true order. Strength-neutral in expectation (same
 PIMC distribution), just properly blind. Pinned by `test_determinization_invariant_to_input_deck_order`.
@@ -100,12 +102,13 @@ PIMC distribution), just properly blind. Pinned by `test_determinization_invaria
    any NEW fair eval (e.g. a C7 R-composite fair S3) must **re-establish its fair baseline** with
    the fixed code before trusting a ruler-reproduction sanity gate against the old +136.
 
-**Recommendation: APPROVE** — it removes a real fairness leak from the deployable agent; the sooner
+**Recommendation: APPROVE — ✅ DONE (Joshua approved 2026-07-14; applied `249f5b9`).** It removes a real fairness leak from the deployable agent; the sooner
 it lands the fewer future fair measurements are taken on the leaky agent. Best applied at a clean
 boundary (no fair run active) with a one-line DECISIONS stamp noting the fair-baseline discontinuity.
 
 ---
 
-*None of (a)/(b)/(c) applied to production. (c) is reverted (`180138c`); (a)/(b) never touched
-PRODUCTION.yaml. Apply only on Joshua's explicit approval, folded into the next governance touch
-(results.csv / DECISIONS / CLAIM_REGISTRY close-out per the CLAUDE.md six-touch rule).*
+*(a)/(b) NOT applied — they never touched PRODUCTION.yaml; apply only on Joshua's explicit approval.
+(c) is a CODE fix (`fair_agent.py`, not PRODUCTION.yaml): APPROVED by Joshua 2026-07-14 + APPLIED
+(commit `249f5b9`), closed out per the CLAUDE.md six-touch rule (DECISIONS 2026-07-14 + CLAIM_REGISTRY
+CL-056). PRODUCTION.yaml UNTOUCHED throughout.*
