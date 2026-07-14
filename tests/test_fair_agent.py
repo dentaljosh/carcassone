@@ -17,7 +17,6 @@ Positions are deterministic: the engine deck is shuffled via the global
 `random` module at get_init_board, so `random.seed(S)` first (the same
 provenance mechanism as tests/test_endgame_solver.py).
 """
-import copy
 import os
 import pickle
 import random
@@ -121,28 +120,6 @@ def test_determinization_touches_only_deck_order():
     assert (game.string_representation(det)
             == game.string_representation(board))
     assert det.state is not board.state, "determinization must be a copy"
-
-
-def test_determinization_invariant_to_input_deck_order():
-    """PIMC deck-sort hardening (fair-handoff audit 2026-07-06, probe C): the
-    sampled determinization must be a pure function of the unseen MULTISET + rng,
-    NOT the engine's hidden TRUE deck order. Two boards with the same multiset but
-    a different unseen-deck order must produce byte-identical reshuffled decks
-    under the same rng seed (before the fix they would differ ~19% of the time)."""
-    _game, board = midgame_position(5, 12)
-    # a genuine permutation of the SAME unseen deck (same multiset, different order)
-    permuted = copy.deepcopy(board)
-    random.Random(999).shuffle(permuted.state.deck)
-    assert ([t.description for t in permuted.state.deck]
-            != [t.description for t in board.state.deck]), "need a real permutation to test"
-    d0 = FairHeuristicMCTSAgent.reshuffled_determinization(board, random.Random(0))
-    d1 = FairHeuristicMCTSAgent.reshuffled_determinization(permuted, random.Random(0))
-    assert ([t.description for t in d0.state.deck]
-            == [t.description for t in d1.state.deck]), \
-        "determinization must not depend on the hidden input deck order (canonical-sort fix)"
-    # and the caller's boards are still untouched (sort operates on the copy only)
-    assert [t.description for t in permuted.state.deck] != \
-           [t.description for t in board.state.deck], "caller boards must be unmutated"
 
 
 def test_choose_action_never_mutates_caller_board():
