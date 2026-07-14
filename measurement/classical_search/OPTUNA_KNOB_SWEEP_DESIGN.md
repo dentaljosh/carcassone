@@ -39,7 +39,7 @@ tool → returned inline); the orchestrator materialized it and verified its loa
 
 **All six open questions resolved → design is GO for coding.** PRODUCTION.yaml untouched.
 
-**AMENDMENT 2026-07-14 (pre-data, no rankings observed):** rung-A n 40→52 to match the 52-worker capacity (30 local + 22 laptop; at n=40, 12 workers sat idle). One wave either way, ~0 wall-clock cost, tightens rung-A σ ±38→±33. Rung B(120)/C(240), keep-counts (top-10/top-4), and the +30/z≥2.0 gate UNCHANGED.
+**AMENDMENT 2026-07-14 (pre-data, no rankings observed):** rung-A n 40→52 to match the 52-worker capacity (30 local + 22 laptop; at n=40, 12 workers sat idle). Tightens rung-A σ ±38→±33 (20→26 decks). Rung B(120)/C(240), keep-counts (top-10/top-4), and the +30/z≥2.0 gate UNCHANGED. **⚠️ COST CORRECTION (post-hoc, empirical):** the initial framing claimed this was "~0 wall-clock cost (one wave either way)" — WRONG. Measured per-cell times show rung-A cells scale ~linearly-to-worse with n (throughput/long-tail-bound across the workers, NOT a single clean wave): n=40 anchor cell = 1073s vs fresh n=52 cells = 1478/1739/1912/1573s (~1675s avg, +56%). So the bump bought better ranking + used the idle silicon at a REAL ~50% per-cell time cost, not zero. Accepted (pre-data, ranking-quality gain on the weakest rung); logged so the "free" claim isn't propagated.
 
 ---
 
