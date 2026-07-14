@@ -35,8 +35,9 @@ CL-022 ruler (measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md "vs Heuristic
 @ heur_sims=800, v2.7 leaf"), NO endgame (fixed yardstick).
 
 EQUAL-WALL-CLOCK: the fair champion's total per-move search budget = k_dets*sims,
-targeted at the deployed clairvoyant champion's ~2750 sims (default k_dets=8 *
-sims=344 ~= 2752). The k_dets separate root expansions add a little fixed overhead,
+targeted at the deployed clairvoyant champion's ~2750 sims (default k_dets=4 *
+sims=688 ~= 2752 — ADOPTED 2026-07-13, CL-054; was k8*344, k4 beat k8 +5.18/z4.17
+cost-neutral). The k_dets separate root expansions add a little fixed overhead,
 so the fair arm gets a hair MORE compute than a single 2750 search — conservative
 (if it still loses the tax, the tax is real).
 
@@ -728,8 +729,8 @@ def main(argv=None) -> int:
     ap.add_argument("--no-value-global-pool", dest="value_global_pool", action="store_false")
     ap.add_argument("--exact-k", type=int, default=2,
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
-    ap.add_argument("--k-dets", type=int, default=8, help="determinizations per move (fair PIMC)")
-    ap.add_argument("--sims", type=int, default=344, help="PUCT sims per determinization")
+    ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC); deploy default k4 (CL-054, 2026-07-13; was 8)")
+    ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization (k4×688=2752 total; was 344 at k8)")
     ap.add_argument("--rung-sims", type=int, default=800, help="fixed HeuristicMCTS rung sims (CL-022=800)")
     # champion knobs (governance/PRODUCTION.yaml defaults)
     ap.add_argument("--c-puct", type=float, default=1.5)

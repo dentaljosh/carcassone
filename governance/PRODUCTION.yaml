@@ -20,6 +20,12 @@ leaf_adopt_authorized_by: >
   frozen v2.9 substrate 7fc930b8 stays on the OLD curve (frozen_v29_cfg hard-sets+restores it; each eval ruler keeps its own
   _CANON_ENV old curve). ⚠️ Do NOT export CARCASSONNE_V29_MEEPLE_CURVE globally — the rulers setdefault, so an ambient
   curve125 would silently move the fixed ruler/anchor side and contaminate baselines. No production/E4 run active; E4 deferred.
+fair_kdets_folded_in: "2026-07-13"   # fair-PIMC determinizations per move 8 → 4 (cost-neutral: same total budget 2752).
+fair_kdets_authorized_by: >
+  Joshua, 2026-07-13 ('adopt into production'), on CL-054 — the k_dets width bracket. At FIXED total budget
+  (k_dets × sims/det = 2752) k4 beat the deployed k8 by +5.18±1.24 pts/deck (deck-matched delta-vs-k8, double-CRN,
+  z4.17, n=400 confirm). The full width axis is an inverted-U peaked at k4 (k32<k16≈k8<k2<k4); k1/k6 ruled out (peak
+  bracketed, k4-vs-k2 flat). FIRST fair (deployable) lever in the program to fire AND confirm. See fair_deploy block below.
 supersedes:
   - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
                                      # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
@@ -64,6 +70,20 @@ champion:
   sims: "~2750 (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box; the sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number)"
   c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
   endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — UNCHANGED; identical both sides so it does not affect the search-A/B margin"
+  fair_deploy:                          # the human-facing (non-clairvoyant) PIMC deploy config. Clairvoyant dev/ruler
+                                        # play uses ONE true deck (no determinizations), so k_dets applies to fair deploy ONLY.
+    k_dets: 4                           # ADOPTED 2026-07-13 (CL-054). Determinizations per move; was the legacy k8.
+                                        # k4 beat k8 +5.18±1.24 pts/deck (deck-matched delta-vs-k8, z4.17, n=400) at the
+                                        # SAME total budget 2752 → COST-NEUTRAL. Width axis inverted-U peaked at k4.
+    sims_per_det: 688                   # k4 × 688 = 2752 total per-move budget (floats with compute like the clair sims;
+                                        # the CONFIG is k_dets=4 at ~2752 total, not a fixed sim number).
+    fair_agent: FairHeuristicPriorAgent # src/carcassonne_ai/fair_agent.py — PIMC wrapper of the champion HeuristicPriorAgent.
+                                        # Constructor default now k_dets=4/sims=688; eval_fair_puct.py --k-dets/--sims defaults track.
+    stale_path_flag: >
+      ⚠️ scripts/human_anchor/play_harness.py (the intended human-play harness) STILL wires the PRE-FLIP
+      FairHeuristicMCTSAgent — the 2026-07-07 champion flip (→ PUCT-priors HeuristicPriorAgent) and the 2026-07-13
+      curve125 leaf were never propagated there. So that harness does NOT run the current champion. SEPARATE gap
+      from k_dets, flagged for Joshua (an E4-adjacent update). Its --k-dets already defaults to 4 (harmless coincidence).
   env_knobs:
     CARCASSONNE_USE_FLAT_LEAF: "1"
     CARCASSONNE_USE_CY_LEAF: "1"

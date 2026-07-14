@@ -372,7 +372,7 @@ class FairHeuristicPriorAgent:
     """
 
     def __init__(self, game: Game, cfg: HeuristicPriorConfig | None = None,
-                 sims: int = 344, k_dets: int = 8, seed: int | None = None,
+                 sims: int = 688, k_dets: int = 4, seed: int | None = None,   # deploy default = adopted k4×688=2752 (CL-054, 2026-07-13; was k8×344)
                  min_pooled_visits: int = DEFAULT_MIN_POOLED_VISITS,
                  exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
                  exact_budget: int = DEFAULT_EXACT_BUDGET,
