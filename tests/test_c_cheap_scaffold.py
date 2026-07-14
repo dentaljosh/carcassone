@@ -298,3 +298,34 @@ def test_gen_fair_selfplay_determinism():
     assert ds_a is not None and ds_b is not None
     assert np.array_equal(ds_a.values, ds_b.values)
     assert np.array_equal(ds_a.boards, ds_b.boards)
+
+
+def test_gen_fair_meta_sidecar_stamps_value_target(tmp_path):
+    """T4e provenance fix: the per-shard sidecar ALWAYS records `value_target` so a
+    shard is self-describing (outcome vs residual) even without the run manifest,
+    and the sidecar is EXCLUDED from the training globs."""
+    from carcassonne_ai.warmstart import iter_game_dataset_files
+
+    # (a) outcome target: value_target stamped, NO residual diagnostics.
+    po = gfs._write_meta_sidecar(tmp_path, 7, "outcome")
+    assert po == gfs._meta_path(tmp_path, 7)
+    with np.load(po) as m:
+        assert str(m["value_target"]) == "outcome"
+        assert "z" not in m.files and "leaf_tanh" not in m.files
+
+    # (b) residual target: value_target stamped AND per-ply {z, leaf_tanh}.
+    z = np.array([0.1, -0.2, 0.3], dtype=np.float32)
+    lt = np.array([0.0, 0.1, -0.1], dtype=np.float32)
+    pr = gfs._write_meta_sidecar(tmp_path, 8, "residual", z=z, leaf_tanh=lt)
+    with np.load(pr) as m:
+        assert str(m["value_target"]) == "residual"
+        assert np.array_equal(m["z"], z)
+        assert np.array_equal(m["leaf_tanh"], lt)
+
+    # (c) the sidecars are named seed_*.meta.npz and are NOT picked up as training
+    # shards (they lack boards/values) — iter_game_dataset_files must skip them.
+    assert po.name.endswith(".meta.npz") and pr.name.endswith(".meta.npz")
+    (tmp_path / "seed_000000000007.npz").write_bytes(b"")  # a real (empty) shard name
+    shards = list(iter_game_dataset_files(tmp_path))
+    assert po not in shards and pr not in shards
+    assert (tmp_path / "seed_000000000007.npz") in shards

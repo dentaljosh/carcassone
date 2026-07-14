@@ -111,8 +111,28 @@ def _shard_path(out: Path, seed: int) -> Path:
 
 
 def _meta_path(out: Path, seed: int) -> Path:
-    """Diagnostic sidecar (residual target only): per-ply z + leaf_tanh."""
+    """Per-shard metadata sidecar. Named `seed_*.meta.npz` and EXCLUDED from the
+    training globs by `warmstart.iter_game_dataset_files` (it lacks the boards/
+    values keys). Always stamps `value_target` (the value-convention this shard's
+    `values` column holds — item T4e provenance fix); the residual target also
+    carries per-ply {z, leaf_tanh} diagnostics."""
     return out / f"seed_{seed:012d}.meta.npz"
+
+
+def _write_meta_sidecar(out: Path, seed: int, value_target: str,
+                        z=None, leaf_tanh=None) -> Path:
+    """Write the per-shard metadata sidecar and return its path. ALWAYS stamps
+    `value_target` so a shard is self-describing about which value convention its
+    `values` column encodes (outcome vs residual) even when separated from the
+    run manifest.json — a future training restart must never have to guess. The
+    residual `{z, leaf_tanh}` diagnostics are included only when supplied."""
+    meta: dict = {"value_target": np.asarray(str(value_target))}
+    if z is not None and leaf_tanh is not None:
+        meta["z"] = z
+        meta["leaf_tanh"] = leaf_tanh
+    path = _meta_path(out, seed)
+    np.savez(path, **meta)
+    return path
 
 
 def play_fair_game_to_dataset(
@@ -248,12 +268,13 @@ def _play_one(args) -> dict | None:
         info["skipped"] = True
         return info
     ds.save(p)
-    # Diagnostic sidecar (residual target): per-ply z + leaf_tanh (pop the arrays out
-    # of `info` so the returned dict stays small/JSON-friendly for the progress print).
-    if "z" in info and "leaf_tanh" in info:
-        z = info.pop("z")
-        leaf_tanh = info.pop("leaf_tanh")
-        np.savez(_meta_path(out, seed), z=z, leaf_tanh=leaf_tanh)
+    # Per-shard metadata sidecar. ALWAYS stamps `value_target` (provenance: which
+    # convention `values` holds); the residual target also carries per-ply
+    # {z, leaf_tanh}. Pop the arrays out of `info` so the returned dict stays
+    # small/JSON-friendly for the progress print.
+    z = info.pop("z", None)
+    leaf_tanh = info.pop("leaf_tanh", None)
+    _write_meta_sidecar(out, seed, _W.get("value_target", "outcome"), z, leaf_tanh)
     info["rows"] = len(ds)
     return info
 
