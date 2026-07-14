@@ -90,9 +90,10 @@ def _assert_cy_float_path(cfg) -> None:
     if _vs2._v28_active(cfg):
         raise ValueError("--cand-leaf-json: v2.8 terms (v28_farm_majority/v28_meeple_k) "
                          "force the object path — not a Cython float leaf")
-    if _vs2._v29_active(cfg) and not _vs2._v29_curve_only(cfg):
-        raise ValueError("--cand-leaf-json: v2.9 non-curve terms (util_tanh/punish/farm_access) "
-                         "force the object path — only v29_meeple_curve stays on the cy float path")
+    if _vs2._v29_active(cfg) and not _vs2._v29_flat_eligible(cfg):
+        raise ValueError("--cand-leaf-json: v2.9 object-only terms (util_tanh/punish/farm_access) "
+                         "force the object path — only the curve / C7 Term R (v29_meeple_return_k) / "
+                         "Term F (v29_farm_flip_k) stay on the cy float path")
     if cfg.tile_counting_closure or cfg.closure_continuous_slack > 0.0:
         raise ValueError("--cand-leaf-json: tile_counting_closure / closure_continuous_slack "
                          "force the non-cy path")
@@ -104,3 +105,18 @@ def _assert_cy_float_path(cfg) -> None:
                                  "lacks SUPPORTS_V210_BAG_CLOSE (rebuild flat_leaf_cy)")
         except ImportError as e:
             raise ValueError("--cand-leaf-json: bag_close set but flat_leaf_cy is not built") from e
+    # C7 wave-2: Term R / Term F need the SUPPORTS_V29_C7_TERMS build, else a stale .so
+    # silently falls back to the ~30x-slower pure-Python flat (mirrors the bag_close clause).
+    if cfg.v29_meeple_return_k != 0.0 or cfg.v29_farm_flip_k != 0.0:
+        try:
+            from carcassonne_ai import flat_leaf_cy as _cy
+            if not bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False)):
+                raise ValueError("--cand-leaf-json: v29_meeple_return_k/v29_farm_flip_k set but the "
+                                 "compiled cy leaf lacks SUPPORTS_V29_C7_TERMS (rebuild flat_leaf_cy)")
+        except ImportError as e:
+            raise ValueError("--cand-leaf-json: C7 terms set but flat_leaf_cy is not built") from e
+    # R-requires-curve (defensive; the champion always carries a curve, so a --cand-leaf-json
+    # replacing only v29_meeple_return_k inherits it — this catches an explicit curve=null).
+    if cfg.v29_meeple_return_k != 0.0 and cfg.v29_meeple_curve is None:
+        raise ValueError("--cand-leaf-json: v29_meeple_return_k requires v29_meeple_curve "
+                         "(Term R prices the marginal step of the liquidity curve)")

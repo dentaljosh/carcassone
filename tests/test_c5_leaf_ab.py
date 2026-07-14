@@ -170,6 +170,50 @@ def test_override_changes_cython_leaf_value():
     assert diffs > 0, "cap5 override never reached the leaf hot path (silently dropped?)"
 
 
+# --------------------------------------------------------------------------- #
+# C7 wave-2 knobs: v29_meeple_return_k (Term R) / v29_farm_flip_k (Term F)      #
+# --------------------------------------------------------------------------- #
+def test_c7_knobs_parse_and_stay_cy():
+    # both new knobs auto-derive from the dataclass (no _load_cand_leaf_cfg change)
+    # and, inheriting the champion curve from DEFAULT_CONFIG, stay on the cy float path.
+    for spec in ('{"v29_meeple_return_k": 1.0}',
+                 '{"v29_farm_flip_k": 0.5}',
+                 '{"v29_meeple_return_k": 1.0, "v29_farm_flip_k": 0.5}'):
+        epp._assert_cy_float_path(epp._load_cand_leaf_cfg(spec))  # must not raise
+    r = epp._load_cand_leaf_cfg('{"v29_meeple_return_k": 2.0}')
+    assert r.v29_meeple_return_k == 2.0 and r.v29_meeple_curve is not None
+    assert epp._load_cand_leaf_cfg('{"v29_farm_flip_k": 0.25}').v29_farm_flip_k == 0.25
+
+
+def test_c7_return_requires_curve_rejected():
+    # Term R with the curve explicitly nulled -> guard raises (R-requires-curve).
+    with pytest.raises(ValueError):
+        epp._assert_cy_float_path(
+            epp._load_cand_leaf_cfg('{"v29_meeple_return_k": 1.0, "v29_meeple_curve": null}'))
+
+
+def test_c7_override_changes_cython_leaf_value():
+    # each C7 knob must reach the CYTHON float leaf and change it on some board (else it
+    # was silently dropped — exactly the SUPPORTS_V29_C7_TERMS stale-.so trap). Term F is
+    # sparse (needs a CONTESTED field with a finished adjacent city), so sample many
+    # deep games until it fires rather than a single short one.
+    champ = epp._load_cand_leaf_cfg(None) or DEF
+    for spec in ('{"v29_meeple_return_k": 1.0}', '{"v29_farm_flip_k": 1.0}'):
+        cand = epp._load_cand_leaf_cfg(spec)
+        diffs = 0
+        for seed in range(30):
+            for st in _played_states(seed=8877000000 + seed, n_moves=140):
+                if st.players != 2:
+                    continue
+                for player in (0, 1):
+                    if flat_leaf.flat_virtual_score_v2_float(st, player, champ, False) != \
+                       flat_leaf.flat_virtual_score_v2_float(st, player, cand, False):
+                        diffs += 1
+            if diffs > 0:
+                break
+        assert diffs > 0, f"{spec} never reached the cy leaf hot path (silently dropped?)"
+
+
 def test_override_reaches_prior_evaluator():
     # the same override reaches the PRODUCTION evaluator (make_heuristic_prior_evaluator
     # -> flat_virtual_score_v2_float): value/priors differ on at least one board.
@@ -266,3 +310,15 @@ def test_mirror_manifest_records_distinct_hashes_when_leaf_differs(tmp_path):
     assert man["champ_leaf_cfg"]["bonus_cap"] == DEF.bonus_cap == 8.0
     # the champion PUCT opponent block still carries the env DEFAULT_CONFIG leaf
     assert man["opponent"]["leaf_cfg"]["bonus_cap"] == 8.0
+
+
+def test_mirror_manifest_c7_return_knob_distinct(tmp_path):
+    # C7 Stage-0(c) manifest smoke: a Term R candidate leaf differs from the untouched
+    # champion side -> distinct per-side leaf hashes; the champion opponent side keeps
+    # the env leaf (curve125 cap8, return knob OFF).
+    _, _, man = _run_cell(tmp_path, "c7ret",
+                          ["--cand-leaf-json", '{"v29_meeple_return_k": 1.0}'])
+    assert man["cand_leaf_hash"] != man["champ_leaf_hash"]
+    assert man["cand_leaf_cfg"]["v29_meeple_return_k"] == 1.0
+    assert man["champ_leaf_cfg"]["v29_meeple_return_k"] == 0.0
+    assert man["opponent"]["leaf_cfg"]["v29_meeple_return_k"] == 0.0
