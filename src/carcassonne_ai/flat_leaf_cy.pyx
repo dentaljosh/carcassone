@@ -8,6 +8,12 @@ SUPPORTS_V29_CURVE = True
 # Track B): flat_leaf.py routes bag_close=True here only when this flag is present,
 # so a stale .so can never silently drop the gate.
 SUPPORTS_V210_BAG_CLOSE = True
+# Same pattern for the C7 wave-2 leaf terms (Term R meeple-return liquidity + Term F
+# farm majority-flip, measurement/classical_search/C7_LEAF_TERMS_DESIGN.md). ONE flag
+# for both terms; flat_leaf.py routes an R/F config here only when this is present, so
+# a stale .so falls back to the pure-Python flat path instead of silently dropping the
+# terms. Bump/rename if the term semantics ever change.
+SUPPORTS_V29_C7_TERMS = True
 """Cython port of the production flat leaf (`flat_leaf.flat_virtual_score_v2`).
 
 DEV-ONLY (2026-06-12, stage-b-wiring worktree). Default OFF — nothing imports
@@ -198,6 +204,7 @@ cdef class _WS:
     cdef char *road_fin
     cdef int *road_total
     cdef char *road_inn
+    cdef int *road_open_n       # C7 Term R: #distinct empty adjacent cells per road root
     cdef int *farm_fincities
     cdef int *farm_adj          # concatenated deduped adjacent city roots
     cdef int *farm_adj_lo
@@ -267,6 +274,7 @@ cdef class _WS:
         self.road_fin = <char *>malloc(c4)
         self.road_total = <int *>malloc(c4 * sizeof(int))
         self.road_inn = <char *>malloc(c4)
+        self.road_open_n = <int *>malloc(c4 * sizeof(int))
         self.farm_fincities = <int *>malloc(c8 * sizeof(int))
         self.farm_adj = <int *>malloc(c8 * sizeof(int))
         self.farm_adj_lo = <int *>malloc(c8 * sizeof(int))
@@ -310,6 +318,7 @@ cdef class _WS:
         free(self.city_ge2); free(self.city_ge3); free(self.city_ge4)
         free(self.cell_cnt)
         free(self.road_fin); free(self.road_total); free(self.road_inn)
+        free(self.road_open_n)
         free(self.farm_fincities); free(self.farm_adj)
         free(self.farm_adj_lo); free(self.farm_adj_hi)
         free(self.stamp_cell); free(self.stamp_city); free(self.stamp_farm)
@@ -619,20 +628,32 @@ cdef int _decompose_c(object state, _WS ws) except -1:
         if i1 > i0:
             ws.counter += 1
             stamp = ws.counter
-            fin = 1; total = 0; rinn = 0
+            fin = 1; total = 0; rinn = 0; open_n = 0
             for m in range(i0, i1):
                 nid = ws.order[m]
                 if ws.road_openb[nid]:
                     fin = 0
-                rc = ws.road_nr[nid] * W + ws.road_nc[nid]
+                r = ws.road_nr[nid]; c = ws.road_nc[nid]; six = ws.road_nix[nid]
+                rc = r * W + c
                 if ws.stamp_cell[rc] != stamp:
                     ws.stamp_cell[rc] = stamp
                     total += 1
                     if ws.cell_inn[rc]:
                         rinn = 1
+                # C7 Term R closure-proximity: distinct EMPTY outward neighbours
+                # (== flat_leaf road_root_open_n / _open_road_positions). Empty cells
+                # can't collide with the component's occupied tile cells under `stamp`.
+                nr2 = r + _OPP_DR[six]; nc2 = c + _OPP_DC[six]
+                if 0 <= nr2 < H and 0 <= nc2 < W:
+                    rc = nr2 * W + nc2
+                    if not ws.cell_occ[rc]:
+                        if ws.stamp_cell[rc] != stamp:
+                            ws.stamp_cell[rc] = stamp
+                            open_n += 1
             ws.road_fin[root] = fin
             ws.road_total[root] = total
             ws.road_inn[root] = rinn
+            ws.road_open_n[root] = open_n
         root += 1
 
     # ---- farm facts (adjacent city components, deduped by city root) ---------
@@ -950,6 +971,165 @@ cdef inline double _curve_lookup_c(object curve, long n):
     return <double>curve[n]
 
 
+cdef inline double _dcurve_c(object curve, long n):
+    """== flat_leaf._flat_dcurve / leaf_v29._dcurve. Marginal value of recovering ONE
+    meeple at free count n: curve[min(n+1, L-1)] - curve[min(max(n,0), L-1)]."""
+    cdef Py_ssize_t L = len(curve)
+    cdef long hi = n + 1
+    cdef long lo = n
+    if hi > L - 1:
+        hi = L - 1
+    if lo < 0:
+        lo = 0
+    if lo > L - 1:
+        lo = L - 1
+    return (<double>curve[hi]) - (<double>curve[lo])
+
+
+cdef double _return_one_c(object state, int p, _WS ws, object closure_p, object curve) except *:
+    """C7 Term R per-player ret(p) = dcurve(free) * fsum(P_list). PER MEEPLE (no dedup;
+    every meeple on a merged feature returns when it closes). == flat_leaf.flat_return_term
+    inner _ret: same P multiset (closure-schedule values) -> same fsum by construction."""
+    cdef list board = <list>state.board
+    cdef int W = ws.W
+    cdef int r, c, six, nid, root, open_n, needed, n_sur
+    cdef object mp, cws, coord, side, tile, terrain, pobj
+    cdef double pd
+    cdef list plist = []
+    side_ix = _SIDE_IX
+    for mp in <list>state.placed_meeples[p]:
+        cws = mp.coordinate_with_side
+        coord = cws.coordinate
+        r = <int>coord.row
+        c = <int>coord.column
+        side = cws.side
+        tile = (<list>board[r])[c]
+        terrain = tile.get_type(side)
+        six = <int>side_ix[side]
+        if terrain is _T_CITY:
+            nid = ws.city_tab[(r * W + c) * 9 + six]
+            if nid < 0:
+                continue
+            root = ws.city_lab[nid]
+            if ws.city_fin[root]:
+                continue
+            open_n = ws.city_open_n[root]
+            if open_n <= 0:
+                continue
+            pobj = closure_p.get(open_n)
+            if pobj is None:
+                continue
+            pd = <double>pobj
+            if pd > 0:
+                plist.append(pd)
+        elif terrain is _T_ROAD:
+            nid = ws.road_tab[(r * W + c) * 9 + six]
+            if nid < 0:
+                continue
+            root = ws.road_lab[nid]
+            if ws.road_fin[root]:
+                continue
+            open_n = ws.road_open_n[root]
+            if open_n <= 0:
+                continue
+            pobj = closure_p.get(open_n)
+            if pobj is None:
+                continue
+            pd = <double>pobj
+            if pd > 0:
+                plist.append(pd)
+        elif terrain is _T_CHAPEL or terrain is _T_FLOWERS:
+            n_sur = _cloister_points_c(ws, r, c) - 1   # exclude centre (occupied)
+            needed = 8 - n_sur
+            if needed <= 0:
+                continue
+            pobj = closure_p.get(needed)
+            if pobj is None:
+                continue
+            pd = <double>pobj
+            if pd > 0:
+                plist.append(pd)
+        # FARMER / BIG_FARMER: terrain not city/road/cloister -> skip (never returns)
+    return _dcurve_c(curve, <long>int(state.meeples[p])) * <double>_fsum(plist)
+
+
+cdef double _return_term_c(object state, int player, int opp, _WS ws, object cfg) except *:
+    """C7 Term R differential ret(player) - ret(opp). Requires a curve."""
+    cdef object curve = cfg.v29_meeple_curve
+    if curve is None:
+        raise ValueError("v29_meeple_return_k requires v29_meeple_curve")
+    cdef object closure_p = cfg.closure_p
+    return (_return_one_c(state, player, ws, closure_p, curve)
+            - _return_one_c(state, opp, ws, closure_p, curve))
+
+
+cdef double _farm_flip_term_c(object state, int player, int opp, _WS ws, object cfg) except *:
+    """C7 Term F player-POV antisymmetric fsum of contested-field contributions.
+    Field counts via pos0 (base) semantics (== flat_leaf.flat_farm_flip_term); the
+    _feat_add table + farm_fincities are the SAME data _final_scores_c scores base on."""
+    cdef list board = <list>state.board
+    cdef int W = ws.W
+    cdef int froots[32]
+    cdef int fw0[32]
+    cdef int fw1[32]
+    cdef int nfr = 0
+    cdef int r, c, six, nid, i, w, pl, m, w_me, w_opp
+    cdef object mp, cws, coord, side, mtype
+    cdef list pm
+    cdef double FLIP_BETA = 0.5
+    cdef double FLIP_RAMP = 2.0
+    cdef double V, step, m_eff, ramp
+    cdef list contribs = []
+    side_ix = _SIDE_IX
+    for pl in range(2):
+        pm = <list>state.placed_meeples[pl]
+        for mp in pm:
+            mtype = mp.meeple_type
+            if not (mtype is _M_FARMER or mtype is _M_BIG_FARMER):
+                continue
+            cws = mp.coordinate_with_side
+            coord = cws.coordinate
+            r = <int>coord.row
+            c = <int>coord.column
+            side = cws.side
+            six = <int>side_ix[side]
+            nid = ws.pos0_tab[(r * W + c) * 9 + six]
+            if nid < 0:
+                continue
+            w = 2 if (mtype is _M_BIG_FARMER) else 1
+            _feat_add(froots, fw0, fw1, &nfr, ws.farm_lab[nid], pl, w)
+    cdef long md = <long>int(state.meeples[player]) - <long>int(state.meeples[opp])
+    cdef int free_d
+    if md > 1:
+        free_d = 1
+    elif md < -1:
+        free_d = -1
+    else:
+        free_d = <int>md
+    for i in range(nfr):
+        if player == 0:
+            w_me = fw0[i]; w_opp = fw1[i]
+        else:
+            w_me = fw1[i]; w_opp = fw0[i]
+        if w_me >= 1 and w_opp >= 1:
+            V = <double>(3 * ws.farm_fincities[froots[i]])
+            m = w_me - w_opp
+            if m > 0:
+                step = 1.0
+            elif m < 0:
+                step = -1.0
+            else:
+                step = 0.0
+            m_eff = <double>m + FLIP_BETA * <double>free_d
+            ramp = m_eff / FLIP_RAMP
+            if ramp > 1.0:
+                ramp = 1.0
+            elif ramp < -1.0:
+                ramp = -1.0
+            contribs.append(V * (ramp - step))
+    return <double>_fsum(contribs)
+
+
 cdef double _flat_score_v2_c(state, int player, cfg, bag_close) except *:
     """Shared PRE-ROUND float body of the flat v2 leaf.
 
@@ -1032,6 +1212,14 @@ cdef double _flat_score_v2_c(state, int player, cfg, bag_close) except *:
     elif meeple_k > 0.0:
         meeples = state.meeples
         score += meeple_k * (<long>int(meeples[player]) - <long>int(meeples[opp]))
+    # C7 Term R then Term F — two SEPARATE gated adds in this fixed order (float add is
+    # non-associative; matches flat_leaf / leaf_v29 for 3-way bit-exactness).
+    cdef double rk = <double>cfg.v29_meeple_return_k
+    cdef double fk = <double>cfg.v29_farm_flip_k
+    if rk != 0.0:
+        score += rk * _return_term_c(state, player, opp, ws, cfg)
+    if fk != 0.0:
+        score += fk * _farm_flip_term_c(state, player, opp, ws, cfg)
     return score
 
 
@@ -1330,6 +1518,7 @@ def decompose_export(state):
         road_side_root[(ws.road_nr[nid], ws.road_nc[nid], ix_side[ws.road_nix[nid]])] = ws.road_lab[nid]
     rroots = sorted(set(road_side_root.values()))
     road_root_finished = {r: bool(ws.road_fin[r]) for r in rroots}
+    road_root_open_n = {r: ws.road_open_n[r] for r in rroots}
 
     farm_pos0_root = {}
     farm_anypos_root = {}
@@ -1355,6 +1544,7 @@ def decompose_export(state):
         "city_root_delta": city_root_delta,
         "road_side_root": road_side_root,
         "road_root_finished": road_root_finished,
+        "road_root_open_n": road_root_open_n,
         "farm_pos0_root": farm_pos0_root,
         "farm_anypos_root": farm_anypos_root,
         "farm_root_adj_city_roots": farm_root_adj_city_roots,

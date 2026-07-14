@@ -45,6 +45,8 @@ sys.path.insert(0, str(ROOT / "engine"))
 
 import numpy as np  # noqa: E402
 
+from dataclasses import replace  # noqa: E402
+
 from carcassonne_ai import flat_leaf  # noqa: E402
 from carcassonne_ai import flat_leaf_cy  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
@@ -56,6 +58,15 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG, LeafConfig  # noqa: 
 CFG_Pre27 = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=5.0, opp_bonus_cap=5.0)
 CFG_Weird = LeafConfig(closure_p={1: 1.0}, bonus_cap=3.0, opp_bonus_cap=7.5, meeple_k=0.35)
 
+# C7 wave-2 ON configs (curve + Term R / Term F / both). Term R requires a curve, so
+# these carry the frozen v2.9 curve. Bit-exact cy==py over full games is the C7 gate.
+_C7_CURVE = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
+_C7_BASE = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=8.0,
+                      opp_bonus_cap=8.0, meeple_k=2.0, v29_meeple_curve=_C7_CURVE)
+CFG_C7_R1 = replace(_C7_BASE, v29_meeple_return_k=1.0)
+CFG_C7_F05 = replace(_C7_BASE, v29_farm_flip_k=0.5)
+CFG_C7_RF = replace(_C7_BASE, v29_meeple_return_k=1.0, v29_farm_flip_k=0.5)
+
 STRUCT_FIELDS = [
     ("city_side_root", "city_side_root"),
     ("city_root_finished", "city_root_finished"),
@@ -63,6 +74,7 @@ STRUCT_FIELDS = [
     ("city_root_delta", "city_root_delta"),
     ("road_side_root", "road_side_root"),
     ("road_root_finished", "road_root_finished"),
+    ("road_root_open_n", "road_root_open_n"),
     ("farm_pos0_root", "farm_pos0_root"),
     ("farm_anypos_root", "farm_anypos_root"),
     ("farm_root_adj_city_roots", "farm_root_adj_city_roots"),
@@ -137,6 +149,15 @@ def main() -> int:
     configs = [("prod-default", DEFAULT_CONFIG)]
     if not args.skip_offprod:
         configs += [("pre-v2.7", CFG_Pre27), ("weird", CFG_Weird)]
+    # C7 wave-2 ON configs (always checked — the reason this gate was extended).
+    configs += [("c7-R1.0", CFG_C7_R1), ("c7-F0.5", CFG_C7_F05), ("c7-both", CFG_C7_RF)]
+
+    # Force the "py" reference to the PURE-PYTHON flat path: with USE_CY_LEAF on (the
+    # default), flat_leaf.flat_virtual_score_v2 would itself route to the cy port for
+    # every cy-supported cfg, making the leaf compare cy-vs-cy (vacuous). Disabling it
+    # here makes py genuinely pure-Python; the cy side is called directly. check_wiring
+    # (below) saves/restores this flag independently.
+    flat_leaf.USE_CY_LEAF = False
 
     game = Game()
     states_seen = 0
@@ -155,14 +176,18 @@ def main() -> int:
                 for name, cfg in configs:
                     py = flat_leaf.flat_virtual_score_v2(state, p, cfg)
                     cy = flat_leaf_cy.flat_virtual_score_v2_cy(state, p, cfg)
+                    # pre-round float too (catches sub-integer divergence the int round
+                    # would hide — the C7 term floats must match bit-for-bit).
+                    pyf = flat_leaf.flat_virtual_score_v2_float(state, p, cfg)
+                    cyf = flat_leaf_cy.flat_virtual_score_v2_cy_float(state, p, cfg)
                     v2_checks += 1
-                    if py != cy:
+                    if py != cy or pyf != cyf:
                         v2_mism += 1
                         mism_by_cfg[name] += 1
                         if first_fail is None:
                             first_fail = (
                                 f"LEAF game_seed={args.seed + g} p={p} cfg={name}: "
-                                f"py={py} cy={cy}"
+                                f"py={py} cy={cy} pyf={pyf!r} cyf={cyf!r}"
                             )
                 base_checks += 1
                 bpy = flat_leaf.flat_base_score(state, p)

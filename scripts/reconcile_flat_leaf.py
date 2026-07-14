@@ -64,6 +64,7 @@ from carcassonne_ai.virtual_score import virtual_score  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import (  # noqa: E402
     DEFAULT_CONFIG,
     _closure_anticipation_bonus,
+    _open_road_positions,
     virtual_score_v2,
 )
 from wingedsheep.carcassonne.objects.coordinate import Coordinate  # noqa: E402
@@ -241,8 +242,12 @@ def main() -> int:
                          "run is UNDERSAMPLED and exits 3 (not 0), even with zero mismatches.")
     args = ap.parse_args()
 
-    assert "/carc-leafdev/" in carcassonne_ai.__file__, f"not worktree: {carcassonne_ai.__file__}"
-    assert "/carc-leafdev/" in wingedsheep.__file__, f"not worktree: {wingedsheep.__file__}"
+    # Ensure the source worktree is imported (not a site-packages install) — accept
+    # ANY worktree the script is run from (ROOT = this script's repo root; the old
+    # hard-coded /carc-leafdev/ pin was stale — leaf dev now lives on the main tree).
+    _root = str(ROOT)
+    assert _root in carcassonne_ai.__file__, f"not this worktree: {carcassonne_ai.__file__} (expected under {_root})"
+    assert _root in wingedsheep.__file__, f"not this worktree: {wingedsheep.__file__} (expected under {_root})"
 
     # The flat leaf is CANONICAL (order-independent fsum) by construction, so the
     # engine bonus/v2 it is compared against must run canonical too — else the
@@ -339,6 +344,12 @@ def main() -> int:
                         road_mism += 1
                         fail(f"ROAD edge {cws.coordinate.row},{cws.coordinate.column},{cws.side}: "
                              f"flat(fin={r_fin},n={len(r_pos)}) truth(fin={t_fin},n={len(t_pos)})")
+                    # C7 Term R: road_root_open_n == engine _open_road_positions
+                    t_open = _open_road_positions(state, road)
+                    if decomp.road_root_open_n[root] != t_open:
+                        road_mism += 1
+                        fail(f"ROAD open_n edge {cws.coordinate.row},{cws.coordinate.column},{cws.side}: "
+                             f"flat={decomp.road_root_open_n[root]} truth={t_open}")
                     cov_rfin += 1 if t_fin else 0
                     cov_runfin += 0 if t_fin else 1
 
