@@ -49,9 +49,11 @@ K=2                        # exact-K both sides
 BAND=18000000000           # 1.80e10, ONE band for all cells (CRN). 1.60e10 was NOT free (D-1 ladder).
 CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750   # champion-sibling A/B knobs
 
-# 3 Term-F dose cells (design's monotone axis; 0.5 guess, 0.25 under, 1.0 over-dose wing).
-# OFF == champion == 0 by construction (Stage-0 mirror is the anchor's proof). R cells dropped (cost).
-CELLS_ALL="flip025 flip050 flip100"
+# 3 Term-F dose cells + 3 Term-R dose cells. R RE-ADDED 2026-07-14 (Joshua accepts the 1.2x per-leaf
+# cost): screen R at equal sims=2750, read RAW paired elo vs the +35/z1.5 gate (NO cost penalty — cost
+# accepted); the in-run ms-ratio will show ~1.2, expected/fine. OFF == champion == 0 by construction.
+# Run R alone with: --cells "ret050 ret100 ret200" (band 1.80e10, CRN-shares the champion decks with F).
+CELLS_ALL="flip025 flip050 flip100 ret050 ret100 ret200"
 
 case "$BOX_TAG" in
   local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared ;;
