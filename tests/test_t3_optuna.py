@@ -54,6 +54,13 @@ epp = importlib.util.module_from_spec(_spec)
 sys.modules["eval_puct_priors"] = epp  # fork-Pool workers unpickle _play_one by module name
 _spec.loader.exec_module(epp)
 
+# the T3 driver (emission exactness §5c, anchors, ranges/rounding §2)
+_dspec = importlib.util.spec_from_file_location(
+    "optuna_knob_sweep", REPO / "scripts" / "classical_search" / "optuna_knob_sweep.py")
+oks = importlib.util.module_from_spec(_dspec)
+sys.modules["optuna_knob_sweep"] = oks
+_dspec.loader.exec_module(oks)
+
 DEF = epp.DEFAULT_CONFIG
 
 # curve125 champion leaf hash on current code (verified 2026-07-14 against the real
@@ -226,3 +233,86 @@ def test_pin_vs_leak_manifest_opponent_c_puct(tmp_path):
     assert leak_man["candidate"]["c_puct"] == 2.0
     assert leak_man["opponent"]["c_puct"] == 2.0         # THE LEAK
     assert leak_man["opponent"]["pinned_champion_knobs"] is False
+
+
+# --------------------------------------------------------------------------- #
+# Driver EMISSION EXACTNESS (S0c, design §2/§5c) — self-consistent vs whatever  #
+# DEFAULT_CONFIG resolved to (the absolute curve125 hash is the subprocess test).#
+# --------------------------------------------------------------------------- #
+def test_emission_champion_verbatim_hashes_equal():
+    # scale==1.0 / caps==champion emits the champion leaf VERBATIM -> cand hash == champ
+    assert oks.cand_leaf_hash(oks.CHAMP) == epp._leaf_hash(DEF)
+
+
+def test_emission_scale_and_caps_change_the_hash():
+    for override in ({"curve_scale": 1.2}, {"pclose_scale": 1.1},
+                     {"bonus_cap": 7.0}, {"opp_bonus_cap": 9.0}):
+        p = {**oks.CHAMP, **override}
+        assert oks.cand_leaf_hash(p) != epp._leaf_hash(DEF), override
+
+
+def test_emission_curve_scale_multiplies_each_entry():
+    lj = oks.leaf_json({**oks.CHAMP, "curve_scale": 1.2})
+    for got, base in zip(lj["v29_meeple_curve"], oks.CHAMP_CURVE):
+        assert got == pytest.approx(base * 1.2)
+
+
+def test_emission_pclose_scale_multiplies_each_value():
+    lj = oks.leaf_json({**oks.CHAMP, "pclose_scale": 1.1})
+    assert lj["closure_p"] == {k: pytest.approx(oks.CHAMP_CLOSURE_P[int(k)] * 1.1)
+                               for k in ("1", "2", "3")}
+
+
+def test_emission_closure_keys_survive_str_to_int_roundtrip():
+    lj = oks.leaf_json({**oks.CHAMP, "pclose_scale": 1.1})
+    assert set(lj["closure_p"]) == {"1", "2", "3"}          # emitted as str keys
+    cfg = epp._load_cand_leaf_cfg(json.dumps(lj))
+    assert set(cfg.closure_p) == {1, 2, 3}                  # coerced back to int
+    assert all(isinstance(k, int) for k in cfg.closure_p)
+
+
+def test_emission_leaf_stays_on_cy_float_path():
+    # every emitted candidate leaf must clear the cy-float guard (else ~30x object path)
+    for override in ({}, {"curve_scale": 0.8}, {"curve_scale": 1.45},
+                     {"pclose_scale": 1.3}, {"bonus_cap": 12.0}, {"opp_bonus_cap": 6.5}):
+        cfg = epp._load_cand_leaf_cfg(json.dumps(oks.leaf_json({**oks.CHAMP, **override})))
+        epp._assert_cy_float_path(cfg)   # must not raise
+
+
+# --------------------------------------------------------------------------- #
+# Driver SPACE / rounding (§2) + enqueued anchors (§1(5))                      #
+# --------------------------------------------------------------------------- #
+def test_space_ranges_and_rounding():
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study = oks.build_study(None, 20260714, in_memory=True)
+    dp = {k: oks.SPACE[k][3] for k in oks.KNOB_ORDER}
+    for _ in range(60):
+        t = study.ask()
+        p = oks.suggest_params(t)
+        for knob in oks.KNOB_ORDER:
+            lo, hi, _log, ndp = oks.SPACE[knob]
+            assert lo <= p[knob] <= hi, f"{knob}={p[knob]} out of [{lo},{hi}]"
+            assert round(p[knob], ndp) == p[knob], f"{knob} not rounded to {ndp}dp"
+        study.tell(t, 0.0)
+
+
+def test_enqueued_anchors_are_champion_and_curve14():
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study = oks.build_study(None, 20260714, in_memory=True)
+    oks.enqueue_anchors_if_fresh(study)
+    t0 = study.ask(); p0 = oks.suggest_params(t0)
+    assert p0 == {k: oks.CHAMP[k] for k in oks.KNOB_ORDER}      # trial 0 = champion
+    assert oks.cand_leaf_hash(p0) == epp._leaf_hash(DEF)        # -> champion leaf hash
+    study.tell(t0, 0.0)
+    t1 = study.ask(); p1 = oks.suggest_params(t1)
+    assert p1["curve_scale"] == 1.4                             # trial 1 = curve1.4rel
+    assert all(p1[k] == oks.CHAMP[k] for k in oks.KNOB_ORDER if k != "curve_scale")
+
+
+def test_env_guard_raises_on_wrong_champion(monkeypatch):
+    # verify_champion_env must FAIL LOUD if DEFAULT_CONFIG isn't the curve125 champion
+    monkeypatch.setattr(oks, "EXPECTED_CHAMP_LEAF_HASH", "deadbeefdeadbeef")
+    with pytest.raises(SystemExit):
+        oks.verify_champion_env()
