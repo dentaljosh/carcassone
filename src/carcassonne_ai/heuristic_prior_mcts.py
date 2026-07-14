@@ -93,6 +93,12 @@ def leaf_score_float(state, player: int, cfg) -> float:
         )
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
+    # C7 Term R then Term F — two separate gated adds (fixed order; float add is
+    # non-associative). Call the SHARED flat_leaf helpers, do not re-implement.
+    if cfg.v29_meeple_return_k != 0.0:
+        score += cfg.v29_meeple_return_k * flat_leaf.flat_return_term(state, player, decomp, cfg)
+    if cfg.v29_farm_flip_k != 0.0:
+        score += cfg.v29_farm_flip_k * flat_leaf.flat_farm_flip_term(state, player, decomp, cfg)
     return float(score)
 
 
