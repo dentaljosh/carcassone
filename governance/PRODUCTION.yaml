@@ -65,11 +65,21 @@ champion:
     v29_meeple_curve: [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]   # C5 curve125 = prior ×1.25 exactly
     bonus_cap: 8.0                      # UNCHANGED (C5 confirmed cap8 optimal: opp_cap wings both negative)
     opp_bonus_cap: 8.0                  # UNCHANGED
-    meeple_k: 2.0                       # INERT — the curve (non-null) REPLACES the flat meeple_k term
-                                        # (flat_leaf.py:838, `if curve is not None`). Kept for record; not load-bearing.
+    # meeple_k OMITTED (was 2.0) — INERT under a non-null curve: flat_leaf.py:988 `if curve is not None`
+    # takes the curve branch, never the flat meeple_k term. Removed 2026-07-14 (T4b hygiene, Joshua approved)
+    # to kill the sweepable-but-ignored config trap. The launcher still exports CARCASSONNE_V25_MEEPLE_K=2.0 (unused here).
   sims: "~2750 (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box; the sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number)"
   c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
-  endgame: "exact K<=4 alpha-beta solver handoff (scripts/level2/endgame_solver.py) — UNCHANGED; identical both sides so it does not affect the search-A/B margin"
+  endgame: >
+    Two handoffs share this champion. (a) CLAIRVOYANT reference/eval agent — what the
+    champion's strength numbers were measured with: exact K<=4 clairvoyant alpha-beta solver
+    (scripts/level2/endgame_solver.py, mode=clairvoyant), margin-correct; UNCHANGED and
+    identical both sides, so it does not affect the search-A/B margin. (b) FAIR deployable
+    agent for human-facing play (src/carcassonne_ai/fair_agent.py): exact K<=2 MARGINALIZED
+    expectiminimax handoff (mode=marginalized, no alpha-beta). Alpha-beta and K=3-4 are
+    clairvoyant-only (they read the true deck order) so the fair agent caps at K<=2 marginalized.
+    Audited 2026-07-06 (measurement/fair_handoff_audit/REPORT.md): 0 clairvoyant/alpha-beta
+    solves in 20 fair games; the marginalized solve is bit-invariant to deck permutation.
   fair_deploy:                          # the human-facing (non-clairvoyant) PIMC deploy config. Clairvoyant dev/ruler
                                         # play uses ONE true deck (no determinizations), so k_dets applies to fair deploy ONLY.
     k_dets: 4                           # ADOPTED 2026-07-13 (CL-054). Determinizations per move; was the legacy k8.
