@@ -1,16 +1,17 @@
-# PRODUCTION.yaml hygiene proposals — PROPOSE, DO NOT APPLY (needs Joshua)
+# PRODUCTION.yaml hygiene proposals — ✅ APPROVED by Joshua + APPLIED
 
-**Date:** 2026-07-14 · **Status:** PROPOSED (unapplied) · **Source:** BACKLOG re-audit T4 (items a + b).
+**Date:** 2026-07-14 · **Status:** ✅ APPROVED by Joshua 2026-07-14 + APPLIED — (a) endgame-wording + (b) meeple_k-removal in commit `cf6384b`; (c) code fix in `249f5b9` · **Source:** BACKLOG re-audit T4 (items a + b).
 
 Standing rule: `governance/PRODUCTION.yaml` is never touched without Joshua's explicit
 approval. He is away. Both items below are behavior-neutral config hygiene (the champion
 plays identically either way — the meeple_k key is proven INERT and the endgame line is
-documentation), so there is no urgency; they are staged here for the next approved
-governance touch. Neither has been applied.
+documentation), so there was no urgency. **UPDATE 2026-07-14: Joshua APPROVED both; applied
+in commit `cf6384b` (PRODUCTION.yaml edited by Joshua directly). Both behavior-neutral —
+the champion plays identically.**
 
 ---
 
-## (a) Phase-0.1 wording fix — the `endgame:` line conflates two configs
+## (a) Phase-0.1 wording fix — the `endgame:` line conflates two configs — ✅ APPROVED by Joshua 2026-07-14 + APPLIED (commit cf6384b)
 
 The fair-handoff audit (`measurement/fair_handoff_audit/REPORT.md`, 2026-07-06) proved
 that the "K<=4 alpha-beta" wording can only describe the CLAIRVOYANT reference/eval agent,
@@ -47,7 +48,7 @@ behavior change.
 
 ---
 
-## (b) Remove the INERT `meeple_k: 2.0` key — config-hygiene trap
+## (b) Remove the INERT `meeple_k: 2.0` key — config-hygiene trap — ✅ APPROVED by Joshua 2026-07-14 + APPLIED (commit cf6384b)
 
 The C5 leaf-retune design pass (roadmap 2026-07-13; `C5_LEAF_RETUNE_DESIGN.md`) found that
 `meeple_k` is dead once the meeple **curve** is non-null: the flat `meeple_k` term is
@@ -108,7 +109,8 @@ boundary (no fair run active) with a one-line DECISIONS stamp noting the fair-ba
 
 ---
 
-*(a)/(b) NOT applied — they never touched PRODUCTION.yaml; apply only on Joshua's explicit approval.
-(c) is a CODE fix (`fair_agent.py`, not PRODUCTION.yaml): APPROVED by Joshua 2026-07-14 + APPLIED
-(commit `249f5b9`), closed out per the CLAUDE.md six-touch rule (DECISIONS 2026-07-14 + CLAIM_REGISTRY
-CL-056). PRODUCTION.yaml UNTOUCHED throughout.*
+*(a)/(b) ✅ APPROVED by Joshua 2026-07-14 + APPLIED to PRODUCTION.yaml in commit `cf6384b` (Joshua
+edited the YAML directly); both behavior-neutral (endgame wording is documentation; meeple_k was
+proven INERT). (c) is a CODE fix (`fair_agent.py`, not PRODUCTION.yaml): APPROVED by Joshua
+2026-07-14 + APPLIED (commit `249f5b9`), closed out per the CLAUDE.md six-touch rule (DECISIONS
+2026-07-14 + CLAIM_REGISTRY CL-056).*

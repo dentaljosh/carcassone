@@ -48,6 +48,25 @@ def test_deck_hash_deterministic_and_seed_sensitive():
     assert len(h1) == 16
 
 
+def test_deck_hash_covers_first_drawn_tile():
+    """Regression (hygiene 4c): the engine draws the FIRST tile into next_tile at
+    init, so two decks differing only in that first tile must NOT collide. The
+    pre-fix hash (state.deck only) omitted next_tile and would collide here."""
+    import random
+    random.seed(ep.EVAL_SEED_FLOOR)
+    board = Game(enable_legal_moves_cache=True).get_init_board()
+    h0 = ep.deck_hash(board)
+    orig = board.state.next_tile
+    # Swap in a deck tile whose description differs from next_tile (deck unchanged
+    # in content is irrelevant — only next_tile changes), so the FULL initial deck
+    # differs solely in the first drawn tile.
+    alt = next((t for t in board.state.deck if t.description != orig.description), None)
+    assert alt is not None, "expected a base deck with >1 tile description"
+    board.state.next_tile = alt
+    assert ep.deck_hash(board) != h0, (
+        "changing only the first drawn tile (next_tile) must change deck_hash")
+
+
 # --- seed namespace guard --------------------------------------------------
 
 def test_seed_guard_rejects_selfplay_namespace():

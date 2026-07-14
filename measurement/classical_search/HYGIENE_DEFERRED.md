@@ -1,6 +1,6 @@
 # Hygiene items DEFERRED — touch a LIVE eval-screen code path (apply after the screen)
 
-**Date:** 2026-07-14 · **Status:** PREPARED, NOT APPLIED · **Source:** BACKLOG re-audit T4 (items c + d).
+**Date:** 2026-07-14 · **Status:** ✅ APPLIED 2026-07-14 (this commit — both boxes idle, no `eval_puct_priors` run active; verified) · **Source:** BACKLOG re-audit T4 (items c + d).
 
 Context: a CLAIRVOYANT PUCT eval screen (C7 Term-R) was RUNNING on both boxes when this
 bundle was done. Its workers re-spawn per launcher retry-iter and load code fresh from disk,
@@ -15,7 +15,7 @@ committed.
 
 ---
 
-## (c) `deck_hash` omits the first drawn tile — in `eval_provenance.py` (ON the eval path)
+## (c) `deck_hash` omits the first drawn tile — in `eval_provenance.py` (ON the eval path) — ✅ APPLIED 2026-07-14 (this commit)
 
 **Why deferred:** the omission lives in `src/carcassonne_ai/eval_provenance.py::deck_hash`,
 which is imported by the running screen (`eval_puct_priors.py:112
@@ -64,7 +64,7 @@ format change.
 
 ---
 
-## (d) Abbots defensive assert — appropriate spot is `game_wrapper.py` (ON the eval path)
+## (d) Abbots defensive assert — appropriate spot is `game_wrapper.py` (ON the eval path) — ✅ APPLIED 2026-07-14 (this commit)
 
 **Why deferred:** the natural, central scope-guard spot is in
 `src/carcassonne_ai/game_wrapper.py` (the `Game` wrapper already enforces scope there — the
@@ -107,5 +107,12 @@ construction, so the direct-state test is the one that exercises the new assert.
 
 ---
 
-*Both prepared; apply after the C7 screen concludes, one commit each, tests included, per the
-CLAUDE.md operating norms.*
+*Both ✅ APPLIED 2026-07-14 in this commit (the C7 screen having concluded; both boxes idle,
+`pgrep -af eval_puct_priors` clear). Applied together in one commit (not one-each) since both
+land at a clean idle boundary. Tests: `test_deck_hash_covers_first_drawn_tile` (4c regression)
+and `test_get_init_board_asserts_no_abbots` (4d) added and green; broad `-k "provenance or
+deck or wrapper or board or mcts"` sanity = 179 passed; the deck_hash-comparing harnesses
+(c5_leaf_ab / c5_fair_leaf_ab / rr_roundrobin) = 35 passed. Both behavior-neutral for champion
+play. Caveat (4c): the fix changes every deck's hash value → new `deck_hash` rows are
+incomparable to pre-fix rows (provenance discontinuity; within-run CRN pairing still holds).
+See DECISIONS.md 2026-07-14.*

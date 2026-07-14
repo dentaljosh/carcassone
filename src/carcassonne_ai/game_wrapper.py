@@ -346,6 +346,13 @@ class Game:
             tile_sets=list(self.tile_sets),
             supplementary_rules=list(self.supplementary_rules),
         )
+        # Scope guard (locked scope = 2p Base+Farmers, NO Abbots): a base+farmers
+        # state has abbots == [0, 0] and no ABBOT meeple can ever be placed. If this
+        # fires, an out-of-scope ABBOTS state slipped past the __init__ guard and
+        # would silently mis-score — fail loud instead of scoring the wrong game.
+        assert not any(state.abbots), (
+            f"scope violation: abbots enabled ({state.abbots}); locked scope is "
+            "2p Base+Farmers, no Abbots")
         # +1 for the first tile already drawn into next_tile.
         total_tiles = len(state.deck) + 1
         return Board.from_state(state, total_tiles, self.window_size)

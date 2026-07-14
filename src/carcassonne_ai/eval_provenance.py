@@ -58,7 +58,12 @@ def deck_hash(board) -> str:
     """Stable 16-hex identity of a game's shuffled deck, computed at init (before
     any tile is drawn). Lets a results row prove which deck it played and lets us
     detect overlap with trained-on self-play decks (outside-review A9)."""
-    descs = tuple(t.description for t in board.state.deck)
+    st = board.state
+    # The engine draws the FIRST tile into `next_tile` at init (deck.pop(0)), so
+    # `state.deck` alone omits it — two decks differing only in that first tile
+    # would collide. Hash the FULL initial deck: [next_tile] + deck.
+    tiles = ([st.next_tile] if st.next_tile is not None else []) + list(st.deck)
+    descs = tuple(t.description for t in tiles)
     return hashlib.sha256(repr(descs).encode()).hexdigest()[:16]
 
 
