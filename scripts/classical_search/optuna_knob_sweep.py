@@ -250,13 +250,14 @@ def run_cell(params, n, sub, exp_id, band, out_root, sims, exact_k, workers,
     results exist, then a final no-worker aggregate writes summary.json. The per-seed
     cache makes an extension (rung B/C) replay the already-played decks for free."""
     cell_dir = Path(out_root) / sub
-    cell_dir.mkdir(parents=True, exist_ok=True)
     base = _base_argv(params, n, sub, exp_id, band, out_root, sims, exact_k)
     if dry_run_log is not None:
+        # dry-run touches NOTHING on disk (no mkdir) — pure argv preview
         dry_run_log.append(base + ["--workers", str(workers), "--shared-claim",
                                    "--claim-host", claim_host, "--claim-stale-secs",
                                    str(claim_stale)])
         return None
+    cell_dir.mkdir(parents=True, exist_ok=True)
     _clean_stale_claims(cell_dir, None)   # primary force-cleans orphan claims at cell start
     it = 0
     while _count_results(cell_dir) < n and it < max_iter:
