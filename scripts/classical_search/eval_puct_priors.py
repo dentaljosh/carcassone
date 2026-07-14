@@ -248,7 +248,8 @@ class _ChampPrefix:
         return int(self._m.best_action(board))
 
 
-def _champ_puct_cfg(shared: dict, reuse: bool = False) -> "HeuristicPriorConfig":
+def _champ_puct_cfg(shared: dict, reuse: bool = False,
+                    pin_champion: bool = False) -> "HeuristicPriorConfig":
     """Build the flag-OFF champion PUCT-heuristic-priors config, taking only the
     SHARED axes (c_puct/tau_p/leaf_quantize) from `shared` (the candidate's
     cand_cfg_dict) and forcing every variant knob to its champion-off value. This
@@ -256,10 +257,26 @@ def _champ_puct_cfg(shared: dict, reuse: bool = False) -> "HeuristicPriorConfig"
 
     `reuse` (default False = byte-for-byte the flag-OFF sibling) is the C6
     --opp-reuse-tree relaxation: the Stage-2 confirm runs vs the champion OF RECORD,
-    which is reuse_tree=True (CL-044). Left False for the Stage-1 screen."""
+    which is reuse_tree=True (CL-044). Left False for the Stage-1 screen.
+
+    `pin_champion` (default False = byte-identical legacy: the c_puct/tau_p/
+    leaf_quantize "shared axes" copy from the candidate) is the T3 --opp-pin-champion
+    fix for the JOINT knob sweep: when a sweep moves --c-puct/--tau-p the shared-axis
+    copy would silently move BOTH sides (the A/B measures nothing). With it set the
+    opponent sibling takes the champion CONSTANTS (CHAMP_PUCT_C_PUCT/TAU_P/
+    LEAF_QUANTIZE) instead, so the candidate's search knobs are isolated. See
+    OPTUNA_KNOB_SWEEP_DESIGN.md §3/§5(a)."""
+    if pin_champion:
+        c_puct = CHAMP_PUCT_C_PUCT
+        tau_p = CHAMP_PUCT_TAU_P
+        leaf_quantize = CHAMP_PUCT_LEAF_QUANTIZE
+    else:
+        c_puct = shared["c_puct"]
+        tau_p = shared["tau_p"]
+        leaf_quantize = shared["leaf_quantize"]
     return HeuristicPriorConfig(
-        c_puct=shared["c_puct"], tau_p=shared["tau_p"],
-        leaf_quantize=shared["leaf_quantize"],
+        c_puct=c_puct, tau_p=tau_p,
+        leaf_quantize=leaf_quantize,
         final_select=CHAMP_PUCT_FINAL_SELECT, value_norm=CHAMP_PUCT_VALUE_NORM,
         c_lcb=CHAMP_PUCT_C_LCB, reuse_tree=bool(reuse),
         root_select="puct",   # the flag-OFF baseline: PUCT root, never Gumbel
@@ -318,6 +335,13 @@ def _parse_candidate(tok: str):
 CHAMP_PUCT_FINAL_SELECT = "visits"
 CHAMP_PUCT_VALUE_NORM = 15.0
 CHAMP_PUCT_C_LCB = 1.0
+# T3 --opp-pin-champion (OPTUNA_KNOB_SWEEP_DESIGN.md §3): the champion's SHARED-axis
+# values (c_puct/tau_p/leaf_quantize). Legacy default copies these from the candidate
+# ("shared axes" — correct for C2–C7 which never swept them); the joint knob sweep
+# pins them to these constants so moving --c-puct/--tau-p isolates the candidate side.
+CHAMP_PUCT_C_PUCT = 1.5
+CHAMP_PUCT_TAU_P = 5.0
+CHAMP_PUCT_LEAF_QUANTIZE = "float"
 
 
 def _parse_opponent(tok: str):
@@ -399,6 +423,15 @@ def _variant_sig(args) -> str:
         if args.gumbel_c_scale != 1.0:
             g += f"cs{args.gumbel_c_scale:g}"
         parts.append(g)
+    # T3 --opp-pin-champion: c_puct/tau_p normally ride BOTH sides (shared axes) so they
+    # are never tagged; when the opponent is pinned they genuinely differ between sides,
+    # so tag them (only when they diverge from the champion constant) — defense-in-depth
+    # against two pinned c/τ cells auto-colliding on one out-dir (design §3(1)).
+    if getattr(args, "opp_pin_champion", False):
+        if args.c_puct != CHAMP_PUCT_C_PUCT:
+            parts.append(f"c{args.c_puct:g}")
+        if args.tau_p != CHAMP_PUCT_TAU_P:
+            parts.append(f"tp{args.tau_p:g}")
     return "".join("-" + p for p in parts)
 
 
@@ -627,12 +660,14 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  shared_claim, claim_host, claim_stale,
                  cand_kind="puct", opp_kind="heur", opp_sims=None,
                  net_ckpt="", net_ns=10, shm_name="", id_q=None,
-                 cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False):
+                 cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False,
+                 opp_pin_champion=False):
     _W["cand_cfg_dict"] = cand_cfg_dict
     # candidate-side leaf override (None -> DEFAULT_CONFIG); champion stays DEFAULT.
     _W["cand_leaf_cfg"] = cand_leaf_cfg
     _W["ab_cfg_dict"] = ab_cfg_dict            # C6 AlphaBetaConfig knobs (None unless ab)
     _W["opp_reuse"] = bool(opp_reuse)          # --opp-reuse-tree (Stage-2 confirm only)
+    _W["opp_pin_champion"] = bool(opp_pin_champion)  # T3 --opp-pin-champion (§3 shared-axis fix)
     _W["cand_sims"] = cand_sims
     _W["champ_sims"] = champ_sims
     _W["exact_k"] = exact_k
@@ -728,7 +763,8 @@ def _play_one(args) -> GameResult | None:
     elif opp_kind == "puct":
         champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
                                    _champ_puct_cfg(_W["cand_cfg_dict"],
-                                                   reuse=_W.get("opp_reuse", False)),
+                                                   reuse=_W.get("opp_reuse", False),
+                                                   pin_champion=_W.get("opp_pin_champion", False)),
                                    _W["opp_sims"], seed + 1)
         opp_K = K
     else:
@@ -957,9 +993,11 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         if opp_kind == "heur":
             opp_desc = f"heur h{opp_sims}"
         elif opp_kind == "puct":
+            _pin = (f" PINNED(c={CHAMP_PUCT_C_PUCT:g} tau={CHAMP_PUCT_TAU_P:g} "
+                    f"quant={CHAMP_PUCT_LEAF_QUANTIZE})" if args.opp_pin_champion else "")
             opp_desc = (f"puct-CHAMPION(select={CHAMP_PUCT_FINAL_SELECT} "
                         f"value_norm={CHAMP_PUCT_VALUE_NORM:g} "
-                        f"reuse={'ON' if args.opp_reuse_tree else 'off'}) sims={opp_sims}")
+                        f"reuse={'ON' if args.opp_reuse_tree else 'off'}){_pin} sims={opp_sims}")
         else:
             opp_desc = f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)"
         print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k}")
@@ -988,7 +1026,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
             shared = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize}
             champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
-                                       _champ_puct_cfg(shared, reuse=args.opp_reuse_tree),
+                                       _champ_puct_cfg(shared, reuse=args.opp_reuse_tree,
+                                                       pin_champion=args.opp_pin_champion),
                                        opp_sims, seed + 1)
         else:
             champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
@@ -1114,6 +1153,17 @@ def main(argv=None) -> int:
                     help="ab: enable late-move reductions (move-changing; default OFF)")
     ap.add_argument("--cand-ab-futility", type=float, default=0.0,
                     help="ab frontier futility margin in points (0 = off; default OFF)")
+    ap.add_argument("--opp-pin-champion", action="store_true",
+                    help="T3 JOINT-SWEEP shared-axis fix (default OFF = byte-identical legacy). "
+                         "Requires --opponent puct. When set, the champion PUCT sibling takes the "
+                         "champion CONSTANTS c_puct=%(default_cpuct)s/tau_p=%(default_taup)s/"
+                         "leaf_quantize=%(default_quant)s instead of copying the candidate's "
+                         "shared axes — so a sweep of --c-puct/--tau-p isolates the candidate "
+                         "side (OPTUNA_KNOB_SWEEP_DESIGN.md §3). value_norm/final_select/reuse are "
+                         "already pinned; opponent sims stays = cand sims." % {
+                             "default_cpuct": CHAMP_PUCT_C_PUCT,
+                             "default_taup": CHAMP_PUCT_TAU_P,
+                             "default_quant": CHAMP_PUCT_LEAF_QUANTIZE})
     ap.add_argument("--opp-reuse-tree", action="store_true",
                     help="let the --opponent puct sibling run reuse_tree=True (the "
                          "champion OF RECORD; C6 Stage-2 confirm). Default OFF = the "
@@ -1156,6 +1206,8 @@ def main(argv=None) -> int:
         ap.error("--cand-ab-steps INT (>0) is required for --candidate ab")
     if args.opp_reuse_tree and opp_kind != "puct":
         ap.error("--opp-reuse-tree only applies to --opponent puct")
+    if args.opp_pin_champion and opp_kind != "puct":
+        ap.error("--opp-pin-champion only applies to --opponent puct")
 
     # candidate-side leaf override (--cand-leaf-json). None -> DEFAULT_CONFIG both
     # sides (byte-identical to today). The champion/opponent side NEVER takes it.
@@ -1306,7 +1358,17 @@ def main(argv=None) -> int:
                                   if args.opp_reuse_tree else "champion (variant flags OFF)"),
                          "sims": opp_sims, "exact_k": args.exact_k,
                          "reuse_tree": bool(args.opp_reuse_tree),
-                         **_champ_puct_cfg(cand_cfg_dict, reuse=args.opp_reuse_tree).as_manifest()}
+                         # T3 --opp-pin-champion (§3/§5a): whether the shared c/τ/quant axes
+                         # were pinned to the champion constants (True) or copied from the
+                         # candidate (False = legacy shared-axis leak). The as_manifest() below
+                         # already reflects the RESOLVED (pinned or leaked) c_puct/tau_p.
+                         "pinned_champion_knobs": bool(args.opp_pin_champion),
+                         "pinned_c_puct": (CHAMP_PUCT_C_PUCT if args.opp_pin_champion else None),
+                         "pinned_tau_p": (CHAMP_PUCT_TAU_P if args.opp_pin_champion else None),
+                         "pinned_leaf_quantize": (CHAMP_PUCT_LEAF_QUANTIZE
+                                                  if args.opp_pin_champion else None),
+                         **_champ_puct_cfg(cand_cfg_dict, reuse=args.opp_reuse_tree,
+                                           pin_champion=args.opp_pin_champion).as_manifest()}
         else:
             opp_block = {"kind": "net", "agent": "NeuralMCTS",
                          "ckpt": str(net_ckpt), "ckpt_sha256": net_sha,
@@ -1356,7 +1418,8 @@ def main(argv=None) -> int:
                             cand_kind, opp_kind, opp_sims, net_ckpt or "",
                             (net_meta or {}).get("n_scalar_features", 10),
                             args.shm_eval_server or "", id_q, cand_leaf_cfg,
-                            ab_cfg_dict, args.opp_reuse_tree)) as pool:
+                            ab_cfg_dict, args.opp_reuse_tree,
+                            args.opp_pin_champion)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
