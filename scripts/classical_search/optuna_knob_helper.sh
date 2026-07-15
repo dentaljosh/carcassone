@@ -40,6 +40,7 @@ POLL=15
 STALE_SECS=600
 DRYRUN=0
 CLAIM_STALE=300
+GAME_WALL=""                   # if set, exported as CARCASSONNE_GAME_WALL_SECS (per-game watchdog)
 while [ $# -gt 0 ]; do
   case "$1" in
     --share)         SHARE="${2:?}"; shift 2 ;;
@@ -47,6 +48,8 @@ while [ $# -gt 0 ]; do
     --subdir-prefix) SUBDIR_PREFIX="${2:?}"; shift 2 ;;
     --poll)          POLL="${2:?}"; shift 2 ;;
     --stale-secs)    STALE_SECS="${2:?}"; shift 2 ;;
+    --claim-stale)   CLAIM_STALE="${2:?}"; shift 2 ;;   # work-claim TTL; must EXCEED game-wall so a heavy game's claim never expires mid-play (else redundant replays)
+    --game-wall)     GAME_WALL="${2:?}"; shift 2 ;;      # per-game wall watchdog secs (CARCASSONNE_GAME_WALL_SECS)
     --dry-run)       DRYRUN=1; shift ;;
     *) echo "unknown arg '$1'"; exit 1 ;;
   esac
@@ -64,6 +67,9 @@ export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THRE
 export CARCASSONNE_V29_MEEPLE_CURVE=-10,-5,-1.25,0,2.5,3.75,5,6.25 CARCASSONNE_V25_MEEPLE_K=2.0
 export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_V25_VALUE_BLEND=0
 export CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+# per-game wall watchdog (raised for the Option-B heavy-deck re-run so farm-heavy decks COMPLETE
+# instead of timing out at the 3600s default). Inherited by the harness child. Empty => harness default.
+[ -n "$GAME_WALL" ] && export CARCASSONNE_GAME_WALL_SECS="$GAME_WALL"
 
 count_results() { ls "$1"/seed*_a*.json 2>/dev/null | grep -vc summary; }
 clean_stale_claims() {   # drop .claim files with no result; arg2=min-age-minutes (empty=all)
