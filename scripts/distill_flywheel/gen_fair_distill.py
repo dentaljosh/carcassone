@@ -132,11 +132,14 @@ def play_fair_distill_game_to_dataset(
     seed: int, *, k_dets: int, sims: int,
     c_puct: float = 1.5, tau_p: float = 5.0, value_norm: float = 15.0,
     exact_endgame: bool = True, exact_max_k: int = 2,
+    sighted: bool = False,
     window_size: int = 25, max_plies: int = 400,
 ) -> tuple[GameDataset | None, dict]:
     """Play ONE net-free FAIR champion self-play game (FairHeuristicPriorAgent vs
     itself) and return (GameDataset, info). One row per ply:
-      * NON-sighted obs (78ch) + base scalars (10) — matches warmstart_canonical.pt,
+      * obs + scalars from the encoder: DEFAULT non-sighted (78ch/10, matches
+        warmstart_canonical.pt); with sighted=True bag-aware (81ch/42, matches
+        m2_sighted/warmstart_sighted.pt) — ONLY the obs encoding changes,
       * policies = normalized pooled root-visit distribution (aux_mask=True rows);
         forced -> one-hot; exact-endgame/pathological -> zeros (aux_mask=False),
       * valid_masks = the legal mask (aux rows) / zeros (value-only rows),
@@ -147,12 +150,15 @@ def play_fair_distill_game_to_dataset(
     """
     random.seed(seed)  # seeds the deck shuffle (get_init_board uses the global RNG)
     game = Game(enable_legal_moves_cache=True, window_size=window_size)   # referee / deck driver
-    # NON-sighted obs encoder (78ch board / 10 base scalars) — matches the warm-from
-    # net checkpoints/warmstart_canonical.pt (stem in_channels=78) and the existing
-    # 96x6 production representation. (The copied base gen_fair_selfplay.py used a
-    # SIGHTED encoder for the C-cheap deck-aware VALUE experiment — irrelevant here;
-    # a sighted 81ch obs would not load into the 78ch warm-from net.)
-    encoder = Game(window_size=window_size)                              # 78ch / 10-scalar
+    # OBS encoder. DEFAULT (sighted=False): NON-sighted 78ch board / 10 base scalars —
+    # matches the warm-from net checkpoints/warmstart_canonical.pt (stem in_channels=78)
+    # and the 96x6 production representation. With sighted=True: bag-aware 81ch / 42
+    # scalars — matches m2_sighted/warmstart_sighted.pt. ONLY the observation encoding
+    # changes; the referee `game` (deck driver) and the champion `agent` (below) are
+    # identical, so the recorded policy/value TARGETS are byte-identical either way
+    # (fair-safe — the sighted extras are the order-agnostic public bag + board-derived
+    # farm planes, no deck-order/future-draw leak). See SIGHTED_SCOPE.md.
+    encoder = Game(sighted=sighted, window_size=window_size)             # 78ch/10 or (sighted) 81ch/42
     agent = FairHeuristicPriorAgent(
         Game(enable_legal_moves_cache=True, window_size=window_size),
         cfg=_champion_cfg(c_puct, tau_p, value_norm),
@@ -225,8 +231,8 @@ def play_fair_distill_game_to_dataset(
     N = len(obs_list)
     W = window_size
     ds = GameDataset(
-        boards=np.stack(obs_list).astype(np.float32, copy=False),      # (N,81,W,W)
-        scalars=np.stack(scl_list).astype(np.float32, copy=False),     # (N,42)
+        boards=np.stack(obs_list).astype(np.float32, copy=False),      # (N,C,W,W) C=78 (or 81 sighted)
+        scalars=np.stack(scl_list).astype(np.float32, copy=False),     # (N,S) S=10 (or 42 sighted)
         policies=np.stack(policy_list).astype(np.float32, copy=False), # (N,A) pooled-visit / one-hot / dummy
         values=values,                                                 # (N,) mover-POV outcome
         valid_masks=np.stack(mask_list),                               # (N,A) legal (aux) / zeros
@@ -241,10 +247,10 @@ _W: dict = {}
 
 
 def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_max_k,
-                 window_size, shared_claim, claim_host, claim_stale):
+                 sighted, window_size, shared_claim, claim_host, claim_stale):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
-              exact_max_k=exact_max_k, window_size=window_size,
+              exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
               shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale)
 
 
@@ -261,7 +267,7 @@ def _play_one(args) -> dict | None:
         seed, k_dets=_W["k_dets"], sims=_W["sims"], c_puct=_W["c_puct"],
         tau_p=_W["tau_p"], value_norm=_W["value_norm"],
         exact_endgame=_W["exact_endgame"], exact_max_k=_W["exact_max_k"],
-        window_size=_W["window_size"],
+        sighted=_W["sighted"], window_size=_W["window_size"],
     )
     if ds is None:
         info["skipped"] = True
@@ -283,6 +289,11 @@ def main(argv=None) -> int:
     ap.add_argument("--no-exact-endgame", dest="exact_endgame", action="store_false",
                     help="pure fair PIMC to the terminal (no marginalized solver)")
     ap.add_argument("--exact-max-k", type=int, default=2, help="fair endgame handoff depth K (champion=2)")
+    ap.add_argument("--sighted", action="store_true", default=False,
+                    help="use the bag-aware SIGHTED encoder (81ch board / 42 scalars) "
+                         "instead of the DEFAULT non-sighted (78ch / 10); ONLY the obs "
+                         "encoding changes (policy/value TARGETS identical) — the "
+                         "warm-from net must be built for the chosen dims")
     ap.add_argument("--window-size", type=int, default=25)
     ap.add_argument("--workers", type=int, default=None, help="Pool size (default min(cpu,games))")
     ap.add_argument("--seed-start", type=int, default=700_000_000,
@@ -301,6 +312,11 @@ def main(argv=None) -> int:
     # + resolved leaf provenance + policy/value semantics (addendum "Manifest").
     cfg = _champion_cfg(args.c_puct, args.tau_p, args.value_norm)
     resolved_hash = _resolved_leaf_hash()
+    # Resolved observation dims from the (sighted-aware) encoder — recorded in the
+    # manifest so the rep never needs dirname archaeology (non-sighted 78/10; sighted 81/42).
+    _enc = Game(sighted=args.sighted, window_size=args.window_size)
+    n_channels = _enc.get_input_channels()
+    n_scalars = _enc.get_scalar_feature_size()
     man = {
         "generator": "FairHeuristicPriorAgent self-play (net-free, blind PIMC) — DISTILLATION emitter",
         "teacher": {
@@ -326,7 +342,15 @@ def main(argv=None) -> int:
         "value_target": "game_outcome",
         "value_target_desc": f"mover-POV tanh((p0-p1)/{_OUTCOME_NORM:g}) backfilled from the FINAL score",
         "outcome_norm": _OUTCOME_NORM,
-        "representation": "78ch board / 10 base scalars (NON-sighted; matches warmstart_canonical.pt + the 96x6 net)",
+        "sighted": args.sighted,
+        "n_channels": n_channels,
+        "n_scalars": n_scalars,
+        "representation": (
+            f"{n_channels}ch board / {n_scalars} scalars "
+            + ("(SIGHTED bag-aware; matches m2_sighted/warmstart_sighted.pt)"
+               if args.sighted
+               else "(NON-sighted; matches warmstart_canonical.pt + the 96x6 net)")
+        ),
         "row_kind": "mixed (trajectory aux_mask=True incl. forced one-hot; exact-endgame/pathological value-only aux_mask=False)",
         "ownership": "DUMMY zeros (no fair ownership labels; driver trains --aux-weight 0)",
         "games": args.games, "seed_start": args.seed_start,
@@ -340,7 +364,8 @@ def main(argv=None) -> int:
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"gen_fair_distill: games={args.games} k_dets={args.k_dets} sims={args.sims} "
           f"(budget={args.k_dets*args.sims}) exact_endgame={args.exact_endgame} "
-          f"exact_max_k={args.exact_max_k} leaf_hash={resolved_hash} | "
+          f"exact_max_k={args.exact_max_k} sighted={args.sighted} "
+          f"rep={n_channels}ch/{n_scalars}sc leaf_hash={resolved_hash} | "
           f"{len(seeds)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}",
           flush=True)
 
@@ -353,7 +378,7 @@ def main(argv=None) -> int:
     with Pool(processes=workers, initializer=_worker_init,
               initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
                         args.value_norm, args.exact_endgame, args.exact_max_k,
-                        args.window_size, args.shared_claim, args.claim_host,
+                        args.sighted, args.window_size, args.shared_claim, args.claim_host,
                         args.claim_stale_secs)) as pool:
         for r in pool.imap_unordered(_play_one, todo, chunksize=1):
             if r is None or r.get("cached"):
