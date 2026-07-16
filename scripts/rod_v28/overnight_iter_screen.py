@@ -71,8 +71,15 @@ def parse_smoke(smoke_dir):
     return {"a_w": w, "a_l": losses, "a_d": d, "n": n, "wr": wr, "elo": elo, "sigma": sig}
 
 
-def screen(metrics, smoke, smoke_catastrophe_wr):
-    """Return (verdict, reasons[]). verdict in HEALTHY|COLLAPSE|AMBIGUOUS."""
+def screen(metrics, smoke, smoke_catastrophe_wr, val_pol_collapse_thresh=1.0):
+    """Return (verdict, reasons[]). verdict in HEALTHY|COLLAPSE|AMBIGUOUS.
+
+    ``val_pol_collapse_thresh`` (default 1.0) is the absolute val_pol_loss COLLAPSE
+    threshold for check #3a. The 1.0 default is tuned for SHARP self-play MCTS policy
+    targets (healthy ~0.27). SOFT targets — e.g. a fair-champion POOLED-visit
+    distillation, whose target entropy alone is ~1.35 — must raise it (the CE floor
+    exceeds 1.0 for a perfectly-healthy fit); those runs rely on the distribution-
+    agnostic collapse guards instead (#1 NaN, #2 entropy-floor, #3b relative rise)."""
     reasons = []
     catastrophe = False
     ambiguous = False
@@ -99,9 +106,9 @@ def screen(metrics, smoke, smoke_catastrophe_wr):
     # 3. val policy loss blow-up (healthy sits ~0.27; >1.0 = broken fit)
     if epochs:
         vlast = epochs[-1].get("val_pol_loss")
-        if not _isnan(vlast) and float(vlast) > 1.0:
+        if not _isnan(vlast) and float(vlast) > val_pol_collapse_thresh:
             catastrophe = True
-            reasons.append(f"val_pol_loss {vlast} > 1.0 — broken policy fit")
+            reasons.append(f"val_pol_loss {vlast} > {val_pol_collapse_thresh} — broken policy fit")
         # diverging across epochs (last > 1.5x first) is a soft flag
         vfirst = epochs[0].get("val_pol_loss")
         if not _isnan(vfirst) and not _isnan(vlast) and float(vlast) > 1.5 * float(vfirst) + 0.05:
@@ -201,6 +208,10 @@ def main():
     ap.add_argument("--smoke-dir", default="")
     ap.add_argument("--smoke-seed", default="")
     ap.add_argument("--smoke-catastrophe-wr", type=float, default=0.25)
+    ap.add_argument("--val-pol-collapse-thresh", type=float, default=1.0,
+                    help="absolute val_pol_loss COLLAPSE threshold (check #3a). Default 1.0 "
+                         "(sharp self-play targets). Raise for SOFT targets (fair-champion "
+                         "pooled-visit distillation: target entropy ~1.35 > 1.0).")
     ap.add_argument("--crashes", default="none")
     # Record labels — defaults preserve the v2.8 overnight behavior; RoD v2 overrides
     # these to the frozen v2.9 substrate so the manifest/csv are honest (the
@@ -216,7 +227,8 @@ def main():
     epochs = metrics.get("epochs", [])
     ck_sha = sha256(args.ckpt)
     smoke = parse_smoke(args.smoke_dir) if args.smoke_dir else None
-    verdict, reasons = screen(metrics, smoke, args.smoke_catastrophe_wr)
+    verdict, reasons = screen(metrics, smoke, args.smoke_catastrophe_wr,
+                              args.val_pol_collapse_thresh)
 
     total_steps = sum(int(e.get("n_batches", 0)) for e in epochs)
     train_sec_metrics = sum(float(e.get("wallclock_sec", 0.0)) for e in epochs)

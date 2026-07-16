@@ -31,10 +31,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts", "lev
 
 from carcassonne_ai.fair_agent import (
     FairHeuristicMCTSAgent,
+    FairHeuristicPriorAgent,
     k_remaining,
     pool_root_stats,
     pooled_q_argmax,
 )
+from carcassonne_ai.heuristic_prior_mcts import HeuristicPriorConfig
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.mcts import HeuristicMCTS, Node
 from wingedsheep.carcassonne.objects.game_phase import GamePhase
@@ -287,3 +289,60 @@ def test_exact_endgame_flag_gates_the_handoff():
 def test_k_remaining_matches_l23_convention():
     game, board = endgame_position(1, 2)
     assert k_remaining(board.state) == 2
+
+
+# --------------------------------------------------------------------------- #
+# (f) FairHeuristicPriorAgent.last_pooled_visits — the distillation stash        #
+#     (fair-distill addendum Change 2). ADDITIVE: exposing the pooled visit      #
+#     distribution must NOT change the pooled-Q played action.                   #
+# --------------------------------------------------------------------------- #
+def _prior_cfg():
+    """Champion fair_deploy knobs (leaf resolves from the session env — irrelevant
+    to the no-behavior-change pin, which is about the stash being inert)."""
+    return HeuristicPriorConfig(c_puct=1.5, tau_p=5.0, value_norm=15.0,
+                                leaf_quantize="float", final_select="visits",
+                                leaf_cfg=None)
+
+
+def test_prior_last_pooled_visits_nonempty_on_normal_move():
+    game, board = midgame_position(3, 20)
+    assert int(game.get_valid_moves(board).sum()) > 1, "need a non-forced move"
+    agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                    cfg=_prior_cfg(), sims=16, k_dets=2, seed=11,
+                                    exact_endgame=False)
+    a = agent.choose_action(board)
+    pv = agent.last_pooled_visits
+    assert isinstance(pv, dict) and len(pv) > 0, "normal move must stash a pooled dict"
+    assert all(v > 0 for v in pv.values()), "pooled visit counts must be positive"
+    assert a in pv, "the played (pooled-Q) action must be a pooled root action"
+    assert game.get_valid_moves(board)[a], "played action must be legal"
+
+
+def test_prior_stash_is_no_behavior_change():
+    """Reading last_pooled_visits (the additive stash) must not change the played
+    action: a seed-matched agent whose stash we never touch returns the SAME move."""
+    _game, board = midgame_position(3, 20)
+    a1_agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                       cfg=_prior_cfg(), sims=16, k_dets=2, seed=11,
+                                       exact_endgame=False)
+    a1 = a1_agent.choose_action(board)
+    _read = dict(a1_agent.last_pooled_visits)   # READ + consume the stash
+    assert _read  # (used, so the read is not optimized away)
+    a2_agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                       cfg=_prior_cfg(), sims=16, k_dets=2, seed=11,
+                                       exact_endgame=False)
+    a2 = a2_agent.choose_action(board)          # never read the stash
+    assert a1 == a2, "the additive stash perturbed the played action"
+
+
+def test_prior_exact_endgame_stash_is_value_only():
+    """The exact-endgame latch path stashes {} (an empty dict) so the emitter emits
+    a value-only row — this is what makes aux_mask MIXED across a game."""
+    game, board = endgame_position(1, 2)   # K=2 TILES root -> marginalized latch
+    agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                    cfg=_prior_cfg(), sims=16, k_dets=1, seed=5,
+                                    exact_endgame=True, exact_max_k=2)
+    a = agent.choose_action(board)
+    assert agent.exact_moves == 1, "K=2 root must take the exact handoff"
+    assert agent.last_pooled_visits == {}, "exact-endgame row must stash {} (value-only)"
+    assert game.get_valid_moves(board)[a], "played action must be legal"

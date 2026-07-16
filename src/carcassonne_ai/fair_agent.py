@@ -434,6 +434,11 @@ class FairHeuristicPriorAgent:
         self.solver_secs = 0.0
         self.solver_nodes = 0
         self.max_solve_secs = 0.0
+        # ADDITIVE distillation hook (no behavior change): after every choose_action
+        # this holds the POOLED root-visit distribution {action: summed N over k_dets}
+        # — the fair policy TARGET (== agg_n). One-hot {a:1.0} on a forced move; {} on
+        # the exact-endgame latch (value-only row). Does NOT touch the pooled-Q pick.
+        self.last_pooled_visits: dict | None = None
 
     # --- deterministic per-move seed derivation (mirrors FairHeuristicMCTSAgent) --
     def det_seed_base(self, move_idx: int) -> int:
@@ -449,6 +454,7 @@ class FairHeuristicPriorAgent:
         if legal.size == 0:
             raise ValueError("fair agent asked to move with no legal actions")
         if legal.size == 1:
+            self.last_pooled_visits = {int(legal[0]): 1.0}   # forced: one-hot policy
             return int(legal[0])   # forced move: skip the K searches
         base = self.det_seed_base(move_idx)
         det_rng = random.Random(base + 1)          # deck reshuffles
@@ -467,7 +473,11 @@ class FairHeuristicPriorAgent:
             pool_root_stats(root, agg_n, agg_w)
             m.clear()
         if not agg_n:                              # pathological: nothing visited
+            self.last_pooled_visits = {}           # no search signal -> value-only row
             return int(legal[0])
+        # ADDITIVE: stash the pooled visit distribution (the fair policy target)
+        # BEFORE the pooled-Q pick. This does NOT change the returned action.
+        self.last_pooled_visits = dict(agg_n)
         return pooled_q_argmax(agg_n, agg_w, self._min_pooled_visits)
 
     # --- the fair exact endgame (marginalized; identical to FairHeuristicMCTSAgent
@@ -503,6 +513,7 @@ class FairHeuristicPriorAgent:
         if self._latched:
             a = self._exact_move(board)
             if a is not None:
+                self.last_pooled_visits = {}   # exact-endgame row: value-only (no policy)
                 return a
             # BudgetExceeded: fair PIMC fallback for THIS decision only.
         return self._pimc_move(board, move_idx)
