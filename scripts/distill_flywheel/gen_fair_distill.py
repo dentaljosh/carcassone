@@ -76,6 +76,7 @@ for _k, _v in _CANON_ENV.items():
 
 import argparse
 import math
+import multiprocessing as mp
 import random
 import socket
 import sys
@@ -93,7 +94,10 @@ from carcassonne_ai.aux_targets import OWNERSHIP_PLANES  # noqa: E402
 from carcassonne_ai.claim import try_claim as _try_claim  # noqa: E402
 from carcassonne_ai.fair_agent import FairHeuristicPriorAgent  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
-from carcassonne_ai.heuristic_prior_mcts import HeuristicPriorConfig  # noqa: E402
+from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
+    HeuristicPriorConfig,
+    make_fair_net_prior_evaluator,
+)
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 from carcassonne_ai.warmstart import GameDataset  # noqa: E402
@@ -124,6 +128,32 @@ def _champion_cfg(c_puct: float, tau_p: float, value_norm: float) -> HeuristicPr
     )
 
 
+def _load_net(path, device="cpu"):
+    """Load a SIGHTED (81ch/42-scalar) CarcassonneNet checkpoint for the fair-net
+    PRIORS path (per-worker CPU net — the non-orch net mode). Mirrors
+    eval_fair_puct._load_net / verify_sighted_orch_parity (arch dims live in the
+    ckpt). torch + CarcassonneNet are imported lazily so the net-free champion path
+    (the default) stays torch-free at startup."""
+    import torch
+
+    from carcassonne_ai.network import CarcassonneNet
+    ck = torch.load(path, map_location=device, weights_only=False)
+    n_ch = int(ck.get("n_input_channels", 78))
+    n_scalar = int(ck.get("n_scalar_features", 10))
+    net = CarcassonneNet(
+        n_filters=ck.get("n_filters", 96), n_blocks=ck.get("n_blocks", 6),
+        n_input_channels=n_ch, n_scalar_features=n_scalar,
+        value_global_pool=bool(ck.get("value_global_pool", False)),
+    ).to(device)
+    net.load_state_dict(ck["model_state"])
+    net.eval()
+    if n_ch != 81 or n_scalar != 42 or not bool(ck.get("sighted", False)):
+        print(f"[warn] --net-ckpt is not an 81ch/42-scalar sighted net "
+              f"(n_ch={n_ch} n_scalar={n_scalar} sighted={ck.get('sighted')}); "
+              "the fair-net-prior path expects the sighted rep.", file=sys.stderr)
+    return net
+
+
 def _shard_path(out: Path, seed: int) -> Path:
     return out / f"seed_{seed:012d}.npz"
 
@@ -133,10 +163,22 @@ def play_fair_distill_game_to_dataset(
     c_puct: float = 1.5, tau_p: float = 5.0, value_norm: float = 15.0,
     exact_endgame: bool = True, exact_max_k: int = 2,
     sighted: bool = False,
+    net=None, handles=None, eval_sighted_game=None,
     window_size: int = 25, max_plies: int = 400,
 ) -> tuple[GameDataset | None, dict]:
-    """Play ONE net-free FAIR champion self-play game (FairHeuristicPriorAgent vs
-    itself) and return (GameDataset, info). One row per ply:
+    """Play ONE FAIR champion self-play game (FairHeuristicPriorAgent vs itself) and
+    return (GameDataset, info).
+
+    STAGE-1 (default, net=None and handles=None): the NET-FREE champion — the fair
+    PIMC agent with the FROZEN v2.9 heuristic priors + heuristic leaf value (byte-
+    unchanged from the pure-distillation emitter). STAGE-2 (net or handles given):
+    the SEVERED-VALUE-LOOP fair-net agent — the trained net's POLICY head supplies the
+    PUCT priors while the value stays the frozen champion leaf
+    (make_fair_net_prior_evaluator, passed via `evaluator=`). Only the SEARCH priors
+    change; the RECORDED targets (pooled-visit policy + game-outcome value) and the
+    whole agg_n / value-backfill path are IDENTICAL to stage 1.
+
+    One row per ply:
       * obs + scalars from the encoder: DEFAULT non-sighted (78ch/10, matches
         warmstart_canonical.pt); with sighted=True bag-aware (81ch/42, matches
         m2_sighted/warmstart_sighted.pt) — ONLY the obs encoding changes,
@@ -159,11 +201,22 @@ def play_fair_distill_game_to_dataset(
     # (fair-safe — the sighted extras are the order-agnostic public bag + board-derived
     # farm planes, no deck-order/future-draw leak). See SIGHTED_SCOPE.md.
     encoder = Game(sighted=sighted, window_size=window_size)             # 78ch/10 or (sighted) 81ch/42
+    champ_cfg = _champion_cfg(c_puct, tau_p, value_norm)
+    agent_game = Game(enable_legal_moves_cache=True, window_size=window_size)
+    # STAGE-2 fair-net-prior evaluator (severed value loop): net POLICY -> priors,
+    # FROZEN champion leaf -> value. Built ONLY when a net/orch handle is supplied;
+    # default (both None) keeps the byte-for-byte net-free champion agent below.
+    fair_net_evaluator = None
+    if net is not None or handles is not None:
+        fair_net_evaluator = make_fair_net_prior_evaluator(
+            champ_cfg, net=net, handles=handles, sighted_game=eval_sighted_game,
+        )
     agent = FairHeuristicPriorAgent(
-        Game(enable_legal_moves_cache=True, window_size=window_size),
-        cfg=_champion_cfg(c_puct, tau_p, value_norm),
+        agent_game,
+        cfg=champ_cfg,
         sims=sims, k_dets=k_dets, seed=seed,
         exact_endgame=exact_endgame, exact_max_k=exact_max_k,
+        evaluator=fair_net_evaluator,
     )
 
     board = game.get_init_board()
@@ -247,11 +300,30 @@ _W: dict = {}
 
 
 def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_max_k,
-                 sighted, window_size, shared_claim, claim_host, claim_stale):
+                 sighted, window_size, shared_claim, claim_host, claim_stale,
+                 net_ckpt=None, shm_eval_server="", id_q=None):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
               exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
               shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale)
+    # STAGE-2 fair-net-prior wiring (default net-free: both stay None). Set up ONCE per
+    # worker, reused across every game the worker plays.
+    _W["net"] = None
+    _W["handles"] = None
+    _W["sighted_game"] = None
+    if shm_eval_server:
+        # carc-orch SHM: the GPU server owns the only sighted (81ch/42) net; this CPU
+        # worker reads masked-softmax PRIORS over shared memory. Each worker pops a
+        # unique SHM slot from id_q (mirrors eval_fair_puct / clairvoyance_gap). CUDA
+        # stays hidden (the module _CANON_ENV sets CUDA_VISIBLE_DEVICES="").
+        from carcassonne_ai.shm_eval_handles import connect_shm
+        _W["handles"] = connect_shm(shm_eval_server, id_q.get(), 42, 81)
+        _W["sighted_game"] = Game(sighted=True)
+    elif net_ckpt:
+        # per-worker net-on-CPU copy (the gen env hides CUDA; a 7M net ~30MB/worker),
+        # loaded once per process, reused across games.
+        _W["net"] = _load_net(net_ckpt, device="cpu")
+        _W["sighted_game"] = Game(sighted=True)
 
 
 def _play_one(args) -> dict | None:
@@ -268,6 +340,8 @@ def _play_one(args) -> dict | None:
         tau_p=_W["tau_p"], value_norm=_W["value_norm"],
         exact_endgame=_W["exact_endgame"], exact_max_k=_W["exact_max_k"],
         sighted=_W["sighted"], window_size=_W["window_size"],
+        net=_W.get("net"), handles=_W.get("handles"),
+        eval_sighted_game=_W.get("sighted_game"),
     )
     if ds is None:
         info["skipped"] = True
@@ -302,7 +376,25 @@ def main(argv=None) -> int:
     ap.add_argument("--shared-claim", action="store_true", help="O_EXCL .claim work-stealing")
     ap.add_argument("--claim-stale-secs", type=int, default=7200)
     ap.add_argument("--claim-host", type=str, default=socket.gethostname())
+    # STAGE-2 fair-net-prior mode (additive; default OFF = byte-for-byte net-free champion).
+    ap.add_argument("--net-ckpt", type=str, default=None,
+                    help="STAGE-2 fair-net-prior mode: path to the SIGHTED (81ch/42) net "
+                         "checkpoint whose POLICY head supplies the PUCT priors (the value stays "
+                         "the FROZEN champion leaf = severed value loop). Loads a per-worker CPU "
+                         "net. Requires --sighted. Prefer --shm-eval-server for GPU-batched "
+                         "forwards; when both are given the ckpt is recorded for provenance only.")
+    ap.add_argument("--shm-eval-server", type=str, default=None,
+                    help="STAGE-2 fair-net-prior mode (PRODUCTION): connect workers to a running "
+                         "carc-orch SHM eval-server (GPU-batched sighted 81ch/42 forwards) for the "
+                         "net PRIORS instead of a per-worker CPU net. The server (started separately: "
+                         "run_server.sh --transport shm --shm-name <name> --n-ch 81 --n-scalar 42) "
+                         "owns the only net. Requires --sighted.")
     args = ap.parse_args(argv)
+
+    net_mode = bool(args.net_ckpt) or bool(args.shm_eval_server)
+    if net_mode and not args.sighted:
+        ap.error("--net-ckpt / --shm-eval-server (fair-net-prior mode) require --sighted "
+                 "(the net is an 81ch/42-scalar sighted net; the recorded obs must match)")
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -317,11 +409,28 @@ def main(argv=None) -> int:
     _enc = Game(sighted=args.sighted, window_size=args.window_size)
     n_channels = _enc.get_input_channels()
     n_scalars = _enc.get_scalar_feature_size()
+    _net_mode_str = ("orch-shm(" + args.shm_eval_server + ")" if args.shm_eval_server
+                     else ("cpu-net" if args.net_ckpt else "net-free (champion)"))
     man = {
-        "generator": "FairHeuristicPriorAgent self-play (net-free, blind PIMC) — DISTILLATION emitter",
+        "generator": (
+            "FairHeuristicPriorAgent self-play — DISTILLATION emitter | "
+            + ("STAGE-2 fair-NET-prior (severed value loop: net POLICY head -> priors, "
+               "FROZEN champion leaf -> value; blind PIMC)" if net_mode
+               else "STAGE-1 net-free fair-CHAMPION (heuristic priors + heuristic leaf value; blind PIMC)")
+        ),
+        "net_mode": _net_mode_str,
+        "net_ckpt": args.net_ckpt,
+        "shm_eval_server": args.shm_eval_server,
+        "priors_source": (
+            "net_policy_head (masked-softmax over legal, SIGHTED 81ch/42 forward)" if net_mode
+            else "heuristic softmax(Δleaf/τ) [net-free champion]"),
+        "search_value_source": (
+            "FROZEN champion v2.9 leaf tanh(flat_virtual_score_v2_float/value_norm) "
+            "[severed value loop — the learned value head never steers search]"),
         "teacher": {
             "fair_agent": "FairHeuristicPriorAgent",
-            "kind": "classical PUCT-with-heuristic-priors, blind PIMC (non-clairvoyant)",
+            "kind": ("net-priors + frozen-leaf-value blind PIMC (fair-net flywheel)" if net_mode
+                     else "classical PUCT-with-heuristic-priors, blind PIMC (non-clairvoyant)"),
             "k_dets": args.k_dets,
             "sims_per_det": args.sims,
             "total_budget_per_move": args.k_dets * args.sims,
@@ -365,7 +474,7 @@ def main(argv=None) -> int:
     print(f"gen_fair_distill: games={args.games} k_dets={args.k_dets} sims={args.sims} "
           f"(budget={args.k_dets*args.sims}) exact_endgame={args.exact_endgame} "
           f"exact_max_k={args.exact_max_k} sighted={args.sighted} "
-          f"rep={n_channels}ch/{n_scalars}sc leaf_hash={resolved_hash} | "
+          f"rep={n_channels}ch/{n_scalars}sc leaf_hash={resolved_hash} net_mode={_net_mode_str} | "
           f"{len(seeds)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}",
           flush=True)
 
@@ -373,13 +482,35 @@ def main(argv=None) -> int:
         print("nothing to do (all shards present)")
         return 0
 
+    # Pool: default (net-free / CPU-net) uses the fork Pool. The carc-orch SHM path uses
+    # a SPAWN context + a worker-id Queue so each CPU worker pops a unique SHM slot
+    # (mirrors eval_fair_puct's orch launch); spawn keeps the forked-after-torch hazards
+    # out of the GPU-server-attached workers.
+    orch = bool(args.shm_eval_server)
+    if orch:
+        _ctx = mp.get_context("spawn")
+        _id_q = _ctx.Queue()
+        for _w in range(workers):
+            _id_q.put(_w)
+        print(f"  [orch] SHM eval-server '{args.shm_eval_server}': {workers} CPU workers attach to "
+              f"/dev/shm/carc_{args.shm_eval_server} (81ch/42-scalar sighted net PRIORS)", flush=True)
+        _pool_cm = _ctx.Pool(
+            processes=workers, initializer=_worker_init,
+            initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
+                      args.value_norm, args.exact_endgame, args.exact_max_k,
+                      args.sighted, args.window_size, args.shared_claim, args.claim_host,
+                      args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q))
+    else:
+        _pool_cm = Pool(
+            processes=workers, initializer=_worker_init,
+            initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
+                      args.value_norm, args.exact_endgame, args.exact_max_k,
+                      args.sighted, args.window_size, args.shared_claim, args.claim_host,
+                      args.claim_stale_secs, args.net_ckpt, "", None))
+
     t0 = time.perf_counter()
     played = skipped = rows = aux_rows = val_rows = 0
-    with Pool(processes=workers, initializer=_worker_init,
-              initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
-                        args.value_norm, args.exact_endgame, args.exact_max_k,
-                        args.sighted, args.window_size, args.shared_claim, args.claim_host,
-                        args.claim_stale_secs)) as pool:
+    with _pool_cm as pool:
         for r in pool.imap_unordered(_play_one, todo, chunksize=1):
             if r is None or r.get("cached"):
                 continue

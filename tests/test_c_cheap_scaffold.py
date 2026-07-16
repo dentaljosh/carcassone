@@ -46,6 +46,7 @@ from carcassonne_ai.fair_agent import FairHeuristicMCTSAgent, FairHeuristicPrior
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.heuristic_prior_mcts import (
     HeuristicPriorConfig,
+    make_fair_net_prior_evaluator,
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_net_value,
     make_heuristic_prior_evaluator_with_residual_value,
@@ -165,6 +166,76 @@ def test_residual_evaluator_lambda_nudges_value_only():
         if abs(v_r - v_h) > 1e-6:
             nudged += 1
     assert nudged >= 1, "λ=0.25 never moved the value off the heuristic value"
+
+
+# --------------------------------------------------------------------------- #
+# 1c. FAIR-NET-PRIOR evaluator (STAGE-2 flywheel substrate) — the MIRROR of the  #
+#     net-value evaluator: net POLICY head -> priors, FROZEN champion leaf -> value.
+# --------------------------------------------------------------------------- #
+def test_fair_net_prior_evaluator_value_frozen_priors_from_net():
+    """make_fair_net_prior_evaluator: VALUE is byte-identical to the frozen champion
+    heuristic leaf value (severed value loop), while PRIORS come from the net policy
+    head (a valid distribution that generally differs from the heuristic priors)."""
+    net = _random_sighted_net()
+    # plies=40 -> boards with many legal moves (late boards can be forced/one-hot,
+    # where net & heuristic priors trivially coincide).
+    boards = _midgame_boards(n=4, plies=40)
+    assert len(boards) >= 3, "need >=3 mid-game boards"
+    prior_diffs = 0
+    multi_legal = 0
+    for game, board in boards:
+        heur_ev = make_heuristic_prior_evaluator(game, _cfg())
+        fairnet_ev = make_fair_net_prior_evaluator(_cfg(), net=net)
+        p_h, v_h = heur_ev(board)
+        p_fn, v_fn = fairnet_ev(board)
+        # VALUE byte-identical: both = tanh(flat_virtual_score_v2_float/value_norm).
+        assert v_fn == v_h, f"fair-net value {v_fn!r} != frozen heuristic leaf value {v_h!r}"
+        # PRIORS: valid masked distribution over legal, float32, sums to 1.
+        assert p_fn.dtype == np.float32
+        assert abs(float(p_fn.sum()) - 1.0) < 1e-5
+        mask = game.get_valid_moves(board).astype(bool)
+        assert float((p_fn * (~mask)).sum()) == 0.0, "net priors put mass off the legal mask"
+        if int(mask.sum()) > 1:
+            multi_legal += 1
+            if not np.array_equal(p_fn, p_h):
+                prior_diffs += 1
+    assert multi_legal >= 1, "test needs at least one multi-legal board"
+    assert prior_diffs >= 1, "net priors never differed from the heuristic priors"
+
+
+def test_fair_net_prior_evaluator_provenance_and_needs_a_source():
+    net = _random_sighted_net()
+    ev = make_fair_net_prior_evaluator(_cfg(), net=net)
+    assert ev.priors_source == "net_policy_head"
+    assert ev.value_source == "frozen_champion_v29_leaf"
+    assert ev.value_transport == "per-worker CPU net"
+    assert ev.sighted_game.sighted is True
+    assert ev.net is net
+    # neither net nor handles -> loud failure (no silent net-free fallthrough).
+    with pytest.raises(ValueError):
+        make_fair_net_prior_evaluator(_cfg())
+
+
+def test_fair_net_prior_agent_plays_full_legal_game():
+    """End-to-end: FairHeuristicPriorAgent(evaluator=fair-net-prior) plays a legal
+    game — the exact stage-2 gen wiring (net priors steer search, frozen leaf value)."""
+    game = Game(enable_legal_moves_cache=True)
+    net = _random_sighted_net()
+    ev = make_fair_net_prior_evaluator(_cfg(), net=net)
+    agent = FairHeuristicPriorAgent(game, _cfg(), sims=8, k_dets=2, seed=3,
+                                    evaluator=ev, exact_endgame=False)
+    random.seed(7_000_002)
+    board = game.get_init_board()
+    plies = 0
+    while game.get_game_ended(board, 0) == 0.0 and plies < 40:
+        mask = game.get_valid_moves(board)
+        act = agent.move(board)
+        assert mask[act], f"fair-net-prior agent returned illegal action {act}"
+        # the additive pooled-visit stash still populates (the policy target path).
+        assert agent.last_pooled_visits is not None
+        board, _ = game.get_next_state(board, act)
+        plies += 1
+    assert plies > 0 and agent.heur_moves > 0
 
 
 def test_net_value_evaluator_provenance_and_dim_guard():

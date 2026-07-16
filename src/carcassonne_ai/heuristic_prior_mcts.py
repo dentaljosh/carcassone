@@ -438,6 +438,145 @@ def make_heuristic_prior_evaluator_with_net_value(
 
 
 # --------------------------------------------------------------------------- #
+# FAIR-NET-PRIOR evaluator (the distill-flywheel STAGE-2 substrate) — the MIRROR #
+# of make_heuristic_prior_evaluator_with_net_value. There:                       #
+#   net -> VALUE,  heuristic softmax(Δleaf/τ) -> PRIORS.                          #
+# Here (severed value loop):                                                     #
+#   net POLICY head -> PRIORS,  FROZEN champion v2.9 leaf -> VALUE.              #
+# The learned VALUE head NEVER steers search (search value is always the frozen  #
+# curve125 leaf), so the classic silent value-collapse regression is impossible  #
+# by construction; the only learned feedback path is policy -> priors, which the  #
+# k_dets*sims of leaf-valued PIMC lookahead regularizes. See                      #
+# measurement/distill_flywheel_20260715/{STAGE2_FLYWHEEL_SPEC,DESIGN_FAIR_ADDENDUM}.md.
+# --------------------------------------------------------------------------- #
+def make_fair_net_prior_evaluator(
+    cfg: HeuristicPriorConfig,
+    *,
+    net=None,
+    handles=None,
+    sighted_game: Game | None = None,
+    device=None,
+):
+    """Return a ``Callable[[Board], (net_policy_priors[A], frozen_leaf_value)]``.
+
+    The severed-value-loop fair-net evaluator: the NET's policy head supplies the
+    PUCT priors (masked-softmax over the legal mask, 81ch/42-scalar SIGHTED encode),
+    while the value is the FROZEN champion v2.9 leaf,
+    ``tanh(flat_virtual_score_v2_float(state, mover, cfg.leaf_cfg) / cfg.value_norm)`` —
+    byte-identical to the value line of ``make_heuristic_prior_evaluator`` (a single
+    Cython float-leaf eval; NO net, NO per-child stepping, so the learned value head
+    never touches search).
+
+    This is the exact MIRROR of ``make_heuristic_prior_evaluator_with_net_value``
+    (which keeps heuristic PRIORS + swaps in a net VALUE): here we keep the frozen
+    leaf VALUE and swap in the net PRIORS.
+
+    The net priors come from EITHER:
+      * ``handles`` — a carc-orch SHM ``ServerHandles`` (GPU-batched forwards; the
+        PRODUCTION stage-2 path). The server owns the only (GPU) net; each worker
+        ships (obs, scalars, mask) over shared memory and reads back the masked-
+        softmax priors. The remote's VALUE is DISCARDED (we use the frozen leaf).
+      * ``net`` — a per-worker CPU ``CarcassonneNet`` (the fallback / test path).
+
+    Exactly one of ``net`` / ``handles`` must be given (handles wins if both).
+
+    Parameters
+    ----------
+    cfg : HeuristicPriorConfig  champion knobs — ``cfg.resolved_leaf_cfg()`` +
+                                ``cfg.value_norm`` fully determine the frozen value;
+                                the prior-side softmax temperature ``cfg.tau_p`` is
+                                INERT here (the net's own policy head is the prior).
+    net : CarcassonneNet        an 81ch/42-scalar sighted net (policy head read).
+    handles : ServerHandles     carc-orch SHM handles (see ``connect_shm``).
+    sighted_game : Game         a ``Game(sighted=True)`` encoder for the net forward
+                                (built here if None). The 81ch board / 42 scalars.
+    device                      torch device for a CPU net forward (defaults to the
+                                net's own parameter device); ignored for ``handles``.
+    """
+    # --- value side: the FROZEN champion v2.9 leaf, computed DIRECTLY (one Cython
+    #     float-leaf eval + tanh). NOT via make_heuristic_prior_evaluator, whose value
+    #     is identical but which ALSO steps every legal child to build heuristic priors
+    #     we would only discard. Byte-identical to that value line otherwise.
+    leaf_cfg = cfg.resolved_leaf_cfg()
+    norm = float(cfg.value_norm)
+    bag_close = bool(getattr(leaf_cfg, "bag_close", False))
+
+    def _leaf_value(board: Board) -> float:
+        st = board.state
+        mover = st.current_player
+        leaf_parent = flat_leaf.flat_virtual_score_v2_float(st, mover, leaf_cfg, bag_close)
+        return math.tanh(leaf_parent / norm)
+
+    # --- prior side: the NET policy head, masked-softmax over legal, on the SIGHTED
+    #     (81ch/42-scalar) encode.
+    if sighted_game is None:
+        sighted_game = Game(sighted=True)
+    if not getattr(sighted_game, "sighted", False):
+        raise ValueError(
+            "sighted_game must be a Game(sighted=True) — the fair-net net forward "
+            "reads the 81ch board / 42-scalar sighted representation"
+        )
+
+    if handles is not None:
+        # carc-orch SHM: the server (81ch/42-scalar sighted TorchScript) batches the
+        # policy forward across all workers. The remote returns masked-softmax priors
+        # already (export_torchscript bakes the masked_fill + softmax) — the exact
+        # NeuralMCTS prior contract. Discard its net value; the leaf owns the value.
+        from .remote_evaluators import make_remote_single_evaluator
+        remote = make_remote_single_evaluator(handles, sighted_game)
+
+        def _net_priors(board: Board):
+            return remote(board)[0]   # (priors[A], value) -> priors; value dropped
+
+        _transport = "carc-orch SHM"
+    elif net is not None:
+        # Per-worker CPU net: reuse the tested policy-only evaluator (masked-softmax
+        # over legal, value head skipped → 0.0 sentinel, which we discard).
+        import torch
+
+        from .evaluators import make_single_evaluator_policy_only
+        if device is None:
+            try:
+                device = next(net.parameters()).device
+            except StopIteration:
+                device = torch.device("cpu")
+        net.eval()
+        # Fail loudly on a rep/net channel mismatch (mirrors the sibling factory guard).
+        exp_ch = sighted_game.get_input_channels()
+        net_ch = int(getattr(net, "stem", [None])[0].in_channels) if hasattr(net, "stem") else None
+        if net_ch is not None and net_ch != exp_ch:
+            raise ValueError(
+                f"net input channels ({net_ch}) != sighted encode channels ({exp_ch}); "
+                "the fair-net-prior net must be an 81ch sighted net"
+            )
+        _base_pol = make_single_evaluator_policy_only(net, device, sighted_game)
+
+        def _net_priors(board: Board):
+            return _base_pol(board)[0]   # (priors[A], 0.0) -> priors
+
+        _transport = "per-worker CPU net"
+    else:
+        raise ValueError(
+            "make_fair_net_prior_evaluator needs a CPU `net` or carc-orch `handles`"
+        )
+
+    def evaluator(board: Board):
+        return _net_priors(board), _leaf_value(board)
+
+    # Provenance / introspection hooks (mirror the sibling net-value evaluator).
+    evaluator.heur_prior_cfg = cfg
+    evaluator.leaf_cfg = leaf_cfg
+    evaluator.leaf_name = f"v29_leafvalue_netpriors_{cfg.leaf_quantize}"
+    evaluator.priors_source = "net_policy_head"
+    evaluator.value_source = "frozen_champion_v29_leaf"
+    evaluator.value_transport = _transport
+    evaluator.sighted_game = sighted_game
+    if net is not None:
+        evaluator.net = net
+    return evaluator
+
+
+# --------------------------------------------------------------------------- #
 # C-cheap v2 — sighted mover-POV net VALUE forward, factored out so the         #
 # residual evaluator (and the orch/CPU eval harness) build the SAME forward the  #
 # replace-mode `_net_value` uses. This does NOT touch                            #

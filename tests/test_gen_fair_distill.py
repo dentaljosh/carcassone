@@ -114,3 +114,72 @@ def test_fair_distill_emitter_smoke(tmp_path):
     closure = {int(k): float(v) for k, v in leaf["closure_p"].items()}
     assert closure == {1: 0.5, 2: 0.2, 3: 0.05}, f"closure_p not default 3-open: {closure}"
     assert cfg["value_target"] == "game_outcome" and float(cfg["outcome_norm"]) == 15.0
+    # default (net-free) manifest records the STAGE-1 champion mode.
+    assert cfg["net_mode"] == "net-free (champion)"
+    assert cfg["net_ckpt"] is None and cfg["shm_eval_server"] is None
+    assert cfg["priors_source"].startswith("heuristic softmax")
+
+
+def _save_small_sighted_net(path):
+    """Build + save a SMALL random SIGHTED (81ch/42) CarcassonneNet checkpoint in the
+    format gen_fair_distill._load_net expects (arch dims in the ckpt). Small net =
+    fast per-leaf CPU forward for the plumbing test (the RECORDED targets are the
+    pooled visits, not the net priors, so net quality is irrelevant here)."""
+    torch = pytest.importorskip("torch")
+    from carcassonne_ai.network import CarcassonneNet
+    torch.manual_seed(0)
+    net = CarcassonneNet(
+        n_filters=16, n_blocks=2, n_input_channels=81, n_scalar_features=42,
+        value_global_pool=True,
+    )
+    net.eval()
+    torch.save({
+        "model_state": net.state_dict(),
+        "n_input_channels": 81, "n_scalar_features": 42,
+        "n_filters": 16, "n_blocks": 2, "value_global_pool": True, "sighted": True,
+    }, path)
+
+
+def test_fair_net_prior_emitter_smoke(tmp_path):
+    """STAGE-2 fair-NET-prior CPU path: --net-ckpt <sighted> --sighted emits 81ch/42
+    shards whose POLICY target is still the pooled-visit distribution and whose VALUE
+    is the frozen-leaf game-outcome — the net only steers search (severed value loop).
+    Proves the --net-ckpt CLI wiring end-to-end (fork Pool + _load_net + worker net)."""
+    pytest.importorskip("torch")
+    net_pt = tmp_path / "small_sighted.pt"
+    _save_small_sighted_net(net_pt)
+
+    out = tmp_path / "fair_net_smoke"
+    script = REPO / "scripts" / "distill_flywheel" / "gen_fair_distill.py"
+    env = {**os.environ, **_CHAMP_ENV}
+    r = subprocess.run(
+        [sys.executable, "-u", str(script), "--games", "1", "--k-dets", "2",
+         "--sims", "16", "--workers", "1", "--seed-start", "700000000",
+         "--sighted", "--net-ckpt", str(net_pt), "--out", str(out)],
+        env=env, capture_output=True, text=True, timeout=600,
+    )
+    assert r.returncode == 0, f"fair-net emitter failed:\nSTDOUT:{r.stdout}\nSTDERR:{r.stderr}"
+
+    shards = sorted(out.glob("seed_*.npz"))
+    assert len(shards) == 1, f"expected 1 shard, got {shards}"
+    ds = GameDataset.load(shards[0])
+    # SIGHTED shapes: 81ch board / 42 scalars.
+    assert ds.boards.shape[1] == 81, f"expected 81ch (sighted), got {ds.boards.shape[1]}"
+    assert ds.scalars.shape[1] == 42, f"expected 42 scalars (sighted), got {ds.scalars.shape[1]}"
+    aux = np.asarray(ds.aux_mask, dtype=bool)
+    pol = np.asarray(ds.policies, dtype=np.float32)
+    mask = np.asarray(ds.valid_masks, dtype=bool)
+    vals = np.asarray(ds.values, dtype=np.float32)
+    # SAME distillation contract as the net-free path (targets are agg_n + outcome).
+    assert aux.sum() > 0 and (~aux).sum() > 0, "aux_mask must be mixed"
+    prow = pol[aux].sum(axis=1)
+    assert np.allclose(prow, 1.0, atol=1e-5), "trajectory policy rows must sum to 1"
+    assert float((pol[aux] * (~mask[aux])).sum()) == 0.0, "policy mass off the legal mask"
+    assert vals.min() >= -1.0 and vals.max() <= 1.0
+
+    man = json.loads((out / "manifest.json").read_text())["config"]
+    assert man["net_mode"] == "cpu-net"
+    assert man["net_ckpt"].endswith("small_sighted.pt")
+    assert man["shm_eval_server"] is None
+    assert man["priors_source"].startswith("net_policy_head")
+    assert man["sighted"] is True and man["n_channels"] == 81 and man["n_scalars"] == 42
