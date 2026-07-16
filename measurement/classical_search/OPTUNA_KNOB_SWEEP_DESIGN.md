@@ -1,6 +1,8 @@
 # T3 — Joint Optuna knob sweep over the classical PUCT champion ("interaction insurance") — PRE-REGISTERED DESIGN
 
-> **STATUS: DESIGN / PROPOSED 2026-07-14 — NOT LAUNCHED.** No code written, no compute run.
+**Status: ❌ CLOSED NULL 2026-07-15 (CL-057).** Launched after C7 closed (2026-07-14). **Stage-1** (clairvoyant, nested successive-halving n=52→120→240, CRN) FIRED two candidates at the rung-C +30/z2 gate — **t020 +36.3/z2.97** and **t27 +34.9/z2.35** (t18 +24.7/z1.82, t12 UNRELIABLE were sub-gate) — but the decisive **S3 fair-transfer test** (`eval_fair_puct.py --info fair` k4×688 vs the FROZEN clairvoyant h800 rung, CRN band 2.02e10, delta-of-deltas cand−champ, read via `crn_delta_fairnet.py`) killed BOTH: **t27 +4.7 elo / paired z −0.55** (≈ champion config, expected) and **t020 collapsed from a n=400 winner's-curse spike (+32.1/z1.68) to +3.4 elo / paired z +0.73 at n=800** (fresh decks 400-799 — the n=400 spike was noise). **Verdict: knob-tuning the heuristic-leaf search has no free FAIR strength — clairvoyant edges wash out ~4:1 under PIMC (CL-045/CL-048); leaf AND search are now tapped out; the frontier is the distill-champion→net→flywheel bet, not more classical tuning.** Champion + `governance/PRODUCTION.yaml` UNTOUCHED. Verdict JSONs on the share (`/mnt/c/carc-shared/classical_search/t3_s3/s3_verdict_{t020,t27,t020_n800}.json`). Close-out: DECISIONS 2026-07-15, CLAIM_REGISTRY CL-057, `results.csv t3_s3_*`. The pre-registration below is preserved as-designed.
+
+> **STATUS: LAUNCHED 2026-07-14 → CLOSED NULL 2026-07-15 (CL-057; see banner above).** Originally proposed 2026-07-14.
 > Charter: [docs/BACKLOG_REAUDIT_2026-07-13.md](../../docs/BACKLOG_REAUDIT_2026-07-13.md) item **T3**
 > ("Joint Optuna/TPE over the champion's knobs, clair-screen + fair-confirm gate, ~2 box-days").
 > Design-only; `governance/PRODUCTION.yaml` untouched by anything in this document.
