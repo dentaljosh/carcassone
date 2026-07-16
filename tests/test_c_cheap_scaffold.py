@@ -203,6 +203,76 @@ def test_fair_net_prior_evaluator_value_frozen_priors_from_net():
     assert prior_diffs >= 1, "net priors never differed from the heuristic priors"
 
 
+def _random_net_at_rep(sighted, seed=0):
+    """A random net whose dims match `Game(sighted=...)` — the two distill candidates
+    are sighted (81ch/42) and non-sighted (78ch/10)."""
+    probe = Game(sighted=sighted)
+    torch.manual_seed(seed)
+    net = CarcassonneNet(
+        n_input_channels=probe.get_input_channels(),
+        n_scalar_features=probe.get_scalar_feature_size(),
+        value_global_pool=sighted,
+    )
+    net.eval()
+    return net
+
+
+@pytest.mark.parametrize("sighted", [True, False])
+def test_fair_net_prior_evaluator_rep_switch(sighted):
+    """The fair-netprior evaluator drives BOTH candidate reps — sighted (81ch/42) and
+    NON-sighted (78ch/10). The frozen leaf VALUE is rep-independent (it reads the
+    engine state, not the encode), so only the priors' encode changes."""
+    net = _random_net_at_rep(sighted)
+    ev = make_fair_net_prior_evaluator(_cfg(), net=net, sighted=sighted)
+    expect_ch = 81 if sighted else 78
+    expect_sc = 42 if sighted else 10
+    assert ev.rep == {"sighted": sighted, "n_input_channels": expect_ch,
+                      "n_scalar_features": expect_sc}
+    assert ev.sighted is sighted
+    assert ev.sighted_game.sighted is sighted
+
+    game, board = _midgame_boards(n=1, plies=40)[0]
+    priors, value = ev(board)
+    mask = game.get_valid_moves(board).astype(bool)
+    assert priors.dtype == np.float32
+    assert abs(float(priors.sum()) - 1.0) < 1e-5
+    assert float((priors * (~mask)).sum()) == 0.0, "net priors put mass off the legal mask"
+    # VALUE is the frozen champion leaf — identical to the heuristic evaluator's value
+    # and IDENTICAL ACROSS REPS (the severed value loop never consults the net).
+    _, v_heur = make_heuristic_prior_evaluator(game, _cfg())(board)
+    assert value == v_heur
+
+
+def test_fair_net_prior_evaluator_rep_mismatch_fails_loud():
+    """A rep/net-dim mismatch must RAISE, never silently mis-encode: feeding a 78ch
+    net the 81ch sighted planes (or vice versa) would produce plausible-looking but
+    garbage priors, i.e. a quietly weak agent that still passes a smoke test."""
+    # non-sighted net + sighted encode
+    with pytest.raises(ValueError, match="input channels"):
+        make_fair_net_prior_evaluator(_cfg(), net=_random_net_at_rep(False), sighted=True)
+    # sighted net + non-sighted encode
+    with pytest.raises(ValueError, match="input channels"):
+        make_fair_net_prior_evaluator(_cfg(), net=_random_net_at_rep(True), sighted=False)
+    # a net whose channels match but whose SCALARS do not (same-ch, different rep)
+    torch.manual_seed(0)
+    odd = CarcassonneNet(n_input_channels=81, n_scalar_features=10)
+    odd.eval()
+    with pytest.raises(ValueError, match="scalar features"):
+        make_fair_net_prior_evaluator(_cfg(), net=odd, sighted=True)
+    # an explicit `sighted` contradicting the supplied encoder must not be guessed
+    with pytest.raises(ValueError, match="contradicts"):
+        make_fair_net_prior_evaluator(_cfg(), net=_random_net_at_rep(True),
+                                      sighted_game=Game(sighted=True), sighted=False)
+
+
+def test_fair_net_prior_evaluator_defaults_to_sighted():
+    """Back-compat: no `sighted` / no `sighted_game` -> the sighted rep (the stage-2
+    flywheel callers rely on this default)."""
+    ev = make_fair_net_prior_evaluator(_cfg(), net=_random_sighted_net())
+    assert ev.sighted_game.sighted is True
+    assert ev.rep["n_input_channels"] == 81
+
+
 def test_fair_net_prior_evaluator_provenance_and_needs_a_source():
     net = _random_sighted_net()
     ev = make_fair_net_prior_evaluator(_cfg(), net=net)

@@ -24,6 +24,21 @@ THREE ARMS (--info), all vs the SAME fixed rung on the SAME decks so their paire
                deck-aware learned value shrink the clairvoyance tax? (Gate: fair-elo
                of fair-net minus fair >= +35 elo; C_CHEAP_SPEC §4.) The priors are
                byte-identical to `fair` (make_heuristic_prior_evaluator_with_net_value).
+  - fair-netprior : the MIRROR of fair-net, and the STRENGTH arm for the DISTILLED net.
+               fair-net swaps the VALUE; this swaps the PRIORS. The net's POLICY head
+               supplies the PUCT priors while the value stays the FROZEN curve125
+               champion leaf — the severed value loop, so a value collapse is impossible
+               by construction (make_fair_net_prior_evaluator; the same evaluator the
+               stage-2 flywheel gen uses). vs the `fair` arm on the same decks it
+               isolates the POLICY component: do distilled priors beat the heuristic
+               softmax priors at equal search budget?
+               --net-mode / --net-lambda are INAPPLICABLE (there is no net value) and
+               are REJECTED. The rep (sighted 81ch/42 vs non-sighted 78ch/10) is
+               INFERRED from the checkpoint; a mismatch fails loud.
+               ⚠️ Its frozen leaf is curve125 (the PRODUCTION champion the nets were
+               distilled against), injected IN-PROCESS on the candidate side only. The
+               h800 rung stays curve100 — see the CURVE125 block below for why you must
+               NOT `source champ_env.sh` to get this.
 ALL arms get the IDENTICAL fair MARGINALIZED exact endgame handoff (latched on the
 first TILES decision with k_remaining<=K), so the only measured difference is the
 SEARCH PREFIX (fair PIMC vs clairvoyant). The endgame is marginalized (honest
@@ -56,6 +71,21 @@ Usage:
   # C-cheap fair-net plumbing smoke (RANDOM 81ch/42-scalar net, no training):
   nice -n 19 .venv/bin/python scripts/classical_search/eval_fair_puct.py \
       --info fair-net --exact-k 2 --k-dets 2 --sims 32 --games 2 --smoke
+
+  # DISTILLED-net fair-netprior plumbing smoke (rep inferred from the ckpt; works for
+  # BOTH the sighted 81ch/42 and the non-sighted 78ch/10 candidates):
+  nice -n 19 .venv/bin/python scripts/classical_search/eval_fair_puct.py \
+      --info fair-netprior --net <distilled ckpt> --exact-k 2 --k-dets 2 --sims 32 \
+      --games 2 --workers 2 --smoke
+
+  # fair-netprior A/B cell vs the SAME h800 rung on the SAME decks as the `fair` arm
+  # (so the paired Δ isolates the POLICY component). CPU net per worker:
+  CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
+      scripts/classical_search/eval_fair_puct.py \
+      --info fair-netprior --net <distilled ckpt> \
+      --exact-k 2 --k-dets 4 --sims 688 --rung-sims 800 --n 100 --paired \
+      --seed-start 13000000000 --workers 14 \
+      --out-root /mnt/c/carc-shared/classical_search --shared-claim --no-results-csv
 
   # C-cheap v2 RESIDUAL fair-net A/B cell (n=100 deck-paired, CPU net per worker):
   CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
@@ -152,6 +182,7 @@ from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorAgent,
     HeuristicPriorConfig,
+    make_fair_net_prior_evaluator,
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_residual_value,
     make_sighted_net_value_fn,
@@ -223,6 +254,183 @@ def _random_sighted_net(device="cpu", value_global_pool=True, seed=0):
 EVAL_ROOT = REPO / "data" / "classical_search"
 RUNG_C = DEFAULT_C  # 3.0 — the CL-022 rung's HeuristicMCTS exploration constant
 EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
+
+
+# --------------------------------------------------------------------------- #
+# CURVE125 — the PRODUCTION champion leaf, for the `fair-netprior` CANDIDATE only. #
+#                                                                                 #
+# ⚠️ `_CANON_ENV` above pins the OLD curve100 (-8,-4,-1,0,2,3,4,5). That is CORRECT #
+# and MUST NOT change: it resolves DEFAULT_CONFIG, which is the fixed h800 rung —  #
+# the CL-022 ruler. The ruler must stay put.                                       #
+#                                                                                  #
+# But the distilled nets were trained against the PRODUCTION curve125 champion      #
+# (scripts/distill_flywheel/champ_env.sh), so the frozen leaf VALUE inside the      #
+# fair-netprior evaluator must be curve125 to match what the net was distilled      #
+# against. We therefore inject curve125 IN-PROCESS on the candidate side only —     #
+# exactly the --cand-leaf-json mechanism (dataclasses.replace on DEFAULT_CONFIG).   #
+#                                                                                   #
+# ⚠️ Do NOT instead `source champ_env.sh`: _CANON_ENV uses os.environ.setdefault, so  #
+# a pre-set CARCASSONNE_V29_MEEPLE_CURVE would win and move DEFAULT_CONFIG — i.e.    #
+# move the RUNG to curve125 too, silently invalidating the ruler and every           #
+# cross-arm comparison. The in-process override cannot do that. `_assert_rung_is_ruler`
+# below enforces this even if the caller sources champ_env.sh anyway.
+#
+# TWO HASH DIALECTS (verified 2026-07-16 — they describe the SAME leaf function):
+#   * a36d2e15a3b3d71d = c5_leaf_override._leaf_hash(candidate) — THIS harness's
+#     dialect (meeple_k=2.0 from _CANON_ENV). Corroborated by tests/test_t3_optuna.py
+#     CURVE125_LEAF_HASH and by every real C7 curve125 manifest (c7_s1_*/manifest.json
+#     champ_leaf_hash) — so a fair-netprior cell is directly comparable to those cells.
+#   * 6dfffd57051690f2 = measurement_infra.snapshot._frozen_config_hash(candidate with
+#     meeple_k=0.0) — the champ_env.sh / distill-gen dialect (a DIFFERENT hash function
+#     AND champ_env.sh deliberately does not export CARCASSONNE_V25_MEEPLE_K, so it
+#     resolves meeple_k=0.0). meeple_k is INERT under a non-null curve — measured
+#     byte-identical leaf values over 240 evals — so this is the same leaf, re-expressed.
+# We assert BOTH: the first proves comparability with the sibling fair cells, the
+# second proves the candidate's frozen leaf IS the champion the nets were distilled
+# against. Asserting only one would leave a real mis-leaf failure mode open.
+CURVE125 = (-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25)
+CURVE100 = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
+CURVE125_LEAF_HASH = "a36d2e15a3b3d71d"        # _leaf_hash dialect (this harness)
+CURVE125_FROZEN_HASH = "6dfffd57051690f2"      # _frozen_config_hash dialect (champ_env)
+RUNG_CURVE100_LEAF_HASH = "42af12fce22e1a0f"   # the CL-022 h800 ruler, must not move
+
+
+def _curve125_leaf_cfg():
+    """The production curve125 champion leaf = env DEFAULT_CONFIG with ONLY the
+    meeple curve replaced (the --cand-leaf-json mechanism, applied in-process)."""
+    import dataclasses as _dc
+    return _dc.replace(DEFAULT_CONFIG, v29_meeple_curve=CURVE125)
+
+
+def _frozen_hash_champ_dialect(cfg):
+    """`_frozen_config_hash` of `cfg` re-expressed in the champ_env.sh dialect
+    (meeple_k=0.0 — inert under a non-null curve). Returns None if the
+    measurement_infra snapshot helper isn't importable (provenance is best-effort;
+    the _leaf_hash assert below is the hard gate)."""
+    import dataclasses as _dc
+    try:
+        sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
+        from snapshot import _frozen_config_hash
+    except Exception:
+        return None
+    return _frozen_config_hash(_dc.replace(cfg, meeple_k=0.0))
+
+
+def _assert_netprior_leaf(cand_cfg, strict=True):
+    """Verify the fair-netprior CANDIDATE leaf is the production curve125 champion,
+    in BOTH hash dialects, and return the provenance dict for the manifest.
+
+    Semantic check first (robust to LeafConfig dataclass drift, which is exactly what
+    staled the PRODUCTION.yaml 158f17ff fingerprint), then the two hash strings."""
+    curve = cand_cfg.v29_meeple_curve
+    if curve is None or tuple(float(x) for x in curve) != CURVE125:
+        raise SystemExit(
+            f"[fair-netprior] FATAL: candidate leaf curve is {curve!r}, expected curve125 "
+            f"{CURVE125!r}. The distilled nets were trained against the curve125 champion; "
+            "a curve100 frozen leaf would evaluate a different agent than was distilled."
+        )
+    lh = _leaf_hash(cand_cfg)
+    fh = _frozen_hash_champ_dialect(cand_cfg)
+    prov = {
+        "curve": "curve125 (production champion, CL-051)",
+        "leaf_hash": lh,
+        "leaf_hash_expected": CURVE125_LEAF_HASH,
+        "frozen_config_hash_champ_dialect": fh,
+        "frozen_config_hash_expected": CURVE125_FROZEN_HASH,
+        "note": ("meeple_k is inert under a non-null curve; the two dialects "
+                 "(this harness meeple_k=2.0 vs champ_env.sh meeple_k=0.0) are the "
+                 "SAME leaf function, verified byte-identical on real boards."),
+    }
+    bad = []
+    if lh != CURVE125_LEAF_HASH:
+        bad.append(f"_leaf_hash {lh} != expected {CURVE125_LEAF_HASH}")
+    if fh is not None and fh != CURVE125_FROZEN_HASH:
+        bad.append(f"_frozen_config_hash {fh} != expected {CURVE125_FROZEN_HASH}")
+    if bad:
+        msg = ("[fair-netprior] candidate leaf hash drift: " + "; ".join(bad) +
+               ". The curve VALUES matched, so this is most likely an additive "
+               "LeafConfig field changing the hash shape (the 158f17ff precedent) — "
+               "re-baseline the constants if so. Re-run with --allow-leaf-hash-drift "
+               "to proceed on the semantic (curve-values) check alone.")
+        if strict:
+            raise SystemExit("FATAL: " + msg)
+        print("[warn] " + msg, file=sys.stderr)
+        prov["hash_drift_allowed"] = True
+    return prov
+
+
+def _assert_rung_is_ruler():
+    """The fixed h800 rung is env DEFAULT_CONFIG and MUST remain the curve100 CL-022
+    ruler. Sourcing champ_env.sh before this harness would set the curve env, and
+    _CANON_ENV's setdefault would NOT override it -> the rung would silently move to
+    curve125 and every arm's elo would be measured against a different yardstick.
+    Fail loud (fair-netprior only; the fair/fair-net arms are untouched)."""
+    curve = DEFAULT_CONFIG.v29_meeple_curve
+    if curve is None or tuple(float(x) for x in curve) != CURVE100:
+        raise SystemExit(
+            f"[fair-netprior] FATAL: the h800 RUNG's leaf curve is {curve!r}, expected the "
+            f"curve100 CL-022 ruler {CURVE100!r}. Did you `source champ_env.sh` before "
+            "running? _CANON_ENV uses setdefault, so a pre-set CARCASSONNE_V29_MEEPLE_CURVE "
+            "MOVES THE RULER. Unset it: the candidate's curve125 leaf is injected "
+            "in-process, the rung must stay curve100."
+        )
+    return _leaf_hash(DEFAULT_CONFIG)
+
+
+def _load_net_rep(path, device="cpu"):
+    """Load a distilled policy net and INFER its representation from the checkpoint
+    (`sighted` / `n_input_channels` / `n_scalar_features` are all recorded by the
+    distill trainer). Returns (net, rep). Fails LOUD on an internally-inconsistent
+    checkpoint rather than mis-encoding at every leaf.
+
+    The rep is inferred, never assumed: the two distill candidates are sighted
+    (81ch/42) and non-sighted (78ch/10), and picking the wrong encoder silently
+    feeds the policy head garbage planes."""
+    import torch
+    from carcassonne_ai.network import CarcassonneNet
+    ck = torch.load(path, map_location=device, weights_only=False)
+    n_ch = int(ck.get("n_input_channels", 78))
+    n_sc = int(ck.get("n_scalar_features", 10))
+    sighted = bool(ck.get("sighted", False))
+    # cross-check the ckpt's own fields against the encoder they imply
+    probe = Game(sighted=sighted)
+    exp_ch, exp_sc = probe.get_input_channels(), probe.get_scalar_feature_size()
+    if (n_ch, n_sc) != (exp_ch, exp_sc):
+        raise SystemExit(
+            f"FATAL: checkpoint {path} is internally inconsistent — it declares "
+            f"sighted={sighted} (which implies {exp_ch}ch/{exp_sc}sc) but carries "
+            f"n_input_channels={n_ch} / n_scalar_features={n_sc}. Refusing to guess "
+            "the representation."
+        )
+    net = CarcassonneNet(
+        n_filters=ck.get("n_filters", 96), n_blocks=ck.get("n_blocks", 6),
+        n_input_channels=n_ch, n_scalar_features=n_sc,
+        value_global_pool=bool(ck.get("value_global_pool", False)),
+    ).to(device)
+    net.load_state_dict(ck["model_state"])
+    net.eval()
+    rep = {"sighted": sighted, "n_input_channels": n_ch, "n_scalar_features": n_sc,
+           "value_global_pool": bool(ck.get("value_global_pool", False)),
+           "iter": ck.get("iter"), "provenance": ck.get("provenance")}
+    return net, rep
+
+
+def _random_net_rep(sighted=True, device="cpu", value_global_pool=True, seed=0):
+    """A randomly-initialized net at the requested rep — the --smoke plumbing net
+    (proves the fair-netprior path end-to-end without any training)."""
+    import torch
+    from carcassonne_ai.network import CarcassonneNet
+    torch.manual_seed(seed)
+    probe = Game(sighted=sighted)
+    n_ch, n_sc = probe.get_input_channels(), probe.get_scalar_feature_size()
+    net = CarcassonneNet(
+        n_input_channels=n_ch, n_scalar_features=n_sc,
+        value_global_pool=value_global_pool,
+    ).to(device)
+    net.eval()
+    return net, {"sighted": bool(sighted), "n_input_channels": n_ch,
+                 "n_scalar_features": n_sc, "value_global_pool": bool(value_global_pool),
+                 "iter": None, "provenance": "RANDOM (smoke plumbing net)"}
 
 
 # --------------------------------------------------------------------------- #
@@ -356,7 +564,7 @@ def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
 
 def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
-                   sighted_game=None):
+                   sighted_game=None, rep=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
@@ -365,10 +573,28 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                         but the learned deck-aware net value (C-cheap), wired via the
                         `evaluator=` hook. RESIDUAL (default) blends heur+λ·net; REPLACE
                         swaps the value outright. Value from a CPU net OR orch handles.
+    info=="fair-netprior"
+                     -> the MIRROR of fair-net (the distilled-agent arm): the NET's
+                        POLICY head supplies the PUCT priors while the value stays the
+                        FROZEN curve125 champion leaf (the severed value loop). `cfg`
+                        MUST already carry the curve125 candidate leaf.
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     if info == "fair":
         prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
                                          seed=seed, exact_endgame=False)
+    elif info == "fair-netprior":
+        if net is None and handles is None:
+            raise ValueError(
+                "info=fair-netprior requires a loaded net (--net) or orch handles "
+                "(--orch-shm-name)")
+        evaluator = make_fair_net_prior_evaluator(
+            cfg, net=net, handles=handles, sighted_game=sighted_game,
+            sighted=(None if sighted_game is not None
+                     else (bool(rep["sighted"]) if rep else None)),
+        )
+        prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
+                                         seed=seed, exact_endgame=False,
+                                         evaluator=evaluator)
     elif info == "fair-net":
         if net is None and handles is None:
             raise ValueError(
@@ -445,7 +671,7 @@ _W: dict = {}
 def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  shared_claim, claim_host, claim_stale, net_ckpt=None,
                  net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
-                 cand_leaf_cfg=None):
+                 cand_leaf_cfg=None, rep=None):
     _W["info"] = info
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
@@ -463,7 +689,28 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["net"] = None
     _W["handles"] = None
     _W["sighted_game"] = None
-    if info == "fair-net" and orch_shm_name:
+    _W["rep"] = rep
+    if info == "fair-netprior":
+        # The distilled-agent arm. The rep (sighted 81ch/42 vs non-sighted 78ch/10) was
+        # resolved in main() from the CHECKPOINT and is passed down, so every worker
+        # encodes exactly the rep the net was trained on.
+        if orch_shm_name:
+            # carc-orch SHM: the GPU server owns the only net and returns masked-softmax
+            # PRIORS; the value is the local frozen leaf. Size the SHM slots from the
+            # RESOLVED rep — hardcoding 81/42 would corrupt a non-sighted server's I/O.
+            from carcassonne_ai.shm_eval_handles import connect_shm
+            _W["handles"] = connect_shm(orch_shm_name, id_q.get(),
+                                        int(rep["n_scalar_features"]),
+                                        int(rep["n_input_channels"]))
+            _W["sighted_game"] = Game(sighted=bool(rep["sighted"]))
+        elif net_ckpt:
+            _W["net"], _loaded = _load_net_rep(net_ckpt, device="cpu")
+            if bool(_loaded["sighted"]) != bool(rep["sighted"]):
+                raise SystemExit(
+                    f"FATAL: worker re-loaded {net_ckpt} with sighted={_loaded['sighted']} "
+                    f"but main() resolved sighted={rep['sighted']}")
+            _W["sighted_game"] = Game(sighted=bool(rep["sighted"]))
+    elif info == "fair-net" and orch_shm_name:
         # carc-orch SHM orchestrator: the server owns the only (GPU) net; this worker
         # is CPU-only and reads the sighted (81ch/42-scalar) VALUE over shared memory.
         # Each worker pops a unique SHM slot from id_q (mirrors clairvoyance_gap /
@@ -504,7 +751,7 @@ def _play_one(args) -> GameResult | None:
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
                            net_lambda=_W["net_lambda"], handles=_W.get("handles"),
-                           sighted_game=_W.get("sighted_game"))
+                           sighted_game=_W.get("sighted_game"), rep=_W.get("rep"))
     rung = _RungPrefix(Game(enable_legal_moves_cache=True), _W["rung_sims"],
                        seed + 1, DEFAULT_CONFIG)
 
@@ -617,18 +864,20 @@ def _build_work(seed_start, n, paired):
 
 
 # --------------------------------------------------------------------------- #
-def _smoke(args) -> int:
+def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
-    and print an elo/z summary. Exits 0 on success."""
-    cand_leaf_cfg = _load_cand_leaf_cfg(getattr(args, "cand_leaf_json", None))
-    if cand_leaf_cfg is not None:
-        _assert_cy_float_path(cand_leaf_cfg)
+    and print an elo/z summary. Exits 0 on success.
+
+    `cand_leaf_cfg` / `rep` are resolved by main() (the curve125 injection + the
+    checkpoint-inferred representation) and passed down, so the smoke exercises the
+    SAME leaf and the SAME rep the real run would."""
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg)
     # fair-net smoke: load --net if given, else a randomly-initialized 81ch/42-scalar
     # net (pure plumbing proof — NO training). Other arms ignore the net.
     smoke_net = None
+    smoke_sighted_game = None
     if args.info == "fair-net":
         smoke_net = (_load_net(args.net, device="cpu") if args.net
                      else _random_sighted_net(device="cpu",
@@ -636,6 +885,20 @@ def _smoke(args) -> int:
         print(f"[smoke] fair-net value = {'ckpt ' + args.net if args.net else 'RANDOM'} "
               f"81ch/42-scalar net (value_global_pool={args.value_global_pool}) "
               f"net_mode={args.net_mode} net_lambda={args.net_lambda:g}")
+    elif args.info == "fair-netprior":
+        # rep comes from the CHECKPOINT (main() resolved it); a random net for the
+        # net-less plumbing smoke defaults to the sighted rep.
+        if args.net:
+            smoke_net, rep = _load_net_rep(args.net, device="cpu")
+        else:
+            smoke_net, rep = _random_net_rep(
+                sighted=True, device="cpu", value_global_pool=args.value_global_pool)
+        smoke_sighted_game = Game(sighted=bool(rep["sighted"]))
+        print(f"[smoke] fair-netprior priors = {'ckpt ' + args.net if args.net else 'RANDOM'} "
+              f"net | rep={'SIGHTED' if rep['sighted'] else 'NON-SIGHTED'} "
+              f"{rep['n_input_channels']}ch/{rep['n_scalar_features']}sc "
+              f"(value_global_pool={rep['value_global_pool']}) | value = FROZEN curve125 "
+              f"champion leaf (NO net value)")
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
           f"(total~{args.k_dets*args.sims}) | rung h{args.rung_sims} c{RUNG_C}")
     import random
@@ -650,7 +913,8 @@ def _smoke(args) -> int:
         dh = deck_hash(board)
         champ = _make_champion(args.info, cfg, args.sims, args.k_dets, args.exact_k,
                                seed, Game(enable_legal_moves_cache=True), net=smoke_net,
-                               net_mode=args.net_mode, net_lambda=args.net_lambda)
+                               net_mode=args.net_mode, net_lambda=args.net_lambda,
+                               sighted_game=smoke_sighted_game, rep=rep)
         rung = _RungPrefix(Game(enable_legal_moves_cache=True), args.rung_sims,
                            seed + 1, DEFAULT_CONFIG)
         moves = 0
@@ -701,21 +965,29 @@ def _smoke(args) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="eval_fair_puct")
-    ap.add_argument("--info", choices=("fair", "clair", "fair-net"), default="fair",
+    ap.add_argument("--info", choices=("fair", "clair", "fair-net", "fair-netprior"),
+                    default="fair",
                     help="fair = FairHeuristicPriorAgent PIMC (deployable, default); "
                          "clair = clairvoyant champion (CL-022 CLAIR arm at champion config); "
                          "fair-net = fair PIMC with IDENTICAL heuristic priors but a learned "
-                         "deck-aware net leaf value (C-cheap; needs --net)")
+                         "deck-aware net leaf VALUE (C-cheap; needs --net); "
+                         "fair-netprior = the MIRROR (the distilled-agent STRENGTH arm): net "
+                         "POLICY-head priors + the FROZEN curve125 champion leaf value (severed "
+                         "value loop; needs --net; rep auto-inferred from the ckpt)")
     ap.add_argument("--net", type=str, default=None,
-                    help="fair-net arm: path to the sighted (81ch/42-scalar) value-net "
-                         "checkpoint. Under --smoke this may be omitted (a random net is used). "
+                    help="fair-net: path to the sighted (81ch/42-scalar) value-net checkpoint. "
+                         "fair-netprior: path to the DISTILLED policy net (sighted 81ch/42 OR "
+                         "non-sighted 78ch/10 — the rep is inferred from the checkpoint). "
+                         "Under --smoke this may be omitted (a random net is used). "
                          "With --orch-shm-name it is NOT loaded per-worker (the server owns the "
                          "net) but is still recorded in the manifest for provenance.")
-    ap.add_argument("--net-mode", choices=("replace", "residual"), default="residual",
+    ap.add_argument("--net-mode", choices=("replace", "residual"), default=None,
                     help="fair-net value combiner: residual (default, C-cheap v2) = "
                          "heur_value + net_lambda*net_value (clipped); replace (CL-049) = "
-                         "net_value fully replaces the heuristic leaf value.")
-    ap.add_argument("--net-lambda", type=float, default=0.25,
+                         "net_value fully replaces the heuristic leaf value. "
+                         "INAPPLICABLE to fair-netprior (that arm has no net value at all — "
+                         "its value is the frozen champion leaf), which rejects it.")
+    ap.add_argument("--net-lambda", type=float, default=None,
                     help="residual blend weight λ (net_mode=residual only). λ=0 is "
                          "byte-identical to the `fair` arm (a catastrophe pre-check).")
     ap.add_argument("--orch-shm-name", type=str, default=None,
@@ -759,6 +1031,11 @@ def main(argv=None) -> int:
     ap.add_argument("--shared-claim", action="store_true")
     ap.add_argument("--claim-stale-secs", type=int, default=7200)
     ap.add_argument("--claim-host", type=str, default=socket.gethostname())
+    ap.add_argument("--allow-leaf-hash-drift", action="store_true",
+                    help="fair-netprior: downgrade the candidate curve125 leaf-HASH assert to a "
+                         "warning (the curve-VALUES check still hard-fails). Only for a known "
+                         "additive LeafConfig field change that reshapes the hash — see the "
+                         "158f17ff precedent in scripts/distill_flywheel/champ_env.sh.")
     ap.add_argument("--summary-only", action="store_true")
     ap.add_argument("--no-results-csv", action="store_true",
                     help="do not append to experiments/results.csv (this eval NEVER writes it; "
@@ -772,8 +1049,30 @@ def main(argv=None) -> int:
     if args.paired and args.n % 2 != 0:
         ap.error("--paired requires an even --n")
 
-    if args.orch_shm_name and args.info != "fair-net":
-        ap.error("--orch-shm-name only applies to --info fair-net")
+    if args.orch_shm_name and args.info not in ("fair-net", "fair-netprior"):
+        ap.error("--orch-shm-name only applies to --info fair-net / fair-netprior")
+
+    # --net-mode / --net-lambda are INAPPLICABLE to fair-netprior: that arm has no net
+    # value at all (its value is the FROZEN champion leaf — the severed value loop), so
+    # a value-combiner knob would be silently inert. Reject rather than mislead.
+    # (Sentinel defaults of None make "explicitly passed" detectable; the effective
+    # defaults are restored below so the fair-net arm stays byte-identical.)
+    if args.info == "fair-netprior":
+        _inapplicable = [f for f, v in (("--net-mode", args.net_mode),
+                                        ("--net-lambda", args.net_lambda)) if v is not None]
+        if _inapplicable:
+            ap.error(
+                f"{' / '.join(_inapplicable)} {'is' if len(_inapplicable) == 1 else 'are'} "
+                "inapplicable to --info fair-netprior: that arm takes its PRIORS from the net "
+                "policy head and its VALUE from the FROZEN curve125 champion leaf — there is no "
+                "net value to combine. Use --info fair-net for the net-VALUE arm.")
+    elif args.net_mode is not None and args.info != "fair-net":
+        ap.error("--net-mode only applies to --info fair-net")
+    # restore the historical effective defaults (fair-net behavior byte-unchanged)
+    if args.net_mode is None:
+        args.net_mode = "residual"
+    if args.net_lambda is None:
+        args.net_lambda = 0.25
 
     # C5 Stage-3 candidate-leaf override (--cand-leaf-json). None -> the FAIR champion
     # keeps env DEFAULT_CONFIG (byte-identical to today). The h800 rung NEVER takes it.
@@ -786,16 +1085,48 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError) as e:
         ap.error(f"--cand-leaf-json: {e}")
 
+    # ---- fair-netprior: the candidate's FROZEN leaf must be the production curve125
+    # champion (that is what the nets were distilled against), while the h800 rung stays
+    # the curve100 CL-022 ruler. Injected IN-PROCESS (the --cand-leaf-json mechanism) so
+    # the rung's env DEFAULT_CONFIG cannot move. Explicit --cand-leaf-json still wins.
+    netprior_leaf_prov = None
+    rung_ruler_hash = None
+    if args.info == "fair-netprior":
+        rung_ruler_hash = _assert_rung_is_ruler()
+        if cand_leaf_cfg is None:
+            cand_leaf_cfg = _curve125_leaf_cfg()
+            _assert_cy_float_path(cand_leaf_cfg)
+        netprior_leaf_prov = _assert_netprior_leaf(
+            cand_leaf_cfg, strict=not args.allow_leaf_hash_drift)
+        print(f"[fair-netprior] candidate frozen leaf: curve125 "
+              f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
+              f"frozen_config_hash={netprior_leaf_prov['frozen_config_hash_champ_dialect']} "
+              f"(champ_env dialect) | h800 rung ruler leaf_hash={rung_ruler_hash} (curve100, "
+              f"unmoved)", flush=True)
+
     if args.smoke:
         if args.orch_shm_name:
             ap.error("--smoke does not drive the orch path (single-process CPU only); "
                      "run verify_sighted_orch_parity.py + an --orch-shm-name n=20 eval instead")
-        return _smoke(args)
+        return _smoke(args, cand_leaf_cfg)
 
-    if args.info == "fair-net" and not args.net:
+    if args.info in ("fair-net", "fair-netprior") and not args.net:
         # --net is required even under --orch-shm-name: the worker does NOT load it
         # (the server owns the net), but it is recorded in the manifest for provenance.
-        ap.error("--info fair-net requires --net <sighted checkpoint> (except under --smoke)")
+        ap.error(f"--info {args.info} requires --net <checkpoint> (except under --smoke)")
+
+    # fair-netprior: resolve the REPRESENTATION from the checkpoint ONCE in main (the
+    # workers re-load and cross-check against it). Inferring beats a flag: the ckpt is
+    # self-describing, and a wrong rep is a silent mis-encode, not a crash.
+    netprior_rep = None
+    if args.info == "fair-netprior":
+        _probe_net, netprior_rep = _load_net_rep(args.net, device="cpu")
+        del _probe_net    # main() only needs the rep; workers load their own copy
+        print(f"[fair-netprior] net={args.net}\n"
+              f"[fair-netprior] rep={'SIGHTED' if netprior_rep['sighted'] else 'NON-SIGHTED'} "
+              f"{netprior_rep['n_input_channels']}ch/{netprior_rep['n_scalar_features']}sc "
+              f"(inferred from the checkpoint) | priors=net_policy_head "
+              f"value=frozen_v29_curve125_leaf", flush=True)
 
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
@@ -834,20 +1165,29 @@ def main(argv=None) -> int:
     rung_leaf_cfg = DEFAULT_CONFIG              # h800 rung is ALWAYS env DEFAULT_CONFIG (the ruler)
     # human label for the champion leaf: reflects the --cand-leaf-json override when active
     # (the Trap-1 mislabel mitigation — a candidate cell is NOT "v2.9 Bmild_cap8").
-    _champ_leaf_label = ("v2.9 Bmild_cap8 (DEFAULT_CONFIG)" if cand_leaf_cfg is None
-                         else f"candidate override --cand-leaf-json (leaf{_leaf_hash(leaf_cfg)[:8]})")
+    if cand_leaf_cfg is None:
+        _champ_leaf_label = "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"
+    elif args.info == "fair-netprior" and args.cand_leaf_json is None:
+        # auto-injected curve125 (NOT a user --cand-leaf-json) — label it honestly
+        _champ_leaf_label = (f"FROZEN v2.9 curve125 production champion leaf, auto-injected "
+                             f"in-process (leaf{_leaf_hash(leaf_cfg)[:8]})")
+    else:
+        _champ_leaf_label = f"candidate override --cand-leaf-json (leaf{_leaf_hash(leaf_cfg)[:8]})"
     _AGENT_NAME = {
         "fair": "FairHeuristicPriorAgent",
         "fair-net": "FairHeuristicPriorAgent + deck-aware net value (C-cheap)",
+        "fair-netprior": ("FairHeuristicPriorAgent + distilled net POLICY priors "
+                          "(frozen curve125 champion leaf value; severed value loop)"),
         "clair": "HeuristicPriorAgent (clairvoyant)",
     }
+    _NP = args.info == "fair-netprior"
     man_cfg = {
         "info": args.info,
         "champion": {"agent": _AGENT_NAME[args.info],
                      **cfg.as_manifest(),
                      "k_dets": args.k_dets, "sims_per_det": args.sims,
                      "total_sims": args.k_dets * args.sims,
-                     "net": (args.net if args.info == "fair-net" else None),
+                     "net": (args.net if args.info in ("fair-net", "fair-netprior") else None),
                      "net_mode": (args.net_mode if args.info == "fair-net" else None),
                      "net_lambda": (args.net_lambda if (args.info == "fair-net"
                                     and args.net_mode == "residual") else None),
@@ -855,11 +1195,34 @@ def main(argv=None) -> int:
                                          if (args.info == "fair-net" and args.orch_shm_name)
                                          else ("per-worker CPU net" if args.info == "fair-net"
                                                else None)),
+                     # --- fair-netprior (the distilled-agent arm) provenance ---
+                     # priors_source is recorded for EVERY arm (additive metadata): the
+                     # fair/fair-net/clair arms all steer on the heuristic softmax(Δleaf/τ);
+                     # only fair-netprior swaps in the net policy head.
+                     "priors_source": ("net_policy_head" if _NP
+                                       else "heuristic_softmax_dleaf_tau"),
+                     "rep": (("sighted" if netprior_rep["sighted"] else "non-sighted")
+                             if _NP else None),
+                     "rep_dims": ({"n_input_channels": netprior_rep["n_input_channels"],
+                                   "n_scalar_features": netprior_rep["n_scalar_features"],
+                                   "sighted": netprior_rep["sighted"],
+                                   "inferred_from": "checkpoint (n_input_channels/"
+                                                    "n_scalar_features/sighted)"}
+                                  if _NP else None),
+                     "net_rep_provenance": ({"iter": netprior_rep["iter"],
+                                             "value_global_pool": netprior_rep["value_global_pool"],
+                                             "train_provenance": netprior_rep["provenance"]}
+                                            if _NP else None),
+                     "priors_transport": (("carc-orch SHM (" + args.orch_shm_name + ")")
+                                          if (_NP and args.orch_shm_name)
+                                          else ("per-worker CPU net" if _NP else None)),
+                     "netprior_leaf": (netprior_leaf_prov if _NP else None),
                      "leaf": _champ_leaf_label,
                      "value_source": (
-                         ("learned deck-aware net (sighted 81ch/42-scalar), "
-                          + ("residual heur+%g*net" % args.net_lambda
-                             if args.net_mode == "residual" else "replace net-only"))
+                         "frozen_v29_curve125_leaf" if _NP
+                         else ("learned deck-aware net (sighted 81ch/42-scalar), "
+                               + ("residual heur+%g*net" % args.net_lambda
+                                  if args.net_mode == "residual" else "replace net-only"))
                          if args.info == "fair-net"
                          else ("v2.9 heuristic leaf" if cand_leaf_cfg is None
                                else "v2.9 heuristic leaf, CANDIDATE override (--cand-leaf-json)")),
@@ -899,7 +1262,7 @@ def main(argv=None) -> int:
           f"{len(todo)} to play, {workers} workers, out={out}")
     sys.stdout.flush()
 
-    orch = bool(args.orch_shm_name) and args.info == "fair-net"
+    orch = bool(args.orch_shm_name) and args.info in ("fair-net", "fair-netprior")
     results = []
     if todo:
         t0 = time.perf_counter()
@@ -910,22 +1273,26 @@ def main(argv=None) -> int:
             _id_q = _ctx.Queue()
             for _w in range(workers):
                 _id_q.put(_w)
+            _dims = (f"{netprior_rep['n_input_channels']}ch/"
+                     f"{netprior_rep['n_scalar_features']}-scalar "
+                     f"{'sighted' if netprior_rep['sighted'] else 'non-sighted'} PRIORS"
+                     if _NP else "81ch/42-scalar sighted value")
             print(f"  [orch] SHM eval-server '{args.orch_shm_name}': {workers} CPU workers "
-                  f"attach to /dev/shm/carc_{args.orch_shm_name} (81ch/42-scalar sighted value)",
+                  f"attach to /dev/shm/carc_{args.orch_shm_name} ({_dims})",
                   flush=True)
             _pool_cm = _ctx.Pool(
                 processes=workers, initializer=_worker_init,
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          args.orch_shm_name, _id_q, cand_leaf_cfg))
+                          args.orch_shm_name, _id_q, cand_leaf_cfg, netprior_rep))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          "", None, cand_leaf_cfg))
+                          "", None, cand_leaf_cfg, netprior_rep))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

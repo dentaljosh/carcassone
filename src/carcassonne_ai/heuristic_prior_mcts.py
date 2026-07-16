@@ -456,6 +456,7 @@ def make_fair_net_prior_evaluator(
     handles=None,
     sighted_game: Game | None = None,
     device=None,
+    sighted: bool | None = None,
 ):
     """Return a ``Callable[[Board], (net_policy_priors[A], frozen_leaf_value)]``.
 
@@ -486,12 +487,21 @@ def make_fair_net_prior_evaluator(
                                 ``cfg.value_norm`` fully determine the frozen value;
                                 the prior-side softmax temperature ``cfg.tau_p`` is
                                 INERT here (the net's own policy head is the prior).
-    net : CarcassonneNet        an 81ch/42-scalar sighted net (policy head read).
+    net : CarcassonneNet        the policy-head net. Its input dims MUST match the
+                                resolved rep (81ch/42 sighted, or 78ch/10 non-sighted)
+                                — checked here, fail-loud.
     handles : ServerHandles     carc-orch SHM handles (see ``connect_shm``).
-    sighted_game : Game         a ``Game(sighted=True)`` encoder for the net forward
-                                (built here if None). The 81ch board / 42 scalars.
+    sighted_game : Game         the encoder for the net forward (built here if None).
+                                Despite the name it may be EITHER rep; when given, it
+                                is authoritative and ``sighted`` must not contradict it.
     device                      torch device for a CPU net forward (defaults to the
                                 net's own parameter device); ignored for ``handles``.
+    sighted : bool | None       rep selector used ONLY when ``sighted_game`` is None:
+                                True -> 81ch/42 sighted, False -> 78ch/10. Default
+                                None -> True (backward-compatible with the stage-2
+                                sighted callers). Both distilled candidates exist, so
+                                the rep is a switch; a mismatch raises rather than
+                                silently mis-encoding.
     """
     # --- value side: the FROZEN champion v2.9 leaf, computed DIRECTLY (one Cython
     #     float-leaf eval + tanh). NOT via make_heuristic_prior_evaluator, whose value
@@ -507,21 +517,34 @@ def make_fair_net_prior_evaluator(
         leaf_parent = flat_leaf.flat_virtual_score_v2_float(st, mover, leaf_cfg, bag_close)
         return math.tanh(leaf_parent / norm)
 
-    # --- prior side: the NET policy head, masked-softmax over legal, on the SIGHTED
-    #     (81ch/42-scalar) encode.
+    # --- prior side: the NET policy head, masked-softmax over legal. The encode REP
+    #     is a SWITCH, not a constant: both distillation targets exist — SIGHTED
+    #     (81ch board / 42 scalars, bag-aware) and NON-SIGHTED (78ch / 10, the
+    #     production warmstart rep). Resolve it explicitly and fail LOUD on any
+    #     rep/net-dim mismatch; a silent mis-encode would feed the policy head
+    #     garbage planes and quietly produce a weak-but-plausible agent.
     if sighted_game is None:
-        sighted_game = Game(sighted=True)
-    if not getattr(sighted_game, "sighted", False):
+        sighted_game = Game(sighted=(True if sighted is None else bool(sighted)))
+    elif sighted is not None and bool(sighted_game.sighted) != bool(sighted):
         raise ValueError(
-            "sighted_game must be a Game(sighted=True) — the fair-net net forward "
-            "reads the 81ch board / 42-scalar sighted representation"
+            f"sighted={bool(sighted)} contradicts the supplied sighted_game "
+            f"(sighted={bool(sighted_game.sighted)}) — refusing to guess the rep"
         )
+    rep = {
+        "sighted": bool(sighted_game.sighted),
+        "n_input_channels": int(sighted_game.get_input_channels()),
+        "n_scalar_features": int(sighted_game.get_scalar_feature_size()),
+    }
 
     if handles is not None:
-        # carc-orch SHM: the server (81ch/42-scalar sighted TorchScript) batches the
-        # policy forward across all workers. The remote returns masked-softmax priors
-        # already (export_torchscript bakes the masked_fill + softmax) — the exact
-        # NeuralMCTS prior contract. Discard its net value; the leaf owns the value.
+        # carc-orch SHM: the server (a TorchScript net at the RESOLVED rep — 81ch/42
+        # sighted or 78ch/10 non-sighted) batches the policy forward across all workers.
+        # The remote returns masked-softmax priors already (export_torchscript bakes the
+        # masked_fill + softmax) — the exact NeuralMCTS prior contract. Discard its net
+        # value; the leaf owns the value.
+        # NOTE: the SHM slot dims are sized by the CALLER (connect_shm(name, id, n_scalar,
+        # n_ch)) — it MUST size them from this same rep, or the shared buffers silently
+        # mis-map. The eval harness passes `rep` down to its workers for exactly this.
         from .remote_evaluators import make_remote_single_evaluator
         remote = make_remote_single_evaluator(handles, sighted_game)
 
@@ -541,14 +564,23 @@ def make_fair_net_prior_evaluator(
             except StopIteration:
                 device = torch.device("cpu")
         net.eval()
-        # Fail loudly on a rep/net channel mismatch (mirrors the sibling factory guard).
-        exp_ch = sighted_game.get_input_channels()
-        net_ch = int(getattr(net, "stem", [None])[0].in_channels) if hasattr(net, "stem") else None
-        if net_ch is not None and net_ch != exp_ch:
-            raise ValueError(
-                f"net input channels ({net_ch}) != sighted encode channels ({exp_ch}); "
-                "the fair-net-prior net must be an 81ch sighted net"
-            )
+        # Fail loudly on ANY rep/net-dim mismatch — channels AND scalars, against the
+        # RESOLVED rep (not a hardcoded 81). A net whose channels happen to match but
+        # whose scalars don't would otherwise die deep inside policy_fc with an opaque
+        # shape error, or (worse) a same-dim different-rep net would silently mis-encode.
+        _net_ch = getattr(net, "n_input_channels", None)
+        if _net_ch is None and hasattr(net, "stem"):   # pre-attr checkpoints
+            _net_ch = int(net.stem[0].in_channels)
+        _net_sc = getattr(net, "n_scalar_features", None)
+        for _what, _got, _exp in (("input channels", _net_ch, rep["n_input_channels"]),
+                                  ("scalar features", _net_sc, rep["n_scalar_features"])):
+            if _got is not None and int(_got) != int(_exp):
+                raise ValueError(
+                    f"net {_what} ({int(_got)}) != encode {_what} ({int(_exp)}) for the "
+                    f"resolved rep (sighted={rep['sighted']}: "
+                    f"{rep['n_input_channels']}ch/{rep['n_scalar_features']}sc). The "
+                    "fair-net-prior net and its encoder MUST be the same representation."
+                )
         _base_pol = make_single_evaluator_policy_only(net, device, sighted_game)
 
         def _net_priors(board: Board):
@@ -571,6 +603,8 @@ def make_fair_net_prior_evaluator(
     evaluator.value_source = "frozen_champion_v29_leaf"
     evaluator.value_transport = _transport
     evaluator.sighted_game = sighted_game
+    evaluator.rep = rep                 # resolved encode rep (provenance; manifest)
+    evaluator.sighted = rep["sighted"]
     if net is not None:
         evaluator.net = net
     return evaluator

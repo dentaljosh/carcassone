@@ -80,6 +80,12 @@ class CarcassonneNet(nn.Module):
         self.window_size = window_size
         self.action_size = compute_action_size(window_size)
         self.n_ownership_planes = n_ownership_planes
+        # Introspectable input dims (plain ints — NOT params/buffers, so state_dict
+        # and every existing checkpoint are unchanged). Let a caller assert the net's
+        # representation matches its encoder (78ch/10 non-sighted vs 81ch/42 sighted)
+        # BEFORE a forward, instead of hitting an opaque shape error inside policy_fc.
+        self.n_input_channels = int(n_input_channels)
+        self.n_scalar_features = int(n_scalar_features)
         # Flywheel step 2 (DECISIONS 2026-06-05): feed a board-WIDE summary
         # (global mean+max over the trunk's spatial dims) into the value head.
         # The 1×1-project→flatten value head has a tiny receptive field and can't
