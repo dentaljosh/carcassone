@@ -61,6 +61,10 @@ from carcassonne_ai.evaluators import (
 from carcassonne_ai.board_repr import N_CHANNELS
 from carcassonne_ai.features import N_SCALAR_FEATURES
 from carcassonne_ai.game_wrapper import Game
+from carcassonne_ai.heuristic_prior_mcts import (
+    HeuristicPriorConfig,
+    make_heuristic_prior_evaluator,
+)
 from carcassonne_ai.network import CarcassonneNet
 from carcassonne_ai.remote_eval_bridge import (
     BridgeServer,
@@ -171,6 +175,29 @@ def _parse_host_port(s: str) -> tuple[str, int]:
     return host, port
 
 
+def _teacher_prior_config(cfg: dict) -> HeuristicPriorConfig:
+    """Build the champion HeuristicPriorConfig for the `--teacher heuristic_prior`
+    emitter from the resolved cfg dict.
+
+    Only tau_p / value_norm / leaf_quantize / leaf_cfg are consumed by
+    `make_heuristic_prior_evaluator` (the NeuralMCTS evaluator contract). c_puct
+    and final_select are agent-level knobs (HeuristicPriorAgent) that the
+    self-play driver applies separately — c_puct is passed straight into
+    NeuralMCTS via `play_one_selfplay_game(c_puct=...)`, and move SELECTION is the
+    self-play temperature sampler, not final_select — so they are recorded here for
+    a faithful manifest but do not change the evaluator. leaf_cfg=None resolves to
+    the env-built DEFAULT_CONFIG (the champion curve125 Bmild_cap8 leaf when the
+    production CARCASSONNE_* env is set), matching the POC + PRODUCTION.yaml."""
+    return HeuristicPriorConfig(
+        c_puct=float(cfg["c_puct"]),
+        tau_p=float(cfg["teacher_tau_p"]),
+        value_norm=float(cfg["teacher_value_norm"]),
+        leaf_quantize=str(cfg["teacher_leaf_quantize"]),
+        final_select="visits",
+        leaf_cfg=None,
+    )
+
+
 def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     """Pool initializer. In orchestrator mode the worker skips the net load
     entirely; the server process owns the only copy of the weights and
@@ -183,6 +210,12 @@ def _worker_init(checkpoint_path: str, cfg: dict) -> None:
     global _worker_net, _worker_device, _worker_cfg, _worker_handles
     global _worker_anchor_net, _worker_anchor_handles
     _worker_cfg = cfg
+    if cfg.get("teacher") == "heuristic_prior":
+        # Net-free CPU champion emitter: no checkpoint, no CUDA context. The
+        # heuristic-prior evaluator is built per-game in _build_evaluators.
+        _worker_device = torch.device("cpu")
+        _worker_net = None
+        return
     if cfg.get("orchestrator"):
         # CPU-only worker. No torch.cuda, no checkpoint load.
         _worker_device = torch.device("cpu")
@@ -324,6 +357,17 @@ def _play_one_pool(args: tuple[int, str]) -> tuple[int, str, int]:
         (G-S1 plan risk #4). With the v2_5 leaf, leaf_cfg's value_blend=0.0
         makes the wrapper discard any NN value, so the anchor stays pure v2.7
         even on the orchestrator path (where the server may still compute it)."""
+        if cfg.get("teacher") == "heuristic_prior":
+            # Champion distillation emitter: priors=softmax(dLeaf/tau_p) over
+            # afterstates, value=tanh(float-leaf/value_norm), mover-POV. Net-free;
+            # NO make_v25_value_wrapper (the evaluator value is ALREADY the float
+            # leaf tanh, matching the champion — the wrapper would re-derive it from
+            # the int leaf and clobber the sub-integer prior resolution). batch=1
+            # only (guarded in main), so bev is always None.
+            ev = make_heuristic_prior_evaluator(game, _teacher_prior_config(cfg))
+            if _FW_ENABLED:
+                ev, _ = _wrap_throughput(ev, None)
+            return ev, None
         eff_blend = cfg.get("value_blend", 0.0) if blend is None else blend
         # Residual leaf (Lever 1/3): the anchor (blend explicitly passed) always
         # plays pure v2.7, so its residual is 0 too; the learner (blend is None)
@@ -445,7 +489,38 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--checkpoint", type=Path, required=False, default=None,
                    help="Network checkpoint to use as the self-play opponent. "
                         "Required unless --remote-eval-server is set (a remote "
-                        "client doesn't load the model — the server does).")
+                        "client doesn't load the model — the server does), or "
+                        "--teacher heuristic_prior (the net-free champion emitter).")
+    p.add_argument(
+        "--teacher", choices=["net", "heuristic_prior"], default="net",
+        help="Who drives self-play. 'net' (default, ZERO change to every existing "
+             "caller) = the learned network via NeuralMCTS. 'heuristic_prior' = the "
+             "classical CHAMPION (HeuristicPriorAgent's evaluator, clairvoyant, "
+             "net-free CPU) as a policy+value DISTILLATION emitter: records the root "
+             "visit distribution as policy targets + score_diff value targets, no net "
+             "loaded. Requires --value-blend 0 --residual-scale 0 --batch-size 1 and "
+             "NO orchestrator/remote/shm/anchor; --checkpoint becomes optional. The "
+             "champion leaf config comes from the CARCASSONNE_* env (curve125 "
+             "Bmild_cap8); knobs below.",
+    )
+    p.add_argument(
+        "--teacher-tau-p", type=float, default=5.0,
+        help="Only with --teacher heuristic_prior. Prior softmax temperature over "
+             "the afterstate leaf gains dLeaf(a) (HeuristicPriorConfig.tau_p; "
+             "champion=5.0).",
+    )
+    p.add_argument(
+        "--teacher-value-norm", type=float, default=15.0,
+        help="Only with --teacher heuristic_prior. tanh denominator for the leaf "
+             "value = tanh(leaf/value_norm), mover POV (HeuristicPriorConfig."
+             "value_norm; champion=15.0, matching --value-target score_diff's /15).",
+    )
+    p.add_argument(
+        "--teacher-leaf-quantize", choices=["float", "int"], default="float",
+        help="Only with --teacher heuristic_prior. 'float' (champion) = pre-round "
+             "Cython float leaf (full sub-integer prior resolution); 'int' = the "
+             "rounded production int leaf (HeuristicPriorConfig.leaf_quantize).",
+    )
     p.add_argument("--output-root", type=Path, required=True,
                    help="Root dir for self-play data; per-iter subdirs created.")
     p.add_argument("--iter", type=int, required=True, dest="iter_idx",
@@ -689,12 +764,51 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--serve-on requires --orchestrator")
     if args.serve_on and args.serve_slots <= 0:
         p.error("--serve-on requires --serve-slots > 0")
+    if args.teacher == "heuristic_prior":
+        # Net-free champion distillation emitter (§4.1). Fail loudly on any flag
+        # that would (a) load/steer a net — defeating the "distill the champion"
+        # point — or (b) route through a path the emitter does not support. Checked
+        # BEFORE the remote/shm force-orchestrator branch below so args.orchestrator
+        # still reflects the user's flag.
+        bad = []
+        if args.value_blend != 0.0:
+            bad.append(f"--value-blend {args.value_blend} (must be 0)")
+        if args.residual_scale != 0.0:
+            bad.append(f"--residual-scale {args.residual_scale} (must be 0)")
+        if args.leaf_eval != "nn":
+            bad.append(
+                f"--leaf-eval {args.leaf_eval} (must be nn: the leaf value comes "
+                "from the champion evaluator, not the v2_5 wrapper)"
+            )
+        if args.batch_size != 1:
+            bad.append(
+                f"--batch-size {args.batch_size} (must be 1: the emitter is serial CPU)"
+            )
+        if args.orchestrator:
+            bad.append("--orchestrator (the net-free emitter has no eval-server)")
+        if args.shm_eval_server:
+            bad.append("--shm-eval-server (the net-free emitter has no eval-server)")
+        if args.remote_eval_server:
+            bad.append("--remote-eval-server (the net-free emitter has no eval-server)")
+        if args.anchor_checkpoint is not None:
+            bad.append("--anchor-checkpoint (no net anchor in champion distillation)")
+        if bad:
+            p.error(
+                "--teacher heuristic_prior is incompatible with: " + "; ".join(bad)
+            )
     if args.remote_eval_server or args.shm_eval_server:
         # Orchestrator-client mode (TCP or SHM); the server owns the net pool.
         # Force the orchestrator code path on so _worker_init takes that branch.
         args.orchestrator = True
-    if not args.remote_eval_server and args.checkpoint is None:
-        p.error("--checkpoint is required (only optional with --remote-eval-server)")
+    if (
+        not args.remote_eval_server
+        and args.checkpoint is None
+        and args.teacher != "heuristic_prior"
+    ):
+        p.error(
+            "--checkpoint is required (optional only with --remote-eval-server "
+            "or --teacher heuristic_prior)"
+        )
     if args.anchor_fraction < 0.0 or args.anchor_fraction > 1.0:
         p.error(f"--anchor-fraction must be in [0, 1]; got {args.anchor_fraction}")
     if args.anchor_fraction > 0.0 and args.anchor_checkpoint is None:
@@ -845,6 +959,10 @@ def main(argv: list[str] | None = None) -> int:
         "anchor_fraction": float(args.anchor_fraction),
         "value_blend": float(args.value_blend),
         "residual_scale": float(args.residual_scale),
+        "teacher": args.teacher,
+        "teacher_tau_p": float(args.teacher_tau_p),
+        "teacher_value_norm": float(args.teacher_value_norm),
+        "teacher_leaf_quantize": args.teacher_leaf_quantize,
     }
     print(
         f"selfplay iter={args.iter_idx}: {args.games} games "
@@ -857,6 +975,45 @@ def main(argv: list[str] | None = None) -> int:
         f"out={iter_dir}, orchestrator={args.orchestrator}"
     )
     sys.stdout.flush()
+
+    if args.teacher == "heuristic_prior":
+        # Self-describing manifest for the champion-distillation emitter (§4.1):
+        # the resolved HeuristicPriorConfig + sims + the CARCASSONNE_* leaf env, so
+        # the shards never require dirname archaeology to interpret. Atomic write;
+        # both boxes point at the same shared iter dir (benign overwrite).
+        import json as _json
+
+        hp_cfg = _teacher_prior_config(cfg)
+        leaf_env = {
+            k: v for k, v in sorted(os.environ.items())
+            if k.startswith("CARCASSONNE_")
+        }
+        manifest = {
+            "teacher": {
+                "mode": "heuristic_prior",
+                "agent": "HeuristicPriorAgent champion evaluator (net-free CPU)",
+                "sims": args.sims,
+                "c_puct": args.c_puct,
+                "dirichlet_alpha": args.dirichlet_alpha,
+                "dirichlet_eps": args.dirichlet_eps,
+                "temp_threshold": args.temp_threshold,
+                "value_target": args.value_target,
+                "config": hp_cfg.as_manifest(),
+                "resolved_leaf_env": leaf_env,
+            },
+            "iter": args.iter_idx,
+            "games": args.games,
+            "seed_start": args.seed_start,
+            "output_dir": str(iter_dir),
+            "host": args.claim_host,
+        }
+        manifest_path = iter_dir / "manifest.json"
+        _tmp = manifest_path.with_name("manifest.json.tmp")
+        with open(_tmp, "w") as _f:
+            _json.dump(manifest, _f, indent=2)
+        os.replace(_tmp, manifest_path)
+        print(f"  wrote teacher manifest -> {manifest_path}")
+        sys.stdout.flush()
 
     if remaining == 0:
         print("All games cached; nothing to do.")
