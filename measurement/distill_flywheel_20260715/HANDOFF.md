@@ -64,19 +64,50 @@ Fidelity to the fair champion on a frozen 24-game probe (`probe_metrics.jsonl`, 
 | `60be5b7` | **`--info fair-netprior` strength arm** — net policy priors + frozen curve125 leaf, both reps, rung ruler guarded |
 | in flight | **`--opponent {h800,fair-champion,net}`** — direct head-to-heads (agent a459516c) |
 
-## NEXT STEPS (in order)
-1. **Stage-1 finishes ~1:15am** → sighted iter_3 ckpt. (Watcher `bvaubs0mj` armed; if lost, poll
-   `pgrep -f 'run_distill_[s]ighted'`.)
-2. **Two DIRECT head-to-heads** (once `--opponent` lands + boxes free):
-   - **best distilled net vs CHAMPION** — "did the distillation work?" A pure prior-swap: same 2752
-     fair budget, same frozen curve125 leaf, only priors differ (net vs heuristic softmax).
-     ⚠️ Interesting: the net's priors encode the champion's *search output* (pooled visits after 2752
-     sims), not its raw one-ply priors → net-priors + same search could **exceed** the champion. That's
-     the flywheel's whole bet.
-   - **sighted net vs non-sighted iter_02** — does the bag matter for STRENGTH (not imitation)?
-   - ~n=200/arm, band 15e9, seat-balanced + deck-paired.
-3. **W28 orch bench** for the real stage-2 ETA (the W2 smoke's 74s/game was tiny-batch under-utilization).
-4. **Flywheel launch decision** (Joshua's go) → `run_distill_stage2.sh` iters 4-11.
+## 🌙 OVERNIGHT CHAIN — LAUNCHED 2026-07-17 00:12, RUNNING UNATTENDED
+`scripts/distill_flywheel/run_overnight_chain.sh` (commit `2bd7529`), detached, launched with
+**`N_HH=100 OW=16`**. Log: `measurement/distill_flywheel_20260715/overnight_chain.log`.
+**Morning read: `OVERNIGHT_CHAIN_STATUS.md`** (per-step state) in the run root.
+1. **WAIT** for sighted stage-1 to exit (~1:40am; polls `run_distill_[s]ighted` every 120s).
+2. **HH1 — the money shot:** sighted iter_03 **vs the fair CHAMPION** (`--info fair-netprior
+   --opponent fair-champion`, k4×688, exact-k 2, **n=100 paired**, fresh CRN band **21.0e9**, W16,
+   LOCAL, **CPU nets**). Pure prior-swap → the first real STRENGTH number for a distilled net.
+   Results: `<run root>/hh1_vs_champion/`.
+3. **HH2 — rep A/B on strength:** sighted iter_03 vs non-sighted iter_02 (cross-rep). Same band →
+   deck-matched to HH1. Results: `<run root>/hh2_rep_ab/`.
+4. **FLYWHEEL LAUNCHES UNCONDITIONALLY** (`run_distill_stage2.sh`, iters 4-11, seeds from sighted
+   iter_03) — **Joshua's explicit call 2026-07-16**: it fires regardless of the HH results, even if an
+   HH crashed, even if stage-1 died without iter_03.pt. **Fault-tested by injection** (both-HH-crash
+   and no-iter_03 cases both still launched step 4).
+
+### ⚠️ THE THREE THINGS TO READ FIRST IN THE MORNING
+1. **THE FLYWHEEL IS ~66h (~2.75 DAYS), NOT ~13h.** Measured: net-prior gen is **forward-latency
+   bound** (~219k forwards/game; **no game finished in 30 min at W=4**). GPU saturates ~3700 fwd/s;
+   W28 demands ~3280/s → per iter 450 games × ≥219k ≈ ≥98M forwards → **≥8h/iter → ≥66h for iters
+   4-11.** (Extrapolated — flagged as such.) **The lever is `NET_GAMES` (450) or `END` (11)**; both are
+   env knobs, and the driver is iter-resumable via `done/` markers, so retuning after ~1 iter costs
+   almost nothing. **I deliberately did NOT cut it** — that's the experiment's data budget = Joshua's call.
+2. **A REAL ORCH ROOT CAUSE WAS FOUND + FIXED** (`36dff1d`, revert with `git revert 36dff1d`):
+   `sem_timedwait` takes an **absolute CLOCK_REALTIME deadline** but the caller wants a *duration*.
+   **WSL2 resyncs its clock to the Windows host — a forward clock step puts the deadline in the past →
+   instant ETIMEDOUT → `BrokenServerError` against a healthy, still-batching server whose watchdog
+   correctly stays silent.** That is the project's long-standing "known open orch stall"
+   (`reference_exact_solver_eval_infra`), and it is **load-independent** — which is why it never
+   reproduced on demand. Regression test fails against HEAD with the literal production error;
+   validated in-situ (7.2ms/forward, no hot-path regression). **NOT eval-specific** — gen uses the same
+   client and just didn't get unlucky in 30 min, so a multi-day flywheel would likely have hit it.
+3. **Stage-2 gen does NOT reproduce the stall** (30 min / 876k forwards clean at k4×688) → the driver
+   was left UNTOUCHED (a non-problem doesn't get an untested fallback in an unattended launch).
+   The HHs still use **CPU nets**: the clock fix is plausible but **unproven for the eval**, and I
+   wouldn't gamble the one number Joshua wants on an unproven fix while nobody's watching. `ORCH=1` opts in.
+
+**Known costs of the overnight config (accepted deliberately):** the **laptop idles** during the
+LOCAL-only HHs (~1:40am→HH end) — a 2-box eval split would have meant inventing a fragile scheme at
+midnight, on the very transport that's broken. **n=100 (not 200)** because the chain's original ETA was
+built on stage-1's *net-free* rate and the net-prior side is ~6× slower; n=100 paired ≈ ±25 elo, which
+still answers the coarse question ("near the champion, or catastrophic like C-cheap's W0/L100?").
+**ETAs for the HHs are UNVERIFIED** — no game completed in the bench window, so treat any HH ETA as a
+guess. Step 4 is unconditional, so overruns cannot strand the night.
 
 ## GOTCHAS THAT WILL BITE (hard-won)
 - ⚠️ **NEVER `source champ_env.sh` before `eval_fair_puct`.** Its `_CANON_ENV` uses
