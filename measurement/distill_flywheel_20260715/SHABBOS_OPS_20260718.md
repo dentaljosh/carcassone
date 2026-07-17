@@ -31,6 +31,16 @@ session waited on a notification that never came; active periodic checks, not pa
   parity bit-exact), `40a3acd` (fair_net_vs_net_orch pkill scoped to fairnvn*, safe
   next to gen orch — VERIFIED live). `42cc336` (Xeon retired banner).
 
+## ⚠️ TOKEN BUDGET (Joshua, pre-signoff): survival > richness
+
+Premium (fable-tier) tokens are constrained; if the session runs out mid-Shabbos the
+loop dies silently. Rules: (1) every Agent spawn passes an explicit `model: "opus"`
+override; (2) main-loop turns stay LEAN — terse CHECKLOG lines, no big whole-file
+Reads, delegate noisy multi-step checks to one opus subagent that returns a compact
+status; (3) at any sign of usage pressure (errors, warnings), stretch the wakeup
+interval to ~2h and strip check-ins to bare health checks + heal-if-dead only. A
+thin loop that survives 25h beats a rich one that dies at hour 10.
+
 ## The hourly loop (each wakeup)
 
 1. **Flywheel health**: `pgrep -f 'run_distill_[s]tage2'` + `pgrep -af 'carc-[o]rch.*distill_stage2'`
