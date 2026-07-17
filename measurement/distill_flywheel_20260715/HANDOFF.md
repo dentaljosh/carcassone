@@ -18,15 +18,17 @@ move** (bs=16; was 12.67× at batch-1). On the CL-046 ladder, giving the champio
 SCREEN, not a verdict, and has the same statistical profile as t020 (+32/z1.68 → collapsed to +3.4 at
 n=800, CL-057, three days prior). **So: confirm + wall-clock test both needed before believing it.**
 
-## WHAT'S RUNNING NOW (15:25 — VIABILITY FLYWHEEL at sims200, iters 4-16)
+## WHAT'S RUNNING NOW (17:25 — VIABILITY FLYWHEEL sims200 @ W20/f4, iters 4-16 — CONFIG SETTLED)
 **Reframe (Joshua):** this flywheel is a **viability probe** — can self-play get the net IMPROVING at all, and
 does it PLATEAU early? NOT a max-strength run, so it's cut hard for speed. The earlier sims688 iter-4 was killed
 (0 games banked) after it was diagnosed as a ~6.7-DAY run (GPU-forward-bound — see LEVERS EXPLORED below).
 
 - **LOCAL — FLYWHEEL (stage 2, iters 4-16), net-prior ONLY, NO strength-gate.** `run_distill_stage2.sh` with
-  `USE_LAPTOP=0 CHAMP_GAMES=0 GAMES=300 NET_GAMES=300 NET_BATCH=16 NET_KDETS=4 NET_SIMS=200 START=4 END=16`.
-  Budget k4×200=**800** (¼ of the champion's 2752). Est **~3-4h/iter** (UNMEASURED — rate watch pending; no
-  net-prior iter has ever completed end-to-end). Launcher log: `measurement/distill_flywheel_20260715/stage2_sims200.log`.
+  `USE_LAPTOP=0 CHAMP_GAMES=0 GAMES=300 NET_GAMES=300 NET_BATCH=16 NET_KDETS=4 NET_SIMS=200 START=4 END=16 W_LOCAL_NET=20 ORCH_WORKERS=20`
+  (forwarders default 4). Budget k4×200=**800** (¼ of champion's 2752). **~1.5-2h/iter MEASURED** (~3 games/min
+  steady at W20 → iters 4-16 ≈ ~1 day). Launcher log: `measurement/distill_flywheel_20260715/stage2_sims200.log`.
+  iter-4 resuming from ~62 games (`--shared-claim` survives kill/relaunch — the config was tuned via many
+  pause/resume cycles, games always preserved).
   Collapse-safety screen (rc=3) STAYS ("no gate" = no strength decision-gate, kill/gate manually). Kill (local):
   `pkill -9 -f run_distill_[s]tage2`, then gen main + `pgrep -f multiprocessing.[s]pawn` by PID + `ps -C carc-orch`.
   ⚠️ **pkill self-match bit me twice this session** — NEVER leave the literal pattern UNbracketed in the kill cmd.
@@ -69,6 +71,15 @@ overlaps it perfectly — Joshua's "use the idle half" idea). Needs a driver cha
   NOT the old net-value W26 (different profile: fair net-prior eval is the CPU-leaf-heavy "W≤threads" regime).
 - **k_dets STAYS 4** (advisor: CL-054 strength peak AND target-quality — the policy target is pooled over the k
   trees, so k4 = lower-variance targets; cutting to k2 noisies the small signal we're hunting). Cut SIMS only.
+- **Local gen W-sweep (sims200):** throughput FLAT ~5200 fwd/s from W20→W44 (latency-capped, not worker-bound).
+  **W20 = knee** (min-W holding the plateau, 65% pipeline, load ~15/32, max headroom); below it worker-starved
+  (W16 −9%, W12 −23%). → run **W20**.
+- **Forwarder sweep (proportional-knee, ~5 workers/forwarder):** more forwarders BARELY help — f6/W30=+4.7% (5421
+  fwd/s), f8/W40=+1.5% AND hits the CPU-spin wall (load 30/32, throughput reverses). Gen is **DISPATCH-LATENCY-BOUND**
+  (the per-forward round-trip: SHM handoff + H2D/D2H + CUDA dispatch/sync — NOT compute [GPU 76W], NOT PCIe-bw, NOT
+  workers, NOT forwarders). Ceiling ~**5400 fwd/s**. → **f4** default; the +4.7% isn't worth spending the headroom.
+  Matches the project's "training is GPU-latency-bound" finding. **W/forwarder rabbit-hole CLOSED — don't re-run.**
+  The freed W20 headroom (load ~15/32, GPU 76W) is for the champ-anchor and/or concurrent per-iter eval instead.
 
 ## DESIGN PRINCIPLE (Joshua, standing)
 **Every workload = a shared work-stealing pool at per-box OPTIMAL W; nothing pinned to one box.**
