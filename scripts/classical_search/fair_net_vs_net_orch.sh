@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Fair net-vs-net (or net-vs-fair-champion) through TWO carc-orch SHM GPU orchestrators
+# — one server per net, the two contexts sharing the one GPU. The GPU-batched path for
+# eval_fair_puct.py --opponent net; per-worker batch-1 CPU forwards are GPU-latency-bound,
+# the orchestrator batches them (the standing default for all neural eval).
+#
+# Mirrors scripts/heuristic_v28/v28_net_vs_net_orch.sh (server lifecycle, stale cleanup,
+# forwarder- readiness gate, trap/kill, per-side TorchScript export) with TWO deliberate
+# differences — read these before editing:
+#
+#  1. ⚠️ PER-SERVER --n-ch. carc-orch DEFAULTS n_ch=78 (rust/carc-orch/src/main.rs:58).
+#     v28 never passed it because every v28 net was 78ch — but the distill candidates are
+#     cross-rep: sighted 81ch/42-scalar vs non-sighted 78ch/10. A sighted server left at
+#     the 78 default silently corrupts every forward (wrong plane count => garbage priors,
+#     a weak-but-plausible agent, no crash). Both --n-ch AND --n-scalar are peeked from
+#     EACH checkpoint and passed per side. This is the stage-2 trap.
+#
+#  2. ⚠️ NO LEAF ENV. v28 exports a LEAFENV; this script deliberately exports NONE.
+#     eval_fair_puct.py sets its own _CANON_ENV via os.environ.setdefault at import, and a
+#     pre-set CARCASSONNE_V29_MEEPLE_CURVE would WIN over that setdefault and move
+#     DEFAULT_CONFIG — i.e. move the h800 ruler and silently invalidate every cross-arm
+#     comparison. The harness injects the candidate/opponent curve125 leaf IN-PROCESS.
+#     Do NOT add a curve env here, and do NOT `source champ_env.sh` before running.
+#
+# The servers own the only nets (GPU); the client workers are CPU and ship
+# (obs, scalars, mask) over shared memory. Keep OW modest on a shared box.
+#
+#   # cross-rep net-vs-net: sighted candidate vs non-sighted opponent
+#   CAND_CKPT=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_00.pt \
+#   OPP_CKPT=/mnt/c/carc-shared/distill_flywheel_20260715/ckpt/iter_02.pt \
+#   OW=4 bash scripts/classical_search/fair_net_vs_net_orch.sh \
+#       --exact-k 2 --k-dets 2 --sims 32 --n 2 --paired \
+#       --out-root /mnt/c/carc-shared/classical_search --no-results-csv
+set -euo pipefail
+REPO=${REPO:-$(cd "$(dirname "$0")/../.." && pwd)}
+PY=${PY:-$REPO/.venv/bin/python}
+[ -x "$PY" ] || PY=python3
+CAND_CKPT=${CAND_CKPT:?set CAND_CKPT=<candidate distilled policy net .pt>}
+OPP_CKPT=${OPP_CKPT:?set OPP_CKPT=<opponent distilled policy net .pt>}
+OW=${OW:-4}                        # CPU workers = SHM slots per server. Keep low on a
+                                   # shared box (a concurrent gen run owns the cores).
+FWD=${ORCH_FWD:-2}
+MB=${ORCH_MAX_BATCH:-16}
+HOST=${HOST:-$(hostname)}
+SRV="$REPO/rust/carc-orch/run_server.sh"
+TS_C="/tmp/carc_fairnvnC_${HOST}.ts.pt"
+TS_O="/tmp/carc_fairnvnO_${HOST}.ts.pt"
+SHMN_C="fairnvnC${HOST}"
+SHMN_O="fairnvnO${HOST}"
+LOG_C="/tmp/carc_srvFAIRNVNC_${HOST}.log"
+LOG_O="/tmp/carc_srvFAIRNVNO_${HOST}.log"
+
+cd "$REPO"
+
+# --- peek EACH side's rep from its OWN checkpoint (n_ch + n_scalar + sighted). The rep is
+#     never assumed: picking the wrong encoder/dims is a silent mis-encode, not a crash.
+read -r NC_C NS_C SG_C < <("$PY" - "$CAND_CKPT" <<'EOF'
+import sys, torch
+ck = torch.load(sys.argv[1], map_location="cpu", weights_only=False)
+print(int(ck.get("n_input_channels", 78)), int(ck.get("n_scalar_features", 10)),
+      "sighted" if ck.get("sighted", False) else "non-sighted")
+EOF
+)
+read -r NC_O NS_O SG_O < <("$PY" - "$OPP_CKPT" <<'EOF'
+import sys, torch
+ck = torch.load(sys.argv[1], map_location="cpu", weights_only=False)
+print(int(ck.get("n_input_channels", 78)), int(ck.get("n_scalar_features", 10)),
+      "sighted" if ck.get("sighted", False) else "non-sighted")
+EOF
+)
+echo "[fair-nvn-orch] CAND $(basename "$CAND_CKPT"): ${NC_C}ch/${NS_C}sc ($SG_C)"
+echo "[fair-nvn-orch] OPP  $(basename "$OPP_CKPT"): ${NC_O}ch/${NS_O}sc ($SG_O)"
+
+# --- export per side -> TorchScript (parity-gated; abort on fail) ---
+echo "[fair-nvn-orch] exporting both -> TorchScript (parity-gated)"
+"$PY" scripts/export_torchscript.py --checkpoint "$CAND_CKPT" --out "$TS_C" --device cuda \
+  || { echo "FATAL: TorchScript export/parity failed for CANDIDATE" >&2; exit 1; }
+"$PY" scripts/export_torchscript.py --checkpoint "$OPP_CKPT" --out "$TS_O" --device cuda \
+  || { echo "FATAL: TorchScript export/parity failed for OPPONENT" >&2; exit 1; }
+
+# --- clean any stale carc-orch / shm for THESE two names ---
+pkill carc-orch 2>/dev/null || true; sleep 1
+rm -f "/dev/shm/carc_$SHMN_C" /dev/shm/sem.carc_"${SHMN_C}"_* \
+      "/dev/shm/carc_$SHMN_O" /dev/shm/sem.carc_"${SHMN_O}"_* 2>/dev/null || true
+
+# --- launch BOTH servers, each with ITS OWN dims (the n_ch trap above) ---
+echo "[fair-nvn-orch] start carc-orch CAND (W=$OW fwd=$FWD max_batch=$MB) shm=$SHMN_C n_ch=$NC_C n_scalar=$NS_C"
+nice -n 19 "$SRV" --model "$TS_C" --transport shm --shm-name "$SHMN_C" --workers "$OW" \
+  --n-ch "$NC_C" --n-scalar "$NS_C" \
+  --device cuda --max-batch "$MB" --batch-timeout-ms 2.0 --forwarders "$FWD" --watchdog-secs 30 \
+  > "$LOG_C" 2>&1 &
+SRV_C_PID=$!
+echo "[fair-nvn-orch] start carc-orch OPP  (W=$OW fwd=$FWD max_batch=$MB) shm=$SHMN_O n_ch=$NC_O n_scalar=$NS_O"
+nice -n 19 "$SRV" --model "$TS_O" --transport shm --shm-name "$SHMN_O" --workers "$OW" \
+  --n-ch "$NC_O" --n-scalar "$NS_O" \
+  --device cuda --max-batch "$MB" --batch-timeout-ms 2.0 --forwarders "$FWD" --watchdog-secs 30 \
+  > "$LOG_O" 2>&1 &
+SRV_O_PID=$!
+trap 'kill $SRV_C_PID $SRV_O_PID 2>/dev/null; pkill carc-orch 2>/dev/null; rm -f "/dev/shm/carc_'"$SHMN_C"'" /dev/shm/sem.carc_'"$SHMN_C"'_* "/dev/shm/carc_'"$SHMN_O"'" /dev/shm/sem.carc_'"$SHMN_O"'_*' EXIT
+
+# --- wait for "forwarder-" in BOTH logs (80 x 0.5s each); FATAL if either dies ---
+for side in C O; do
+  eval "LOG=\$LOG_$side; PID=\$SRV_${side}_PID"
+  for _ in $(seq 1 80); do
+    grep -q "forwarder-" "$LOG" 2>/dev/null && break
+    kill -0 "$PID" 2>/dev/null || { echo "FATAL: carc-orch $side died early" >&2; tail -15 "$LOG" >&2; exit 1; }
+    sleep 0.5
+  done
+  grep -q "forwarder-" "$LOG" 2>/dev/null \
+    || { echo "FATAL: carc-orch $side failed to start" >&2; tail -12 "$LOG" >&2; exit 1; }
+done
+echo "[fair-nvn-orch] BOTH servers READY | CAND shm='$SHMN_C' ${NC_C}ch/${NS_C}sc | OPP shm='$SHMN_O' ${NC_O}ch/${NS_O}sc | client W=$OW"
+
+# --- run the client. NO leaf env (see header note 2): the harness's _CANON_ENV setdefault
+#     must win, and the curve125 leaf is injected in-process per side.
+nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py \
+  --info fair-netprior --net "$CAND_CKPT" \
+  --opponent net --opp-net "$OPP_CKPT" \
+  --orch-shm-name "$SHMN_C" --opp-orch-shm-name "$SHMN_O" \
+  --workers "$OW" "$@"
