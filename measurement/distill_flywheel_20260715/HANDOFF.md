@@ -18,48 +18,57 @@ move** (bs=16; was 12.67× at batch-1). On the CL-046 ladder, giving the champio
 SCREEN, not a verdict, and has the same statistical profile as t020 (+32/z1.68 → collapsed to +3.4 at
 n=800, CL-057, three days prior). **So: confirm + wall-clock test both needed before believing it.**
 
-## WHAT'S RUNNING NOW (12:30 — SPLIT: the confirm is CPU-bound, so it moved OFF the strong box)
-The both-box confirm banked **0 games in 31 min** (each k4×688 fair game is a >40-min wall; parallelism just
-fans many long games out — it's CPU-bound, orch only ~37% busy). The flywheel is the priority, so Joshua split
-the boxes: confirm → laptop-only, flywheel → local now.
+## WHAT'S RUNNING NOW (15:25 — VIABILITY FLYWHEEL at sims200, iters 4-16)
+**Reframe (Joshua):** this flywheel is a **viability probe** — can self-play get the net IMPROVING at all, and
+does it PLATEAU early? NOT a max-strength run, so it's cut hard for speed. The earlier sims688 iter-4 was killed
+(0 games banked) after it was diagnosed as a ~6.7-DAY run (GPU-forward-bound — see LEVERS EXPLORED below).
 
-- **LAPTOP — n=200 confirm** (cut from 400: laptop-only is ~22% of combined throughput → n=400 would be ~37h;
-  n=200 ±25 elo still separates +88 from a wash, ~19h). Candidate bs=16 net vs the fair champion, k4×688, band
-  **22.0e9**, dir `<run>/confirm_n200_laptop/`, OW=8, own carc-orch. Rung guard PASSED (both sides curve125, no
-  leak). Log (laptop): `/tmp/confirm_laptop_n200.log`. Relaunch = pipe `scratchpad/confirm_laptop_n200.sh` to
-  laptop-wsl. Kill (laptop): `pkill -9 -f eval_fair_[p]uct` + its orch (`ps -C carc-orch`).
-- **LOCAL — the FLYWHEEL (stage 2, iters 4-11), net-gen ONLY.** `run_distill_stage2.sh` with
-  `USE_LAPTOP=0 CHAMP_GAMES=0 GAMES=450 NET_GAMES=450 NET_BATCH=16 NET_KDETS=4 NET_SIMS=688` (full-budget k4×688,
-  proven — NOT the unvalidated 2× sims cut). iter-4 gen live: 28 workers, load ~12-18 (NOT oversubscribed — gen
-  self-play batches BOTH sides through the orch, avg_batch 14.3, fwd_busy 43%). Launcher log:
-  `measurement/distill_flywheel_20260715/stage2.log`; per-iter status: `measurement/<TAG>/STAGE2_STATUS.md`;
-  gen log: `<run>/logs/gen_local_it<NN>.log`. Kill (local): `pkill -9 -f run_distill_stage2` then
-  `pkill -9 -f gen_fair_distill` + `ps -C carc-orch`.
+- **LOCAL — FLYWHEEL (stage 2, iters 4-16), net-prior ONLY, NO strength-gate.** `run_distill_stage2.sh` with
+  `USE_LAPTOP=0 CHAMP_GAMES=0 GAMES=300 NET_GAMES=300 NET_BATCH=16 NET_KDETS=4 NET_SIMS=200 START=4 END=16`.
+  Budget k4×200=**800** (¼ of the champion's 2752). Est **~3-4h/iter** (UNMEASURED — rate watch pending; no
+  net-prior iter has ever completed end-to-end). Launcher log: `measurement/distill_flywheel_20260715/stage2_sims200.log`.
+  Collapse-safety screen (rc=3) STAYS ("no gate" = no strength decision-gate, kill/gate manually). Kill (local):
+  `pkill -9 -f run_distill_[s]tage2`, then gen main + `pgrep -f multiprocessing.[s]pawn` by PID + `ps -C carc-orch`.
+  ⚠️ **pkill self-match bit me twice this session** — NEVER leave the literal pattern UNbracketed in the kill cmd.
+- **LAPTOP — n=200 confirm** (goal-1 verification, RESUMING 32/200 — fair games DO complete), OW=**12** (W-sweep
+  optimum), band 22.0e9, dir `confirm_n200_laptop/`. Independent of the flywheel. Log (laptop): `/tmp/confirm_laptop_n200.log`.
 
-⚠️ **ANCHOR-FREE recipe deviation (monitored, deliberate):** the intended flywheel mixes a 25% net-free champion
-side-stream on the laptop (anti-drift anchor). The laptop is on the confirm and the two timelines are ~even
-(~19h each), so the laptop won't realistically free up mid-run — this flywheel runs WITHOUT the champ anchor.
-The **severed value loop** (value = frozen champion leaf, never the net) is the PRIMARY anti-collapse mechanism
-and is intact; the anchor is secondary belt-and-suspenders on the policy side. Watched via the per-iter collapse
-screen (rc=3 halts), the iter-6 gate, and iter-resumability — if drift shows, add the anchor back or abort cheap.
+⚠️ **sims200 = ¼ budget, BELOW the advisor's ½-budget "safe" floor.** A NULL result is AMBIGUOUS (real, OR gen
+search too weak to beat the net's own 2752-distilled priors → no gradient). **Protocol:** a POSITIVE signal is
+self-validating (viable, cheaply); a NULL → bump to sims **344** (k4×344=1376=½ budget) to disambiguate BEFORE
+concluding "doesn't work." The strong frozen champion leaf (value) makes even a shallow search decent, so 200 has
+a real shot. (Advisor wanted 344; Joshua chose 200 with this escalation protocol.)
 
-## THE PLAN (steps 1 and 4 now run CONCURRENTLY — see WHAT'S RUNNING)
-1. **n=200 confirm** (laptop-only, running) → does +88.7 hold at equal sims for the deployable bs=16 agent?
-2. **E4 — the DEPLOYABILITY verdict (now the key experiment):** a net-sims ladder (344 / 688 / 1376,
-   all bs=16) vs the FIXED 2752 champion. The champion at 2752 costs ~what the net costs at ~1376, so
-   **if net-1376 still beats champion-2752, that's a real wall-clock win + a fast agent.** If it needs
-   the full 2752, +88.7 is an equal-sims curiosity. One ladder answers goal-1 (deployable performance).
-   ⚠️ **NOT ready-to-fire (verified 2026-07-17):** `eval_fair_puct` runs BOTH sides at the same
-   `--sims`/`--k-dets` — the opponent's knobs ride the candidate's `cfg_dict` (`eval_fair_puct.py:687-701`),
-   there is no `--opp-sims`. E4's asymmetric "reduced-net vs fixed-2752-champion" needs an Opus subagent to
-   add per-side `--opp-sims`/`--opp-k-dets` FIRST. (NOTE: this is deployability; the flywheel's own sims-cut
-   lever is a separate, lower-risk question — it's about gen policy-improvement efficiency, not vs-champion.)
-3. **Restructure stage-2 to shared work-stealing** (see design principle) + fix REVIEW_LOG D9 (a claim
-   held ~90 min by a failed game; its gate is "before the next multi-iter run" = this run).
-4. **Flywheel (stage 2, iters 4-11)** on the fast path, with the net-side sims CUT (advisory: 2752 is
-   ~2× over-provisioned for the net — cut SIMS, never k_dets [CL-054 inverted-U peak] or games).
-   Decision gate after iter 6 (free — driver is iter-resumable). Goal 2: does self-play produce
-   STRONGER nets. **~66h at batch-1; batching + a sims cut should bring it well down — re-bench first.**
+⚠️ **ANCHOR = GEN data, not eval** (net-free champion games mixed into training, anti-drift). Currently OFF
+(net-prior only). ~40% covered anyway by the train `--window` (keeps the stage-1 champ games). If per-iter eval
+shows DRIFT, add the champ-anchor on LOCAL's **idle CPU** (gen is GPU-bound → CPU ~50% idle; net-free champ gen
+overlaps it perfectly — Joshua's "use the idle half" idea). Needs a driver change (subagent) + a resume.
+
+## THE PLAN (viability run)
+1. **Flywheel iters 4-16** (running, sims200) → does the net improve? does it plateau?
+2. **MEASURE at LOW sims (advisor, load-bearing):** the flywheel improves the POLICY head only, and policy gains
+   WASH OUT under deep search (`feedback_sims_washout_net_eval`: deepteacher +82.8/z3.48 @sims200 → +8/z0.34
+   @sims800, SAME nets). So grade at **~k2×172, NOT production 2752** — a paired game screen vs BOTH **iter_03**
+   (fixed seed anchor) AND the **fair champion**, at checkpoints (e.g. iters 4/7/11/16). n=100 screen, n=400
+   paired confirm on the endpoint. The wired per-iter probe (CE/top-1/entropy) + collapse screen = HEALTH ONLY,
+   NEVER read as strength (autopsy: +top1 with −40 elo). Eval harness = `eval_fair_puct.py` / `fair_net_vs_net_orch.sh`
+   (already supports `--opponent net` [OPP_CKPT=iter_03] and `--opponent fair-champion`).
+3. **Plateau criterion (advisor + `feedback_noisy_plateau_not_a_conclusion`):** a few flat iters ≠ plateau
+   (deepteacher iters 3-5 rejected → "definitively no" → 6-8 ALL promoted). "Plateaued" is legit ONLY as a
+   POWERED NULL after ≥6-8 iters (cumulative iter_last−iter_03 at low sims, n=400, within ±X of 0). Believe the
+   fixed anchor over chain-vs-prev (chain climbed +612 while the fixed anchor showed −330).
+
+## LEVERS EXPLORED THIS SESSION (2026-07-17 — why the config is what it is)
+- **Gen is GPU-forward-bound** (28 games funnel net-prior forwards through 1 GPU, orch ~99% / CPU ~50% idle). The
+  ONLY real speed levers are cutting the SEARCH (sims/k_dets/games) — not workers, not batching, not more boxes.
+- **max_batch: WASH** (mb-sweep this session: MB16=5492 / MB32=5724 (+4%) / MB64=4787 / MB128=5035 fwd/s — GPU
+  compute-bound at MB16, bigger batches STALL the latency-sensitive workers). Left at 16. The old "MAX_K" idea
+  was the wrong constant (`MAX_K`=per-worker wire cap, strength-affecting; `--max-batch`=the GPU batch, free, strength-neutral).
+- **xeon + laptop: too slow to add as gen GPUs** (Joshua: "forget xeon"). Laptop = confirm only.
+- **Laptop confirm W-sweep:** optimum ~**W12-16** (1550→1858 fwd/s W8→W22, GPU-capped, RAM drops past W16) —
+  NOT the old net-value W26 (different profile: fair net-prior eval is the CPU-leaf-heavy "W≤threads" regime).
+- **k_dets STAYS 4** (advisor: CL-054 strength peak AND target-quality — the policy target is pooled over the k
+  trees, so k4 = lower-variance targets; cutting to k2 noisies the small signal we're hunting). Cut SIMS only.
 
 ## DESIGN PRINCIPLE (Joshua, standing)
 **Every workload = a shared work-stealing pool at per-box OPTIMAL W; nothing pinned to one box.**
