@@ -1,6 +1,13 @@
 # Stage-2 flywheel — performance advisory (2026-07-17)
 
 **STATUS: ADVISORY — read-only review before the stage-2 relaunch. Nothing here was changed or launched.**
+
+> **⚠️ UPDATE 2026-07-17 PM — SUPERSEDED IN PART BY MEASUREMENT.** The stage-2 config was since settled empirically
+> via a full W + forwarder sweep: **W20 / forwarders=4 / sims200 / games300 / k4, iters 4-16**. Gen is
+> **dispatch-latency-bound** (~5400 fwd/s ceiling; more workers, more forwarders, and bigger batches all fail to
+> raise it — the batch/max_batch guesses here were tested and are a WASH). Those measured results + their
+> **VALIDITY SCOPE** (what they do and don't transfer to) now live in [HANDOFF.md](HANDOFF.md) "LEVERS EXPLORED" —
+> trust the measured numbers there over this advisory's a-priori recommendations wherever they differ.
 Scope: GEN / TRAIN / EVAL setup, pre-run experiments, code wins, config critique for
 `run_distill_stage2.sh` iters 4-11 (interrupted at iter-4 gen 2026-07-17 09:49 for the batch-1 fix).
 Every recommendation is labeled **novel / previously-killed / previously-deferred** against

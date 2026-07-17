@@ -81,6 +81,17 @@ overlaps it perfectly — Joshua's "use the idle half" idea). Needs a driver cha
   Matches the project's "training is GPU-latency-bound" finding. **W/forwarder rabbit-hole CLOSED — don't re-run.**
   The freed W20 headroom (load ~15/32, GPU 76W) is for the champ-anchor and/or concurrent per-iter eval instead.
 
+⚠️ **VALIDITY SCOPE — what the W20/f4 + dispatch-latency findings apply to (and DON'T):** measured ONLY for the
+**sims200 net-prior fair GEN** config (k4×200=800 budget, bs16, sighted 81ch/42, the 7.4M net) on the **LOCAL box
+(5900XT + its GPU)**. The W20 knee, f4 default, ~5400 fwd/s ceiling, and "more workers/forwarders don't help" are
+ALL specific to this (config × box × net) and **do NOT transfer** to: (a) **different sims** — sims688 was
+GPU-forward-SATURATED at 99%, a different regime, and the old "W28 gen optimum" came from that GPU-pegged config,
+not this one; (b) **a bigger/different net** — more compute per forward shifts latency-bound → compute-bound, and
+then forwarders/batching WOULD start to matter; (c) **a different box** — laptop/xeon have different GPUs, each
+needs its own sweep; (d) **the eval/confirm profile** — one-net-side, separately swept (laptop confirm ~W12-16);
+(e) **the champion heuristic gen** — net-free, CPU-bound, totally different. **Re-sweep after ANY change to sims,
+net architecture, box, or a leaf/orch code-era change.** (Laptop GEN was never swept — see BACKLOG.)
+
 ## DESIGN PRINCIPLE (Joshua, standing)
 **Every workload = a shared work-stealing pool at per-box OPTIMAL W; nothing pinned to one box.**
 - **GEN orch-ON:** local **W28** / laptop **W8** (laptop RAM-capped — W12+ OOMs the 11 GB box, W26 gen
