@@ -45,9 +45,31 @@ SEARCH PREFIX (fair PIMC vs clairvoyant). The endgame is marginalized (honest
 hidden-bag value), NOT clairvoyant — a clairvoyant K=3-4 solve would be the cheating
 path and is intractable-fair anyway. tax = elo(clair) - elo(fair).
 
-RUNG = HeuristicMCTS @ rung_sims (default 800, c=3.0, v2.9 Bmild_cap8 leaf) — the
-CL-022 ruler (measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md "vs HeuristicMCTS
-@ heur_sims=800, v2.7 leaf"), NO endgame (fixed yardstick).
+OPPONENT (--opponent) — WHO the candidate plays. DEFAULT `h800` = the fixed rung
+(byte-unchanged; every pre-existing arm/result stays valid). The two head-to-head
+modes replace the delta-of-deltas through the rung with a DIRECT match:
+  - h800          : HeuristicMCTS @ rung_sims (default 800, c=3.0, v2.9 Bmild_cap8
+                    curve100 leaf) — the CL-022 ruler
+                    (measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md "vs
+                    HeuristicMCTS @ heur_sims=800, v2.7 leaf"), NO endgame (fixed
+                    yardstick). DEFAULT.
+  - fair-champion : the PRODUCTION champion itself — FairHeuristicPriorAgent with
+                    HEURISTIC softmax priors, curve125 leaf, at the SAME budget and
+                    the SAME fair machinery as the candidate. With `--info
+                    fair-netprior` this is the "did the distillation work?" cell: a
+                    PURE PRIOR-SWAP (net policy priors vs heuristic priors), every
+                    other knob shared.
+  - net           : a SECOND distilled net (--opp-net), run as a fair-netprior agent.
+                    With `--info fair-netprior` this is the "does the bag matter?"
+                    cell (sighted vs non-sighted distilled net). Each side's rep
+                    (81ch/42 sighted vs 78ch/10) is inferred from ITS OWN checkpoint,
+                    so a cross-rep match encodes each side correctly.
+In BOTH head-to-head modes the two sides are production agents, so BOTH resolve the
+FROZEN curve125 champion leaf (injected in-process per side — see the CURVE125 block
+below), both get the same marginalized endgame handoff at K, and seat alternation +
+deck pairing are unchanged (the candidate's seat is `a_seat`, which _build_work
+balances over 0/1) — a prior-swap A/B where one side owned a seat would be worthless.
+`diff` is always CANDIDATE - OPPONENT.
 
 EQUAL-WALL-CLOCK: the fair champion's total per-move search budget = k_dets*sims,
 targeted at the deployed clairvoyant champion's ~2750 sims (default k_dets=4 *
@@ -257,7 +279,8 @@ EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
 
 
 # --------------------------------------------------------------------------- #
-# CURVE125 — the PRODUCTION champion leaf, for the `fair-netprior` CANDIDATE only. #
+# CURVE125 — the PRODUCTION champion leaf, for the `fair-netprior` CANDIDATE and   #
+# for BOTH sides of a head-to-head (--opponent fair-champion / net).               #
 #                                                                                 #
 # ⚠️ `_CANON_ENV` above pins the OLD curve100 (-8,-4,-1,0,2,3,4,5). That is CORRECT #
 # and MUST NOT change: it resolves DEFAULT_CONFIG, which is the fixed h800 rung —  #
@@ -268,6 +291,13 @@ EXACT_BUDGET = int(os.environ.get("CARCASSONNE_EXACT_BUDGET", "2000000"))
 # fair-netprior evaluator must be curve125 to match what the net was distilled      #
 # against. We therefore inject curve125 IN-PROCESS on the candidate side only —     #
 # exactly the --cand-leaf-json mechanism (dataclasses.replace on DEFAULT_CONFIG).   #
+#                                                                                   #
+# HEAD-TO-HEAD (--opponent != h800) injects the SAME curve125 cfg on the OPPONENT    #
+# side too, via the same in-process mechanism and a SEPARATE cfg object: in a direct  #
+# match both sides ARE production agents, so a curve100 opponent would be comparing   #
+# the candidate against an agent nobody ships. The injection stays per-side —         #
+# DEFAULT_CONFIG never moves, so the `h800` default path is untouched and the ruler   #
+# survives even when both sides are on curve125.                                      #
 #                                                                                   #
 # ⚠️ Do NOT instead `source champ_env.sh`: _CANON_ENV uses os.environ.setdefault, so  #
 # a pre-set CARCASSONNE_V29_MEEPLE_CURVE would win and move DEFAULT_CONFIG — i.e.    #
@@ -316,16 +346,19 @@ def _frozen_hash_champ_dialect(cfg):
     return _frozen_config_hash(_dc.replace(cfg, meeple_k=0.0))
 
 
-def _assert_netprior_leaf(cand_cfg, strict=True):
-    """Verify the fair-netprior CANDIDATE leaf is the production curve125 champion,
-    in BOTH hash dialects, and return the provenance dict for the manifest.
+def _assert_netprior_leaf(cand_cfg, strict=True, side="candidate", tag="fair-netprior"):
+    """Verify a side's leaf is the production curve125 champion, in BOTH hash
+    dialects, and return the provenance dict for the manifest.
 
     Semantic check first (robust to LeafConfig dataclass drift, which is exactly what
-    staled the PRODUCTION.yaml 158f17ff fingerprint), then the two hash strings."""
+    staled the PRODUCTION.yaml 158f17ff fingerprint), then the two hash strings.
+
+    `side`/`tag` only label the messages: the SAME check runs for the fair-netprior
+    candidate and for both sides of a head-to-head, so the two can never drift."""
     curve = cand_cfg.v29_meeple_curve
     if curve is None or tuple(float(x) for x in curve) != CURVE125:
         raise SystemExit(
-            f"[fair-netprior] FATAL: candidate leaf curve is {curve!r}, expected curve125 "
+            f"[{tag}] FATAL: {side} leaf curve is {curve!r}, expected curve125 "
             f"{CURVE125!r}. The distilled nets were trained against the curve125 champion; "
             "a curve100 frozen leaf would evaluate a different agent than was distilled."
         )
@@ -347,7 +380,7 @@ def _assert_netprior_leaf(cand_cfg, strict=True):
     if fh is not None and fh != CURVE125_FROZEN_HASH:
         bad.append(f"_frozen_config_hash {fh} != expected {CURVE125_FROZEN_HASH}")
     if bad:
-        msg = ("[fair-netprior] candidate leaf hash drift: " + "; ".join(bad) +
+        msg = (f"[{tag}] {side} leaf hash drift: " + "; ".join(bad) +
                ". The curve VALUES matched, so this is most likely an additive "
                "LeafConfig field changing the hash shape (the 158f17ff precedent) — "
                "re-baseline the constants if so. Re-run with --allow-leaf-hash-drift "
@@ -611,6 +644,100 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
     return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
 
 
+# --------------------------------------------------------------------------- #
+# OPPONENT (--opponent) — the non-candidate seat.                              #
+# --------------------------------------------------------------------------- #
+OPPONENT_MODES = ("h800", "fair-champion", "net")
+_HEAD_TO_HEAD = ("fair-champion", "net")
+
+
+def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
+                   opp_leaf_cfg=None, net=None, handles=None, sighted_game=None,
+                   rep=None):
+    """Build the OPPONENT side.
+
+    opponent=="h800"          -> the fixed CL-022 rung: HeuristicMCTS @ rung_sims on
+                                 env DEFAULT_CONFIG (curve100). BYTE-IDENTICAL to the
+                                 pre-`--opponent` construction — the ruler never takes
+                                 a leaf override and never gets an endgame.
+    opponent=="fair-champion" -> the PRODUCTION champion: FairHeuristicPriorAgent with
+                                 HEURISTIC softmax priors on the curve125 leaf
+                                 (`opp_leaf_cfg`), same budget + same marginalized
+                                 endgame handoff at K as the candidate. Against an
+                                 `--info fair-netprior` candidate this is a PURE
+                                 prior-swap: only the prior source differs.
+    opponent=="net"           -> a SECOND distilled net as a fair-netprior agent (net
+                                 POLICY priors + the frozen curve125 leaf value). Its
+                                 `rep`/`sighted_game` are resolved from ITS OWN
+                                 checkpoint, so a cross-rep (81ch vs 78ch) match
+                                 encodes each side on its own encoder.
+
+    The opponent's search knobs ride on the SAME `cfg_dict` as the candidate — that is
+    what makes a head-to-head a clean single-variable swap; only the leaf cfg is
+    injected per-side. Those knobs DEFAULT to the production champion's, so a default
+    invocation is literally "vs the shipped champion"; `_prod_deviations` warns if a
+    sweep moved them. `seed+1` mirrors the rung's historical seed offset, so the two
+    sides never share a determinization stream.
+    """
+    if opponent == "h800":
+        return _RungPrefix(Game(enable_legal_moves_cache=True), rung_sims, seed + 1,
+                           DEFAULT_CONFIG)
+    if opponent not in _HEAD_TO_HEAD:
+        raise ValueError(f"unknown opponent mode {opponent!r}")
+    opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg)
+    info = "fair" if opponent == "fair-champion" else "fair-netprior"
+    return _make_champion(info, opp_cfg, sims, k_dets, K, seed + 1,
+                          Game(enable_legal_moves_cache=True), net=net,
+                          handles=handles, sighted_game=sighted_game, rep=rep)
+
+
+# The PRODUCTION champion's search knobs (governance/PRODUCTION.yaml). These are ALSO
+# the argparse defaults, so a default head-to-head invocation IS "vs the shipped
+# champion"; `_prod_deviations` exists to catch the case where a sweep moved them.
+PROD_KNOBS = {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
+              "value_norm": 15.0, "k_dets": 4, "sims": 688}
+
+
+def _prod_deviations(args):
+    """Which shared search knobs differ from governance/PRODUCTION.yaml. Empty list ==
+    the head-to-head opponent is literally the shipped champion config."""
+    out = []
+    for k, want in PROD_KNOBS.items():
+        got = getattr(args, k)
+        if isinstance(want, float) and float(got) != want:
+            out.append(f"{k}={got:g} (production {want:g})")
+        elif not isinstance(want, float) and got != want:
+            out.append(f"{k}={got} (production {want})")
+    return out
+
+
+def _opp_label(args, opp_rep=None):
+    """Human label for the opponent side (summary header + manifest)."""
+    if args.opponent == "h800":
+        return f"HeuristicMCTS(h{args.rung_sims})"
+    if args.opponent == "fair-champion":
+        return (f"FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, "
+                f"curve125 leaf, k{args.k_dets}x{args.sims})")
+    rep = ("?" if opp_rep is None
+           else ("sighted" if opp_rep["sighted"] else "non-sighted"))
+    return (f"FAIR NET-PRIOR agent ({Path(args.opp_net).name}, {rep} rep, curve125 leaf, "
+            f"k{args.k_dets}x{args.sims})")
+
+
+def _opp_stats(opp):
+    """Instrumentation read-out that works for BOTH opponent shapes: `_RungPrefix`
+    (no endgame, no counters -> zeros) and `_MarginalizedHandoff` (prefix/exact split).
+    getattr-with-default keeps the h800 GameResult fields exactly as they were."""
+    return {
+        "opp_prefix_moves": int(getattr(opp, "prefix_moves", 0)),
+        "opp_exact_moves": int(getattr(opp, "exact_moves", 0)),
+        "opp_prefix_secs": round(float(getattr(opp, "prefix_secs", 0.0)), 3),
+        "opp_solver_secs": round(float(getattr(opp, "solver_secs", 0.0)), 3),
+        "opp_timeouts": int(getattr(opp, "n_timeouts", 0)),
+        "opp_latch_k": getattr(opp, "latch_k", None),
+    }
+
+
 # _leaf_hash / _leaf_dict / _load_cand_leaf_cfg / _assert_cy_float_path are imported
 # from the shared c5_leaf_override module (above) — identical to eval_puct_priors.py.
 
@@ -619,15 +746,15 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
 @dataclass
 class GameResult:
     seed: int
-    a_seat: int            # seat the CHAMPION plays this game
-    info: str              # fair | clair
+    a_seat: int            # seat the CANDIDATE (champion) plays this game
+    info: str              # fair | clair | fair-net | fair-netprior
     exact_k: int
     k_dets: int
     sims: int
     rung_sims: int
     score_p0: int
     score_p1: int
-    diff: int              # champion - rung
+    diff: int              # candidate - opponent (== champion - rung when opponent=h800)
     won_by_champ: bool
     drew: bool
     elapsed_s: float
@@ -639,10 +766,21 @@ class GameResult:
     champ_prefix_secs: float = 0.0
     champ_solver_secs: float = 0.0
     champ_timeouts: int = 0
-    # rung instrumentation
+    # opponent instrumentation. `rung_moves`/`rung_secs` keep their names and meaning
+    # (opponent moves / opponent wall-clock) for reader compatibility; the `opp_*`
+    # fields below are ADDITIVE and stay 0/None for the h800 rung (which has no
+    # endgame handoff and no counters), so an h800 row is unchanged in every field
+    # that existed before --opponent.
     rung_moves: int = 0
     rung_secs: float = 0.0
     latch_k: int | None = None
+    opponent: str = "h800"
+    opp_prefix_moves: int = 0
+    opp_exact_moves: int = 0
+    opp_prefix_secs: float = 0.0
+    opp_solver_secs: float = 0.0
+    opp_timeouts: int = 0
+    opp_latch_k: int | None = None
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -671,7 +809,8 @@ _W: dict = {}
 def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  shared_claim, claim_host, claim_stale, net_ckpt=None,
                  net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
-                 cand_leaf_cfg=None, rep=None):
+                 cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
+                 opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name=""):
     _W["info"] = info
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
@@ -690,6 +829,18 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["handles"] = None
     _W["sighted_game"] = None
     _W["rep"] = rep
+    # opponent side (--opponent; "h800" -> nothing to wire, the rung is net-free)
+    _W["opponent"] = opponent
+    _W["opp_leaf_cfg"] = opp_leaf_cfg
+    _W["opp_rep"] = opp_rep
+    _W["opp_net"] = None
+    _W["opp_handles"] = None
+    _W["opp_sighted_game"] = None
+    # ONE id per worker, shared by both SHM connections: the candidate and opponent
+    # servers are separate processes (a server owns exactly one net), each sized for
+    # `workers` slots, so slot w on each is this worker's. Popping twice would exhaust
+    # the queue and hand a second worker the same slot.
+    _wid = id_q.get() if (id_q is not None and (orch_shm_name or opp_orch_shm_name)) else None
     if info == "fair-netprior":
         # The distilled-agent arm. The rep (sighted 81ch/42 vs non-sighted 78ch/10) was
         # resolved in main() from the CHECKPOINT and is passed down, so every worker
@@ -699,7 +850,7 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
             # PRIORS; the value is the local frozen leaf. Size the SHM slots from the
             # RESOLVED rep — hardcoding 81/42 would corrupt a non-sighted server's I/O.
             from carcassonne_ai.shm_eval_handles import connect_shm
-            _W["handles"] = connect_shm(orch_shm_name, id_q.get(),
+            _W["handles"] = connect_shm(orch_shm_name, _wid,
                                         int(rep["n_scalar_features"]),
                                         int(rep["n_input_channels"]))
             _W["sighted_game"] = Game(sighted=bool(rep["sighted"]))
@@ -716,12 +867,32 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
         # Each worker pops a unique SHM slot from id_q (mirrors clairvoyance_gap /
         # eval_m2_net_vs_net). Keep CUDA hidden (the _CANON_ENV sets it "").
         from carcassonne_ai.shm_eval_handles import connect_shm
-        _W["handles"] = connect_shm(orch_shm_name, id_q.get(), 42, 81)
+        _W["handles"] = connect_shm(orch_shm_name, _wid, 42, 81)
         _W["sighted_game"] = Game(sighted=True)
     elif info == "fair-net" and net_ckpt:
         # per-worker net-on-CPU copy (the eval env hides CUDA; a 7M net ~30MB/worker),
         # loaded once per process, reused across games.
         _W["net"] = _load_net(net_ckpt, device="cpu")
+
+    # --- opponent side. `fair-champion` is net-free (heuristic priors), so only the
+    #     `net` opponent needs a net/handles — mirrored from the candidate wiring
+    #     above, but keyed on the OPPONENT's own rep (a cross-rep 81ch-vs-78ch match
+    #     is the whole point of the net-vs-net cell, so nothing here may be shared).
+    if opponent == "net":
+        if opp_orch_shm_name:
+            from carcassonne_ai.shm_eval_handles import connect_shm
+            _W["opp_handles"] = connect_shm(opp_orch_shm_name, _wid,
+                                            int(opp_rep["n_scalar_features"]),
+                                            int(opp_rep["n_input_channels"]))
+            _W["opp_sighted_game"] = Game(sighted=bool(opp_rep["sighted"]))
+        elif opp_net_ckpt:
+            _W["opp_net"], _oloaded = _load_net_rep(opp_net_ckpt, device="cpu")
+            if bool(_oloaded["sighted"]) != bool(opp_rep["sighted"]):
+                raise SystemExit(
+                    f"FATAL: worker re-loaded opponent {opp_net_ckpt} with "
+                    f"sighted={_oloaded['sighted']} but main() resolved "
+                    f"sighted={opp_rep['sighted']}")
+            _W["opp_sighted_game"] = Game(sighted=bool(opp_rep["sighted"]))
 
 
 def _cfg_from_dict(d, leaf_cfg=None):
@@ -752,8 +923,11 @@ def _play_one(args) -> GameResult | None:
                            net=_W.get("net"), net_mode=_W["net_mode"],
                            net_lambda=_W["net_lambda"], handles=_W.get("handles"),
                            sighted_game=_W.get("sighted_game"), rep=_W.get("rep"))
-    rung = _RungPrefix(Game(enable_legal_moves_cache=True), _W["rung_sims"],
-                       seed + 1, DEFAULT_CONFIG)
+    rung = _make_opponent(
+        _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
+        _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
+        net=_W.get("opp_net"), handles=_W.get("opp_handles"),
+        sighted_game=_W.get("opp_sighted_game"), rep=_W.get("opp_rep"))
 
     t0 = time.perf_counter()
     moves = 0
@@ -785,6 +959,7 @@ def _play_one(args) -> GameResult | None:
         champ_timeouts=champ.n_timeouts,
         rung_moves=rung_moves, rung_secs=round(rung_secs, 3),
         latch_k=champ.latch_k,
+        opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
     )
     _save(p, r)
     return r
@@ -806,7 +981,8 @@ def _paired_z(results):
     return mean, z, len(ds)
 
 
-def _summary(results, info, exact_k, k_dets, sims, rung_sims):
+def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
+             opp_label=None):
     n = len(results)
     w = sum(1 for r in results if r.won_by_champ)
     d = sum(1 for r in results if r.drew)
@@ -824,26 +1000,51 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims):
     champ_latched = sum(1 for r in results if r.champ_exact_moves > 0)
     champ_ms = (sum(r.champ_prefix_secs for r in results) /
                 max(1, sum(r.champ_prefix_moves for r in results))) * 1e3
-    rung_ms = (sum(r.rung_secs for r in results) /
-               max(1, sum(r.rung_moves for r in results))) * 1e3
+    # ⚠️ `rung_secs`/`rung_moves` are timed by the DRIVER around opponent.move(), so they
+    # include the marginalized ENDGAME SOLVE, whereas champ_prefix_secs is measured
+    # INSIDE the handoff and excludes it. For the h800 rung that is a distinction without
+    # a difference (no endgame -> rung_secs IS prefix time) and the historical number is
+    # preserved. For a head-to-head opponent it is NOT: charging one side's solver time
+    # into a "prefix ms/move" comparison against the other side's solver-free prefix made
+    # two IDENTICAL agents look 4x apart. Use the handoff's own prefix counters instead.
+    if opponent in _HEAD_TO_HEAD:
+        rung_ms = (sum(r.opp_prefix_secs for r in results) /
+                   max(1, sum(r.opp_prefix_moves for r in results))) * 1e3
+    else:
+        rung_ms = (sum(r.rung_secs for r in results) /
+                   max(1, sum(r.rung_moves for r in results))) * 1e3
     solver_pergame = sum(r.champ_solver_secs for r in results) / n
+    if opp_label is None:
+        opp_label = (f"HeuristicMCTS(h{rung_sims})" if opponent == "h800"
+                     else f"{opponent}")
     print()
     print(f"=== FAIR-PUCT[{info}] (K={exact_k}, k_dets={k_dets}, sims={sims}, "
-          f"total~{k_dets * sims}) vs HeuristicMCTS(h{rung_sims}) ===")
-    print(f"games: {n}   champion: {w}W / {d}D / {losses}L   winrate {wr:.3f} (z={wr_z:+.2f})")
-    print(f"avg score diff (champ - rung): {avg:+.2f}")
+          f"total~{k_dets * sims}) vs {opp_label} ===")
+    print(f"games: {n}   candidate: {w}W / {d}D / {losses}L   winrate {wr:.3f} (z={wr_z:+.2f})")
+    print(f"avg score diff (candidate - opponent): {avg:+.2f}")
     print(f"ELO: {elo:+.1f}  (+/- {elo_sig:.1f} 1sigma)")
     if mean_d is not None:
         print(f"PAIRED: {npair} decks   mean seat-balanced margin {mean_d:+.2f}   z = {z:+.2f}")
-    print(f"prefix ms/move: champion {champ_ms:.0f}  rung {rung_ms:.0f}  "
+    print(f"prefix ms/move: candidate {champ_ms:.0f}  opponent {rung_ms:.0f}  "
           f"(ratio {champ_ms/max(1e-9,rung_ms):.2f}x)")
-    print(f"fair endgame: latched {champ_latched}/{n} games, {solver_pergame:.2f}s solver/game, "
+    print(f"fair endgame: candidate latched {champ_latched}/{n} games, "
+          f"{solver_pergame:.2f}s solver/game, "
           f"timeouts={sum(r.champ_timeouts for r in results)}")
+    if opponent in _HEAD_TO_HEAD:
+        _opp_latched = sum(1 for r in results if r.opp_exact_moves > 0)
+        _opp_solver = sum(r.opp_solver_secs for r in results) / n
+        print(f"fair endgame: opponent  latched {_opp_latched}/{n} games, "
+              f"{_opp_solver:.2f}s solver/game, "
+              f"timeouts={sum(r.opp_timeouts for r in results)}")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
     return {
         "info": info, "exact_k": exact_k, "k_dets": k_dets, "sims": sims,
         "total_sims": k_dets * sims, "rung_sims": rung_sims,
+        # `opponent`/`opponent_label` are additive; `diff`-derived stats (winrate/elo/
+        # paired_mean_margin) are ALWAYS candidate-minus-opponent, which for the
+        # default h800 opponent is exactly the historical champion-minus-rung.
+        "opponent": opponent, "opponent_label": opp_label,
         "n": n, "W": w, "D": d, "L": losses, "winrate": wr, "winrate_z": wr_z,
         "elo": elo, "elo_sig_1sigma": elo_sig, "avg_diff": avg,
         "paired_mean_margin": mean_d, "paired_z": z, "n_paired": npair,
@@ -864,16 +1065,39 @@ def _build_work(seed_start, n, paired):
 
 
 # --------------------------------------------------------------------------- #
-def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
+def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
+           opp_label=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
 
-    `cand_leaf_cfg` / `rep` are resolved by main() (the curve125 injection + the
-    checkpoint-inferred representation) and passed down, so the smoke exercises the
-    SAME leaf and the SAME rep the real run would."""
+    `cand_leaf_cfg` / `rep` / `opp_leaf_cfg` / `opp_rep` are resolved by main() (the
+    per-side curve125 injection + the checkpoint-inferred representations) and passed
+    down, so the smoke exercises the SAME leaves and the SAME reps the real run would.
+
+    ⚠️ The smoke is SINGLE-PROCESS: it never runs `_worker_init`, so it does NOT cover
+    worker rep-passing or SHM slot sizing. Drive a small real `--workers 2` run to
+    exercise those."""
     cfg = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
                            args.final_select, args.value_norm, cand_leaf_cfg)
+    champ_cfg_dict = {"c_puct": args.c_puct, "tau_p": args.tau_p,
+                      "leaf_quantize": args.leaf_quantize,
+                      "final_select": args.final_select, "value_norm": args.value_norm}
+    # opponent side: `fair-champion` is net-free; `net` loads its OWN checkpoint at
+    # its OWN rep (never the candidate's).
+    smoke_opp_net = None
+    smoke_opp_game = None
+    if args.opponent == "net":
+        smoke_opp_net, opp_rep = _load_net_rep(args.opp_net, device="cpu")
+        smoke_opp_game = Game(sighted=bool(opp_rep["sighted"]))
+        print(f"[smoke] opponent = net {args.opp_net} | "
+              f"rep={'SIGHTED' if opp_rep['sighted'] else 'NON-SIGHTED'} "
+              f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
+              f"(inferred from ITS OWN ckpt) | priors=net_policy_head "
+              f"value=FROZEN curve125 champion leaf")
+    elif args.opponent == "fair-champion":
+        print("[smoke] opponent = PRODUCTION fair champion (FairHeuristicPriorAgent, "
+              "heuristic softmax priors, FROZEN curve125 champion leaf)")
     # fair-net smoke: load --net if given, else a randomly-initialized 81ch/42-scalar
     # net (pure plumbing proof — NO training). Other arms ignore the net.
     smoke_net = None
@@ -900,7 +1124,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
               f"(value_global_pool={rep['value_global_pool']}) | value = FROZEN curve125 "
               f"champion leaf (NO net value)")
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
-          f"(total~{args.k_dets*args.sims}) | rung h{args.rung_sims} c{RUNG_C}")
+          f"(total~{args.k_dets*args.sims}) | opponent={args.opponent}"
+          + (f" (rung h{args.rung_sims} c{RUNG_C})" if args.opponent == "h800"
+             else f" (k_dets={args.k_dets} sims={args.sims}, same fair machinery)"))
     import random
     results = []
     t0 = time.perf_counter()
@@ -915,8 +1141,10 @@ def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
                                seed, Game(enable_legal_moves_cache=True), net=smoke_net,
                                net_mode=args.net_mode, net_lambda=args.net_lambda,
                                sighted_game=smoke_sighted_game, rep=rep)
-        rung = _RungPrefix(Game(enable_legal_moves_cache=True), args.rung_sims,
-                           seed + 1, DEFAULT_CONFIG)
+        rung = _make_opponent(
+            args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
+            args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
+            sighted_game=smoke_opp_game, rep=opp_rep)
         moves = 0
         rung_moves = 0
         rung_secs = 0.0
@@ -935,6 +1163,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
             moves += 1
         s0, s1 = board.state.scores
         diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
+        _os = _opp_stats(rung)
         results.append(GameResult(
             seed=seed, a_seat=a_seat, info=args.info, exact_k=args.exact_k,
             k_dets=args.k_dets, sims=args.sims, rung_sims=args.rung_sims,
@@ -943,16 +1172,31 @@ def _smoke(args, cand_leaf_cfg=None, rep=None) -> int:
             deck_hash=dh, champ_prefix_moves=champ.prefix_moves,
             champ_exact_moves=champ.exact_moves, champ_prefix_secs=champ.prefix_secs,
             champ_solver_secs=champ.solver_secs, champ_timeouts=champ.n_timeouts,
-            rung_moves=rung_moves, rung_secs=rung_secs, latch_k=champ.latch_k))
-        print(f"[smoke] a_seat={a_seat}: {s0}-{s1} diff(champ-rung)={diff:+d} moves={moves} | "
-              f"champ prefix/exact={champ.prefix_moves}/{champ.exact_moves} "
-              f"latch_k={champ.latch_k} solver={champ.solver_secs:.2f}s to={champ.n_timeouts}")
+            rung_moves=rung_moves, rung_secs=rung_secs, latch_k=champ.latch_k,
+            opponent=args.opponent, **_os))
+        print(f"[smoke] a_seat={a_seat}: {s0}-{s1} diff(cand-opp)={diff:+d} moves={moves} | "
+              f"cand prefix/exact={champ.prefix_moves}/{champ.exact_moves} "
+              f"latch_k={champ.latch_k} solver={champ.solver_secs:.2f}s to={champ.n_timeouts}"
+              + ("" if args.opponent == "h800" else
+                 f" | opp prefix/exact={_os['opp_prefix_moves']}/{_os['opp_exact_moves']} "
+                 f"latch_k={_os['opp_latch_k']} solver={_os['opp_solver_secs']:.2f}s "
+                 f"to={_os['opp_timeouts']}"))
         if args.exact_k > 0:
             assert champ.exact_moves > 0, \
                 "champion never reached the fair exact endgame (K too small / rung got all the endgames?)"
         assert champ.prefix_moves > 0, "prefix search never ran (K too big?)"
+        if args.opponent in _HEAD_TO_HEAD:
+            # a head-to-head opponent is a production agent too: it must actually be
+            # searching AND taking the same marginalized endgame handoff.
+            assert _os["opp_prefix_moves"] > 0, \
+                "opponent prefix search never ran (K too big?)"
+            if args.exact_k > 0:
+                assert _os["opp_exact_moves"] > 0, \
+                    ("opponent never reached the fair exact endgame — both sides must "
+                     "share the handoff for the match to be symmetric")
 
-    summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims, args.rung_sims)
+    summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
+                    args.rung_sims, opponent=args.opponent, opp_label=opp_label)
     if args.out_root:
         out = Path(args.out_root) / (args.out_subdir or "fair_smoke_k2")
         out.mkdir(parents=True, exist_ok=True)
@@ -974,6 +1218,29 @@ def main(argv=None) -> int:
                          "fair-netprior = the MIRROR (the distilled-agent STRENGTH arm): net "
                          "POLICY-head priors + the FROZEN curve125 champion leaf value (severed "
                          "value loop; needs --net; rep auto-inferred from the ckpt)")
+    ap.add_argument("--opponent", choices=OPPONENT_MODES, default="h800",
+                    help="WHO the candidate plays. h800 (DEFAULT, byte-unchanged) = the fixed "
+                         "CL-022 HeuristicMCTS rung @ --rung-sims on the curve100 ruler leaf; "
+                         "every pre-existing arm/result is an h800 result. fair-champion = a "
+                         "DIRECT head-to-head vs the PRODUCTION champion (FairHeuristicPriorAgent, "
+                         "heuristic softmax priors, curve125 leaf, same budget/machinery) — with "
+                         "--info fair-netprior this is the pure PRIOR-SWAP 'did the distillation "
+                         "work?' cell. net = head-to-head vs a SECOND distilled net (--opp-net) "
+                         "run as a fair-netprior agent — the 'does the bag matter?' cell (each "
+                         "side's rep inferred from its OWN ckpt, so cross-rep 81ch-vs-78ch works). "
+                         "Both head-to-head modes resolve curve125 on BOTH sides and keep deck "
+                         "pairing + seat alternation; diff is always candidate - opponent.")
+    ap.add_argument("--opp-net", type=str, default=None,
+                    help="--opponent net: path to the OPPONENT's distilled policy net. Its rep "
+                         "(sighted 81ch/42 vs non-sighted 78ch/10) is inferred from THIS "
+                         "checkpoint independently of --net, so a cross-rep match encodes each "
+                         "side on its own encoder. Required for --opponent net.")
+    ap.add_argument("--opp-orch-shm-name", type=str, default=None,
+                    help="--opponent net: serve the OPPONENT's priors from a SECOND carc-orch SHM "
+                         "eval-server (a server owns exactly one net, so a net-vs-net orch run "
+                         "needs two servers with distinct --shm-name, each sized --n-ch/--n-scalar "
+                         "for ITS OWN net's rep and --workers to match). Omit for a per-worker CPU "
+                         "opponent net.")
     ap.add_argument("--net", type=str, default=None,
                     help="fair-net: path to the sighted (81ch/42-scalar) value-net checkpoint. "
                          "fair-netprior: path to the DISTILLED policy net (sighted 81ch/42 OR "
@@ -1052,6 +1319,21 @@ def main(argv=None) -> int:
     if args.orch_shm_name and args.info not in ("fair-net", "fair-netprior"):
         ap.error("--orch-shm-name only applies to --info fair-net / fair-netprior")
 
+    # ---- opponent-mode validation -------------------------------------------------
+    if args.opponent == "net" and not args.opp_net:
+        ap.error("--opponent net requires --opp-net <checkpoint>")
+    if args.opp_net and args.opponent != "net":
+        ap.error("--opp-net only applies to --opponent net")
+    if args.opp_orch_shm_name and args.opponent != "net":
+        ap.error("--opp-orch-shm-name only applies to --opponent net")
+    if args.opponent in _HEAD_TO_HEAD and args.info == "clair":
+        # a clairvoyant candidate vs a fair opponent is a legitimate DIRECT tax
+        # measurement, but it is NOT a prior-swap — say so rather than let it read as one.
+        print("[warn] --info clair vs a FAIR head-to-head opponent measures the "
+              "CLAIRVOYANCE advantage directly (the candidate sees the true deck, the "
+              "opponent does not). This is NOT a like-for-like prior swap.",
+              file=sys.stderr)
+
     # --net-mode / --net-lambda are INAPPLICABLE to fair-netprior: that arm has no net
     # value at all (its value is the FROZEN champion leaf — the severed value loop), so
     # a value-combiner knob would be silently inert. Reject rather than mislead.
@@ -1085,30 +1367,100 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError) as e:
         ap.error(f"--cand-leaf-json: {e}")
 
-    # ---- fair-netprior: the candidate's FROZEN leaf must be the production curve125
-    # champion (that is what the nets were distilled against), while the h800 rung stays
-    # the curve100 CL-022 ruler. Injected IN-PROCESS (the --cand-leaf-json mechanism) so
-    # the rung's env DEFAULT_CONFIG cannot move. Explicit --cand-leaf-json still wins.
+    # ---- FROZEN curve125 leaf injection. Two triggers, one mechanism:
+    #   * --info fair-netprior : the CANDIDATE's frozen leaf must be the production
+    #     curve125 champion (that is what the nets were distilled against), while the
+    #     h800 rung stays the curve100 CL-022 ruler.
+    #   * any head-to-head (--opponent != h800): BOTH sides are production agents, so
+    #     both resolve curve125 (there is no rung to protect).
+    # Injected IN-PROCESS (the --cand-leaf-json mechanism, per-side cfg objects) so the
+    # env DEFAULT_CONFIG can never move. Explicit --cand-leaf-json still wins on the
+    # CANDIDATE side only; the opponent/reference side never takes it.
     netprior_leaf_prov = None
     rung_ruler_hash = None
-    if args.info == "fair-netprior":
-        rung_ruler_hash = _assert_rung_is_ruler()
+    opp_leaf_cfg = None
+    opp_leaf_prov = None
+    _h2h = args.opponent in _HEAD_TO_HEAD
+    # The curve125 candidate injection fires for the fair-netprior arm (the net was
+    # distilled against curve125) AND for any head-to-head (both sides are production
+    # agents, so both must be the shipped curve125 champion leaf).
+    if args.info == "fair-netprior" or _h2h:
+        if not _h2h:
+            # The rung is the ruler ONLY when there IS a rung. Head-to-head has no rung,
+            # so this assert is skipped there — but the curve125 asserts below are
+            # strictly stronger (they pin BOTH sides' actual resolved leaves), so nothing
+            # goes unchecked. The h800 default path keeps the original hard gate.
+            rung_ruler_hash = _assert_rung_is_ruler()
         if cand_leaf_cfg is None:
             cand_leaf_cfg = _curve125_leaf_cfg()
             _assert_cy_float_path(cand_leaf_cfg)
         netprior_leaf_prov = _assert_netprior_leaf(
-            cand_leaf_cfg, strict=not args.allow_leaf_hash_drift)
-        print(f"[fair-netprior] candidate frozen leaf: curve125 "
-              f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
-              f"frozen_config_hash={netprior_leaf_prov['frozen_config_hash_champ_dialect']} "
-              f"(champ_env dialect) | h800 rung ruler leaf_hash={rung_ruler_hash} (curve100, "
-              f"unmoved)", flush=True)
+            cand_leaf_cfg, strict=not args.allow_leaf_hash_drift, side="candidate",
+            tag=(args.info if args.info == "fair-netprior" else "head-to-head"))
+        if _h2h:
+            # The OPPONENT is the production champion (or a second production-config
+            # net): ALWAYS curve125, never the user's --cand-leaf-json (which is a
+            # CANDIDATE-side knob — the reference side must not move with it, exactly
+            # as the h800 rung never takes it).
+            opp_leaf_cfg = _curve125_leaf_cfg()
+            _assert_cy_float_path(opp_leaf_cfg)
+            opp_leaf_prov = _assert_netprior_leaf(
+                opp_leaf_cfg, strict=not args.allow_leaf_hash_drift, side="opponent",
+                tag="head-to-head")
+        if _h2h:
+            print(f"[head-to-head] opponent={args.opponent}\n"
+                  f"[head-to-head] candidate frozen leaf: curve125 "
+                  f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
+                  f"frozen_config_hash="
+                  f"{netprior_leaf_prov['frozen_config_hash_champ_dialect']} (champ_env dialect)\n"
+                  f"[head-to-head] opponent  frozen leaf: curve125 "
+                  f"leaf_hash={opp_leaf_prov['leaf_hash']} "
+                  f"frozen_config_hash="
+                  f"{opp_leaf_prov['frozen_config_hash_champ_dialect']} (champ_env dialect)\n"
+                  f"[head-to-head] BOTH SIDES curve125: "
+                  f"{'YES' if opp_leaf_prov['leaf_hash'] == netprior_leaf_prov['leaf_hash'] else 'NO'}"
+                  f" | env DEFAULT_CONFIG (unmoved, no rung in play) "
+                  f"leaf_hash={_leaf_hash(DEFAULT_CONFIG)}", flush=True)
+        else:
+            print(f"[fair-netprior] candidate frozen leaf: curve125 "
+                  f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
+                  f"frozen_config_hash={netprior_leaf_prov['frozen_config_hash_champ_dialect']} "
+                  f"(champ_env dialect) | h800 rung ruler leaf_hash={rung_ruler_hash} (curve100, "
+                  f"unmoved)", flush=True)
+
+    # ---- opponent side: resolve the OPPONENT's rep from ITS OWN checkpoint (never the
+    # candidate's — the net-vs-net cell is deliberately cross-rep) + label the side.
+    opp_rep = None
+    if args.opponent == "net":
+        _oprobe, opp_rep = _load_net_rep(args.opp_net, device="cpu")
+        del _oprobe       # main() only needs the rep; workers load their own copy
+        print(f"[head-to-head] opp_net={args.opp_net}\n"
+              f"[head-to-head] opponent rep="
+              f"{'SIGHTED' if opp_rep['sighted'] else 'NON-SIGHTED'} "
+              f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
+              f"(inferred from ITS OWN checkpoint) | priors=net_policy_head "
+              f"value=frozen_v29_curve125_leaf", flush=True)
+    opp_label = _opp_label(args, opp_rep)
+
+    # A head-to-head is only a clean single-variable swap if the two sides share every
+    # search knob; those knobs default to the PRODUCTION champion's, so warn loudly if
+    # a sweep has moved them off production (the opponent tracks them either way — the
+    # A/B stays valid, but it is no longer "vs the shipped champion").
+    if args.opponent in _HEAD_TO_HEAD:
+        _off = _prod_deviations(args)
+        if _off:
+            print("[warn] --opponent " + args.opponent + ": the shared search config "
+                  "deviates from governance/PRODUCTION.yaml (" + "; ".join(_off) + "). "
+                  "BOTH sides use these values, so the swap stays single-variable, but "
+                  "the opponent is NOT the shipped production champion — do not report "
+                  "this cell as 'vs production'.", file=sys.stderr)
 
     if args.smoke:
-        if args.orch_shm_name:
+        if args.orch_shm_name or args.opp_orch_shm_name:
             ap.error("--smoke does not drive the orch path (single-process CPU only); "
                      "run verify_sighted_orch_parity.py + an --orch-shm-name n=20 eval instead")
-        return _smoke(args, cand_leaf_cfg)
+        return _smoke(args, cand_leaf_cfg, opp_leaf_cfg=opp_leaf_cfg, opp_rep=opp_rep,
+                      opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
         # --net is required even under --orch-shm-name: the worker does NOT load it
@@ -1137,8 +1489,17 @@ def main(argv=None) -> int:
                       "leaf_quantize": args.leaf_quantize,
                       "final_select": args.final_select, "value_norm": args.value_norm}
 
+    # the `_vs_h{rung_sims}` segment is the OPPONENT identity; a head-to-head must NEVER
+    # land in the same auto out-dir as the h800 cell at the same knobs (Trap 1). The
+    # h800 tag is unchanged.
+    if args.opponent == "h800":
+        _vs = f"vs_h{args.rung_sims}"
+    elif args.opponent == "fair-champion":
+        _vs = "vs_fairchamp"
+    else:
+        _vs = f"vs_net-{Path(args.opp_net).stem}"
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
-           f"_kd{args.k_dets}_s{args.sims}_vs_h{args.rung_sims}_k{args.exact_k}")
+           f"_kd{args.k_dets}_s{args.sims}_{_vs}_k{args.exact_k}")
     if cand_leaf_cfg is not None:
         # a leaf A/B: keep the auto tag / default out-dir distinct per candidate leaf
         # so cells never silently share a directory (Trap 1). An explicit --out-subdir
@@ -1155,7 +1516,8 @@ def main(argv=None) -> int:
     if args.summary_only:
         results = [r for t in tasks if (r := _try_load(_result_path(out, t[1], t[2]))) is not None]
         if results:
-            summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims, args.rung_sims)
+            summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
+                            args.rung_sims, opponent=args.opponent, opp_label=opp_label)
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
         else:
             print("no cached results yet")
@@ -1167,7 +1529,7 @@ def main(argv=None) -> int:
     # (the Trap-1 mislabel mitigation — a candidate cell is NOT "v2.9 Bmild_cap8").
     if cand_leaf_cfg is None:
         _champ_leaf_label = "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"
-    elif args.info == "fair-netprior" and args.cand_leaf_json is None:
+    elif (args.info == "fair-netprior" or _h2h) and args.cand_leaf_json is None:
         # auto-injected curve125 (NOT a user --cand-leaf-json) — label it honestly
         _champ_leaf_label = (f"FROZEN v2.9 curve125 production champion leaf, auto-injected "
                              f"in-process (leaf{_leaf_hash(leaf_cfg)[:8]})")
@@ -1231,12 +1593,84 @@ def main(argv=None) -> int:
         "endgame": {"mode": "marginalized", "exact_k": args.exact_k,
                     "exact_budget": EXACT_BUDGET, "shared_by_both_arms": True,
                     "tt_cap": os.environ.get("CARCASSONNE_TT_CAP")},
-        "rung": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7", "c": RUNG_C,
-                 "sims": args.rung_sims, "endgame": None,
-                 # the ruler NEVER takes the candidate override — always env DEFAULT_CONFIG.
-                 "leaf": f"v2.9 Bmild_cap8 (DEFAULT_CONFIG, leaf{_leaf_hash(rung_leaf_cfg)[:8]})",
-                 "leaf_hash": _leaf_hash(rung_leaf_cfg),
-                 "provenance": "CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"},
+        # --- OPPONENT (--opponent). `rung` below is retained VERBATIM for the h800
+        # default so every existing manifest reader keeps working; in a head-to-head it
+        # is null (there IS no rung) and `opponent` carries the full second-side record.
+        "opponent_mode": args.opponent,
+        "opponent": {
+            "mode": args.opponent,
+            "label": opp_label,
+            "agent": ("HeuristicMCTS" if args.opponent == "h800" else
+                      "FairHeuristicPriorAgent" if args.opponent == "fair-champion" else
+                      "FairHeuristicPriorAgent + distilled net POLICY priors "
+                      "(frozen curve125 champion leaf value; severed value loop)"),
+            "priors_source": ("random_expansion_uct (no priors)" if args.opponent == "h800"
+                              else "net_policy_head" if args.opponent == "net"
+                              else "heuristic_softmax_dleaf_tau"),
+            "value_source": ("v2.9 curve100 heuristic leaf (DEFAULT_CONFIG ruler)"
+                             if args.opponent == "h800" else "frozen_v29_curve125_leaf"),
+            "net": (args.opp_net if args.opponent == "net" else None),
+            "rep": ((("sighted" if opp_rep["sighted"] else "non-sighted"))
+                    if opp_rep else None),
+            "rep_dims": ({"n_input_channels": opp_rep["n_input_channels"],
+                          "n_scalar_features": opp_rep["n_scalar_features"],
+                          "sighted": opp_rep["sighted"],
+                          "inferred_from": "the OPPONENT's own checkpoint (independent "
+                                           "of --net; a cross-rep match is supported)"}
+                         if opp_rep else None),
+            "net_rep_provenance": ({"iter": opp_rep["iter"],
+                                    "value_global_pool": opp_rep["value_global_pool"],
+                                    "train_provenance": opp_rep["provenance"]}
+                                   if opp_rep else None),
+            "priors_transport": (("carc-orch SHM (" + args.opp_orch_shm_name + ")")
+                                 if (args.opponent == "net" and args.opp_orch_shm_name)
+                                 else ("per-worker CPU net" if args.opponent == "net"
+                                       else None)),
+            "c": (RUNG_C if args.opponent == "h800" else None),
+            "sims": (args.rung_sims if args.opponent == "h800" else None),
+            "k_dets": (None if args.opponent == "h800" else args.k_dets),
+            "sims_per_det": (None if args.opponent == "h800" else args.sims),
+            "total_sims": (None if args.opponent == "h800" else args.k_dets * args.sims),
+            "endgame": (None if args.opponent == "h800"
+                        else {"mode": "marginalized", "exact_k": args.exact_k,
+                              "exact_budget": EXACT_BUDGET}),
+            "leaf": (f"v2.9 Bmild_cap8 (DEFAULT_CONFIG, leaf{_leaf_hash(rung_leaf_cfg)[:8]})"
+                     if args.opponent == "h800"
+                     else f"FROZEN v2.9 curve125 production champion leaf, auto-injected "
+                          f"in-process (leaf{_leaf_hash(opp_leaf_cfg)[:8]})"),
+            "leaf_hash": (_leaf_hash(rung_leaf_cfg) if args.opponent == "h800"
+                          else _leaf_hash(opp_leaf_cfg)),
+            "leaf_cfg": (_leaf_dict(rung_leaf_cfg) if args.opponent == "h800"
+                         else _leaf_dict(opp_leaf_cfg)),
+            "curve125_leaf_provenance": opp_leaf_prov,
+            "champ_cfg": (None if args.opponent == "h800" else champ_cfg_dict),
+            "production_config_deviations": (_prod_deviations(args)
+                                             if args.opponent in _HEAD_TO_HEAD else None),
+            "provenance": ("CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"
+                           if args.opponent == "h800"
+                           else "governance/PRODUCTION.yaml champion config; both sides "
+                                "share every search knob (single-variable swap)"),
+        },
+        "result_semantics": {
+            "diff": "candidate - opponent (per game, from the candidate's a_seat)",
+            "winrate_elo_paired": "candidate vs opponent",
+            "note": ("For --opponent h800 this is IDENTICAL to the historical "
+                     "champion-minus-rung semantics and the numbers are directly "
+                     "comparable to every earlier cell. For a head-to-head the elo is "
+                     "an ABSOLUTE pairwise elo between the two agents, NOT an elo "
+                     "against the h800 rung — do NOT compare it to a vs-h800 cell or "
+                     "subtract one from the other."),
+            "seat_balance": ("a_seat (the CANDIDATE's seat) alternates 0/1 over the same "
+                             "deck under --paired; _paired_z averages the two seats per "
+                             "deck, so neither side owns a seat."),
+        },
+        "rung": ({"agent": "HeuristicMCTS", "heur_leaf": "v2_7", "c": RUNG_C,
+                  "sims": args.rung_sims, "endgame": None,
+                  # the ruler NEVER takes the candidate override — always env DEFAULT_CONFIG.
+                  "leaf": f"v2.9 Bmild_cap8 (DEFAULT_CONFIG, leaf{_leaf_hash(rung_leaf_cfg)[:8]})",
+                  "leaf_hash": _leaf_hash(rung_leaf_cfg),
+                  "provenance": "CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"}
+                 if args.opponent == "h800" else None),
         "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
         "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
         # C5 Stage-3 per-side leaf provenance (Trap 1: a worker missing the env exports
@@ -1245,8 +1679,16 @@ def main(argv=None) -> int:
         "cand_leaf_json": args.cand_leaf_json,
         "cand_leaf_cfg": _leaf_dict(leaf_cfg),
         "cand_leaf_hash": _leaf_hash(leaf_cfg),
+        # rung_leaf_* is the env DEFAULT_CONFIG. For --opponent h800 it IS the opponent's
+        # leaf (the ruler). For a head-to-head no agent uses it — it is recorded anyway as
+        # the PROOF that the in-process curve125 injection did not move DEFAULT_CONFIG.
         "rung_leaf_cfg": _leaf_dict(rung_leaf_cfg),
         "rung_leaf_hash": _leaf_hash(rung_leaf_cfg),
+        "opp_leaf_cfg": (_leaf_dict(opp_leaf_cfg) if opp_leaf_cfg is not None else None),
+        "opp_leaf_hash": (_leaf_hash(opp_leaf_cfg) if opp_leaf_cfg is not None else None),
+        "both_sides_curve125": (bool(opp_leaf_cfg is not None
+                                     and _leaf_hash(opp_leaf_cfg) == _leaf_hash(leaf_cfg))
+                                if _h2h else None),
         "equal_wall_clock_note": ("champion total per-move budget k_dets*sims targets the "
                                   "deployed clairvoyant champion ~2750 sims (equal wall-clock; "
                                   "k_dets root expansions add a little fixed overhead)"),
@@ -1262,37 +1704,52 @@ def main(argv=None) -> int:
           f"{len(todo)} to play, {workers} workers, out={out}")
     sys.stdout.flush()
 
-    orch = bool(args.orch_shm_name) and args.info in ("fair-net", "fair-netprior")
+    _cand_orch = bool(args.orch_shm_name) and args.info in ("fair-net", "fair-netprior")
+    _opp_orch = bool(args.opp_orch_shm_name) and args.opponent == "net"
+    orch = _cand_orch or _opp_orch
     results = []
     if todo:
         t0 = time.perf_counter()
         if orch:
             # carc-orch SHM: spawn context (CUDA-clean re-import) + a worker-id Queue
             # so each CPU worker pops a unique SHM slot (mirrors clairvoyance_gap / eval_m2).
+            # A net-vs-net orch run attaches to TWO servers (one net each) — the worker
+            # pops ONE id and uses that slot on both.
             _ctx = mp.get_context("spawn")
             _id_q = _ctx.Queue()
             for _w in range(workers):
                 _id_q.put(_w)
-            _dims = (f"{netprior_rep['n_input_channels']}ch/"
-                     f"{netprior_rep['n_scalar_features']}-scalar "
-                     f"{'sighted' if netprior_rep['sighted'] else 'non-sighted'} PRIORS"
-                     if _NP else "81ch/42-scalar sighted value")
-            print(f"  [orch] SHM eval-server '{args.orch_shm_name}': {workers} CPU workers "
-                  f"attach to /dev/shm/carc_{args.orch_shm_name} ({_dims})",
-                  flush=True)
+            if _cand_orch:
+                _dims = (f"{netprior_rep['n_input_channels']}ch/"
+                         f"{netprior_rep['n_scalar_features']}-scalar "
+                         f"{'sighted' if netprior_rep['sighted'] else 'non-sighted'} PRIORS"
+                         if _NP else "81ch/42-scalar sighted value")
+                print(f"  [orch] candidate SHM eval-server '{args.orch_shm_name}': {workers} "
+                      f"CPU workers attach to /dev/shm/carc_{args.orch_shm_name} ({_dims})",
+                      flush=True)
+            if _opp_orch:
+                print(f"  [orch] opponent  SHM eval-server '{args.opp_orch_shm_name}': "
+                      f"{workers} CPU workers attach to "
+                      f"/dev/shm/carc_{args.opp_orch_shm_name} "
+                      f"({opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}-scalar "
+                      f"{'sighted' if opp_rep['sighted'] else 'non-sighted'} PRIORS)",
+                      flush=True)
             _pool_cm = _ctx.Pool(
                 processes=workers, initializer=_worker_init,
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          args.orch_shm_name, _id_q, cand_leaf_cfg, netprior_rep))
+                          (args.orch_shm_name or ""), _id_q, cand_leaf_cfg, netprior_rep,
+                          args.opponent, opp_leaf_cfg, args.opp_net, opp_rep,
+                          (args.opp_orch_shm_name or "")))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
                 initargs=(args.info, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
-                          "", None, cand_leaf_cfg, netprior_rep))
+                          "", None, cand_leaf_cfg, netprior_rep,
+                          args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, ""))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
@@ -1314,7 +1771,8 @@ def main(argv=None) -> int:
     if not results:
         print("no results")
         return 0
-    summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims, args.rung_sims)
+    summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
+                    args.rung_sims, opponent=args.opponent, opp_label=opp_label)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
     print(f"[summary.json] wrote {out/'summary.json'}")
     return 0
