@@ -57,6 +57,23 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 - **Concurrency policy** (fill in after the test): if NO TANK → launch evals freely
   during gen. If MILD (-8..-25%) → launch evals only right after a train phase starts
   (gen idle) and let them run into gen. If TANKED → evals only during train windows.
+- **W ratchet (Joshua 19:35, pre-signoff):** if W8 = NO TANK, run the NEXT eval
+  (iter_07) at OW=12-16 and re-measure the gen delta with the same sampler method;
+  keep stepping W up per eval until gen notices, back off one step. Each scheduled
+  eval doubles as the next rung's measurement.
+- **Size eval to the gen window:** from the iter_03 run, compute games/min at W8;
+  pick OW so an n=100 eval ≈ fits one gen window (~60-90 min). One measurement + one
+  division — don't over-tune.
+- **Train-phase impact:** iter_05's train will overlap the running eval — compare its
+  train duration vs iter_04's (stage2 log timestamps). If train slows meaningfully
+  (>~20%), adopt PAUSE-VIA-KILL: kill the eval (wrapper + 2 fairnvn orchs by PID, rm
+  /dev/shm/carc_fairnvn*) when a train phase starts, relaunch the SAME command at the
+  next gen window — `--shared-claim` resumes, losing only in-flight games. If train
+  doesn't slow, skip the pause complexity entirely.
+- **Adaptive cadence:** default every 3-4 iters (07, 11, 15/16). If evals prove ~free,
+  densify to every 2-3 iters (more trend points); never >1 eval per gen window, and
+  FLYWHEEL ITERS ALWAYS WIN — any wedge/slowdown/RAM pressure → eval yields (kill,
+  resume later). The 25h iter count is the priority.
 - **Never SIGSTOP** an eval to "pause during train" (mp.Queue procs break —
   memory feedback_no_sigstop_mp_queue). If an eval must yield: kill wrapper+its two
   fairnvn orchs by PID, cleanup `/dev/shm/carc_fairnvn*`; `--shared-claim` resumes later.
