@@ -378,10 +378,37 @@ class FairHeuristicPriorAgent:
                                 precedence over net). Callable[[Board],(priors,val)].
     sighted_game                OPTIONAL Game(sighted=True) encoder for `net`
                                 (built internally if None). Ignored unless net.
+    batch_size : int            leaves collected per forward inside EACH
+                                per-determinization search (default 1 = the
+                                byte-identical serial champion path). >1 engages
+                                NeuralMCTS's virtual-loss batch machinery.
+    batch_evaluator             OPTIONAL Callable[[list[Board]], (priors[N,A],
+                                values[N])] — e.g.
+                                heuristic_prior_mcts.make_fair_net_prior_batch_evaluator.
+                                Only consulted when batch_size>1 (NeuralMCTS._eval_boards);
+                                passing it at batch_size=1 raises rather than silently
+                                no-op'ing. Without it, batch_size>1 still batches the TREE
+                                but falls back to per-board `evaluator` calls (no
+                                transport win).
+    virtual_loss : float        NeuralMCTS virtual loss (default 1.0; inert at
+                                batch_size=1 — it is only read on the batched path).
 
-    ⚠️ BIT-EXACT DEFAULT: with net=None AND evaluator=None (the default) the agent
-    builds the SAME make_heuristic_prior_evaluator as before — byte-for-byte the
-    heuristic-value fair champion. The net/evaluator hooks are purely additive.
+    ⚠️ BIT-EXACT DEFAULT: with net=None AND evaluator=None AND batch_size=1 (the
+    defaults) the agent builds the SAME make_heuristic_prior_evaluator as before and
+    constructs NeuralMCTS with its own defaults — byte-for-byte the heuristic-value
+    fair champion. The net/evaluator/batch hooks are purely additive.
+
+    ⚠️ LEAF BATCHING CHANGES THE SEARCH — the CHAMPION MUST NOT USE IT. Virtual loss
+    is an approximation: it perturbs PUCT selection so K leaves can be collected before
+    any of them is evaluated, so a batch_size>1 tree does NOT reproduce the serial tree.
+    That is ACCEPTABLE for the distilled net candidate (the gen path already accepts it
+    at --batch-size 8) but NOT for the heuristic-priors fair champion, which is our
+    opponent/ruler AND stage-1's teacher and must stay byte-identical. Hence the default
+    is 1: batching is strictly opt-in, per agent instance.
+    WHY IT EXISTS: the net candidate's evaluator is a GPU/IPC round-trip (~7ms); at
+    batch_size=1 the ~2752 expansions/move serialize into 57s/move (measured 2026-07-16,
+    12.67x the heuristic champion) with the GPU ~15% utilized. The champion's leaf is
+    in-process Cython, so it has no round-trip to amortize and gains nothing here.
     """
 
     def __init__(self, game: Game, cfg: HeuristicPriorConfig | None = None,
@@ -389,11 +416,21 @@ class FairHeuristicPriorAgent:
                  min_pooled_visits: int = DEFAULT_MIN_POOLED_VISITS,
                  exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
                  exact_budget: int = DEFAULT_EXACT_BUDGET,
-                 net=None, evaluator=None, sighted_game: Game | None = None):
+                 net=None, evaluator=None, sighted_game: Game | None = None,
+                 batch_size: int = 1, batch_evaluator=None,
+                 virtual_loss: float = 1.0):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
             raise ValueError(f"exact_max_k must be >= 0, got {exact_max_k}")
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+        if batch_evaluator is not None and batch_size <= 1:
+            raise ValueError(
+                "batch_evaluator given with batch_size=1 — it would never be called "
+                "(NeuralMCTS only uses the batched path when batch_size>1). Pass "
+                "batch_size>1 to batch, or drop batch_evaluator."
+            )
         self._game = game
         self._cfg = cfg if cfg is not None else HeuristicPriorConfig()
         self._sims = int(sims)
@@ -404,6 +441,14 @@ class FairHeuristicPriorAgent:
         self._exact_endgame = bool(exact_endgame)
         self._exact_max_k = int(exact_max_k)
         self._exact_budget = int(exact_budget)
+        # LATENCY: within-search leaf batching (default 1 = the byte-identical champion
+        # path). batch_size>1 makes each per-determinization NeuralMCTS collect that many
+        # leaves under VIRTUAL LOSS and evaluate them in ONE `batch_evaluator` call
+        # instead of firing one forward per expansion and waiting a full round-trip.
+        # See the class docstring's LEAF BATCHING note for the invariant.
+        self._batch_size = int(batch_size)
+        self._batch_evaluator = batch_evaluator
+        self._virtual_loss = float(virtual_loss)
         # The heuristic-prior evaluator is STATELESS (a pure Callable[[Board],
         # (priors, value)] over `game`), so build it ONCE and share it across the
         # fresh per-determinization NeuralMCTS trees — exactly how HeuristicPriorAgent
@@ -465,7 +510,10 @@ class FairHeuristicPriorAgent:
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
             m = NeuralMCTS(game=self._game, evaluator=self._evaluator,
                            simulations=self._sims, c_puct=self._c_puct,
-                           seed=base + 100 + i)
+                           seed=base + 100 + i,
+                           batch_size=self._batch_size,
+                           batch_evaluator=self._batch_evaluator,
+                           virtual_loss=self._virtual_loss)
             m.search(b)
             # deck order isn't in the key, so the reshuffled root shares the
             # original board's key (same fallback as FairHeuristicMCTSAgent).

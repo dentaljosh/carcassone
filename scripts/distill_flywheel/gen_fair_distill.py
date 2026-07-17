@@ -96,6 +96,7 @@ from carcassonne_ai.fair_agent import FairHeuristicPriorAgent  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorConfig,
+    make_fair_net_prior_batch_evaluator,
     make_fair_net_prior_evaluator,
 )
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
@@ -165,6 +166,7 @@ def play_fair_distill_game_to_dataset(
     sighted: bool = False,
     net=None, handles=None, eval_sighted_game=None,
     window_size: int = 25, max_plies: int = 400,
+    batch_size: int = 1,
 ) -> tuple[GameDataset | None, dict]:
     """Play ONE FAIR champion self-play game (FairHeuristicPriorAgent vs itself) and
     return (GameDataset, info).
@@ -207,16 +209,31 @@ def play_fair_distill_game_to_dataset(
     # FROZEN champion leaf -> value. Built ONLY when a net/orch handle is supplied;
     # default (both None) keeps the byte-for-byte net-free champion agent below.
     fair_net_evaluator = None
+    fair_net_batch_evaluator = None
     if net is not None or handles is not None:
         fair_net_evaluator = make_fair_net_prior_evaluator(
             champ_cfg, net=net, handles=handles, sighted_game=eval_sighted_game,
         )
+        # LATENCY (2026-07-16): batch_size>1 collects that many leaves under virtual
+        # loss and evaluates them in ONE forward instead of one blocking IPC+GPU
+        # round-trip per expansion. Only built when batching is actually requested —
+        # batch_size=1 keeps the byte-for-byte serial path (and FairHeuristicPriorAgent
+        # rejects a batch_evaluator at batch_size=1 rather than silently ignoring it).
+        # The NET-FREE champion (stage-1, net=None+handles=None) NEVER batches: its
+        # leaf is in-process Cython with no round-trip to amortize, and it must stay
+        # byte-identical (it is the teacher AND the ruler).
+        if batch_size > 1:
+            fair_net_batch_evaluator = make_fair_net_prior_batch_evaluator(
+                champ_cfg, net=net, handles=handles, sighted_game=eval_sighted_game,
+            )
     agent = FairHeuristicPriorAgent(
         agent_game,
         cfg=champ_cfg,
         sims=sims, k_dets=k_dets, seed=seed,
         exact_endgame=exact_endgame, exact_max_k=exact_max_k,
         evaluator=fair_net_evaluator,
+        batch_size=(batch_size if fair_net_evaluator is not None else 1),
+        batch_evaluator=fair_net_batch_evaluator,
     )
 
     board = game.get_init_board()
@@ -301,11 +318,12 @@ _W: dict = {}
 
 def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_max_k,
                  sighted, window_size, shared_claim, claim_host, claim_stale,
-                 net_ckpt=None, shm_eval_server="", id_q=None):
+                 net_ckpt=None, shm_eval_server="", id_q=None, batch_size=1):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
               exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
-              shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale)
+              shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale,
+              batch_size=batch_size)
     # STAGE-2 fair-net-prior wiring (default net-free: both stay None). Set up ONCE per
     # worker, reused across every game the worker plays.
     _W["net"] = None
@@ -340,6 +358,7 @@ def _play_one(args) -> dict | None:
         tau_p=_W["tau_p"], value_norm=_W["value_norm"],
         exact_endgame=_W["exact_endgame"], exact_max_k=_W["exact_max_k"],
         sighted=_W["sighted"], window_size=_W["window_size"],
+        batch_size=_W.get("batch_size", 1),
         net=_W.get("net"), handles=_W.get("handles"),
         eval_sighted_game=_W.get("sighted_game"),
     )
@@ -389,6 +408,15 @@ def main(argv=None) -> int:
                          "net PRIORS instead of a per-worker CPU net. The server (started separately: "
                          "run_server.sh --transport shm --shm-name <name> --n-ch 81 --n-scalar 42) "
                          "owns the only net. Requires --sighted.")
+    ap.add_argument("--batch-size", type=int, default=1,
+                    help="STAGE-2 within-search leaf batching (LATENCY fix, 2026-07-16). >1 makes "
+                         "each per-determinization NeuralMCTS collect this many leaves under virtual "
+                         "loss and evaluate them in ONE forward instead of one blocking IPC+GPU "
+                         "round-trip per expansion. Default 1 = the byte-for-byte serial path. IGNORED "
+                         "in net-free (stage-1 champion) mode — the champion leaf is in-process Cython "
+                         "with no round-trip to amortize and must stay byte-identical. NOTE the SHM "
+                         "protocol caps a single request at MAX_K=8 boards, so batch_size>8 chunks into "
+                         "ceil(N/8) round-trips (no extra transport win). The gen path already uses 8.")
     args = ap.parse_args(argv)
 
     net_mode = bool(args.net_ckpt) or bool(args.shm_eval_server)
@@ -464,6 +492,7 @@ def main(argv=None) -> int:
         "ownership": "DUMMY zeros (no fair ownership labels; driver trains --aux-weight 0)",
         "games": args.games, "seed_start": args.seed_start,
         "leaf": "v2.9 Bmild_cap8 curve125 (DEFAULT_CONFIG under champ_env.sh)",
+        "batch_size": args.batch_size,   # within-search leaf batching (1 = serial; net-mode only)
         "code_rev": code_rev(),
     }
     write_manifest(out, kind="gen_fair_distill", game=game_tag(Game()),
@@ -473,7 +502,7 @@ def main(argv=None) -> int:
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"gen_fair_distill: games={args.games} k_dets={args.k_dets} sims={args.sims} "
           f"(budget={args.k_dets*args.sims}) exact_endgame={args.exact_endgame} "
-          f"exact_max_k={args.exact_max_k} sighted={args.sighted} "
+          f"exact_max_k={args.exact_max_k} sighted={args.sighted} batch_size={args.batch_size} "
           f"rep={n_channels}ch/{n_scalars}sc leaf_hash={resolved_hash} net_mode={_net_mode_str} | "
           f"{len(seeds)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}",
           flush=True)
@@ -499,14 +528,16 @@ def main(argv=None) -> int:
             initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
-                      args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q))
+                      args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q,
+                      args.batch_size))
     else:
         _pool_cm = Pool(
             processes=workers, initializer=_worker_init,
             initargs=(args.k_dets, args.sims, args.c_puct, args.tau_p,
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
-                      args.claim_stale_secs, args.net_ckpt, "", None))
+                      args.claim_stale_secs, args.net_ckpt, "", None,
+                      args.batch_size))
 
     t0 = time.perf_counter()
     played = skipped = rows = aux_rows = val_rows = 0

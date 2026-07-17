@@ -46,6 +46,7 @@ from carcassonne_ai.fair_agent import FairHeuristicMCTSAgent, FairHeuristicPrior
 from carcassonne_ai.game_wrapper import Game
 from carcassonne_ai.heuristic_prior_mcts import (
     HeuristicPriorConfig,
+    make_fair_net_prior_batch_evaluator,
     make_fair_net_prior_evaluator,
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_net_value,
@@ -284,6 +285,148 @@ def test_fair_net_prior_evaluator_provenance_and_needs_a_source():
     # neither net nor handles -> loud failure (no silent net-free fallthrough).
     with pytest.raises(ValueError):
         make_fair_net_prior_evaluator(_cfg())
+
+
+# --------------------------------------------------------------------------- #
+# 1d. FAIR-NET-PRIOR **BATCH** evaluator — the within-search latency fix.        #
+#     Contract: same per-board semantics as the single evaluator, N boards ->    #
+#     ONE net forward. (The single path fired one ~7ms round-trip per expansion, #
+#     serialized: 57s/move vs the champion's 4.5s, GPU at 15%.)                   #
+# --------------------------------------------------------------------------- #
+def test_fair_net_prior_batch_evaluator_matches_single_per_board():
+    """THE equivalence contract: the batch evaluator's (priors, value) for each board
+    are IDENTICAL to what the single evaluator returns for that board alone. Batching
+    is a transport change ONLY — it must not alter any evaluation."""
+    net = _random_sighted_net()
+    boards = _midgame_boards(n=4, plies=40)
+    assert len(boards) >= 3, "need >=3 mid-game boards"
+    single = make_fair_net_prior_evaluator(_cfg(), net=net)
+    batch = make_fair_net_prior_batch_evaluator(_cfg(), net=net)
+
+    # Batch them all in ONE call, then compare against per-board single calls.
+    board_list = [b for _g, b in boards]
+    p_batch, v_batch = batch(board_list)
+    action_size = boards[0][0].get_action_size()
+    assert p_batch.shape == (len(board_list), action_size), \
+        f"batched priors shape {p_batch.shape} != (N, A)=({len(board_list)}, {action_size})"
+    assert v_batch.shape == (len(board_list),)
+    for i, (game, board) in enumerate(boards):
+        p_s, v_s = single(board)
+        # VALUE: the frozen leaf is deterministic + in-process -> exactly equal.
+        assert float(v_batch[i]) == pytest.approx(float(v_s), abs=1e-6), \
+            f"board {i}: batched value {v_batch[i]!r} != single {v_s!r}"
+        # PRIORS: same net, same encode; batching only changes the forward's batch dim
+        # (float assoc. in a batched matmul can differ in the last bits -> approx).
+        np.testing.assert_allclose(p_batch[i], p_s, rtol=0, atol=1e-5,
+                                   err_msg=f"board {i}: batched priors != single priors")
+        # And each row is still a valid masked distribution.
+        mask = game.get_valid_moves(board).astype(bool)
+        assert abs(float(p_batch[i].sum()) - 1.0) < 1e-5, "batched priors row doesn't sum to 1"
+        assert float((p_batch[i] * (~mask)).sum()) == 0.0, \
+            "batched priors put mass off the legal mask"
+
+
+def test_fair_net_prior_batch_evaluator_empty_and_provenance():
+    net = _random_sighted_net()
+    batch = make_fair_net_prior_batch_evaluator(_cfg(), net=net)
+    p, v = batch([])
+    assert len(p) == 0 and len(v) == 0
+    assert batch.batched is True
+    assert batch.priors_source == "net_policy_head"
+    assert batch.value_source == "frozen_champion_v29_leaf"
+    assert batch.value_transport == "per-worker CPU net"
+    assert batch.rep["n_input_channels"] == 81
+    # neither net nor handles -> loud failure (mirrors the single factory).
+    with pytest.raises(ValueError):
+        make_fair_net_prior_batch_evaluator(_cfg())
+
+
+@pytest.mark.parametrize("sighted", [True, False])
+def test_fair_net_prior_batch_evaluator_rep_switch_and_mismatch(sighted):
+    """The batch sibling resolves + validates the rep exactly like the single one:
+    it drives BOTH candidate reps and fails LOUD on a net/encode mismatch (a silent
+    mis-encode would feed the policy head garbage planes)."""
+    net = _random_net_at_rep(sighted)
+    ev = make_fair_net_prior_batch_evaluator(_cfg(), net=net, sighted=sighted)
+    assert ev.rep == {"sighted": sighted,
+                      "n_input_channels": 81 if sighted else 78,
+                      "n_scalar_features": 42 if sighted else 10}
+    # the WRONG-rep net must raise, not silently mis-encode.
+    with pytest.raises(ValueError, match="input channels|scalar features"):
+        make_fair_net_prior_batch_evaluator(_cfg(), net=_random_net_at_rep(not sighted),
+                                            sighted=sighted)
+
+
+def test_fair_net_prior_agent_batched_search_is_sane_and_legal():
+    """A batch_size>1 fair agent plays legal moves and produces a sane pooled policy.
+    Virtual loss CHANGES the search (approximation), so this asserts sanity — support,
+    positivity, no collapse — NOT bit-identity with the serial tree."""
+    game = Game(enable_legal_moves_cache=True)
+    net = _random_sighted_net()
+    ev = make_fair_net_prior_evaluator(_cfg(), net=net)
+    bev = make_fair_net_prior_batch_evaluator(_cfg(), net=net)
+    agent = FairHeuristicPriorAgent(game, _cfg(), sims=16, k_dets=2, seed=3,
+                                    evaluator=ev, batch_evaluator=bev, batch_size=8,
+                                    exact_endgame=False)
+    random.seed(7_000_002)
+    board = game.get_init_board()
+    plies = 0
+    saw_multi_support = False
+    while game.get_game_ended(board, 0) == 0.0 and plies < 20:
+        mask = game.get_valid_moves(board)
+        act = agent.move(board)
+        assert mask[act], f"batched fair-net-prior agent returned illegal action {act}"
+        pv = agent.last_pooled_visits
+        assert pv is not None
+        if int(mask.sum()) > 1 and pv:
+            # every pooled action is legal + positively visited (no vloss leakage of
+            # negative/zero-visit actions into the policy target)
+            assert all(mask[a] for a in pv), "pooled visits contain an illegal action"
+            assert all(n > 0 for n in pv.values()), "pooled visits contain a non-positive count"
+            if len(pv) > 1:
+                saw_multi_support = True
+        board, _ = game.get_next_state(board, act)
+        plies += 1
+    assert saw_multi_support, "batched search never explored >1 action (policy collapse?)"
+
+
+def test_fair_net_prior_batch_evaluator_is_actually_batched_in_search():
+    """The batched agent must route its leaf evals through the BATCH evaluator with
+    N>1 boards per call — i.e. the fix is actually engaged, not silently falling back
+    to per-board `evaluator` calls."""
+    game = Game(enable_legal_moves_cache=True)
+    net = _random_sighted_net()
+    bev = make_fair_net_prior_batch_evaluator(_cfg(), net=net)
+    calls = {"n": 0, "max_boards": 0, "total_boards": 0}
+
+    def spy(boards):
+        calls["n"] += 1
+        calls["max_boards"] = max(calls["max_boards"], len(boards))
+        calls["total_boards"] += len(boards)
+        return bev(boards)
+
+    agent = FairHeuristicPriorAgent(
+        game, _cfg(), sims=32, k_dets=2, seed=5,
+        evaluator=make_fair_net_prior_evaluator(_cfg(), net=net),
+        batch_evaluator=spy, batch_size=8, exact_endgame=False)
+    board = _midgame_boards(n=1, plies=40)[0][1]
+    agent.move(board)
+    assert calls["n"] > 0, "batch evaluator was never called — batching not engaged"
+    assert calls["max_boards"] > 1, \
+        f"batch evaluator only ever got 1 board (max={calls['max_boards']}) — no batching"
+    # sanity: far fewer forwards than boards evaluated == the latency win.
+    assert calls["total_boards"] > calls["n"], "no amortization: boards <= calls"
+
+
+def test_fair_net_prior_batch_evaluator_rejected_at_batch_size_1():
+    """Fail loud rather than silently no-op: NeuralMCTS ignores batch_evaluator when
+    batch_size==1, so that combination is a wiring bug (the caller thinks it batched)."""
+    net = _random_sighted_net()
+    with pytest.raises(ValueError, match="batch_evaluator given with batch_size=1"):
+        FairHeuristicPriorAgent(
+            Game(), _cfg(), evaluator=make_fair_net_prior_evaluator(_cfg(), net=net),
+            batch_evaluator=make_fair_net_prior_batch_evaluator(_cfg(), net=net),
+            batch_size=1)
 
 
 def test_fair_net_prior_agent_plays_full_legal_game():

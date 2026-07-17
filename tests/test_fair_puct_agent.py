@@ -86,6 +86,18 @@ def _champ_cfg():
                                final_select="visits")
 
 
+# GOLDEN — the DEFAULT (heuristic-priors) fair champion's pick + pooled visits on
+# midgame_position(3, 20) at sims=24/k_dets=2/seed=123, CAPTURED FROM THE PRE-BATCHING
+# CODE (git 04b951f, before batch_size/batch_evaluator existed) and re-verified against
+# the post-build code. This is the champion-invariant tripwire: the champion is our
+# opponent/ruler AND stage-1's teacher, so its search must stay byte-identical.
+GOLDEN_DEFAULT_ACTION = 1236
+GOLDEN_DEFAULT_POOLED_VISITS = {
+    1045: 4.0, 1046: 2.0, 1056: 2.0, 1059: 2.0, 1160: 2.0, 1161: 2.0,
+    1236: 6.0, 1237: 6.0, 1353: 8.0, 1441: 8.0, 1442: 6.0,
+}
+
+
 # --------------------------------------------------------------------------- #
 # (a) determinism given seed                                                   #
 # --------------------------------------------------------------------------- #
@@ -222,3 +234,110 @@ def test_puct_exact_endgame_flag_gates_the_handoff():
 def test_puct_k_dets_validation():
     with pytest.raises(ValueError):
         FairHeuristicPriorAgent(Game(), _champ_cfg(), k_dets=0)
+
+
+def test_puct_batch_size_validation():
+    with pytest.raises(ValueError):
+        FairHeuristicPriorAgent(Game(), _champ_cfg(), batch_size=0)
+
+
+# --------------------------------------------------------------------------- #
+# (f) THE CHAMPION INVARIANT — the DEFAULT path is byte-unchanged by the        #
+#     leaf-batching build (2026-07-16). The heuristic-priors fair champion is    #
+#     our opponent/ruler AND stage-1's teacher; virtual-loss batching CHANGES    #
+#     the search, so it must be strictly opt-in and default OFF.                 #
+# --------------------------------------------------------------------------- #
+def test_default_agent_constructs_neuralmcts_with_serial_defaults():
+    """The default agent must build NeuralMCTS with EXACTLY the batching kwargs
+    NeuralMCTS itself defaults to — i.e. constructing it is indistinguishable from
+    the pre-batching code, which passed none of them."""
+    import inspect
+
+    from carcassonne_ai import mcts as mcts_mod
+
+    nm_defaults = inspect.signature(mcts_mod.NeuralMCTS.__init__).parameters
+    assert nm_defaults["batch_size"].default == 1
+    assert nm_defaults["batch_evaluator"].default is None
+    assert nm_defaults["virtual_loss"].default == 1.0
+
+    seen = []
+    real_init = mcts_mod.NeuralMCTS.__init__
+
+    def spy_init(self, *a, **kw):
+        seen.append(kw)
+        return real_init(self, *a, **kw)
+
+    game, board = midgame_position(3, 20)
+    mcts_mod.NeuralMCTS.__init__ = spy_init
+    try:
+        agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                        _champ_cfg(), sims=8, k_dets=2, seed=11,
+                                        exact_endgame=False)
+        agent.choose_action(board)
+    finally:
+        mcts_mod.NeuralMCTS.__init__ = real_init
+
+    assert seen, "no NeuralMCTS was constructed"
+    for kw in seen:
+        assert kw["batch_size"] == 1, "default agent built a BATCHED search"
+        assert kw["batch_evaluator"] is None, "default agent wired a batch evaluator"
+        assert kw["virtual_loss"] == nm_defaults["virtual_loss"].default
+
+
+def test_default_agent_never_enters_the_virtual_loss_path():
+    """Behavioral proof: with the defaults, the vloss/batch machinery is never
+    touched — the search runs the serial `_simulate` loop, byte-for-byte as before."""
+    from carcassonne_ai import mcts as mcts_mod
+
+    def boom(*a, **kw):
+        raise AssertionError("default agent entered the virtual-loss batch path")
+
+    game, board = midgame_position(4, 18)
+    real_run_batch = mcts_mod.NeuralMCTS._run_batch
+    real_vloss_sel = mcts_mod.NeuralMCTS._select_leaf_with_vloss
+    mcts_mod.NeuralMCTS._run_batch = boom
+    mcts_mod.NeuralMCTS._select_leaf_with_vloss = boom
+    try:
+        agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                        _champ_cfg(), sims=12, k_dets=2, seed=21,
+                                        exact_endgame=False)
+        a = agent.choose_action(board)     # must not raise
+    finally:
+        mcts_mod.NeuralMCTS._run_batch = real_run_batch
+        mcts_mod.NeuralMCTS._select_leaf_with_vloss = real_vloss_sel
+    assert game.get_valid_moves(board)[a]
+
+
+def test_default_agent_pick_matches_prebatch_golden():
+    """GOLDEN: the default (heuristic-priors) fair champion's pick + pooled visits on a
+    fixed position, captured from the PRE-batching code (git 04b951f) and hard-coded
+    here. If a future change to the batching wiring perturbs the champion's search at
+    all, this fails.
+
+    ⚠️ The golden was captured under the test's pinned CURVE100 leaf
+    (CARCASSONNE_V29_MEEPLE_CURVE=-8,-4,-1,0,2,3,4,5, set by this file's setdefault
+    block). The leaf curve is env-read at import (DEFAULT_CONFIG), so if the process
+    env pins a DIFFERENT curve (e.g. champ_env.sh exports the production curve125), the
+    numbers legitimately differ — that's a leaf change, not a batching regression. Guard
+    against that footgun by skipping when the resolved curve isn't the captured one."""
+    captured_curve = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
+    resolved = _champ_cfg().resolved_leaf_cfg()
+    got_curve = tuple(float(x) for x in (resolved.v29_meeple_curve or ()))
+    if got_curve != captured_curve:
+        pytest.skip(
+            f"golden captured under curve100 {captured_curve}; resolved leaf is "
+            f"{got_curve} (env pins a different curve, e.g. champ_env.sh's curve125). "
+            "The golden is a batching-invariance tripwire, not a leaf assertion.")
+    game, board = midgame_position(3, 20)
+    agent = FairHeuristicPriorAgent(Game(enable_legal_moves_cache=True),
+                                    _champ_cfg(), sims=24, k_dets=2, seed=123,
+                                    exact_endgame=False)
+    act = agent.choose_action(board)
+    assert act == GOLDEN_DEFAULT_ACTION, (
+        f"the DEFAULT champion path changed: picked {act}, pre-batching code picked "
+        f"{GOLDEN_DEFAULT_ACTION}. Leaf batching must be opt-in and byte-neutral."
+    )
+    assert agent.last_pooled_visits == GOLDEN_DEFAULT_POOLED_VISITS, (
+        "the DEFAULT champion path's pooled visit distribution changed:\n"
+        f"  now: {agent.last_pooled_visits}\n  pre: {GOLDEN_DEFAULT_POOLED_VISITS}"
+    )

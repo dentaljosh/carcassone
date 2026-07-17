@@ -60,6 +60,11 @@ RUN_SERVER=$REPO_LOCAL/rust/carc-orch/run_server.sh
 # Defaults mirror the fair champion budget (k4x688=2752). RECIPE — main agent may tune.
 NET_KDETS=${NET_KDETS:-4}                       # determinizations/move (net-priors fair PIMC)
 NET_SIMS=${NET_SIMS:-688}                       # PUCT sims/det (k4 x 688 = 2752 budget)
+NET_BATCH=${NET_BATCH:-8}                        # within-search leaf batching for the NET priors (LATENCY, 2026-07-16):
+                                                 # each per-det NeuralMCTS collects this many leaves under virtual loss
+                                                 # -> ONE orch forward instead of a blocking round-trip per expansion.
+                                                 # 8 = the SHM MAX_K cap (no gain past it); gen already ran batch-1.
+                                                 # ONLY the NET stream batches; the champ side-stream stays serial+byte-exact.
 CPUCT=${CPUCT:-1.5}; TAUP=${TAUP:-5.0}; VALUE_NORM=${VALUE_NORM:-15.0}
 NET_GAMES=${NET_GAMES:-450}                     # LOCAL net-priors gen games/iter
 # --- FAIR champion side-stream recipe (net-free, laptop; PRODUCTION.yaml fair_deploy) ---
@@ -125,7 +130,7 @@ _gen_cmd_local() {   # net-priors FAIR gen through the orch (workers hide CUDA, 
   local it="$1" seed data nn prev; nn=$(_nn "$it"); seed=$(_net_seed_for "$it"); data="$OUT/iter_${nn}"; prev=$(_prev_ckpt "$it")
   echo "source $CHAMP_ENV && nohup nice -n 19 $PY -u $GEN \\"
   echo "    --games $NET_GAMES --k-dets $NET_KDETS --sims $NET_SIMS --c-puct $CPUCT --tau-p $TAUP --value-norm $VALUE_NORM \\"
-  echo "    --sighted --net-ckpt $prev --shm-eval-server $SHM_NAME --workers $W_LOCAL_NET \\"
+  echo "    --sighted --net-ckpt $prev --shm-eval-server $SHM_NAME --workers $W_LOCAL_NET --batch-size $NET_BATCH \\"
   echo "    --seed-start $seed --out $data --shared-claim --claim-host 5800x \\"
   echo "    > $OUT/logs/gen_local_it${nn}.log 2>&1 & disown"
 }
@@ -274,7 +279,7 @@ _gen_launch() {   # (re)start the orch + local net gen + (backgrounded) laptop c
   ( source "$CHAMP_ENV" && nohup nice -n 19 "$PY" -u "$GEN" \
       --games "$NET_GAMES" --k-dets "$NET_KDETS" --sims "$NET_SIMS" --c-puct "$CPUCT" \
       --tau-p "$TAUP" --value-norm "$VALUE_NORM" --sighted --net-ckpt "$prev" \
-      --shm-eval-server "$SHM_NAME" --workers "$W_LOCAL_NET" \
+      --shm-eval-server "$SHM_NAME" --workers "$W_LOCAL_NET" --batch-size "$NET_BATCH" \
       --seed-start "$seed" --out "$OUT/iter_${nn}" --shared-claim --claim-host 5800x \
       > "$OUT/logs/gen_local_it${nn}.log" 2>&1 & )
   # LAPTOP fair-champion side-stream (net-free; background the ssh call — rc=124=launched).

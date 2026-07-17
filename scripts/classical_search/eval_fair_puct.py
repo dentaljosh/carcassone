@@ -204,6 +204,7 @@ from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorAgent,
     HeuristicPriorConfig,
+    make_fair_net_prior_batch_evaluator,
     make_fair_net_prior_evaluator,
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_residual_value,
@@ -597,7 +598,7 @@ def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
 
 def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
-                   sighted_game=None, rep=None):
+                   sighted_game=None, rep=None, batch_size=1):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
@@ -620,14 +621,25 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             raise ValueError(
                 "info=fair-netprior requires a loaded net (--net) or orch handles "
                 "(--orch-shm-name)")
+        _sighted_arg = (None if sighted_game is not None
+                        else (bool(rep["sighted"]) if rep else None))
         evaluator = make_fair_net_prior_evaluator(
             cfg, net=net, handles=handles, sighted_game=sighted_game,
-            sighted=(None if sighted_game is not None
-                     else (bool(rep["sighted"]) if rep else None)),
+            sighted=_sighted_arg,
         )
+        # LATENCY (2026-07-16): batch_size>1 collects that many leaves under virtual loss
+        # -> ONE orch forward instead of a blocking IPC+GPU round-trip per expansion. Only
+        # the net-prior CANDIDATE batches; the fair-champion opponent is net-free + serial.
+        batch_evaluator = (
+            make_fair_net_prior_batch_evaluator(
+                cfg, net=net, handles=handles, sighted_game=sighted_game,
+                sighted=_sighted_arg)
+            if batch_size > 1 else None)
         prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
                                          seed=seed, exact_endgame=False,
-                                         evaluator=evaluator)
+                                         evaluator=evaluator,
+                                         batch_size=batch_size,
+                                         batch_evaluator=batch_evaluator)
     elif info == "fair-net":
         if net is None and handles is None:
             raise ValueError(
@@ -810,8 +822,10 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  shared_claim, claim_host, claim_stale, net_ckpt=None,
                  net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
-                 opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name=""):
+                 opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1):
     _W["info"] = info
+    # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
+    _W["batch_size"] = batch_size
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
     # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
@@ -922,7 +936,8 @@ def _play_one(args) -> GameResult | None:
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
                            net_lambda=_W["net_lambda"], handles=_W.get("handles"),
-                           sighted_game=_W.get("sighted_game"), rep=_W.get("rep"))
+                           sighted_game=_W.get("sighted_game"), rep=_W.get("rep"),
+                           batch_size=_W.get("batch_size", 1))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -1140,7 +1155,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
         champ = _make_champion(args.info, cfg, args.sims, args.k_dets, args.exact_k,
                                seed, Game(enable_legal_moves_cache=True), net=smoke_net,
                                net_mode=args.net_mode, net_lambda=args.net_lambda,
-                               sighted_game=smoke_sighted_game, rep=rep)
+                               sighted_game=smoke_sighted_game, rep=rep,
+                               batch_size=args.batch_size)
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -1270,6 +1286,14 @@ def main(argv=None) -> int:
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
     ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC); deploy default k4 (CL-054, 2026-07-13; was 8)")
     ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization (k4×688=2752 total; was 344 at k8)")
+    ap.add_argument("--batch-size", type=int, default=1,
+                    help="fair-netprior CANDIDATE within-search leaf batching (LATENCY fix, "
+                         "2026-07-16): >1 collects this many leaves under virtual loss -> ONE orch "
+                         "forward per batch instead of a blocking round-trip per expansion. Default "
+                         "1 = the byte-for-byte serial search (the +88.7 was measured at batch-1; "
+                         "vloss CHANGES the search, so a batched run is a DIFFERENT — faster — agent). "
+                         "ONLY the net-prior candidate batches; the fair-champion opponent stays serial. "
+                         "SHM caps a request at MAX_K=8, so >8 chunks into ceil(N/8) round-trips.")
     ap.add_argument("--rung-sims", type=int, default=800, help="fixed HeuristicMCTS rung sims (CL-022=800)")
     # champion knobs (governance/PRODUCTION.yaml defaults)
     ap.add_argument("--c-puct", type=float, default=1.5)
@@ -1315,6 +1339,14 @@ def main(argv=None) -> int:
         ap.error("--k-dets must be >= 1")
     if args.paired and args.n % 2 != 0:
         ap.error("--paired requires an even --n")
+    if args.batch_size < 1:
+        ap.error("--batch-size must be >= 1")
+    if args.batch_size > 1 and args.info != "fair-netprior":
+        # Only the fair-netprior candidate has a batched net-prior evaluator wired.
+        # fair/clair have no per-leaf net round-trip; fair-net batches a VALUE net for
+        # which no batch factory exists yet. Fail loud rather than silently ignore.
+        ap.error("--batch-size > 1 only applies to --info fair-netprior "
+                 f"(got --info {args.info}); it would be silently ignored otherwise")
 
     if args.orch_shm_name and args.info not in ("fair-net", "fair-netprior"):
         ap.error("--orch-shm-name only applies to --info fair-net / fair-netprior")
@@ -1549,6 +1581,7 @@ def main(argv=None) -> int:
                      **cfg.as_manifest(),
                      "k_dets": args.k_dets, "sims_per_det": args.sims,
                      "total_sims": args.k_dets * args.sims,
+                     "batch_size": args.batch_size,   # within-search leaf batching (1=serial; fair-netprior only)
                      "net": (args.net if args.info in ("fair-net", "fair-netprior") else None),
                      "net_mode": (args.net_mode if args.info == "fair-net" else None),
                      "net_lambda": (args.net_lambda if (args.info == "fair-net"
@@ -1741,7 +1774,7 @@ def main(argv=None) -> int:
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
                           (args.orch_shm_name or ""), _id_q, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep,
-                          (args.opp_orch_shm_name or "")))
+                          (args.opp_orch_shm_name or ""), args.batch_size))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -1749,7 +1782,8 @@ def main(argv=None) -> int:
                           args.rung_sims, args.shared_claim, args.claim_host,
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
                           "", None, cand_leaf_cfg, netprior_rep,
-                          args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, ""))
+                          args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, "",
+                          args.batch_size))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

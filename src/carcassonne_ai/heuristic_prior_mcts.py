@@ -449,6 +449,89 @@ def make_heuristic_prior_evaluator_with_net_value(
 # k_dets*sims of leaf-valued PIMC lookahead regularizes. See                      #
 # measurement/distill_flywheel_20260715/{STAGE2_FLYWHEEL_SPEC,DESIGN_FAIR_ADDENDUM}.md.
 # --------------------------------------------------------------------------- #
+def _fair_net_prior_leaf_value_fn(cfg: HeuristicPriorConfig):
+    """The FROZEN champion v2.9 leaf value, computed DIRECTLY (one Cython float-leaf
+    eval + tanh). NOT via make_heuristic_prior_evaluator, whose value is identical but
+    which ALSO steps every legal child to build heuristic priors we would only discard.
+    Byte-identical to that value line otherwise.
+
+    Shared verbatim by the single and BATCH fair-net-prior factories so the two can
+    never drift on the value line (the batch sibling just loops it — the leaf is
+    in-process Cython and does not batch).
+
+    Returns ``(leaf_value_fn, leaf_cfg)``.
+    """
+    leaf_cfg = cfg.resolved_leaf_cfg()
+    norm = float(cfg.value_norm)
+    bag_close = bool(getattr(leaf_cfg, "bag_close", False))
+
+    def _leaf_value(board: Board) -> float:
+        st = board.state
+        mover = st.current_player
+        leaf_parent = flat_leaf.flat_virtual_score_v2_float(st, mover, leaf_cfg, bag_close)
+        return math.tanh(leaf_parent / norm)
+
+    return _leaf_value, leaf_cfg
+
+
+def _resolve_fair_net_prior_rep(sighted_game: Game | None, sighted: bool | None):
+    """Resolve the encode REP for a fair-net-prior evaluator. The rep is a SWITCH,
+    not a constant: both distillation targets exist — SIGHTED (81ch board / 42 scalars,
+    bag-aware) and NON-SIGHTED (78ch / 10, the production warmstart rep). Resolve it
+    explicitly and fail LOUD on a contradiction; a silent mis-encode would feed the
+    policy head garbage planes and quietly produce a weak-but-plausible agent.
+
+    Returns ``(sighted_game, rep)``. Shared by the single and BATCH factories.
+    """
+    if sighted_game is None:
+        sighted_game = Game(sighted=(True if sighted is None else bool(sighted)))
+    elif sighted is not None and bool(sighted_game.sighted) != bool(sighted):
+        raise ValueError(
+            f"sighted={bool(sighted)} contradicts the supplied sighted_game "
+            f"(sighted={bool(sighted_game.sighted)}) — refusing to guess the rep"
+        )
+    rep = {
+        "sighted": bool(sighted_game.sighted),
+        "n_input_channels": int(sighted_game.get_input_channels()),
+        "n_scalar_features": int(sighted_game.get_scalar_feature_size()),
+    }
+    return sighted_game, rep
+
+
+def _validate_fair_net_prior_dims(net, rep: dict) -> None:
+    """Fail loudly on ANY rep/net-dim mismatch — channels AND scalars, against the
+    RESOLVED rep (not a hardcoded 81). A net whose channels happen to match but whose
+    scalars don't would otherwise die deep inside policy_fc with an opaque shape error,
+    or (worse) a same-dim different-rep net would silently mis-encode. Shared by the
+    single and BATCH factories."""
+    _net_ch = getattr(net, "n_input_channels", None)
+    if _net_ch is None and hasattr(net, "stem"):   # pre-attr checkpoints
+        _net_ch = int(net.stem[0].in_channels)
+    _net_sc = getattr(net, "n_scalar_features", None)
+    for _what, _got, _exp in (("input channels", _net_ch, rep["n_input_channels"]),
+                              ("scalar features", _net_sc, rep["n_scalar_features"])):
+        if _got is not None and int(_got) != int(_exp):
+            raise ValueError(
+                f"net {_what} ({int(_got)}) != encode {_what} ({int(_exp)}) for the "
+                f"resolved rep (sighted={rep['sighted']}: "
+                f"{rep['n_input_channels']}ch/{rep['n_scalar_features']}sc). The "
+                "fair-net-prior net and its encoder MUST be the same representation."
+            )
+
+
+def _resolve_net_device(net, device):
+    """Default a CPU-net forward's device to the net's own parameter device."""
+    import torch
+
+    if device is None:
+        try:
+            device = next(net.parameters()).device
+        except StopIteration:
+            device = torch.device("cpu")
+    net.eval()
+    return device
+
+
 def make_fair_net_prior_evaluator(
     cfg: HeuristicPriorConfig,
     *,
@@ -503,38 +586,12 @@ def make_fair_net_prior_evaluator(
                                 the rep is a switch; a mismatch raises rather than
                                 silently mis-encoding.
     """
-    # --- value side: the FROZEN champion v2.9 leaf, computed DIRECTLY (one Cython
-    #     float-leaf eval + tanh). NOT via make_heuristic_prior_evaluator, whose value
-    #     is identical but which ALSO steps every legal child to build heuristic priors
-    #     we would only discard. Byte-identical to that value line otherwise.
-    leaf_cfg = cfg.resolved_leaf_cfg()
-    norm = float(cfg.value_norm)
-    bag_close = bool(getattr(leaf_cfg, "bag_close", False))
+    # --- value side: the FROZEN champion v2.9 leaf (see _fair_net_prior_leaf_value_fn).
+    _leaf_value, leaf_cfg = _fair_net_prior_leaf_value_fn(cfg)
 
-    def _leaf_value(board: Board) -> float:
-        st = board.state
-        mover = st.current_player
-        leaf_parent = flat_leaf.flat_virtual_score_v2_float(st, mover, leaf_cfg, bag_close)
-        return math.tanh(leaf_parent / norm)
-
-    # --- prior side: the NET policy head, masked-softmax over legal. The encode REP
-    #     is a SWITCH, not a constant: both distillation targets exist — SIGHTED
-    #     (81ch board / 42 scalars, bag-aware) and NON-SIGHTED (78ch / 10, the
-    #     production warmstart rep). Resolve it explicitly and fail LOUD on any
-    #     rep/net-dim mismatch; a silent mis-encode would feed the policy head
-    #     garbage planes and quietly produce a weak-but-plausible agent.
-    if sighted_game is None:
-        sighted_game = Game(sighted=(True if sighted is None else bool(sighted)))
-    elif sighted is not None and bool(sighted_game.sighted) != bool(sighted):
-        raise ValueError(
-            f"sighted={bool(sighted)} contradicts the supplied sighted_game "
-            f"(sighted={bool(sighted_game.sighted)}) — refusing to guess the rep"
-        )
-    rep = {
-        "sighted": bool(sighted_game.sighted),
-        "n_input_channels": int(sighted_game.get_input_channels()),
-        "n_scalar_features": int(sighted_game.get_scalar_feature_size()),
-    }
+    # --- prior side: the NET policy head, masked-softmax over legal, at the RESOLVED
+    #     encode rep (see _resolve_fair_net_prior_rep — fail-loud, no rep guessing).
+    sighted_game, rep = _resolve_fair_net_prior_rep(sighted_game, sighted)
 
     if handles is not None:
         # carc-orch SHM: the server (a TorchScript net at the RESOLVED rep — 81ch/42
@@ -555,32 +612,9 @@ def make_fair_net_prior_evaluator(
     elif net is not None:
         # Per-worker CPU net: reuse the tested policy-only evaluator (masked-softmax
         # over legal, value head skipped → 0.0 sentinel, which we discard).
-        import torch
-
         from .evaluators import make_single_evaluator_policy_only
-        if device is None:
-            try:
-                device = next(net.parameters()).device
-            except StopIteration:
-                device = torch.device("cpu")
-        net.eval()
-        # Fail loudly on ANY rep/net-dim mismatch — channels AND scalars, against the
-        # RESOLVED rep (not a hardcoded 81). A net whose channels happen to match but
-        # whose scalars don't would otherwise die deep inside policy_fc with an opaque
-        # shape error, or (worse) a same-dim different-rep net would silently mis-encode.
-        _net_ch = getattr(net, "n_input_channels", None)
-        if _net_ch is None and hasattr(net, "stem"):   # pre-attr checkpoints
-            _net_ch = int(net.stem[0].in_channels)
-        _net_sc = getattr(net, "n_scalar_features", None)
-        for _what, _got, _exp in (("input channels", _net_ch, rep["n_input_channels"]),
-                                  ("scalar features", _net_sc, rep["n_scalar_features"])):
-            if _got is not None and int(_got) != int(_exp):
-                raise ValueError(
-                    f"net {_what} ({int(_got)}) != encode {_what} ({int(_exp)}) for the "
-                    f"resolved rep (sighted={rep['sighted']}: "
-                    f"{rep['n_input_channels']}ch/{rep['n_scalar_features']}sc). The "
-                    "fair-net-prior net and its encoder MUST be the same representation."
-                )
+        device = _resolve_net_device(net, device)
+        _validate_fair_net_prior_dims(net, rep)
         _base_pol = make_single_evaluator_policy_only(net, device, sighted_game)
 
         def _net_priors(board: Board):
@@ -608,6 +642,133 @@ def make_fair_net_prior_evaluator(
     if net is not None:
         evaluator.net = net
     return evaluator
+
+
+# --------------------------------------------------------------------------- #
+# FAIR-NET-PRIOR **BATCH** evaluator — the latency fix for the fair net candidate. #
+#                                                                                  #
+# WHY: FairHeuristicPriorAgent's per-determinization NeuralMCTS ran batch_size=1,   #
+# so each of the ~2752 node expansions per move fired ONE forward and waited a full #
+# IPC+GPU round-trip, SERIALIZED. Measured 2026-07-16: 57138 ms/move for the net    #
+# candidate vs 4509 for the heuristic champion (12.67x) with the GPU at ~15% util — #
+# i.e. the cost was round-trip LATENCY, not compute. carc-orch batches ACROSS games #
+# (throughput), never WITHIN a search. This sibling is the within-search batch: N    #
+# leaves -> ONE forward.                                                            #
+#                                                                                   #
+# CONTRACT: Callable[[list[Board]], (priors[N,A], values[N])] — the NeuralMCTS       #
+# `batch_evaluator` contract (mcts.py::_eval_boards), so it drops straight into the  #
+# existing virtual-loss batch machinery (`_run_batch`).                              #
+#                                                                                   #
+# The VALUE stays the frozen leaf, looped per board: it is in-process Cython (~µs),  #
+# has no round-trip to amortize, and batching it would buy nothing. ONLY the net      #
+# policy forward is batched — which is the entire latency cost.                       #
+# --------------------------------------------------------------------------- #
+def make_fair_net_prior_batch_evaluator(
+    cfg: HeuristicPriorConfig,
+    *,
+    net=None,
+    handles=None,
+    sighted_game: Game | None = None,
+    device=None,
+    sighted: bool | None = None,
+):
+    """Batch sibling of ``make_fair_net_prior_evaluator``.
+
+    Returns ``Callable[[list[Board]], (priors[N, A], values[N])]``: the NET's policy
+    head batched over all N boards in ONE forward (one carc-orch SHM request / one GPU
+    call), plus the FROZEN champion v2.9 leaf value per board (looped — the leaf is
+    cheap and in-process).
+
+    Semantically IDENTICAL, per board, to the single evaluator: the same resolved rep,
+    the same fail-loud dim validation, the same frozen-leaf value line (both call
+    ``_fair_net_prior_leaf_value_fn``), and the same masked-softmax net priors. The only
+    difference is transport batching. Wire it into ``FairHeuristicPriorAgent`` via
+    ``batch_evaluator=`` + ``batch_size>1``.
+
+    ⚠️ Batching the SEARCH (batch_size>1) engages NeuralMCTS's virtual loss, which
+    CHANGES the search (it is an approximation — the same one the gen path already
+    accepts at ``--batch-size 8``). This evaluator itself is exact; the approximation
+    lives in the tree, not here. The heuristic-priors CHAMPION must stay at
+    ``batch_size=1`` (the FairHeuristicPriorAgent default) to remain byte-identical.
+
+    Parameters mirror ``make_fair_net_prior_evaluator`` exactly.
+    """
+    _leaf_value, leaf_cfg = _fair_net_prior_leaf_value_fn(cfg)
+    sighted_game, rep = _resolve_fair_net_prior_rep(sighted_game, sighted)
+
+    if handles is not None:
+        # carc-orch SHM: ONE request carrying up to MAX_K boards (obs/scalars/mask
+        # stacked). The server returns masked-softmax priors already
+        # (export_torchscript bakes the masked_fill + softmax) — the NeuralMCTS prior
+        # contract. Its values are DROPPED; the frozen leaf owns the value.
+        # NOTE: the SHM slot dims are sized by the CALLER (connect_shm) and MUST come
+        # from this same rep, or the shared buffers silently mis-map.
+        #
+        # ⚠️ MAX_K CHUNKING: the SHM wire protocol hard-caps a single request at
+        # MAX_K=8 boards (shm_eval_handles.MAX_K / rust shm.rs::MAX_K — a COMPILE-TIME
+        # constant on both sides; the per-worker slot statically reserves exactly MAX_K
+        # board positions). make_remote_batch_evaluator does NOT chunk: it np.stacks
+        # whatever list it is handed, so k>MAX_K raises "k=9 exceeds MAX_K=8" from
+        # _ShmConn.put. We chunk here so ANY batch_size stays correct.
+        # CONSEQUENCE: batch_size>MAX_K buys NO extra transport win through the orch —
+        # it becomes ceil(N/8) SEQUENTIAL round-trips, the same round-trip count per
+        # leaf as batch_size=8, but with MORE virtual-loss distortion. Raising the
+        # ceiling needs MAX_K bumped in BOTH shm.rs and shm_eval_handles.py + a rust
+        # rebuild (it changes the SHM slot layout for every client).
+        from .remote_evaluators import make_remote_batch_evaluator
+        from .shm_eval_handles import MAX_K
+        _remote_batch = make_remote_batch_evaluator(handles, sighted_game)
+
+        def _net_priors_batch(boards: list[Board]) -> np.ndarray:
+            if len(boards) <= MAX_K:
+                return _remote_batch(boards)[0]   # (priors[N,A], values[N]) -> priors
+            chunks = [
+                _remote_batch(boards[i:i + MAX_K])[0]
+                for i in range(0, len(boards), MAX_K)
+            ]
+            return np.concatenate(chunks, axis=0)
+
+        _transport = "carc-orch SHM"
+    elif net is not None:
+        # Per-worker CPU/GPU net: reuse the tested batched policy-only evaluator
+        # (masked-softmax over legal, value head skipped → zeros, which we discard).
+        from .evaluators import make_batch_evaluator_policy_only
+        device = _resolve_net_device(net, device)
+        _validate_fair_net_prior_dims(net, rep)
+        _base_pol_batch = make_batch_evaluator_policy_only(net, device, sighted_game)
+
+        def _net_priors_batch(boards: list[Board]) -> np.ndarray:
+            return _base_pol_batch(boards)[0]   # (priors[N,A], zeros[N]) -> priors
+
+        _transport = "per-worker CPU net"
+    else:
+        raise ValueError(
+            "make_fair_net_prior_batch_evaluator needs a CPU `net` or carc-orch `handles`"
+        )
+
+    def batch_evaluator(boards: list[Board]):
+        if not boards:
+            # Match NeuralMCTS._eval_boards' empty convention.
+            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
+        priors = _net_priors_batch(boards)
+        values = np.array([_leaf_value(b) for b in boards], dtype=np.float32)
+        return priors, values
+
+    # Provenance / introspection hooks — mirror the single evaluator so a manifest
+    # written from either reads the same (plus `batched` to tell them apart).
+    batch_evaluator.heur_prior_cfg = cfg
+    batch_evaluator.leaf_cfg = leaf_cfg
+    batch_evaluator.leaf_name = f"v29_leafvalue_netpriors_{cfg.leaf_quantize}"
+    batch_evaluator.priors_source = "net_policy_head"
+    batch_evaluator.value_source = "frozen_champion_v29_leaf"
+    batch_evaluator.value_transport = _transport
+    batch_evaluator.sighted_game = sighted_game
+    batch_evaluator.rep = rep
+    batch_evaluator.sighted = rep["sighted"]
+    batch_evaluator.batched = True
+    if net is not None:
+        batch_evaluator.net = net
+    return batch_evaluator
 
 
 # --------------------------------------------------------------------------- #
