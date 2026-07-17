@@ -71,9 +71,14 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
   (iter_07) at OW=12-16 and re-measure the gen delta with the same sampler method;
   keep stepping W up per eval until gen notices, back off one step. Each scheduled
   eval doubles as the next rung's measurement.
-- **Size eval to the gen window:** from the iter_03 run, compute games/min at W8;
-  pick OW so an n=100 eval ≈ fits one gen window (~60-90 min). One measurement + one
-  division — don't over-tune.
+- **Cadence from quality, NOT n from window (Joshua correction, 19:45):** do NOT
+  shrink n to fit a gen window. Fix the eval at GOOD-ENOUGH quality — **n=200 paired**
+  (~±12-17 elo, a real trend point; n=100 is only a screen) — at the max non-tanking
+  W. Measure its actual duration D from the iter_03 run (extrapolate 100→200), and set
+  the cadence x = eval every ceil(D / gen-window) iters (window ~60-90 min). E.g.
+  D≈3 windows → eval every 3-4 iters; faster → denser. The running iter_03 eval is
+  n=100 (launched pre-correction) — fine as the calibration + first screen; from
+  iter_07 on, use `--n 200`.
 - **Train-phase impact:** iter_05's train will overlap the running eval — compare its
   train duration vs iter_04's (stage2 log timestamps). If train slows meaningfully
   (>~20%), adopt PAUSE-VIA-KILL: kill the eval (wrapper + 2 fairnvn orchs by PID, rm
