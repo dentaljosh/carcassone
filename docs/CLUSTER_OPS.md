@@ -51,6 +51,8 @@ tail --pid=$PID -f /dev/null
 
 ## Second machine — Xeon training box (192.168.0.110)
 
+> ⚠️ **RETIRED — do not use the Xeon for cluster work (reaffirmed 2026-07-17).** It's just too slow to be worth the wiring/contention risk: Quadro RTX 4000 (Turing, 8 GB) + a 6C/12T Skylake-X give roughly ½–⅔ of the 5900XT's throughput, and in the current GPU-dispatch-latency-bound gen/eval regime it adds far more orchestration fragility than useful compute. **Standing decision: local (5900XT) + laptop only; the Xeon is not part of the default cluster.** Only revisit if a job is embarrassingly CPU-parallel *and* both other boxes are saturated. Everything below is kept for historical reference / the one-off exception.
+
 A second always-on machine is available for training runs (set up 2026-05-18).
 
 - **Reach it:** `ssh xeon` — configured in `~/.ssh/config` on the carcassonne box, key-only auth (no password). That lands in a Windows shell as user `VATECH`; `wsl -d Ubuntu-24.04` enters Linux. (Direct WSL2 ssh now available — `ssh xeon-wsl` lands in bash, see memory `reference_xeon_direct_ssh`.)
