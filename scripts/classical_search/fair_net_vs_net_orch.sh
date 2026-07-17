@@ -36,7 +36,11 @@ REPO=${REPO:-$(cd "$(dirname "$0")/../.." && pwd)}
 PY=${PY:-$REPO/.venv/bin/python}
 [ -x "$PY" ] || PY=python3
 CAND_CKPT=${CAND_CKPT:?set CAND_CKPT=<candidate distilled policy net .pt>}
-OPP_CKPT=${OPP_CKPT:?set OPP_CKPT=<opponent distilled policy net .pt>}
+# OPP_CKPT EMPTY/unset -> --opponent fair-champion: the opponent is the net-free
+# PRODUCTION champion (heuristic priors), so only ONE server is needed. Non-empty ->
+# --opponent net: a second server for the opponent's net.
+OPP_CKPT=${OPP_CKPT:-}
+if [ -n "$OPP_CKPT" ]; then MODE=net; else MODE=fair-champion; fi
 OW=${OW:-4}                        # CPU workers = SHM slots per server. Keep low on a
                                    # shared box (a concurrent gen run owns the cores).
 FWD=${ORCH_FWD:-2}
@@ -61,22 +65,28 @@ print(int(ck.get("n_input_channels", 78)), int(ck.get("n_scalar_features", 10)),
       "sighted" if ck.get("sighted", False) else "non-sighted")
 EOF
 )
-read -r NC_O NS_O SG_O < <("$PY" - "$OPP_CKPT" <<'EOF'
+echo "[fair-nvn-orch] CAND $(basename "$CAND_CKPT"): ${NC_C}ch/${NS_C}sc ($SG_C)"
+if [ "$MODE" = net ]; then
+  read -r NC_O NS_O SG_O < <("$PY" - "$OPP_CKPT" <<'EOF'
 import sys, torch
 ck = torch.load(sys.argv[1], map_location="cpu", weights_only=False)
 print(int(ck.get("n_input_channels", 78)), int(ck.get("n_scalar_features", 10)),
       "sighted" if ck.get("sighted", False) else "non-sighted")
 EOF
 )
-echo "[fair-nvn-orch] CAND $(basename "$CAND_CKPT"): ${NC_C}ch/${NS_C}sc ($SG_C)"
-echo "[fair-nvn-orch] OPP  $(basename "$OPP_CKPT"): ${NC_O}ch/${NS_O}sc ($SG_O)"
+  echo "[fair-nvn-orch] OPP  $(basename "$OPP_CKPT"): ${NC_O}ch/${NS_O}sc ($SG_O)"
+else
+  echo "[fair-nvn-orch] OPP  = fair-champion (net-free heuristic priors) -> ONE server only"
+fi
 
 # --- export per side -> TorchScript (parity-gated; abort on fail) ---
-echo "[fair-nvn-orch] exporting both -> TorchScript (parity-gated)"
+echo "[fair-nvn-orch] exporting -> TorchScript (parity-gated)"
 "$PY" scripts/export_torchscript.py --checkpoint "$CAND_CKPT" --out "$TS_C" --device cuda \
   || { echo "FATAL: TorchScript export/parity failed for CANDIDATE" >&2; exit 1; }
-"$PY" scripts/export_torchscript.py --checkpoint "$OPP_CKPT" --out "$TS_O" --device cuda \
-  || { echo "FATAL: TorchScript export/parity failed for OPPONENT" >&2; exit 1; }
+if [ "$MODE" = net ]; then
+  "$PY" scripts/export_torchscript.py --checkpoint "$OPP_CKPT" --out "$TS_O" --device cuda \
+    || { echo "FATAL: TorchScript export/parity failed for OPPONENT" >&2; exit 1; }
+fi
 
 # --- clean any stale carc-orch / shm for THESE two names ---
 pkill carc-orch 2>/dev/null || true; sleep 1
@@ -90,16 +100,22 @@ nice -n 19 "$SRV" --model "$TS_C" --transport shm --shm-name "$SHMN_C" --workers
   --device cuda --max-batch "$MB" --batch-timeout-ms 2.0 --forwarders "$FWD" --watchdog-secs 30 \
   > "$LOG_C" 2>&1 &
 SRV_C_PID=$!
-echo "[fair-nvn-orch] start carc-orch OPP  (W=$OW fwd=$FWD max_batch=$MB) shm=$SHMN_O n_ch=$NC_O n_scalar=$NS_O"
-nice -n 19 "$SRV" --model "$TS_O" --transport shm --shm-name "$SHMN_O" --workers "$OW" \
-  --n-ch "$NC_O" --n-scalar "$NS_O" \
-  --device cuda --max-batch "$MB" --batch-timeout-ms 2.0 --forwarders "$FWD" --watchdog-secs 30 \
-  > "$LOG_O" 2>&1 &
-SRV_O_PID=$!
+SRV_O_PID=""
+SIDES="C"
+if [ "$MODE" = net ]; then
+  echo "[fair-nvn-orch] start carc-orch OPP  (W=$OW fwd=$FWD max_batch=$MB) shm=$SHMN_O n_ch=$NC_O n_scalar=$NS_O"
+  nice -n 19 "$SRV" --model "$TS_O" --transport shm --shm-name "$SHMN_O" --workers "$OW" \
+    --n-ch "$NC_O" --n-scalar "$NS_O" \
+    --device cuda --max-batch "$MB" --batch-timeout-ms 2.0 --forwarders "$FWD" --watchdog-secs 30 \
+    > "$LOG_O" 2>&1 &
+  SRV_O_PID=$!
+  SIDES="C O"
+fi
+# shellcheck disable=SC2064
 trap 'kill $SRV_C_PID $SRV_O_PID 2>/dev/null; pkill carc-orch 2>/dev/null; rm -f "/dev/shm/carc_'"$SHMN_C"'" /dev/shm/sem.carc_'"$SHMN_C"'_* "/dev/shm/carc_'"$SHMN_O"'" /dev/shm/sem.carc_'"$SHMN_O"'_*' EXIT
 
-# --- wait for "forwarder-" in BOTH logs (80 x 0.5s each); FATAL if either dies ---
-for side in C O; do
+# --- wait for "forwarder-" in each started log (80 x 0.5s each); FATAL if any dies ---
+for side in $SIDES; do
   eval "LOG=\$LOG_$side; PID=\$SRV_${side}_PID"
   for _ in $(seq 1 80); do
     grep -q "forwarder-" "$LOG" 2>/dev/null && break
@@ -109,12 +125,24 @@ for side in C O; do
   grep -q "forwarder-" "$LOG" 2>/dev/null \
     || { echo "FATAL: carc-orch $side failed to start" >&2; tail -12 "$LOG" >&2; exit 1; }
 done
-echo "[fair-nvn-orch] BOTH servers READY | CAND shm='$SHMN_C' ${NC_C}ch/${NS_C}sc | OPP shm='$SHMN_O' ${NC_O}ch/${NS_O}sc | client W=$OW"
+if [ "$MODE" = net ]; then
+  echo "[fair-nvn-orch] BOTH servers READY | CAND shm='$SHMN_C' ${NC_C}ch/${NS_C}sc | OPP shm='$SHMN_O' ${NC_O}ch/${NS_O}sc | client W=$OW"
+else
+  echo "[fair-nvn-orch] server READY | CAND shm='$SHMN_C' ${NC_C}ch/${NS_C}sc | OPP fair-champion (net-free, no server) | client W=$OW"
+fi
 
 # --- run the client. NO leaf env (see header note 2): the harness's _CANON_ENV setdefault
 #     must win, and the curve125 leaf is injected in-process per side.
-nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py \
-  --info fair-netprior --net "$CAND_CKPT" \
-  --opponent net --opp-net "$OPP_CKPT" \
-  --orch-shm-name "$SHMN_C" --opp-orch-shm-name "$SHMN_O" \
-  --workers "$OW" "$@"
+if [ "$MODE" = net ]; then
+  nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py \
+    --info fair-netprior --net "$CAND_CKPT" \
+    --opponent net --opp-net "$OPP_CKPT" \
+    --orch-shm-name "$SHMN_C" --opp-orch-shm-name "$SHMN_O" \
+    --workers "$OW" "$@"
+else
+  nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py \
+    --info fair-netprior --net "$CAND_CKPT" \
+    --opponent fair-champion \
+    --orch-shm-name "$SHMN_C" \
+    --workers "$OW" "$@"
+fi
