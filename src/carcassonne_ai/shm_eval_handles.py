@@ -67,6 +67,12 @@ class _Layout:
 _ETIMEDOUT = 110
 _EINTR = 4
 
+# Max single sem_timedwait slice (seconds). Bounds how long a BACKWARD wall-clock
+# step can make a waiter over-wait; the real budget is enforced monotonically in
+# _ShmConn.get. Small enough to stay responsive, large enough that the wakeup rate
+# is negligible (~1/slice per BLOCKED worker; the fast path never times out).
+_WAIT_SLICE_S = 5.0
+
 
 class _timespec(ctypes.Structure):
     _fields_ = [("tv_sec", ctypes.c_long), ("tv_nsec", ctypes.c_long)]
@@ -152,21 +158,44 @@ class _ShmConn:
             raise ConnectionError("sem_post(req) failed")
 
     def get(self, timeout: float | None = None):
+        """Wait for this worker's response, enforcing `timeout` on the MONOTONIC clock.
+
+        ⚠️ `sem_timedwait` takes an ABSOLUTE **CLOCK_REALTIME** deadline (POSIX), but
+        a timeout is a DURATION. Those differ whenever the wall clock steps — and on
+        this stack it does: WSL2 periodically resyncs its clock to the Windows host
+        (and after host sleep/resume). A FORWARD step past the deadline makes
+        sem_timedwait return ETIMEDOUT *immediately*, no matter how much of the
+        timeout is actually left — the caller then reports a dead eval-server
+        (BrokenServerError) while the server is healthy and still batching, and its
+        watchdog (jobs-in/no-batches-out) correctly stays silent. Raising the timeout
+        cannot fix that: a big enough step still lands past any deadline.
+
+        So: only BELIEVE an ETIMEDOUT if `time.monotonic()` (immune to clock steps)
+        agrees the duration really elapsed; otherwise re-arm. The wait is also sliced
+        (<= _WAIT_SLICE_S) so a BACKWARD step can over-wait by at most one slice
+        instead of parking here until the clock catches up. The fast path is
+        unchanged — the response arrives in ~ms, so the first sem_timedwait returns 0.
+        """
         if timeout is None:
             timeout = 75.0
-        ts = _timespec()
-        dl = time.time() + timeout
-        ts.tv_sec = int(dl)
-        ts.tv_nsec = int((dl - int(dl)) * 1e9)
+        t0 = time.monotonic()
         while True:
+            elapsed = time.monotonic() - t0
+            remaining = timeout - elapsed
+            if remaining <= 0:
+                raise queue.Empty(f"shm eval-server timeout after {timeout}s")
+            ts = _timespec()
+            dl = time.time() + min(_WAIT_SLICE_S, remaining)
+            ts.tv_sec = int(dl)
+            ts.tv_nsec = int((dl - int(dl)) * 1e9)
             r = _libc.sem_timedwait(self.resp_sem, ctypes.byref(ts))
             if r == 0:
                 break
             err = ctypes.get_errno()
-            if err == _EINTR:
+            if err in (_EINTR, _ETIMEDOUT):
+                # ETIMEDOUT here = this SLICE expired (or the realtime clock stepped
+                # forward). The loop top re-checks the monotonic budget and decides.
                 continue
-            if err == _ETIMEDOUT:
-                raise queue.Empty(f"shm eval-server timeout after {timeout}s")
             raise ConnectionError(f"sem_timedwait failed: {os.strerror(err)}")
         k = int(self.hdr[1])
         priors = self.pri_v[:k].copy()
