@@ -417,24 +417,37 @@ def _load_net_rep(path, device="cpu"):
     distill trainer). Returns (net, rep). Fails LOUD on an internally-inconsistent
     checkpoint rather than mis-encoding at every leaf.
 
-    The rep is inferred, never assumed: the two distill candidates are sighted
-    (81ch/42) and non-sighted (78ch/10), and picking the wrong encoder silently
-    feeds the policy head garbage planes."""
+    The rep is inferred, never assumed. Three valid distill reps exist:
+      * SIGHTED         81ch / 42sc (10 base + 32 bag; include_farm_scalars is OFF —
+                        the sighted vector carries NO farm scalars).
+      * NON-SIGHTED     78ch / 10sc (the production warmstart rep).
+      * NON-SIGHTED+farm 78ch / 12sc (RoD-v2 / "Step-E farm-scalar" rep = 10 base + 2
+                        farm scalars, include_farm_scalars=True).
+    Picking the wrong encoder silently feeds the policy head a wrong-width / mis-typed
+    scalar vector, so include_farm_scalars is derived HERE (ckpt field if present, else
+    the codebase convention (n_scalar>10) and not sighted — shared with
+    eval_net_vs_heuristic / train_iter / run_selfplay_iter) and cross-checked against
+    the ckpt's declared dims. The guard stays strict for genuinely-unknown combos."""
     import torch
     from carcassonne_ai.network import CarcassonneNet
     ck = torch.load(path, map_location=device, weights_only=False)
     n_ch = int(ck.get("n_input_channels", 78))
     n_sc = int(ck.get("n_scalar_features", 10))
     sighted = bool(ck.get("sighted", False))
+    # The 2 farm scalars ride on the NON-SIGHTED rep ONLY (the sighted 42 = 10 base +
+    # 32 bag, no farm scalars). Prefer the ckpt's explicit flag; else the standard
+    # convention. A 78/12 net therefore resolves include_farm_scalars=True and is
+    # encoded by Game(sighted=False, include_farm_scalars=True) -> 78ch/12sc.
+    include_farm = bool(ck.get("include_farm_scalars", (n_sc > 10) and not sighted))
     # cross-check the ckpt's own fields against the encoder they imply
-    probe = Game(sighted=sighted)
+    probe = Game(sighted=sighted, include_farm_scalars=include_farm)
     exp_ch, exp_sc = probe.get_input_channels(), probe.get_scalar_feature_size()
     if (n_ch, n_sc) != (exp_ch, exp_sc):
         raise SystemExit(
             f"FATAL: checkpoint {path} is internally inconsistent — it declares "
-            f"sighted={sighted} (which implies {exp_ch}ch/{exp_sc}sc) but carries "
-            f"n_input_channels={n_ch} / n_scalar_features={n_sc}. Refusing to guess "
-            "the representation."
+            f"sighted={sighted} / include_farm_scalars={include_farm} (which implies "
+            f"{exp_ch}ch/{exp_sc}sc) but carries n_input_channels={n_ch} / "
+            f"n_scalar_features={n_sc}. Refusing to guess the representation."
         )
     net = CarcassonneNet(
         n_filters=ck.get("n_filters", 96), n_blocks=ck.get("n_blocks", 6),
@@ -444,6 +457,7 @@ def _load_net_rep(path, device="cpu"):
     net.load_state_dict(ck["model_state"])
     net.eval()
     rep = {"sighted": sighted, "n_input_channels": n_ch, "n_scalar_features": n_sc,
+           "include_farm_scalars": include_farm,
            "value_global_pool": bool(ck.get("value_global_pool", False)),
            "iter": ck.get("iter"), "provenance": ck.get("provenance")}
     return net, rep
@@ -621,6 +635,14 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             raise ValueError(
                 "info=fair-netprior requires a loaded net (--net) or orch handles "
                 "(--orch-shm-name)")
+        # Encode rep: the explicit sighted_game (built per-side in _worker_init / _smoke
+        # WITH include_farm_scalars) is authoritative. If only `rep` reached us, build the
+        # encoder from it here — a bare `sighted=` bool CANNOT express the non-sighted
+        # 78ch/12 (Step-E farm-scalar) rep, so relying on it would silently feed a
+        # 12-scalar net a 10-scalar vector.
+        if sighted_game is None and rep is not None:
+            sighted_game = Game(sighted=bool(rep["sighted"]),
+                                include_farm_scalars=bool(rep.get("include_farm_scalars", False)))
         _sighted_arg = (None if sighted_game is not None
                         else (bool(rep["sighted"]) if rep else None))
         evaluator = make_fair_net_prior_evaluator(
@@ -898,7 +920,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
             _W["opp_handles"] = connect_shm(opp_orch_shm_name, _wid,
                                             int(opp_rep["n_scalar_features"]),
                                             int(opp_rep["n_input_channels"]))
-            _W["opp_sighted_game"] = Game(sighted=bool(opp_rep["sighted"]))
+            _W["opp_sighted_game"] = Game(
+                sighted=bool(opp_rep["sighted"]),
+                include_farm_scalars=bool(opp_rep.get("include_farm_scalars", False)))
         elif opp_net_ckpt:
             _W["opp_net"], _oloaded = _load_net_rep(opp_net_ckpt, device="cpu")
             if bool(_oloaded["sighted"]) != bool(opp_rep["sighted"]):
@@ -906,7 +930,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                     f"FATAL: worker re-loaded opponent {opp_net_ckpt} with "
                     f"sighted={_oloaded['sighted']} but main() resolved "
                     f"sighted={opp_rep['sighted']}")
-            _W["opp_sighted_game"] = Game(sighted=bool(opp_rep["sighted"]))
+            _W["opp_sighted_game"] = Game(
+                sighted=bool(opp_rep["sighted"]),
+                include_farm_scalars=bool(opp_rep.get("include_farm_scalars", False)))
 
 
 def _cfg_from_dict(d, leaf_cfg=None):
@@ -1104,7 +1130,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     smoke_opp_game = None
     if args.opponent == "net":
         smoke_opp_net, opp_rep = _load_net_rep(args.opp_net, device="cpu")
-        smoke_opp_game = Game(sighted=bool(opp_rep["sighted"]))
+        smoke_opp_game = Game(
+            sighted=bool(opp_rep["sighted"]),
+            include_farm_scalars=bool(opp_rep.get("include_farm_scalars", False)))
         print(f"[smoke] opponent = net {args.opp_net} | "
               f"rep={'SIGHTED' if opp_rep['sighted'] else 'NON-SIGHTED'} "
               f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
@@ -1648,6 +1676,7 @@ def main(argv=None) -> int:
             "rep_dims": ({"n_input_channels": opp_rep["n_input_channels"],
                           "n_scalar_features": opp_rep["n_scalar_features"],
                           "sighted": opp_rep["sighted"],
+                          "include_farm_scalars": opp_rep.get("include_farm_scalars", False),
                           "inferred_from": "the OPPONENT's own checkpoint (independent "
                                            "of --net; a cross-rep match is supported)"}
                          if opp_rep else None),
