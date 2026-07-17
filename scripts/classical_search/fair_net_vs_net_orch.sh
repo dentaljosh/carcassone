@@ -88,8 +88,10 @@ if [ "$MODE" = net ]; then
     || { echo "FATAL: TorchScript export/parity failed for OPPONENT" >&2; exit 1; }
 fi
 
-# --- clean any stale carc-orch / shm for THESE two names ---
-pkill carc-orch 2>/dev/null || true; sleep 1
+# --- clean any stale carc-orch / shm for THESE two names ONLY (scoped to fairnvn* by -f,
+#     NOT a blanket `pkill carc-orch`: this eval may run CONCURRENTLY with a self-play gen
+#     orch on the same box — a blanket kill would nuke that gen orch. Keep it scoped.) ---
+pkill -f '[f]airnvn' 2>/dev/null || true; sleep 1
 rm -f "/dev/shm/carc_$SHMN_C" /dev/shm/sem.carc_"${SHMN_C}"_* \
       "/dev/shm/carc_$SHMN_O" /dev/shm/sem.carc_"${SHMN_O}"_* 2>/dev/null || true
 
@@ -112,7 +114,7 @@ if [ "$MODE" = net ]; then
   SIDES="C O"
 fi
 # shellcheck disable=SC2064
-trap 'kill $SRV_C_PID $SRV_O_PID 2>/dev/null; pkill carc-orch 2>/dev/null; rm -f "/dev/shm/carc_'"$SHMN_C"'" /dev/shm/sem.carc_'"$SHMN_C"'_* "/dev/shm/carc_'"$SHMN_O"'" /dev/shm/sem.carc_'"$SHMN_O"'_*' EXIT
+trap 'kill $SRV_C_PID $SRV_O_PID 2>/dev/null; pkill -f '[f]airnvn' 2>/dev/null; rm -f "/dev/shm/carc_'"$SHMN_C"'" /dev/shm/sem.carc_'"$SHMN_C"'_* "/dev/shm/carc_'"$SHMN_O"'" /dev/shm/sem.carc_'"$SHMN_O"'_*' EXIT
 
 # --- wait for "forwarder-" in each started log (80 x 0.5s each); FATAL if any dies ---
 for side in $SIDES; do
