@@ -72,16 +72,20 @@ _start_srv() {  # $1=workers $2=max_batch $3=forwarders
   echo "[grid] server READY"
 }
 
-# client env: curve125 leaf, CUDA hidden (server owns the GPU)
-# shellcheck disable=SC1091
-source "$REPO/scripts/distill_flywheel/champ_env.sh"
-export CUDA_VISIBLE_DEVICES=""
+# ⚠️ CUDA must stay VISIBLE for the server launches (the orch owns the GPU net). The
+# client (+ its spawned CPU workers) needs the curve125 leaf AND CUDA hidden — but ONLY
+# the client. So we source champ_env.sh + hide CUDA in a SUBSHELL per client call, never
+# globally (a global CUDA_VISIBLE_DEVICES="" would blind the server -> "cuda_available=false").
+_run_client() {  # args passed straight to bench_fair_batch.py
+  ( source "$REPO/scripts/distill_flywheel/champ_env.sh"
+    export CUDA_VISIBLE_DEVICES=""
+    nice -n 19 "$PY" "$REPO/scripts/bench/bench_fair_batch.py" "$@" )
+}
 
 # === A) single-agent latency curve (max-batch irrelevant; 256) ===
 echo "=== [grid] A: single-agent latency curve ==="
 _start_srv 4 256 2
-nice -n 19 "$PY" "$REPO/scripts/bench/bench_fair_batch.py" \
-  --orch-shm-name "$SHMN" --batch-sizes "1,8,16,32" --moves "$SINGLE_MOVES" \
+_run_client --orch-shm-name "$SHMN" --batch-sizes "1,8,16,32" --moves "$SINGLE_MOVES" \
   --sims "$SIMS" --k-dets "$KDETS" --champion \
   --out "$MEASURE/BATCH_LATENCY_SINGLE.json"
 
@@ -89,8 +93,7 @@ nice -n 19 "$PY" "$REPO/scripts/bench/bench_fair_batch.py" \
 for MB in 16 64; do
   echo "=== [grid] B: concurrency=$CONC throughput, max_batch=$MB ==="
   _start_srv "$CONC" "$MB" 4
-  nice -n 19 "$PY" "$REPO/scripts/bench/bench_fair_batch.py" \
-    --orch-shm-name "$SHMN" --concurrency "$CONC" --batch-sizes "8,16,32" \
+  _run_client --orch-shm-name "$SHMN" --concurrency "$CONC" --batch-sizes "8,16,32" \
     --moves "$CONC_MOVES" --sims "$SIMS" --k-dets "$KDETS" \
     --out "$MEASURE/BATCH_THROUGHPUT_mb${MB}.json"
 done
