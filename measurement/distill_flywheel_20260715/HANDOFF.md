@@ -49,6 +49,11 @@ screen (rc=3 halts), the iter-6 gate, and iter-resumability — if drift shows, 
    all bs=16) vs the FIXED 2752 champion. The champion at 2752 costs ~what the net costs at ~1376, so
    **if net-1376 still beats champion-2752, that's a real wall-clock win + a fast agent.** If it needs
    the full 2752, +88.7 is an equal-sims curiosity. One ladder answers goal-1 (deployable performance).
+   ⚠️ **NOT ready-to-fire (verified 2026-07-17):** `eval_fair_puct` runs BOTH sides at the same
+   `--sims`/`--k-dets` — the opponent's knobs ride the candidate's `cfg_dict` (`eval_fair_puct.py:687-701`),
+   there is no `--opp-sims`. E4's asymmetric "reduced-net vs fixed-2752-champion" needs an Opus subagent to
+   add per-side `--opp-sims`/`--opp-k-dets` FIRST. (NOTE: this is deployability; the flywheel's own sims-cut
+   lever is a separate, lower-risk question — it's about gen policy-improvement efficiency, not vs-champion.)
 3. **Restructure stage-2 to shared work-stealing** (see design principle) + fix REVIEW_LOG D9 (a claim
    held ~90 min by a failed game; its gate is "before the next multi-iter run" = this run).
 4. **Flywheel (stage 2, iters 4-11)** on the fast path, with the net-side sims CUT (advisory: 2752 is
