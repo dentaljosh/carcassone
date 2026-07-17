@@ -64,9 +64,23 @@ Evals done/planned (n=100 paired sims200 kd2 k2, OW=8, out-subdir pattern
 next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot opens).
 - Template (run from repo root; CAND is the iter's ckpt):
   `CAND_CKPT=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_NN.pt OPP_CKPT=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt OW=8 setsid nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh --exact-k 2 --k-dets 2 --sims 200 --n 100 --paired --seed-start 13000000000 --out-root /mnt/c/carc-shared/distill_flywheel_sighted_20260716 --out-subdir eval_iterNN_vs_rodv2iter02_gpu --shared-claim --no-results-csv </dev/null > measurement/distill_flywheel_20260715/eval_iterNN_vs_rodv2iter02_gpu.log 2>&1 &`
-- **Concurrency policy** (fill in after the test): if NO TANK → launch evals freely
-  during gen. If MILD (-8..-25%) → launch evals only right after a train phase starts
-  (gen idle) and let them run into gen. If TANKED → evals only during train windows.
+- **Concurrency VERDICT (measured 19:54): TANKED at W8-as-launched — but confounded
+  by thread-thrash.** Gen 3.11→1.51 npz/min (−52%); load 17→**70**/32; and the eval
+  itself crawled (3/100 games in 38 min — useless even standalone). Root-cause
+  hypothesis: the wrapper sets no OMP/MKL pinning → 8 client workers × unpinned
+  BLAS/torch thread pools = classic torch-thread thrash (memory
+  reference_desktop_friendly_selfplay: BOTH env vars needed). Eval KILLED 19:57
+  (clean: gen orch/driver intact, shm + 12 stale claims cleaned, 4 jsons kept for
+  shared-claim resume).
+  **RETRY PLAN (one variable):** next attempt = same command but prefix env
+  `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1` and OW=4, launched at a TRAIN-phase start
+  (gen idle window). If load stays sane (<26) and games complete at a usable rate,
+  ratchet W and possibly allow gen-overlap per the original tree. If it's still
+  pathological, STOP local concurrent evals; plan B = run iter evals on the LAPTOP
+  (it demonstrably runs this harness at ~2.5 min/game aggregate on a HARDER config)
+  after its confirm — trade off vs the laptop-gen-join (decide at that wake; gen
+  throughput vs eval trend line, Joshua wanted both; laptop-evals + local-gen is the
+  cleaner split if concurrent-local stays broken).
 - **W ratchet (Joshua 19:35, pre-signoff):** if W8 = NO TANK, run the NEXT eval
   (iter_07) at OW=12-16 and re-measure the gen delta with the same sampler method;
   keep stepping W up per eval until gen notices, back off one step. Each scheduled
@@ -141,3 +155,4 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 ## CHECKLOG (append at each wakeup: time | iter/npz | laptop | actions)
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
+- 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
