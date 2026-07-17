@@ -18,22 +18,33 @@ move** (bs=16; was 12.67× at batch-1). On the CL-046 ladder, giving the champio
 SCREEN, not a verdict, and has the same statistical profile as t020 (+32/z1.68 → collapsed to +3.4 at
 n=800, CL-057, three days prior). **So: confirm + wall-clock test both needed before believing it.**
 
-## WHAT'S RUNNING NOW (12:00)
-**n=400 CONFIRM** of the deployable bs=16 net vs the fair champion, k4×688, FRESH band **22.0e9**
-(disjoint from HH1's 21.0e9), BOTH boxes work-stealing (`--shared-claim`): local OW=28 + laptop OW=8,
-each its own carc-orch server. Driver: `scripts/classical_search/fair_net_vs_net_orch.sh`
-(`OPP_CKPT=` empty → `--opponent fair-champion`, one server). Out: `<run>/confirm_n400_bs16/`,
-log `measurement/distill_flywheel_20260715/confirm_n400.log`.
-- ⚠️ **NOT reusing HH1's 100 games** — those were batch-1 (a slightly different agent); this is a fresh
-  400 of the bs=16 deployable agent. Report the n=400 verdict on the fresh band.
-- ⚠️ **RATE UNKNOWN / SLOW**: 0/400 done at 18 min — k4×688 bs=16 under 28-worker orch contention is
-  slower than the single-agent bench (5156 ms/move) implied. If it's ~10h+, consider cutting to n=200
-  (±25 elo — enough to tell +88 from a wash) or reducing OW. **Investigate the rate.**
-- To relaunch/resume (shared-claim = resumable): re-run the same command (local) + the laptop join
-  (`/tmp/confirm_laptop_join.sh` pattern, OW=8). Kill: `pkill -f eval_fair_[p]uct`; `ps -C carc-orch`.
+## WHAT'S RUNNING NOW (12:30 — SPLIT: the confirm is CPU-bound, so it moved OFF the strong box)
+The both-box confirm banked **0 games in 31 min** (each k4×688 fair game is a >40-min wall; parallelism just
+fans many long games out — it's CPU-bound, orch only ~37% busy). The flywheel is the priority, so Joshua split
+the boxes: confirm → laptop-only, flywheel → local now.
 
-## THE PLAN (in order)
-1. **n=400 confirm** (running) → does +88.7 hold at equal sims for the deployable bs=16 agent?
+- **LAPTOP — n=200 confirm** (cut from 400: laptop-only is ~22% of combined throughput → n=400 would be ~37h;
+  n=200 ±25 elo still separates +88 from a wash, ~19h). Candidate bs=16 net vs the fair champion, k4×688, band
+  **22.0e9**, dir `<run>/confirm_n200_laptop/`, OW=8, own carc-orch. Rung guard PASSED (both sides curve125, no
+  leak). Log (laptop): `/tmp/confirm_laptop_n200.log`. Relaunch = pipe `scratchpad/confirm_laptop_n200.sh` to
+  laptop-wsl. Kill (laptop): `pkill -9 -f eval_fair_[p]uct` + its orch (`ps -C carc-orch`).
+- **LOCAL — the FLYWHEEL (stage 2, iters 4-11), net-gen ONLY.** `run_distill_stage2.sh` with
+  `USE_LAPTOP=0 CHAMP_GAMES=0 GAMES=450 NET_GAMES=450 NET_BATCH=16 NET_KDETS=4 NET_SIMS=688` (full-budget k4×688,
+  proven — NOT the unvalidated 2× sims cut). iter-4 gen live: 28 workers, load ~12-18 (NOT oversubscribed — gen
+  self-play batches BOTH sides through the orch, avg_batch 14.3, fwd_busy 43%). Launcher log:
+  `measurement/distill_flywheel_20260715/stage2.log`; per-iter status: `measurement/<TAG>/STAGE2_STATUS.md`;
+  gen log: `<run>/logs/gen_local_it<NN>.log`. Kill (local): `pkill -9 -f run_distill_stage2` then
+  `pkill -9 -f gen_fair_distill` + `ps -C carc-orch`.
+
+⚠️ **ANCHOR-FREE recipe deviation (monitored, deliberate):** the intended flywheel mixes a 25% net-free champion
+side-stream on the laptop (anti-drift anchor). The laptop is on the confirm and the two timelines are ~even
+(~19h each), so the laptop won't realistically free up mid-run — this flywheel runs WITHOUT the champ anchor.
+The **severed value loop** (value = frozen champion leaf, never the net) is the PRIMARY anti-collapse mechanism
+and is intact; the anchor is secondary belt-and-suspenders on the policy side. Watched via the per-iter collapse
+screen (rc=3 halts), the iter-6 gate, and iter-resumability — if drift shows, add the anchor back or abort cheap.
+
+## THE PLAN (steps 1 and 4 now run CONCURRENTLY — see WHAT'S RUNNING)
+1. **n=200 confirm** (laptop-only, running) → does +88.7 hold at equal sims for the deployable bs=16 agent?
 2. **E4 — the DEPLOYABILITY verdict (now the key experiment):** a net-sims ladder (344 / 688 / 1376,
    all bs=16) vs the FIXED 2752 champion. The champion at 2752 costs ~what the net costs at ~1376, so
    **if net-1376 still beats champion-2752, that's a real wall-clock win + a fast agent.** If it needs
