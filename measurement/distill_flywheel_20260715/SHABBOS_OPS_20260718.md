@@ -9,6 +9,53 @@ join laptop to the cluster. **Check in ~hourly** — last Shabbos a run crashed 
 session waited on a notification that never came; active periodic checks, not passive.
 (Xeon is RETIRED — do not use.)
 
+## FINAL SUMMARY (for Joshua, written 19:25 Sat 2026-07-18)
+
+**Bottom line: 16 iters trained (4-19, with it20 finishing ~20:30), zero downtime, and
+the flywheel is demonstrably WORKING — iter_16 decisively beats the rodv2 anchor
+(+88.7 elo, z=+3.65, first statistically decisive anchor win of the program).**
+
+**Iters:** original run iters 4-16 (13 iters) completed cleanly 14:10 Sat; C6
+continuation 17-20 launched immediately (iter_19.pt trained 19:15; it20 gen 2-box in
+progress, lands ~20:30). ~78 min/iter 2-box (~65 gen + ~13 train), zero crashes, zero
+manual heals needed (the driver's stall-healer never fired after Friday's iter_04).
+
+**Eval trend (n=200 paired each, vs rodv2_iter02 cross-rep 78/12, k2×200, laptop):**
+| ckpt | W-L-D | wr | elo | z |
+|---|---|---|---|---|
+| iter_07 | 103-93-4 | .525 | +17.4 | +0.7 (tie) |
+| iter_11 | 102-96-2 | .515 | +10.4 | +0.4 (tie) |
+| iter_16 | **123-73-4** | **.625** | **+88.7** | **+3.65 BREAKOUT** |
+
+Plus the stage-1 goal: **n=200 confirm = exact 100-100 tie** vs the fair production
+champion at full production budget (k4×688) — distillation faithful at prod depth.
+All rows in results.csv (exp_ids distill_s1_confirm_n200, eval_iter{07,11,16}_vs_rodv2iter02).
+
+**⚠️ One correction to know:** `won_by_champ` in the eval jsons means *the CANDIDATE
+won* (the harness calls the candidate side "champion"). My first it7/it11 tallies were
+inverted (reported −17/−10); caught via the avg_diff contradiction at it16, verified
+(diff>0 ⟺ won_by_champ, 0/312 disagreements), results.csv rows CORRECTED 15:15.
+
+**Infra built/proven this run:** 2-box shared-claim gen (laptop W8 orch on its 4070m,
+contributing 25-46% of games/iter, advancing per-iter via scripted orch+gen relaunch);
+laptop-side autonomous eval-swap runners (wait for ckpt → kill gen orch → run n=200
+eval → I harvest + rejoin gen); scoped-pkill fix (40a3acd) that makes the eval wrapper
+safe next to a live gen orch; the 78/12 farm-scalar opponent encoder (2903a6c,
+bit-exact parity-gated) that unlocked rodv2 as an anchor at all.
+
+**Incidents (all handled):** local concurrent eval ABANDONED after two distinct
+failures (unpinned-thread thrash load 70 → then silent mp-worker death even pinned)
+→ Plan-B laptop checkpoint evals worked flawlessly 3×; the won_by_champ inversion
+(above); I killed my own shell twice with unbracketed pgrep patterns (bracket-guard
+is now reflex). Xeon retired note + memory updates committed pre-Shabbos.
+
+**Suggested next steps (your call):** (1) n=400 low-sims confirm of the it16 breakout
+(±12 elo) + eval it19/it20; (2) washout check — re-eval it16 at HIGHER sims (the
+policy-gain washout memory says low-sims gains can vanish at depth; the breakout must
+be depth-checked before any promotion talk); (3) continuation beyond it20 if the trend
+holds. **PRODUCTION.yaml untouched** — champion promotion is entirely your decision.
+Branch rod_v2_flywheel, ~20 ops commits, NOT pushed.
+
 ## Live state at handoff (2026-07-17 19:20)
 
 - **Flywheel** (local): driver `run_distill_stage2.sh` pid 2010969, **iter_05 gen**
@@ -162,6 +209,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 19:25 | it19 trained → it20 opened, laptop ADVANCED (orch iter_19.ts READY 19:19, seed 702050000, 35 cached) — final iter 2-box | **FINAL SUMMARY written (top of this doc) + STATUS.md top block updated**. it20 lands ~20:30. Welcome back!
 - 2026-07-18 18:22 | it19 179/300 2-box (laptop 85), all healthy. Quiet wake; final summary next wake (~19:20).
 - 2026-07-18 17:39 | it19 opened → laptop ADVANCED (orch iter_18.ts READY 17:38, gen seed 701950000) — 2-box it19 | it19 done ~18:45 → it20 ~19:00; final summary at next wake.
 - 2026-07-18 17:20 | it18 273/300 2-box (laptop 125 = 46%!), healthy, disk 20G | it19 scripts prepped + watcher armed. Quiet wake; final summary at ~19:45.
