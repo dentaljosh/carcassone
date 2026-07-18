@@ -162,6 +162,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 18:22 | it19 179/300 2-box (laptop 85), all healthy. Quiet wake; final summary next wake (~19:20).
 - 2026-07-18 17:39 | it19 opened → laptop ADVANCED (orch iter_18.ts READY 17:38, gen seed 701950000) — 2-box it19 | it19 done ~18:45 → it20 ~19:00; final summary at next wake.
 - 2026-07-18 17:20 | it18 273/300 2-box (laptop 125 = 46%!), healthy, disk 20G | it19 scripts prepped + watcher armed. Quiet wake; final summary at ~19:45.
 - 2026-07-18 16:18 | **🎯 IT16 EVAL FINAL: BREAKOUT CONFIRMED — n=200, 123-73-4, wr 0.625, elo +88.7, z=+3.65, margin +4.09** (results row eval_iter16_vs_rodv2iter02). Trend: it7 +17 → it11 +10 → it16 +89 — first decisive anchor win; the flywheel is WORKING | it18 opened → laptop REJOINED (orch iter_17.ts READY 16:17, gen seed 701850000) — 2-box it18 | endgame: it19 ~17:40, it20.pt ~19:50-20:15, final summary at ~19:45 wake.
