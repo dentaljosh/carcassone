@@ -162,6 +162,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 10:25 | it14 92/300 2-box (laptop 49), healthy | it15 scripts + it16 eval runner prepped (greps verified), it15 watcher armed — at it15-open: advance laptop + deploy it16 runner. Quiet wake.
 - 2026-07-18 10:02 | it14 opened → laptop ADVANCED (orch iter_13.ts READY 10:01, gen W8 seed 701450000) — 2-box it14 | it15 ~11:15 (+it16 eval runner deploy), END=16 ~13:45.
 - 2026-07-18 09:25 | it13 198/300 2-box (laptop 92), healthy, disk 21G | it14 scripts prepped + watcher armed. Quiet wake.
 - 2026-07-18 08:40 | it13 opened → fairnvn cleaned + laptop REJOINED (orch iter_12.ts READY 08:38, gen W8 seed 701350000, RAM 7G) — 2-box it13 | plan: it14 ~09:50, it15 ~11:10 (+deploy it16 eval runner), END=16 ~13:45 → C6 continuation 17-20.
