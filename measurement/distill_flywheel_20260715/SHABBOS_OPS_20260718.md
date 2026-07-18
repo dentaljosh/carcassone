@@ -162,6 +162,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 07:25 | it12 solo 147/300 (~2.7/min, done ~08:15) | it11 eval 107/200 PARTIAL wr 0.481 — tracking a tie like it7 | trend so far: it3=champ-tie(prod), it7=rodv2-tie, it11 partial tie → flywheel HOLDS tier, not yet exceeding anchor at low sims | healthy (load 17, RAM 27G).
 - 2026-07-18 06:25 | it11 gen DONE 300/300 (06:07), train running → iter_11.pt ~06:20 → eval runner fires (within its 200min window, expires ~07:00 — fine) | watcher armed on first eval json | RAM 32G, healthy.
 - 2026-07-18 05:25 | it11 69/300 2-box (laptop 40 claims), driver healthy, load 16, RAM 27G, disk 21G. Quiet wake — eval fires ~06:20.
 - 2026-07-18 05:03 | it11 opened → laptop ADVANCED (orch iter_10.ts READY 05:02, gen W8 seed 701150000, RAM 7G) — 2-box it11 | it11 gen ETA ~06:05, iter_11.pt ~06:20 → eval runner fires (laptop), local solo-gens it12 | all healthy.
