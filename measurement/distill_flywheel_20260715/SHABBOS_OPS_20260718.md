@@ -72,15 +72,21 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
   reference_desktop_friendly_selfplay: BOTH env vars needed). Eval KILLED 19:57
   (clean: gen orch/driver intact, shm + 12 stale claims cleaned, 4 jsons kept for
   shared-claim resume).
-  **RETRY PLAN (one variable):** next attempt = same command but prefix env
-  `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1` and OW=4, launched at a TRAIN-phase start
-  (gen idle window). If load stays sane (<26) and games complete at a usable rate,
-  ratchet W and possibly allow gen-overlap per the original tree. If it's still
-  pathological, STOP local concurrent evals; plan B = run iter evals on the LAPTOP
-  (it demonstrably runs this harness at ~2.5 min/game aggregate on a HARDER config)
-  after its confirm — trade off vs the laptop-gen-join (decide at that wake; gen
-  throughput vs eval trend line, Joshua wanted both; laptop-evals + local-gen is the
-  cleaner split if concurrent-local stays broken).
+  **RETRY RESULT (21:07-21:55): FAILED DIFFERENTLY — LOCAL CONCURRENT EVAL IS DEAD.**
+  Pinned retry (OMP/MKL/OPENBLAS/NUMEXPR=1, OW=4) fixed the load thrash (10-16, sane)
+  but its 4 mp workers DIED silently (~resource_tracker "process died unexpectedly");
+  0 new games in 48 min, main at 0% CPU. Two distinct failure modes in two attempts →
+  per the flywheel-first rule, NO MORE local concurrent evals this run. Killed+cleaned
+  21:55 (note: my unbracketed pgrep killed my own shell twice — ALWAYS bracket).
+  **PLAN B (ACTIVE): LAPTOP CHECKPOINT EVALS.** The laptop runs this harness flawlessly
+  (whole n=200 confirm, zero incidents). At checkpoint iters (07, 11, 15/16): kill the
+  laptop GEN worker cleanly (by PID; clean laptop-host claims-without-npz in the live
+  iter), run the eval ON THE LAPTOP (same wrapper, laptop paths, OW~10-12, n=200
+  --paired, k2×200: est ~21s/game aggregate → n=200 ≈ 70-90 min ≈ one gen window),
+  then relaunch laptop gen on the then-live iter. Local box NEVER runs evals.
+  Eval cmd = the iter_NN template below but on laptop via 'bash -s' script, out-subdir
+  eval_iterNN_vs_rodv2iter02_lap, OPP ckpt path /mnt/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt.
+  (The 78/12 encoder fix 2903a6c is in the bundle synced to the laptop — required.)
 - **W ratchet (Joshua 19:35, pre-signoff):** if W8 = NO TANK, run the NEXT eval
   (iter_07) at OW=12-16 and re-measure the gen delta with the same sampler method;
   keep stepping W up per eval until gen notices, back off one step. Each scheduled
@@ -156,4 +162,5 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-17 21:55 | it5 trained 12.5min (21:02→21:15, w/ eval concurrent — train unaffected); it6 gen 100/300 healthy | pinned eval retry FAILED (workers died silently, 0 games/48min) → local concurrent eval ABANDONED (2 failure modes), killed+cleaned; PLAN B active: laptop checkpoint evals (~70-90min at k2×200 n=200) at iters 07/11/15, laptop gens otherwise | join agent kicked via message (its it6 poll never fired) — laptop gen launch in flight | load 15.5, RAM 25G, disk 22G. Next wake ~22:50.
 - 2026-07-17 21:10 | it5 292/300 (gen recovered 3.3/min post-kill; train imminent) | **LAPTOP CONFIRM DONE: n=200 TIE** — 100W/100L wr .5000 elo +0.0 avg_diff +1.87 (iter_03 net-priors vs fair champion, k4×688 single-var swap; distillation FAITHFUL at production depth; results.csv row distill_s1_confirm_n200) | pinned eval retry LAUNCHED (OMP/MKL/OPENBLAS/NUMEXPR=1, OW=4): resumed 7 games, load 10.4 — **thread-thrash CONFIRMED as the tank cause** (laptop manifest showed same harness healthy WITH pinning) | laptop-join subagent dispatched (bundle sync → wait iter_06 → orch W8 + gen launch). Next wake ~22:00.
