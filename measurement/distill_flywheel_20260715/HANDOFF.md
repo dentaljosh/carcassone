@@ -1,8 +1,27 @@
-# Distill-flywheel — LIVE HANDOFF (2026-07-17 12:00 EDT)
+# Distill-flywheel — LIVE HANDOFF (updated 2026-07-19 00:15 EDT)
 
 **The single authoritative state doc. Survives compaction — a fresh session picks up from here alone.**
 Design: `DESIGN.md` + `DESIGN_FAIR_ADDENDUM.md` (fair pivot). Perf: `PERF_ADVISORY.md`. Audits:
 `INPUT_EXPOSURE_HISTORY.md`, `PRIOR_TOP1_CALIBRATION.md`, `PRIOR_GEN_MODE_AUDIT.md`, `SIGHTED_SCOPE.md`.
+
+## ✅ RUN COMPLETE + GROWTH CONFIRMED (2026-07-18) — read this first; sections below it are history
+
+**The viability flywheel ran 17 iters (4-20) over the Shabbos autonomous window and answered BOTH goals:**
+- **Goal-1 (distillation faithful):** the n=200 paired confirm (laptop, k4×688 production budget) = **exact
+  100-100 TIE vs the fair champion** — the net's policy priors match the heuristic priors at prod depth
+  (results.csv `distill_s1_confirm_n200`). NOTE: this DOWNGRADES the +88.7/z=1.92 n=100 screen in THE
+  HEADLINE below — the screen regressed exactly as its t020-profile caveat warned. Faithful, not superior.
+- **Goal-2 (self-play grows): YES — the first growing flywheel in the project.** Anchor trend vs
+  rodv2_iter02 (n=200 paired, k2×200, deck-matched band 13.0e9): **it7 +17.4 (tie) → it11 +10.4 (tie) →
+  it16 +88.7, z=+3.65 BREAKOUT** (results.csv `eval_iter{07,11,16}_vs_rodv2iter02`).
+  ⚠️ Eval-json semantics: **`won_by_champ` = the CANDIDATE won** (verified vs diff signs, 0/312 disagree).
+- **In flight (2026-07-18 night):** retro/endpoint curve points **it09/it13/it14/it18/it20** (same band,
+  2-box work-steal chain) → 8-point growth curve; then the pre-registered branch (GO=continuation 21-28 if
+  deck-matched it16→it20 ≥ +1.5 pts/deck, else Plan-B prod-depth washout eval). Full narrative + CHECKLOG +
+  overnight plan: **`SHABBOS_OPS_20260718.md`**. Standing plan (grow-by-default · depth-verify · free
+  archaeology · ablate-on-stall · stage-3 value-unlock next): roadmap **E5** + memory
+  `project_flywheel_design_levers` (the 7 first-time recipe choices = candidate causal levers).
+- Champion / PRODUCTION.yaml UNTOUCHED. Branch `rod_v2_flywheel`, not pushed.
 
 ## 🎉 THE HEADLINE (with the honest caveat)
 **A distilled net BEAT the fair champion — +88.7 elo (61W/3D/36L, wr 0.625, n=100, paired z=1.92).**
@@ -18,7 +37,7 @@ move** (bs=16; was 12.67× at batch-1). On the CL-046 ladder, giving the champio
 SCREEN, not a verdict, and has the same statistical profile as t020 (+32/z1.68 → collapsed to +3.4 at
 n=800, CL-057, three days prior). **So: confirm + wall-clock test both needed before believing it.**
 
-## WHAT'S RUNNING NOW (17:25 — VIABILITY FLYWHEEL sims200 @ W20/f4, iters 4-16 — CONFIG SETTLED)
+## WHAT'S RUNNING NOW (⚠️ HISTORICAL 2026-07-17 17:25 — superseded by RUN COMPLETE above; config details still accurate)
 **Reframe (Joshua):** this flywheel is a **viability probe** — can self-play get the net IMPROVING at all, and
 does it PLATEAU early? NOT a max-strength run, so it's cut hard for speed. The earlier sims688 iter-4 was killed
 (0 games banked) after it was diagnosed as a ~6.7-DAY run (GPU-forward-bound — see LEVERS EXPLORED below).
