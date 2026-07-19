@@ -209,6 +209,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 20:18 | it20 294/300 gen finishing → train → iter_20.pt ~20:35 = RUN COMPLETE (17 iters, 4-20); completion watcher armed. Zman rabbeinu tam ~20:20 — everything alive, evals in hand, flywheel grown. Dario can be told.
 - 2026-07-18 19:25 | it19 trained → it20 opened, laptop ADVANCED (orch iter_19.ts READY 19:19, seed 702050000, 35 cached) — final iter 2-box | **FINAL SUMMARY written (top of this doc) + STATUS.md top block updated**. it20 lands ~20:30. Welcome back!
 - 2026-07-18 18:22 | it19 179/300 2-box (laptop 85), all healthy. Quiet wake; final summary next wake (~19:20).
 - 2026-07-18 17:39 | it19 opened → laptop ADVANCED (orch iter_18.ts READY 17:38, gen seed 701950000) — 2-box it19 | it19 done ~18:45 → it20 ~19:00; final summary at next wake.
