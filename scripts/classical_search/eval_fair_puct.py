@@ -200,6 +200,7 @@ from carcassonne_ai.fair_agent import (  # noqa: E402
     FairHeuristicPriorAgent,
     k_remaining,
 )
+from carcassonne_ai import champion_factory  # noqa: E402  (F1: single construction point)
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorAgent,
@@ -628,8 +629,12 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                         MUST already carry the curve125 candidate leaf.
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     if info == "fair":
-        prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
-                                         seed=seed, exact_endgame=False)
+        # F1: route through the champion factory (single construction point). Byte-
+        # identical to FairHeuristicPriorAgent(game, cfg, sims=..., k_dets=..., seed=...,
+        # exact_endgame=False) — build_fair_champion forwards these verbatim and leaves
+        # every other kwarg at the agent's own default (parity-gated, see F1 report).
+        prefix = champion_factory.build_fair_champion(
+            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False)
     elif info == "fair-netprior":
         if net is None and handles is None:
             raise ValueError(
@@ -657,11 +662,9 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                 cfg, net=net, handles=handles, sighted_game=sighted_game,
                 sighted=_sighted_arg)
             if batch_size > 1 else None)
-        prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
-                                         seed=seed, exact_endgame=False,
-                                         evaluator=evaluator,
-                                         batch_size=batch_size,
-                                         batch_evaluator=batch_evaluator)
+        prefix = champion_factory.build_fair_champion(
+            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
+            evaluator=evaluator, batch_size=batch_size, batch_evaluator=batch_evaluator)
     elif info == "fair-net":
         if net is None and handles is None:
             raise ValueError(
@@ -670,11 +673,12 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
         evaluator = _build_fairnet_evaluator(
             game, cfg, net_mode, net_lambda, net=net, handles=handles,
             sighted_game=sighted_game)
-        prefix = FairHeuristicPriorAgent(game, cfg, sims=sims, k_dets=k_dets,
-                                         seed=seed, exact_endgame=False,
-                                         evaluator=evaluator)
+        prefix = champion_factory.build_fair_champion(
+            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
+            evaluator=evaluator)
     else:  # clair
-        prefix = HeuristicPriorAgent(game, cfg, simulations=(sims * k_dets), seed=seed)
+        prefix = champion_factory.build_clairvoyant_champion(
+            game, cfg=cfg, simulations=(sims * k_dets), seed=seed)
     return _MarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
 
 
