@@ -446,5 +446,26 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     else:
         raise ValueError(f"mode must be 'fair'|'clairvoyant'; got {mode!r}")
 
+    # The manifest's fair_deploy block records the PRODUCTION.yaml INTENT (k4x688=2752).
+    # If sims/k_dets override it (a smoke), record the budget the agent ACTUALLY runs so
+    # the game log never misrepresents what played. resolved_manifest itself stays
+    # canonical/byte-stable (the override note is added only on the attached copy).
+    if mode == "fair":
+        es = spec.sims_per_det if sims is None else int(sims)
+        ek = spec.k_dets if k_dets is None else int(k_dets)
+        if (es, ek) != (spec.sims_per_det, spec.k_dets):
+            manifest = dict(manifest)
+            manifest["runtime_budget_override"] = {
+                "sims_per_det": es, "k_dets": ek, "total_sims": es * ek,
+                "note": "the budget the agent ACTUALLY runs; fair_deploy above is the "
+                        "PRODUCTION.yaml intent (k4x688=2752)."}
+    else:
+        total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
+        if total != spec.k_dets * spec.sims_per_det:
+            manifest = dict(manifest)
+            manifest["runtime_budget_override"] = {
+                "total_sims": total,
+                "note": "the budget the agent ACTUALLY runs; fair_deploy above is intent."}
+
     agent.manifest = manifest
     return agent

@@ -1,9 +1,19 @@
 """4.2 — Logged human-vs-agent play harness (production FAIR agent).
 
 A minimal, fully-logged interface for a human (or another agent) to play the
-DEPLOYABLE fair-play champion, FairHeuristicMCTSAgent — the audited-honest,
-non-clairvoyant PIMC + K<=2 marginalized-exact-endgame agent (Phase 0.1/0.4 are
-green, so the fair agent is audited honest: it never peeks at the real deck).
+DEPLOYABLE fair-play champion — the audited-honest, non-clairvoyant PIMC + K<=2
+marginalized-exact-endgame agent (Phase 0.1/0.4 are green, so the fair agent is
+audited honest: it never peeks at the real deck).
+
+⚠️ REWIRED 2026-07-19 (F1): the champion is now built by
+``carcassonne_ai.champion_factory.make_production_champion("fair")`` — the CURRENT
+champion, ``FairHeuristicPriorAgent`` (PUCT heuristic priors + curve125 leaf,
+c_puct=1.5/tau_p=5/float/visits, k4x688). It previously wired the PRE-FLIP
+``FairHeuristicMCTSAgent`` (random-expansion UCT + the old curve100 leaf), which the
+2026-07-07 champion flip and the 2026-07-13 curve125 adopt never propagated here — so
+this harness did NOT run the current champion (PRODUCTION.yaml stale_path_flag). The
+factory PROVES the leaf on real boards at construction and records a runtime manifest
+into every game log. E4 (the human exam) itself stays PARKED (Joshua).
 
 Enforces the locked 2p Base+Farmers ruleset (the wingedsheep engine already
 constrains this; we assert `state.players == 2`). No ELO math lives here — this
@@ -66,10 +76,18 @@ def _snapshot(agent) -> dict:
     return {k: getattr(agent, k, 0) for k in _COUNTERS} | {"latch_k": agent.latch_k}
 
 
-def _make_fair_agent(game, sims, k_dets, c_puct, seed, exact_endgame=True):
-    from carcassonne_ai.fair_agent import FairHeuristicMCTSAgent
-    return FairHeuristicMCTSAgent(game=game, sims=sims, k_dets=k_dets,
-                                  c_puct=c_puct, seed=seed, exact_endgame=exact_endgame)
+def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True):
+    """The PRODUCTION fair champion, built + runtime-verified by the champion factory
+    (F1, 2026-07-19). Rewired from the PRE-FLIP FairHeuristicMCTSAgent (random-expansion
+    UCT + old leaf) to the current champion: FairHeuristicPriorAgent (PUCT heuristic
+    priors, curve125 leaf, c_puct=1.5/tau_p=5/float/visits) via
+    champion_factory.make_production_champion, which reads governance/PRODUCTION.yaml and
+    PROVES the leaf on real boards at construction (raises on mismatch). The returned
+    agent carries a runtime manifest (`agent.manifest`) recorded into every game log.
+    c_puct is no longer a knob here — the champion's c_puct=1.5 is factory-owned."""
+    from carcassonne_ai.champion_factory import make_production_champion
+    return make_production_champion("fair", game=game, seed=seed, sims=sims,
+                                    k_dets=k_dets, exact_endgame=exact_endgame)
 
 
 class HumanCLIAgent:
@@ -164,6 +182,12 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
         "deck_seed": int(deck_seed),
         "deck_hash": dh,
         "agent_labels": agent_labels,
+        # F1: the runtime-verified champion factory manifest for every factory-built
+        # agent seat (curve125 leaf proven on real boards at construction).
+        "champion_manifests": {
+            str(seat): m for seat, a in agents.items()
+            if (m := getattr(a, "manifest", None)) is not None
+        },
         "config": config,
         "config_hash": C.sha256_of(config)[:16],
         "utc": _now_iso(),
@@ -206,18 +230,19 @@ def self_test() -> int:
     from carcassonne_ai.game_wrapper import Game
     game = Game(enable_legal_moves_cache=True)
     seed = 777_000_001
-    sims, k_dets, c = 48, 2, 3.0   # LIGHT smoke config (NOT production strength)
+    sims, k_dets = 48, 2   # LIGHT smoke config (NOT production strength)
     print(f"[1] one full fair-vs-fair game  seed={seed} sims={sims} k_dets={k_dets} ...")
     t0 = time.time()
 
     def ctor_a():
-        return _make_fair_agent(game, sims, k_dets, c, seed=101)
+        return _make_fair_agent(game, sims, k_dets, seed=101)
 
     def ctor_b():
-        return _make_fair_agent(game, sims, k_dets, c, seed=202)
+        return _make_fair_agent(game, sims, k_dets, seed=202)
 
-    config = {"sims": sims, "k_dets": k_dets, "c_puct": c, "exact_endgame": True,
-              "ruleset": "2p_base_farmers"}
+    config = {"sims": sims, "k_dets": k_dets,
+              "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
+              "exact_endgame": True, "ruleset": "2p_base_farmers"}
     out_dir = C.REPO_ROOT / "measurement/human_anchor/_selftest_games"
     recs = play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config,
                        out_dir=out_dir)
@@ -267,7 +292,10 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", type=int, default=None, help="deck seed (random if unset)")
     ap.add_argument("--sims", type=int, default=400)
     ap.add_argument("--k-dets", type=int, default=4)
-    ap.add_argument("--c-puct", type=float, default=3.0)
+    ap.add_argument("--c-puct", type=float, default=3.0,
+                    help="DEPRECATED / IGNORED (F1): the champion's exploration constant "
+                         "(c_puct=1.5) is owned by champion_factory/PRODUCTION.yaml, not this "
+                         "flag. Kept only so old invocations do not error.")
     ap.add_argument("--paired", action="store_true", help="play a seat-swapped rematch too")
     ap.add_argument("--out", type=Path, default=C.REPO_ROOT / "measurement/human_anchor/games")
     args = ap.parse_args(argv)
@@ -278,7 +306,8 @@ def main(argv=None) -> int:
     from carcassonne_ai.game_wrapper import Game
     game = Game(enable_legal_moves_cache=True)
     seed = args.seed if args.seed is not None else random.randint(1, 2_000_000_000)
-    config = {"sims": args.sims, "k_dets": args.k_dets, "c_puct": args.c_puct,
+    config = {"sims": args.sims, "k_dets": args.k_dets,
+              "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
               "exact_endgame": True, "ruleset": "2p_base_farmers"}
 
     if args.human is None:
@@ -286,10 +315,10 @@ def main(argv=None) -> int:
               f"(seed={seed}, sims={args.sims})")
 
         def ctor_a():
-            return _make_fair_agent(game, args.sims, args.k_dets, args.c_puct, seed=101)
+            return _make_fair_agent(game, args.sims, args.k_dets, seed=101)
 
         def ctor_b():
-            return _make_fair_agent(game, args.sims, args.k_dets, args.c_puct, seed=202)
+            return _make_fair_agent(game, args.sims, args.k_dets, seed=202)
 
         if args.paired:
             play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config, out_dir=args.out)
@@ -303,7 +332,7 @@ def main(argv=None) -> int:
     human_seat = args.human
     ai_seat = 1 - human_seat
     human = HumanCLIAgent(game)
-    ai = _make_fair_agent(game, args.sims, args.k_dets, args.c_puct, seed=303)
+    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303)
     agents = {human_seat: human, ai_seat: ai}
     labels = {human_seat: "human", ai_seat: f"fair@{args.sims}"}
     rec = play_game(game, seed, agents, labels, config)
