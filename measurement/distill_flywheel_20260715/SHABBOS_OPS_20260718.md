@@ -11,7 +11,7 @@ session waited on a notification that never came; active periodic checks, not pa
 
 ## FINAL SUMMARY (for Joshua, written 19:25 Sat 2026-07-18)
 
-**Bottom line: 16 iters trained (4-19, with it20 finishing ~20:30), zero downtime, and
+**Bottom line: 17 iters trained (4-20, COMPLETE 20:34), zero downtime, and
 the flywheel is demonstrably WORKING — iter_16 decisively beats the rodv2 anchor
 (+88.7 elo, z=+3.65, first statistically decisive anchor win of the program).**
 
@@ -209,6 +209,7 @@ next at **iter_07**, **iter_11**, **iter_15 or 16** (whichever exists when slot 
 
 - 2026-07-17 19:20 | it5 36/300 gen | laptop confirm ~127/200 | eval it3-vs-rodv2 W8 launched (concurrency test), samplers live, ops doc committed.
 - 2026-07-17 20:00 | it5 93/300 gen, driver+orch healthy | laptop not checked (next wake) | CONCURRENCY TEST: TANKED −52% at load 70/32 (thread-thrash suspected, no OMP pinning) + eval itself crawled 3/100 in 38m → eval KILLED clean 19:57, load draining 70→51, 4 jsons kept, 12 stale claims cleaned. Retry plan: OMP/MKL=1 + OW=4 at a train-phase start. Next wake ~21:00 (laptop confirm ETA + train-window watch).
+- 2026-07-18 20:36 | **🏁 RUN COMPLETE — iter_20.pt trained 20:34, continuation driver exited clean, local box quiesced (load 1.9, no orphans). FINAL TALLY: 17 iters trained (4-20) in ~25.5h, evals it7/it11/it16 done (BREAKOUT +88.7 at it16), zero lost work.** Boxes idle awaiting Joshua. it20-eval + n=400 confirm + washout check queued as suggestions (FINAL SUMMARY).
 - 2026-07-18 20:18 | it20 294/300 gen finishing → train → iter_20.pt ~20:35 = RUN COMPLETE (17 iters, 4-20); completion watcher armed. Zman rabbeinu tam ~20:20 — everything alive, evals in hand, flywheel grown. Dario can be told.
 - 2026-07-18 19:25 | it19 trained → it20 opened, laptop ADVANCED (orch iter_19.ts READY 19:19, seed 702050000, 35 cached) — final iter 2-box | **FINAL SUMMARY written (top of this doc) + STATUS.md top block updated**. it20 lands ~20:30. Welcome back!
 - 2026-07-18 18:22 | it19 179/300 2-box (laptop 85), all healthy. Quiet wake; final summary next wake (~19:20).
