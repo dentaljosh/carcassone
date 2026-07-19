@@ -46,6 +46,13 @@ OW=${OW:-4}                        # CPU workers = SHM slots per server. Keep lo
 FWD=${ORCH_FWD:-2}
 MB=${ORCH_MAX_BATCH:-16}
 HOST=${HOST:-$(hostname)}
+# OPP_SIMS (optional): ASYMMETRIC search budgets — the opponent runs at this per-det
+# sims while --sims (in "$@") stays the CANDIDATE budget (equal-WALL-CLOCK check).
+# Empty/unset => --opp-sims is NOT passed (symmetric, byte-unchanged). --sims itself
+# still comes through "$@" as before.
+OPP_SIMS=${OPP_SIMS:-}
+OPP_SIMS_ARGS=()
+[ -n "$OPP_SIMS" ] && OPP_SIMS_ARGS=(--opp-sims "$OPP_SIMS")
 SRV="$REPO/rust/carc-orch/run_server.sh"
 TS_C="/tmp/carc_fairnvnC_${HOST}.ts.pt"
 TS_O="/tmp/carc_fairnvnO_${HOST}.ts.pt"
@@ -140,11 +147,11 @@ if [ "$MODE" = net ]; then
     --info fair-netprior --net "$CAND_CKPT" \
     --opponent net --opp-net "$OPP_CKPT" \
     --orch-shm-name "$SHMN_C" --opp-orch-shm-name "$SHMN_O" \
-    --workers "$OW" "$@"
+    --workers "$OW" "${OPP_SIMS_ARGS[@]}" "$@"
 else
   nice -n 19 "$PY" -u scripts/classical_search/eval_fair_puct.py \
     --info fair-netprior --net "$CAND_CKPT" \
     --opponent fair-champion \
     --orch-shm-name "$SHMN_C" \
-    --workers "$OW" "$@"
+    --workers "$OW" "${OPP_SIMS_ARGS[@]}" "$@"
 fi

@@ -687,7 +687,7 @@ _HEAD_TO_HEAD = ("fair-champion", "net")
 
 def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                    opp_leaf_cfg=None, net=None, handles=None, sighted_game=None,
-                   rep=None):
+                   rep=None, opp_sims=None):
     """Build the OPPONENT side.
 
     opponent=="h800"          -> the fixed CL-022 rung: HeuristicMCTS @ rung_sims on
@@ -712,15 +712,27 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
     invocation is literally "vs the shipped champion"; `_prod_deviations` warns if a
     sweep moved them. `seed+1` mirrors the rung's historical seed offset, so the two
     sides never share a determinization stream.
+
+    `opp_sims` (--opp-sims) is the ONE deliberate exception to "same cfg both sides":
+    when set, the head-to-head opponent runs at that per-determinization sims budget
+    while the candidate keeps `sims`, so the match is an equal-WALL-CLOCK deployability
+    check rather than an equal-budget swap. None -> symmetric (uses `sims`).
     """
     if opponent == "h800":
+        # The h800 rung's budget is rung_sims; opp_sims is inapplicable here (and is
+        # rejected for --opponent h800 in main()), so `sims`/`opp_sims` are both ignored.
         return _RungPrefix(Game(enable_legal_moves_cache=True), rung_sims, seed + 1,
                            DEFAULT_CONFIG)
     if opponent not in _HEAD_TO_HEAD:
         raise ValueError(f"unknown opponent mode {opponent!r}")
     opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg)
     info = "fair" if opponent == "fair-champion" else "fair-netprior"
-    return _make_champion(info, opp_cfg, sims, k_dets, K, seed + 1,
+    # --opp-sims: the head-to-head opponent may run an ASYMMETRIC per-determinization
+    # budget (the equal-wall-clock deployability check: candidate at a reduced --sims vs
+    # the champion at full budget). None -> the shared `sims`, byte-identical to the
+    # symmetric head-to-head. The CANDIDATE keeps `sims` (see _play_one / _smoke).
+    _opp_sims = sims if opp_sims is None else opp_sims
+    return _make_champion(info, opp_cfg, _opp_sims, k_dets, K, seed + 1,
                           Game(enable_legal_moves_cache=True), net=net,
                           handles=handles, sighted_game=sighted_game, rep=rep)
 
@@ -732,12 +744,20 @@ PROD_KNOBS = {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
               "value_norm": 15.0, "k_dets": 4, "sims": 688}
 
 
-def _prod_deviations(args):
+def _prod_deviations(args, sims_override=None):
     """Which shared search knobs differ from governance/PRODUCTION.yaml. Empty list ==
-    the head-to-head opponent is literally the shipped champion config."""
+    the head-to-head opponent is literally the shipped champion config.
+
+    `sims_override` (the opponent's --opp-sims budget in an ASYMMETRIC run) substitutes
+    for the `sims` knob so the OPPONENT block reports ITS OWN deviation, not the
+    candidate's — with --opp-sims the two sides deliberately search different sims, so
+    the shared-knob framing no longer holds for that one axis. None (symmetric) ->
+    getattr(args, "sims"), byte-identical to the pre---opp-sims behavior."""
     out = []
     for k, want in PROD_KNOBS.items():
         got = getattr(args, k)
+        if k == "sims" and sims_override is not None:
+            got = sims_override
         if isinstance(want, float) and float(got) != want:
             out.append(f"{k}={got:g} (production {want:g})")
         elif not isinstance(want, float) and got != want:
@@ -745,17 +765,27 @@ def _prod_deviations(args):
     return out
 
 
+def _opp_eff_sims(args):
+    """The OPPONENT's per-determinization PUCT sims budget. Defaults to the shared
+    --sims (SYMMETRIC head-to-head, byte-identical to pre---opp-sims); --opp-sims
+    overrides it so the head-to-head opponent runs an ASYMMETRIC (equal-wall-clock)
+    budget while the candidate keeps --sims. The h800 rung is unaffected — its budget
+    is --rung-sims, and --opp-sims is rejected for --opponent h800."""
+    return args.opp_sims if args.opp_sims is not None else args.sims
+
+
 def _opp_label(args, opp_rep=None):
     """Human label for the opponent side (summary header + manifest)."""
     if args.opponent == "h800":
         return f"HeuristicMCTS(h{args.rung_sims})"
+    _oes = _opp_eff_sims(args)   # --opp-sims (asymmetric) or the shared --sims
     if args.opponent == "fair-champion":
         return (f"FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, "
-                f"curve125 leaf, k{args.k_dets}x{args.sims})")
+                f"curve125 leaf, k{args.k_dets}x{_oes})")
     rep = ("?" if opp_rep is None
            else ("sighted" if opp_rep["sighted"] else "non-sighted"))
     return (f"FAIR NET-PRIOR agent ({Path(args.opp_net).name}, {rep} rep, curve125 leaf, "
-            f"k{args.k_dets}x{args.sims})")
+            f"k{args.k_dets}x{_oes})")
 
 
 def _opp_stats(opp):
@@ -844,7 +874,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  shared_claim, claim_host, claim_stale, net_ckpt=None,
                  net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
-                 opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1):
+                 opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
+                 opp_sims=None):
     _W["info"] = info
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
@@ -867,6 +898,9 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["rep"] = rep
     # opponent side (--opponent; "h800" -> nothing to wire, the rung is net-free)
     _W["opponent"] = opponent
+    # --opp-sims: asymmetric per-det budget for the head-to-head opponent (None -> the
+    # shared `sims`, symmetric). h800 ignores it (its budget is rung_sims).
+    _W["opp_sims"] = opp_sims
     _W["opp_leaf_cfg"] = opp_leaf_cfg
     _W["opp_rep"] = opp_rep
     _W["opp_net"] = None
@@ -968,7 +1002,8 @@ def _play_one(args) -> GameResult | None:
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
         net=_W.get("opp_net"), handles=_W.get("opp_handles"),
-        sighted_game=_W.get("opp_sighted_game"), rep=_W.get("opp_rep"))
+        sighted_game=_W.get("opp_sighted_game"), rep=_W.get("opp_rep"),
+        opp_sims=_W.get("opp_sims"))
 
     t0 = time.perf_counter()
     moves = 0
@@ -1188,7 +1223,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
-            sighted_game=smoke_opp_game, rep=opp_rep)
+            sighted_game=smoke_opp_game, rep=opp_rep, opp_sims=args.opp_sims)
         moves = 0
         rung_moves = 0
         rung_secs = 0.0
@@ -1314,6 +1349,14 @@ def main(argv=None) -> int:
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
     ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC); deploy default k4 (CL-054, 2026-07-13; was 8)")
     ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization (k4×688=2752 total; was 344 at k8)")
+    ap.add_argument("--opp-sims", type=int, default=None,
+                    help="ASYMMETRIC search budgets: the head-to-head opponent "
+                         "(--opponent fair-champion / net) runs at THIS per-determinization "
+                         "sims budget while the CANDIDATE keeps --sims — the equal-WALL-CLOCK "
+                         "deployability check (e.g. candidate k4x154 vs fair-champion k4x688). "
+                         "Default None = the opponent uses the shared --sims (SYMMETRIC head-to-"
+                         "head, byte-identical to today). Inapplicable to --opponent h800 (its "
+                         "budget is --rung-sims) and rejected there.")
     ap.add_argument("--batch-size", type=int, default=1,
                     help="fair-netprior CANDIDATE within-search leaf batching (LATENCY fix, "
                          "2026-07-16): >1 collects this many leaves under virtual loss -> ONE orch "
@@ -1380,6 +1423,15 @@ def main(argv=None) -> int:
         ap.error("--orch-shm-name only applies to --info fair-net / fair-netprior")
 
     # ---- opponent-mode validation -------------------------------------------------
+    if args.opp_sims is not None:
+        if args.opp_sims < 1:
+            ap.error("--opp-sims must be >= 1")
+        if args.opponent == "h800":
+            # h800 already owns a budget flag (--rung-sims); silently swallowing
+            # --opp-sims there would mislead. Fail loud (fail-loudly).
+            ap.error("--opp-sims applies to a head-to-head opponent "
+                     "(--opponent fair-champion / net); the h800 rung's budget is "
+                     "--rung-sims. Use --rung-sims for the h800 rung.")
     if args.opponent == "net" and not args.opp_net:
         ap.error("--opponent net requires --opp-net <checkpoint>")
     if args.opp_net and args.opponent != "net":
@@ -1507,13 +1559,29 @@ def main(argv=None) -> int:
     # a sweep has moved them off production (the opponent tracks them either way — the
     # A/B stays valid, but it is no longer "vs the shipped champion").
     if args.opponent in _HEAD_TO_HEAD:
-        _off = _prod_deviations(args)
+        _oes = _opp_eff_sims(args)
+        _asym = args.opp_sims is not None and args.opp_sims != args.sims
+        if _asym:
+            # The two sides deliberately search DIFFERENT sims (equal-wall-clock check),
+            # so it is NOT the single-variable prior swap the symmetric head-to-head is.
+            print(f"[warn] --opp-sims: ASYMMETRIC search budgets — candidate "
+                  f"k{args.k_dets}x{args.sims} (total {args.k_dets * args.sims}) vs "
+                  f"opponent {args.opponent} k{args.k_dets}x{_oes} (total "
+                  f"{args.k_dets * _oes}). This is an equal-WALL-CLOCK deployability "
+                  "check, NOT the single-variable prior swap the symmetric head-to-head "
+                  "is: the two sides search different sims budgets. diff/elo stay "
+                  "candidate-minus-opponent.", file=sys.stderr)
+        # The OPPONENT's deviation from the shipped champion uses ITS sims budget
+        # (--opp-sims when asymmetric; the shared --sims otherwise).
+        _off = _prod_deviations(args, sims_override=_oes)
         if _off:
-            print("[warn] --opponent " + args.opponent + ": the shared search config "
+            _swap = ("the opponent's sims is set per-side via --opp-sims; the other "
+                     "shared knobs still apply to both sides" if _asym else
+                     "BOTH sides use these values, so the swap stays single-variable")
+            print("[warn] --opponent " + args.opponent + ": the search config "
                   "deviates from governance/PRODUCTION.yaml (" + "; ".join(_off) + "). "
-                  "BOTH sides use these values, so the swap stays single-variable, but "
-                  "the opponent is NOT the shipped production champion — do not report "
-                  "this cell as 'vs production'.", file=sys.stderr)
+                  + _swap + ", but the opponent is NOT the shipped production champion "
+                  "— do not report this cell as 'vs production'.", file=sys.stderr)
 
     if args.smoke:
         if args.orch_shm_name or args.opp_orch_shm_name:
@@ -1603,6 +1671,10 @@ def main(argv=None) -> int:
         "clair": "HeuristicPriorAgent (clairvoyant)",
     }
     _NP = args.info == "fair-netprior"
+    # The OPPONENT's per-det sims budget (--opp-sims when asymmetric, else the shared
+    # --sims). Byte-identical to args.sims when --opp-sims is unset, so an unset run's
+    # manifest is unchanged in every opponent field.
+    opp_eff_sims = _opp_eff_sims(args)
     man_cfg = {
         "info": args.info,
         "champion": {"agent": _AGENT_NAME[args.info],
@@ -1658,6 +1730,9 @@ def main(argv=None) -> int:
         # default so every existing manifest reader keeps working; in a head-to-head it
         # is null (there IS no rung) and `opponent` carries the full second-side record.
         "opponent_mode": args.opponent,
+        # --opp-sims: the opponent's ASYMMETRIC per-det budget. None (absent-semantics)
+        # when unset -> the opponent used the shared --sims (symmetric head-to-head).
+        "opp_sims": args.opp_sims,
         "opponent": {
             "mode": args.opponent,
             "label": opp_label,
@@ -1691,8 +1766,10 @@ def main(argv=None) -> int:
             "c": (RUNG_C if args.opponent == "h800" else None),
             "sims": (args.rung_sims if args.opponent == "h800" else None),
             "k_dets": (None if args.opponent == "h800" else args.k_dets),
-            "sims_per_det": (None if args.opponent == "h800" else args.sims),
-            "total_sims": (None if args.opponent == "h800" else args.k_dets * args.sims),
+            # the OPPONENT's per-det budget: --opp-sims when asymmetric, else the shared
+            # --sims (== args.sims, byte-identical to today when --opp-sims is unset).
+            "sims_per_det": (None if args.opponent == "h800" else opp_eff_sims),
+            "total_sims": (None if args.opponent == "h800" else args.k_dets * opp_eff_sims),
             "endgame": (None if args.opponent == "h800"
                         else {"mode": "marginalized", "exact_k": args.exact_k,
                               "exact_budget": EXACT_BUDGET}),
@@ -1706,7 +1783,7 @@ def main(argv=None) -> int:
                          else _leaf_dict(opp_leaf_cfg)),
             "curve125_leaf_provenance": opp_leaf_prov,
             "champ_cfg": (None if args.opponent == "h800" else champ_cfg_dict),
-            "production_config_deviations": (_prod_deviations(args)
+            "production_config_deviations": (_prod_deviations(args, sims_override=opp_eff_sims)
                                              if args.opponent in _HEAD_TO_HEAD else None),
             "provenance": ("CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"
                            if args.opponent == "h800"
@@ -1803,7 +1880,8 @@ def main(argv=None) -> int:
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
                           (args.orch_shm_name or ""), _id_q, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep,
-                          (args.opp_orch_shm_name or ""), args.batch_size))
+                          (args.opp_orch_shm_name or ""), args.batch_size,
+                          args.opp_sims))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -1812,7 +1890,7 @@ def main(argv=None) -> int:
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
                           "", None, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, "",
-                          args.batch_size))
+                          args.batch_size, args.opp_sims))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
