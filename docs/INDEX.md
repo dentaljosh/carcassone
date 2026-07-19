@@ -8,6 +8,8 @@
 ## Current program & live reference
 | Doc | Role | Status |
 |---|---|---|
+| [reviews/INTEGRATED_REVIEW_20260719.md](reviews/INTEGRATED_REVIEW_20260719.md) | **The integrated external review (2 independent reviewers, merged; verbatim)** — verdict audit of the whole program, 5 decision probes, stop rules, superhuman protocol | received 2026-07-19; response → adoption doc |
+| [reviews/REVIEW_ADOPTION_20260719.md](reviews/REVIEW_ADOPTION_20260719.md) | **The adopted response** — disposition of every rec (adopted queue F0-F5 / policies / deferred / declined), corrections to the review's factual base | **ADOPTED 2026-07-19 (the live queue = roadmap Track F)** |
 | [POST_REVIEW_PLAN.md](POST_REVIEW_PLAN.md) | **The live program (2026-07-01)** — reconciles the fresh-look review (F1–F10) with live state: solver-scored gates (F4), S1/S2 ship, M1/M2/M3 reopeners | **S1 FLIPPED · S2 CLOSED · M1 KILL · M3 FIRES (FPU axis closed); M2 loop RUNNING** |
 | [AZ_VALUE_ROUTE_AUTOPSY_2026-07-01.md](AZ_VALUE_ROUTE_AUTOPSY_2026-07-01.md) | The program-level autopsy of the learned-value route — earned vs pending; the route-closure is a **REOPENING, not a death** (M1 KILL + M3 FIRE refuted Gate-B as a law) | DRAFT — §7 REOPENING (CL-042; do NOT finalize until M2) |
 | [../measurement/canonical_az/M2_PLAN.md](../measurement/canonical_az/M2_PLAN.md) | **M2 runbook** — the never-run canonical-AZ cell (sighted rep × pooled value head × `score_diff_wide` × FPU=0.6 × `--leaf-eval nn`), solver-scored; read-out pre-registered (eval iters 1/3/5) | LOOP RUNNING (contributes to CL-042) |
