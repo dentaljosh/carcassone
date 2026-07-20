@@ -613,8 +613,14 @@ def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
 
 def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
-                   sighted_game=None, rep=None, batch_size=1):
+                   sighted_game=None, rep=None, batch_size=1,
+                   oracle_prior_mult=None, oracle_prior_eps_coef=1e-3):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
+
+    ``oracle_prior_mult`` (Track-F Gate A, CANDIDATE side only; None = OFF) engages the
+    per-world oracle-prior probe on the ``fair`` arm — see FairHeuristicPriorAgent. It is
+    passed ONLY by the candidate call sites (_play_one / _smoke); _make_opponent never
+    forwards it, so the opponent side is never oracle-armed.
 
     info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
                         the _MarginalizedHandoff owns the endgame so both arms share it).
@@ -633,8 +639,13 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
         # identical to FairHeuristicPriorAgent(game, cfg, sims=..., k_dets=..., seed=...,
         # exact_endgame=False) — build_fair_champion forwards these verbatim and leaves
         # every other kwarg at the agent's own default (parity-gated, see F1 report).
+        # Track-F Gate A oracle-prior overlay (CANDIDATE only; None = OFF = byte-identical).
+        _oracle_kw = ({} if oracle_prior_mult is None
+                      else dict(oracle_prior_mult=int(oracle_prior_mult),
+                                oracle_prior_eps_coef=float(oracle_prior_eps_coef)))
         prefix = champion_factory.build_fair_champion(
-            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False)
+            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
+            **_oracle_kw)
     elif info == "fair-netprior":
         if net is None and handles is None:
             raise ValueError(
@@ -806,6 +817,23 @@ def _opp_stats(opp):
     }
 
 
+def _oracle_telemetry(agent) -> dict:
+    """Per-game Track-F Gate A oracle cost telemetry read off the CANDIDATE's
+    FairHeuristicPriorAgent (empty {} for any non-oracle candidate, so the GameResult
+    keeps the default zeros and _save omits them). ``agent`` is the fair PIMC agent
+    behind the candidate's _MarginalizedHandoff (its ``._prefix``)."""
+    if agent is None or getattr(agent, "oracle_prior_mult", None) is None:
+        return {}
+    return {
+        "oracle_prior_moves": int(agent.oracle_moves),
+        "oracle_presearch_worlds": int(agent.oracle_presearch_worlds),
+        "oracle_presearch_secs": round(float(agent.oracle_presearch_secs), 3),
+        "oracle_mainsearch_secs": round(float(agent.oracle_mainsearch_secs), 3),
+        "oracle_presearch_leaf_calls": int(agent.oracle_presearch_leaf_calls),
+        "oracle_mainsearch_leaf_calls": int(agent.oracle_mainsearch_leaf_calls),
+    }
+
+
 # _leaf_hash / _leaf_dict / _load_cand_leaf_cfg / _assert_cy_float_path are imported
 # from the shared c5_leaf_override module (above) — identical to eval_puct_priors.py.
 
@@ -849,6 +877,25 @@ class GameResult:
     opp_solver_secs: float = 0.0
     opp_timeouts: int = 0
     opp_latch_k: int | None = None
+    # Track-F Gate A oracle-prior per-game cost telemetry (CANDIDATE side; 0 unless the
+    # candidate is oracle-armed). OMITTED from the serialized JSON for non-oracle cells
+    # (see _save) so every legacy cell stays byte-identical to today's schema.
+    oracle_prior_moves: int = 0
+    oracle_presearch_worlds: int = 0
+    oracle_presearch_secs: float = 0.0
+    oracle_mainsearch_secs: float = 0.0
+    oracle_presearch_leaf_calls: int = 0
+    oracle_mainsearch_leaf_calls: int = 0
+
+
+# Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game JSON for
+# non-oracle cells (all zero there) so every legacy/non-oracle cell stays byte-identical
+# to today's schema. _try_load re-fills them from the dataclass defaults, so a reload is
+# lossless either way.
+_ORACLE_RESULT_FIELDS = (
+    "oracle_prior_moves", "oracle_presearch_worlds", "oracle_presearch_secs",
+    "oracle_mainsearch_secs", "oracle_presearch_leaf_calls", "oracle_mainsearch_leaf_calls",
+)
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -866,8 +913,12 @@ def _try_load(p: Path):
 
 def _save(p: Path, r: GameResult):
     p.parent.mkdir(parents=True, exist_ok=True)
+    d = asdict(r)
+    if not d.get("oracle_prior_moves"):   # non-oracle cell -> omit oracle keys (schema-identical)
+        for k in _ORACLE_RESULT_FIELDS:
+            d.pop(k, None)
     tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
-    json.dump(asdict(r), open(tmp, "w"))
+    json.dump(d, open(tmp, "w"))
     tmp.replace(p)
 
 
@@ -879,10 +930,13 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  net_mode="residual", net_lambda=0.25, orch_shm_name="", id_q=None,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
-                 opp_sims=None):
+                 opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3):
     _W["info"] = info
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
+    # Track-F Gate A oracle-prior probe (CANDIDATE side; None = OFF).
+    _W["oracle_prior_mult"] = oracle_prior_mult
+    _W["oracle_prior_eps_coef"] = oracle_prior_eps_coef
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
     # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
@@ -1001,7 +1055,9 @@ def _play_one(args) -> GameResult | None:
                            net=_W.get("net"), net_mode=_W["net_mode"],
                            net_lambda=_W["net_lambda"], handles=_W.get("handles"),
                            sighted_game=_W.get("sighted_game"), rep=_W.get("rep"),
-                           batch_size=_W.get("batch_size", 1))
+                           batch_size=_W.get("batch_size", 1),
+                           oracle_prior_mult=_W.get("oracle_prior_mult"),
+                           oracle_prior_eps_coef=_W.get("oracle_prior_eps_coef", 1e-3))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -1040,6 +1096,9 @@ def _play_one(args) -> GameResult | None:
         rung_moves=rung_moves, rung_secs=round(rung_secs, 3),
         latch_k=champ.latch_k,
         opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
+        # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
+        # so the fields stay at their dataclass-default zeros and _save omits them).
+        **_oracle_telemetry(getattr(champ, "_prefix", None)),
     )
     _save(p, r)
     return r
@@ -1118,6 +1177,34 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
               f"timeouts={sum(r.opp_timeouts for r in results)}")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
+    # Track-F Gate A oracle-prior cost aggregation (per-world pre-search vs main-search
+    # cost — mirrors the clairvoyant harness: pre/main ms/move + leaf ratio). Empty for
+    # non-oracle cells, so an OFF summary is byte-identical.
+    oracle_summary = {}
+    oracle_games = [r for r in results if getattr(r, "oracle_prior_moves", 0) > 0]
+    if oracle_games:
+        om = sum(r.oracle_prior_moves for r in oracle_games)
+        ow = sum(getattr(r, "oracle_presearch_worlds", 0) for r in oracle_games)
+        pre_s = sum(r.oracle_presearch_secs for r in oracle_games)
+        main_s = sum(r.oracle_mainsearch_secs for r in oracle_games)
+        pre_lc = sum(r.oracle_presearch_leaf_calls for r in oracle_games)
+        main_lc = sum(r.oracle_mainsearch_leaf_calls for r in oracle_games)
+        oracle_summary = {
+            "oracle_games": len(oracle_games),
+            "oracle_prior_moves": om,
+            "oracle_presearch_worlds": ow,
+            "oracle_presearch_ms_per_move": (pre_s / max(1, om)) * 1e3,
+            "oracle_mainsearch_ms_per_move": (main_s / max(1, om)) * 1e3,
+            "oracle_total_ms_per_move": ((pre_s + main_s) / max(1, om)) * 1e3,
+            "oracle_leaf_ratio": pre_lc / max(1, main_lc),
+            "oracle_cost_multiple": (pre_s + main_s) / max(1e-9, main_s),
+        }
+        print(f"oracle-prior: {len(oracle_games)} games — {ow} per-world pre-searches — pre "
+              f"{oracle_summary['oracle_presearch_ms_per_move']:.0f} + main "
+              f"{oracle_summary['oracle_mainsearch_ms_per_move']:.0f} ms/move "
+              f"(total {oracle_summary['oracle_total_ms_per_move']:.0f}, "
+              f"{oracle_summary['oracle_cost_multiple']:.2f}x main-only; "
+              f"leaf ratio {oracle_summary['oracle_leaf_ratio']:.2f}x)")
     return {
         "info": info, "exact_k": exact_k, "k_dets": k_dets, "sims": sims,
         "total_sims": k_dets * sims, "rung_sims": rung_sims,
@@ -1131,6 +1218,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         "champ_prefix_ms_per_move": champ_ms, "rung_ms_per_move": rung_ms,
         "champ_latched_games": champ_latched, "solver_secs_per_game": solver_pergame,
         "champ_timeouts": sum(r.champ_timeouts for r in results),
+        **oracle_summary,
     }
 
 
@@ -1223,7 +1311,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                seed, Game(enable_legal_moves_cache=True), net=smoke_net,
                                net_mode=args.net_mode, net_lambda=args.net_lambda,
                                sighted_game=smoke_sighted_game, rep=rep,
-                               batch_size=args.batch_size)
+                               batch_size=args.batch_size,
+                               oracle_prior_mult=args.oracle_prior_mult,
+                               oracle_prior_eps_coef=args.oracle_prior_eps_coef)
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -1268,6 +1358,25 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
             assert champ.exact_moves > 0, \
                 "champion never reached the fair exact endgame (K too small / rung got all the endgames?)"
         assert champ.prefix_moves > 0, "prefix search never ran (K too big?)"
+        if args.oracle_prior_mult is not None:
+            op = getattr(champ, "_prefix", None)   # the FairHeuristicPriorAgent
+            assert op is not None and op.oracle_prior_mult is not None, \
+                "oracle candidate did not build an oracle-armed fair agent"
+            assert op.oracle_moves > 0, "oracle candidate never ran a per-world pre-search"
+            # THE per-world contract: one pre-search per determinization world per move.
+            assert op.oracle_presearch_worlds == op.oracle_moves * args.k_dets, \
+                (f"pre-search must run once PER WORLD per oracle move: worlds="
+                 f"{op.oracle_presearch_worlds} != moves*k_dets="
+                 f"{op.oracle_moves * args.k_dets}")
+            assert op.last_reached_root, "oracle prior distribution never reached a world root"
+            assert op.oracle_presearch_leaf_calls > op.oracle_mainsearch_leaf_calls, \
+                "pre-search must run MORE leaf calls than the main search (mult>1)"
+            print(f"[smoke]   oracle-prior mult={args.oracle_prior_mult} (per-world): "
+                  f"moves={op.oracle_moves} worlds={op.oracle_presearch_worlds} "
+                  f"pre={op.oracle_presearch_secs:.2f}s/{op.oracle_presearch_leaf_calls}leaves "
+                  f"main={op.oracle_mainsearch_secs:.2f}s/{op.oracle_mainsearch_leaf_calls}leaves "
+                  f"(leaf ratio {op.oracle_presearch_leaf_calls/max(1,op.oracle_mainsearch_leaf_calls):.2f}x, "
+                  f"cost {(op.oracle_presearch_secs+op.oracle_mainsearch_secs)/max(1e-9,op.oracle_mainsearch_secs):.2f}x)")
         if args.opponent in _HEAD_TO_HEAD:
             # a head-to-head opponent is a production agent too: it must actually be
             # searching AND taking the same marginalized endgame handoff.
@@ -1369,6 +1478,24 @@ def main(argv=None) -> int:
                          "vloss CHANGES the search, so a batched run is a DIFFERENT — faster — agent). "
                          "ONLY the net-prior candidate batches; the fair-champion opponent stays serial. "
                          "SHM caps a request at MAX_K=8, so >8 chunks into ceil(N/8) round-trips.")
+    ap.add_argument("--oracle-prior-mult", type=int, default=None,
+                    help="Track-F Gate A oracle-prior CONFIRM (CANDIDATE side, --info fair only). "
+                         "When set to N (>=2), the fair PIMC candidate runs a PER-WORLD pre-search: "
+                         "for EACH of the k_dets determinizations, a fresh champion search at "
+                         "N x --sims runs FIRST on that world's reshuffled deck, its root VISIT "
+                         "distribution is converted to a prior (same alias-fold + eps-floor as the "
+                         "clairvoyant screen), and that world's normal --sims search runs with the "
+                         "ROOT priors REPLACED by it (deeper node priors stay the heuristic "
+                         "evaluator's). Pooled-Q across worlds is UNCHANGED. The pre-search tree is "
+                         "NOT reused into the main search (isolates priors from depth). Default None "
+                         "= OFF = byte-identical to the plain fair champion. MUTUALLY EXCLUSIVE with "
+                         "a net candidate (--info fair-net/fair-netprior / --net): oracle priors "
+                         "REPLACE the prior source. Requires --batch-size 1.")
+    ap.add_argument("--oracle-prior-eps-coef", type=float, default=1e-3,
+                    help="epsilon-floor coefficient for --oracle-prior-mult: each world's per-group "
+                         "prior is floored at eps = coef / n_groups (keeps PUCT exploration of "
+                         "pre-search-unvisited moves alive), then renormalized. Default 1e-3. "
+                         "Ignored unless --oracle-prior-mult is set.")
     ap.add_argument("--rung-sims", type=int, default=800, help="fixed HeuristicMCTS rung sims (CL-022=800)")
     # champion knobs (governance/PRODUCTION.yaml defaults)
     ap.add_argument("--c-puct", type=float, default=1.5)
@@ -1425,6 +1552,26 @@ def main(argv=None) -> int:
 
     if args.orch_shm_name and args.info not in ("fair-net", "fair-netprior"):
         ap.error("--orch-shm-name only applies to --info fair-net / fair-netprior")
+
+    # ---- Track-F Gate A oracle-prior validation (CANDIDATE side, --info fair only) ----
+    if args.oracle_prior_mult is not None:
+        if args.info != "fair":
+            # The oracle prior REPLACES the candidate's prior source; the net arms already
+            # own the prior (fair-netprior) or the value (fair-net). Reject rather than
+            # silently ignore the flag or double-source the priors.
+            ap.error("--oracle-prior-mult requires --info fair (the heuristic-prior "
+                     f"candidate); it is mutually exclusive with --info {args.info} — the "
+                     "oracle prior REPLACES the prior source, incompatible with the "
+                     "net-value/net-prior arms.")
+        if args.net is not None:
+            ap.error("--oracle-prior-mult is mutually exclusive with --net (a net "
+                     "candidate): the oracle prior REPLACES the prior source. Drop one.")
+        if args.oracle_prior_mult < 2:
+            ap.error("--oracle-prior-mult must be >= 2 (a pre-search LARGER than production)")
+        # NB: --batch-size>1 is already rejected for --info fair by the batch gate above
+        # (batching only applies to fair-netprior), so oracle (which requires --info fair)
+        # can never reach batching via the CLI; the agent still hard-rejects the combo if
+        # constructed directly (FairHeuristicPriorAgent oracle_prior_mult + batch_size>1).
 
     # ---- opponent-mode validation -------------------------------------------------
     if args.opp_sims is not None:
@@ -1630,8 +1777,12 @@ def main(argv=None) -> int:
         _vs = "vs_fairchamp"
     else:
         _vs = f"vs_net-{Path(args.opp_net).stem}"
+    # Track-F Gate A oracle-prior suffix rides on the CANDIDATE segment ONLY (before the
+    # `_vs_<opponent>` identity), so an oracle cell never shares an out-dir with the plain
+    # candidate and the OPPONENT label (_opp_label / opponent manifest block) stays clean.
+    _cand_oracle = "" if args.oracle_prior_mult is None else f"-oracle{args.oracle_prior_mult}"
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
-           f"_kd{args.k_dets}_s{args.sims}_{_vs}_k{args.exact_k}")
+           f"_kd{args.k_dets}_s{args.sims}{_cand_oracle}_{_vs}_k{args.exact_k}")
     if cand_leaf_cfg is not None:
         # a leaf A/B: keep the auto tag / default out-dir distinct per candidate leaf
         # so cells never silently share a directory (Trap 1). An explicit --out-subdir
@@ -1837,6 +1988,29 @@ def main(argv=None) -> int:
                                   "k_dets root expansions add a little fixed overhead)"),
         "env": {k: os.environ.get(k) for k in _CANON_ENV},
     }
+    # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON (CANDIDATE
+    # side), so a plain (OFF) manifest stays byte-identical to the pre-change output. Top-
+    # level scalar + a config block; the block is also stamped into the champion (candidate)
+    # sub-manifest. The OPPONENT block is untouched (candidate-only, per _opp_label).
+    if args.oracle_prior_mult is not None:
+        oracle_block = {
+            "oracle_prior_mult": args.oracle_prior_mult,
+            "presearch_sims_per_det": args.sims * args.oracle_prior_mult,
+            "main_sims_per_det": args.sims,
+            "k_dets": args.k_dets,
+            "eps_coef": args.oracle_prior_eps_coef,
+            "scope": ("ROOT priors only (deeper node priors = heuristic evaluator); PER-WORLD "
+                      "pre-search on EACH determinization's reshuffled deck; the pre-search "
+                      "tree is NOT reused into that world's main search; pooled-Q across "
+                      "worlds is UNCHANGED"),
+            "applies_to": "candidate",
+            "per_world": True,
+        }
+        man_cfg["oracle_prior_mult"] = args.oracle_prior_mult
+        man_cfg["oracle_prior"] = oracle_block
+        man_cfg["champion"]["oracle_prior"] = oracle_block
+        man_cfg["champion"]["priors_source"] = (
+            "heuristic_softmax_dleaf_tau + per-world oracle ROOT-prior override (Gate A)")
     write_manifest(out, kind="eval_fair_puct", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
 
@@ -1885,7 +2059,8 @@ def main(argv=None) -> int:
                           (args.orch_shm_name or ""), _id_q, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep,
                           (args.opp_orch_shm_name or ""), args.batch_size,
-                          args.opp_sims))
+                          args.opp_sims, args.oracle_prior_mult,
+                          args.oracle_prior_eps_coef))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -1894,7 +2069,8 @@ def main(argv=None) -> int:
                           args.claim_stale_secs, args.net, args.net_mode, args.net_lambda,
                           "", None, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, "",
-                          args.batch_size, args.opp_sims))
+                          args.batch_size, args.opp_sims, args.oracle_prior_mult,
+                          args.oracle_prior_eps_coef))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
