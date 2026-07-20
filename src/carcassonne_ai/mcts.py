@@ -530,6 +530,15 @@ class NeuralMCTS:
         # every search call. clear() resets this so a fresh tree starts noisy
         # again at its root.
         self._noisy_roots: set[str] = set()
+        # Optional ONE-SHOT root-prior override (Track-F Gate A oracle-prior probe,
+        # 2026-07-19). When set to a {legal_action: prior} dict via
+        # ``set_root_prior_override``, the NEXT ``search`` replaces the freshly
+        # expanded root's per-action priors with it (deeper expansions untouched),
+        # then clears the override so it never leaks to a later move. Default None
+        # → the attribute is inert and every existing caller is byte-for-byte
+        # unchanged (a single ``is not None`` check per search). See
+        # scripts/classical_search/eval_puct_priors.py --oracle-prior-mult.
+        self._root_prior_override: dict[int, float] | None = None
 
     def _reshuffled_root(self, board: Board) -> Board:
         """Return a copy of `board` whose UNSEEN deck is re-shuffled (contents
@@ -573,6 +582,14 @@ class NeuralMCTS:
             self._expand_with_priors(
                 root, root_board, priors_b[0], float(values_b[0])
             )
+        # ONE-SHOT root-prior override (Gate A oracle-prior probe): replace the
+        # freshly-expanded root's per-action priors with the caller-supplied
+        # distribution, then consume it so it can never leak into a later move's
+        # search. Applied AFTER expansion (so root.valid_actions exists) and
+        # BEFORE any simulation, on the root ONLY — deeper node expansions keep the
+        # normal evaluator priors. Inert (skipped) unless a caller set it.
+        if self._root_prior_override is not None and root.expanded and not root.is_terminal:
+            self._apply_root_prior_override(root)
         # AlphaZero-style root-only Dirichlet noise: applied once per fresh
         # root to encourage exploration in self-play. No-op if either alpha
         # or eps is 0 (the default — keeps tournament/eval code paths
@@ -866,6 +883,31 @@ class NeuralMCTS:
         self._nodes.clear()
         self._noisy_roots.clear()
         self.game.clear_caches()
+
+    def set_root_prior_override(self, override: dict[int, float] | None) -> None:
+        """Arm a ONE-SHOT root-prior override for the next ``search`` (Gate A
+        oracle-prior probe). ``override`` maps every legal ROOT action to a prior;
+        the next ``search`` writes those onto the expanded root's ``priors`` and
+        then disarms itself (so a subsequent move without a fresh arm searches with
+        the normal evaluator priors). Deliberately NOT reset by ``clear()`` so the
+        caller can arm → clear() → search() in that order. Pass None to disarm."""
+        self._root_prior_override = None if override is None else dict(override)
+
+    def _apply_root_prior_override(self, root: "_NeuralNode") -> None:
+        """Overwrite the expanded root's per-action priors with the armed override,
+        then consume it (one-shot). Every legal root action is set; an action absent
+        from the override map gets 0.0 (its prior mass was folded into a
+        transposition representative by the caller — see eval_puct_priors
+        _oracle_prior_from_visits). PUCT reads ``priors`` as an exploration weight
+        (no re-normalization needed); the transposition-alias ``prior_bonus`` folding
+        in ``_link_child`` still applies, so a colliding rotation competes once with
+        the summed group mass exactly as it does for evaluator priors."""
+        override = self._root_prior_override
+        self._root_prior_override = None  # one-shot: never leaks to a later move
+        if not override:
+            return
+        for a in root.valid_actions:
+            root.priors[a] = float(override.get(int(a), 0.0))
 
     def _mix_dirichlet_noise(self, root: "_NeuralNode") -> None:
         """Mix Dirichlet(α) noise into root.priors per AlphaZero spec.
