@@ -79,6 +79,16 @@ _WINDOW_AUDIT_LOG: list = []
 # itself corrupted, but the mask/raise semantics are otherwise unchanged.
 _CACHE_COLLIDE_CHECK = os.environ.get("CARCASSONNE_CACHE_COLLIDE_CHECK", "0") == "1"
 
+# --- Strict window mode (F1 release audit, DEFAULT OFF) ----------------------
+# Production `get_valid_moves` silently DROPS individual legal actions that fall
+# outside the centered window and only raises when ALL of them overflow (the
+# review's P1-R1: a single dropped legal action is invisible). When
+# CARCASSONNE_WINDOW_STRICT=1, ANY dropped legal action raises WindowOverflowError,
+# so the F1 adversarial replay can fail loud on the FIRST drop. Default OFF ->
+# production mask/raise semantics are byte-for-byte unchanged. Read as a module
+# global (tests monkeypatch `game_wrapper._WINDOW_STRICT`).
+_WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
+
 
 def _state_fingerprint(state) -> dict:
     """A DEEP fingerprint of the engine state — captures fields that
@@ -531,6 +541,18 @@ class Game:
                 "n_oow_tiles": _count_out_of_window_tiles(board.state, board.offset),
                 "window_size": board.offset.size,
             })
+
+        # Strict mode (F1 release audit, default OFF): fail loud on the FIRST
+        # dropped legal action, not only when ALL overflow. Production is byte-for-
+        # byte unchanged (the flag defaults off); the release audit sets it so an
+        # adversarial replay can assert zero dropped legal actions.
+        if _WINDOW_STRICT and n_overflow > 0:
+            raise WindowOverflowError(
+                f"STRICT window: {n_overflow}/{n_total} legal actions fall outside the "
+                f"{board.offset.size}x{board.offset.size} window centered at "
+                f"({board.offset.origin_row}, {board.offset.origin_col}). "
+                f"CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+            )
 
         # If every legal action is outside the window, surface a clear signal
         # so the caller can drop the game (rather than seeing an empty mask

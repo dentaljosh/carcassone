@@ -58,9 +58,22 @@ champion:
                                         # it contributes 0 to deployable (fair) strength. Do NOT build a "fair reuse" (sticky-determinization would leak future info). CL-044 scoped clairvoyant/dev.
   leaf: v2_9_2_Bmild_cap8_curve125     # CHANGED 2026-07-13 (C5, CL-051): meeple curve ×1.25. FIRST leaf change to
                                         # the champion (all prior flips were pure search over the frozen v2.9 leaf).
-  leaf_hash: "158f17ff76adaa02"        # RECOMPUTED via the frozen-cfg recipe (scripts/measurement_infra/snapshot.py
-                                        # _frozen_config_hash); NOT the eval-manifest hash (96d2c075, a different fn).
-                                        # Prior leaf was 7fc930b82801cb43 (v2_9_1_Bmild_cap8), now lineage.
+  # Leaf fingerprint — CORRECTED 2026-07-19 (F1 release integrity). The OLD single value
+  # 158f17ff was snapshot._frozen_config_hash in the meeple_k=2.0 sub-dialect: REPRODUCIBLE
+  # (not gone-stale), but a nonstandard string nothing else references, which is why it read
+  # as "stale". The leaf is now recorded PRIMARY in the dialect the rest of the system speaks
+  # (c5_leaf_override._leaf_hash — what STATUS verifies + every real C7 curve125 manifest
+  # carries), with all three runtime-verified variants below. meeple_k is INERT under a
+  # non-null curve, so all three describe the SAME leaf function (240/240 byte-identical).
+  # RUNTIME-VERIFIED + asserted on real boards at construction by
+  # src/carcassonne_ai/champion_factory.py (curve VALUES first — robust to config-shape
+  # drift — then these hashes; the ruler-trap note, STATUS 2026-07-17).
+  leaf_hash: "a36d2e15a3b3d71d"        # PRIMARY: _leaf_hash (harness dialect, all fields, meeple_k=2.0)
+  leaf_hash_dialects:
+    harness_leaf_hash: "a36d2e15a3b3d71d"            # c5_leaf_override._leaf_hash (all fields, meeple_k=2.0)
+    frozen_config_hash_meeple_k0: "6dfffd57051690f2" # snapshot._frozen_config_hash, meeple_k=0.0 (champ_env/distill)
+    frozen_config_hash_meeple_k2: "158f17ff76adaa02" # snapshot._frozen_config_hash, meeple_k=2.0 (the OLD value)
+  # Prior leaf was 7fc930b82801cb43 (v2_9_1_Bmild_cap8), now lineage.
   leaf_config:                          # opt-in via LeafConfig.v29_* / src/carcassonne_ai/leaf_v29.py
     v29_meeple_curve: [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]   # C5 curve125 = prior ×1.25 exactly
     bonus_cap: 8.0                      # UNCHANGED (C5 confirmed cap8 optimal: opp_cap wings both negative)

@@ -1,0 +1,56 @@
+{
+  "schema": "carcassonne-replay-audit/v2",
+  "ok": true,
+  "corpus_source": "/home/doctor/projects/carcassone/.claude/worktrees/agent-affbf918036532428/measurement/window_audit/gen_games.jsonl",
+  "n_games": 20,
+  "n_prod_games": 15,
+  "n_synthetic_games": 5,
+  "n_states": 2159,
+  "states_by_source": {
+    "prod": 2159,
+    "synth": 0
+  },
+  "dropped_legal_actions": 0,
+  "strict_window_failures_production": 0,
+  "strict_window_failures_synthetic": 5,
+  "dangerous_key_collisions": 0,
+  "engine_board_edge_terminals": 0,
+  "rotation_alias_fragmentations_p1a3": 0,
+  "key_collisions_builtin_detector": 0,
+  "manifest_drift": false,
+  "leaf_hash_harness": "a36d2e15a3b3d71d",
+  "failures": [
+    {
+      "game": "synthetic_max_0",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/68 legal actions fall outside the 25x25 window centered at (-1, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_1",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/66 legal actions fall outside the 25x25 window centered at (2, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_2",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 4/60 legal actions fall outside the 25x25 window centered at (2, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_3",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 4/60 legal actions fall outside the 25x25 window centered at (-2, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_4",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/73 legal actions fall outside the 25x25 window centered at (0, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    }
+  ],
+  "wall_secs": 4.0,
+  "note": "F1 smoke pathway (~2k states); the full >=100k replay is a later free-box execution with a bigger --games/--synthetic/--workers and the real window-audit corpus. Gate = production drops + DANGEROUS (count-differing) collisions + manifest drift; synthetic drops and P1-A3 label fragmentation are measured, not gating."
+}
