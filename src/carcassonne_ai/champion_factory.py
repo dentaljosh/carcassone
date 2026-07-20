@@ -374,7 +374,8 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         min_pooled_visits=_UNSET, exact_budget=_UNSET,
                         net=_UNSET, evaluator=_UNSET, sighted_game=_UNSET,
                         batch_size=_UNSET, batch_evaluator=_UNSET,
-                        virtual_loss=_UNSET):
+                        virtual_loss=_UNSET,
+                        oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
     agent's OWN defaults — i.e. constructing via this factory is byte-for-byte identical
@@ -390,6 +391,8 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         exact_budget=exact_budget, net=net, evaluator=evaluator,
         sighted_game=sighted_game, batch_size=batch_size,
         batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
+        oracle_prior_mult=oracle_prior_mult,
+        oracle_prior_eps_coef=oracle_prior_eps_coef,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 

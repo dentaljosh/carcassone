@@ -86,6 +86,14 @@ from .heuristic_prior_mcts import (
     make_heuristic_prior_evaluator,
     make_heuristic_prior_evaluator_with_net_value,
 )
+# Track-F Gate A oracle-prior extraction — the SINGLE-SOURCE helpers shared with the
+# clairvoyant screen (eval_puct_priors re-exports the same functions). Imported here so
+# the fair per-world pre-search folds/floors IDENTICALLY (no copy-paste divergence).
+from .oracle_prior import (
+    LeafCounter,
+    oracle_prior_from_visits,
+    root_action_groups,
+)
 
 # Marginalized-solver handoff band. NOT a tuning knob: K<=2 is both the
 # tractability frontier of the no-alpha-beta expectiminimax AND the L2-3 band
@@ -418,7 +426,9 @@ class FairHeuristicPriorAgent:
                  exact_budget: int = DEFAULT_EXACT_BUDGET,
                  net=None, evaluator=None, sighted_game: Game | None = None,
                  batch_size: int = 1, batch_evaluator=None,
-                 virtual_loss: float = 1.0):
+                 virtual_loss: float = 1.0,
+                 oracle_prior_mult: int | None = None,
+                 oracle_prior_eps_coef: float = 1e-3):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -431,6 +441,24 @@ class FairHeuristicPriorAgent:
                 "(NeuralMCTS only uses the batched path when batch_size>1). Pass "
                 "batch_size>1 to batch, or drop batch_evaluator."
             )
+        # --- Track-F Gate A oracle-prior probe (F2, 2026-07-19; default OFF = None ->
+        # byte-identical to the pre-probe fair champion). When set to N (>=2), EACH
+        # determinization world runs a PRE-SEARCH at N x sims on a FRESH tree FIRST, its
+        # deduped root visit distribution is converted to a ROOT-prior override
+        # (oracle_prior.oracle_prior_from_visits — the SAME alias-fold/eps-floor as the
+        # clairvoyant screen), and that world's normal sims-budget search runs with the
+        # ROOT priors REPLACED via NeuralMCTS.set_root_prior_override. Pooling across
+        # worlds (pooled-Q) is UNCHANGED. See eval_fair_puct.py --oracle-prior-mult.
+        if oracle_prior_mult is not None:
+            if int(oracle_prior_mult) < 2:
+                raise ValueError(
+                    f"oracle_prior_mult must be >= 2 (a pre-search LARGER than the "
+                    f"production budget), got {oracle_prior_mult}")
+            if batch_size > 1:
+                raise ValueError(
+                    "oracle_prior_mult requires batch_size=1: leaf batching perturbs PUCT "
+                    "selection (virtual loss), which would confound the ROOT-prior probe. "
+                    "Run the oracle candidate serial.")
         self._game = game
         self._cfg = cfg if cfg is not None else HeuristicPriorConfig()
         self._sims = int(sims)
@@ -484,6 +512,22 @@ class FairHeuristicPriorAgent:
         # — the fair policy TARGET (== agg_n). One-hot {a:1.0} on a forced move; {} on
         # the exact-endgame latch (value-only row). Does NOT touch the pooled-Q pick.
         self.last_pooled_visits: dict | None = None
+        # --- Track-F Gate A oracle-prior config + per-game cost telemetry. All zero /
+        # None unless oracle_prior_mult is set, so the OFF agent is byte-identical.
+        self._oracle_prior_mult = None if oracle_prior_mult is None else int(oracle_prior_mult)
+        self._oracle_prior_eps_coef = float(oracle_prior_eps_coef)
+        # public alias (harness telemetry read-off keys on this being non-None)
+        self.oracle_prior_mult = self._oracle_prior_mult
+        self.oracle_moves = 0            # PIMC moves where the oracle pre-search ran
+        self.oracle_presearch_worlds = 0  # per-world pre-searches (= k_dets x oracle_moves)
+        self.oracle_presearch_secs = 0.0
+        self.oracle_mainsearch_secs = 0.0
+        self.oracle_presearch_leaf_calls = 0
+        self.oracle_mainsearch_leaf_calls = 0
+        self.last_reached_root = False    # last move: override reached EVERY world's root
+        # per-world overrides of the LAST oracle move (evidence the distribution is
+        # per-world, not shared) — None until an oracle move runs. Small (k_dets dicts).
+        self.last_world_oracle_priors: list[dict] | None = None
 
     # --- deterministic per-move seed derivation (mirrors FairHeuristicMCTSAgent) --
     def det_seed_base(self, move_idx: int) -> int:
@@ -506,20 +550,63 @@ class FairHeuristicPriorAgent:
         root_key = self._game.string_representation(board)
         agg_n: dict[int, float] = defaultdict(float)
         agg_w: dict[int, float] = defaultdict(float)
+        oracle = self._oracle_prior_mult is not None
+        if oracle:
+            self.oracle_moves += 1
+            self.last_world_oracle_priors = []
+            _reached = True
         for i in range(self._k_dets):
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
-            m = NeuralMCTS(game=self._game, evaluator=self._evaluator,
-                           simulations=self._sims, c_puct=self._c_puct,
-                           seed=base + 100 + i,
-                           batch_size=self._batch_size,
-                           batch_evaluator=self._batch_evaluator,
-                           virtual_loss=self._virtual_loss)
-            m.search(b)
+            if oracle:
+                # Track-F Gate A per-world pre-search: on THIS world's reshuffled deck,
+                # run a fresh champion search at mult x sims, read its deduped root visit
+                # distribution, convert it to a ROOT-prior override (identical alias-fold
+                # + eps-floor as the clairvoyant screen), then run this world's normal
+                # sims-budget search with the ROOT priors REPLACED. The pre-search tree is
+                # NOT reused into the main search (a fresh NeuralMCTS) so the probe isolates
+                # the prior channel from deeper search. Each world gets ITS OWN override
+                # (its own reshuffled deck -> its own pre-search distribution).
+                pre = NeuralMCTS(game=self._game, evaluator=LeafCounter(self._evaluator),
+                                 simulations=self._sims * self._oracle_prior_mult,
+                                 c_puct=self._c_puct, seed=base + 100 + i)
+                _t = time.perf_counter()
+                pre.search(b)
+                counts, actions = pre.root_visit_distribution(b)
+                self.oracle_presearch_secs += time.perf_counter() - _t
+                self.oracle_presearch_leaf_calls += pre.evaluator.n
+                self.oracle_presearch_worlds += 1
+                groups = root_action_groups(self._game, b)
+                counts_by_action = {int(a): float(c) for a, c in zip(actions, counts)}
+                override = oracle_prior_from_visits(
+                    groups, counts_by_action, self._oracle_prior_eps_coef)
+                self.last_world_oracle_priors.append(override)
+                _reached = _reached and bool(override)
+                m = NeuralMCTS(game=self._game, evaluator=LeafCounter(self._evaluator),
+                               simulations=self._sims, c_puct=self._c_puct,
+                               seed=base + 100 + i,
+                               batch_size=self._batch_size,
+                               batch_evaluator=self._batch_evaluator,
+                               virtual_loss=self._virtual_loss)
+                m.set_root_prior_override(override)   # one-shot, survives the search's expand
+                _t = time.perf_counter()
+                m.search(b)
+                self.oracle_mainsearch_secs += time.perf_counter() - _t
+                self.oracle_mainsearch_leaf_calls += m.evaluator.n
+            else:
+                m = NeuralMCTS(game=self._game, evaluator=self._evaluator,
+                               simulations=self._sims, c_puct=self._c_puct,
+                               seed=base + 100 + i,
+                               batch_size=self._batch_size,
+                               batch_evaluator=self._batch_evaluator,
+                               virtual_loss=self._virtual_loss)
+                m.search(b)
             # deck order isn't in the key, so the reshuffled root shares the
             # original board's key (same fallback as FairHeuristicMCTSAgent).
             root = m._nodes.get(root_key) or m._nodes[self._game.string_representation(b)]
             pool_root_stats(root, agg_n, agg_w)
             m.clear()
+        if oracle:
+            self.last_reached_root = bool(_reached)
         if not agg_n:                              # pathological: nothing visited
             self.last_pooled_visits = {}           # no search signal -> value-only row
             return int(legal[0])
