@@ -159,26 +159,34 @@ def _passes(game, board) -> bool:
 # --------------------------------------------------------------------------- #
 # Source: greedy from an l23_positions.jsonl snapshot file                      #
 # --------------------------------------------------------------------------- #
-def mine_from_l23(records, band: set, tag_gap: bool) -> list:
+def _mine_one_l23(arg):
+    r, tag_gap = arg
+    seed, ply = int(r["seed"]), int(r["ply"])
+    try:
+        game, board = GEP.replay_to(seed, ply)
+    except Exception as e:  # noqa
+        return ("recon_fail", seed, ply, str(e))
+    if game.string_representation(board) != r["checksum"]:
+        return ("checksum_mismatch", seed, ply, None)
+    if not _passes(game, board):
+        return None
+    return provenance(game, board, source_agent="greedy_selfplay_l23",
+                      ids={"seed": seed, "ply": ply}, ply=ply, tag_gap=tag_gap)
+
+
+def mine_from_l23(records, band: set, tag_gap: bool, workers: int = 4) -> list:
+    from multiprocessing import get_context
+    args = [(r, tag_gap) for r in records if int(r["k_remaining"]) in band]
     out = []
-    for r in records:
-        k = int(r["k_remaining"])
-        if k not in band:
-            continue
-        seed, ply = int(r["seed"]), int(r["ply"])
-        try:
-            game, board = GEP.replay_to(seed, ply)
-        except Exception as e:  # noqa
-            print(f"  recon fail seed={seed} ply={ply}: {e}", file=sys.stderr)
-            continue
-        if game.string_representation(board) != r["checksum"]:
-            print(f"  checksum mismatch seed={seed} ply={ply}", file=sys.stderr)
-            continue
-        if not _passes(game, board):
-            continue
-        rec = provenance(game, board, source_agent="greedy_selfplay_l23",
-                         ids={"seed": seed, "ply": ply}, ply=ply, tag_gap=tag_gap)
-        out.append(rec)
+    ctx = get_context("fork")
+    with ctx.Pool(workers) as pool:
+        for res in pool.imap_unordered(_mine_one_l23, args, chunksize=2):
+            if res is None:
+                continue
+            if isinstance(res, tuple):
+                print(f"  {res[0]} seed={res[1]} ply={res[2]}: {res[3]}", file=sys.stderr)
+                continue
+            out.append(res)
     return out
 
 
@@ -273,7 +281,7 @@ def main(argv=None) -> int:
     else:
         with open(args.positions) as f:
             src = [json.loads(l) for l in f if l.strip()]
-        recs = mine_from_l23(src, band, args.tag)
+        recs = mine_from_l23(src, band, args.tag, workers=args.workers)
 
     recs.sort(key=lambda r: (r["k_remaining"], r.get("seed", r.get("game_id", 0)), r["ply"]))
     outp = Path(args.out)
