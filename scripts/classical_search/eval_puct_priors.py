@@ -311,6 +311,171 @@ class _AbPrefix:
 
 
 # --------------------------------------------------------------------------- #
+# Track-F Gate A: oracle-prior production-depth headroom probe (F2, 2026-07-19). #
+# docs/reviews/INTEGRATED_REVIEW_20260719.md §"Candidate 2 / Gate A". Measures   #
+# whether a NEAR-ORACLE root prior (the champion's OWN visit distribution at a    #
+# larger budget) buys anything at production depth — the cheapest test of whether #
+# ANY policy-learning spend is rational. Default OFF (--oracle-prior-mult unset)  #
+# → byte-identical to the plain champion path.                                    #
+# --------------------------------------------------------------------------- #
+def _root_action_groups(game, board) -> dict:
+    """Group the legal ROOT actions by the child board they lead to (== the
+    search's transposition key), returning {repr_action: [members]} with the repr
+    the lowest-index member. Symmetric-tile rotations that step to the IDENTICAL
+    child board collide onto ONE node in the PUCT tree; this reproduces that
+    grouping EXACTLY (same string_representation key) so the oracle prior folds
+    rotation aliases the way the search already does. Cheap: n_legal get_next_state
+    steps (no board mutation, no legal-cache touch), negligible vs the sim budget."""
+    mask = game.get_valid_moves(board)
+    legal = [int(a) for a in np.flatnonzero(mask)]
+    by_key: dict[str, list[int]] = {}
+    for a in legal:
+        child, _ = game.get_next_state(board, a)
+        key = game.string_representation(child)
+        by_key.setdefault(key, []).append(a)
+    return {min(members): sorted(members) for members in by_key.values()}
+
+
+def _oracle_prior_from_visits(groups: dict, counts_by_action: dict,
+                              eps_coef: float) -> dict:
+    """Convert a pre-search root visit distribution into a prior over legal root
+    actions (Gate A). ``groups`` = {repr_action: [members]} from
+    ``_root_action_groups``; ``counts_by_action`` = {action: visit_count} from the
+    deduped pre-search root distribution (only ONE member per group carries the
+    combined visit count). Returns {action: prior} over ALL legal actions.
+
+    Mechanics (documented for the writeup):
+      * group_mass(g) = summed pre-search visits of g's members (= the group's
+        combined child-node visit count).
+      * prior(g) = group_mass / total_visits.
+      * epsilon floor: eps = eps_coef / n_groups (a 1e-3/n_actions-style floor);
+        floor each GROUP's prior at eps so a move the pre-search never visited
+        still gets a live PUCT exploration term, then renormalize over groups.
+      * scatter: the whole group prior sits on the group's repr (lowest-index)
+        action; other members get 0.0 — their mass is folded back onto whatever
+        action the main search picks as the transposition representative via
+        NeuralMCTS._link_child's ``prior_bonus``, so the group competes once with
+        the summed mass (invariant to which member is the main-search repr).
+      * degenerate all-zero pre-search (no visits at all) → uniform over groups.
+    """
+    n_groups = len(groups)
+    if n_groups == 0:
+        return {}
+    group_mass = {r: sum(counts_by_action.get(m, 0.0) for m in members)
+                  for r, members in groups.items()}
+    total = sum(group_mass.values())
+    eps = float(eps_coef) / n_groups
+    if total <= 0.0:
+        raw = {r: 1.0 / n_groups for r in group_mass}
+    else:
+        raw = {r: m / total for r, m in group_mass.items()}
+    floored = {r: max(p, eps) for r, p in raw.items()}
+    z = sum(floored.values())
+    gp = {r: p / z for r, p in floored.items()}
+    override: dict[int, float] = {}
+    for repr_a, members in groups.items():
+        override[int(repr_a)] = gp[repr_a]
+        for m in members:
+            if m != repr_a:
+                override[int(m)] = 0.0
+    return override
+
+
+class _LeafCounter:
+    """Wrap a NeuralMCTS evaluator callable to COUNT invocations (= per-node leaf/
+    root expansions) for the Gate A cost accounting, forwarding every attribute
+    (wants_parent / root_logits / heur_prior_cfg / leaf_name) so the search is
+    otherwise byte-identical. Reset ``.n = 0`` around a phase to count it."""
+
+    def __init__(self, fn):
+        object.__setattr__(self, "_fn", fn)
+        object.__setattr__(self, "n", 0)
+
+    def __call__(self, *a):
+        self.n += 1
+        return self._fn(*a)
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, "_fn"), name)
+
+
+class _OraclePriorPrefix:
+    """Gate A oracle-prior candidate prefix (Track-F F2). Per root move:
+
+      1. PRE-SEARCH: an IDENTICAL champion search at ``mult × sims`` on a FRESH
+         tree; read its transposition-deduped root visit distribution.
+      2. Convert that distribution to a prior over legal root actions
+         (``_oracle_prior_from_visits``: visits/total, epsilon-floored, alias-folded).
+      3. MAIN SEARCH: the normal production-budget (``sims``) search with the ROOT
+         priors REPLACED by that distribution — deeper node priors stay the
+         heuristic evaluator's (this probe measures ROOT-prior headroom, the
+         dominant prior effect).
+
+    The pre-search tree is NOT reused into the main search (fresh clear() each);
+    reuse would conflate deeper search with better priors — the probe isolates the
+    prior channel. Both agents run reuse_tree=OFF (the harness enforces this) so each
+    move lands the override on a freshly expanded root. Exposes ``.move(board)`` so it
+    drops into ``_ExactHandoff`` exactly like a plain HeuristicPriorAgent."""
+
+    def __init__(self, game_main, game_pre, cfg, sims, mult, eps_coef, seed):
+        self._main = HeuristicPriorAgent(game_main, cfg, simulations=sims, seed=seed)
+        self._pre = HeuristicPriorAgent(game_pre, cfg, simulations=sims * int(mult),
+                                        seed=seed)
+        # count leaf/root expansions per phase (cost writeup)
+        self._main.mcts.evaluator = _LeafCounter(self._main.mcts.evaluator)
+        self._pre.mcts.evaluator = _LeafCounter(self._pre.mcts.evaluator)
+        self._mult = int(mult)
+        self._eps_coef = float(eps_coef)
+        # per-game cost accounting (read off by _oracle_telemetry)
+        self.oracle_moves = 0
+        self.presearch_secs = 0.0
+        self.mainsearch_secs = 0.0
+        self.presearch_leaf_calls = 0
+        self.mainsearch_leaf_calls = 0
+        self.last_reached_root = False  # smoke/functional-check: override reached root
+
+    def move(self, board) -> int:
+        m_pre = self._pre.mcts
+        # 1. PRE-SEARCH on a fresh tree (mult × sims), read deduped root visits.
+        self._pre.clear()
+        m_pre.evaluator.n = 0
+        t0 = time.perf_counter()
+        m_pre.search(board)
+        counts, actions = m_pre.root_visit_distribution(board)
+        self.presearch_secs += time.perf_counter() - t0
+        self.presearch_leaf_calls += m_pre.evaluator.n
+        # 2. Build the oracle root-prior distribution (visits -> prior).
+        counts_by_action = {int(a): float(c) for a, c in zip(actions, counts)}
+        groups = _root_action_groups(self._main.game, board)
+        override = _oracle_prior_from_visits(groups, counts_by_action, self._eps_coef)
+        # 3. MAIN SEARCH at production sims with the ROOT priors replaced.
+        m_main = self._main.mcts
+        m_main.set_root_prior_override(override)   # survives the move()'s clear()
+        m_main.evaluator.n = 0
+        t1 = time.perf_counter()
+        mv = self._main.move(board)                # clear() -> search(applies override)
+        self.mainsearch_secs += time.perf_counter() - t1
+        self.mainsearch_leaf_calls += m_main.evaluator.n
+        self.oracle_moves += 1
+        self.last_reached_root = bool(override)
+        return int(mv)
+
+
+def _oracle_telemetry(prefix) -> dict:
+    """Per-game oracle cost telemetry read off an _OraclePriorPrefix (empty for any
+    other candidate). Feeds the GameResult cost fields + the summary aggregation."""
+    if not isinstance(prefix, _OraclePriorPrefix):
+        return {}
+    return {
+        "oracle_prior_moves": int(prefix.oracle_moves),
+        "oracle_presearch_secs": round(prefix.presearch_secs, 3),
+        "oracle_mainsearch_secs": round(prefix.mainsearch_secs, 3),
+        "oracle_presearch_leaf_calls": int(prefix.presearch_leaf_calls),
+        "oracle_mainsearch_leaf_calls": int(prefix.mainsearch_leaf_calls),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Round-robin extension: candidate/opponent specs + the neural opponent         #
 # (measurement/classical_search/ROUND_ROBIN_PLAN.md). Torch is imported lazily  #
 # so the legacy pure-CPU cells never pay for it.                                #
@@ -432,6 +597,10 @@ def _variant_sig(args) -> str:
             parts.append(f"c{args.c_puct:g}")
         if args.tau_p != CHAMP_PUCT_TAU_P:
             parts.append(f"tp{args.tau_p:g}")
+    # Track-F Gate A oracle-prior overlay (CANDIDATE only) — tag so an oracle cell
+    # never shares an auto out-dir with the plain champion. Empty when OFF.
+    if getattr(args, "oracle_prior_mult", None):
+        parts.append(f"oracle{args.oracle_prior_mult}")
     return "".join("-" + p for p in parts)
 
 
@@ -596,6 +765,14 @@ class GameResult:
     cand_ab_tt_exact_hits: int = 0
     cand_ab_tt_cross_parent_hits: int = 0
     cand_ab_moves: int = 0
+    # Track-F Gate A oracle-prior per-game cost telemetry (0 unless the candidate is
+    # an _OraclePriorPrefix). OMITTED from the serialized JSON for non-oracle cells so
+    # every legacy cell stays byte-identical (the default-OFF / result-neutral gate).
+    oracle_prior_moves: int = 0
+    oracle_presearch_secs: float = 0.0
+    oracle_mainsearch_secs: float = 0.0
+    oracle_presearch_leaf_calls: int = 0
+    oracle_mainsearch_leaf_calls: int = 0
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -621,12 +798,24 @@ _AB_RESULT_FIELDS = (
     "cand_ab_moves",
 )
 
+# Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game
+# JSON for non-oracle cells (all zero there) so every legacy/non-oracle cell stays
+# byte-identical to today's schema. _try_load re-fills them from the dataclass
+# defaults, so a reload is lossless either way.
+_ORACLE_RESULT_FIELDS = (
+    "oracle_prior_moves", "oracle_presearch_secs", "oracle_mainsearch_secs",
+    "oracle_presearch_leaf_calls", "oracle_mainsearch_leaf_calls",
+)
+
 
 def _save(p: Path, r: GameResult):
     p.parent.mkdir(parents=True, exist_ok=True)
     d = asdict(r)
     if not d.get("cand_ab_moves"):          # non-ab cell -> omit ab keys (schema-identical)
         for k in _AB_RESULT_FIELDS:
+            d.pop(k, None)
+    if not d.get("oracle_prior_moves"):     # non-oracle cell -> omit oracle keys (schema-identical)
+        for k in _ORACLE_RESULT_FIELDS:
             d.pop(k, None)
     tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
     json.dump(d, open(tmp, "w"))
@@ -661,8 +850,11 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  cand_kind="puct", opp_kind="heur", opp_sims=None,
                  net_ckpt="", net_ns=10, shm_name="", id_q=None,
                  cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False,
-                 opp_pin_champion=False):
+                 opp_pin_champion=False, oracle_prior_mult=None,
+                 oracle_prior_eps_coef=1e-3):
     _W["cand_cfg_dict"] = cand_cfg_dict
+    _W["oracle_prior_mult"] = oracle_prior_mult  # Track-F Gate A (None = OFF)
+    _W["oracle_prior_eps_coef"] = oracle_prior_eps_coef
     # candidate-side leaf override (None -> DEFAULT_CONFIG); champion stays DEFAULT.
     _W["cand_leaf_cfg"] = cand_leaf_cfg
     _W["ab_cfg_dict"] = ab_cfg_dict            # C6 AlphaBetaConfig knobs (None unless ab)
@@ -750,6 +942,12 @@ def _play_one(args) -> GameResult | None:
     elif cand_kind == "ab":
         cand_prefix = _AbPrefix(Game(enable_legal_moves_cache=False), _make_ab_cfg(),
                                 seed=seed)
+    elif _W.get("oracle_prior_mult"):
+        # Track-F Gate A oracle-prior candidate (its own main + pre-search games).
+        cand_prefix = _OraclePriorPrefix(
+            Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True),
+            _make_cand_cfg(), sims=_W["cand_sims"], mult=_W["oracle_prior_mult"],
+            eps_coef=_W["oracle_prior_eps_coef"], seed=seed)
     else:
         cfg = _make_cand_cfg()
         cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
@@ -811,6 +1009,7 @@ def _play_one(args) -> GameResult | None:
         champ_prefix_secs=round(champ.prefix_secs, 3), champ_solver_secs=round(champ.solver_secs, 3),
         champ_timeouts=champ.n_timeouts, latch_k=latch_k, game_timeout=game_timed_out,
         **(_ab_telemetry(cand_prefix) if cand_kind == "ab" else {}),
+        **_oracle_telemetry(cand_prefix),
     )
     _save(p, r)
     return r
@@ -908,6 +1107,30 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
               f"(p10 {ab_summary['ab_depth_p10']:.0f}, min {ab_summary['ab_depth_min']}), "
               f"{ab_summary['ab_steps_per_move']:.0f} steps/move, "
               f"cross-parent hit frac {ab_summary['ab_tt_cross_parent_frac']:.4f}")
+    # Track-F Gate A oracle-prior cost aggregation (pre-search vs main-search cost per
+    # move — the probe's cost accounting for the writeup). Empty for non-oracle cells.
+    oracle_summary = {}
+    oracle_games = [r for r in results if getattr(r, "oracle_prior_moves", 0) > 0]
+    if oracle_games:
+        om = sum(r.oracle_prior_moves for r in oracle_games)
+        pre_s = sum(r.oracle_presearch_secs for r in oracle_games)
+        main_s = sum(r.oracle_mainsearch_secs for r in oracle_games)
+        pre_lc = sum(r.oracle_presearch_leaf_calls for r in oracle_games)
+        main_lc = sum(r.oracle_mainsearch_leaf_calls for r in oracle_games)
+        oracle_summary = {
+            "oracle_games": len(oracle_games),
+            "oracle_presearch_ms_per_move": (pre_s / max(1, om)) * 1e3,
+            "oracle_mainsearch_ms_per_move": (main_s / max(1, om)) * 1e3,
+            "oracle_total_ms_per_move": ((pre_s + main_s) / max(1, om)) * 1e3,
+            "oracle_leaf_ratio": pre_lc / max(1, main_lc),
+            "oracle_cost_multiple": (pre_s + main_s) / max(1e-9, main_s),
+        }
+        print(f"oracle-prior: {len(oracle_games)} games — pre "
+              f"{oracle_summary['oracle_presearch_ms_per_move']:.0f} + main "
+              f"{oracle_summary['oracle_mainsearch_ms_per_move']:.0f} ms/move "
+              f"(total {oracle_summary['oracle_total_ms_per_move']:.0f}, "
+              f"{oracle_summary['oracle_cost_multiple']:.2f}x main-only; "
+              f"leaf ratio {oracle_summary['oracle_leaf_ratio']:.2f}x)")
     return {
         "n": n, "W": w, "D": d, "L": losses, "winrate": wr, "winrate_z": wr_z,
         "elo": elo, "elo_sig_1sigma": elo_sig, "avg_diff": avg,
@@ -916,6 +1139,7 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
         "cand_latched_games": cand_latched, "solver_secs_per_game": solver_pergame,
         "game_timeouts": game_timeouts,
         **ab_summary,
+        **oracle_summary,
     }
 
 
@@ -1012,6 +1236,11 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                                        seed, DEFAULT_CONFIG)
         elif cand_kind == "ab":
             cand_prefix = _AbPrefix(Game(enable_legal_moves_cache=False), ab_cfg, seed=seed)
+        elif getattr(args, "oracle_prior_mult", None):
+            cand_prefix = _OraclePriorPrefix(
+                Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True),
+                cfg, sims=args.cand_sims, mult=args.oracle_prior_mult,
+                eps_coef=args.oracle_prior_eps_coef, seed=seed)
         else:
             cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                               simulations=args.cand_sims, seed=seed)
@@ -1056,6 +1285,17 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                   f"collide={hp.reuse_collide}")
             assert hp.reuse_hits + hp.reuse_fresh + hp.reuse_collide == hp.neural_moves, \
                 "reuse counters must account for every prefix move"
+        if getattr(args, "oracle_prior_mult", None) and cand_kind == "puct":
+            op = cand._prefix  # the _OraclePriorPrefix behind the exact handoff
+            assert op.oracle_moves > 0, "oracle prefix never played a move"
+            assert op.last_reached_root, "oracle prior distribution never reached the root"
+            assert op.presearch_leaf_calls > op.mainsearch_leaf_calls, \
+                "pre-search must run MORE leaf calls than the main search (mult>1)"
+            print(f"[smoke]   oracle-prior mult={args.oracle_prior_mult}: "
+                  f"moves={op.oracle_moves} presearch={op.presearch_secs:.1f}s/"
+                  f"{op.presearch_leaf_calls} leaves main={op.mainsearch_secs:.1f}s/"
+                  f"{op.mainsearch_leaf_calls} leaves "
+                  f"(leaf ratio {op.presearch_leaf_calls/max(1,op.mainsearch_leaf_calls):.2f}x)")
         if args.exact_k > 0:
             assert cand.exact_moves > 0, "candidate never reached the exact endgame (K too small?)"
         if opp_K > 0:
@@ -1105,6 +1345,23 @@ def main(argv=None) -> int:
                     help="champion/opponent sims (default 6400 for a heur opponent). "
                          "MANDATORY for --candidate ab --opponent puct (the ab child-step "
                          "budget has no sims axis, so the champion budget is set here).")
+    ap.add_argument("--oracle-prior-mult", type=int, default=None,
+                    help="Track-F Gate A oracle-prior probe (CANDIDATE side, --candidate "
+                         "puct only). When set to N, each candidate root move first runs a "
+                         "PRE-SEARCH with the IDENTICAL champion config at N x --cand-sims on "
+                         "a FRESH tree, converts its root VISIT distribution to a prior, and "
+                         "runs the normal --cand-sims search with the ROOT priors REPLACED by "
+                         "it (DEEPER node priors stay the heuristic evaluator's — this measures "
+                         "ROOT-prior production-depth headroom, the dominant prior effect). The "
+                         "pre-search tree is NOT reused into the main search (isolates priors "
+                         "from depth). Default None = OFF = byte-identical to the plain champion. "
+                         "Requires reuse_tree OFF.")
+    ap.add_argument("--oracle-prior-eps-coef", type=float, default=1e-3,
+                    help="epsilon-floor coefficient for --oracle-prior-mult: each root move's "
+                         "per-group prior is floored at eps = coef / n_groups (a 1e-3/n_actions "
+                         "-style floor keeping PUCT exploration of pre-search-unvisited moves "
+                         "alive), then renormalized. Default 1e-3. Ignored unless "
+                         "--oracle-prior-mult is set.")
     ap.add_argument("--cand-leaf-json", type=str, default=None,
                     help="override ONLY the CANDIDATE side's leaf LeafConfig — inline "
                          "JSON (a '{...}' object of field->value, replace-fields on the "
@@ -1208,6 +1465,16 @@ def main(argv=None) -> int:
         ap.error("--opp-reuse-tree only applies to --opponent puct")
     if args.opp_pin_champion and opp_kind != "puct":
         ap.error("--opp-pin-champion only applies to --opponent puct")
+    if args.oracle_prior_mult is not None:
+        if cand_kind != "puct":
+            ap.error("--oracle-prior-mult requires --candidate puct")
+        if args.oracle_prior_mult < 2:
+            ap.error("--oracle-prior-mult must be >= 2 (a pre-search LARGER than production)")
+        if args.reuse_tree:
+            ap.error("--oracle-prior-mult requires reuse_tree OFF (drop --reuse-tree); a "
+                     "reused root would conflate deeper search with the injected priors")
+        if args.root_select != "puct":
+            ap.error("--oracle-prior-mult requires --root-select puct (the champion root)")
 
     # candidate-side leaf override (--cand-leaf-json). None -> DEFAULT_CONFIG both
     # sides (byte-identical to today). The champion/opponent side NEVER takes it.
@@ -1324,12 +1591,29 @@ def main(argv=None) -> int:
                "champ_leaf_cfg": _leaf_dict(champ_leaf_cfg),
                "champ_leaf_hash": _leaf_hash(champ_leaf_cfg),
                "env": {k: os.environ.get(k) for k in _CANON_ENV}}
+    # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON, so
+    # a plain (OFF) manifest stays byte-identical to the pre-change harness output.
+    oracle_block = None
+    if args.oracle_prior_mult is not None:
+        oracle_block = {
+            "oracle_prior_mult": args.oracle_prior_mult,
+            "presearch_sims": args.cand_sims * args.oracle_prior_mult,
+            "main_sims": args.cand_sims,
+            "eps_coef": args.oracle_prior_eps_coef,
+            "scope": "ROOT priors only (deeper node priors = heuristic evaluator); "
+                     "pre-search tree NOT reused into the main search",
+            "applies_to": "candidate",
+        }
+        man_cfg["oracle_prior"] = oracle_block
     if new_mode:
         # Round-robin cell: resolved candidate + opponent specs (ROUND_ROBIN_PLAN.md).
         if cand_kind == "puct":
             cand_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
                           "sims": args.cand_sims, "exact_k": args.exact_k,
                           **cfg.as_manifest()}
+            if oracle_block is not None:
+                cand_block["agent"] = "OraclePriorPrefix(HeuristicPriorAgent)"
+                cand_block["oracle_prior"] = oracle_block
         elif cand_kind == "ab":
             # C6 ID-alpha-beta candidate: the FULL resolved AlphaBetaConfig + leaf_hash
             # (design §8; per-side leaf_hash is the Trap-1 wrong-leaf mitigation).
@@ -1419,7 +1703,8 @@ def main(argv=None) -> int:
                             (net_meta or {}).get("n_scalar_features", 10),
                             args.shm_eval_server or "", id_q, cand_leaf_cfg,
                             ab_cfg_dict, args.opp_reuse_tree,
-                            args.opp_pin_champion)) as pool:
+                            args.opp_pin_champion, args.oracle_prior_mult,
+                            args.oracle_prior_eps_coef)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
