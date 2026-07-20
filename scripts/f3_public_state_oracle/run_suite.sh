@@ -23,11 +23,12 @@ BUDGET="${4:-2000000}"     # per-root solver node budget (BudgetExceeded -> cove
 TT_CAP="${5:-1500000}"     # CARCASSONNE_TT_CAP: freeze the TT at ~1.5M entries (~a few GB/worker)
 SIMS="${6:-688}"           # k4x688 = the production fair budget
 K_DETS="${7:-4}"
+WALL_CAP="${8:-300}"       # per-root wall-clock cap seconds (SIGALRM); §5.3 '2M nodes / 300 s'
 
 mkdir -p "${OUT_DIR}"
 LOG="${OUT_DIR}/run.log"
 
-echo "[$(date -Is)] F3 oracle suite: roots=${ROOTS} out=${OUT_DIR} W=${WORKERS} budget=${BUDGET} tt_cap=${TT_CAP} k${K_DETS}x${SIMS}" | tee -a "${LOG}"
+echo "[$(date -Is)] F3 oracle suite: roots=${ROOTS} out=${OUT_DIR} W=${WORKERS} budget=${BUDGET} tt_cap=${TT_CAP} k${K_DETS}x${SIMS} wall=${WALL_CAP}s" | tee -a "${LOG}"
 
 # nice -n 19: yield to interactive use / other cluster jobs on the shared box.
 exec nice -n 19 env CARCASSONNE_TT_CAP="${TT_CAP}" \
@@ -39,4 +40,5 @@ exec nice -n 19 env CARCASSONNE_TT_CAP="${TT_CAP}" \
     --tt-cap "${TT_CAP}" \
     --sims "${SIMS}" \
     --k-dets "${K_DETS}" \
+    --wall-cap "${WALL_CAP}" \
     >> "${LOG}" 2>&1

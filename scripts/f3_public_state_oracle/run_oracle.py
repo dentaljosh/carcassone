@@ -31,8 +31,18 @@ sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
 
 import argparse  # noqa: E402
 import json  # noqa: E402
+import signal  # noqa: E402
 import time  # noqa: E402
 import traceback  # noqa: E402
+
+
+class _WallTimeout(Exception):
+    """Per-root wall-clock cap hit (§5.3 '2M nodes / 300 s'). Marked completed=False,
+    counts as missing coverage — identical downstream to a node-budget hit."""
+
+
+def _alarm(signum, frame):
+    raise _WallTimeout()
 
 import numpy as np  # noqa: E402
 
@@ -91,15 +101,22 @@ def score_root(rec: dict) -> dict:
     if len(legal) < 2:
         return {"root_id": rid, "_skip": "<2 legal"}
 
-    # --- 2. exact marginalized solve --------------------------------------------
+    # --- 2. exact marginalized solve (node budget + SIGALRM wall cap) ------------
+    wall_cap = _CTX["wall_cap"]
     t0 = time.perf_counter()
-    completed = True
+    if wall_cap > 0:
+        signal.signal(signal.SIGALRM, _alarm)
+        signal.alarm(int(wall_cap))
     try:
         res = S.solve(game, board, mode="marginalized", budget=budget, alphabeta=False)
-    except S.BudgetExceeded:
+    except (S.BudgetExceeded, _WallTimeout) as e:
+        reason = "wall" if isinstance(e, _WallTimeout) else "node_budget"
         return {"root_id": rid, "completed": False, "k_remaining": rec["k_remaining"],
                 "solve_secs": round(time.perf_counter() - t0, 2), "budget": budget,
-                "note": "budget_hit (counts as missing coverage)"}
+                "note": f"{reason}_hit (counts as missing coverage)"}
+    finally:
+        if wall_cap > 0:
+            signal.alarm(0)
     solve_secs = time.perf_counter() - t0
     cv = {int(a): float(v) for a, v in res.child_values.items()}
     vstar = float(res.value)
@@ -222,6 +239,8 @@ def main(argv=None) -> int:
     ap.add_argument("--k-dets", type=int, default=4)
     ap.add_argument("--sims", type=int, default=688, help="sims per determinization (k4x688)")
     ap.add_argument("--agent-seed", type=int, default=101)
+    ap.add_argument("--wall-cap", type=int, default=300,
+                    help="per-root wall-clock cap seconds (SIGALRM; 0=off). §5.3 '2M nodes / 300 s'")
     ap.add_argument("--decided-eps", type=float, default=0.5,
                     help="mover-perspective child spread below this = effectively decided (§1.4b)")
     ap.add_argument("--fusion-thresh", type=float, default=FU.DEFAULT_FUSION_THRESHOLD)
@@ -248,12 +267,13 @@ def main(argv=None) -> int:
 
     _CTX.update(cfg=_cfg, budget=args.budget, k_dets=args.k_dets, sims=args.sims,
                 agent_seed=args.agent_seed, decided_eps=args.decided_eps,
-                fusion_thresh=args.fusion_thresh)
+                fusion_thresh=args.fusion_thresh, wall_cap=args.wall_cap)
 
     # run manifest for the suite
     (out_dir / "suite_manifest.json").write_text(json.dumps({
         "roots_file": str(args.roots), "n_roots": len(roots),
-        "budget": args.budget, "k_dets": args.k_dets, "sims_per_det": args.sims,
+        "budget": args.budget, "wall_cap_s": args.wall_cap,
+        "k_dets": args.k_dets, "sims_per_det": args.sims,
         "total_sims": args.k_dets * args.sims, "agent_seed": args.agent_seed,
         "decided_eps": args.decided_eps, "fusion_thresh": args.fusion_thresh,
         "tt_cap": os.environ.get("CARCASSONNE_TT_CAP", "0"),
