@@ -15,3 +15,6 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "slow: deep/expensive test (e.g. a full K=3 marginalized solve); deselect with -m 'not slow'",
+]
