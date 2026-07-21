@@ -310,11 +310,13 @@ def main(argv=None) -> int:
         "leaf_hash_harness": manifest_before["leaf_hashes"]["harness_leaf_hash"],
         "failures": failures[:20],
         "wall_secs": round(dt, 1),
-        "note": ("F1 smoke pathway (~2k states); the full >=100k replay is a later free-box "
-                 "execution with a bigger --games/--synthetic/--workers and the real "
-                 "window-audit corpus. Gate = production drops + DANGEROUS (count-differing) "
-                 "collisions + manifest drift; synthetic drops and P1-A3 label fragmentation "
-                 "are measured, not gating."),
+        "scale": ("FULL (>=100k states)" if n_states >= 100_000 else
+                  f"SMOKE/PARTIAL ({n_states} states; the full residue bar is >=100k)"),
+        "note": ("Gate = production drops + DANGEROUS (count-differing) collisions + manifest "
+                 "drift; synthetic drops and P1-A3 label fragmentation are measured, not gating. "
+                 "Synthetic states are constructed adversarially/out-of-distribution, so "
+                 "strict_window_failures_synthetic > 0 is the detector WORKING, not a defect. "
+                 "See the 'scale' field for whether this run cleared the >=100k full-replay bar."),
     }
     print(json.dumps(summary, indent=2))
     if args.out:

@@ -1,0 +1,147 @@
+{
+  "schema": "carcassonne-replay-audit/v2",
+  "ok": true,
+  "corpus_source": "/home/doctor/projects/carcassone/measurement/window_audit/gen_games.jsonl",
+  "n_games": 1300,
+  "n_prod_games": 1000,
+  "n_synthetic_games": 300,
+  "n_states": 143915,
+  "states_by_source": {
+    "prod": 143915,
+    "synth": 0
+  },
+  "dropped_legal_actions": 0,
+  "strict_window_failures_production": 0,
+  "strict_window_failures_synthetic": 300,
+  "dangerous_key_collisions": 0,
+  "engine_board_edge_terminals": 0,
+  "rotation_alias_fragmentations_p1a3": 0,
+  "key_collisions_builtin_detector": 0,
+  "manifest_drift": false,
+  "leaf_hash_harness": "a36d2e15a3b3d71d",
+  "failures": [
+    {
+      "game": "synthetic_max_0",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/68 legal actions fall outside the 25x25 window centered at (-1, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_1",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/66 legal actions fall outside the 25x25 window centered at (2, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_2",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 4/60 legal actions fall outside the 25x25 window centered at (2, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_3",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 4/60 legal actions fall outside the 25x25 window centered at (-2, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_4",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/73 legal actions fall outside the 25x25 window centered at (0, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_5",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/78 legal actions fall outside the 25x25 window centered at (0, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_6",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 3/90 legal actions fall outside the 25x25 window centered at (-1, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_7",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/68 legal actions fall outside the 25x25 window centered at (1, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_8",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/80 legal actions fall outside the 25x25 window centered at (-1, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_9",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/74 legal actions fall outside the 25x25 window centered at (-1, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_10",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/78 legal actions fall outside the 25x25 window centered at (1, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_11",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 3/71 legal actions fall outside the 25x25 window centered at (-1, 13). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_12",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/78 legal actions fall outside the 25x25 window centered at (0, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_13",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/69 legal actions fall outside the 25x25 window centered at (0, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_14",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/76 legal actions fall outside the 25x25 window centered at (-2, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_15",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/71 legal actions fall outside the 25x25 window centered at (0, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_16",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 1/95 legal actions fall outside the 25x25 window centered at (0, 15). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_17",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/65 legal actions fall outside the 25x25 window centered at (0, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_18",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 3/95 legal actions fall outside the 25x25 window centered at (-1, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    },
+    {
+      "game": "synthetic_max_19",
+      "source": "synth",
+      "kind": "window_overflow",
+      "detail": "STRICT window: 2/78 legal actions fall outside the 25x25 window centered at (-1, 14). CARCASSONNE_WINDOW_STRICT=1 fails loud on any dropped legal action."
+    }
+  ],
+  "wall_secs": 276.4,
+  "scale": "FULL (>=100k states)",
+  "note": "Gate = production drops + DANGEROUS (count-differing) collisions + manifest drift; synthetic drops and P1-A3 label fragmentation are measured, not gating. Synthetic states are constructed adversarially/out-of-distribution, so strict_window_failures_synthetic > 0 is the detector WORKING, not a defect. See the 'scale' field for whether this run cleared the >=100k full-replay bar."
+}
