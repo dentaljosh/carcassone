@@ -204,6 +204,48 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True) -> dict:
     return out
 
 
+def yardstick(rows, level: str, boot=1000, verbose=True) -> dict:
+    """PREREG §3 'outside the family': what would THIS estimator have said about the
+    curve125 change (CL-051, +66.8 elo n=400 clairvoyant / +48.8-50.4 fair-confirmed)
+    the day BEFORE it was adopted?
+
+    Rebuild the counterfactual pre-CL-051 leaf   leaf100 = leaf_raw - pos_ref_c5_curve
+    (exact: pos_ref IS the curve125-minus-curve100 delta), re-tanh it, use it as BOTH
+    the value being corrected AND the control, and ask for the partial correlation of
+    pos_ref with (V_deep - V_leaf100).  That number is the scale on which a REAL,
+    ADOPTED, ~+50-to-+67-elo leaf term registers here.  It is a yardstick, NOT a gate:
+    the §5 verdict does not move if it is large or small.
+    """
+    keep = [r for r in rows if r.get("resid", {}).get(level) is not None]
+    vdeep = np.array([r["resid"][level] + r["aux"]["v_leaf"] for r in keep], dtype=float)
+    leaf_raw = np.array([r["aux"]["leaf_raw"] for r in keep], dtype=float)
+    posref = np.array([r["features"][LF.POS_REF] for r in keep], dtype=float)
+    tiles = np.array([r["aux"]["tiles_remaining"] for r in keep], dtype=float)
+    corp = np.array([r["aux"]["corpus_champ125"] for r in keep], dtype=float)
+    groups = np.array([int(r["deck_seed"]) for r in keep], dtype=np.int64)
+
+    v100 = np.tanh((leaf_raw - posref) / 15.0)
+    y = vdeep - v100
+    X = np.column_stack([np.ones(len(y)), v100, v100 ** 2, tiles, corp])
+    X = X[:, [0] + [j for j in range(1, X.shape[1]) if np.ptp(X[:, j]) > 0]]
+    e_r, _ = crossfit_resid(y, X, groups)
+    e_f, _ = crossfit_resid(posref, X, groups)
+    rho = (0.0 if (e_r.std() == 0 or e_f.std() == 0)
+           else float(np.corrcoef(e_r, e_f)[0, 1]))
+    bs = clustered_boot_corr(e_r, e_f, groups, n_boot=boot)
+    out = dict(rho_yardstick=rho, n=len(y),
+               ci=[float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))],
+               p=float(2.0 * min((bs <= 0).mean(), (bs >= 0).mean())),
+               note="partial corr of the curve125-minus-curve100 leaf delta with the "
+                    "residual of the PRE-CL-051 leaf. CL-051 shipped at +66.8 elo "
+                    "(n=400 clairvoyant) / +48.8-50.4 fair-confirmed.")
+    if verbose:
+        print(f"\n--- YARDSTICK (CL-051 curve125, retro) level={level}: "
+              f"rho={rho:+.4f} ci=[{out['ci'][0]:+.4f},{out['ci'][1]:+.4f}] "
+              f"p={out['p']:.4f} n={len(y)} ---")
+    return out
+
+
 def gate(primary: dict, replication: dict | None) -> dict:
     """PREREG §5, verbatim."""
     neg = primary["features"][LF.NEG_CONTROL]
@@ -256,8 +298,10 @@ def main(argv=None) -> int:
           + (f"  replication rows={len(rrows)}" if rrows else ""))
 
     prim = analyse(prows, args.level, args.label, boot=args.boot)
+    yard = yardstick(prows, args.level, boot=min(1000, args.boot))
     rep = analyse(rrows, args.level, "replication(champion)", boot=args.boot) if rrows else None
     g = gate(prim, rep)
+    g["yardstick_cl051"] = yard
     print("\n=== GATE (PREREG §5) ===")
     print(json.dumps(g, indent=2, default=float))
 
@@ -275,7 +319,8 @@ def main(argv=None) -> int:
 
     if args.out:
         Path(args.out).write_text(json.dumps(
-            dict(primary=prim, replication=rep, gate=g, depth_trend=depth),
+            dict(primary=prim, replication=rep, gate=g, depth_trend=depth,
+                 yardstick_cl051=yard),
             indent=2, default=float))
         print(f"\n[analyse] wrote {args.out}")
     return 0
