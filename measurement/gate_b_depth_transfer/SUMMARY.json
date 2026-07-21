@@ -1,0 +1,26 @@
+{
+  "n_records": 354,
+  "n_ok": 354,
+  "levels": [
+    200,
+    344,
+    688
+  ],
+  "agree_shallowest_vs_deepest": 0.8475,
+  "all_agree_frac": 0.8362,
+  "prior_survival_by_level": {
+    "200": 0.8588,
+    "344": 0.8333,
+    "688": 0.7599
+  },
+  "played_eq_q_argmax_by_level": {
+    "200": 0.8023,
+    "344": 0.7768,
+    "688": 0.7655
+  },
+  "mean_top2_q_gap_by_level": {
+    "200": 0.05635,
+    "344": 0.05903,
+    "688": 0.06821
+  }
+}
