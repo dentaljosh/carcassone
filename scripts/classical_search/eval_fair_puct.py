@@ -142,12 +142,17 @@ Usage:
   # CL-060 re-open trigger — the DIRECT head-to-head the ladder could not run:
   # candidate k8x1376 (11008) vs the k4x688 (2752) DEPLOY champion. Both asymmetry
   # flags are needed: --opp-sims ALONE would give a k8x688=5504 opponent, NOT the
-  # deploy config. Fresh (unused) seed band; deck-paired.
+  # deploy config. Deck-paired, on a FRESH band.
+  # ⚠️ Band history: 28e9 was originally written here as "unused", but the champion
+  # action-log gen consumed it on 2026-07-21 (champ_action_logs_20260721 claims
+  # seed_028000000000+). Using those decks for a confirmatory eval would grade on
+  # decks already seen during root mining. 32e9 verified clean; RE-VERIFY before
+  # launching (in use as of 2026-07-21: 13e9, 15e9, 22e9, 24e9, 25e9, 26e9, 28e9, 90e9).
   CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
       scripts/classical_search/eval_fair_puct.py \
       --info fair --opponent fair-champion \
       --exact-k 2 --k-dets 8 --sims 1376 --opp-k-dets 4 --opp-sims 688 \
-      --n 400 --paired --seed-start 28000000000 --workers 32 \
+      --n 400 --paired --seed-start 32000000000 --workers 32 \
       --out-root /mnt/c/carc-shared/classical_search \
       --out-subdir cl060_h2h_k8x1376_vs_deploy_k4x688 --shared-claim --no-results-csv
 """
