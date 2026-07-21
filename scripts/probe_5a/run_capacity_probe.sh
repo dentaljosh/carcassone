@@ -39,6 +39,15 @@ mkdir -p "$OUTROOT"
 # ascending size — smallest validates the pipeline first
 SIZES=("64 4" "128 6" "256 8")
 SEEDS=(0 1)
+# Optional cell subset for a 2-box split of the SAME cells (2026-07-21 resume after
+# the 2026-07-04 losses — originally blamed on a "2026-07-05 dirty reboot", but the
+# Windows event log shows NO Event 41 on 07-04/05; it was Event 26 low-virtual-memory
+# at 07-04 18:02:38, i.e. THIS SCRIPT starved the host. See run_capped_cell.sh and the
+# page-cache note below; do NOT relaunch f128b6/f256b8 uncapped on the local box).
+# CELLS="128:6:0 256:8:0" runs exactly those
+# (filters:blocks:seed) in the given order. Empty (default) = the full 3x2 ladder,
+# byte-identical to the original launch. Hyperparameters are UNCHANGED either way.
+CELLS="${CELLS:-}"
 
 echo "[eta] 6 sequential GPU runs (3 sizes x 2 seeds, ascending): f64 ~15-70min/run"
 echo "[eta] (2026-07-01 arms-run wallclocks), f128 slower, f256 possibly 2-4h/run"
@@ -68,12 +77,25 @@ run_one () {  # filters blocks seed
 
 # NOTE: do NOT drop page cache between runs — every run reads the SAME 32GB obs
 # memmap; keeping it cached across runs is the speedup, not a leak.
-for sz in "${SIZES[@]}"; do
-  read -r F B <<< "$sz"
-  for seed in "${SEEDS[@]}"; do
-    run_one "$F" "$B" "$seed"
+# ⚠️ 2026-07-21 CORRECTION: that is true on native Linux (page cache is reclaimable
+# and free) but FALSE under WSL2 — guest page cache inflates the utility VM's
+# host-side footprint, and .wslconfig grants memory=42GB on a 47.9GB host. This
+# comment's advice is exactly what killed the VM on 07-04 and again on 07-21
+# (Windows Event 26, then teardown). Launch big cells via run_capped_cell.sh, which
+# runs the training in a cgroup scope with a hard MemoryMax + a host-RAM watchdog.
+if [ -n "$CELLS" ]; then
+  for cell in $CELLS; do
+    IFS=: read -r F B S <<< "$cell"
+    run_one "$F" "$B" "$S"
   done
-done
+else
+  for sz in "${SIZES[@]}"; do
+    read -r F B <<< "$sz"
+    for seed in "${SEEDS[@]}"; do
+      run_one "$F" "$B" "$seed"
+    done
+  done
+fi
 
 echo "=== all capacity-probe trainings done -> $OUTROOT ==="
 echo "score:  .venv/bin/python scripts/canonical_az/solver_score.py --max-k 2 \\"
