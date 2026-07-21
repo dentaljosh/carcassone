@@ -2082,9 +2082,23 @@ def main(argv=None) -> int:
         "both_sides_curve125": (bool(opp_leaf_cfg is not None
                                      and _leaf_hash(opp_leaf_cfg) == _leaf_hash(leaf_cfg))
                                 if _h2h else None),
-        "equal_wall_clock_note": ("champion total per-move budget k_dets*sims targets the "
-                                  "deployed clairvoyant champion ~2750 sims (equal wall-clock; "
-                                  "k_dets root expansions add a little fixed overhead)"),
+        # NOTE: must stay accurate under ASYMMETRIC budgets (--opp-sims / --opp-k-dets).
+        # The old text hardcoded "targets ~2750 sims", which reads as FALSE whenever the
+        # candidate is deliberately off the deploy budget (e.g. the CL-060 k8x1376=11008
+        # H2H). Describe what this run actually did instead of asserting a fixed target.
+        "equal_wall_clock_note": (
+            (f"ASYMMETRIC budgets: candidate k_dets={args.k_dets}x{args.sims}"
+             f"={args.k_dets * args.sims} total vs opponent "
+             f"k_dets={_opp_eff_k_dets(args)}x{args.opp_sims if args.opp_sims is not None else args.sims}"
+             f"={_opp_eff_k_dets(args) * (args.opp_sims if args.opp_sims is not None else args.sims)}"
+             " total per move — this is NOT an equal-sims cell; see the summary's "
+             "'asymmetric_budgets' block for the per-side record")
+            if (_h2h and (args.opp_sims is not None or args.opp_k_dets is not None))
+            # Symmetric branch keeps the PRE-CHANGE string verbatim so an unset-flag run
+            # stays byte-identical to every historical manifest (the parity property).
+            else ("champion total per-move budget k_dets*sims targets the "
+                  "deployed clairvoyant champion ~2750 sims (equal wall-clock; "
+                  "k_dets root expansions add a little fixed overhead)")),
         "env": {k: os.environ.get(k) for k in _CANON_ENV},
     }
     # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON (CANDIDATE
