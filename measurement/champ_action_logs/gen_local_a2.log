@@ -1,0 +1,7 @@
+gen_fair_distill: games=450 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=False batch_size=1 rep=78ch/10sc leaf_hash=6dfffd57051690f2 net_mode=net-free (champion) | 157 cached, 293 to play, 8 workers, out=/mnt/c/carc-shared/champ_action_logs_20260721
+  10/293 games (105.0s/game, 1438 rows [1398 policy / 40 value-only], ~495 min left)
+  20/293 games (87.5s/game, 2876 rows [2796 policy / 80 value-only], ~398 min left)
+  30/293 games (81.3s/game, 4316 rows [4196 policy / 120 value-only], ~356 min left)
+  40/293 games (82.5s/game, 5755 rows [5595 policy / 160 value-only], ~348 min left)
+  50/293 games (83.6s/game, 7195 rows [6995 policy / 200 value-only], ~339 min left)
+  60/293 games (80.9s/game, 8635 rows [8395 policy / 240 value-only], ~314 min left)

@@ -1,0 +1,31 @@
+{
+  "kind": "champion_action_log_corpus",
+  "games_jsonl": "measurement/champ_action_logs/champ_games.jsonl (copy: champ_games.jsonl in this dir)",
+  "format": "root_replay GameRecord jsonl {game_id, deck_seed, actions, n_plies, score_p0, score_p1, ...meta}",
+  "n_games": 449,
+  "seed_band": "28000000000..28000000449 (449/450 complete; 28000000446 lost to an orphan .claim)",
+  "agent": "FairHeuristicPriorAgent (PRODUCTION.yaml champion, fair PIMC)",
+  "budget": "k_dets=4 x sims_per_det=688 = 2752 sims/move, exact_endgame K<=2",
+  "leaf": "v2_9_2_Bmild_cap8_curve125; runtime frozen-config-hash 6dfffd57051690f2 (== champion_factory.LEAF_HASH_FROZEN_MK0)",
+  "champion_parity_check": "agent cfg == champion_factory.production_prior_cfg() except reuse_tree (a documented NO-OP in fair deploy); leaf_cfg identical; leaf VALUE panel identical",
+  "boxes": "laptop W14 + laptop W6 + local-5900XT W8, --shared-claim work-stealing",
+  "wall_clock": "~2h27m (2026-07-21 09:38 -> 12:05 EDT)",
+  "code_rev_by_shard": {
+    "1029d5db1-dirty": 262,
+    "ddb4ceb-dirty": 124,
+    "3f93fdb-dirty": 63
+  },
+  "code_rev_note": "three adjacent revs across the three legs (laptop 1029d5db1 / local ddb4ceb / laptop-leg2 3f93fdb). 1029d5d (the emitter commit) is an ANCESTOR of both others, and `git diff 1029d5d..<rev> -- src/ scripts/distill_flywheel/` is EMPTY for both -> all legs ran byte-identical champion + emitter code; the intervening commits touched only eval/docs/harnesses.",
+  "round_trip_proof": "25 full-game replays (terminal + recorded final scores) + 1448 per-ply string_representation comparisons over 10 games, 0 mismatches; tests/test_gen_fair_distill.py::test_action_log_round_trips",
+  "mined_roots": "measurement/f3_public_state_oracle/roots_k3_champion.jsonl (436 genuinely-hidden K=3 roots)",
+  "outcome_stats": {
+    "p0_wins": 211,
+    "draws": 12,
+    "n": 449,
+    "mean_score_diff_p0_minus_p1": -0.54,
+    "plies": {
+      "144": 403,
+      "143": 46
+    }
+  }
+}
