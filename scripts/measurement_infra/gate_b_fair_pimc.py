@@ -214,7 +214,7 @@ def _build_agent(game, sims, seed):
 
 
 def _process_root(r: dict) -> dict:
-    seed, ply = int(r["seed"]), int(r["ply"])
+    seed, ply = _root_ids(r)
     root_id = f"s{seed}_p{ply}"
     rec = {"root_id": root_id, "seed": seed, "ply": ply,
            "k_remaining": int(r.get("k_remaining", -1)),
@@ -227,7 +227,7 @@ def _process_root(r: dict) -> dict:
     old = signal.signal(signal.SIGALRM, _on_alarm)
     signal.alarm(int(_WALL))
     try:
-        game, board = GEP.replay_to(seed, ply)
+        game, board = _reconstruct(r)
         cksum = game.string_representation(board)
         rec["checksum_ok"] = bool(cksum == r.get("checksum"))
         if not rec["checksum_ok"]:
@@ -373,7 +373,7 @@ def _process_root(r: dict) -> dict:
             for L in _LEVELS:
                 match = True
                 for i, b in enumerate(world_boards):
-                    g2, _b2 = GEP.replay_to(seed, ply)
+                    g2, _b2 = _reconstruct(r)
                     ag2 = _build_agent(g2, L, rseed)
                     m2 = NeuralMCTS(game=g2, evaluator=ag2._evaluator, simulations=L,
                                     c_puct=ag2._c_puct, seed=base + 100 + i)
@@ -408,6 +408,26 @@ def _init_worker(cfg, levels, k_dets, wall, verify, minpv):
 
 
 # --------------------------------------------------------------------------- #
+def _root_ids(r: dict) -> tuple[int, int]:
+    """(seed, ply) for a root record. GREEDY roots carry `seed`; CHAMPION action-log roots
+    (mine_roots.py --source champion) carry `deck_seed` + the full `actions` sequence."""
+    return int(r.get("seed", r.get("deck_seed"))), int(r["ply"])
+
+
+def _reconstruct(r: dict):
+    """Rebuild (game, board) for a root record — SOURCE-AGNOSTIC (2026-07-21).
+
+    * greedy roots   -> gen_endgame_positions.replay_to(seed, ply)
+    * champion roots -> root_replay.replay_actions(deck_seed, actions, ply) — the lossless
+      (deck_seed, action_sequence) contract, so roots mined from the CHAMPION'S OWN play
+      distribution work here without the greedy proxy. Checksum-verified by the caller.
+    """
+    if r.get("actions"):
+        import root_replay as RR
+        return RR.replay_actions(int(r["deck_seed"]), r["actions"], int(r["ply"]))
+    return GEP.replay_to(int(r["seed"]), int(r["ply"]))
+
+
 def _load_roots(path: str) -> list:
     out = []
     for line in Path(path).read_text().splitlines():
@@ -415,9 +435,12 @@ def _load_roots(path: str) -> list:
         if not line:
             continue
         d = json.loads(line)
-        if "seed" in d and "ply" in d:
+        if "ply" not in d:
+            continue
+        # greedy (seed+ply) OR champion action-log (deck_seed+actions+ply) roots
+        if "seed" in d or ("deck_seed" in d and d.get("actions")):
             out.append(d)
-    out.sort(key=lambda r: (int(r.get("k_remaining", 0)), int(r["seed"]), int(r["ply"])))
+    out.sort(key=lambda r: (int(r.get("k_remaining", 0)), *_root_ids(r)))
     return out
 
 
@@ -526,14 +549,14 @@ def main(argv=None) -> int:
 
     todo, skipped = [], 0
     for r in roots:
-        rid = f"s{int(r['seed'])}_p{int(r['ply'])}"
+        rid = ("s%d_p%d" % _root_ids(r))
         if args.resume and (out_dir / f"{rid}.json").exists():
             skipped += 1
             continue
         todo.append(r)
 
-    kept_ids = {f"s{int(r['seed'])}_p{int(r['ply'])}" for r in roots}
-    all_ids = [f"s{int(r['seed'])}_p{int(r['ply'])}" for r in _load_roots(args.roots)]
+    kept_ids = {("s%d_p%d" % _root_ids(r)) for r in roots}
+    all_ids = [("s%d_p%d" % _root_ids(r)) for r in _load_roots(args.roots)]
     dropped = [i for i in all_ids if i not in kept_ids]
 
     manifest = {
@@ -589,7 +612,7 @@ def main(argv=None) -> int:
     records = []
     if args.resume:
         for r in roots:
-            rid = f"s{int(r['seed'])}_p{int(r['ply'])}"
+            rid = ("s%d_p%d" % _root_ids(r))
             fp = out_dir / f"{rid}.json"
             if fp.exists() and r not in todo:
                 try:
