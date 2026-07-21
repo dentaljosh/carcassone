@@ -242,6 +242,12 @@ def main(argv=None) -> int:
     ap.add_argument("--k-dets", type=int, default=4)
     ap.add_argument("--n", type=int, default=0, help="cap total roots (0 = all)")
     ap.add_argument("--shard", default="0/1", help="i/N — take every Nth root")
+    ap.add_argument("--roots-file", default=None,
+                    help="FREE-PASS mode: label an explicit roots jsonl in the gate_b schema "
+                         "({deck_seed, actions, ply, ...}) instead of sampling a corpus. These "
+                         "sets are ENDGAME-BOUNDED (k_remaining=3) — hypothesis generation "
+                         "ONLY, never a verdict (PREREG.md §8).")
+    ap.add_argument("--roots-tag", default="freepass")
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--wall-cap-secs", type=int, default=900)
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "records.jsonl"))
@@ -257,14 +263,31 @@ def main(argv=None) -> int:
 
     roots = []
     corpus_meta = {}
-    for tag in args.corpora.split(","):
-        tag = tag.strip()
-        path, ind = CORPORA[tag]
-        games = RR.load_games(str(path))
-        rs = sample_roots(games, args.per_game, args.tiles_lo, args.tiles_hi, tag, ind)
-        corpus_meta[tag] = {"path": str(path), "n_games": len(games), "n_roots": len(rs),
-                            "corpus_champ125": ind}
-        roots.extend(rs)
+    if args.roots_file:
+        for line in Path(args.roots_file).read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            d = json.loads(line)
+            if "ply" not in d or not d.get("actions"):
+                continue
+            roots.append({"corpus": args.roots_tag, "corpus_champ125": 1,
+                          "game_id": int(d.get("game_id", d["deck_seed"])),
+                          "deck_seed": int(d["deck_seed"]), "ply": int(d["ply"]),
+                          "actions": d["actions"]})
+        corpus_meta[args.roots_tag] = {
+            "path": args.roots_file, "n_roots": len(roots), "corpus_champ125": 1,
+            "scope": "FREE PASS — ENDGAME-BOUNDED (k_remaining=3). Hypothesis generation "
+                     "ONLY; can never pass or fail the PREREG §5 gate."}
+    else:
+        for tag in args.corpora.split(","):
+            tag = tag.strip()
+            path, ind = CORPORA[tag]
+            games = RR.load_games(str(path))
+            rs = sample_roots(games, args.per_game, args.tiles_lo, args.tiles_hi, tag, ind)
+            corpus_meta[tag] = {"path": str(path), "n_games": len(games), "n_roots": len(rs),
+                                "corpus_champ125": ind}
+            roots.extend(rs)
     roots.sort(key=lambda r: (r["corpus"], r["deck_seed"], r["ply"]))
     if args.n > 0:
         roots = roots[: args.n]
