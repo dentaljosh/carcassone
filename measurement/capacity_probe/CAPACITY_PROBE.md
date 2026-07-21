@@ -1,7 +1,45 @@
 # Capacity-scaling probe — pre-registered read-out
 
-**Status: RUNNING (launched 2026-07-04). Thresholds below were fixed BEFORE any
-result existed. Do not move them after seeing the numbers.**
+> **⚠️ STATUS 2026-07-21 — PARTIAL LADDER, RUNNING UNDER A MEMORY CAP. Scope is
+> contested and the f256b8 cells are DEFERRED pending Joshua's call.** Done:
+> f64b4 s0/s1 (2026-07-04). Running/queued: f128b6 s0, then s1. **NOT running:
+> f256b8 s0/s1.** Thresholds below were fixed BEFORE any result existed — do not
+> move them after seeing the numbers.
+
+> **🛑 NEVER launch this probe via `run_capacity_probe.sh` directly — use
+> [`scripts/probe_5a/run_capped_cell.sh`](../../scripts/probe_5a/run_capped_cell.sh).**
+> This probe **kills the box** uncapped. `run_capacity_probe.sh` deliberately keeps
+> the ~30GB obs memmap hot in page cache ("the speedup, not a leak") — true on
+> native Linux, **false under WSL2**, where guest page cache inflates the utility
+> VM's host-side footprint against a `.wslconfig` grant of 42GB on a 47.9GB host.
+> Windows then logs **Event 26 "Virtual Memory Minimum Too Low"** and tears the WSL
+> VM down. The host survives, so `dmesg` is empty and it *masquerades as flaky
+> hardware*. This happened **twice**: 2026-07-04 18:02:38 and again 2026-07-21
+> 13:55:35, when the loss was mis-blamed on a "2026-07-05 dirty reboot" and naively
+> retried. There is **no Event 41 on 07-04 or 07-05** — the dirty-reboot story is
+> false. `f128b6_s0.log` died at **byte 437 on both dates**; a byte-identical death
+> means the JOB is the cause, not the hardware. Preserved evidence:
+> `f128b6_s0.CRASH_EVIDENCE_20260721.log` (do not overwrite). Root cause + fix:
+> commit `1c75a3e`; the box's *other*, genuinely-hardware dirty-reboot mode is
+> distinct — check Event **41 vs 26** before blaming hardware, the fixes are opposite.
+> Under the cap (`MemoryHigh=16G`/`MemoryMax=20G`/`MemorySwapMax=0` + a
+> Windows-free-RAM watchdog) f128b6_s0 cleared epoch 1 for the first time ever.
+
+> **⚖️ SPEC CONFLICT — B3's scope is unsettled (recorded 2026-07-21, not resolved).**
+> This doc (2026-07-04) pre-registers a **3-size** ladder (64/128/256) whose slope
+> clause needs *"the mean of the two step deltas"*, i.e. it **requires f256b8**.
+> But [docs/PROGRAM_ROADMAP_2026-07-07.md](../../docs/PROGRAM_ROADMAP_2026-07-07.md)
+> line 45 is **dated later** (after the 07-04 crash) and re-scopes B3 to
+> *"f64b4-vs-f128b6 solver-τ slope on the memory-safe ~2GB subset, **laptop only**
+> (capacity jobs banned local)"* — dropping f256b8 **and** the full dataset. The two
+> cannot both be satisfied. Resolution is **Joshua's call, not the agent's**.
+> Interim decision: run `f128b6_s1` (needed by *both* specs, and on the **full**
+> dataset — strictly better data than the roadmap's 2GB subset, and directly
+> comparable to the already-trained f64b4 checkpoints), then **STOP**. The f256b8
+> cells (~10–25h under the cap) are deferred. ⚠️ Consequence: with only f64→f128,
+> the pre-registered **two-delta slope is NOT computable**, so the gate below
+> **cannot be fully adjudicated** on the partial ladder — the 4-checkpoint read-out
+> reports the single step delta and the arithmetic, and stops short of a verdict.
 
 ## Question
 
