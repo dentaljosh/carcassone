@@ -132,9 +132,23 @@ def _process_root(r: dict) -> dict:
     old = signal.signal(signal.SIGALRM, _on_alarm)
     signal.alarm(int(_WALL))
     try:
-        game, board = RR.replay_actions(int(r["deck_seed"]), r["actions"], int(r["ply"]))
+        ply = int(r["ply"])
+        game, board = RR.replay_actions(int(r["deck_seed"]), r["actions"], ply)
+        # TILES-phase selection is by REPLAY, not by action-index parity. The engine
+        # SKIPS the meeple phase when the mover has no placeable meeple, so a game
+        # with any such turn has its parity flipped from there on (found in the
+        # pre-flight: 3/48 roots, all in one game). From a MEEPLES-phase state the
+        # single meeple action always lands on the next TILES phase, so one step
+        # suffices; ply_shifted records it.
+        shifted = 0
+        while board.state.phase != GamePhase.TILES and shifted < 2 and ply < len(r["actions"]):
+            board, _ = game.get_next_state(board, int(r["actions"][ply]))
+            ply += 1
+            shifted += 1
         st = board.state
         assert st.phase == GamePhase.TILES, f"root is not TILES phase: {st.phase}"
+        rec["ply_used"] = ply
+        rec["ply_shifted"] = shifted
         mover = int(st.current_player)
         rec["mover"] = mover
         rec["tiles_remaining"] = int(len(st.deck) + 1)

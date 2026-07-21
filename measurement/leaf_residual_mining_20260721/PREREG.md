@@ -263,3 +263,42 @@ pre-registered estimator + gate arithmetic) · `records*.jsonl` · `REPORT.md` (
 verdict). Close-out: `experiments/results.csv` row, a `governance/CLAIM_REGISTRY.csv` claim,
 status banners here and on `REPORT.md`, the `STATUS.md` top block, a
 `docs/PROGRAM_ROADMAP_2026-07-07.md` line, and `python3 scripts/doc_lint.py` clean.
+
+---
+
+## AMENDMENT 1 — 2026-07-21, BEFORE any primary fit result
+
+**What changed:** §4 said TILES-phase roots are "the even action indices". That is factually
+wrong for some games: the engine **skips the meeple phase** whenever the mover has no placeable
+meeple, so any game containing such a turn has its action-index parity flipped from that turn
+on. The pre-flight caught it — 3 of 48 roots landed in MEEPLES phase, all three in a single
+game (`windowaudit` deck_seed 7000013), and the harness's phase assertion rejected them loudly
+(working as intended).
+
+**The correction:** TILES-phase selection is now determined **by replay, not by parity**. If the
+sampled ply replays into a MEEPLES state, the harness applies that single meeple action to reach
+the next TILES phase and labels that root, recording `ply_used` and `ply_shifted` on every
+record. From a MEEPLES state one action always lands on TILES, so the shift is at most 1 ply and
+`tiles_remaining` is unchanged.
+
+**Why this is a bug fix and not a plan change:** the pre-registered *intent* — "TILES-phase
+midgame roots, 3 per game, drawn uniformly from the eligible band by a deck-seed-seeded RNG" —
+is unchanged; only a broken implementation detail of *how a TILES ply is identified* is fixed.
+Nothing about the residual definition, the feature dictionary, the split, the correction or the
+gate moves. No primary fit result had been computed when this was made.
+
+## AMENDMENT 2 — 2026-07-21, BEFORE any primary fit result: depth levels + measured ETA
+
+Per-world snapshot levels are **{200, 344, 688, 1376}** (totals k4×… = 800 / 1376 / 2752 /
+5504). §2's primary level is unchanged at **L = 688** (the deployed k4×688 = 2752 budget); 1376
+is a free-ish secondary that supports the depth-trend read (does the residual's structure
+strengthen as search deepens?).
+
+Measured pre-flight at production knobs (laptop, W=10, same levels/k_dets/leaf as the scaled
+run): **45/48 ok, median 5.89 s/root**, `resid(688)` mean +0.067 sd 0.141. At W=12 over the
+10,047 pre-registered roots (8,700 primary + 1,347 replication) that is **≈1.4–1.7 h wall-clock
+on the laptop** — well inside the box-night budget, so no scope reduction is needed.
+
+**Box assignment:** laptop only. The local box is running another agent's B3 capacity-probe
+ladder (~8–13 h) after a WSL VM teardown caused by that job's memory footprint, so it is not
+used here even though this workload is memory-light (~100 MB/worker).
