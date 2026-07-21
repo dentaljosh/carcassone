@@ -53,6 +53,12 @@ HOST=${HOST:-$(hostname)}
 OPP_SIMS=${OPP_SIMS:-}
 OPP_SIMS_ARGS=()
 [ -n "$OPP_SIMS" ] && OPP_SIMS_ARGS=(--opp-sims "$OPP_SIMS")
+# OPP_K_DETS (optional): the sibling axis — the opponent runs THIS many determinizations
+# while --k-dets (in "$@") stays the CANDIDATE count. Needed for a whole-config A/B
+# (CL-060: candidate k8x1376 vs the k4x688 DEPLOY champion), which OPP_SIMS alone cannot
+# express. Empty/unset => --opp-k-dets is NOT passed (symmetric, byte-unchanged).
+OPP_K_DETS=${OPP_K_DETS:-}
+[ -n "$OPP_K_DETS" ] && OPP_SIMS_ARGS+=(--opp-k-dets "$OPP_K_DETS")
 SRV="$REPO/rust/carc-orch/run_server.sh"
 TS_C="/tmp/carc_fairnvnC_${HOST}.ts.pt"
 TS_O="/tmp/carc_fairnvnO_${HOST}.ts.pt"

@@ -25,6 +25,14 @@ that file guards the CANDIDATE-side leaf override, this one guards the OPPONENT 
       "prefix ms/move" compares prefix-to-prefix (the driver-timed rung_secs includes
       the endgame solve, so charging it against the candidate's solver-free prefix
       made two IDENTICAL agents look ~4x apart).
+  (g) ASYMMETRIC BUDGETS (--opp-sims / --opp-k-dets): the two deliberate exceptions to
+      (e)'s shared-knob rule. UNSET is the load-bearing case — the opponent must fall
+      back to the shared --sims/--k-dets so every symmetric run stays byte-identical;
+      SET moves ONLY the opponent, is rejected for the h800 rung (which owns
+      --rung-sims and is not a PIMC agent at all), and is surfaced per-side in the
+      label/manifest/summary so no reader can mistake one side's budget for the
+      match's. --opp-k-dets is what makes CL-060's re-open trigger expressible:
+      candidate k8x1376 (11008) vs the k4x688 (2752) DEPLOY champion.
 
 No games are played here (agent CONSTRUCTION + config resolution only), so the whole
 file runs in seconds. Importing eval_fair_puct FIRST keeps DEFAULT_CONFIG the
@@ -321,3 +329,156 @@ def test_old_result_json_still_loads_into_the_new_dataclass():
     r = efp.GameResult(**old)
     assert r.opponent == "h800"
     assert r.opp_exact_moves == 0 and r.opp_latch_k is None
+
+
+# --------------------------------------------------------------------------- #
+# (g) ASYMMETRIC opponent budgets: --opp-sims / --opp-k-dets
+#
+# UNSET is the load-bearing case: the opponent must fall back to the shared
+# --sims/--k-dets so every symmetric run is byte-identical to the pre-flag harness.
+# SET moves ONLY the opponent, and every read-out (label, manifest, summary) must
+# carry the OPPONENT's own budget rather than the candidate's.
+# --------------------------------------------------------------------------- #
+C125 = None   # lazily built (the leaf load is the slow part)
+
+
+def _c125():
+    global C125
+    if C125 is None:
+        C125 = efp._curve125_leaf_cfg()
+    return C125
+
+
+def _fair_opp(sims, k_dets, opp_sims=None, opp_k_dets=None):
+    """The head-to-head opponent as _make_opponent builds it, unwrapped to the agent."""
+    opp = efp._make_opponent("fair-champion", CFG_DICT, sims, k_dets, 2, 800, seed=1,
+                             opp_leaf_cfg=_c125(), opp_sims=opp_sims,
+                             opp_k_dets=opp_k_dets)
+    return opp._prefix
+
+
+class _Args:
+    """Minimal argparse-Namespace stand-in for the arg-level helpers."""
+
+    def __init__(self, **kw):
+        d = {"opponent": "fair-champion", "sims": 688, "k_dets": 4, "opp_sims": None,
+             "opp_k_dets": None, "c_puct": 1.5, "tau_p": 5.0,
+             "leaf_quantize": "float", "value_norm": 15.0, "opp_net": None}
+        d.update(kw)
+        for k, v in d.items():
+            setattr(self, k, v)
+
+
+def test_opp_k_dets_unset_falls_back_to_the_shared_k_dets():
+    """THE parity property: None must be indistinguishable from 'pass --k-dets'."""
+    fallback = _fair_opp(sims=344, k_dets=8, opp_k_dets=None)
+    explicit = _fair_opp(sims=344, k_dets=8, opp_k_dets=8)
+    assert fallback._k_dets == explicit._k_dets == 8
+    assert fallback._sims == explicit._sims == 344
+
+
+def test_opp_k_dets_moves_only_the_opponent():
+    cand = efp._make_champion("fair", efp._cfg_from_dict(CFG_DICT, _c125()),
+                              1376, 8, 2, 1, Game(enable_legal_moves_cache=True))._prefix
+    opp = _fair_opp(sims=1376, k_dets=8, opp_k_dets=4)
+    assert (cand._k_dets, cand._sims) == (8, 1376)
+    assert (opp._k_dets, opp._sims) == (4, 1376)
+
+
+def test_cl060_h2h_is_expressible_only_with_both_flags():
+    """CL-060's re-open trigger: candidate k8x1376 (11008) vs the k4x688 (2752) DEPLOY
+    champion. --opp-sims ALONE gives a k8x688=5504 opponent — NOT the deploy config."""
+    sims_only = _fair_opp(sims=1376, k_dets=8, opp_sims=688)
+    assert sims_only._k_dets * sims_only._sims == 8 * 688 == 5504   # the wrong opponent
+    both = _fair_opp(sims=1376, k_dets=8, opp_sims=688, opp_k_dets=4)
+    assert (both._k_dets, both._sims) == (4, 688)
+    assert both._k_dets * both._sims == 2752                       # the DEPLOY champion
+    # ...and the deploy config IS the production default, so the opponent is literally
+    # the shipped champion on both budget axes.
+    a = _Args(sims=1376, k_dets=8, opp_sims=688, opp_k_dets=4)
+    assert efp._prod_deviations(a, sims_override=efp._opp_eff_sims(a),
+                                k_dets_override=efp._opp_eff_k_dets(a)) == []
+    # the CANDIDATE, by contrast, deviates on BOTH axes
+    dev = efp._prod_deviations(a)
+    assert any("k_dets=8" in d for d in dev) and any("sims=1376" in d for d in dev)
+
+
+def test_h800_rung_ignores_opp_k_dets():
+    """The rung is a plain HeuristicMCTS — no determinizations at all. It must stay the
+    byte-identical fixed ruler no matter what the asymmetry flags say."""
+    plain = efp._make_opponent("h800", CFG_DICT, 8, 2, 2, 800, seed=1)
+    with_k = efp._make_opponent("h800", CFG_DICT, 8, 2, 2, 800, seed=1,
+                                opp_k_dets=99, opp_sims=99)
+    assert isinstance(with_k, efp._RungPrefix)
+    assert with_k._m.simulations == plain._m.simulations == 800
+    assert efp._leaf_hash(with_k._m._leaf_cfg) == efp.RUNG_CURVE100_LEAF_HASH
+
+
+def test_opp_eff_helpers_default_to_the_shared_knobs():
+    sym = _Args(sims=688, k_dets=4)
+    assert efp._opp_eff_sims(sym) == 688 and efp._opp_eff_k_dets(sym) == 4
+    asym = _Args(sims=1376, k_dets=8, opp_sims=688, opp_k_dets=4)
+    assert efp._opp_eff_sims(asym) == 688 and efp._opp_eff_k_dets(asym) == 4
+
+
+def test_opp_label_reports_the_opponents_own_budget():
+    """The label is what lands in summary.json / the run header — it must never show the
+    CANDIDATE's budget on the opponent line."""
+    assert "k4x688" in efp._opp_label(_Args(sims=1376, k_dets=8, opp_sims=688,
+                                            opp_k_dets=4))
+    # symmetric: unchanged (the shared knobs)
+    assert "k8x1376" in efp._opp_label(_Args(sims=1376, k_dets=8))
+
+
+def test_prod_deviations_k_dets_override_mirrors_sims_override():
+    a = _Args(sims=688, k_dets=8)
+    assert any("k_dets=8" in d for d in efp._prod_deviations(a))
+    # the OPPONENT block substitutes ITS own k_dets -> production, no deviation
+    assert efp._prod_deviations(a, k_dets_override=4) == []
+
+
+def test_summary_asymmetry_block_is_absent_when_symmetric():
+    """Byte-identical summary.json for every symmetric run: the guard keys appear ONLY
+    when an asymmetry flag was explicitly set."""
+    res = [_mk(1, 0, +5, opponent="fair-champion"), _mk(1, 1, -5, opponent="fair-champion")]
+    sym = efp._summary(res, "fair", 2, 4, 688, 800, opponent="fair-champion")
+    for k in ("asymmetric_budgets", "opp_k_dets", "opp_sims", "opp_total_sims",
+              "candidate_total_sims"):
+        assert k not in sym
+
+
+def test_summary_asymmetry_block_names_both_sides():
+    """`k_dets`/`sims`/`total_sims` are the CANDIDATE's; in an asymmetric run the
+    opponent's own budget must sit right next to them so neither can be read as the
+    match's."""
+    res = [_mk(1, 0, +5, opponent="fair-champion"), _mk(1, 1, -5, opponent="fair-champion")]
+    summ = efp._summary(res, "fair", 2, 8, 1376, 800, opponent="fair-champion",
+                        opp_k_dets=4, opp_sims=688)
+    assert summ["asymmetric_budgets"] is True
+    assert (summ["k_dets"], summ["sims"], summ["total_sims"]) == (8, 1376, 11008)
+    assert (summ["candidate_k_dets"], summ["candidate_sims"],
+            summ["candidate_total_sims"]) == (8, 1376, 11008)
+    assert (summ["opp_k_dets"], summ["opp_sims"], summ["opp_total_sims"]) == (4, 688, 2752)
+
+
+def test_summary_asymmetry_block_fills_the_unset_axis_from_the_shared_knob():
+    """--opp-k-dets alone (no --opp-sims): the opponent's sims is the shared --sims."""
+    res = [_mk(1, 0, 0, opponent="fair-champion")]
+    summ = efp._summary(res, "fair", 2, 8, 344, 800, opponent="fair-champion",
+                        opp_k_dets=4)
+    assert (summ["opp_k_dets"], summ["opp_sims"], summ["opp_total_sims"]) == (4, 344, 1376)
+
+
+@pytest.mark.parametrize("flag", ["--opp-k-dets", "--opp-sims"])
+def test_asymmetry_flags_are_rejected_for_the_h800_rung(flag, capsys):
+    """h800 already owns a budget flag (--rung-sims); silently swallowing an asymmetry
+    flag there would mislead. Fail loud."""
+    with pytest.raises(SystemExit):
+        efp.main(["--info", "fair", "--opponent", "h800", flag, "4"])
+    err = capsys.readouterr().err
+    assert flag in err and "--rung-sims" in err
+
+
+def test_opp_k_dets_must_be_at_least_one():
+    with pytest.raises(SystemExit):
+        efp.main(["--info", "fair", "--opponent", "fair-champion", "--opp-k-dets", "0"])
