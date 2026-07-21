@@ -52,10 +52,21 @@ def load(paths) -> dict:
     return rows
 
 
-def build_matrix(rows, level: str):
+def _target(r, level, target):
+    """PREREG §2: the PRIMARY target is the pooled visit-weighted root Q minus the leaf.
+    `maxq` is the pre-registered SECONDARY read (best-play value instead of the
+    visit-weighted mean) — reported for robustness, never gated on."""
+    if target == "pooled":
+        return r.get("resid", {}).get(level)
+    ex = (r.get("level_extras") or {}).get(level) or {}
+    mq = ex.get("max_child_q")
+    return None if mq is None else mq - r["aux"]["v_leaf"]
+
+
+def build_matrix(rows, level: str, target: str = "pooled"):
     """-> (y, X_ctrl, F, groups, meta) for one depth level."""
-    keep = [r for r in rows if r.get("resid", {}).get(level) is not None]
-    y = np.array([r["resid"][level] for r in keep], dtype=float)
+    keep = [r for r in rows if _target(r, level, target) is not None]
+    y = np.array([_target(r, level, target) for r in keep], dtype=float)
     groups = np.array([int(r["deck_seed"]) for r in keep], dtype=np.int64)
     aux = {k: np.array([float(r["aux"][k]) for r in keep]) for k in
            ("v_leaf", "tiles_remaining", "corpus_champ125")}
@@ -150,8 +161,9 @@ def bh(pvals: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True) -> dict:
-    y, X, F, groups, keep = build_matrix(rows, level)
+def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True,
+            target: str = "pooled") -> dict:
+    y, X, F, groups, keep = build_matrix(rows, level, target)
     n, ngames = len(y), len(np.unique(groups))
     rho_icc, mbar = icc(y, groups)
     deff = 1.0 + (mbar - 1.0) * rho_icc
@@ -181,12 +193,25 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True) -> dict:
         res[k]["p_holm"] = hadj[k]
         res[k]["p_bh"] = badj[k]
 
-    out = dict(label=label, level=level, n_roots=n, n_games=ngames,
+    # candidate correlation matrix (PREREG §7.4: a "hit" must not be read as K
+    # independent chances when several candidates are near-collinear)
+    names = list(LF.CANDIDATE_NAMES)
+    M = np.column_stack([F[nm] for nm in names])
+    with np.errstate(invalid="ignore"):
+        C = np.corrcoef(M, rowvar=False)
+    C = np.nan_to_num(C)
+    hi = [[names[i], names[j], float(C[i, j])]
+          for i in range(len(names)) for j in range(i + 1, len(names))
+          if abs(C[i, j]) >= 0.5]
+    hi.sort(key=lambda t: -abs(t[2]))
+
+    out = dict(label=label, level=level, target=target, n_roots=n, n_games=ngames,
                mean_roots_per_game=mbar, icc_resid=rho_icc, design_effect=deff,
                n_eff=n_eff, resid_mean=float(y.mean()), resid_sd=float(y.std()),
-               family_size=len(LF.CANDIDATE_NAMES), features=res)
+               family_size=len(LF.CANDIDATE_NAMES), features=res,
+               candidate_pairs_absr_ge_0p5=hi)
     if verbose:
-        print(f"\n=== {label}  level={level} ===")
+        print(f"\n=== {label}  level={level}  target={target} ===")
         print(f"n_roots={n} n_games={ngames} mean_roots/game={mbar:.2f} "
               f"ICC={rho_icc:.3f} deff={deff:.2f} n_eff={n_eff:.0f}")
         print(f"resid mean={y.mean():+.4f} sd={y.std():.4f}")
@@ -201,6 +226,9 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True) -> dict:
             tag = "NEGCTL" if name == LF.NEG_CONTROL else "YARDST"
             print(f"{name:<26}{tag:<6}{r['rho']:>8.4f}{r['ci'][0]:>9.4f}"
                   f"{r['ci'][1]:>9.4f}{r['p']:>9.4f}{'--':>9}")
+        if hi:
+            print("  collinear candidate pairs (|r|>=0.5): "
+                  + ", ".join(f"{a}~{b}={c:+.2f}" for a, b, c in hi[:8]))
     return out
 
 
@@ -290,6 +318,9 @@ def main(argv=None) -> int:
     ap.add_argument("--boot", type=int, default=N_BOOT)
     ap.add_argument("--out", default=None)
     ap.add_argument("--label", default="primary")
+    ap.add_argument("--target", choices=["pooled", "maxq"], default="pooled",
+                    help="pooled = the PRIMARY pre-registered target; maxq = the "
+                         "pre-registered SECONDARY robustness read (never gated on)")
     args = ap.parse_args(argv)
 
     prows = load(args.primary)
@@ -297,9 +328,10 @@ def main(argv=None) -> int:
     print(f"[analyse] primary rows={len(prows)}"
           + (f"  replication rows={len(rrows)}" if rrows else ""))
 
-    prim = analyse(prows, args.level, args.label, boot=args.boot)
+    prim = analyse(prows, args.level, args.label, boot=args.boot, target=args.target)
     yard = yardstick(prows, args.level, boot=min(1000, args.boot))
-    rep = analyse(rrows, args.level, "replication(champion)", boot=args.boot) if rrows else None
+    rep = (analyse(rrows, args.level, "replication(champion)", boot=args.boot,
+                   target=args.target) if rrows else None)
     g = gate(prim, rep)
     g["yardstick_cl051"] = yard
     print("\n=== GATE (PREREG §5) ===")
@@ -313,7 +345,8 @@ def main(argv=None) -> int:
             continue
         try:
             depth[L] = analyse(prows, L, f"{args.label} depth L={L}",
-                               boot=max(400, args.boot // 4), verbose=False)
+                               boot=max(400, args.boot // 4), verbose=False,
+                               target=args.target)
         except Exception as e:
             depth[L] = {"error": str(e)}
 
