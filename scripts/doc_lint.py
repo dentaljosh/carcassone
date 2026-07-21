@@ -67,6 +67,20 @@ def _tracked() -> set[str]:
     return set(_git(["ls-files"]).splitlines())
 
 
+def _is_tracked_path(rt: str, tracked: set[str]) -> bool:
+    """True if `rt` is a tracked FILE or a tracked DIRECTORY.
+
+    `git ls-files` emits files only, so a link pointing at a directory that is
+    fully committed (e.g. a frozen review packet's `sources/`) would otherwise be
+    reported as UNTRACKED — a false E2 that blocks commits. Treat a path as
+    tracked when any tracked file lives under it.
+    """
+    if rt in tracked:
+        return True
+    prefix = rt.rstrip("/") + "/"
+    return any(t.startswith(prefix) for t in tracked)
+
+
 def _last_commit_age_days(relpath: str) -> float | None:
     out = _git(["log", "-1", "--format=%ct", "--", relpath]).strip()
     if not out.isdigit():
@@ -107,7 +121,7 @@ def lint(files: list[Path], stale_days: float) -> tuple[list[str], list[str]]:
                     errors.append(f"E1 {rel}: broken link -> {target}")
                 elif resolved != Path("/") and rel in tracked:
                     rt = str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else None
-                    if rt and rt not in tracked and not rt.startswith((".claude/",)):
+                    if rt and not _is_tracked_path(rt, tracked) and not rt.startswith((".claude/",)):
                         errors.append(
                             f"E2 {rel}: links to UNTRACKED file {rt} "
                             f"(breaks on clones/remotes — git add it or fix the link)")
