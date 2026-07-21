@@ -1,11 +1,15 @@
 # PRE-REGISTRATION — Leaf residual-mining (error-guided leaf-term discovery)
 
-> **⚠️ STATUS 2026-07-21 — PRE-REGISTERED, RUN NOT YET EXECUTED.** This document is committed
-> BEFORE any fit result is computed. Everything below — the residual definition, the complete
-> feature dictionary, the split, the multiple-comparisons correction, the gate thresholds and
-> the trigger/closure consequences — is fixed in advance. Nothing here may be edited after the
-> first look at a candidate's out-of-sample statistic; a change of plan gets a dated amendment
-> block at the bottom, not an edit. Results land in `REPORT.md`.
+> **⚠️ STATUS 2026-07-21 — EXECUTED AND CLOSED. Verdict = AMBIGUOUS (one candidate, at the floor
+> of the ambiguous band); no HIT; no S1 launched; champion and `governance/PRODUCTION.yaml`
+> UNTOUCHED.** Claim **CL-063**. Results + gate arithmetic → `REPORT.md`; canonical numbers →
+> [ANALYSIS_688_pooled.json](ANALYSIS_688_pooled.json).
+>
+> *Original banner, preserved:* this document was committed (`ffe37c8`) BEFORE any fit result was
+> computed. Everything below — the residual definition, the complete feature dictionary, the
+> split, the multiple-comparisons correction, the gate thresholds and the trigger/closure
+> consequences — was fixed in advance. Nothing was edited after the first look at a candidate's
+> out-of-sample statistic; the two amendments at the bottom are both dated pre-result.
 
 **Owner:** autonomous run, 2026-07-21. **Prior probability of a hit: ~10–15% — a NULL is the
 expected outcome and is a good result.** This is the last new experiment on the current program

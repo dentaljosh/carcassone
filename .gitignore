@@ -68,3 +68,9 @@ measurement/post_search_residual/data/
 
 # 5A arm-retrain weights (reproducible via scripts/probe_5a/run_arm_retrains.sh; evidence = summary/solver JSONs)
 measurement/probe_5a/arms_retrain/**/ranknet_best.pt
+
+# Leaf residual-mining (2026-07-21): the raw per-root labels are LARGE (16.7M + 2.6M).
+# The .gz siblings ARE tracked as provenance; the uncompressed files are not.
+measurement/leaf_residual_mining_20260721/records_primary.jsonl
+measurement/leaf_residual_mining_20260721/records_replication.jsonl
+measurement/leaf_residual_mining_20260721/freepass_k3champ.jsonl

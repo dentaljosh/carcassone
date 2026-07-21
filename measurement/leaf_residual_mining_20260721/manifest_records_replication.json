@@ -15,24 +15,27 @@
   "agent": "FairHeuristicPriorAgent via champion_factory.build_fair_champion (PRODUCTION.yaml knobs, curve125 v2.9 Bmild_cap8 leaf)",
   "k_dets": 4,
   "root_sampling": {
-    "mode": "explicit_roots_file",
-    "roots_file": "measurement/f3_public_state_oracle/roots_k3_champion.jsonl",
-    "roots_tag": "freepass_k3champ",
-    "phase": "TILES (asserted per root; a MEEPLES root advances one action, recorded as ply_shifted)",
-    "scope": "FREE PASS \u2014 hypothesis generation only (PREREG.md \u00a78)",
-    "note": "corpus-sampling knobs (--per-game/--tiles-lo/--tiles-hi) are NOT used in this mode and are omitted deliberately"
+    "mode": "corpus_sample",
+    "phase": "TILES only \u2014 determined BY REPLAY, not by action-index parity (PREREG.md Amendment 1: the engine skips the meeple phase when the mover has no placeable meeple, which flips parity for the rest of that game). A sampled ply landing in MEEPLES advances one action; ply_used/ply_shifted are recorded per root.",
+    "candidate_plies": "even action indices in the eligible band (the draw), then replay-corrected to TILES",
+    "tiles_remaining_band": [
+      20,
+      55
+    ],
+    "per_game": 3,
+    "rule": "uniform without replacement over eligible plies, random.Random(deck_seed*7919+11)"
   },
   "corpora": {
-    "freepass_k3champ": {
-      "path": "measurement/f3_public_state_oracle/roots_k3_champion.jsonl",
-      "n_roots": 436,
-      "corpus_champ125": 1,
-      "scope": "FREE PASS \u2014 ENDGAME-BOUNDED (k_remaining=3). Hypothesis generation ONLY; can never pass or fail the PREREG \u00a75 gate."
+    "champion": {
+      "path": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl",
+      "n_games": 449,
+      "n_roots": 1347,
+      "corpus_champ125": 0
     }
   },
-  "n_roots_selected": 436,
+  "n_roots_selected": 1347,
   "n_todo": 0,
-  "n_resumed": 436,
+  "n_resumed": 1347,
   "shard": "0/1",
   "workers": 2,
   "wall_cap_secs": 900,
@@ -141,7 +144,7 @@
   },
   "code_rev": "f3ec3a0",
   "host": "Doctor",
-  "utc": "2026-07-21T20:29:02+00:00",
+  "utc": "2026-07-21T20:29:01+00:00",
   "env": {
     "CARCASSONNE_V25_CAP": "8",
     "CARCASSONNE_V25_OPP_CAP": "8",
