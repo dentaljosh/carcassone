@@ -635,7 +635,13 @@ def main(argv=None) -> int:
                       f"{flag}", flush=True)
 
     summary = _summary(records)
-    (out_dir.parent / "SUMMARY.json").write_text(json.dumps(summary, indent=2))
+    # SUMMARY belongs BESIDE the records: out_dir.parent only when out_dir is the
+    # conventional records/ subdir, else out_dir itself. The unconditional .parent
+    # meant a TOP-LEVEL --out-dir wrote the summary into the parent tree (e.g.
+    # measurement/SUMMARY.json), where two concurrent runs silently clobbered each
+    # other and each run's own dir was left with no canonical artifact (2026-07-21).
+    summary_dir = out_dir.parent if out_dir.name == "records" else out_dir
+    (summary_dir / "SUMMARY.json").write_text(json.dumps(summary, indent=2))
     print("[gate_b_fair] SUMMARY:", json.dumps(summary, indent=2), flush=True)
     return 0
 

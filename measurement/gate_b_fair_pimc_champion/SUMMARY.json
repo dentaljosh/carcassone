@@ -1,0 +1,47 @@
+{
+  "n_records": 436,
+  "n_ok": 436,
+  "levels": [
+    200,
+    344,
+    688
+  ],
+  "k_dets": 4,
+  "regime": "fair_pimc",
+  "agree_shallowest_vs_deepest": 0.789,
+  "agree_shallowest_vs_deepest_q": 0.6514,
+  "all_agree_frac": 0.7798,
+  "all_agree_frac_q": 0.5986,
+  "prior_survival_by_level": {
+    "200": 0.8005,
+    "344": 0.7569,
+    "688": 0.6904
+  },
+  "prior_survival_q_by_level": {
+    "200": 0.6284,
+    "344": 0.5688,
+    "688": 0.4862
+  },
+  "played_eq_q_argmax_by_level": {
+    "200": 0.7706,
+    "344": 0.7569,
+    "688": 0.7294
+  },
+  "mean_top2_q_gap_by_level": {
+    "200": 0.07611,
+    "344": 0.08957,
+    "688": 0.10503
+  },
+  "mean_top2_q_gap_eligible_by_level": {
+    "200": 0.07423,
+    "344": 0.08957,
+    "688": 0.10503
+  },
+  "mean_played_visit_share_by_level": {
+    "200": 0.45532,
+    "344": 0.44984,
+    "688": 0.42887
+  },
+  "n_exact_latch": 0,
+  "prior_worlds_identical_frac": 1.0
+}
