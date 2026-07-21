@@ -1,5 +1,13 @@
 # Plateau decomposition — Track-B flywheel attempt #2 (2026-06-10)
 
+> ✅ **STATUS: CLOSED — question answered (stamped 2026-07-21).** "What plateaued?" was resolved by the value-route
+> probe ladder that followed: **the learned-value route is exhausted** across scalar/structured/clairvoyant/fair
+> (CL-039), upgraded to an *earned* closure by the canonical-AZ M2 KILL (CL-042, 2026-07-03) — i.e. the plateau was
+> the learned-value ceiling itself, not a fixable recipe detail. Confirmed downstream: the 2026-07 distill flywheel
+> held anchor tier but showed **no robust growth** (CL-058, the it16 peak refuted by a fresh-band extension), the
+> policy-prior channel is **null at fair depth** (CL-059), and buying simulations is **no-go** (CL-060).
+> **Current state: [STATUS.md](../STATUS.md) + `governance/CLAIM_REGISTRY.csv`.** This file is historical.
+
 **Question.** Attempt #2 produced a real, significant, *bounded* gain (sealed n=400, champion
 iter8 vs iter0 = **+67.4 elo / z2.73**; CL-018 Supported) that **plateaued by ~iter5** (iters
 6–10 all within ~1.5σ, trending mildly down). *What* plateaued? Four live hypotheses (from the

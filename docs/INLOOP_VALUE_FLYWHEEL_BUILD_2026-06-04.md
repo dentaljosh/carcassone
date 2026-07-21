@@ -1,5 +1,17 @@
 # In-loop value flywheel — build spec (2026-06-04)
 
+> ⚠️ **STATUS: HISTORICAL — PREMISE EXPIRED (stamped 2026-07-21). Do NOT read the strategic framing below as current.**
+> This spec was written when the in-loop learned value was believed to be "the one lever that can break the v2.7-leaf
+> ceiling." The evidence has since closed that route and every adjacent one:
+> **learned VALUE exhausted** across scalar/structured/clairvoyant/fair (CL-039), upgraded from "premature" to an
+> *earned* closure when the canonical-AZ cell M2 executed its pre-registered KILL (CL-042, 2026-07-03);
+> **learned POLICY-PRIOR null** at fair production depth (CL-059, Gate-A fair confirm 2026-07-21: −3.7 elo / z−0.20 —
+> the clairvoyant +78.1 screen was a regime artifact); **throughput/sims NO-GO** (CL-060, 4× the deploy budget buys
+> +1.12 pts/deck z=0.86). The 2026-07 distill flywheel held anchor tier but produced no robust growth (CL-058).
+> In particular the line "we are NOT re-scoping down to the analyzer" records a 2026-06-04 intent, **not** a standing
+> decision — the analyzer-vs-superhuman scoping is live again and is Joshua's call.
+> **Current state: [STATUS.md](../STATUS.md) + `governance/CLAIM_REGISTRY.csv`.** This file is the build record only.
+
 **Decision (Joshua, 2026-06-04 evening):** build a KataGo-style **in-loop learned value flywheel**.
 This is the one lever that can produce a *climbing* curve (and the only path that can break the
 v2.7-leaf ceiling). Superhuman stays the **north star** — we are NOT re-scoping down to the analyzer.
