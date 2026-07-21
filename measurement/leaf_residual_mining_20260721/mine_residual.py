@@ -351,13 +351,37 @@ def main(argv=None) -> int:
         "agent": "FairHeuristicPriorAgent via champion_factory.build_fair_champion "
                  "(PRODUCTION.yaml knobs, curve125 v2.9 Bmild_cap8 leaf)",
         "k_dets": int(args.k_dets),
-        "root_sampling": {
-            "phase": "TILES only (even action indices)",
-            "tiles_remaining_band": [args.tiles_lo, args.tiles_hi],
-            "per_game": args.per_game,
-            "rule": "uniform without replacement over eligible plies, "
-                    "random.Random(deck_seed*7919+11)",
-        },
+        # Computed from the ACTUAL resolved mode — never a static string. A
+        # corpus-sampling description on a --roots-file run (or the pre-Amendment-1
+        # "even action indices" wording) would be a manifest that lies about the run
+        # that produced the artifact.
+        "root_sampling": (
+            {
+                "mode": "explicit_roots_file",
+                "roots_file": args.roots_file,
+                "roots_tag": args.roots_tag,
+                "phase": "TILES (asserted per root; a MEEPLES root advances one "
+                         "action, recorded as ply_shifted)",
+                "scope": "FREE PASS — hypothesis generation only (PREREG.md §8)",
+                "note": "corpus-sampling knobs (--per-game/--tiles-lo/--tiles-hi) are "
+                        "NOT used in this mode and are omitted deliberately",
+            }
+            if args.roots_file else
+            {
+                "mode": "corpus_sample",
+                "phase": "TILES only — determined BY REPLAY, not by action-index "
+                         "parity (PREREG.md Amendment 1: the engine skips the meeple "
+                         "phase when the mover has no placeable meeple, which flips "
+                         "parity for the rest of that game). A sampled ply landing in "
+                         "MEEPLES advances one action; ply_used/ply_shifted are "
+                         "recorded per root.",
+                "candidate_plies": "even action indices in the eligible band (the "
+                                   "draw), then replay-corrected to TILES",
+                "tiles_remaining_band": [args.tiles_lo, args.tiles_hi],
+                "per_game": args.per_game,
+                "rule": "uniform without replacement over eligible plies, "
+                        "random.Random(deck_seed*7919+11)",
+            }),
         "corpora": corpus_meta,
         "n_roots_selected": len(roots),
         "n_todo": len(todo),
