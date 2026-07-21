@@ -241,6 +241,66 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True,
     return out
 
 
+def joint_r2(rows, level: str, target="pooled", boot=1000, verbose=True) -> dict:
+    """How much of the leaf's error does the WHOLE dictionary explain, jointly?
+
+    Cross-fitted (grouped by deck_seed) out-of-fold R^2 of
+        M0 = resid ~ controls
+        M1 = resid ~ controls + every LEAF-VIABLE (tier A/B) candidate
+    and the gain M1 - M0.  This is the single number that sizes a NULL: if the full
+    cheap-feature dictionary jointly explains ~nothing beyond the leaf value and the
+    game stage, then "the leaf's error is not predicted by cheap interpretable
+    features" is a statement about the dictionary as a whole, not 18 separate tests.
+    Reported for the tier-C diagnostic too, separately.
+    """
+    y, X, F, groups, keep = build_matrix(rows, level, target)
+    ab = [n for n in LF.CANDIDATE_NAMES if LF.TIER[n] in ("A", "B")]
+    Xab = np.column_stack([X] + [F[n] for n in ab])
+    Xall = np.column_stack([Xab] + [F[n] for n in LF.CANDIDATE_NAMES
+                                    if LF.TIER[n] == "C"])
+
+    def _oof_pred(XX):
+        ug = np.unique(groups)
+        rng = np.random.default_rng(0)
+        perm = rng.permutation(len(ug))
+        fmap = {int(g): int(perm[i] % N_FOLDS) for i, g in enumerate(ug)}
+        fold = np.array([fmap[int(g)] for g in groups])
+        pred = np.empty_like(y)
+        for k in range(N_FOLDS):
+            te = fold == k
+            beta = _ols_fit(XX[~te], y[~te])
+            pred[te] = XX[te] @ beta
+        return pred
+
+    p0, p1, p2 = _oof_pred(X), _oof_pred(Xab), _oof_pred(Xall)
+    sst = float(((y - y.mean()) ** 2).sum())
+
+    def _r2(pr):
+        return 1.0 - float(((y - pr) ** 2).sum()) / sst
+
+    idx = boot_indices(groups, boot)
+    gains = np.array([
+        (1.0 - ((y[i] - p1[i]) ** 2).sum() / ((y[i] - y[i].mean()) ** 2).sum())
+        - (1.0 - ((y[i] - p0[i]) ** 2).sum() / ((y[i] - y[i].mean()) ** 2).sum())
+        for i in idx])
+    out = dict(level=level, target=target, n=len(y),
+               r2_controls=_r2(p0), r2_controls_plus_AB=_r2(p1),
+               r2_controls_plus_all=_r2(p2),
+               gain_AB=_r2(p1) - _r2(p0), gain_all=_r2(p2) - _r2(p0),
+               gain_AB_ci=[float(np.percentile(gains, 2.5)),
+                           float(np.percentile(gains, 97.5))],
+               n_ab_features=len(ab))
+    if verbose:
+        print(f"\n--- JOINT OOS R^2 (level={level}, target={target}) ---")
+        print(f"  controls only              : {out['r2_controls']:+.5f}")
+        print(f"  + all {len(ab)} leaf-viable feats : {out['r2_controls_plus_AB']:+.5f}"
+              f"   GAIN {out['gain_AB']:+.5f} "
+              f"[{out['gain_AB_ci'][0]:+.5f},{out['gain_AB_ci'][1]:+.5f}]")
+        print(f"  + the tier-C diagnostic    : {out['r2_controls_plus_all']:+.5f}"
+              f"   GAIN {out['gain_all']:+.5f}")
+    return out
+
+
 def yardstick(rows, level: str, boot=1000, verbose=True) -> dict:
     """PREREG §3 'outside the family': what would THIS estimator have said about the
     curve125 change (CL-051, +66.8 elo n=400 clairvoyant / +48.8-50.4 fair-confirmed)
@@ -339,10 +399,12 @@ def main(argv=None) -> int:
 
     prim = analyse(prows, args.level, args.label, boot=args.boot, target=args.target)
     yard = yardstick(prows, args.level, boot=min(1000, args.boot))
+    jr2 = joint_r2(prows, args.level, target=args.target, boot=min(1000, args.boot))
     rep = (analyse(rrows, args.level, "replication(champion)", boot=args.boot,
                    target=args.target) if rrows else None)
     g = gate(prim, rep)
     g["yardstick_cl051"] = yard
+    g["joint_oos_r2"] = jr2
     print("\n=== GATE (PREREG §5) ===")
     print(json.dumps(g, indent=2, default=float))
 
@@ -362,7 +424,7 @@ def main(argv=None) -> int:
     if args.out:
         Path(args.out).write_text(json.dumps(
             dict(primary=prim, replication=rep, gate=g, depth_trend=depth,
-                 yardstick_cl051=yard),
+                 yardstick_cl051=yard, joint_oos_r2=jr2),
             indent=2, default=float))
         print(f"\n[analyse] wrote {args.out}")
     return 0
