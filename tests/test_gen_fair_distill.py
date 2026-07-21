@@ -183,3 +183,75 @@ def test_fair_net_prior_emitter_smoke(tmp_path):
     assert man["shm_eval_server"] is None
     assert man["priors_source"].startswith("net_policy_head")
     assert man["sighted"] is True and man["n_channels"] == 81 and man["n_scalars"] == 42
+
+
+def test_action_log_round_trips(tmp_path):
+    """--actions-only emits a root_replay (deck_seed, actions) GameRecord that replays
+    BIT-EXACTLY to the board the generator held at every ply.
+
+    This is the contract F3 / Gate-B root mining depends on (mine_roots.py --source
+    champion): a root is stored as (deck_seed, actions, ply) and reconstructed by
+    root_replay.replay_actions. If the log did not round-trip, every mined champion root
+    would be a different position than the champion actually faced.
+
+    Checks: (a) --actions-only writes the action json and NO npz; (b) the full replay is
+    terminal with the recorded final scores; (c) the replay-side Game construction
+    (root_replay) and the generator-side Game construction (window_size=25) agree on
+    string_representation at EVERY ply; (d) an independent cold replay_actions(seed,
+    actions, ply) matches at sampled plies.
+    """
+    import random as _pyrandom
+
+    sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
+    out = tmp_path / "actions_only_smoke"
+    script = REPO / "scripts" / "distill_flywheel" / "gen_fair_distill.py"
+    seed = 700_000_000
+    env = {**os.environ, **_CHAMP_ENV}
+    r = subprocess.run(
+        [sys.executable, "-u", str(script), "--games", "1", "--k-dets", "2",
+         "--sims", "32", "--workers", "1", "--seed-start", str(seed),
+         "--actions-only", "--out", str(out)],
+        env=env, capture_output=True, text=True, timeout=600,
+    )
+    assert r.returncode == 0, f"emitter failed:\nSTDOUT:{r.stdout}\nSTDERR:{r.stderr}"
+
+    # (a) action log written; the (28 MB) training npz skipped.
+    logs = sorted((out / "actions").glob("seed_*.json"))
+    assert len(logs) == 1, f"expected 1 action log, got {logs}"
+    assert not list(out.glob("seed_*.npz")), "--actions-only must not write npz shards"
+    rec = json.loads(logs[0].read_text())
+    assert rec["deck_seed"] == seed and rec["game_id"] == seed
+    assert rec["n_plies"] == len(rec["actions"]) > 20
+    assert rec["gen"] == "champion_fair_selfplay"
+
+    import root_replay as RR
+    from carcassonne_ai.game_wrapper import Game
+
+    games = RR.load_games(logs[0].parent.parent / "actions" / logs[0].name)
+    assert len(games) == 1
+    g = games[0]
+
+    # (b) full replay -> terminal, recorded final scores.
+    rgame, rboard = RR.replay_actions(g.deck_seed, g.actions, len(g.actions))
+    assert rgame.get_game_ended(rboard, 0) != 0.0, "replay is not terminal"
+    assert (int(rboard.state.scores[0]), int(rboard.state.scores[1])) == \
+        (int(rec["score_p0"]), int(rec["score_p1"])), "replayed final scores differ"
+
+    # (c) per-ply: generator-side Game construction == replay-side Game construction.
+    _pyrandom.seed(int(g.deck_seed))
+    gen_game = Game(enable_legal_moves_cache=True, window_size=25)   # gen_fair_distill
+    gen_board = gen_game.get_init_board()
+    _pyrandom.seed(int(g.deck_seed))
+    rep_game = Game(enable_legal_moves_cache=True, include_farm_scalars=True)  # root_replay
+    rep_board = rep_game.get_init_board()
+    n = len(g.actions)
+    for ply in range(n + 1):
+        cs = gen_game.string_representation(gen_board)
+        assert cs == rep_game.string_representation(rep_board), \
+            f"gen/replay board diverged at ply {ply}"
+        if ply % 40 == 0 or ply == n:      # (d) independent cold reconstruction
+            cg, cb = RR.replay_actions(g.deck_seed, g.actions, ply)
+            assert cg.string_representation(cb) == cs, f"cold replay differs at ply {ply}"
+        if ply < n:
+            gen_board, _ = gen_game.get_next_state(gen_board, int(g.actions[ply]))
+            rep_board, _ = rep_game.get_next_state(rep_board, int(g.actions[ply]))

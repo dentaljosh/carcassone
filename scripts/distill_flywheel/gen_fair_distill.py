@@ -75,6 +75,7 @@ for _k, _v in _CANON_ENV.items():
     os.environ.setdefault(_k, _v)
 
 import argparse
+import json
 import math
 import multiprocessing as mp
 import random
@@ -157,6 +158,18 @@ def _load_net(path, device="cpu"):
 
 def _shard_path(out: Path, seed: int) -> Path:
     return out / f"seed_{seed:012d}.npz"
+
+
+def _actions_path(out: Path, seed: int) -> Path:
+    """Per-game ACTION LOG shard (2026-07-20). One json per game keeps the writers
+    lock-free over the CIFS share (a shared jsonl would interleave); merge with
+    scripts/distill_flywheel/collect_action_logs.py into a root_replay games jsonl."""
+    return out / "actions" / f"seed_{seed:012d}.json"
+
+
+def _done_path(out: Path, seed: int, actions_only: bool) -> Path:
+    """The resume/claim key: the npz shard normally, the action log in --actions-only."""
+    return _actions_path(out, seed) if actions_only else _shard_path(out, seed)
 
 
 def play_fair_distill_game_to_dataset(
@@ -244,6 +257,7 @@ def play_fair_distill_game_to_dataset(
     policy_list: list[np.ndarray] = []
     mask_list: list[np.ndarray] = []
     aux_list: list[bool] = []
+    action_list: list[int] = []      # ACTION LOG (2026-07-20): (deck_seed, actions) root_replay contract
     n_aux = n_valonly = 0
     plies = 0
     while game.get_game_ended(board, 0) == 0.0 and plies < max_plies:
@@ -276,6 +290,7 @@ def play_fair_distill_game_to_dataset(
         policy_list.append(policy)
         mask_list.append(valid)
         aux_list.append(aux)
+        action_list.append(int(action))
 
         board, _ = game.get_next_state(board, action)
         plies += 1
@@ -286,7 +301,13 @@ def play_fair_distill_game_to_dataset(
             "diff": s0 - s1, "terminated": terminated,
             "n_aux": n_aux, "n_valonly": n_valonly,
             "exact_moves": agent.exact_moves, "heur_moves": agent.heur_moves,
-            "n_timeouts": agent.n_timeouts}
+            "n_timeouts": agent.n_timeouts,
+            # ACTION LOG (2026-07-20): the complete move sequence from the seeded init
+            # board. With `seed` (= the deck seed) this is the root_replay lossless
+            # contract — replay_actions(seed, actions, ply) reconstructs ANY position the
+            # champion actually reached. Recorded unconditionally (a few KB); WRITTEN to
+            # disk only under --log-actions.
+            "actions": action_list}
     if not terminated:
         info["error"] = f"game did not terminate in {max_plies} plies"
         return None, info
@@ -318,12 +339,14 @@ _W: dict = {}
 
 def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_max_k,
                  sighted, window_size, shared_claim, claim_host, claim_stale,
-                 net_ckpt=None, shm_eval_server="", id_q=None, batch_size=1):
+                 net_ckpt=None, shm_eval_server="", id_q=None, batch_size=1,
+                 log_actions=False, actions_only=False, action_meta=None):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
               exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
               shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale,
-              batch_size=batch_size)
+              batch_size=batch_size, log_actions=log_actions,
+              actions_only=actions_only, action_meta=(action_meta or {}))
     # STAGE-2 fair-net-prior wiring (default net-free: both stay None). Set up ONCE per
     # worker, reused across every game the worker plays.
     _W["net"] = None
@@ -344,11 +367,28 @@ def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_m
         _W["sighted_game"] = Game(sighted=True)
 
 
+def _write_action_log(out: Path, seed: int, info: dict, meta: dict) -> None:
+    """Write the per-game action log (root_replay GameRecord json). Atomic
+    (tmp + os.replace) so a torn CIFS write can never masquerade as a done shard."""
+    p = _actions_path(out, seed)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    rec = {"game_id": int(seed), "deck_seed": int(seed),
+           "actions": [int(a) for a in info["actions"]],
+           "n_plies": int(info["plies"]),
+           "score_p0": int(info["score_p0"]), "score_p1": int(info["score_p1"])}
+    rec.update(meta)
+    tmp = p.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(rec) + "\n")
+    os.replace(tmp, p)
+
+
 def _play_one(args) -> dict | None:
     out_str, seed = args
     out = Path(out_str)
+    actions_only = bool(_W.get("actions_only"))
     p = _shard_path(out, seed)
-    if p.exists():
+    done = _done_path(out, seed, actions_only)
+    if done.exists():
         return {"seed": seed, "cached": True}
     if _W.get("shared_claim"):
         if not _try_claim(p.with_suffix(".claim"), _W["claim_host"], _W["claim_stale"]):
@@ -365,7 +405,11 @@ def _play_one(args) -> dict | None:
     if ds is None:
         info["skipped"] = True
         return info
-    ds.save(p)
+    if not actions_only:
+        ds.save(p)
+    if _W.get("log_actions"):
+        _write_action_log(out, seed, info, _W.get("action_meta", {}))
+    info.pop("actions", None)     # keep the Pool return payload small
     return info
 
 
@@ -417,7 +461,20 @@ def main(argv=None) -> int:
                          "with no round-trip to amortize and must stay byte-identical. NOTE the SHM "
                          "protocol caps a single request at MAX_K=8 boards, so batch_size>8 chunks into "
                          "ceil(N/8) round-trips (no extra transport win). The gen path already uses 8.")
+    # ACTION LOG (2026-07-20) — emit the (deck_seed, action_sequence) root_replay record
+    # per game so downstream root miners (F3 / Gate-B) can reconstruct ANY position the
+    # CHAMPION actually reached, instead of falling back to a greedy-self-play proxy.
+    ap.add_argument("--log-actions", action="store_true", default=False,
+                    help="also write out/actions/seed_<seed>.json — the root_replay "
+                         "(deck_seed, actions) GameRecord for each game. Free (a few KB/game).")
+    ap.add_argument("--actions-only", action="store_true", default=False,
+                    help="skip the training-data npz shard entirely and emit ONLY the action "
+                         "log (implies --log-actions). ~28 MB/game of obs tensors saved when "
+                         "the consumer is a root miner, not a trainer. Resume/caching keys on "
+                         "the action json instead of the npz.")
     args = ap.parse_args(argv)
+    if args.actions_only:
+        args.log_actions = True
 
     net_mode = bool(args.net_ckpt) or bool(args.shm_eval_server)
     if net_mode and not args.sighted:
@@ -494,11 +551,30 @@ def main(argv=None) -> int:
         "leaf": "v2.9 Bmild_cap8 curve125 (DEFAULT_CONFIG under champ_env.sh)",
         "batch_size": args.batch_size,   # within-search leaf batching (1 = serial; net-mode only)
         "code_rev": code_rev(),
+        "log_actions": args.log_actions,
+        "actions_only": args.actions_only,
+        "action_log": (
+            "out/actions/seed_<seed>.json — root_replay GameRecord "
+            "{game_id, deck_seed, actions, n_plies, ...meta}; losslessly replayable via "
+            "scripts/measurement_infra/root_replay.replay_actions(deck_seed, actions, ply). "
+            "Merge to a games jsonl with scripts/distill_flywheel/collect_action_logs.py."
+            if args.log_actions else None),
+    }
+    _code_rev = code_rev()
+    action_meta = {
+        "gen": ("champion_fair_selfplay" if not net_mode else "fair_net_prior_selfplay"),
+        "k_dets": args.k_dets, "sims_per_det": args.sims,
+        "total_budget_per_move": args.k_dets * args.sims,
+        "exact_max_k": args.exact_max_k,
+        "leaf": "v2_9_2_Bmild_cap8_curve125",
+        "leaf_hash_runtime": resolved_hash,
+        "code_rev": _code_rev,
     }
     write_manifest(out, kind="gen_fair_distill", game=game_tag(Game()),
                    config=man, overwrite=True)
 
-    todo = [(str(out), s) for s in seeds if not _shard_path(out, s).exists()]
+    todo = [(str(out), s) for s in seeds
+            if not _done_path(out, s, args.actions_only).exists()]
     workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"gen_fair_distill: games={args.games} k_dets={args.k_dets} sims={args.sims} "
           f"(budget={args.k_dets*args.sims}) exact_endgame={args.exact_endgame} "
@@ -529,7 +605,7 @@ def main(argv=None) -> int:
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q,
-                      args.batch_size))
+                      args.batch_size, args.log_actions, args.actions_only, action_meta))
     else:
         _pool_cm = Pool(
             processes=workers, initializer=_worker_init,
@@ -537,7 +613,7 @@ def main(argv=None) -> int:
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, "", None,
-                      args.batch_size))
+                      args.batch_size, args.log_actions, args.actions_only, action_meta))
 
     t0 = time.perf_counter()
     played = skipped = rows = aux_rows = val_rows = 0
