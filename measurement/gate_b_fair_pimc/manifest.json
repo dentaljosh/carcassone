@@ -1,0 +1,109 @@
+{
+  "harness": "gate_b_fair_pimc",
+  "schema": "carcassonne-gate-b/v1-fair",
+  "sibling": "scripts/measurement_infra/gate_b_depth_transfer.py (clairvoyant record)",
+  "goal": "fixed-root depth-transfer replay of the DEPLOYED fair-PIMC champion \u2014 does the prior/selection channel's influence decay with depth in the FAIR regime (the clairvoyant Gate-B replication demanded by CL-059)",
+  "levels": [
+    200,
+    344,
+    688
+  ],
+  "level_semantics": "PER-WORLD PUCT sim budgets; total = k_dets x level. Champion band k4x688 (CL-054). ONE deep search per world, snapshotted at every level (bit-exact WITHIN a world), pooled at each level.",
+  "info_mode": "fair_pimc",
+  "agent": "FairHeuristicPriorAgent via champion_factory.build_fair_champion (root-determinization PIMC, canonical-sorted reshuffle, fresh tree per world, pooled aggregation; curve125 v2.9 Bmild_cap8 leaf)",
+  "k_dets": 4,
+  "min_pooled_visits": 2,
+  "decision_rules": {
+    "played_action": "argmax POOLED VISITS \u2014 the clairvoyant harness's rule, recorded for metric-for-metric comparability (NOT the deployed fair rule)",
+    "q_argmax_action": "pooled_q_argmax (pooled Q, min_pooled_visits floor, (Q,N,-a) tiebreak) \u2014 THE DEPLOYED fair pick"
+  },
+  "determinization_rng": "random.Random(det_seed_base(0)+1), k_dets sequential shuffles \u2014 production-identical; per-world search seed = base+100+i. Fixed per (root, world index).",
+  "endgame_solver": "fair marginalized K<=2 handoff; the k3 root suite is at k_remaining=3 so it NEVER fires here (per-root exact_latch records this).",
+  "roots_source": "/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl",
+  "n_roots_population": 354,
+  "n_roots_selected": 354,
+  "subset": null,
+  "dropped_root_ids": [],
+  "n_todo": 354,
+  "n_skipped_resume": 0,
+  "wall_cap_secs": 900,
+  "workers": 8,
+  "verify_bit_exact": true,
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "champion_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "fair",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "FairHeuristicPriorAgent",
+    "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": false,
+      "config_hash": "e1ef44425aeaf9ac"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "87175b1ed20d81667a9be67ce453cdf2fda57fe9",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory)."
+  }
+}
