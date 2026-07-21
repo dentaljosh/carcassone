@@ -1,0 +1,153 @@
+{
+  "n_total": 354,
+  "n_solved": 216,
+  "n_budget_hit": 138,
+  "n_skips": 0,
+  "n_errors": 0,
+  "coverage_fully_solved": 0.6102,
+  "n_decision_roots": 203,
+  "per_selector": {
+    "pooled_q": {
+      "mean_regret": 0.2562,
+      "ci95": [
+        0.1601,
+        0.3793
+      ],
+      "top_action_agreement": 0.7882,
+      "n": 203
+    },
+    "pooled_n": {
+      "mean_regret": 0.3276,
+      "ci95": [
+        0.202,
+        0.4704
+      ],
+      "top_action_agreement": 0.7833,
+      "n": 203
+    },
+    "covq_neutral": {
+      "mean_regret": 0.2537,
+      "ci95": [
+        0.1576,
+        0.3768
+      ],
+      "top_action_agreement": 0.7931,
+      "n": 203
+    },
+    "covq_pessimistic": {
+      "mean_regret": 0.2537,
+      "ci95": [
+        0.1576,
+        0.3768
+      ],
+      "top_action_agreement": 0.7931,
+      "n": 203
+    }
+  },
+  "regret_reduction": {
+    "covq_neutral": {
+      "abs_reduction_vs_pooled_q": 0.0025,
+      "abs_reduction_ci95": [
+        -0.0123,
+        0.0172
+      ],
+      "pct_reduction": 0.96,
+      "ci_above_zero": false
+    },
+    "covq_pessimistic": {
+      "abs_reduction_vs_pooled_q": 0.0025,
+      "abs_reduction_ci95": [
+        -0.0123,
+        0.0172
+      ],
+      "pct_reduction": 0.96,
+      "ci_above_zero": false
+    },
+    "pooled_n": {
+      "abs_reduction_vs_pooled_q": -0.0714,
+      "abs_reduction_ci95": [
+        -0.1921,
+        0.0271
+      ],
+      "pct_reduction": -27.88,
+      "ci_above_zero": false
+    }
+  },
+  "coverage_stats": {
+    "k_dets": 4,
+    "pooled_q_pick_coverage_hist": {
+      "0": 0,
+      "1": 0,
+      "2": 3,
+      "3": 0,
+      "4": 200
+    },
+    "exact_best_coverage_hist": {
+      "0": 6,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 197
+    },
+    "mean_pooled_q_pick_coverage": 3.97,
+    "mean_exact_best_coverage": 3.882
+  },
+  "fusion_attribution": {
+    "n_pooled_q_wrong": 43,
+    "fusion_flagged": 0,
+    "coverage_flagged_only": 0,
+    "neither_sampling_noise": 43,
+    "fusion_share": 0.0,
+    "mean_fusion_phi_on_wrong": 0.0
+  },
+  "by_k": {
+    "3": {
+      "n": 203,
+      "mean_pooled_q_regret": 0.2562,
+      "ci95": [
+        0.1601,
+        0.3793
+      ]
+    }
+  },
+  "by_stratum": {
+    "contested_farm": {
+      "n": 34,
+      "mean_pooled_q_regret": 0.25,
+      "ci95": [
+        0.0882,
+        0.4706
+      ]
+    },
+    "open_city": {
+      "n": 196,
+      "mean_pooled_q_regret": 0.2449,
+      "ci95": [
+        0.1505,
+        0.3699
+      ]
+    },
+    "live_meeple": {
+      "n": 20,
+      "mean_pooled_q_regret": 0.425,
+      "ci95": [
+        0.2,
+        0.675
+      ]
+    }
+  },
+  "gate": {
+    "local_go_regret_arm": false,
+    "local_go_reduction_arm": false,
+    "local_go": false,
+    "local_kill": false,
+    "coverage_ok": false,
+    "pooled_q_mean_regret": 0.2562,
+    "pooled_q_regret_ci95": [
+      0.1601,
+      0.3793
+    ],
+    "pooled_q_top_action_agreement": 0.7882
+  },
+  "verdict": "INCONCLUSIVE \u2014 neither GO nor KILL thresholds met (size up n / pair / re-solve)"
+}
