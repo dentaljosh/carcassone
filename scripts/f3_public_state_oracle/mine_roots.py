@@ -4,14 +4,22 @@ Produces the root suite the oracle scores: TILES-phase roots in the K band with 
 GENUINELY HIDDEN draw (bag has >=2 distinct tile types), >=2 legal actions, with
 per-root provenance (fully reconstructable) + stratum flags + a checksum guard.
 
-⚠️ ROOT SOURCE (2026-07-20 reconnaissance): the spec's PRIMARY source — champion
-fair-PIMC k4x688 self-play (deck_seed, actions) game logs via root_replay — DOES
-NOT EXIST on the share (only head-to-head eval SUMMARIES, no actions array). So the
-buildable default is the spec's documented FALLBACK: the greedy L2-3 distribution
-(neutral generator; 96% of K=3 greedy roots are genuinely hidden). The champion
-path (--source champion --games <jsonl>) is implemented and ready for when such logs
-are generated; --source greedy is the working default. This is a PROMINENT,
-non-silent fallback (spec §1.3 "Supplement / fallback").
+ROOT SOURCE (updated 2026-07-21): the spec's PRIMARY source — champion fair-PIMC
+k4x688 self-play (deck_seed, actions) game logs via root_replay — NOW EXISTS. Generate
+it with the champion self-play emitter:
+
+    scripts/distill_flywheel/gen_fair_distill.py --games N --k-dets 4 --sims 688 \
+        --actions-only --shared-claim --seed-start <fresh band> --out <share dir>
+    scripts/distill_flywheel/collect_action_logs.py --in <share dir> --out <games.jsonl>
+
+then mine with `--source champion --games <games.jsonl>`.
+
+(2026-07-20 history: no such logs existed — only head-to-head eval SUMMARIES with no
+actions array — so the buildable default was the spec's documented FALLBACK, the greedy
+L2-3 distribution: a neutral generator where 96% of K=3 roots are genuinely hidden.
+`--source greedy` remains the default flag value, and roots_k3_suite.jsonl is the greedy
+suite the first F3/Gate-B runs used. The two distributions are NOT interchangeable: at
+K=3 the champion holds far more meeples in hand and reaches much higher scores.)
 
 Sources:
   --source greedy  --positions measurement/level2/l23_positions.jsonl   (reconstruct via replay_to)
