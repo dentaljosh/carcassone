@@ -183,7 +183,8 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True,
     for name in LF.ALL_FEATURES:
         f = F[name]
         if np.ptp(f) == 0:
-            res[name] = dict(rho=0.0, p=1.0, ci=[0.0, 0.0], degenerate=True)
+            res[name] = dict(rho=0.0, rho_rank=0.0, p=1.0, ci=[0.0, 0.0],
+                             degenerate=True)
             continue
         e_f, _ = crossfit_resid(f, X, groups)
         sa, sb = e_r.std(), e_f.std()
@@ -192,7 +193,13 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True,
         # two-sided cluster-bootstrap p: fraction of resamples on the far side of 0,
         # centred on the point estimate (percentile-t free; adequate at this n)
         p = 2.0 * min((bs <= 0).mean(), (bs >= 0).mean())
-        res[name] = dict(rho=rho, p=float(min(1.0, max(p, 1.0 / len(bidx)))),
+        # NOT GATED — a rank version of the same partial correlation, as an
+        # outlier-robustness check on the Pearson statistic the gate uses.
+        rr = np.argsort(np.argsort(e_r)).astype(float)
+        rf = np.argsort(np.argsort(e_f)).astype(float)
+        rho_rank = float(np.corrcoef(rr, rf)[0, 1])
+        res[name] = dict(rho=rho, rho_rank=rho_rank,
+                         p=float(min(1.0, max(p, 1.0 / len(bidx)))),
                          ci=[float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))],
                          degenerate=False)
 
@@ -225,16 +232,17 @@ def analyse(rows, level: str, label: str, boot=N_BOOT, verbose=True,
               f"ICC={rho_icc:.3f} deff={deff:.2f} n_eff={n_eff:.0f}")
         print(f"resid mean={y.mean():+.4f} sd={y.std():.4f}")
         print(f"{'feature':<26}{'tier':<6}{'rho':>8}{'ci_lo':>9}{'ci_hi':>9}"
-              f"{'p':>9}{'p_holm':>9}")
+              f"{'p':>9}{'p_holm':>9}{'rho_rnk':>9}")
         for name in LF.CANDIDATE_NAMES:
             r = res[name]
             print(f"{name:<26}{LF.TIER[name]:<6}{r['rho']:>8.4f}{r['ci'][0]:>9.4f}"
-                  f"{r['ci'][1]:>9.4f}{r['p']:>9.4f}{r['p_holm']:>9.4f}")
+                  f"{r['ci'][1]:>9.4f}{r['p']:>9.4f}{r['p_holm']:>9.4f}"
+                  f"{r['rho_rank']:>9.4f}")
         for name in (LF.NEG_CONTROL, LF.POS_REF):
             r = res[name]
             tag = "NEGCTL" if name == LF.NEG_CONTROL else "YARDST"
             print(f"{name:<26}{tag:<6}{r['rho']:>8.4f}{r['ci'][0]:>9.4f}"
-                  f"{r['ci'][1]:>9.4f}{r['p']:>9.4f}{'--':>9}")
+                  f"{r['ci'][1]:>9.4f}{r['p']:>9.4f}{'--':>9}{r['rho_rank']:>9.4f}")
         if hi:
             print("  collinear candidate pairs (|r|>=0.5): "
                   + ", ".join(f"{a}~{b}={c:+.2f}" for a, b, c in hi[:8]))
