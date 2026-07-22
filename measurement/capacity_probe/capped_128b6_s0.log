@@ -1,0 +1,51 @@
+[capped] cells=128:6:0 MemoryHigh=16G MemoryMax=20G abort<4GB
+[capped] started 2026-07-21_14:10:14
+[eta] 6 sequential GPU runs (3 sizes x 2 seeds, ascending): f64 ~15-70min/run
+[eta] (2026-07-01 arms-run wallclocks), f128 slower, f256 possibly 2-4h/run
+[eta] -> total possibly 6-12h. First loss lines expected within ~10-20min.
+=== SIZE f128b6 seed 0 2026-07-21_14:10:14 -> measurement/capacity_probe/f128b6_s0.log ===
+[watchdog] 14:11:15 windows_free=20.1GB
+[watchdog] 14:12:16 windows_free=13.2GB
+[watchdog] 14:13:17 windows_free=11GB
+[watchdog] 14:14:18 windows_free=12.1GB
+[watchdog] 14:15:20 windows_free=12.6GB
+[watchdog] 14:16:21 windows_free=13.3GB
+[watchdog] 14:17:22 windows_free=13.5GB
+[watchdog] 14:18:23 windows_free=12.7GB
+[watchdog] 14:19:24 windows_free=12.7GB
+[watchdog] 14:20:26 windows_free=13.1GB
+[watchdog] 14:21:27 windows_free=12.6GB
+[watchdog] 14:22:28 windows_free=12.7GB
+[watchdog] 14:23:29 windows_free=12.7GB
+[watchdog] 14:24:30 windows_free=12.6GB
+[watchdog] 14:25:32 windows_free=12GB
+[watchdog] 14:26:33 windows_free=12GB
+[watchdog] 14:27:34 windows_free=11.4GB
+[watchdog] 14:28:35 windows_free=10.7GB
+[watchdog] 14:29:36 windows_free=10.7GB
+[watchdog] 14:30:38 windows_free=10.9GB
+[watchdog] 14:31:39 windows_free=10.8GB
+[watchdog] 14:32:40 windows_free=10.9GB
+[watchdog] 14:33:41 windows_free=10.9GB
+[watchdog] 14:34:42 windows_free=11.9GB
+[watchdog] 14:35:43 windows_free=11.2GB
+[watchdog] 14:36:45 windows_free=11GB
+[watchdog] 14:37:46 windows_free=10.9GB
+[watchdog] 14:38:47 windows_free=11GB
+[watchdog] 14:39:48 windows_free=11.3GB
+[watchdog] 14:40:50 windows_free=11.1GB
+[watchdog] 14:41:51 windows_free=11GB
+[watchdog] 14:42:52 windows_free=11GB
+[watchdog] 14:43:53 windows_free=11GB
+[watchdog] 14:44:54 windows_free=11GB
+[watchdog] 14:45:56 windows_free=11GB
+[watchdog] 14:46:57 windows_free=11.1GB
+[watchdog] 14:47:58 windows_free=11GB
+[watchdog] 14:48:59 windows_free=12.2GB
+[watchdog] 14:50:00 windows_free=12.2GB
+    OK f128b6 s0 (rc=0) -> measurement/capacity_probe/f128b6_s0/V4_listwise/ranknet_best.pt
+=== all capacity-probe trainings done -> measurement/capacity_probe ===
+score:  .venv/bin/python scripts/canonical_az/solver_score.py --max-k 2 \
+          $(for d in measurement/capacity_probe/f*b*_s*/V4_listwise/ranknet_best.pt; do echo --arm-ckpt $d; done) \
+          --workers 12 --out measurement/capacity_probe/solver_score_capacity.json
+[capped] finished 2026-07-21_14:50:36 rc=0

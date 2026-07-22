@@ -1,0 +1,254 @@
+=== overnight chain started 2026-07-22_00:48:41 ===
+[chain] 4-ckpt scoring finished 01:00:41; json=1202404
+[chain] windows_free=26.8GB before f256b8
+[chain] launching f256b8 s0+s1 at MEM_MAX=16G 01:00:42
+[capped] cells=256:8:0 256:8:1 MemoryHigh=12G MemoryMax=16G abort<4GB
+[capped] started 2026-07-22_01:00:42
+[eta] 6 sequential GPU runs (3 sizes x 2 seeds, ascending): f64 ~15-70min/run
+[eta] (2026-07-01 arms-run wallclocks), f128 slower, f256 possibly 2-4h/run
+[eta] -> total possibly 6-12h. First loss lines expected within ~10-20min.
+=== SIZE f256b8 seed 0 2026-07-22_01:00:42 -> measurement/capacity_probe/f256b8_s0.log ===
+[watchdog] 01:01:43 windows_free=23.8GB
+[watchdog] 01:02:44 windows_free=21.9GB
+[watchdog] 01:03:45 windows_free=19.7GB
+[watchdog] 01:04:46 windows_free=17.1GB
+[watchdog] 01:05:46 windows_free=16GB
+[watchdog] 01:06:47 windows_free=16.2GB
+[watchdog] 01:07:48 windows_free=16.4GB
+[watchdog] 01:08:49 windows_free=16.4GB
+[watchdog] 01:09:50 windows_free=16.4GB
+[watchdog] 01:10:51 windows_free=16.4GB
+[watchdog] 01:11:52 windows_free=16.3GB
+[watchdog] 01:12:53 windows_free=16.3GB
+[watchdog] 01:13:53 windows_free=16.4GB
+[watchdog] 01:14:54 windows_free=16.3GB
+[watchdog] 01:15:55 windows_free=16.2GB
+[watchdog] 01:16:56 windows_free=16.3GB
+[watchdog] 01:17:57 windows_free=16.3GB
+[watchdog] 01:18:58 windows_free=16.3GB
+[watchdog] 01:19:59 windows_free=16.3GB
+[watchdog] 01:20:59 windows_free=16.3GB
+[watchdog] 01:22:00 windows_free=16.3GB
+[watchdog] 01:23:01 windows_free=16.4GB
+[watchdog] 01:24:02 windows_free=16.3GB
+[watchdog] 01:25:03 windows_free=16.4GB
+[watchdog] 01:26:04 windows_free=16.3GB
+[watchdog] 01:27:05 windows_free=16.4GB
+[watchdog] 01:28:05 windows_free=16.3GB
+[watchdog] 01:29:06 windows_free=16.3GB
+[watchdog] 01:30:07 windows_free=16.5GB
+[watchdog] 01:31:08 windows_free=16.6GB
+[watchdog] 01:32:09 windows_free=16.6GB
+[watchdog] 01:33:10 windows_free=16.6GB
+[watchdog] 01:34:10 windows_free=16.5GB
+[watchdog] 01:35:11 windows_free=16.5GB
+[watchdog] 01:36:12 windows_free=16.2GB
+[watchdog] 01:37:13 windows_free=16.5GB
+[watchdog] 01:38:14 windows_free=16.4GB
+[watchdog] 01:39:14 windows_free=16.5GB
+[watchdog] 01:40:15 windows_free=16.4GB
+[watchdog] 01:41:16 windows_free=16.3GB
+[watchdog] 01:42:17 windows_free=16.4GB
+[watchdog] 01:43:18 windows_free=16.4GB
+[watchdog] 01:44:19 windows_free=16.4GB
+[watchdog] 01:45:19 windows_free=16.3GB
+[watchdog] 01:46:20 windows_free=16.4GB
+[watchdog] 01:47:21 windows_free=16.4GB
+[watchdog] 01:48:22 windows_free=16.4GB
+[watchdog] 01:49:23 windows_free=16.3GB
+[watchdog] 01:50:24 windows_free=16.3GB
+[watchdog] 01:51:24 windows_free=16.4GB
+[watchdog] 01:52:25 windows_free=16.4GB
+[watchdog] 01:53:26 windows_free=16.4GB
+[watchdog] 01:54:27 windows_free=16.4GB
+[watchdog] 01:55:28 windows_free=16.4GB
+[watchdog] 01:56:28 windows_free=16.4GB
+[watchdog] 01:57:29 windows_free=16.4GB
+[watchdog] 01:58:30 windows_free=16.4GB
+[watchdog] 01:59:31 windows_free=16.4GB
+[watchdog] 02:00:32 windows_free=16.4GB
+[watchdog] 02:01:33 windows_free=15.2GB
+[watchdog] 02:02:33 windows_free=14.7GB
+[watchdog] 02:03:34 windows_free=16GB
+[watchdog] 02:04:35 windows_free=15.5GB
+[watchdog] 02:05:36 windows_free=15.5GB
+[watchdog] 02:06:37 windows_free=15.6GB
+[watchdog] 02:07:38 windows_free=15.6GB
+[watchdog] 02:08:38 windows_free=15.7GB
+[watchdog] 02:09:39 windows_free=15.7GB
+[watchdog] 02:10:40 windows_free=15.7GB
+[watchdog] 02:11:41 windows_free=15.6GB
+[watchdog] 02:12:42 windows_free=15.7GB
+[watchdog] 02:13:42 windows_free=15.7GB
+[watchdog] 02:14:43 windows_free=15.7GB
+[watchdog] 02:15:44 windows_free=15.6GB
+[watchdog] 02:16:45 windows_free=15.7GB
+[watchdog] 02:17:46 windows_free=15.7GB
+[watchdog] 02:18:47 windows_free=15.6GB
+[watchdog] 02:19:47 windows_free=15.6GB
+[watchdog] 02:20:48 windows_free=15.6GB
+[watchdog] 02:21:49 windows_free=15.7GB
+[watchdog] 02:22:50 windows_free=15.6GB
+[watchdog] 02:23:51 windows_free=15.6GB
+[watchdog] 02:24:52 windows_free=15.6GB
+[watchdog] 02:25:52 windows_free=15.7GB
+[watchdog] 02:26:53 windows_free=15.6GB
+[watchdog] 02:27:54 windows_free=15.6GB
+[watchdog] 02:28:55 windows_free=15.6GB
+[watchdog] 02:29:56 windows_free=15.6GB
+[watchdog] 02:30:56 windows_free=15.6GB
+[watchdog] 02:31:57 windows_free=15.6GB
+    OK f256b8 s0 (rc=0) -> measurement/capacity_probe/f256b8_s0/V4_listwise/ranknet_best.pt
+=== SIZE f256b8 seed 1 2026-07-22_02:32:27 -> measurement/capacity_probe/f256b8_s1.log ===
+[watchdog] 02:32:58 windows_free=15.5GB
+[watchdog] 02:33:59 windows_free=15.5GB
+[watchdog] 02:35:00 windows_free=15.6GB
+[watchdog] 02:36:01 windows_free=15.6GB
+[watchdog] 02:37:01 windows_free=15.6GB
+[watchdog] 02:38:02 windows_free=15.6GB
+[watchdog] 02:39:03 windows_free=15.6GB
+[watchdog] 02:40:04 windows_free=15.6GB
+[watchdog] 02:41:05 windows_free=15.6GB
+[watchdog] 02:42:05 windows_free=15.6GB
+[watchdog] 02:43:06 windows_free=15.6GB
+[watchdog] 02:44:07 windows_free=15.6GB
+[watchdog] 02:45:08 windows_free=15.6GB
+[watchdog] 02:46:09 windows_free=15.7GB
+[watchdog] 02:47:10 windows_free=15.7GB
+[watchdog] 02:48:10 windows_free=15.7GB
+[watchdog] 02:49:11 windows_free=15.7GB
+[watchdog] 02:50:12 windows_free=15.7GB
+[watchdog] 02:51:13 windows_free=15.7GB
+[watchdog] 02:52:14 windows_free=15.7GB
+[watchdog] 02:53:14 windows_free=15.7GB
+[watchdog] 02:54:15 windows_free=15.6GB
+[watchdog] 02:55:16 windows_free=15.6GB
+[watchdog] 02:56:17 windows_free=15.7GB
+[watchdog] 02:57:18 windows_free=15.7GB
+[watchdog] 02:58:18 windows_free=15.7GB
+[watchdog] 02:59:19 windows_free=15.7GB
+[watchdog] 03:00:20 windows_free=15.6GB
+[watchdog] 03:01:21 windows_free=15.6GB
+[watchdog] 03:02:22 windows_free=15.7GB
+[watchdog] 03:03:23 windows_free=15.6GB
+[watchdog] 03:04:23 windows_free=15.6GB
+[watchdog] 03:05:24 windows_free=15.6GB
+[watchdog] 03:06:25 windows_free=15.7GB
+[watchdog] 03:07:26 windows_free=15.6GB
+[watchdog] 03:08:27 windows_free=15.6GB
+[watchdog] 03:09:27 windows_free=15.6GB
+[watchdog] 03:10:28 windows_free=15.6GB
+[watchdog] 03:11:29 windows_free=15.6GB
+[watchdog] 03:12:30 windows_free=15.6GB
+[watchdog] 03:13:31 windows_free=15.6GB
+[watchdog] 03:14:32 windows_free=15.6GB
+[watchdog] 03:15:32 windows_free=15.6GB
+[watchdog] 03:16:33 windows_free=15.7GB
+[watchdog] 03:17:34 windows_free=15.7GB
+[watchdog] 03:18:35 windows_free=15.7GB
+[watchdog] 03:19:36 windows_free=15.6GB
+[watchdog] 03:20:36 windows_free=15.6GB
+[watchdog] 03:21:37 windows_free=15.6GB
+[watchdog] 03:22:38 windows_free=15.6GB
+[watchdog] 03:23:39 windows_free=15.6GB
+[watchdog] 03:24:40 windows_free=15.6GB
+[watchdog] 03:25:41 windows_free=15.6GB
+[watchdog] 03:26:41 windows_free=15.6GB
+[watchdog] 03:27:42 windows_free=15.6GB
+[watchdog] 03:28:43 windows_free=15.6GB
+[watchdog] 03:29:44 windows_free=15.6GB
+[watchdog] 03:30:45 windows_free=15.6GB
+[watchdog] 03:31:45 windows_free=15.6GB
+[watchdog] 03:32:46 windows_free=15.6GB
+[watchdog] 03:33:47 windows_free=15.6GB
+[watchdog] 03:34:48 windows_free=15.6GB
+[watchdog] 03:35:49 windows_free=15.6GB
+[watchdog] 03:36:50 windows_free=15.6GB
+[watchdog] 03:37:50 windows_free=15.6GB
+[watchdog] 03:38:51 windows_free=15.6GB
+[watchdog] 03:39:52 windows_free=15.6GB
+[watchdog] 03:40:53 windows_free=15.6GB
+[watchdog] 03:41:54 windows_free=15.6GB
+[watchdog] 03:42:54 windows_free=15.6GB
+[watchdog] 03:43:55 windows_free=15.6GB
+[watchdog] 03:44:56 windows_free=15.6GB
+[watchdog] 03:45:57 windows_free=15.6GB
+[watchdog] 03:46:58 windows_free=15.6GB
+[watchdog] 03:47:59 windows_free=15.4GB
+[watchdog] 03:48:59 windows_free=15.5GB
+[watchdog] 03:50:00 windows_free=15.5GB
+[watchdog] 03:51:01 windows_free=15.5GB
+[watchdog] 03:52:02 windows_free=15.6GB
+[watchdog] 03:53:03 windows_free=15.6GB
+[watchdog] 03:54:03 windows_free=15.5GB
+[watchdog] 03:55:04 windows_free=15.5GB
+[watchdog] 03:56:05 windows_free=15.6GB
+[watchdog] 03:57:06 windows_free=15.6GB
+[watchdog] 03:58:07 windows_free=15.6GB
+[watchdog] 03:59:07 windows_free=15.6GB
+[watchdog] 04:00:08 windows_free=15.6GB
+[watchdog] 04:01:09 windows_free=15.6GB
+[watchdog] 04:02:10 windows_free=15.5GB
+[watchdog] 04:03:11 windows_free=15.5GB
+[watchdog] 04:04:12 windows_free=15.5GB
+[watchdog] 04:05:12 windows_free=15.5GB
+[watchdog] 04:06:13 windows_free=15.5GB
+[watchdog] 04:07:14 windows_free=15.5GB
+[watchdog] 04:08:15 windows_free=15.5GB
+[watchdog] 04:09:16 windows_free=15.6GB
+[watchdog] 04:10:16 windows_free=15.4GB
+[watchdog] 04:11:17 windows_free=15.5GB
+[watchdog] 04:12:18 windows_free=15.5GB
+[watchdog] 04:13:19 windows_free=15.5GB
+[watchdog] 04:14:20 windows_free=15.5GB
+[watchdog] 04:15:20 windows_free=15.5GB
+[watchdog] 04:16:21 windows_free=15.5GB
+    OK f256b8 s1 (rc=0) -> measurement/capacity_probe/f256b8_s1/V4_listwise/ranknet_best.pt
+=== all capacity-probe trainings done -> measurement/capacity_probe ===
+score:  .venv/bin/python scripts/canonical_az/solver_score.py --max-k 2 \
+          $(for d in measurement/capacity_probe/f*b*_s*/V4_listwise/ranknet_best.pt; do echo --arm-ckpt $d; done) \
+          --workers 12 --out measurement/capacity_probe/solver_score_capacity.json
+[capped] finished 2026-07-22_04:16:29 rc=0
+[chain] f256b8 phase done rc=0 04:16:29
+[chain] checkpoints present: 6
+[chain] re-scoring all 6 checkpoints 04:16:29
+[ranker] arm_all_three_s0 <- measurement/capacity_probe/f128b6_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1 <- measurement/capacity_probe/f128b6_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s0_f256b8_s0 <- measurement/capacity_probe/f256b8_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1_f256b8_s1 <- measurement/capacity_probe/f256b8_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s0_f64b4_s0 <- measurement/capacity_probe/f64b4_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1_f64b4_s1 <- measurement/capacity_probe/f64b4_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=1119 skipped=0 errors=0 in 2743.5s
+[out] wrote measurement/capacity_probe/solver_score_capacity_full6.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0) ====
+AGG  n=1119  solver_regret mean=1.9553 median=1.0 max=25.0  top1=0.202  tau=0.0439
+  K=2 (marg)  n=1119  regret=1.9553  top1=0.202  tau=0.0439  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1) ====
+AGG  n=1119  solver_regret mean=1.4307 median=1.0 max=28.0  top1=0.1912  tau=0.1467
+  K=2 (marg)  n=1119  regret=1.4307  top1=0.1912  tau=0.1467  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0_f256b8_s0) ====
+AGG  n=1119  solver_regret mean=1.7882 median=1.0 max=28.0  top1=0.1689  tau=0.1076
+  K=2 (marg)  n=1119  regret=1.7882  top1=0.1689  tau=0.1076  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1_f256b8_s1) ====
+AGG  n=1119  solver_regret mean=1.8776 median=1.0 max=24.0  top1=0.1716  tau=0.0582
+  K=2 (marg)  n=1119  regret=1.8776  top1=0.1716  tau=0.0582  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0_f64b4_s0) ====
+AGG  n=1119  solver_regret mean=1.3807 median=1.0 max=25.0  top1=0.1841  tau=0.1686
+  K=2 (marg)  n=1119  regret=1.3807  top1=0.1841  tau=0.1686  13.45s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1_f64b4_s1) ====
+AGG  n=1119  solver_regret mean=1.7516 median=1.0 max=25.0  top1=0.1555  tau=0.0976
+  K=2 (marg)  n=1119  regret=1.7516  top1=0.1555  tau=0.0976  13.45s/solve
+[chain] full re-score rc=0 05:02:15
+=== overnight chain finished 2026-07-22_05:02:15 ===

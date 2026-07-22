@@ -1,0 +1,29 @@
+[ranker] arm_all_three_s0 <- measurement/capacity_probe/f128b6_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1 <- measurement/capacity_probe/f128b6_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s0_f64b4_s0 <- measurement/capacity_probe/f64b4_s0/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[ranker] arm_all_three_s1_f64b4_s1 <- measurement/capacity_probe/f64b4_s1/V4_listwise/ranknet_best.pt (§5A tempo-arm RankNet, CPU)
+[load] 10067 sibling roots (qprobe ∩ pool)
+[filter] 1119 roots with record k_remaining<=2 (11.1%); K-dist={2: 1119}
+[done] scored=1119 skipped=0 errors=0 in 1712.9s
+[out] wrote measurement/capacity_probe/solver_score_capacity.json
+
+==== SOLVER-SCORE (v29_leaf) ====
+AGG  n=1119  solver_regret mean=0.9508 median=0.0 max=23.0  top1=0.6095  tau=0.6153
+  K=2 (marg)  n=1119  regret=0.9508  top1=0.6095  tau=0.6153  13.17s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0) ====
+AGG  n=1119  solver_regret mean=1.9553 median=1.0 max=25.0  top1=0.202  tau=0.0439
+  K=2 (marg)  n=1119  regret=1.9553  top1=0.202  tau=0.0439  13.17s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1) ====
+AGG  n=1119  solver_regret mean=1.4307 median=1.0 max=28.0  top1=0.1912  tau=0.1467
+  K=2 (marg)  n=1119  regret=1.4307  top1=0.1912  tau=0.1467  13.17s/solve
+
+==== SOLVER-SCORE (arm_all_three_s0_f64b4_s0) ====
+AGG  n=1119  solver_regret mean=1.3807 median=1.0 max=25.0  top1=0.1841  tau=0.1686
+  K=2 (marg)  n=1119  regret=1.3807  top1=0.1841  tau=0.1686  13.17s/solve
+
+==== SOLVER-SCORE (arm_all_three_s1_f64b4_s1) ====
+AGG  n=1119  solver_regret mean=1.7516 median=1.0 max=25.0  top1=0.1555  tau=0.0976
+  K=2 (marg)  n=1119  regret=1.7516  top1=0.1555  tau=0.0976  13.17s/solve
+SCORE_RC=0

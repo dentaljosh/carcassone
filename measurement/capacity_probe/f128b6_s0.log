@@ -1,0 +1,23 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[tempo] appended 10 tempo scalars -> n_scalar=54: ['lockup_self', 'lockup_opp', 'lockup_diff', 'lockup_depth_self', 'lockup_depth_opp', 'lockup_depth_diff', 'open_city_delta_self', 'open_city_delta_opp', 'contested_open_count', 'closure_race_diff']
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/40 train=3.3059 val=3.2952 (244s) *
+    [V4_listwise] ep2/40 train=3.2989 val=3.2943 (243s) *
+    [V4_listwise] ep3/40 train=3.2966 val=3.2940 (242s) *
+    [V4_listwise] ep4/40 train=3.2976 val=3.2934 (240s) *
+    [V4_listwise] ep5/40 train=3.2981 val=3.2944 (240s)
+    [V4_listwise] ep6/40 train=3.2973 val=3.2944 (235s)
+    [V4_listwise] ep7/40 train=3.2975 val=3.2938 (236s)
+    [V4_listwise] ep8/40 train=3.2980 val=3.2937 (234s)
+    [V4_listwise] ep9/40 train=3.2970 val=3.2938 (232s)
+    [V4_listwise] ep10/40 train=3.2968 val=3.2936 (231s)
+    [V4_listwise] early-stop ep10 (no val gain in 6 epochs)
+    [V4_listwise] saved best model -> measurement/capacity_probe/f128b6_s0/V4_listwise/ranknet_best.pt
+  [V4_listwise       ] net-alone tau=+0.105 top1=0.220 | combined a*=0.25 regret 0.0263->0.0226 (+14.2%) beats_leaf=True
+    (V4_listwise done in 2416s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.105
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/capacity_probe/f128b6_s0/stage5_offline_gate.json

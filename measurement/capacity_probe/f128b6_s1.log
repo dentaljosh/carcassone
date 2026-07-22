@@ -1,0 +1,46 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[tempo] appended 10 tempo scalars -> n_scalar=54: ['lockup_self', 'lockup_opp', 'lockup_diff', 'lockup_depth_self', 'lockup_depth_opp', 'lockup_depth_diff', 'open_city_delta_self', 'open_city_delta_opp', 'contested_open_count', 'closure_race_diff']
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/40 train=3.3044 val=3.2949 (247s) *
+    [V4_listwise] ep2/40 train=3.2975 val=3.2944 (241s) *
+    [V4_listwise] ep3/40 train=3.2960 val=3.2936 (239s) *
+    [V4_listwise] ep4/40 train=3.2972 val=3.2930 (241s) *
+    [V4_listwise] ep5/40 train=3.2962 val=3.2921 (237s) *
+    [V4_listwise] ep6/40 train=3.2957 val=3.2913 (232s) *
+    [V4_listwise] ep7/40 train=3.2958 val=3.2916 (226s)
+    [V4_listwise] ep8/40 train=3.2964 val=3.2920 (231s)
+    [V4_listwise] ep9/40 train=3.2954 val=3.2914 (232s)
+    [V4_listwise] ep10/40 train=3.2950 val=3.2905 (230s) *
+    [V4_listwise] ep11/40 train=3.2949 val=3.2909 (231s)
+    [V4_listwise] ep12/40 train=3.2949 val=3.2905 (233s) *
+    [V4_listwise] ep13/40 train=3.2950 val=3.2933 (233s)
+    [V4_listwise] ep14/40 train=3.2933 val=3.2907 (233s)
+    [V4_listwise] ep15/40 train=3.2933 val=3.2903 (232s) *
+    [V4_listwise] ep16/40 train=3.2933 val=3.2907 (232s)
+    [V4_listwise] ep17/40 train=3.2931 val=3.2904 (232s)
+    [V4_listwise] ep18/40 train=3.2937 val=3.2902 (233s) *
+    [V4_listwise] ep19/40 train=3.2922 val=3.2916 (234s)
+    [V4_listwise] ep20/40 train=3.2934 val=3.2910 (233s)
+    [V4_listwise] ep21/40 train=3.2932 val=3.2895 (232s) *
+    [V4_listwise] ep22/40 train=3.2919 val=3.2902 (233s)
+    [V4_listwise] ep23/40 train=3.2921 val=3.2912 (235s)
+    [V4_listwise] ep24/40 train=3.2913 val=3.2903 (234s)
+    [V4_listwise] ep25/40 train=3.2931 val=3.2893 (232s) *
+    [V4_listwise] ep26/40 train=3.2912 val=3.2900 (233s)
+    [V4_listwise] ep27/40 train=3.2919 val=3.2889 (235s) *
+    [V4_listwise] ep28/40 train=3.2915 val=3.2916 (232s)
+    [V4_listwise] ep29/40 train=3.2925 val=3.2894 (233s)
+    [V4_listwise] ep30/40 train=3.2912 val=3.2934 (233s)
+    [V4_listwise] ep31/40 train=3.2923 val=3.2894 (233s)
+    [V4_listwise] ep32/40 train=3.2913 val=3.2897 (232s)
+    [V4_listwise] ep33/40 train=3.2909 val=3.2889 (233s)
+    [V4_listwise] early-stop ep33 (no val gain in 6 epochs)
+    [V4_listwise] saved best model -> measurement/capacity_probe/f128b6_s1/V4_listwise/ranknet_best.pt
+  [V4_listwise       ] net-alone tau=+0.207 top1=0.338 | combined a*=0.25 regret 0.0263->0.0176 (+33.2%) beats_leaf=True
+    (V4_listwise done in 7751s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.207
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/capacity_probe/f128b6_s1/stage5_offline_gate.json

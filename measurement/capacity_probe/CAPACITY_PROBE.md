@@ -1,10 +1,13 @@
 # Capacity-scaling probe — pre-registered read-out
 
-> **⚠️ STATUS 2026-07-21 — PARTIAL LADDER, RUNNING UNDER A MEMORY CAP. Scope is
-> contested and the f256b8 cells are DEFERRED pending Joshua's call.** Done:
-> f64b4 s0/s1 (2026-07-04). Running/queued: f128b6 s0, then s1. **NOT running:
-> f256b8 s0/s1.** Thresholds below were fixed BEFORE any result existed — do not
-> move them after seeing the numbers.
+> **✅ STATUS 2026-07-22 — COMPLETE AND CLOSED. Verdict = DEAD** on the
+> pre-registered statistic, computed exactly as written (mean of the two step
+> deltas). Full 3×2 ladder finished: f64b4 s0/s1 (2026-07-04), f128b6 s0/s1
+> (2026-07-21, under the memory cap), f256b8 s0/s1 (2026-07-22 overnight, at
+> `MEM_MAX=16G`). Claim **CL-064**. Results + gate arithmetic in §Results below;
+> canonical numbers → `solver_score_capacity_full6.json` (all six checkpoints).
+> Thresholds below were fixed BEFORE any result existed and were **not** moved
+> after seeing the numbers.
 
 > **🛑 NEVER launch this probe via `run_capacity_probe.sh` directly — use
 > [`scripts/probe_5a/run_capped_cell.sh`](../../scripts/probe_5a/run_capped_cell.sh).**
@@ -33,13 +36,19 @@
 > *"f64b4-vs-f128b6 solver-τ slope on the memory-safe ~2GB subset, **laptop only**
 > (capacity jobs banned local)"* — dropping f256b8 **and** the full dataset. The two
 > cannot both be satisfied. Resolution is **Joshua's call, not the agent's**.
-> Interim decision: run `f128b6_s1` (needed by *both* specs, and on the **full**
-> dataset — strictly better data than the roadmap's 2GB subset, and directly
-> comparable to the already-trained f64b4 checkpoints), then **STOP**. The f256b8
-> cells (~10–25h under the cap) are deferred. ⚠️ Consequence: with only f64→f128,
-> the pre-registered **two-delta slope is NOT computable**, so the gate below
-> **cannot be fully adjudicated** on the partial ladder — the 4-checkpoint read-out
-> reports the single step delta and the arithmetic, and stops short of a verdict.
+> Interim decision (2026-07-21): run `f128b6_s1`, then **STOP** and report the
+> single f64→f128 delta without adjudicating.
+>
+> **→ RESOLVED 2026-07-22: Joshua pre-authorised the f256b8 cells** once the
+> 4-checkpoint read-out landed and the local box was otherwise idle overnight.
+> **THIS DOC'S 3-SIZE SPEC GOVERNS**; roadmap line 45's 2-size / 2GB-subset /
+> laptop-only re-scoping is superseded — and note the roadmap's "capacity jobs
+> banned local" ban was a workaround for the *mis-diagnosed* crash (see the 🛑
+> banner), so with the real cause fixed by the cgroup cap the ban's premise is
+> gone. Consequence: the pre-registered **two-delta slope IS computable** and the
+> gate below **is fully adjudicated** on the complete ladder, on the full dataset
+> (strictly better data than the 2GB subset the roadmap proposed). The roadmap
+> line should be corrected to match.
 
 ## Question
 
@@ -127,5 +136,65 @@ partner + neighbors is a noise signature, not a peak (results-discipline rule).
 
 ## Results
 
-*(to be filled by the solver-scoring run after all 6 trainings — leave empty
-until then)*
+Exact-solver ruler, `--max-k 2`, **n = 1119** scored roots (of 10,067 sibling
+roots; 11.1% pass the K≤2 filter), 0 skipped, 0 errors. Canonical JSON:
+`solver_score_capacity_full6.json` (all six) — the earlier
+`solver_score_capacity.json` holds the 4-checkpoint intermediate and is retained,
+not clobbered.
+
+| size | params | seed 0 τ | seed 1 τ | **per-size τ** (mean of 2 seeds) | seed spread |
+|---|---|---|---|---|---|
+| `f64b4` | 386K | 0.1686 | 0.0976 | **0.1331** | 0.0710 |
+| `f128b6` | ~2M | 0.0439 | 0.1467 | **0.0953** | 0.1028 |
+| `f256b8` | ~10M | 0.1076 | 0.0582 | **0.0829** | 0.0494 |
+| **`v29_leaf`** (baseline) | — | — | — | **0.6153** | — |
+
+Leaf `top1 = 0.6095`, `regret = 0.9508`. Best net `top1 = 0.2020` (f128b6_s0);
+best net τ of any single checkpoint = **0.1686** (f64b4_s0).
+
+### Gate arithmetic (pre-registered thresholds, applied verbatim)
+
+```
+step delta f64→f128   = 0.0953 − 0.1331 = −0.0378
+step delta f128→f256  = 0.0829 − 0.0953 = −0.0124
+SLOPE = mean of the two step deltas    = −0.0251
+best per-size τ = 0.1331   (best single checkpoint = 0.1686)
+```
+
+- **DEAD** requires best solver-τ **< 0.25** AND slope **< +0.05 per ~4× params**.
+  → 0.1331 < 0.25 ✅ **and** −0.0251 < +0.05 ✅ → **both clauses satisfied.**
+- **LIVE** requires τ **≥ 0.3 anywhere** with a rising size curve. → max single
+  checkpoint 0.1686, and no size rises. ✗
+- **AMBIGUOUS** (τ 0.25–0.30, or rising but < 0.25) — not reached.
+
+### ✅ VERDICT: DEAD
+
+Capacity is **not** the binding constraint. Across a **~25× parameter range**
+(386K → ~10M) the sibling-ranking τ never moves toward the leaf; the best net of
+six sits at 0.1686 against the leaf's 0.6153. The M2/CL-039 closure therefore
+extends to **"capacity- and data-limit-independent on this representation"** —
+10× scale would not help, and the gap to the leaf is a representation/label
+problem, not a model-size problem.
+
+### Sanity guards (both from the pre-registration)
+
+- **f64b4 replicate must land near the known ~0.13** or the pipeline changed and
+  nothing is comparable → it landed at **0.1331**. ✅ **PASS** — this read-out is
+  commensurate with the earlier §5A work.
+- **A lone seed spiking >1σ above its partner is a noise signature, not a peak.**
+  Honest reading: seed spreads (0.049–0.103) **exceed** the size steps (0.038,
+  0.012), so the *monotone decline should not be read as real* — the size axis is
+  buried in seed variance. **The verdict does not depend on the decline being
+  real:** it rests on τ never approaching 0.25 (the best of six is 0.1686, a 33%
+  margin below the threshold) and on no size rising. Both hold decisively under
+  any reading of the noise.
+
+### Operational note
+
+The two f256b8 cells were the ones that had never completed a single epoch in
+this project's history (they are what killed the box on 2026-07-04 and
+2026-07-21 — see the 🛑 banner). They completed overnight under
+`MEM_MAX=16G`/`MEM_HIGH=12G` with the Windows-free-RAM watchdog; minimum host
+free memory observed was **11.8GB**, ~3× the 4GB abort line. Chain:
+`scripts/probe_5a/overnight_f256_chain.sh` (commit `a44803d`), log
+`overnight_chain.log`.
