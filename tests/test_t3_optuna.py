@@ -87,11 +87,14 @@ def _leaf_hash_under_curve_env(curve: str) -> str:
         "CARCASSONNE_USE_CY_LEAF": "1", "CARCASSONNE_USE_CY_REPR": "1",
         "CUDA_VISIBLE_DEVICES": "", "CARCASSONNE_V29_MEEPLE_CURVE": curve,
     })
-    # replicate _leaf_hash / _leaf_dict verbatim (c5_leaf_override) with no import-path deps
+    # replicate _leaf_hash / _leaf_dict verbatim (c5_leaf_override) with no import-path
+    # deps — INCLUDING the F6 soft-cap default-off exclusion so a36d2e15 stays stable.
     code = (
         "import hashlib,json;from dataclasses import asdict;"
         "from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG as c;"
-        "d={k:(list(v) if isinstance(v,tuple) else v) for k,v in asdict(c).items()};"
+        "_ex={'soft_cap_slope':0.0,'opp_soft_cap_slope':0.0};"
+        "d={k:(list(v) if isinstance(v,tuple) else v) for k,v in asdict(c).items() "
+        "if not (k in _ex and v==_ex[k])};"
         "print(hashlib.sha256(json.dumps(d,sort_keys=True,default=str).encode()).hexdigest()[:16])"
     )
     out = subprocess.check_output([sys.executable, "-c", code], env=env, cwd=str(REPO))

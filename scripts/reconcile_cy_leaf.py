@@ -67,6 +67,13 @@ CFG_C7_R1 = replace(_C7_BASE, v29_meeple_return_k=1.0)
 CFG_C7_F05 = replace(_C7_BASE, v29_farm_flip_k=0.5)
 CFG_C7_RF = replace(_C7_BASE, v29_meeple_return_k=1.0, v29_farm_flip_k=0.5)
 
+# F6 soft-cap ON configs (CL-063). LOW cap + generous schedule so the SELF/OPP bonus
+# routinely OVERFLOWS -> the soft branch actually fires; asymmetric slopes exercise
+# both sides. slope 0.0 is the hard cap (covered by prod-default/pre-v2.7/weird above).
+_SOFT_BASE = LeafConfig(closure_p={1: 1.0, 2: 0.5, 3: 0.25}, bonus_cap=1.0, opp_bonus_cap=1.0)
+CFG_F6_S05 = replace(_SOFT_BASE, soft_cap_slope=0.5, opp_soft_cap_slope=0.25)
+CFG_F6_S1 = replace(_SOFT_BASE, soft_cap_slope=1.0, opp_soft_cap_slope=1.0)
+
 STRUCT_FIELDS = [
     ("city_side_root", "city_side_root"),
     ("city_root_finished", "city_root_finished"),
@@ -151,6 +158,8 @@ def main() -> int:
         configs += [("pre-v2.7", CFG_Pre27), ("weird", CFG_Weird)]
     # C7 wave-2 ON configs (always checked — the reason this gate was extended).
     configs += [("c7-R1.0", CFG_C7_R1), ("c7-F0.5", CFG_C7_F05), ("c7-both", CFG_C7_RF)]
+    # F6 soft-cap ON configs (always checked — the branch this gate was extended for).
+    configs += [("f6-soft0.5/0.25", CFG_F6_S05), ("f6-soft1.0", CFG_F6_S1)]
 
     # Force the "py" reference to the PURE-PYTHON flat path: with USE_CY_LEAF on (the
     # default), flat_leaf.flat_virtual_score_v2 would itself route to the cy port for

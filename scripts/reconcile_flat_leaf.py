@@ -89,6 +89,13 @@ _CARD = (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT)
 # v2.7 closure schedule (no deck-aware paths) so the flat leaf supports it.
 ALT_CONFIG = replace(DEFAULT_CONFIG, meeple_k=0.5, bonus_cap=8.0, opp_bonus_cap=4.0)
 
+# F6 soft-cap config (CL-063): LOW cap + generous schedule so the SELF/OPP bonus
+# routinely OVERFLOWS -> the soft branch actually fires; asymmetric slopes exercise both
+# sides. Object (virtual_score_v2) == flat under canonical sum is the F6 object gate.
+SOFT_CONFIG = replace(DEFAULT_CONFIG, closure_p={1: 1.0, 2: 0.5, 3: 0.25},
+                      bonus_cap=1.0, opp_bonus_cap=1.0,
+                      soft_cap_slope=0.5, opp_soft_cap_slope=0.25)
+
 
 # --------------------------------------------------------------------------- #
 # enumeration helpers
@@ -266,6 +273,7 @@ def main() -> int:
     bonus_checks = bonus_mism = 0
     v2_checks = v2_mism = 0
     v2alt_checks = v2alt_mism = 0
+    v2soft_checks = v2soft_mism = 0
     cov_farms = cov_cities = cov_roads = 0
     cov_cfin = cov_cunfin = cov_rfin = cov_runfin = 0
     cov_cloister = cov_farm_fincity = 0
@@ -396,6 +404,15 @@ def main() -> int:
                     v2alt_mism += 1
                     fail(f"flat_virtual_score_v2[ALT] p={p} flat={a_got} truth={a_truth}")
 
+                # --- check 9: full v2 under SOFT_CONFIG (F6 soft cap, CL-063) —
+                # object == flat with LINEAR credit above the (low) cap. ---
+                v2soft_checks += 1
+                s_truth = virtual_score_v2(state, p, SOFT_CONFIG)
+                s_got = flat_leaf.flat_virtual_score_v2(state, p, SOFT_CONFIG)
+                if s_truth != s_got:
+                    v2soft_mism += 1
+                    fail(f"flat_virtual_score_v2[SOFT] p={p} flat={s_got} truth={s_truth}")
+
             # coverage extras
             for root, fincnt in decomp.farm_root_finished_cities.items():
                 if fincnt > 0:
@@ -419,6 +436,7 @@ def main() -> int:
     print(f"closure-bonus checks   : {bonus_checks:>8}   mismatches: {bonus_mism}")
     print(f"flat_virtual_score_v2  : {v2_checks:>8}   mismatches: {v2_mism}")
     print(f"  ^ ALT cfg (meeple_k+caps): {v2alt_checks:>5}   mismatches: {v2alt_mism}")
+    print(f"  ^ SOFT cfg (F6 soft cap) : {v2soft_checks:>5}   mismatches: {v2soft_mism}")
     print(f"coverage: farms={cov_farms} cities={cov_cities}(fin={cov_cfin}/unf={cov_cunfin}) "
           f"roads={cov_roads}(fin={cov_rfin}/unf={cov_runfin}) "
           f"cloisters_scored={cov_cloister} farms_w_fincity={cov_farm_fincity}")
@@ -435,7 +453,7 @@ def main() -> int:
         print(f"\nFIRST FAILURE: {first_fail}")
 
     total_mism = (farm_mism + city_mism + road_mism + final_mism + base_mism
-                  + bonus_mism + v2_mism + v2alt_mism)
+                  + bonus_mism + v2_mism + v2alt_mism + v2soft_mism)
     coverage_ok = (
         cov_farms > 0 and cov_cfin > 0 and cov_cunfin > 0
         and cov_rfin > 0 and cov_runfin > 0

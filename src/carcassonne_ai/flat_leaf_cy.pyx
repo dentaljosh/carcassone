@@ -14,6 +14,11 @@ SUPPORTS_V210_BAG_CLOSE = True
 # a stale .so falls back to the pure-Python flat path instead of silently dropping the
 # terms. Bump/rename if the term semantics ever change.
 SUPPORTS_V29_C7_TERMS = True
+# Same pattern for the F6 soft cap on the closure-anticipation bonus (CL-063): linear
+# credit above the cap instead of a hard clamp. flat_leaf.py routes a soft-cap config
+# (soft_cap_slope/opp_soft_cap_slope != 0.0) here only when this flag is present, so a
+# stale .so falls back to the pure-Python flat path instead of silently hard-clamping.
+SUPPORTS_F6_SOFT_CAP = True
 """Cython port of the production flat leaf (`flat_leaf.flat_virtual_score_v2`).
 
 DEV-ONLY (2026-06-12, stage-b-wiring worktree). Default OFF — nothing imports
@@ -1197,10 +1202,21 @@ cdef double _flat_score_v2_c(state, int player, cfg, bag_close) except *:
                                              bag_ge3, bag_ge4)
     cdef double cap = <double>cfg.bonus_cap
     cdef double opp_cap = <double>cfg.opp_bonus_cap
-    if bonus_self > cap:
-        bonus_self = cap
-    if bonus_opp > opp_cap:
-        bonus_opp = opp_cap
+    # F6 soft cap (== flat_leaf._soft_capped): slope 0.0 (default/champion) keeps the
+    # UNCHANGED hard-clamp arithmetic (bit-identical); slope>0 gives linear credit above
+    # the cap (`cap + slope*(bonus-cap)`). Per-side slopes independently controllable.
+    cdef double soft_slope = <double>cfg.soft_cap_slope
+    cdef double opp_soft_slope = <double>cfg.opp_soft_cap_slope
+    if soft_slope == 0.0:
+        if bonus_self > cap:
+            bonus_self = cap
+    elif bonus_self > cap:
+        bonus_self = cap + soft_slope * (bonus_self - cap)
+    if opp_soft_slope == 0.0:
+        if bonus_opp > opp_cap:
+            bonus_opp = opp_cap
+    elif bonus_opp > opp_cap:
+        bonus_opp = opp_cap + opp_soft_slope * (bonus_opp - opp_cap)
     cdef double score = base + bonus_self - bonus_opp
     cdef double meeple_k = <double>cfg.meeple_k
     cdef object curve = cfg.v29_meeple_curve

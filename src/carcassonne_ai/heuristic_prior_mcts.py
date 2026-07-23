@@ -78,11 +78,15 @@ def leaf_score_float(state, player: int, cfg) -> float:
     opp = 1 - player
     bag = flat_leaf._bag_stats(state) if bag_close else None
     base = flat_leaf.flat_base_score(state, player, decomp)
-    bonus_self = flat_leaf._capped(
-        flat_leaf.flat_closure_bonus(state, player, decomp, cfg, bag), cfg.bonus_cap
+    # F6 soft cap: slope 0.0 (default/champion) delegates to the hard `_capped` ->
+    # bit-identical; per-side slopes independently controllable.
+    bonus_self = flat_leaf._soft_capped(
+        flat_leaf.flat_closure_bonus(state, player, decomp, cfg, bag),
+        cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0)
     )
-    bonus_opp = flat_leaf._capped(
-        flat_leaf.flat_closure_bonus(state, opp, decomp, cfg, bag), cfg.opp_bonus_cap
+    bonus_opp = flat_leaf._soft_capped(
+        flat_leaf.flat_closure_bonus(state, opp, decomp, cfg, bag),
+        cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0)
     )
     score = base + bonus_self - bonus_opp
     curve = cfg.v29_meeple_curve

@@ -367,12 +367,15 @@ def decompose_v29(state, player: int, cfg: "LeafConfig") -> dict:
       total_int             int(round(total)) == virtual_score_v2 output
     """
     from .virtual_score import virtual_score
-    from .virtual_score_v2 import _capped, _closure_anticipation_bonus
+    from .virtual_score_v2 import _closure_anticipation_bonus, _soft_capped
 
     opp = 1 - player
     base = float(virtual_score(state, player))
-    closure_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
-    closure_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
+    # F6 soft cap: slope 0.0 (default) delegates to the hard clamp -> bit-identical.
+    closure_self = _soft_capped(_closure_anticipation_bonus(state, player, cfg),
+                                cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))
+    closure_opp = _soft_capped(_closure_anticipation_bonus(state, opp, cfg),
+                               cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
 
     # meeple: flat reference always computed; curve delta only when a curve is set.
     m_self, m_opp = state.meeples[player], state.meeples[opp]

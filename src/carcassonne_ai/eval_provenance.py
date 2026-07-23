@@ -130,6 +130,8 @@ class EvaluatorSpec:
     value_blend: float = 0.0
     cap: float | None = None
     opp_cap: float | None = None
+    soft_cap_slope: float = 0.0       # F6 (CL-063): linear credit above the SELF cap
+    opp_soft_cap_slope: float = 0.0   # F6: linear credit above the OPP cap
     drop_three_open: bool | None = None
     closure_schedule: dict | None = None
     # checkpoint / code provenance
@@ -162,6 +164,8 @@ def _leaf_cfg_fields(leaf_cfg) -> dict:
     return {
         "cap": getattr(leaf_cfg, "bonus_cap", None),
         "opp_cap": getattr(leaf_cfg, "opp_bonus_cap", None),
+        "soft_cap_slope": float(getattr(leaf_cfg, "soft_cap_slope", 0.0) or 0.0),
+        "opp_soft_cap_slope": float(getattr(leaf_cfg, "opp_soft_cap_slope", 0.0) or 0.0),
         "residual_scale": float(getattr(leaf_cfg, "residual_scale", 0.0) or 0.0),
         "value_blend": float(getattr(leaf_cfg, "value_blend", 0.0) or 0.0),
         "drop_three_open": drop_three,
@@ -206,6 +210,8 @@ def spec_from_neural_mcts(
         value_blend=cfg_fields.get("value_blend", 0.0),
         cap=cfg_fields.get("cap"),
         opp_cap=cfg_fields.get("opp_cap"),
+        soft_cap_slope=cfg_fields.get("soft_cap_slope", 0.0),
+        opp_soft_cap_slope=cfg_fields.get("opp_soft_cap_slope", 0.0),
         drop_three_open=cfg_fields.get("drop_three_open"),
         closure_schedule=cfg_fields.get("closure_schedule"),
         checkpoint_path=str(checkpoint_path) if checkpoint_path else None,

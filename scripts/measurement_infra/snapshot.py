@@ -82,6 +82,10 @@ _FROZEN_HASH_DEFAULT_OFF = {
     "bag_close": False,
     "v29_meeple_return_k": 0.0,
     "v29_farm_flip_k": 0.0,
+    # F6 soft cap (CL-063, 2026-07-23): default-off candidate-only knobs. Excluded so
+    # the frozen substrate (7fc930b8) + champion (158f17ff/6dfffd57) hashes hold.
+    "soft_cap_slope": 0.0,
+    "opp_soft_cap_slope": 0.0,
 }
 
 

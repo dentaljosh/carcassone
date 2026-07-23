@@ -65,6 +65,7 @@ _CY_FLAT_V2_FLOAT = None  # lazily bound flat_leaf_cy.flat_virtual_score_v2_cy_f
 _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind time
 _CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
 _CY_SUPPORTS_C7 = False  # set from flat_leaf_cy.SUPPORTS_V29_C7_TERMS at bind time (Term R + Term F)
+_CY_SUPPORTS_SOFT_CAP = False  # set from flat_leaf_cy.SUPPORTS_F6_SOFT_CAP at bind time (F6 soft cap)
 
 # v2.10 bag-aware closure gate (2026-07-04, docs/V210_LEAF_SPEC_2026-07-04.md Track B;
 # BACKLOG 2026-05-16 item 1). When ON, the closure-anticipation bonus consults the
@@ -782,6 +783,15 @@ def _capped(bonus: float, cap: float) -> float:
     return cap if bonus > cap else bonus
 
 
+def _soft_capped(bonus: float, cap: float, slope: float) -> float:
+    """== virtual_score_v2._soft_capped. F6 soft cap (CL-063): linear credit `slope`
+    to the closure bonus ABOVE `cap` instead of a hard clamp. slope==0.0 delegates to
+    the UNCHANGED hard `_capped` (BIT-EXACT default path); slope==1.0 == identity."""
+    if slope == 0.0:
+        return _capped(bonus, cap)
+    return cap + slope * (bonus - cap) if bonus > cap else bonus
+
+
 def _flat_curve_lookup(curve, n: int) -> float:
     """== leaf_v29._curve_lookup. Value of holding `n` free meeples, clamped into
     [0, len-1] (free-meeple count is 0..7 in base+farmers)."""
@@ -929,6 +939,14 @@ def _c7_off(cfg) -> bool:
     return cfg.v29_meeple_return_k == 0.0 and cfg.v29_farm_flip_k == 0.0
 
 
+def _soft_cap_off(cfg) -> bool:
+    """True iff both F6 soft-cap slopes are OFF (0.0) — then the cy route need not
+    advertise SUPPORTS_F6_SOFT_CAP (a stale .so hard-clamps, which is bit-exact for
+    slope 0.0). A SET slope must not silently route to a soft-cap-blind .so."""
+    return (getattr(cfg, "soft_cap_slope", 0.0) == 0.0
+            and getattr(cfg, "opp_soft_cap_slope", 0.0) == 0.0)
+
+
 def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     """== virtual_score_v2(state, player, cfg) under CANONICAL_BONUS_SUM, computed
     entirely flat (no deepcopy, no count_final_scores, no engine Farm/City BFS).
@@ -957,7 +975,7 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # capability-flag pattern for the v2.10 bag-close gate (SUPPORTS_V210_BAG_CLOSE).
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
             try:
                 from . import flat_leaf_cy as _cy
@@ -966,15 +984,18 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
                 _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
                 _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
+                _CY_SUPPORTS_SOFT_CAP = bool(getattr(_cy, "SUPPORTS_F6_SOFT_CAP", False))
             except ImportError:
                 _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
                 _CY_FLAT_V2_FLOAT = False
                 _CY_SUPPORTS_CURVE = False
                 _CY_SUPPORTS_BAG_CLOSE = False
                 _CY_SUPPORTS_C7 = False
+                _CY_SUPPORTS_SOFT_CAP = False
         if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
-                and (_c7_off(cfg) or _CY_SUPPORTS_C7)):
+                and (_c7_off(cfg) or _CY_SUPPORTS_C7)
+                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
@@ -982,8 +1003,11 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     opp = 1 - player
     bag = _bag_stats(state) if bag_close else None
     base = flat_base_score(state, player, decomp)
-    bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg, bag), cfg.bonus_cap)
-    bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg, bag), cfg.opp_bonus_cap)
+    # F6 soft cap (slope 0.0 default -> hard `_capped`, bit-identical); per-side slopes.
+    bonus_self = _soft_capped(flat_closure_bonus(state, player, decomp, cfg, bag),
+                              cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))
+    bonus_opp = _soft_capped(flat_closure_bonus(state, opp, decomp, cfg, bag),
+                             cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     score = base + bonus_self - bonus_opp
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
@@ -1024,7 +1048,7 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP  # noqa: PLW0603
         if _CY_FLAT_V2_FLOAT is None:
             if _CY_FLAT_V2 is False:
                 _CY_FLAT_V2_FLOAT = False  # .so already known-missing; don't retry
@@ -1036,15 +1060,18 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                     _CY_SUPPORTS_CURVE = bool(getattr(_cy, "SUPPORTS_V29_CURVE", False))
                     _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
                     _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
+                    _CY_SUPPORTS_SOFT_CAP = bool(getattr(_cy, "SUPPORTS_F6_SOFT_CAP", False))
                 except ImportError:
                     _CY_FLAT_V2 = False
                     _CY_FLAT_V2_FLOAT = False
                     _CY_SUPPORTS_CURVE = False
                     _CY_SUPPORTS_BAG_CLOSE = False
                     _CY_SUPPORTS_C7 = False
+                    _CY_SUPPORTS_SOFT_CAP = False
         if (_CY_FLAT_V2_FLOAT and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
-                and (_c7_off(cfg) or _CY_SUPPORTS_C7)):
+                and (_c7_off(cfg) or _CY_SUPPORTS_C7)
+                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1053,8 +1080,11 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     opp = 1 - player
     bag = _bag_stats(state) if bag_close else None
     base = flat_base_score(state, player, decomp)
-    bonus_self = _capped(flat_closure_bonus(state, player, decomp, cfg, bag), cfg.bonus_cap)
-    bonus_opp = _capped(flat_closure_bonus(state, opp, decomp, cfg, bag), cfg.opp_bonus_cap)
+    # F6 soft cap (slope 0.0 default -> hard `_capped`, bit-identical); per-side slopes.
+    bonus_self = _soft_capped(flat_closure_bonus(state, player, decomp, cfg, bag),
+                              cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))
+    bonus_opp = _soft_capped(flat_closure_bonus(state, opp, decomp, cfg, bag),
+                             cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     score = base + bonus_self - bonus_opp
     if curve is not None:
         score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])

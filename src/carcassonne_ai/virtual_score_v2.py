@@ -158,6 +158,25 @@ class LeafConfig:
     # step2_pens/feature_graph provenance asserts pin that hash and must be
     # re-frozen if bag_close is ever folded into a frozen substrate.
     bag_close: bool = False
+    # --- F6 SOFT CAP on the closure-anticipation bonus (candidate-only, CL-063) ----
+    # The hard cap `_capped(bonus, cap) = min(bonus, cap)` TRUNCATES the surviving
+    # `bonus_overflow_self` residual (CL-063 leaf-residual mining). F6 replaces the
+    # clamp with a SOFT cap: linear credit `slope` for the bonus ABOVE the cap.
+    #   soft(x, c, s) = x               if x <= c
+    #                   c + s*(x - c)   if x >  c
+    # s=0.0 == the current hard cap (BIT-EXACT: the s==0 branch routes through the
+    # UNCHANGED `_capped`/min path — default traffic never touches the new arithmetic);
+    # s=1.0 == uncapped (identity). PRIMARY target is the SELF bonus; the OPP slope is
+    # kept independently controllable (mirrors bonus_cap / opp_bonus_cap).
+    # Default OFF (0.0) == bit-identical to the champion. Flat-implementable — stays on
+    # the fast cy float path (one extra branch); does NOT force the object path.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg recipe
+    # (snapshot._frozen_config_hash + its 8 mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE 0.0, so the
+    # champion's 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED. A
+    # candidate that SETS a slope shifts the hash (it is a different leaf — as intended).
+    soft_cap_slope: float = 0.0
+    opp_soft_cap_slope: float = 0.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -600,6 +619,19 @@ def _capped(bonus: float, cap: float) -> float:
     return bonus
 
 
+def _soft_capped(bonus: float, cap: float, slope: float) -> float:
+    """F6 soft cap (CL-063): linear credit `slope` to the closure bonus ABOVE `cap`
+    instead of a hard clamp. slope==0.0 reproduces `_capped` (hard clamp) BIT-EXACTLY
+    by delegating to the UNCHANGED min path; slope==1.0 is uncapped (identity). For
+    0<slope<1 the bonus above the cap keeps `cap + slope*(bonus-cap)`. == the
+    flat_leaf._soft_capped / heuristic_prior_mcts inline / cy soft-cap branch."""
+    if slope == 0.0:
+        return _capped(bonus, cap)
+    if bonus > cap:
+        return cap + slope * (bonus - cap)
+    return bonus
+
+
 def virtual_score_v2(
     state: "CarcassonneGameState", player: int, cfg: "LeafConfig | None" = None
 ) -> int:
@@ -685,8 +717,14 @@ def virtual_score_v2(
     city_cache = getattr(state, "_city_cache", None)
     try:
         base = virtual_score(state, player, farm_cache=farm_cache, city_cache=city_cache)
-        bonus_self = _capped(_closure_anticipation_bonus(state, player, cfg), cfg.bonus_cap)
-        bonus_opp = _capped(_closure_anticipation_bonus(state, opp, cfg), cfg.opp_bonus_cap)
+        # F6 soft cap: slope 0.0 (default/champion) delegates to the hard `_capped`,
+        # so default traffic is bit-identical. Per-side slopes are independent.
+        bonus_self = _soft_capped(
+            _closure_anticipation_bonus(state, player, cfg),
+            cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))
+        bonus_opp = _soft_capped(
+            _closure_anticipation_bonus(state, opp, cfg),
+            cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     finally:
         if own_farm:
             try:

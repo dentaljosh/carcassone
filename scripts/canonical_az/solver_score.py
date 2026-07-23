@@ -271,6 +271,8 @@ LEAF_VARIANT_KNOBS = (
     "V25_CAP", "V25_OPP_CAP", "V25_MEEPLE_K",
     "V25_DROP_THREE_OPEN", "V25_ONE_OPEN_ONLY",
     "V29_MEEPLE_CURVE", "V210_BAG_CLOSE",
+    # F6 soft cap (CL-063): linear credit above the cap instead of a hard clamp.
+    "SOFT_CAP_SLOPE", "OPP_SOFT_CAP_SLOPE",
 )
 
 
@@ -325,6 +327,13 @@ def leaf_cfg_from_overrides(overrides: dict):
             kw["v29_meeple_curve"] = tuple(float(x) for x in cv.split(","))
         else:  # list/tuple of numbers
             kw["v29_meeple_curve"] = tuple(float(x) for x in cv)
+    # F6 soft cap (CL-063): real LeafConfig fields (unlike V210_BAG_CLOSE); default 0.0
+    # == hard clamp == bit-identical champion. Excluded from the frozen/harness hashes
+    # while 0.0, so a slope=0.0 variant is byte-identical to the baseline ranker.
+    if "SOFT_CAP_SLOPE" in overrides:
+        kw["soft_cap_slope"] = float(overrides["SOFT_CAP_SLOPE"])
+    if "OPP_SOFT_CAP_SLOPE" in overrides:
+        kw["opp_soft_cap_slope"] = float(overrides["OPP_SOFT_CAP_SLOPE"])
     bag_close = None
     if "V210_BAG_CLOSE" in overrides:
         bag_close = str(overrides["V210_BAG_CLOSE"]) in ("1", "true", "True")

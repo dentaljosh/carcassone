@@ -28,9 +28,21 @@ from pathlib import Path
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 
 
+# F6 soft-cap slopes are EXCLUDED from the harness _leaf_hash while at their default
+# (0.0) so the champion's a36d2e15 dialect recomputes UNCHANGED across this additive,
+# default-off field. NOTE the asymmetry vs the earlier default-off knobs (bag_close /
+# C7 Term R/F): those predate the a36d2e15 baseline (2026-07-19) and are BAKED INTO it,
+# so they stay in the dict; F6 postdates it and must be dropped to preserve the hash. A
+# candidate that SETS a slope is a different leaf and DOES shift the hash (as intended).
+# Mirror in alphabeta_agent._leaf_hash + tests/test_t3_optuna's inline recipe.
+_LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0}
+
+
 def _leaf_dict(cfg) -> dict:
-    """JSON-serializable dict of a resolved LeafConfig (tuples -> lists)."""
-    return {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()}
+    """JSON-serializable dict of a resolved LeafConfig (tuples -> lists), dropping the
+    F6 soft-cap slopes while default (see `_LEAF_HASH_EXCLUDE_IF_DEFAULT`)."""
+    return {k: (list(v) if isinstance(v, tuple) else v) for k, v in asdict(cfg).items()
+            if not (k in _LEAF_HASH_EXCLUDE_IF_DEFAULT and v == _LEAF_HASH_EXCLUDE_IF_DEFAULT[k])}
 
 
 def _leaf_hash(cfg) -> str:
@@ -120,3 +132,14 @@ def _assert_cy_float_path(cfg) -> None:
     if cfg.v29_meeple_return_k != 0.0 and cfg.v29_meeple_curve is None:
         raise ValueError("--cand-leaf-json: v29_meeple_return_k requires v29_meeple_curve "
                          "(Term R prices the marginal step of the liquidity curve)")
+    # F6 soft cap: a SET slope needs the SUPPORTS_F6_SOFT_CAP build, else a stale .so
+    # silently hard-clamps via the pure-Python flat fallback (~30x slower; mirrors the
+    # bag_close / C7 clauses). slope 0.0 is bit-exact on any .so (hard clamp), so skip.
+    if getattr(cfg, "soft_cap_slope", 0.0) != 0.0 or getattr(cfg, "opp_soft_cap_slope", 0.0) != 0.0:
+        try:
+            from carcassonne_ai import flat_leaf_cy as _cy
+            if not bool(getattr(_cy, "SUPPORTS_F6_SOFT_CAP", False)):
+                raise ValueError("--cand-leaf-json: soft_cap_slope/opp_soft_cap_slope set but the "
+                                 "compiled cy leaf lacks SUPPORTS_F6_SOFT_CAP (rebuild flat_leaf_cy)")
+        except ImportError as e:
+            raise ValueError("--cand-leaf-json: soft-cap slope set but flat_leaf_cy is not built") from e

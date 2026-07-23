@@ -87,11 +87,18 @@ class BudgetExceeded(Exception):
     iteration is abandoned; the deepest COMPLETED iteration's move is played)."""
 
 
+# Mirror of c5_leaf_override._LEAF_HASH_EXCLUDE_IF_DEFAULT: drop the F6 soft-cap slopes
+# while default so the champion a36d2e15 dialect stays byte-stable across the additive
+# field (see that module for the a36d2e15-baseline asymmetry rationale).
+_LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0}
+
+
 def _leaf_hash(cfg) -> str:
     """Stable 16-hex-char hash of a resolved LeafConfig (provenance). Byte-identical
     recipe to ``scripts/classical_search/c5_leaf_override._leaf_hash`` so the agent's
     ``as_manifest`` leaf_hash matches the per-side leaf_hash the harness records."""
-    d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()}
+    d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()
+         if not (k in _LEAF_HASH_EXCLUDE_IF_DEFAULT and v == _LEAF_HASH_EXCLUDE_IF_DEFAULT[k])}
     return hashlib.sha256(
         json.dumps(d, sort_keys=True, default=str).encode()
     ).hexdigest()[:16]
