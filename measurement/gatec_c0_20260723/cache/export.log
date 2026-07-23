@@ -1,0 +1,28 @@
+[load] 10067 sibling roots; 1119 with k_remaining<=2
+[cfg] n_features=84 budget=5000000 workers=14
+  50/1119 scored=50 skip=0 err=0 (65s wall, 0.77 root/s)
+  100/1119 scored=100 skip=0 err=0 (127s wall, 0.79 root/s)
+  150/1119 scored=150 skip=0 err=0 (185s wall, 0.81 root/s)
+  200/1119 scored=200 skip=0 err=0 (247s wall, 0.81 root/s)
+  250/1119 scored=250 skip=0 err=0 (323s wall, 0.77 root/s)
+  300/1119 scored=300 skip=0 err=0 (383s wall, 0.78 root/s)
+  350/1119 scored=350 skip=0 err=0 (448s wall, 0.78 root/s)
+  400/1119 scored=400 skip=0 err=0 (502s wall, 0.80 root/s)
+  450/1119 scored=450 skip=0 err=0 (563s wall, 0.80 root/s)
+  500/1119 scored=500 skip=0 err=0 (620s wall, 0.81 root/s)
+  550/1119 scored=550 skip=0 err=0 (688s wall, 0.80 root/s)
+  600/1119 scored=600 skip=0 err=0 (748s wall, 0.80 root/s)
+  650/1119 scored=650 skip=0 err=0 (804s wall, 0.81 root/s)
+  700/1119 scored=700 skip=0 err=0 (861s wall, 0.81 root/s)
+  750/1119 scored=750 skip=0 err=0 (925s wall, 0.81 root/s)
+  800/1119 scored=800 skip=0 err=0 (993s wall, 0.81 root/s)
+  850/1119 scored=850 skip=0 err=0 (1054s wall, 0.81 root/s)
+  900/1119 scored=900 skip=0 err=0 (1095s wall, 0.82 root/s)
+  950/1119 scored=950 skip=0 err=0 (1168s wall, 0.81 root/s)
+  1000/1119 scored=1000 skip=0 err=0 (1238s wall, 0.81 root/s)
+  1050/1119 scored=1050 skip=0 err=0 (1293s wall, 0.81 root/s)
+  1100/1119 scored=1100 skip=0 err=0 (1354s wall, 0.81 root/s)
+[done] scored=1119 skipped=0 errors=0 in 1428s
+[leaf self-check] n_roots=1119 distinct_seeds=1119 tau=0.6153 top1=0.6095 regret=0.9508
+[leaf self-check] EXPECT tau=0.6153 top1=0.6095 regret=0.9508 (CL-064 harness) -> MATCH
+[out] wrote measurement/gatec_c0_20260723/cache/c0_cache.npz (0.4 MB) + manifest.json
