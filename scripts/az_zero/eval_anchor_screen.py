@@ -29,9 +29,16 @@ strength is a clairvoyant-search number, NOT a blind-PIMC deployment number. See
 measurement/az_zero_20260724/DESIGN.md.
 
 Deck-paired: each seed is played with the candidate at BOTH seats (seat swap),
-so seat/first-move advantage cancels in the paired mean. net-on-CPU (the screen is
-n=50 at sims=128 — cheap; no orch server to manage). Per-game JSON checkpointing
+so seat/first-move advantage cancels in the paired mean. Per-game JSON checkpointing
 (resume skips cached games).
+
+TRANSPORT: net-on-CPU by default (--device cpu; each worker owns a net copy). For
+the production screen (both sides searching sims=128, ~1h/point net-on-CPU) pass
+--orch-shm-name (+ --anchor-orch-shm-name for --opponent net) to route forwards
+through carc-orch SHM GPU eval-server(s) — one server per net, the CPU workers ship
+(obs, scalars, mask) over shared memory and the GPU batches them. Use the
+scripts/az_zero/screen_orch.sh wrapper (it exports TorchScript per side, peeks
+n_ch/n_scalar per ckpt, starts the server(s), readiness-gates, and cleans up).
 
 Usage (vs random):
   CUDA_VISIBLE_DEVICES="" scripts/az_zero/eval_anchor_screen.py \
@@ -131,11 +138,46 @@ def _load_net(path: str, device: str = "cpu"):
     return net, n_ch, n_scalar, sighted
 
 
-def _worker_init(cand_ckpt, anchor_ckpt, opponent, device, fpu,
-                 shared_claim, claim_host, claim_stale):
-    import torch  # noqa: F401  (ensures torch thread env respected before net build)
+def _peek_rep(path: str) -> dict:
+    """Read (n_ch, n_scalar, sighted) from a checkpoint WITHOUT building the net.
+    The orch path uses this: the GPU server owns the only net, so the CPU worker
+    needs the rep ONLY to size its SHM slot layout and pick the matching Game
+    encoder — never to run a forward. A wrong rep is a silent mis-encode (e.g. a
+    sighted 81ch net read as the 78ch default), so it is peeked, never assumed."""
+    import torch
 
-    from carcassonne_ai.evaluators import make_single_evaluator
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    rep = {
+        "n_input_channels": int(ck.get("n_input_channels", 78)),
+        "n_scalar_features": int(ck.get("n_scalar_features", 10)),
+        "sighted": bool(ck.get("sighted", False)),
+    }
+    del ck
+    return rep
+
+
+def _make_orch_eval(shm_name, ckpt, worker_id):
+    """Attach this worker to a carc-orch SHM GPU server and return a
+    (priors, value) evaluator that is a byte-for-byte drop-in for
+    make_single_evaluator: it encodes the board on the CPU worker, ships
+    (obs, scalars, mask) to the server over shared memory, and blocks on the
+    masked-softmax PRIORS + net VALUE head the server returns. The Game encoder
+    matches the ckpt's OWN rep (same rule as the net-on-CPU path)."""
+    from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+    from carcassonne_ai.shm_eval_handles import connect_shm
+
+    rep = _peek_rep(ckpt)
+    game = Game(enable_legal_moves_cache=True, sighted=rep["sighted"],
+                include_farm_scalars=(rep["n_scalar_features"] > 10) and not rep["sighted"])
+    handles = connect_shm(shm_name, worker_id,
+                          rep["n_scalar_features"], rep["n_input_channels"])
+    return game, make_remote_single_evaluator(handles, game)
+
+
+def _worker_init(cand_ckpt, anchor_ckpt, opponent, device, fpu,
+                 shared_claim, claim_host, claim_stale,
+                 cand_shm_name="", anchor_shm_name="", id_q=None):
+    import torch  # noqa: F401  (ensures torch thread env respected before net build)
 
     _W["opponent"] = opponent
     _W["fpu"] = fpu
@@ -144,21 +186,38 @@ def _worker_init(cand_ckpt, anchor_ckpt, opponent, device, fpu,
     _W["claim_host"] = claim_host
     _W["claim_stale"] = claim_stale
 
-    import torch as _t
-    dev = _t.device(device)
+    # ONE SHM slot id per worker, shared by the candidate + anchor servers (each is
+    # a SEPARATE process sized for `workers` slots, so slot w is this worker's slot
+    # on BOTH). Popped once; popping twice would exhaust the queue and hand a second
+    # worker the same slot. Only pulled when at least one orch server is in play.
+    _wid = id_q.get() if (id_q is not None and (cand_shm_name or anchor_shm_name)) else None
 
-    cnet, c_nch, c_ns, c_sighted = _load_net(cand_ckpt, device)
-    ga = Game(enable_legal_moves_cache=True, sighted=c_sighted,
-              include_farm_scalars=(c_ns > 10) and not c_sighted)
-    _W["ga"] = ga
-    _W["cand_eval"] = make_single_evaluator(cnet, dev, ga)
+    # --- candidate side ---
+    if cand_shm_name:
+        _W["ga"], _W["cand_eval"] = _make_orch_eval(cand_shm_name, cand_ckpt, _wid)
+    else:
+        from carcassonne_ai.evaluators import make_single_evaluator
+        import torch as _t
+        dev = _t.device(device)
+        cnet, c_nch, c_ns, c_sighted = _load_net(cand_ckpt, device)
+        ga = Game(enable_legal_moves_cache=True, sighted=c_sighted,
+                  include_farm_scalars=(c_ns > 10) and not c_sighted)
+        _W["ga"] = ga
+        _W["cand_eval"] = make_single_evaluator(cnet, dev, ga)
 
+    # --- opponent side (net only; the random mover needs no evaluator) ---
     if opponent == "net":
-        anet, a_nch, a_ns, a_sighted = _load_net(anchor_ckpt, device)
-        gb = Game(enable_legal_moves_cache=True, sighted=a_sighted,
-                  include_farm_scalars=(a_ns > 10) and not a_sighted)
-        _W["gb"] = gb
-        _W["anchor_eval"] = make_single_evaluator(anet, dev, gb)
+        if anchor_shm_name:
+            _W["gb"], _W["anchor_eval"] = _make_orch_eval(anchor_shm_name, anchor_ckpt, _wid)
+        else:
+            from carcassonne_ai.evaluators import make_single_evaluator
+            import torch as _t
+            dev = _t.device(device)
+            anet, a_nch, a_ns, a_sighted = _load_net(anchor_ckpt, device)
+            gb = Game(enable_legal_moves_cache=True, sighted=a_sighted,
+                      include_farm_scalars=(a_ns > 10) and not a_sighted)
+            _W["gb"] = gb
+            _W["anchor_eval"] = make_single_evaluator(anet, dev, gb)
     else:
         _W["gb"] = None
         _W["anchor_eval"] = None
@@ -283,6 +342,18 @@ def main(argv=None):
                     help="First-play-urgency reduction (None = legacy optimistic-zero).")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--device", default="cpu", help="cpu (default) or cuda")
+    # --- carc-orch SHM GPU path (dual-server). When --orch-shm-name is set the
+    #     candidate forwards go through a GPU eval-server over shared memory instead
+    #     of a per-worker net-on-CPU; --device stays the CPU fallback when unset, so
+    #     the existing CLI keeps working byte-identically. For --opponent net,
+    #     --anchor-orch-shm-name routes the anchor net through its OWN server (the
+    #     candidate 81ch/42 and anchor 78ch/10 are cross-rep — separate servers). ---
+    ap.add_argument("--orch-shm-name", default=None,
+                    help="carc-orch SHM server name for the CANDIDATE net (GPU-batched "
+                         "priors+value). Unset -> net-on-CPU (--device).")
+    ap.add_argument("--anchor-orch-shm-name", default=None,
+                    help="carc-orch SHM server name for the ANCHOR net (only with "
+                         "--opponent net). Enables the dual-server GPU path.")
     ap.add_argument("--seed-start", type=int, default=770_000_000)
     ap.add_argument("--out", required=True, help="output dir")
     ap.add_argument("--shared-claim", action="store_true")
@@ -293,6 +364,8 @@ def main(argv=None):
 
     if args.opponent == "net" and not args.anchor_ckpt:
         ap.error("--opponent net requires --anchor-ckpt")
+    if args.anchor_orch_shm_name and args.opponent != "net":
+        ap.error("--anchor-orch-shm-name only applies to --opponent net")
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -309,6 +382,10 @@ def main(argv=None):
         "anchor_ckpt": args.anchor_ckpt, "n": args.n, "sims": args.sims,
         "c_puct": args.c_puct, "fpu": args.fpu, "seed_start": args.seed_start,
         "device": args.device,
+        "orch_shm_name": args.orch_shm_name,
+        "anchor_orch_shm_name": args.anchor_orch_shm_name,
+        "transport": ("carc-orch SHM (GPU-batched)" if args.orch_shm_name
+                      else f"net-on-{args.device}"),
         "leaf": "pure NN (net priors + net value head); NO heuristic leaf, NO solver",
         "clairvoyance": "fair_chance=False (clairvoyant, sees true future deck) — matches selfplay.py",
     }, open(out / "manifest.json", "w"), indent=2)
@@ -331,10 +408,30 @@ def main(argv=None):
     results = []
     if todo:
         ctx = mp.get_context("spawn")
+        # carc-orch SHM: hand each worker a UNIQUE slot id via a shared queue (mirrors
+        # eval_fair_puct / clairvoyance_gap). One id per worker, reused on both the
+        # candidate and anchor servers. id_q stays None on the net-on-CPU path so that
+        # path is byte-identical to before.
+        orch = bool(args.orch_shm_name) or bool(args.anchor_orch_shm_name)
+        id_q = None
+        if orch:
+            id_q = ctx.Queue()
+            for _w in range(args.workers):
+                id_q.put(_w)
+            if args.orch_shm_name:
+                print(f"  [orch] candidate SHM eval-server '{args.orch_shm_name}': "
+                      f"{args.workers} CPU workers attach to "
+                      f"/dev/shm/carc_{args.orch_shm_name}", flush=True)
+            if args.anchor_orch_shm_name:
+                print(f"  [orch] anchor    SHM eval-server '{args.anchor_orch_shm_name}': "
+                      f"{args.workers} CPU workers attach to "
+                      f"/dev/shm/carc_{args.anchor_orch_shm_name}", flush=True)
         with ctx.Pool(processes=args.workers, initializer=_worker_init,
                       initargs=(args.cand_ckpt, args.anchor_ckpt, args.opponent,
                                 args.device, args.fpu, args.shared_claim,
-                                args.claim_host, args.claim_stale_secs)) as pool:
+                                args.claim_host, args.claim_stale_secs,
+                                (args.orch_shm_name or ""),
+                                (args.anchor_orch_shm_name or ""), id_q)) as pool:
             t0 = time.perf_counter()
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

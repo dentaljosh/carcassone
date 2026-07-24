@@ -18,7 +18,9 @@
 #          init baseline would false-trip the 0.5x floor as the policy sharpens).
 #   screen (every SCREEN_EVERY iters + the final iter): n=50 games at sims=128 vs
 #          (a) a uniform-random player, (b) the warm-start net-agent — the
-#          "what does the heuristic scaffolding buy?" comparison.
+#          "what does the heuristic scaffolding buy?" comparison. Orch-SHM
+#          (dual-server, GPU-batched) by default (SCREEN_ORCH=1, ~10-15 min/point);
+#          SCREEN_ORCH=0 falls back to net-on-CPU (both sides search on CPU, ~1h/pt).
 #
 # ⚠️ MEASUREMENT / EXPLORATORY. Touches NOTHING under governance/PRODUCTION.yaml,
 # the champion, checkpoints/ lineage, or the live distill_strong_20260723 gen run.
@@ -85,6 +87,14 @@ SCREEN_W=${SCREEN_W:-8}
 # either works. See DESIGN.md "Known caveats".
 ANCHOR_CKPT=${ANCHOR_CKPT:-$REPO_LOCAL/checkpoints/warmstart_canonical.pt}
 
+# --- screen transport: 1 = carc-orch SHM dual-server (GPU-batched, ~10-15 min/point),
+#     0 = net-on-CPU (both sides search sims=128 on CPU, ~1h/point). Default 1. The
+#     wrapper starts ONE GPU eval-server per net (candidate always; anchor for the
+#     vs-warmstart call), peeks n_ch/n_scalar per ckpt (the sighted-81ch-vs-blind-78ch
+#     cross-rep trap), readiness-gates, and cleans up its servers on exit. ---
+SCREEN_ORCH=${SCREEN_ORCH:-1}
+SCREEN_ORCH_SH=$REPO_LOCAL/scripts/az_zero/screen_orch.sh
+
 # --- gen transport: 1 = carc-orch SHM (GPU-batched), 0 = net-on-CPU fallback ---
 USE_ORCH=${USE_ORCH:-1}
 
@@ -139,12 +149,21 @@ _train_cmd() {
 
 _screen_cmd() {   # two calls: vs random + vs warm-start net
   local it="$1" nn ck; nn=$(_nn "$it"); ck=$OUT/ckpt/iter_${nn}.pt
-  echo "CUDA_VISIBLE_DEVICES=\"\" nice -n 19 $PY -u $SCREEN --cand-ckpt $ck --opponent random \\"
-  echo "  --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU --workers $SCREEN_W --device cpu \\"
-  echo "  --out $OUT/screens/iter_${nn}/vs_random"
-  echo "CUDA_VISIBLE_DEVICES=\"\" nice -n 19 $PY -u $SCREEN --cand-ckpt $ck --opponent net --anchor-ckpt $ANCHOR_CKPT \\"
-  echo "  --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU --workers $SCREEN_W --device cpu \\"
-  echo "  --out $OUT/screens/iter_${nn}/vs_warmstart"
+  if [ "$SCREEN_ORCH" = 1 ]; then
+    echo "CAND_CKPT=$ck OPPONENT=random OW=$SCREEN_W HOST=5800x \\"
+    echo "  nice -n 19 bash $SCREEN_ORCH_SH --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU \\"
+    echo "  --out $OUT/screens/iter_${nn}/vs_random"
+    echo "CAND_CKPT=$ck OPPONENT=net ANCHOR_CKPT=$ANCHOR_CKPT OW=$SCREEN_W HOST=5800x \\"
+    echo "  nice -n 19 bash $SCREEN_ORCH_SH --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU \\"
+    echo "  --out $OUT/screens/iter_${nn}/vs_warmstart"
+  else
+    echo "CUDA_VISIBLE_DEVICES=\"\" nice -n 19 $PY -u $SCREEN --cand-ckpt $ck --opponent random \\"
+    echo "  --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU --workers $SCREEN_W --device cpu \\"
+    echo "  --out $OUT/screens/iter_${nn}/vs_random"
+    echo "CUDA_VISIBLE_DEVICES=\"\" nice -n 19 $PY -u $SCREEN --cand-ckpt $ck --opponent net --anchor-ckpt $ANCHOR_CKPT \\"
+    echo "  --n $SCREEN_N --sims $SIMS --c-puct $CPUCT --fpu $FPU --workers $SCREEN_W --device cpu \\"
+    echo "  --out $OUT/screens/iter_${nn}/vs_warmstart"
+  fi
 }
 
 _screen_iter() { local it="$1"; [ $(( it % SCREEN_EVERY )) -eq 0 ] || [ "$it" -eq "$END" ]; }
@@ -158,7 +177,7 @@ if [ "$DRY_RUN" = 1 ]; then
   echo "random ckpt    : $RANDOM_CKPT"
   echo "gen            : GAMES=$GAMES sims=$SIMS c_puct=$CPUCT fpu=$FPU value_target=$VALUE_TARGET W=$W_GEN  transport=$([ "$USE_ORCH" = 1 ] && echo orch-SHM || echo net-on-CPU)"
   echo "train          : window=$WINDOW epochs=$EPOCHS batch=$BATCH vlw=$VLW aux_weight=$AUX_WEIGHT entropy_floor=$ENTROPY_FLOOR (OFF)"
-  echo "screen         : every $SCREEN_EVERY iters (+final) — n=$SCREEN_N sims=$SIMS vs random + vs $(basename "$ANCHOR_CKPT")"
+  echo "screen         : every $SCREEN_EVERY iters (+final) — n=$SCREEN_N sims=$SIMS vs random + vs $(basename "$ANCHOR_CKPT")  transport=$([ "$SCREEN_ORCH" = 1 ] && echo orch-SHM-dual-server || echo net-on-CPU)"
   for it in $(seq "$START" "$END"); do
     echo ""; echo "########## ITER $it -> iter_$(_nn "$it") (warm from $(basename "$(_warm_for "$it")")) ##########"
     echo "--- gen ---";   _gen_cmd "$it"
@@ -247,16 +266,35 @@ for it in $(seq "$START" "$END"); do
 
   # ---- screen (every SCREEN_EVERY iters + final) ----
   if _screen_iter "$it"; then
-    echo "[it$it] anchor screen (n=$SCREEN_N vs random + vs $(basename "$ANCHOR_CKPT")) @ $(date)"
-    CUDA_VISIBLE_DEVICES="" nice -n 19 "$PY" -u "$SCREEN" --cand-ckpt "$CKPT" --opponent random \
-      --n "$SCREEN_N" --sims "$SIMS" --c-puct "$CPUCT" --fpu "$FPU" --workers "$SCREEN_W" --device cpu \
-      --out "$OUT/screens/iter_${nn}/vs_random" > "$OUT/logs/screen_random_it${nn}.log" 2>&1 \
-      || echo "[it$it] WARN: vs-random screen failed (non-fatal)"
-    if [ -f "$ANCHOR_CKPT" ]; then
-      CUDA_VISIBLE_DEVICES="" nice -n 19 "$PY" -u "$SCREEN" --cand-ckpt "$CKPT" --opponent net --anchor-ckpt "$ANCHOR_CKPT" \
+    echo "[it$it] anchor screen (n=$SCREEN_N vs random + vs $(basename "$ANCHOR_CKPT")) transport=$([ "$SCREEN_ORCH" = 1 ] && echo orch-SHM || echo net-on-CPU) @ $(date)"
+    if [ "$SCREEN_ORCH" = 1 ]; then
+      # carc-orch SHM dual-server (GPU-batched). The wrapper injects --cand-ckpt/
+      # --opponent/--anchor-ckpt/--workers + the shm flags; we pass only the per-run
+      # knobs here. It starts/cleans up its OWN servers (scoped shm name azscreen*),
+      # so it never touches the gen orch (m2gen5800x).
+      CAND_CKPT="$CKPT" OPPONENT=random OW="$SCREEN_W" HOST=5800x \
+        nice -n 19 bash "$SCREEN_ORCH_SH" \
+        --n "$SCREEN_N" --sims "$SIMS" --c-puct "$CPUCT" --fpu "$FPU" \
+        --out "$OUT/screens/iter_${nn}/vs_random" > "$OUT/logs/screen_random_it${nn}.log" 2>&1 \
+        || echo "[it$it] WARN: vs-random screen failed (non-fatal)"
+      if [ -f "$ANCHOR_CKPT" ]; then
+        CAND_CKPT="$CKPT" OPPONENT=net ANCHOR_CKPT="$ANCHOR_CKPT" OW="$SCREEN_W" HOST=5800x \
+          nice -n 19 bash "$SCREEN_ORCH_SH" \
+          --n "$SCREEN_N" --sims "$SIMS" --c-puct "$CPUCT" --fpu "$FPU" \
+          --out "$OUT/screens/iter_${nn}/vs_warmstart" > "$OUT/logs/screen_warm_it${nn}.log" 2>&1 \
+          || echo "[it$it] WARN: vs-warmstart screen failed (non-fatal)"
+      fi
+    else
+      CUDA_VISIBLE_DEVICES="" nice -n 19 "$PY" -u "$SCREEN" --cand-ckpt "$CKPT" --opponent random \
         --n "$SCREEN_N" --sims "$SIMS" --c-puct "$CPUCT" --fpu "$FPU" --workers "$SCREEN_W" --device cpu \
-        --out "$OUT/screens/iter_${nn}/vs_warmstart" > "$OUT/logs/screen_warm_it${nn}.log" 2>&1 \
-        || echo "[it$it] WARN: vs-warmstart screen failed (non-fatal)"
+        --out "$OUT/screens/iter_${nn}/vs_random" > "$OUT/logs/screen_random_it${nn}.log" 2>&1 \
+        || echo "[it$it] WARN: vs-random screen failed (non-fatal)"
+      if [ -f "$ANCHOR_CKPT" ]; then
+        CUDA_VISIBLE_DEVICES="" nice -n 19 "$PY" -u "$SCREEN" --cand-ckpt "$CKPT" --opponent net --anchor-ckpt "$ANCHOR_CKPT" \
+          --n "$SCREEN_N" --sims "$SIMS" --c-puct "$CPUCT" --fpu "$FPU" --workers "$SCREEN_W" --device cpu \
+          --out "$OUT/screens/iter_${nn}/vs_warmstart" > "$OUT/logs/screen_warm_it${nn}.log" 2>&1 \
+          || echo "[it$it] WARN: vs-warmstart screen failed (non-fatal)"
+      fi
     fi
   fi
 
