@@ -165,10 +165,12 @@ the per-iter `value↔outcome corr`).
 **net-on-CPU fallback** (if the GPU/orch is unavailable or contended):
 prepend `USE_ORCH=0` to the launch. **Clean-scaffolding anchor** (recommended):
 prepend `ANCHOR_CKPT=/mnt/c/carc-shared/m2_sighted/warmstart_sighted.pt`.
-**Screen width:** relaunches carry `SCREEN_W=24` (Joshua 2026-07-24: half-box heuristic from
-the RoD2-era W sweeps — net-on-CPU eval optimum ~48 full-box, the distill gen owns half the
-box; applied via driver bounce at the iter-0 train boundary). Gen stays `W_GEN=14` (half of
-the orch-gen ~28 optimum).
+**Worker widths (Joshua's final call 2026-07-24 ~10:00):** relaunches carry `W_GEN=20
+SCREEN_W=32`, applied via driver bounce at the iter-0 train boundary. Context: the half-box
+heuristic (RoD2-era sweeps: gen ~28 / eval ~48 full-box) first suggested 14/24, then a live
+measurement showed az gen workers at ~32% CPU each (GPU round-trip latency-bound, GPU at 41W)
+— the W optima are conservative here because the binding resource (CPU↔GPU trips) is NOT
+under contention from the CPU-only distill gen. Joshua set 20/32 as the operating point.
 
 ⚠️ The full loop's gen (W14) will contend with any live production CPU gen. Launch
 after the `distill_strong_20260723` run is done, or accept the contention.
