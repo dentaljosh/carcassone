@@ -24,6 +24,9 @@ tqdm>=4.66
 
 # Plotting / measurement
 matplotlib>=3.8
+# scikit-learn: C0 learnability probe (measurement/gatec_c0_20260723/c0_fit.py —
+# ridge/GBDT over component features). Installed into local .venv 2026-07-23.
+scikit-learn>=1.4
 
 # Testing
 pytest>=8.0
