@@ -133,16 +133,47 @@ smoke artifacts under `/mnt/c/carc-shared/az_zero_20260724/smoke/`):
 - Both anchor screens (`vs_random`, `vs_warmstart`) ran and wrote per-game JSON.
 - Zero Tracebacks/FATALs across all smoke logs.
 
-## 6. Cost forecast (filled from LIVE timings, 2026-07-24 ~11:45)
+## 6. Cost forecast (MEASURED live; updated 2026-07-24 ~15:00 with joiner data)
 
-Measured beside the live distill gen (Joshua's 50%-contention tolerance; actual beast hit ~8%):
-- gen 300 games: **54 min @ W14** (iter 0) → **38 min @ W20** (iter 1, Joshua's operating point)
-- train (window-accumulating): ~1–2 min on GPU
-- anchor screens (every 2 iters): CPU path was ~1h/point (retired); **GPU orch path ~5–10 min/pair**
-- ⇒ **~40 min/iter** → remaining 10 iters + 5 screen points ≈ **~7.5 h**; 12-iter loop completes
-  **~19:30–20:00 EDT Fri 2026-07-24** (started 09:18, ~10.5 h wall total incl. the CPU-screen detour).
-- Contention on the beast: ~8% (0.81 vs 0.88 games/min) at W14; W20 + screens not re-measured
-  (heartbeat monitors; 50% tolerance nowhere near binding).
+Per-iter gen wall-clock, 300 games @ sims 128, all beside the live distill gen:
+
+| iter | config | gen wall-clock | local fresh | laptop fresh |
+|---|---|---|---|---|
+| 00 | W14 local solo | 54 min | 300 | — |
+| 01 | W20 local solo (beast finishing its chunk) | 34.3 min | 300 | — |
+| 02 | W20 local solo (beast at full tilt) | 41.3 min | 300 | — |
+| 03 | W20 + laptop joiner W8 | 34.8 min | 241 | 105 |
+| 04 | W20 + laptop joiner W8 | 35.2 min | 241 | 105 |
+| 05 | W20 + laptop joiner W8 | 33.5 min | 240 | 104 |
+
+Train ~1–2 min/iter (GPU); anchor screens ~5–10 min/pair on the GPU-orch path (the CPU path was
+~1 h/point — retired). ⇒ **~40 min/iter**, 12-iter loop ≈ 7.5 h, completing **~18:30–19:30 EDT**.
+
+**⚠️ Joiner verdict: contributes games but buys much less wall-clock than the +25–35% forecast.**
+The laptop plays ~35% of each iter's games, yet per-iter time is flat vs solo iter_01 (34.3 →
+~34.5 min). Fairest same-load comparison — iter_02 (41.3, full beast, no joiner) vs iters 03–05
+(34.5, full beast, joiner) — is **≈16% faster**, n=1 per side, indicative only.
+
+**Identified, fixable loss: ~46 duplicated games/iter (15% of the work).** local fresh + laptop
+fresh = 346 against a 300-game target. Cause (flagged in the joiner's own build report): the local
+driver's gen call omits `--shared-claim`, so cross-box coordination is npz-existence-cache only —
+games already *finished* elsewhere are skipped, but games *in flight* on the other box are
+duplicated. The joiner's crc32 seed shuffle decorrelates the walks but cannot prevent frontier
+collisions. **Fix for the next run: add `--shared-claim` to `run_az_zero.sh`'s gen invocation**
+(O_EXCL claims — the mechanism the distill run already uses 2-box daily). Not applied mid-flight
+(the running driver must not be edited).
+
+⚠️ **That fix is a two-part change, not a one-flag change.** `run_az_zero.sh` currently has NO
+claim handling at all (`grep claim` → nothing). Adding `--shared-claim` alone re-introduces the
+documented **shared-claim orphan-stall**: killing a claiming run strands `.claim` files with no
+matching `.npz`, and the resume then hangs forever at `GAMES − n_workers_killed`. So the next-run
+edit must ALSO port the distill driver's `_clean_stranded()` (delete `.claim` files lacking a
+sibling `.npz`; see `scripts/distill_flywheel/run_distill_sighted.sh`) and call it before each gen
+launch and before each self-heal relaunch.
+
+**Beast contention:** ~8% at az W14 solo (0.81 vs 0.88 games/min); **~28% once az ran W20 + joiner
+on both boxes** (0.63 games/min) — inside Joshua's 50% tolerance, and it pushes the distill corpus
+ETA to ~Sat midnight. Recovers when az_zero finishes tonight.
 
 ---
 
