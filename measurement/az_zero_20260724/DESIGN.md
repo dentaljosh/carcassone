@@ -133,11 +133,16 @@ smoke artifacts under `/mnt/c/carc-shared/az_zero_20260724/smoke/`):
 - Both anchor screens (`vs_random`, `vs_warmstart`) ran and wrote per-game JSON.
 - Zero Tracebacks/FATALs across all smoke logs.
 
-## 6. Cost forecast
+## 6. Cost forecast (filled from LIVE timings, 2026-07-24 ~11:45)
 
-To be filled from live iter_00 timing (smoke W2/sims-32 numbers are not honestly scalable to
-W14/sims-128 under SMT contention with the live distill gen; the loop was launched 2026-07-24
-09:18 alongside the beast per Joshua's 50%-contention tolerance — see PREREG.md §5).
+Measured beside the live distill gen (Joshua's 50%-contention tolerance; actual beast hit ~8%):
+- gen 300 games: **54 min @ W14** (iter 0) → **38 min @ W20** (iter 1, Joshua's operating point)
+- train (window-accumulating): ~1–2 min on GPU
+- anchor screens (every 2 iters): CPU path was ~1h/point (retired); **GPU orch path ~5–10 min/pair**
+- ⇒ **~40 min/iter** → remaining 10 iters + 5 screen points ≈ **~7.5 h**; 12-iter loop completes
+  **~19:30–20:00 EDT Fri 2026-07-24** (started 09:18, ~10.5 h wall total incl. the CPU-screen detour).
+- Contention on the beast: ~8% (0.81 vs 0.88 games/min) at W14; W20 + screens not re-measured
+  (heartbeat monitors; 50% tolerance nowhere near binding).
 
 ---
 
