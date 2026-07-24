@@ -1,6 +1,8 @@
 # F1 — P0-lite release integrity build spec (2026-07-19)
 
-**Status: DRAFT, ready to delegate.** Track-F item F1 ([REVIEW_ADOPTION_20260719.md](REVIEW_ADOPTION_20260719.md)); implements the review's Priority 0 at pragmatic scope. Gate for all future headline claims: **zero semantic/configuration divergences.** Est. ~1-2 engineering days (subagent-friendly) + CPU-hours for replay. No GPU, no box contention.
+> ✅ **STATUS: BUILT + MERGED 2026-07-19 (`91bff94`), residue CLEARED 2026-07-21 (stamped 2026-07-24).** Champion factory + parity-byte-identical eval routing + un-staled human harness shipped; `tests/release/` 38 green; replay audit PASS (2,159 states at merge, 143,915-state bulk replay 2026-07-21, 0 prod drops / 0 collisions); PRODUCTION.yaml leaf fingerprint corrected to `a36d2e15` + dialects. See STATUS 2026-07-19 / 2026-07-21. The spec text below is the as-built design (historical).
+
+_(orig status: DRAFT, ready to delegate.)_ Track-F item F1 ([REVIEW_ADOPTION_20260719.md](REVIEW_ADOPTION_20260719.md)); implements the review's Priority 0 at pragmatic scope. Gate for all future headline claims: **zero semantic/configuration divergences.** Est. ~1-2 engineering days (subagent-friendly) + CPU-hours for replay. No GPU, no box contention.
 
 ## 1. Executable champion factory
 `src/carcassonne_ai/champion_factory.py`:

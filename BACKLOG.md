@@ -5,6 +5,10 @@ Parking lot for ideas, distractions, and things-to-do-later that come up during 
 When something goes in: timestamp it, one-line description, why it's not being done now.
 When something comes out: either it gets promoted to an actual phase, or Joshua deletes it.
 
+> ⚠️ **Read every entry's "why deferred" as point-in-time.** Many entries below were written under premises that have since expired ("the recipe still compounds", "the champion is a net", "value learning is the live lever"). Two companions, both mandatory before actioning or re-proposing anything here:
+> **(1) [docs/BACKLOG_REAUDIT_2026-07-13.md](docs/BACKLOG_REAUDIT_2026-07-13.md)** — every item re-scored against *current* premises.
+> **(2) [docs/LEVER_INDEX.md](docs/LEVER_INDEX.md)** — the intervention index; several ideas parked here were later tried and killed, and the index is where that shows up under the name you'd grep.
+
 > Cleaned 2026-05-16: removed landed items (batched GPU inference, in-place state mutation, fp16 inference, Phase 3 prerequisites, self-play temperature sampling, rule-based Tier-1 player), dead v1-v6 recipe entries (v2/v3 recipe fixes, v7 candidates framing, right-size-box, S-curve v6 diagnosis, c_puct sweep continuation — the recipe question is resolved, see DECISIONS 2026-05-16), and the orchestrator-GIL null result (lives in DECISIONS). Kept ideas are still valid for the v2.7-retrain line.
 
 ## Captured ideas

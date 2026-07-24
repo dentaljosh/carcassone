@@ -1,6 +1,6 @@
 # STATUS — live state of in-flight work
 
-> **Current state only.** A fresh thread reads [CLAUDE.md](CLAUDE.md) → here and takes over. The historical "Right now" narrative (carc-orch saga, hardware investigation, cluster-wiring epochs) is frozen in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md); the durable record is dated [DECISIONS.md](DECISIONS.md) entries + git log. **Do NOT re-stack old epochs here** — update the blocks below in place, and run the 5-touch close-out (CLAUDE.md) when a run concludes.
+> **Current state only.** A fresh thread reads [CLAUDE.md](CLAUDE.md) → here and takes over. The historical "Right now" narrative (carc-orch saga, hardware investigation, cluster-wiring epochs) is frozen in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md); the durable record is dated [DECISIONS.md](DECISIONS.md) entries + git log. **Do NOT re-stack old epochs here** — update the blocks below in place, and run the 6-touch close-out (CLAUDE.md) when a run concludes.
 
 > **📋 The full work queue now lives in [docs/PROGRAM_ROADMAP_2026-07-07.md](docs/PROGRAM_ROADMAP_2026-07-07.md)** (created 2026-07-07 after Phase 1.1 fired + the transitivity round-robin + the Fable premise-expiration audit stacked ~3-5 box-days of gated work). This block stays the live-state snapshot; the roadmap is the queue. Update BOTH on close-out.
 

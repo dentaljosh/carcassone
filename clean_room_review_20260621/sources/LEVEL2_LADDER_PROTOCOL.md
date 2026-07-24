@@ -4,7 +4,8 @@
 > modify-iter8 follows from this build. It executes §5 + §8.3 of
 > [docs/MEASUREMENT_FIRST_SPEC_2026-06-18.md](../../docs/MEASUREMENT_FIRST_SPEC_2026-06-18.md).
 > Level 1 (clairvoyance gap) is settled: gap **+26.6 elo** = minor contributor (CL-022,
-> [../clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md](../clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md)) ⇒
+> [CLAIRVOYANCE_GAP_VERDICT.md](CLAIRVOYANCE_GAP_VERDICT.md) — snapshot copy; repo original at
+> [measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md](../../measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md)) ⇒
 > the clairvoyant production agent is an acceptable Level-2 baseline; we **skip the K×
 > non-clairvoyant search** on the ladder rungs.
 

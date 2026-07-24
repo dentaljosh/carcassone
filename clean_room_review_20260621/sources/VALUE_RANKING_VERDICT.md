@@ -14,7 +14,7 @@ architecture swing; pivot to measurement-first.**
 - **Gauge:** held-out Kendall-τ vs the oracle (NOT global value-correlation), + top-1, pairwise, regret.
 - **Reference points:** v2.7 leaf τ = **0.579**; production net (MSE, millions of positions) τ = **0.081**;
   4A oracle ceiling: self-consistent (deterministic) + 0.644 vs a 1600-sim deeper oracle → target
-  is reliably rankable ([VALUE_RANKING_LABEL_RELIABILITY.md](VALUE_RANKING_LABEL_RELIABILITY.md)).
+  is reliably rankable ([VALUE_RANKING_LABEL_RELIABILITY.md](../../value_ranking/VALUE_RANKING_LABEL_RELIABILITY.md)).
 
 ## Arm results (held-out test, 315 groups; `VALUE_RANKING_RESULTS.csv`)
 | arm | head | loss | params | **τ** | top1 | high-spread τ |
