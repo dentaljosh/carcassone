@@ -1,8 +1,12 @@
 # Distill-strong-teacher — SPEC (2026-07-23)
 
-**Status: PLANNED, not launched.** The one live learned-component thread after C0 (DEAD),
-F6 (NULL), and the budget-curve extension. Approved-in-principle by Joshua 2026-07-23
-("ok, so the shape would be gen at 4x, train, eval vs the champ?" → refined below).
+**Status: GEN RUNNING (launched 2026-07-23 23:26 EDT).** Joshua's go: "ok let's try to distill.
+work stealing across boxes. w16 each for gen. eval might be higher w." Executed by reusing
+`scripts/distill_flywheel/run_distill_sighted.sh` with the teacher config: `TAG=distill_strong_20260723
+KDETS=8 CHAMP_SIMS=1376 GAMES=600` ×4 chunks, `SEED_BASE=50e9`, W16 local + W16 laptop shared-claim,
+`STALL_GEN=50` (teacher games ~35–40 min — the 15-min default watchdog would death-loop on the silent
+start window). Corpus target = 2,400 games (~330k positions), matching the stage-1 corpus that produced
+the faithful tie. Live state → STATUS.md; data `/mnt/c/carc-shared/distill_strong_20260723/`.
 Champion / `governance/PRODUCTION.yaml` UNTOUCHED until an eval clears the gate.
 
 ## Why this is NOT a repeat of the failed distillation
