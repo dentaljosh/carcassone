@@ -1,0 +1,5 @@
+iter,ckpt_id,parent_id,sha256_12,games,npz,gen_sec,train_sec,opt_steps,n_train_pos,train_pol_last,val_pol_last,policy_entropy,baseline_entropy,entropy_floor,value_corr,smoke_n,smoke_wr_vs_parent,smoke_elo_vs_parent,verdict,code_commit
+0,distill_iter_00,warmstart_canonical,cf9323975965,600,600,43800.0,202.0,966,82014,1.6202,1.7139,1.6726,1.6004,0.8002,0.3592,,,,HEALTHY,8a0e79dd8184
+1,distill_iter_01,iter_00,4939c6696fa2,600,600,46120.0,297.0,1926,164023,1.5959,1.6656,1.6074,1.6004,0.8002,0.4319,,,,HEALTHY,e58db474ce88
+2,distill_iter_02,iter_01,28f6eef7b483,600,600,41131.0,446.0,2886,246047,1.5814,1.6386,1.5808,1.6004,0.8002,0.5691,,,,HEALTHY,e58db474ce88
+3,distill_iter_03,iter_02,6e2679908d79,600,600,40397.0,589.0,3846,328077,1.5611,1.6165,1.5707,1.6004,0.8002,0.6564,,,,HEALTHY,e58db474ce88

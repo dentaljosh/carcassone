@@ -1,7 +1,21 @@
 # Distill-strong-teacher — SPEC (2026-07-23)
 
-> **STATUS: EXECUTED 2026-07-23 → 2026-07-26. GATE = POSITIVE, +42.8 elo at deploy cost — but a
-> SINGLE SCREEN at the edge; NOT promoted, confirmation on a fresh band owed.**
+> **STATUS: EXECUTED + CONFIRMED 2026-07-23 → 2026-07-26. The EQUAL-SIMS strength claim is
+> CONFIRMED on two disjoint bands (pooled +35.7 ± 12.3 elo, winrate z +2.90, margin z +2.12 over
+> 800 deck-paired games). ⚠️ DEPLOYABILITY IS A SEPARATE QUESTION AND CURRENTLY POINTS NEGATIVE —
+> the candidate costs 4.3–5.5× per move, and at CL-060's own exchange rate a champion given equal
+> wall-clock would gain ~+29 to +34 elo, cancelling the edge. An UNLOADED cost probe decides it.
+> NOT promoted; champion + `governance/PRODUCTION.yaml` UNTOUCHED. → CL-067 (Supported/high).**
+>
+> **CONFIRMATION CELL (band 56e9, n=400 deck-paired, 200 decks, 0 deck_hash mismatches):
+> 213W-7D-180L, winrate 0.5413 (z +1.65), elo +28.7 ±17.4, margin +1.18 pts/deck (paired z +1.28).**
+> Weaker than the gate but **statistically indistinguishable from it** (elo diff +14.1 ± 24.7,
+> z = 0.57) ⇒ winner's-curse shrinkage of a selected first look, **not** the reversal pattern that
+> killed c=3 "+47", anchor-fraction "+39" and the flywheel "+88.7" (that one flipped sign to −3.5).
+> Neither cell clears 2σ alone; the 2σ result is **pooled**, and pooling was not pre-registered.
+>
+> **Historical note — the original gate banner read:** GATE = POSITIVE, +42.8 elo at deploy cost,
+> a SINGLE SCREEN at the edge; NOT promoted, confirmation on a fresh band owed.
 > Gen: 2,400 teacher games at the full 4× budget (k8×1376), 4 chunks, all screened HEALTHY.
 > Gate (n=400 deck-paired, band 52e9, deploy budget k4×688 exact-K2): **221W-7D-172L, winrate
 > 0.5613, elo +42.8 (1σ ±17.5), winrate z +2.45; deck-paired margin +1.595 pts/deck, paired z
