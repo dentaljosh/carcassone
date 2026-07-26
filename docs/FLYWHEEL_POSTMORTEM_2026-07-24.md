@@ -1,8 +1,11 @@
 # The learned-component ("flywheel") program — POST-MORTEM
 
-**Status: DRAFT, 2026-07-24.** Written while az_zero's final iterations run; its formal PREREG read
-lands tonight and the verdict section will be stamped then. Everything else is settled evidence.
-Champion / `governance/PRODUCTION.yaml` untouched by any of this.
+**Status: DRAFT for Joshua's review, 2026-07-24 (§4 verdict stamped 2026-07-26).** All evidence
+herein is settled: az_zero completed its 12 iterations and returned FLATLINE (CL-066), so no
+section is awaiting a result. It stays marked DRAFT because the *framing* — particularly §5's
+claim about what the programme produced and §6's forward allocation — is Joshua's call, not mine.
+⚠️ §6.1 names the distill-strong-teacher thread as live; its champion gate ran 2026-07-26 and that
+result supersedes the framing there. Champion / `governance/PRODUCTION.yaml` untouched by any of this.
 
 **Scope.** The program that ran 2026-04 → 2026-07 asking: *can a learned network become the source
 of playing strength in Carcassonne?* This covers the value head, the policy head, and the
@@ -84,9 +87,15 @@ Every kill above was measured inside a heuristic-warmstarted lineage, leaving on
 thesis. Run 2026-07-24 from a random-init sighted net, pure self-play, no heuristic anywhere in the
 loop, against a same-arch heuristic-taught anchor on deck-matched screens.
 
-Result: **flatline.** Margin vs anchor −47.1 (it0) → −32.8 → **−27.5 (it4, peak)** → −34.6 →
-−36.1 (it8); the pre-registered ALIVE bar (half the gap) became unreachable at iter 8. The random
-floor was solved by iter 2 (0.98) and never converted into anything else.
+Result: **FLATLINE**, 12 iterations complete. Margin vs anchor **−47.12 → −32.78 → −27.46 →
+−34.60 → −36.08 → −26.86 → −29.84** (iters 0/2/4/6/8/10/11, n=50 per point, same deck band every
+screen). The random floor was solved by iter 2 (0.98–1.00) and never converted into anything else.
+All three pre-registered bars missed: best gap-closure **43%** against the 50% bar, best winrate
+**0.12** against the 0.35 bar, and the series is non-monotone — it oscillates in a −27 to −36 band
+from iter 2 onward with no trend. The iter-10 bounce to −26.86 is the best single point and is
+recorded rather than buried: it is statistically indistinguishable from iter 4's −27.46 six
+iterations earlier and is followed by a regression, i.e. exactly the "lone point beating its
+neighbours" signature this project has been burned by before.
 
 The probe in §3(d) gives the mechanism, and it is worth stating precisely because it is the
 generalizable lesson: **the value head's effective sample size is the number of GAMES, not

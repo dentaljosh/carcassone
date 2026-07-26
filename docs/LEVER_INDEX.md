@@ -185,6 +185,9 @@
 
 | lever · aliases | verdict | pointer |
 |---|---|---|
+| **tabula rasa / from-scratch / random-init self-play** · `az_zero` · `scripts/az_zero/` · `make_random_ckpt.py` · "AlphaGo Zero thesis" · "the scaffolding trap" | **TRIED 2026-07-24 — FLATLINE.** 12 iters × 300 games, no heuristic in the loop; all three pre-registered bars missed. **Removes the heuristic-warmstart confound from every earlier learned-value kill.** Do NOT fund a v2 — the mechanism is measured and its levers are all killed | `measurement/az_zero_20260724/RESULTS.md` · **CL-066** · DECISIONS 2026-07-24 |
+| **off-distribution / held-out value probe** · `PROBE_OFFDIST` · "does the value head transfer?" | TRIED — **method worth reusing**: score a candidate net AND a neutral control net on several game sets; if only the candidate collapses off its training window, it memorised rather than learned. Exposed that the trainer's per-iter `value↔outcome corr` is a within-window number | `measurement/az_zero_20260724/PROBE_OFFDIST_20260724.md` |
+| **effective sample size = GAMES not positions** ("~144 positions share one outcome label") | DIAGNOSIS, not a lever — the reason a 7M value head memorises a ~1,200-game buffer. AlphaGo's remedy (one position per game across 30M games) needs the scale that defines it | `measurement/az_zero_20260724/RESULTS.md` §mechanism |
 | **replay window size** · `--window` (10 → 30, 12 in the distill flywheel) · "window-aging" | TRIED as a recipe change, but the **isolated A/B has never been run** — the two designs are confounded by selection + warm-from-best + leaf | DECISIONS 2026-05-11; BACKLOG.md 2026-06-11 |
 | **batch size 256 vs 512** | TRIED — **keep 256**: b512 ties head-to-head but fails the parent gate and under-trains the policy | `measurement/rod_batch512_calibration/`; roadmap B4 |
 | **epochs per iter** (3 standard; "2-epoch batch-256 freebie") | The 2-epoch variant is **NEVER-TRIED** — explicitly unclaimed from the b512 calibration | roadmap Track B B4 |
@@ -200,6 +203,8 @@
 
 | lever · aliases | verdict | pointer |
 |---|---|---|
+| **laptop work-stealing joiner for net self-play** · `scripts/az_zero/laptop_joiner.sh` · "laptop-side orch gen" | SPEED, BUILT + KEPT — first time the orch served gen on the laptop GPU (TS parity 1.3e-07). ⚠️ Measured only **~16%**, not the forecast +30%: the local driver omits `--shared-claim`, so ~46 of 300 games/iter are duplicated. Next-run fix is TWO parts (flag **plus** porting `_clean_stranded()`, else the orphan-stall bug) | `measurement/az_zero_20260724/DESIGN.md` §6 · commit `bb362df` |
+| **GPU orch-SHM path for anchor screens** · `scripts/az_zero/screen_orch.sh` · `--orch-shm-name` | SPEED, BUILT + KEPT — dual-server (candidate + anchor) net-vs-net screens; **~1 h → ~5 min per screen point** vs the net-on-CPU form | commit in the az_zero series, 2026-07-24 |
 | **"would a throughput/search-core program buy elo?"** · **"F5"** | **PURSUED AS STRENGTH** — measured: compute is purchasable but expensive, and it does not touch the structural blocker. Standing recommendation: **don't fund it** | CL-060; roadmap F5 |
 | **GPU orchestrator** · `carc-orch` · SHM eval-server · forwarders · CUDA-streams gambit | TRIED, mixed → **SPEED ONLY**. ⚠️ incompatible with K≥4 solver evals (starves the server) | memory `reference_carc_orch_verdict`, `reference_exact_solver_eval_infra`; [CLUSTER_OPS](CLUSTER_OPS.md) |
 | **orchestrator multi-process pool / GIL hypothesis** | TRIED → NULL; workers are the bottleneck, not the GIL | DECISIONS 2026-05-13 |
