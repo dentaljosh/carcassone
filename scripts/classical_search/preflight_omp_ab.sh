@@ -26,6 +26,12 @@
 # order-statistic trap). We sample aggregate CPU after warm-up instead.
 # ============================================================================
 set -uo pipefail
+# ⚠️ see preflight_w_ladder.sh for the full note: `set -m` gives each background job
+# its own process group (PGID == PID). Reading the group back with `ps -o pgid=` after
+# `setsid` is NOT reliable — setsid only forks when the caller is already a group
+# leader, so on some boxes the lookup returns the DRIVER's group and the subsequent
+# `kill -- -$PGID` is a driver suicide that silently orphans the real cell.
+set -m
 REPO=/home/doctor/projects/carcassone
 CKPT=/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt
 OUT_ROOT=/mnt/c/carc-shared/preflight_omp_20260726
@@ -59,7 +65,7 @@ run_cell () {
   if [ "$omp" = "1" ]; then
     CAND_CKPT="$CKPT" OW="$OW" ORCH_FWD="$FWD" ORCH_MAX_BATCH="$MB" \
       OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
-      setsid nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
+      nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
         --info fair-netprior --opponent fair-champion \
         --exact-k 2 --k-dets 4 --sims 688 \
         --n 200 --paired --seed-start 99000000000 \
@@ -67,7 +73,7 @@ run_cell () {
         --no-results-csv > "$log" 2>&1 &
   else
     CAND_CKPT="$CKPT" OW="$OW" ORCH_FWD="$FWD" ORCH_MAX_BATCH="$MB" \
-      setsid nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
+      nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
         --info fair-netprior --opponent fair-champion \
         --exact-k 2 --k-dets 4 --sims 688 \
         --n 200 --paired --seed-start 99000000000 \
@@ -75,7 +81,12 @@ run_cell () {
         --no-results-csv > "$log" 2>&1 &
   fi
   local wpid=$!
-  CUR_PGID=$(ps -o pgid= -p "$wpid" 2>/dev/null | tr -d ' ')
+  CUR_PGID="$wpid"        # guaranteed by `set -m`; never look this up
+  local own_pgid; own_pgid=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
+  if [ "$CUR_PGID" = "$own_pgid" ] || [ -z "$CUR_PGID" ]; then
+    echo "FATAL: cell pgid ($CUR_PGID) == driver pgid ($own_pgid) — refusing" >&2
+    CUR_PGID=""; return 1
+  fi
   echo "  wrapper pid=$wpid pgid=$CUR_PGID log=$log"
   sleep "$WARMUP"
 

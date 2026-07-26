@@ -27,6 +27,17 @@
 # is unreadable in a short probe, and first-completions is the order-statistic trap).
 # ============================================================================
 set -uo pipefail
+# ⚠️ `set -m` (job control) puts every background job in its OWN process group whose
+# PGID == the job's PID. This is load-bearing, not cosmetic.
+# BUG IT FIXES (hit on the laptop 2026-07-26, cost a 25-min orphan): the previous
+# version launched cells with `setsid` and then read the group back via
+# `ps -o pgid= -p $!`. setsid only forks when the caller is ALREADY a group leader,
+# so on a box where the driver was itself a group leader the lookup returned the
+# DRIVER'S OWN pgid. Consequences: the sampler found 0 workers (they were in another
+# group) and wrote a row of zeros, then `kill -- -$CUR_PGID` KILLED THE DRIVER — while
+# the real cell survived, orphaned, and kept running a 7-hour eval nobody was watching.
+# With `set -m` the pgid is known by construction; no lookup, nothing to get wrong.
+set -m
 REPO=/home/doctor/projects/carcassone
 # ⚠️ THE SHARE MOUNTS AT A DIFFERENT PATH PER BOX: local = /mnt/c/carc-shared,
 # anything running ON the laptop/xeon = /mnt/carc-shared. Override both on remotes.
@@ -59,15 +70,22 @@ run_w () {
   rm -rf "$OUT_ROOT/scratch_w${w}"
   local envs=(CAND_CKPT="$CKPT" OW="$w" ORCH_FWD="$FWD" ORCH_MAX_BATCH="$mb")
   [ "$SERVER_OMP" = "1" ] && envs+=(OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1)
-  env "${envs[@]}" setsid nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
+  env "${envs[@]}" nice -n 19 bash scripts/classical_search/fair_net_vs_net_orch.sh \
       --info fair-netprior --opponent fair-champion \
       --exact-k 2 --k-dets 4 --sims 688 \
       --n 200 --paired --seed-start 99000000000 \
       --out-root "$OUT_ROOT" --out-subdir "scratch_w${w}" \
       --no-results-csv > "$log" 2>&1 &
   local wpid=$!
-  CUR_PGID=$(ps -o pgid= -p "$wpid" 2>/dev/null | tr -d ' ')
-  echo "  pid=$wpid pgid=$CUR_PGID"
+  CUR_PGID="$wpid"        # guaranteed by `set -m`; never look this up
+  # Refuse to continue if the cell's group is somehow our own — killing that group
+  # is a driver suicide, and it is silent (see the set -m note above).
+  local own_pgid; own_pgid=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
+  if [ "$CUR_PGID" = "$own_pgid" ] || [ -z "$CUR_PGID" ]; then
+    echo "FATAL: cell pgid ($CUR_PGID) == driver pgid ($own_pgid) — refusing to sample/kill" >&2
+    CUR_PGID=""; return 1
+  fi
+  echo "  pid=$wpid pgid=$CUR_PGID (driver pgid $own_pgid)"
   sleep "$WARMUP"
   if ! kill -0 "$wpid" 2>/dev/null; then
     echo "  !! died"; tail -20 "$log"
