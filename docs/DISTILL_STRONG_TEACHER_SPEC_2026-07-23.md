@@ -1,5 +1,16 @@
 # Distill-strong-teacher — SPEC (2026-07-23)
 
+> **STATUS: EXECUTED 2026-07-23 → 2026-07-26. GATE = POSITIVE, +42.8 elo at deploy cost — but a
+> SINGLE SCREEN at the edge; NOT promoted, confirmation on a fresh band owed.**
+> Gen: 2,400 teacher games at the full 4× budget (k8×1376), 4 chunks, all screened HEALTHY.
+> Gate (n=400 deck-paired, band 52e9, deploy budget k4×688 exact-K2): **221W-7D-172L, winrate
+> 0.5613, elo +42.8 (1σ ±17.5), winrate z +2.45; deck-paired margin +1.595 pts/deck, paired z
+> +1.71** ⇒ ~86% retention of the teacher's +49.85 edge at ¼ its budget. The win-count statistic
+> clears 2σ, the margin statistic does not — see DECISIONS 2026-07-26 and **CL-067**
+> (Provisional/medium). Champion + `governance/PRODUCTION.yaml` UNTOUCHED.
+> **Next step: confirmation cell on a fresh seed band (n≥200) before any promotion.**
+> Cell 2 (retention % vs the teacher itself, n=200 band 53e9) was specced but NOT run.
+
 **Status: GEN RUNNING (launched 2026-07-23 23:26 EDT).** Joshua's go: "ok let's try to distill.
 work stealing across boxes. w16 each for gen. eval might be higher w." Executed by reusing
 `scripts/distill_flywheel/run_distill_sighted.sh` with the teacher config: `TAG=distill_strong_20260723

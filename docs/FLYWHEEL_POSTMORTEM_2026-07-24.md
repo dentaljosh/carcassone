@@ -131,7 +131,15 @@ under never-tried, not because it is promising but so that "absent" never again 
 "unexplored."
 
 **Not closed, and where the program's energy should go:**
-1. **Distill-strong-teacher** (live, running) — the teacher is now *stronger* than deploy (+40) and
+1. **Distill-strong-teacher** — ✅ **GATE RAN 2026-07-26: POSITIVE, +42.8 elo at deploy cost (CL-067),
+   ~86% of the 4× teacher's edge retained at ¼ its budget.** SINGLE SCREEN at the edge (win-count z
+   +2.45 clears 2σ, deck-paired margin z +1.71 does not) ⇒ **not promoted; a fresh-band confirmation
+   is owed.** ⚠️ This is the programme's first positive strength result and it does **not** contradict
+   §3: the thread distils a *policy* and never asks a learned value to evaluate anything — the
+   component §3 kills is the value head, which stays the frozen heuristic leaf throughout. If the
+   confirmation holds, the honest summary of this post-mortem becomes "learned **value** is dead;
+   learned **policy priors** carrying a stronger teacher's move choices are not."
+   *(original text: live, running)* — the teacher is now *stronger* than deploy (+40) and
    *expensive* (4×). Distillation being faithful is exactly what makes "teacher strength at deploy
    cost" a coherent bet. Note it does not contradict §3: it copies a **policy**, and never asks a
    learned value to evaluate anything.
