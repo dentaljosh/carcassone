@@ -28,8 +28,11 @@
 # ============================================================================
 set -uo pipefail
 REPO=/home/doctor/projects/carcassone
-CKPT=/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt
-OUT_ROOT=/mnt/c/carc-shared/preflight_wladder_20260726
+# ⚠️ THE SHARE MOUNTS AT A DIFFERENT PATH PER BOX: local = /mnt/c/carc-shared,
+# anything running ON the laptop/xeon = /mnt/carc-shared. Override both on remotes.
+SHARE=${SHARE:-/mnt/c/carc-shared}
+CKPT=${CKPT:-$SHARE/distill_strong_20260723/ckpt/iter_03.pt}
+OUT_ROOT=${OUT_ROOT:-$SHARE/preflight_wladder_20260726}
 WARMUP=${WARMUP:-240}
 SAMPLES=${SAMPLES:-3}
 SAMPLE_GAP=${SAMPLE_GAP:-20}
