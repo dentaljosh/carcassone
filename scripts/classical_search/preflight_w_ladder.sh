@@ -54,7 +54,19 @@ W_LIST=${W_LIST:-"16 24 32 40 48"}
 cd "$REPO"
 mkdir -p "$OUT_ROOT"
 RESULT="$OUT_ROOT/W_LADDER_RESULTS.tsv"
-printf 'W\tmax_batch\tfwd\tserver_omp\tn_workers\tworker_agg_cpu\tworker_mean_cpu\torch_cpu\tgpu_w\n' > "$RESULT"
+printf 'W\tmax_batch\tfwd\tserver_omp\tn_workers\tworker_agg_cpu\tworker_mean_cpu\torch_cpu\tgpu_w\tmem_used_g\tmem_avail_g\n' > "$RESULT"
+
+# ⚠️ RAM IS THE BINDING RESOURCE AT HIGH W, AND CPU THROUGHPUT CANNOT SEE IT.
+# Each worker holds engine state + an exact-K solver transposition table. The first
+# version of this script measured CPU only and was blind to memory: it drove local to
+# 29G/41G used at W=56 with W=80 still queued, and the laptop to 3G FREE of 11G with
+# W=24/32 queued (2026-07-26, caught by Joshua). Project precedent: W=18 at K>=4 OOMed
+# this box AND took the session down; on WSL a host-side OOM tears down the whole VM.
+# So: refuse to START a cell without headroom, and ABORT the ladder if a cell eats into
+# the reserve. MIN_AVAIL_G is a floor, not a target.
+MIN_AVAIL_G=${MIN_AVAIL_G:-8}
+_avail_g () { free -g | awk '/^Mem:/ {print $7}'; }
+_used_g ()  { free -g | awk '/^Mem:/ {print $3}'; }
 
 CUR_PGID=""
 cleanup() {
@@ -67,6 +79,14 @@ run_w () {
   local w=$1 mb=$1     # mb = W by construction (see header)
   local log="$OUT_ROOT/w${w}.log"
   echo "=== W=$w (max_batch=$mb fwd=$FWD server_omp=$SERVER_OMP) ==="
+  local av0; av0=$(_avail_g)
+  if [ "${av0:-0}" -lt "$MIN_AVAIL_G" ]; then
+    echo "  ABORT LADDER: only ${av0}G available (< ${MIN_AVAIL_G}G floor) before W=$w." >&2
+    echo "  Higher W only makes this worse — stopping rather than risking an OOM/VM teardown." >&2
+    printf '%s\t%s\t%s\t%s\tSKIPPED_LOW_MEM\t-\t-\t-\t-\t-\t%s\n' "$w" "$mb" "$FWD" "$SERVER_OMP" "$av0" >> "$RESULT"
+    return 2
+  fi
+  echo "  mem before: ${av0}G available"
   rm -rf "$OUT_ROOT/scratch_w${w}"
   local envs=(CAND_CKPT="$CKPT" OW="$w" ORCH_FWD="$FWD" ORCH_MAX_BATCH="$mb")
   [ "$SERVER_OMP" = "1" ] && envs+=(OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1)
@@ -110,8 +130,16 @@ run_w () {
   orch=$(awk -v a="$orch" -v s="$SAMPLES" 'BEGIN{printf "%.0f", a/s}')
   gpu=$(awk -v a="$gpu" -v s="$SAMPLES" 'BEGIN{printf "%.0f", a/s}')
   local mean; mean=$(awk -v a="$agg" -v n="$nw" 'BEGIN{printf "%.1f", (n>0? a/n : 0)}')
-  echo "  workers=$nw agg=${agg}% mean=${mean}% orch=${orch}% gpu=${gpu}W"
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$w" "$mb" "$FWD" "$SERVER_OMP" "$nw" "$agg" "$mean" "$orch" "$gpu" >> "$RESULT"
+  local mu ma; mu=$(_used_g); ma=$(_avail_g)
+  echo "  workers=$nw agg=${agg}% mean=${mean}% orch=${orch}% gpu=${gpu}W | mem used=${mu}G avail=${ma}G"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$w" "$mb" "$FWD" "$SERVER_OMP" "$nw" "$agg" "$mean" "$orch" "$gpu" "$mu" "$ma" >> "$RESULT"
+  if [ "${ma:-0}" -lt "$MIN_AVAIL_G" ]; then
+    echo "  ⚠️ this cell ran the box down to ${ma}G available (< ${MIN_AVAIL_G}G floor)." >&2
+    echo "  Recording it, then ABORTING the ladder — do not climb further." >&2
+    kill -TERM -- "-$CUR_PGID" 2>/dev/null; sleep 4; kill -KILL -- "-$CUR_PGID" 2>/dev/null
+    CUR_PGID=""; rm -f /dev/shm/carc_fairnvn* /dev/shm/sem.carc_fairnvn* 2>/dev/null
+    return 2
+  fi
   kill -TERM -- "-$CUR_PGID" 2>/dev/null; sleep 4
   kill -KILL -- "-$CUR_PGID" 2>/dev/null; sleep 2
   CUR_PGID=""
@@ -119,7 +147,9 @@ run_w () {
   sleep 3
 }
 
-for w in $W_LIST; do run_w "$w"; done
+for w in $W_LIST; do
+  run_w "$w" || { rc=$?; [ "$rc" = "2" ] && { echo "[driver] ladder aborted on memory floor at W=$w"; break; }; }
+done
 
 trap - INT TERM HUP EXIT
 echo
