@@ -1,5 +1,11 @@
 # az_zero — TABULA-RASA AlphaZero mini-loop — DESIGN
 
+> **STATUS: CLOSED 2026-07-24 — the run completed 12 iterations (09:18 → 19:16) and returned
+> FLATLINE.** See [RESULTS.md](RESULTS.md) for the verdict and [PROBE_OFFDIST_20260724.md](PROBE_OFFDIST_20260724.md)
+> for the measured mechanism. Claim **CL-066** (Disfavored/high). §6's cost table is the surviving
+> reusable content (measured per-iter timings + the laptop-joiner verdict).
+> *(orig status: BUILT + SMOKED, not launched.)*
+
 **Status:** BUILT + SMOKED (not launched). Branch `rod_v2_flywheel`. 2026-07-24.
 **Purpose:** the FIRST true zero-start experiment in the project — the existing
 net-value + net-policy self-play machinery, but started from a **RANDOM-INIT**

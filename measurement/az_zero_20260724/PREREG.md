@@ -1,5 +1,11 @@
 # AZ-ZERO (tabula-rasa mini-loop) — PRE-REGISTERED READ (written 2026-07-24 ~02:00, BEFORE any curve exists)
 
+> **STATUS: CLOSED 2026-07-24 — VERDICT FLATLINE.** All three bars below were missed (best
+> gap-closure 43% vs the 50% bar; best winrate 0.12 vs 0.35; non-monotone). Full read:
+> [RESULTS.md](RESULTS.md) · mechanism: [PROBE_OFFDIST_20260724.md](PROBE_OFFDIST_20260724.md) ·
+> claim **CL-066** (Disfavored/high). This file is preserved verbatim as the pre-registration;
+> nothing below was edited after the first game was played.
+
 **Question.** Every net in the kill chain (CL-039/042/064/C0) was raised inside the heuristic's
 basin (warmstart labels and/or heuristic-shaped self-play). This is the first true zero-start:
 random-init net, net-value + net-policy self-play, no heuristic leaf, no exact solver. It tests
