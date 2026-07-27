@@ -105,11 +105,18 @@ def test_assert_rung_is_ruler_still_passes_under_canon_env():
 
 
 def test_opponent_mode_constants():
-    assert efp.OPPONENT_MODES == ("h800", "fair-champion", "net")
+    # `bare-net` (BLIND vs SIGHTED, added 2026-07-27) is additive: the three legacy
+    # modes and their order are unchanged, and it is deliberately NOT a head-to-head.
+    assert efp.OPPONENT_MODES[:3] == ("h800", "fair-champion", "net")
+    assert efp.OPPONENT_MODES == ("h800", "fair-champion", "net", "bare-net")
     # h800 is deliberately NOT a head-to-head: it is the fixed ruler, so it keeps the
     # curve100 leaf, takes no endgame, and skips the two-sided curve125 injection.
+    # bare-net is excluded for the mirror-image reason: its opponent must NOT get our
+    # curve125 leaf, the endgame tail or the shared-knob framing (see tests/
+    # test_bare_net_opponent.py).
     assert efp._HEAD_TO_HEAD == ("fair-champion", "net")
     assert "h800" not in efp._HEAD_TO_HEAD
+    assert "bare-net" not in efp._HEAD_TO_HEAD
 
 
 def test_argparse_default_opponent_is_h800():

@@ -64,12 +64,59 @@ modes replace the delta-of-deltas through the rung with a DIRECT match:
                     cell (sighted vs non-sighted distilled net). Each side's rep
                     (81ch/42 sighted vs 78ch/10) is inferred from ITS OWN checkpoint,
                     so a cross-rep match encodes each side correctly.
-In BOTH head-to-head modes the two sides are production agents, so BOTH resolve the
+  - bare-net      : ⚠️ DELIBERATELY ASYMMETRIC — our BLIND champion vs a SIGHTED
+                    (CLAIRVOYANT) bare NeuralMCTS. See the BLIND-vs-SIGHTED block
+                    below before touching it. Needs --opp-net.
+In both SYMMETRIC head-to-head modes (fair-champion / net) the two sides are
+production agents, so BOTH resolve the
 FROZEN curve125 champion leaf (injected in-process per side — see the CURVE125 block
 below), both get the same marginalized endgame handoff at K, and seat alternation +
 deck pairing are unchanged (the candidate's seat is `a_seat`, which _build_work
 balances over 0/1) — a prior-swap A/B where one side owned a seat would be worthless.
 `diff` is always CANDIDATE - OPPONENT.
+
+===========================================================================
+BLIND vs SIGHTED (`--opponent bare-net`) — THE ASYMMETRY IS THE MEASUREMENT.
+DO NOT "FIX" IT. DO NOT SYMMETRISE IT.
+===========================================================================
+This mode plays our BLIND (fair PIMC) champion against a SIGHTED (clairvoyant)
+bare NeuralMCTS in its ANCHOR identity. The two sides differ on purpose in
+THREE ways, every one of which HANDICAPS US:
+
+  1. INFORMATION.  Candidate = FairHeuristicPriorAgent: it never sees the true
+     deck (root determinization, k_dets reshuffled worlds, pooled-Q). Opponent =
+     NeuralMCTS with fair_chance=False, i.e. it descends the engine's real
+     pre-shuffled `state.deck` and SEES every upcoming tile. The measured
+     clairvoyance tax at champion config is ~156 elo (CL-022 lineage) — that is
+     a tax WE pay and the opponent does not.
+  2. LEAF.  Candidate = the FROZEN production curve125 champion leaf
+     (leaf_hash a36d2e15a3b3d71d). Opponent = the v2.9 Bmild_cap8 curve100 leaf
+     with residual_scale=0.25 (leaf_hash 4bc26f12badbb10b) — NOT curve125. This
+     is NOT a bug and NOT something to "make consistent": it is the exact leaf
+     the RoD-v2 anchor rows in experiments/results.csv were played with, and the
+     opponent is only interpretable as an anchor if it is bit-for-bit that agent.
+     The harness therefore reports TWO DIFFERENT per-side leaf hashes here and
+     HARD-FAILS if they ever come out equal (equality would mean the curve125
+     injection leaked onto the opponent and silently replaced the anchor).
+  3. ENDGAME.  Candidate keeps the marginalized exact-K<=2 tail; the opponent is
+     BARE (no exact tail at all) — again exactly how the anchor rows were played.
+     The one-sided tail needs no new machinery: the default `h800` rung has
+     always been tail-less (_make_opponent returns a bare prefix, only
+     _make_champion wraps in _MarginalizedHandoff), so "candidate-only tail" IS
+     the harness's existing shape.
+
+WHY ASYMMETRIC ON PURPOSE: our side is handicapped on all three axes. A WIN for
+the blind champion is therefore a STRONG, CONSERVATIVE LOWER BOUND on the
+lineage gap — it holds despite the ~156-elo clairvoyance tax. A LOSS is
+UNINTERPRETABLE: it confounds lineage strength with the cost of blindness, and
+must NOT be reported as "the net is stronger". If you find yourself wanting to
+give the opponent our leaf, take away its deck vision, or hand it the exact
+tail — stop. Any of those destroys the meaning of the cell and makes the number
+a different (and un-anchored) measurement.
+
+The opponent's play knobs are PINNED (sims=200, c_puct=3.0, residual_scale=0.25,
+bare) to the rod_v2 anchor harness — see BARE_NET_* below — so --opp-sims /
+--opp-k-dets are REJECTED for this mode rather than silently reshaping the anchor.
 
 EQUAL-WALL-CLOCK: the fair champion's total per-move search budget = k_dets*sims,
 targeted at the deployed clairvoyant champion's ~2750 sims (default k_dets=4 *
@@ -155,6 +202,18 @@ Usage:
       --n 400 --paired --seed-start 32000000000 --workers 32 \
       --out-root /mnt/c/carc-shared/classical_search \
       --out-subdir cl060_h2h_k8x1376_vs_deploy_k4x688 --shared-claim --no-results-csv
+
+  # BLIND vs SIGHTED — our fair champion (k4x344=1376, curve125, exact-K<=2) vs the
+  # SIGHTED bare NeuralMCTS RoD-v2 iter_02 anchor. Read the BLIND-vs-SIGHTED block above.
+  CARCASSONNE_TT_CAP=200000 nice -n 19 .venv/bin/python -u \
+      scripts/classical_search/eval_fair_puct.py \
+      --info fair --opponent bare-net \
+      --opp-net /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt \
+      --exact-k 2 --k-dets 4 --sims 344 \
+      --n 200 --paired --seed-start 68000000000 --workers 14 \
+      --out-root /mnt/c/carc-shared/classical_search \
+      --out-subdir blind_k4x1376_vs_sighted_rodv2_it02_b68e9 \
+      --shared-claim --no-results-csv
 """
 from __future__ import annotations
 
@@ -411,16 +470,21 @@ def _assert_netprior_leaf(cand_cfg, strict=True, side="candidate", tag="fair-net
     return prov
 
 
-def _assert_rung_is_ruler():
+def _assert_rung_is_ruler(tag="fair-netprior", who="h800 RUNG's"):
     """The fixed h800 rung is env DEFAULT_CONFIG and MUST remain the curve100 CL-022
     ruler. Sourcing champ_env.sh before this harness would set the curve env, and
     _CANON_ENV's setdefault would NOT override it -> the rung would silently move to
     curve125 and every arm's elo would be measured against a different yardstick.
-    Fail loud (fair-netprior only; the fair/fair-net arms are untouched)."""
+    Fail loud (fair-netprior only; the fair/fair-net arms are untouched).
+
+    `tag`/`who` only label the message. They default to the historical strings, so the
+    legacy call site is byte-identical; --opponent bare-net reuses the SAME check with
+    its own labels (its opponent leaf is derived from DEFAULT_CONFIG too, so a moved
+    DEFAULT_CONFIG would silently replace the anchor rather than the ruler)."""
     curve = DEFAULT_CONFIG.v29_meeple_curve
     if curve is None or tuple(float(x) for x in curve) != CURVE100:
         raise SystemExit(
-            f"[fair-netprior] FATAL: the h800 RUNG's leaf curve is {curve!r}, expected the "
+            f"[{tag}] FATAL: the {who} leaf curve is {curve!r}, expected the "
             f"curve100 CL-022 ruler {CURVE100!r}. Did you `source champ_env.sh` before "
             "running? _CANON_ENV uses setdefault, so a pre-set CARCASSONNE_V29_MEEPLE_CURVE "
             "MOVES THE RULER. Unset it: the candidate's curve125 leaf is injected "
@@ -571,6 +635,150 @@ class _RungPrefix:
         return int(self._m.best_action(board))
 
 
+# --------------------------------------------------------------------------- #
+# BARE SIGHTED NET opponent (--opponent bare-net) — the RoD-v2 anchor identity.  #
+#                                                                               #
+# ⚠️ READ THE "BLIND vs SIGHTED" BLOCK IN THE MODULE DOCSTRING BEFORE CHANGING    #
+# ANYTHING HERE. This agent is deliberately CLAIRVOYANT (NeuralMCTS's default    #
+# fair_chance=False descends the engine's TRUE deck) and deliberately runs a     #
+# DIFFERENT leaf from our candidate. Both are load-bearing: they make the        #
+# opponent bit-for-bit the agent every `net:<ckpt>` anchor row in                #
+# experiments/results.csv was played by, which is the only reason its rating is  #
+# interpretable at all. "Fixing" either one silently replaces the anchor.        #
+#                                                                               #
+# The play knobs below are COPIED VERBATIM from eval_puct_priors.py's NET_*      #
+# constants (which in turn mirror scripts/level2/eval_hybrid_handoff.py's        #
+# ITER8_* / _make_iter8_mcts, the harness behind the rodv2_iter02_vs_heur*_v29   #
+# rows). They are pinned, not CLI-settable — --opp-sims / --opp-k-dets are       #
+# rejected for this mode so a sweep can never reshape the anchor by accident.    #
+# --------------------------------------------------------------------------- #
+BARE_NET_SIMS = 200            # == eval_puct_priors.NET_SIMS
+BARE_NET_CPUCT = 3.0           # == eval_puct_priors.NET_CPUCT
+BARE_NET_RESIDUAL_SCALE = 0.25  # == eval_puct_priors.NET_RESIDUAL_SCALE
+BARE_NET_MEEPLE_K = 2.0        # == eval_puct_priors.NET_MEEPLE_K (inert under a curve)
+# The anchor's leaf, in this harness's _leaf_hash dialect. NOT curve125 — see above.
+BARE_NET_LEAF_HASH = "4bc26f12badbb10b"
+
+
+def _bare_net_leaf_cfg():
+    """The bare-net opponent's leaf: env DEFAULT_CONFIG (v2.9 Bmild_cap8, curve100 —
+    the CL-022 ruler config) with residual_scale/meeple_k set to the anchor's values.
+
+    Bit-identical by construction to eval_puct_priors._NetPrefix's inline
+    `dc.replace(DEFAULT_CONFIG, residual_scale=NET_RESIDUAL_SCALE, meeple_k=NET_MEEPLE_K)`:
+    the two harnesses share a VERBATIM `_CANON_ENV`, so their DEFAULT_CONFIG is the same
+    object value, and the two replaced fields carry the same constants. (meeple_k=2.0 is
+    already DEFAULT_CONFIG's value under _CANON_ENV, so that replace is a no-op in both
+    files — it is kept for byte-parity with the anchor harness.)
+
+    ⚠️ This is NOT curve125 and must never be made curve125."""
+    import dataclasses as _dc
+    return _dc.replace(DEFAULT_CONFIG, residual_scale=BARE_NET_RESIDUAL_SCALE,
+                       meeple_k=BARE_NET_MEEPLE_K)
+
+
+def _assert_bare_net_leaf(cfg, cand_cfg=None, strict=True):
+    """Verify the bare-net opponent's leaf is the ANCHOR leaf — curve100 (NOT curve125),
+    residual_scale 0.25 — and that it is NOT the candidate's leaf.
+
+    The equality check against `cand_cfg` is the important one: the whole failure mode
+    this mode invites is the curve125 in-process injection leaking onto the opponent,
+    which would produce a perfectly plausible number for an agent that is not the anchor.
+    Semantic checks first (robust to LeafConfig dataclass drift), hash last."""
+    curve = cfg.v29_meeple_curve
+    if curve is None or tuple(float(x) for x in curve) != CURVE100:
+        raise SystemExit(
+            f"[bare-net] FATAL: opponent leaf curve is {curve!r}, expected the curve100 "
+            f"anchor leaf {CURVE100!r}. The RoD-v2 anchor rows were played on curve100 "
+            "with residual_scale=0.25; a curve125 opponent is NOT the anchor and its "
+            "rating is not interpretable. Do NOT 'symmetrise' the two sides.")
+    if float(cfg.residual_scale) != BARE_NET_RESIDUAL_SCALE:
+        raise SystemExit(
+            f"[bare-net] FATAL: opponent leaf residual_scale={cfg.residual_scale!r}, "
+            f"expected the anchor's {BARE_NET_RESIDUAL_SCALE}.")
+    lh = _leaf_hash(cfg)
+    if cand_cfg is not None and lh == _leaf_hash(cand_cfg):
+        raise SystemExit(
+            "[bare-net] FATAL: the candidate and opponent resolved the SAME leaf "
+            f"({lh}). They MUST differ: the candidate is the frozen curve125 champion "
+            "and the opponent is the curve100+rs0.25 anchor. Equality means the "
+            "curve125 injection leaked onto the opponent side.")
+    prov = {
+        "curve": "curve100 (v2.9 Bmild_cap8 — the RoD-v2 anchor leaf, NOT curve125)",
+        "residual_scale": float(cfg.residual_scale),
+        "meeple_k": float(cfg.meeple_k),
+        "leaf_hash": lh,
+        "leaf_hash_expected": BARE_NET_LEAF_HASH,
+        "differs_from_candidate_by_design": True,
+        "note": ("Pinned to eval_puct_priors.py's NET_* anchor constants (== "
+                 "eval_hybrid_handoff ITER8_*). The per-side leaves DIFFER ON PURPOSE; "
+                 "see the BLIND vs SIGHTED block in this file's module docstring."),
+    }
+    if lh != BARE_NET_LEAF_HASH:
+        msg = (f"[bare-net] opponent leaf hash drift: {lh} != expected "
+               f"{BARE_NET_LEAF_HASH}. The curve values and residual_scale matched, so "
+               "this is most likely an additive LeafConfig field reshaping the hash "
+               "(the 158f17ff precedent) — re-baseline BARE_NET_LEAF_HASH if so. "
+               "Re-run with --allow-leaf-hash-drift to proceed on the semantic check.")
+        if strict:
+            raise SystemExit("FATAL: " + msg)
+        print("[warn] " + msg, file=sys.stderr)
+        prov["hash_drift_allowed"] = True
+    return prov
+
+
+class _BareNetPrefix:
+    """SIGHTED (clairvoyant) bare NeuralMCTS opponent — the RoD-v2 anchor identity.
+
+    A VERBATIM mirror of eval_puct_priors.py's `_NetPrefix` (which mirrors
+    eval_hybrid_handoff._make_iter8_mcts): make_v25_value_wrapper(base_eval, leaf_cfg)
+    -> NeuralMCTS(simulations=200, c_puct=3.0). The only difference is that the leaf
+    cfg is PASSED IN rather than rebuilt inline, so the manifest can report the leaf
+    that is actually in use (default None rebuilds the identical cfg).
+
+    ⚠️ CLAIRVOYANT BY DESIGN: NeuralMCTS's `fair_chance` default is False, so this
+    search descends the engine's TRUE pre-shuffled deck. That is the handicap our
+    blind candidate is being asked to overcome — do not pass fair_chance=True here.
+    ⚠️ BARE BY DESIGN: no exact-K endgame handoff (the anchor rows were played bare)."""
+
+    def __init__(self, base_eval, game_farm, seed, leaf_cfg=None):
+        from carcassonne_ai.evaluators import make_v25_value_wrapper
+        from carcassonne_ai.mcts import NeuralMCTS
+        cfg = _bare_net_leaf_cfg() if leaf_cfg is None else leaf_cfg
+        leaf = make_v25_value_wrapper(base_eval, cfg)
+        self.leaf_cfg = cfg
+        self._m = NeuralMCTS(game=game_farm, evaluator=leaf,
+                             simulations=BARE_NET_SIMS, seed=seed,
+                             c_puct=BARE_NET_CPUCT)
+        # provenance handle for the tests / smoke asserts (fair_chance MUST be False)
+        self.mcts = self._m
+
+    def move(self, board) -> int:
+        self._m.clear()
+        return int(self._m.best_action(board))
+
+
+def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None):
+    """Per-game bare sighted NeuralMCTS opponent from a worker-local CPU net.
+
+    The encoder width comes from the OPPONENT's own checkpoint rep (RoD-v2 iter_02 is
+    the non-sighted 78ch/12sc 'Step-E farm-scalar' rep). For that rep this is exactly
+    eval_puct_priors._make_net_prefix's `Game(enable_legal_moves_cache=True,
+    include_farm_scalars=net_ns > 10)` (sighted defaults False there)."""
+    if net is None:
+        raise ValueError("--opponent bare-net requires a loaded opponent net")
+    if rep is None:
+        raise ValueError("--opponent bare-net requires the opponent's checkpoint rep")
+    from carcassonne_ai.evaluators import make_single_evaluator
+    import torch
+    gf = Game(enable_legal_moves_cache=True,
+              sighted=bool(rep["sighted"]),
+              include_farm_scalars=bool(rep.get(
+                  "include_farm_scalars", int(rep["n_scalar_features"]) > 10)))
+    base = make_single_evaluator(net, torch.device("cpu"), gf)
+    return _BareNetPrefix(base, gf, seed, leaf_cfg=leaf_cfg)
+
+
 def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
                      leaf_cfg=None):
     # leaf_cfg=None -> env DEFAULT_CONFIG (byte-identical to the pre-C5 path); a
@@ -713,8 +921,19 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
 # --------------------------------------------------------------------------- #
 # OPPONENT (--opponent) — the non-candidate seat.                              #
 # --------------------------------------------------------------------------- #
-OPPONENT_MODES = ("h800", "fair-champion", "net")
+OPPONENT_MODES = ("h800", "fair-champion", "net", "bare-net")
+# _HEAD_TO_HEAD = the SYMMETRIC head-to-head modes: both sides are fair production
+# agents, both resolve curve125, both take the marginalized endgame at K, and both
+# ride the shared `champ_cfg_dict` search knobs. `bare-net` is DELIBERATELY NOT one
+# of these — it is asymmetric on information, leaf AND endgame (see the BLIND vs
+# SIGHTED block in the module docstring), so every _HEAD_TO_HEAD-gated behaviour
+# (curve125-on-both, opponent endgame, opponent prefix-timing read-out, shared-knob
+# framing) correctly does NOT apply to it. Adding it here would silently symmetrise
+# the cell and destroy its meaning.
 _HEAD_TO_HEAD = ("fair-champion", "net")
+_BARE_NET = "bare-net"
+# Opponent modes that need a checkpoint (--opp-net).
+_NET_OPPONENTS = ("net", _BARE_NET)
 
 
 def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
@@ -758,6 +977,15 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
         # `opp_sims`/`opp_k_dets` are all ignored.
         return _RungPrefix(Game(enable_legal_moves_cache=True), rung_sims, seed + 1,
                            DEFAULT_CONFIG)
+    if opponent == _BARE_NET:
+        # ⚠️ BLIND vs SIGHTED (module docstring). The opponent is the SIGHTED bare
+        # NeuralMCTS anchor: PINNED sims/c_puct (never `sims`/`k_dets`/`opp_sims`/
+        # `opp_k_dets` — those are rejected at the CLI for this mode), its OWN
+        # curve100+rs0.25 leaf (`opp_leaf_cfg`, NEVER the candidate's curve125), and
+        # NO endgame handoff (no _MarginalizedHandoff wrapper — the candidate-only
+        # tail is the same shape the default h800 rung has always had). `seed + 1`
+        # keeps the two sides off a shared stream, as for every other opponent.
+        return _make_bare_net_opponent(net, rep, seed + 1, leaf_cfg=opp_leaf_cfg)
     if opponent not in _HEAD_TO_HEAD:
         raise ValueError(f"unknown opponent mode {opponent!r}")
     opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg)
@@ -829,6 +1057,13 @@ def _opp_label(args, opp_rep=None):
     """Human label for the opponent side (summary header + manifest)."""
     if args.opponent == "h800":
         return f"HeuristicMCTS(h{args.rung_sims})"
+    if args.opponent == _BARE_NET:
+        rep = ("?" if opp_rep is None
+               else ("sighted-rep" if opp_rep["sighted"] else "non-sighted-rep"))
+        return (f"SIGHTED (CLAIRVOYANT) bare NeuralMCTS anchor "
+                f"({Path(args.opp_net).name}, {rep}, sims={BARE_NET_SIMS}, "
+                f"c_puct={BARE_NET_CPUCT:g}, v2.9 curve100 leaf + "
+                f"residual_scale={BARE_NET_RESIDUAL_SCALE:g}, NO exact tail)")
     _oes = _opp_eff_sims(args)     # --opp-sims (asymmetric) or the shared --sims
     _oek = _opp_eff_k_dets(args)   # --opp-k-dets (asymmetric) or the shared --k-dets
     if args.opponent == "fair-champion":
@@ -1065,6 +1300,26 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
             _W["opp_sighted_game"] = Game(
                 sighted=bool(opp_rep["sighted"]),
                 include_farm_scalars=bool(opp_rep.get("include_farm_scalars", False)))
+    elif opponent == _BARE_NET:
+        # BLIND vs SIGHTED: the opponent is a bare sighted NeuralMCTS on a per-worker
+        # CPU net (both boxes are CPU-only for this cell, and the champion side is pure
+        # CPU anyway). No orch path — --opp-orch-shm-name is rejected for this mode.
+        # Same re-load cross-check as the `net` opponent above: main() resolved the rep
+        # from the checkpoint, the worker re-loads and must agree.
+        import torch
+        torch.set_num_threads(1)     # mirrors eval_puct_priors._load_net_cpu
+        _W["opp_net"], _oloaded = _load_net_rep(opp_net_ckpt, device="cpu")
+        if (bool(_oloaded["sighted"]) != bool(opp_rep["sighted"])
+                or int(_oloaded["n_input_channels"]) != int(opp_rep["n_input_channels"])
+                or int(_oloaded["n_scalar_features"]) != int(opp_rep["n_scalar_features"])):
+            raise SystemExit(
+                f"FATAL: worker re-loaded bare-net opponent {opp_net_ckpt} as "
+                f"sighted={_oloaded['sighted']} {_oloaded['n_input_channels']}ch/"
+                f"{_oloaded['n_scalar_features']}sc but main() resolved "
+                f"sighted={opp_rep['sighted']} {opp_rep['n_input_channels']}ch/"
+                f"{opp_rep['n_scalar_features']}sc")
+        # _make_bare_net_opponent builds the encoder Game per game from `opp_rep`.
+        _W["opp_sighted_game"] = None
 
 
 def _cfg_from_dict(d, leaf_cfg=None):
@@ -1215,6 +1470,14 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         print(f"fair endgame: opponent  latched {_opp_latched}/{n} games, "
               f"{_opp_solver:.2f}s solver/game, "
               f"timeouts={sum(r.opp_timeouts for r in results)}")
+    if opponent == _BARE_NET:
+        # Restate the asymmetry wherever the number is printed, so a reader who only
+        # sees the summary cannot mistake this for a like-for-like pairwise elo.
+        print("  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the "
+              "curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS "
+              "on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a "
+              "conservative LOWER BOUND on the lineage gap; a candidate LOSS is "
+              "UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
     # Track-F Gate A oracle-prior cost aggregation (per-world pre-search vs main-search
@@ -1322,6 +1585,18 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
               f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
               f"(inferred from ITS OWN ckpt) | priors=net_policy_head "
               f"value=FROZEN curve125 champion leaf")
+    elif args.opponent == _BARE_NET:
+        smoke_opp_net, opp_rep = _load_net_rep(args.opp_net, device="cpu")
+        print(f"[smoke] opponent = BARE SIGHTED (CLAIRVOYANT) NeuralMCTS anchor "
+              f"{args.opp_net} | rep="
+              f"{'SIGHTED' if opp_rep['sighted'] else 'NON-SIGHTED'} "
+              f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
+              f"(inferred from ITS OWN ckpt) | sims={BARE_NET_SIMS} "
+              f"c_puct={BARE_NET_CPUCT:g} rs={BARE_NET_RESIDUAL_SCALE:g} | "
+              f"leaf=v2.9 curve100 anchor leaf (NOT curve125) | NO exact tail\n"
+              f"[smoke] ⚠️ ASYMMETRIC BY DESIGN: candidate BLIND (fair PIMC) vs "
+              f"opponent SIGHTED (true deck). A candidate WIN is a conservative "
+              f"lower bound; a loss is uninterpretable.")
     elif args.opponent == "fair-champion":
         print("[smoke] opponent = PRODUCTION fair champion (FairHeuristicPriorAgent, "
               "heuristic softmax priors, FROZEN curve125 champion leaf)")
@@ -1353,6 +1628,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
           f"(total~{args.k_dets*args.sims}) | opponent={args.opponent}"
           + (f" (rung h{args.rung_sims} c{RUNG_C})" if args.opponent == "h800"
+             else f" (SIGHTED bare NeuralMCTS, sims={BARE_NET_SIMS} "
+                  f"c_puct={BARE_NET_CPUCT:g}, bare)" if args.opponent == _BARE_NET
              else f" (k_dets={_opp_eff_k_dets(args)} sims={_opp_eff_sims(args)}, "
                   f"same fair machinery)"))
     import random
@@ -1445,6 +1722,25 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                 assert _os["opp_exact_moves"] > 0, \
                     ("opponent never reached the fair exact endgame — both sides must "
                      "share the handoff for the match to be symmetric")
+        if args.opponent == _BARE_NET:
+            # The three load-bearing asymmetries (module docstring). Assert them here
+            # rather than trusting the construction — a symmetrised cell would still
+            # produce a plausible number.
+            assert rung_moves > 0, "bare-net opponent never moved"
+            assert isinstance(rung, _BareNetPrefix), \
+                f"bare-net opponent is a {type(rung).__name__}, not _BareNetPrefix"
+            assert rung.mcts.fair_chance is False, \
+                ("bare-net opponent must be CLAIRVOYANT (fair_chance=False) — it is "
+                 "the sighted anchor; blinding it changes what is being measured")
+            assert _os["opp_exact_moves"] == 0 and _os["opp_latch_k"] is None, \
+                "bare-net opponent must be BARE (no exact-K endgame handoff)"
+            assert _leaf_hash(rung.leaf_cfg) != _leaf_hash(cfg.resolved_leaf_cfg()), \
+                ("candidate and bare-net opponent resolved the SAME leaf — the "
+                 "curve125 injection leaked onto the opponent")
+            _cand_prefix = getattr(champ, "_prefix", None)
+            assert isinstance(_cand_prefix, FairHeuristicPriorAgent), \
+                ("candidate must be the BLIND fair PIMC agent for a blind-vs-sighted "
+                 f"cell; got {type(_cand_prefix).__name__}")
 
     summ = _summary(results, args.info, args.exact_k, args.k_dets, args.sims,
                     args.rung_sims, opponent=args.opponent, opp_label=opp_label,
@@ -1480,13 +1776,23 @@ def main(argv=None) -> int:
                          "work?' cell. net = head-to-head vs a SECOND distilled net (--opp-net) "
                          "run as a fair-netprior agent — the 'does the bag matter?' cell (each "
                          "side's rep inferred from its OWN ckpt, so cross-rep 81ch-vs-78ch works). "
-                         "Both head-to-head modes resolve curve125 on BOTH sides and keep deck "
-                         "pairing + seat alternation; diff is always candidate - opponent.")
+                         "Both SYMMETRIC head-to-head modes resolve curve125 on BOTH sides and keep "
+                         "deck pairing + seat alternation; diff is always candidate - opponent. "
+                         "bare-net = ⚠️ DELIBERATELY ASYMMETRIC: our BLIND fair champion vs a "
+                         "SIGHTED (clairvoyant) BARE NeuralMCTS in its rod_v2 ANCHOR identity "
+                         "(--opp-net; sims=200, c_puct=3.0, v2.9 curve100 leaf + "
+                         "residual_scale=0.25, NO exact tail). The candidate keeps curve125 + "
+                         "exact-K; the opponent does NOT get either. A candidate WIN is a "
+                         "conservative lower bound on the lineage gap; a LOSS is uninterpretable. "
+                         "Read the BLIND vs SIGHTED block in this file's module docstring before "
+                         "changing anything about it — do NOT symmetrise it.")
     ap.add_argument("--opp-net", type=str, default=None,
                     help="--opponent net: path to the OPPONENT's distilled policy net. Its rep "
                          "(sighted 81ch/42 vs non-sighted 78ch/10) is inferred from THIS "
                          "checkpoint independently of --net, so a cross-rep match encodes each "
-                         "side on its own encoder. Required for --opponent net.")
+                         "side on its own encoder. Required for --opponent net. "
+                         "--opponent bare-net: path to the SIGHTED bare-NeuralMCTS anchor "
+                         "checkpoint (e.g. the RoD-v2 iter_02 anchor); same rep inference.")
     ap.add_argument("--opp-orch-shm-name", type=str, default=None,
                     help="--opponent net: serve the OPPONENT's priors from a SECOND carc-orch SHM "
                          "eval-server (a server owns exactly one net, so a net-vs-net orch run "
@@ -1664,12 +1970,35 @@ def main(argv=None) -> int:
             ap.error("--opp-k-dets applies to a head-to-head opponent "
                      "(--opponent fair-champion / net); the h800 rung is not a PIMC "
                      "agent (no determinizations) and its budget is --rung-sims.")
-    if args.opponent == "net" and not args.opp_net:
-        ap.error("--opponent net requires --opp-net <checkpoint>")
-    if args.opp_net and args.opponent != "net":
-        ap.error("--opp-net only applies to --opponent net")
+    if args.opponent in _NET_OPPONENTS and not args.opp_net:
+        ap.error(f"--opponent {args.opponent} requires --opp-net <checkpoint>")
+    if args.opp_net and args.opponent not in _NET_OPPONENTS:
+        ap.error("--opp-net only applies to --opponent net / bare-net")
     if args.opp_orch_shm_name and args.opponent != "net":
-        ap.error("--opp-orch-shm-name only applies to --opponent net")
+        ap.error("--opp-orch-shm-name only applies to --opponent net (the bare-net "
+                 "anchor runs net-on-CPU per worker)")
+    if args.opponent == _BARE_NET:
+        # The anchor's play knobs are PINNED (BARE_NET_*). Swallowing a budget flag here
+        # would silently produce a DIFFERENT agent than the results.csv anchor rows, so
+        # fail loud — same discipline as the h800 rung.
+        for _f, _v in (("--opp-sims", args.opp_sims), ("--opp-k-dets", args.opp_k_dets)):
+            if _v is not None:
+                ap.error(
+                    f"{_f} does not apply to --opponent bare-net: the opponent's config is "
+                    f"PINNED to the rod_v2 anchor identity (sims={BARE_NET_SIMS}, "
+                    f"c_puct={BARE_NET_CPUCT:g}, residual_scale={BARE_NET_RESIDUAL_SCALE:g}, "
+                    "bare) so it stays bit-for-bit the agent every net:<ckpt> anchor row in "
+                    "experiments/results.csv was played by. Moving it would break the anchor.")
+        if args.info != "fair":
+            # The cell only means "BLIND vs SIGHTED" when our side is the fair PIMC
+            # champion. Anything else is a different (and un-preregistered) measurement.
+            print(f"[warn] --opponent bare-net with --info {args.info}: the intended cell is "
+                  "--info fair (our BLIND champion vs the SIGHTED anchor). "
+                  + ("--info clair makes BOTH sides clairvoyant, so the "
+                     "conservative-lower-bound argument does NOT hold. "
+                     if args.info == "clair" else "")
+                  + "Do not report this as the blind-vs-sighted lower bound.",
+                  file=sys.stderr)
     if args.opponent in _HEAD_TO_HEAD and args.info == "clair":
         # a clairvoyant candidate vs a fair opponent is a legitimate DIRECT tax
         # measurement, but it is NOT a prior-swap — say so rather than let it read as one.
@@ -1725,16 +2054,25 @@ def main(argv=None) -> int:
     opp_leaf_cfg = None
     opp_leaf_prov = None
     _h2h = args.opponent in _HEAD_TO_HEAD
+    _bare_net = args.opponent == _BARE_NET
     # The curve125 candidate injection fires for the fair-netprior arm (the net was
-    # distilled against curve125) AND for any head-to-head (both sides are production
-    # agents, so both must be the shipped curve125 champion leaf).
-    if args.info == "fair-netprior" or _h2h:
+    # distilled against curve125), for any SYMMETRIC head-to-head (both sides are
+    # production agents, so both must be the shipped curve125 champion leaf), AND for
+    # --opponent bare-net — where it fires on the CANDIDATE ONLY, because that side is
+    # the shipped production champion while the opponent must stay on the curve100
+    # anchor leaf (see the BLIND vs SIGHTED block; the two leaves DIFFER by design).
+    if args.info == "fair-netprior" or _h2h or _bare_net:
         if not _h2h:
             # The rung is the ruler ONLY when there IS a rung. Head-to-head has no rung,
             # so this assert is skipped there — but the curve125 asserts below are
             # strictly stronger (they pin BOTH sides' actual resolved leaves), so nothing
             # goes unchecked. The h800 default path keeps the original hard gate.
-            rung_ruler_hash = _assert_rung_is_ruler()
+            # bare-net has no rung either, but it DOES need this: its opponent leaf is
+            # dataclasses.replace(DEFAULT_CONFIG, ...), so a moved DEFAULT_CONFIG would
+            # silently swap the anchor's leaf out from under it.
+            rung_ruler_hash = _assert_rung_is_ruler(
+                *(("bare-net", "SIGHTED anchor opponent's base (env DEFAULT_CONFIG)")
+                  if _bare_net else ()))
         if cand_leaf_cfg is None:
             cand_leaf_cfg = _curve125_leaf_cfg()
             _assert_cy_float_path(cand_leaf_cfg)
@@ -1751,7 +2089,37 @@ def main(argv=None) -> int:
             opp_leaf_prov = _assert_netprior_leaf(
                 opp_leaf_cfg, strict=not args.allow_leaf_hash_drift, side="opponent",
                 tag="head-to-head")
-        if _h2h:
+        elif _bare_net:
+            # ⚠️ THE OPPONENT DOES **NOT** GET curve125. It gets the RoD-v2 ANCHOR leaf
+            # (curve100 + residual_scale 0.25), because it is only interpretable as an
+            # anchor if it is bit-for-bit the agent the results.csv rows were played by.
+            # _assert_bare_net_leaf hard-fails if this ever equals the candidate's leaf
+            # (i.e. if the curve125 injection leaked across), which is the single most
+            # likely way to produce a plausible but meaningless number here.
+            opp_leaf_cfg = _bare_net_leaf_cfg()
+            # NOTE: _assert_cy_float_path is deliberately NOT applied to this cfg. That
+            # guard exists for the CANDIDATE's Cython float leaf path; the bare-net leaf
+            # is consumed by evaluators.make_v25_value_wrapper (virtual_score_v2), a
+            # different code path, and the anchor harness never applied it either.
+            opp_leaf_prov = _assert_bare_net_leaf(
+                opp_leaf_cfg, cand_cfg=cand_leaf_cfg,
+                strict=not args.allow_leaf_hash_drift)
+        if _bare_net:
+            print(f"[bare-net] ⚠️ BLIND (candidate) vs SIGHTED (opponent) — the asymmetry "
+                  f"is the measurement; see the module docstring. Do NOT symmetrise.\n"
+                  f"[bare-net] candidate frozen leaf: curve125 "
+                  f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
+                  f"frozen_config_hash="
+                  f"{netprior_leaf_prov['frozen_config_hash_champ_dialect']} (champ_env dialect)\n"
+                  f"[bare-net] opponent  frozen leaf: v2.9 Bmild_cap8 curve100 + "
+                  f"residual_scale={opp_leaf_prov['residual_scale']:g} (the rod_v2 ANCHOR "
+                  f"leaf, NOT curve125) leaf_hash={opp_leaf_prov['leaf_hash']}\n"
+                  f"[bare-net] PER-SIDE LEAVES DIFFER (required): "
+                  f"{'YES' if opp_leaf_prov['leaf_hash'] != netprior_leaf_prov['leaf_hash'] else 'NO'}"
+                  f" | env DEFAULT_CONFIG (unmoved) leaf_hash={rung_ruler_hash}\n"
+                  f"[bare-net] endgame: candidate exact-K<={args.exact_k} marginalized tail; "
+                  f"opponent BARE (no tail) — one-sided by design", flush=True)
+        elif _h2h:
             print(f"[head-to-head] opponent={args.opponent}\n"
                   f"[head-to-head] candidate frozen leaf: curve125 "
                   f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
@@ -1784,6 +2152,18 @@ def main(argv=None) -> int:
               f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
               f"(inferred from ITS OWN checkpoint) | priors=net_policy_head "
               f"value=frozen_v29_curve125_leaf", flush=True)
+    elif args.opponent == _BARE_NET:
+        _oprobe, opp_rep = _load_net_rep(args.opp_net, device="cpu")
+        del _oprobe       # main() only needs the rep; workers load their own copy
+        print(f"[bare-net] opp_net={args.opp_net}\n"
+              f"[bare-net] opponent rep="
+              f"{'SIGHTED' if opp_rep['sighted'] else 'NON-SIGHTED'} "
+              f"{opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}sc "
+              f"(inferred from ITS OWN checkpoint) | agent=BARE NeuralMCTS "
+              f"sims={BARE_NET_SIMS} c_puct={BARE_NET_CPUCT:g} "
+              f"fair_chance=False (CLAIRVOYANT — descends the TRUE deck) | "
+              f"priors+value=net, value replaced by the v2.9 curve100 leaf + net "
+              f"residual (residual_scale={BARE_NET_RESIDUAL_SCALE:g})", flush=True)
     opp_label = _opp_label(args, opp_rep)
 
     # A head-to-head is only a clean single-variable swap if the two sides share every
@@ -1820,6 +2200,23 @@ def main(argv=None) -> int:
                   "deviates from governance/PRODUCTION.yaml (" + "; ".join(_off) + "). "
                   + _swap + ", but the opponent is NOT the shipped production champion "
                   "— do not report this cell as 'vs production'.", file=sys.stderr)
+    elif args.opponent == _BARE_NET:
+        # bare-net shares NO search knobs with the candidate (its config is pinned), so
+        # the "single-variable swap" framing above does not apply. What DOES matter is
+        # whether OUR side is the shipped champion — report that, and restate the
+        # interpretation rule so it lands in every run log.
+        _off = _prod_deviations(args)
+        print("[bare-net] candidate = " + ("the shipped production champion config"
+                                           if not _off else
+                                           "OFF production config (" + "; ".join(_off) + ")")
+              + f", BLIND (fair PIMC k{args.k_dets}x{args.sims} = "
+              f"{args.k_dets * args.sims} total) with the exact-K<={args.exact_k} tail.",
+              file=sys.stderr)
+        print("[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on "
+              "the lineage gap (we are handicapped on information, leaf and endgame). A "
+              "candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the "
+              "cost of blindness. Do not report a loss as 'the net is stronger'.",
+              file=sys.stderr)
 
     if args.smoke:
         if args.orch_shm_name or args.opp_orch_shm_name:
@@ -1862,6 +2259,11 @@ def main(argv=None) -> int:
         _vs = f"vs_h{args.rung_sims}"
     elif args.opponent == "fair-champion":
         _vs = "vs_fairchamp"
+    elif args.opponent == _BARE_NET:
+        # distinct from the `net` mode's `vs_net-*` (that is a FAIR net-prior agent on
+        # OUR leaf; this is the SIGHTED bare anchor) so the two can never share a cached
+        # out-dir at the same candidate knobs (Trap 1).
+        _vs = f"vs_sightedbare-{Path(args.opp_net).stem}"
     else:
         _vs = f"vs_net-{Path(args.opp_net).stem}"
     # ASYMMETRIC opponent budget (--opp-k-dets / --opp-sims) is part of the OPPONENT's
@@ -1908,7 +2310,7 @@ def main(argv=None) -> int:
     # (the Trap-1 mislabel mitigation — a candidate cell is NOT "v2.9 Bmild_cap8").
     if cand_leaf_cfg is None:
         _champ_leaf_label = "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"
-    elif (args.info == "fair-netprior" or _h2h) and args.cand_leaf_json is None:
+    elif (args.info == "fair-netprior" or _h2h or _bare_net) and args.cand_leaf_json is None:
         # auto-injected curve125 (NOT a user --cand-leaf-json) — label it honestly
         _champ_leaf_label = (f"FROZEN v2.9 curve125 production champion leaf, auto-injected "
                              f"in-process (leaf{_leaf_hash(leaf_cfg)[:8]})")
@@ -2084,7 +2486,9 @@ def main(argv=None) -> int:
         "rung_leaf_hash": _leaf_hash(rung_leaf_cfg),
         "opp_leaf_cfg": (_leaf_dict(opp_leaf_cfg) if opp_leaf_cfg is not None else None),
         "opp_leaf_hash": (_leaf_hash(opp_leaf_cfg) if opp_leaf_cfg is not None else None),
-        "both_sides_curve125": (bool(opp_leaf_cfg is not None
+        # False (not None) for bare-net: the sides are checked AND deliberately differ.
+        "both_sides_curve125": (False if _bare_net else
+                                bool(opp_leaf_cfg is not None
                                      and _leaf_hash(opp_leaf_cfg) == _leaf_hash(leaf_cfg))
                                 if _h2h else None),
         # NOTE: must stay accurate under ASYMMETRIC budgets (--opp-sims / --opp-k-dets).
@@ -2092,6 +2496,14 @@ def main(argv=None) -> int:
         # candidate is deliberately off the deploy budget (e.g. the CL-060 k8x1376=11008
         # H2H). Describe what this run actually did instead of asserting a fixed target.
         "equal_wall_clock_note": (
+            (f"BLIND vs SIGHTED: candidate k_dets={args.k_dets}x{args.sims}"
+             f"={args.k_dets * args.sims} total per move (fair PIMC, curve125, exact-K<="
+             f"{args.exact_k}) vs a PINNED bare NeuralMCTS anchor at sims={BARE_NET_SIMS} "
+             f"c_puct={BARE_NET_CPUCT:g} (clairvoyant, curve100+rs"
+             f"{BARE_NET_RESIDUAL_SCALE:g}, no tail). NOT an equal-budget or "
+             "equal-wall-clock cell — the opponent is a fixed anchor identity, not a "
+             "budget-matched sibling.")
+            if _bare_net else
             (f"ASYMMETRIC budgets: candidate k_dets={args.k_dets}x{args.sims}"
              f"={args.k_dets * args.sims} total vs opponent "
              f"k_dets={_opp_eff_k_dets(args)}x{args.opp_sims if args.opp_sims is not None else args.sims}"
@@ -2106,6 +2518,69 @@ def main(argv=None) -> int:
                   "k_dets root expansions add a little fixed overhead)")),
         "env": {k: os.environ.get(k) for k in _CANON_ENV},
     }
+    # ---- BLIND vs SIGHTED (--opponent bare-net) manifest correction. Written as a
+    # post-hoc override rather than by threading a third branch through every ternary
+    # above, so the h800 and head-to-head expressions stay LITERALLY unchanged (they are
+    # what produced last night's cells). Every key here is one the generic `else` branch
+    # would have filled with head-to-head (curve125 / fair-agent) semantics that are
+    # WRONG for this mode — most dangerously `leaf`, which would have claimed curve125.
+    if _bare_net:
+        man_cfg["opponent"].update({
+            "agent": "NeuralMCTS (BARE — no exact-K endgame handoff)",
+            "clairvoyant": True,
+            "fair_chance": False,
+            "priors_source": "net_policy_head",
+            "value_source": ("v2.9 curve100 heuristic leaf + net-value residual "
+                             f"(residual_scale={BARE_NET_RESIDUAL_SCALE:g}) — "
+                             "make_v25_value_wrapper, the rod_v2 anchor construction"),
+            "net": args.opp_net,
+            "priors_transport": "per-worker CPU net",
+            "c_puct": BARE_NET_CPUCT,
+            "sims": BARE_NET_SIMS,
+            "k_dets": None,          # not a PIMC agent
+            "sims_per_det": None,
+            "total_sims": BARE_NET_SIMS,
+            "endgame": None,         # BARE by design (one-sided tail)
+            "leaf": (f"v2.9 Bmild_cap8 curve100 + residual_scale="
+                     f"{BARE_NET_RESIDUAL_SCALE:g} — the rod_v2 ANCHOR leaf, "
+                     f"NOT curve125 (leaf{_leaf_hash(opp_leaf_cfg)[:8]})"),
+            "curve125_leaf_provenance": None,   # this side is deliberately NOT curve125
+            "anchor_leaf_provenance": opp_leaf_prov,
+            "champ_cfg": None,       # shares NO search knobs with the candidate
+            "production_config_deviations": None,
+            "pinned_knobs": {"sims": BARE_NET_SIMS, "c_puct": BARE_NET_CPUCT,
+                             "residual_scale": BARE_NET_RESIDUAL_SCALE,
+                             "meeple_k": BARE_NET_MEEPLE_K,
+                             "source": "eval_puct_priors.py NET_* == "
+                                       "eval_hybrid_handoff.py ITER8_*"},
+            "provenance": ("rod_v2 ANCHOR identity — bit-for-bit the agent behind the "
+                           "net:<ckpt> anchor rows in experiments/results.csv "
+                           "(rodv2_iter02_vs_heur6400_v29_n200 / _vs_heur3200_v29_n200); "
+                           "play knobs pinned, NOT CLI-settable"),
+        })
+        man_cfg["asymmetry"] = {
+            "mode": "BLIND (candidate) vs SIGHTED (opponent) — DELIBERATE, DO NOT SYMMETRISE",
+            "information": {"candidate": "fair PIMC root determinization (blind)",
+                            "opponent": "NeuralMCTS fair_chance=False (sees the true deck)",
+                            "measured_clairvoyance_tax_elo": 156},
+            "leaf": {"candidate": _leaf_hash(leaf_cfg),
+                     "opponent": _leaf_hash(opp_leaf_cfg),
+                     "differ": _leaf_hash(leaf_cfg) != _leaf_hash(opp_leaf_cfg),
+                     "required_to_differ": True},
+            "endgame": {"candidate": f"marginalized exact-K<={args.exact_k}",
+                        "opponent": "none (bare)"},
+            "interpretation": ("Every axis handicaps the CANDIDATE. A candidate WIN is a "
+                               "conservative LOWER BOUND on the lineage gap. A candidate "
+                               "LOSS is UNINTERPRETABLE (confounds lineage strength with "
+                               "the cost of blindness) and must not be reported as the "
+                               "opponent being stronger."),
+        }
+        man_cfg["result_semantics"]["note"] = (
+            man_cfg["result_semantics"]["note"]
+            + " ⚠️ BLIND vs SIGHTED: this elo is NOT a like-for-like pairwise rating — the "
+              "candidate is blind, curve125 and tail-equipped; the opponent is clairvoyant, "
+              "curve100+rs0.25 and bare. See the `asymmetry` block.")
+
     # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON (CANDIDATE
     # side), so a plain (OFF) manifest stays byte-identical to the pre-change output. Top-
     # level scalar + a config block; the block is also stamped into the champion (candidate)
