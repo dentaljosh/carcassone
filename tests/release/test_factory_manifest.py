@@ -97,6 +97,34 @@ def test_meeple_dedup_on_is_stamped_without_moving_any_hash():
     assert {k: v for k, v in on.manifest.items() if k != "meeple_dedup"} == off.manifest
 
 
+def test_intra_turn_reuse_off_leaves_the_manifest_byte_identical():
+    """The flag-gated C3-INTRA within-turn tree carry must be INVISIBLE when off: no
+    manifest key, therefore no config_hash / leaf_hash drift and no re-review."""
+    agent = cf.make_production_champion("fair", seed=1)
+    assert "intra_turn_reuse" not in agent.manifest
+    assert getattr(agent, "intra_reuse", None) is None       # = inherit the env flag
+    assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
+        cf.resolved_manifest("fair"), sort_keys=True)
+
+
+def test_intra_turn_reuse_on_is_stamped_without_moving_any_hash():
+    """When on it MUST be visible in the manifest — including the budget semantics, since
+    ON does more total work per turn at equal nominal sims and a reader of the manifest
+    must not mistake the cell for an equal-work comparison."""
+    off = cf.make_production_champion("fair", seed=1)
+    on = cf.make_production_champion("fair", seed=1, intra_reuse=True)
+    assert on.manifest["intra_turn_reuse"]["enabled"] is True
+    assert on.manifest["intra_turn_reuse"]["source"] == "kwarg"
+    assert "equal-WALL-CLOCK" in on.manifest["intra_turn_reuse"]["budget_semantics"]
+    assert on.intra_reuse is True
+    assert on.manifest["search"] == off.manifest["search"]
+    assert on.manifest["leaf_hashes"] == off.manifest["leaf_hashes"]
+    # ... and the ONLY difference is that one added key.
+    assert set(on.manifest) - set(off.manifest) == {"intra_turn_reuse"}
+    assert {k: v for k, v in on.manifest.items()
+            if k != "intra_turn_reuse"} == off.manifest
+
+
 def test_verify_raises_on_wrong_curve_and_caps():
     import dataclasses as dc
     with pytest.raises(ep.ProvenanceError):

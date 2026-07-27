@@ -376,7 +376,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         batch_size=_UNSET, batch_evaluator=_UNSET,
                         virtual_loss=_UNSET,
                         oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET,
-                        meeple_dedup=_UNSET):
+                        meeple_dedup=_UNSET, intra_reuse=_UNSET):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
     agent's OWN defaults — i.e. constructing via this factory is byte-for-byte identical
@@ -394,7 +394,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
         oracle_prior_mult=oracle_prior_mult,
         oracle_prior_eps_coef=oracle_prior_eps_coef,
-        meeple_dedup=meeple_dedup,
+        meeple_dedup=meeple_dedup, intra_reuse=intra_reuse,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
@@ -420,7 +420,8 @@ def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
 def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              sims: int | None = None, k_dets: int | None = None,
                              exact_endgame: bool = True, verify: bool = True,
-                             meeple_dedup: bool | None = None):
+                             meeple_dedup: bool | None = None,
+                             intra_reuse: bool | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -434,7 +435,15 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     ``meeple_dedup`` binds the MEEPLE-DEDUP search feature for THIS agent
     (None = inherit ``CARCASSONNE_MEEPLE_DEDUP``, which defaults OFF). It is stamped
     onto the attached manifest ONLY when it resolves ON, so an OFF champion's manifest
-    — and every hash computed from it — is byte-identical to before the feature existed."""
+    — and every hash computed from it — is byte-identical to before the feature existed.
+
+    ``intra_reuse`` binds the C3-INTRA within-turn tree carry for THIS agent
+    (None = inherit ``CARCASSONNE_INTRA_TURN_REUSE``, which defaults OFF). FAIR MODE ONLY
+    — the carry lives in the PIMC agent's two-decisions-per-turn structure, which the
+    clairvoyant single-search agent does not have; passing it with mode="clairvoyant"
+    raises rather than silently doing nothing. Stamped onto the manifest ONLY when it
+    resolves ON, on the same no-hash-drift terms as ``meeple_dedup``."""
+    from . import intra_reuse as intra_carry
     from . import meeple_equiv
     from .game_wrapper import Game
 
@@ -448,6 +457,11 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     # Left at _UNSET when the caller said nothing, so the agent constructor is called
     # with EXACTLY the argument list it had before this feature existed.
     dedup_kw = {} if meeple_dedup is None else {"meeple_dedup": bool(meeple_dedup)}
+    intra_kw = {} if intra_reuse is None else {"intra_reuse": bool(intra_reuse)}
+    if intra_reuse is not None and mode != "fair":
+        raise ValueError(
+            "intra_reuse is a FAIR-mode feature (the within-turn carry needs the PIMC "
+            f"agent's tile+meeple decision pair); got mode={mode!r}")
 
     if mode == "fair":
         agent = build_fair_champion(
@@ -455,7 +469,7 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             sims=(spec.sims_per_det if sims is None else int(sims)),
             k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
             seed=int(seed), exact_endgame=bool(exact_endgame),
-            exact_max_k=spec.exact_max_k, **dedup_kw)
+            exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw)
     elif mode == "clairvoyant":
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         agent = build_clairvoyant_champion(
@@ -495,6 +509,29 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             "source": "kwarg" if meeple_dedup is not None else meeple_equiv.ENV_VAR,
             "scope": "intra-tile feature equivalence at meeple-phase nodes "
                      "(meeple_equiv.dedup_legal); the true legal mask is unchanged",
+            "note": "NON-CHAMPION search variant — this agent is NOT the deployed "
+                    "champion of governance/PRODUCTION.yaml.",
+        }
+
+    # C3-INTRA: same no-hash-drift terms as MEEPLE-DEDUP above — stamped only when the
+    # carry actually resolves ON, so an OFF champion's manifest is byte-identical to the
+    # pre-feature one. Fair mode only (guarded at the top).
+    if mode == "fair" and intra_carry.resolve(intra_reuse):
+        manifest = dict(manifest)
+        manifest["intra_turn_reuse"] = {
+            "enabled": True,
+            "source": "kwarg" if intra_reuse is not None else intra_carry.ENV_VAR,
+            "scope": "within-turn carry of the k_dets trees AND their determinizations "
+                     "from the TILE decision into the SAME turn's MEEPLE decision "
+                     "(re-rooted at the played action); fresh search on any mismatch",
+            "budget_semantics": "the meeple decision still runs `sims` NEW simulations "
+                                "per determinization ON TOP of the carried visits, so ON "
+                                "does more total work per turn at equal nominal sims — a "
+                                "positive screen requires an equal-WALL-CLOCK confirm",
+            "information_legality": "no hidden information arrives between the two "
+                                    "decisions (the engine draws the next tile only at "
+                                    "the END of the meeple phase), unlike the ACROSS-move "
+                                    "reuse of CL-044, which stays clairvoyant-only",
             "note": "NON-CHAMPION search variant — this agent is NOT the deployed "
                     "champion of governance/PRODUCTION.yaml.",
         }

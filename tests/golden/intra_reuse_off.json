@@ -1,0 +1,609 @@
+{
+  "kind": "intra_turn_reuse_off_behaviour_fixture",
+  "note": "Recorded on the pre-C3-INTRA tree. Any diff means the flag-OFF fair search path changed \u2014 that is a production regression, not a test bug.",
+  "deck_seed": 20260727,
+  "agent_seed": 11,
+  "sims": 24,
+  "k_dets": 2,
+  "plies_requested": 40,
+  "actions": [
+    1248,
+    2505,
+    1348,
+    2501,
+    1149,
+    2502,
+    1448,
+    2510,
+    1153,
+    2510,
+    1048,
+    2501,
+    1147,
+    2510,
+    950,
+    2501,
+    1257,
+    2502,
+    1055,
+    2510,
+    1346,
+    2510,
+    1552,
+    2506,
+    1447,
+    2501,
+    1553,
+    2501,
+    1341,
+    2507,
+    1457,
+    2503,
+    1160,
+    2503,
+    1550,
+    2510,
+    1167,
+    2510,
+    1354,
+    2510
+  ],
+  "final_key": "(((3, 15, 'city_diagonal_top_left_road', (('road', 'city', 'city', 'road'), False, False, False)), (3, 16, 'city_top_road_bend_left', (('grass', 'road', 'road', 'city'), False, False, False)), (4, 15, 'city_diagonal_top_right', (('city', 'city', 'grass', 'grass'), False, False, False)), (5, 14, 'bent_road', (('grass', 'road', 'road', 'grass'), False, False, False)), (5, 15, 'straight_road', (('grass', 'road', 'grass', 'road'), False, False, False)), (5, 16, 'straight_road', (('grass', 'road', 'grass', 'road'), False, False, False)), (5, 17, 'city_bottom_road_shield', (('city', 'city', 'city', 'road'), True, False, False)), (5, 18, 'city_bottom_road_shield', (('city', 'city', 'road', 'city'), True, False, False)), (5, 19, 'city_top', (('grass', 'grass', 'grass', 'city'), False, False, False)), (6, 14, 'city_top_road_bend_right', (('road', 'grass', 'city', 'road'), False, False, False)), (6, 15, 'chapel_with_road', (('grass', 'grass', 'road', 'grass'), False, True, False)), (7, 13, 'city_top_road_bend_left', (('road', 'city', 'grass', 'road'), False, False, False)), (7, 14, 'city_diagonal_top_right_shield_flowers', (('city', 'grass', 'grass', 'city'), True, False, True)), (7, 15, 'straight_road', (('road', 'grass', 'road', 'grass'), False, False, False)), (7, 17, 'city_top_straight_road', (('grass', 'road', 'city', 'road'), False, False, False)), (8, 15, 'straight_road', (('road', 'grass', 'road', 'grass'), False, False, False)), (8, 16, 'city_top_bottom_flowers', (('city', 'grass', 'city', 'grass'), False, False, True)), (8, 17, 'city_narrow', (('city', 'grass', 'city', 'grass'), False, False, False)), (9, 15, 'city_top_road_bend_right', (('road', 'grass', 'city', 'road'), False, False, False)), (9, 16, 'city_left_right', (('city', 'grass', 'city', 'grass'), False, False, False))), ((('normal', 6, 15, 'center'), ('normal', 5, 15, 'right'), ('normal', 5, 17, 'right'), ('farmer', 7, 13, 'top_right'), ('normal', 5, 18, 'bottom')), (('normal', 7, 15, 'top'), ('normal', 4, 15, 'top'), ('normal', 3, 15, 'top'), ('farmer', 8, 16, 'top_left'), ('normal', 8, 17, 'bottom'))), (8, 4), (2, 2), 0, 'tiles', 51, 'straight_road', (7, 17))",
+  "per_ply": [
+    {
+      "ply": 0,
+      "phase": "TILES",
+      "action": 1248,
+      "pooled_visits": {
+        "1248": 1.0
+      }
+    },
+    {
+      "ply": 1,
+      "phase": "MEEPLES",
+      "action": 2505,
+      "pooled_visits": {
+        "2503": 13.0,
+        "2505": 15.0,
+        "2506": 8.0,
+        "2510": 12.0
+      }
+    },
+    {
+      "ply": 2,
+      "phase": "TILES",
+      "action": 1348,
+      "pooled_visits": {
+        "1149": 12.0,
+        "1244": 12.0,
+        "1252": 12.0,
+        "1348": 12.0
+      }
+    },
+    {
+      "ply": 3,
+      "phase": "MEEPLES",
+      "action": 2501,
+      "pooled_visits": {
+        "2501": 14.0,
+        "2503": 14.0,
+        "2506": 6.0,
+        "2507": 6.0,
+        "2510": 8.0
+      }
+    },
+    {
+      "ply": 4,
+      "phase": "TILES",
+      "action": 1149,
+      "pooled_visits": {
+        "1149": 10.0,
+        "1244": 10.0,
+        "1252": 8.0,
+        "1344": 8.0,
+        "1352": 8.0,
+        "1448": 4.0
+      }
+    },
+    {
+      "ply": 5,
+      "phase": "MEEPLES",
+      "action": 2502,
+      "pooled_visits": {
+        "2502": 12.0,
+        "2504": 12.0,
+        "2507": 6.0,
+        "2509": 6.0,
+        "2510": 12.0
+      }
+    },
+    {
+      "ply": 6,
+      "phase": "TILES",
+      "action": 1448,
+      "pooled_visits": {
+        "1049": 8.0,
+        "1145": 4.0,
+        "1153": 4.0,
+        "1244": 6.0,
+        "1252": 6.0,
+        "1344": 4.0,
+        "1352": 4.0,
+        "1448": 12.0
+      }
+    },
+    {
+      "ply": 7,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2506": 14.0,
+        "2507": 14.0,
+        "2510": 20.0
+      }
+    },
+    {
+      "ply": 8,
+      "phase": "TILES",
+      "action": 1153,
+      "pooled_visits": {
+        "1049": 4.0,
+        "1145": 10.0,
+        "1153": 8.0,
+        "1244": 6.0,
+        "1252": 6.0,
+        "1344": 6.0,
+        "1352": 6.0,
+        "1444": 2.0
+      }
+    },
+    {
+      "ply": 9,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2507": 13.0,
+        "2509": 14.0,
+        "2510": 21.0
+      }
+    },
+    {
+      "ply": 10,
+      "phase": "TILES",
+      "action": 1048,
+      "pooled_visits": {
+        "1048": 6.0,
+        "1051": 4.0,
+        "1052": 4.0,
+        "1055": 4.0,
+        "1246": 2.0,
+        "1247": 2.0,
+        "1253": 2.0,
+        "1346": 2.0,
+        "1347": 2.0,
+        "1352": 2.0,
+        "1353": 2.0,
+        "1446": 4.0,
+        "1447": 4.0,
+        "1452": 4.0,
+        "1453": 4.0
+      }
+    },
+    {
+      "ply": 11,
+      "phase": "MEEPLES",
+      "action": 2501,
+      "pooled_visits": {
+        "2501": 14.0,
+        "2502": 12.0,
+        "2506": 10.0,
+        "2510": 12.0
+      }
+    },
+    {
+      "ply": 12,
+      "phase": "TILES",
+      "action": 1147,
+      "pooled_visits": {
+        "1146": 12.0,
+        "1147": 10.0,
+        "1156": 4.0,
+        "1157": 4.0,
+        "1244": 4.0,
+        "1245": 4.0,
+        "1255": 2.0,
+        "1344": 2.0,
+        "1345": 2.0,
+        "1354": 2.0,
+        "1355": 2.0
+      }
+    },
+    {
+      "ply": 13,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2508": 16.0,
+        "2509": 12.0,
+        "2510": 20.0
+      }
+    },
+    {
+      "ply": 14,
+      "phase": "TILES",
+      "action": 950,
+      "pooled_visits": {
+        "950": 10.0,
+        "951": 10.0,
+        "1157": 4.0,
+        "1158": 4.0,
+        "1550": 10.0,
+        "1551": 10.0
+      }
+    },
+    {
+      "ply": 15,
+      "phase": "MEEPLES",
+      "action": 2501,
+      "pooled_visits": {
+        "2501": 11.0,
+        "2504": 11.0,
+        "2506": 7.0,
+        "2507": 9.0,
+        "2510": 10.0
+      }
+    },
+    {
+      "ply": 16,
+      "phase": "TILES",
+      "action": 1257,
+      "pooled_visits": {
+        "948": 8.0,
+        "1047": 7.0,
+        "1052": 4.0,
+        "1054": 2.0,
+        "1055": 2.0,
+        "1257": 19.0,
+        "1650": 6.0
+      }
+    },
+    {
+      "ply": 17,
+      "phase": "MEEPLES",
+      "action": 2502,
+      "pooled_visits": {
+        "2501": 12.0,
+        "2502": 10.0,
+        "2503": 10.0,
+        "2506": 6.0,
+        "2508": 4.0,
+        "2510": 6.0
+      }
+    },
+    {
+      "ply": 18,
+      "phase": "TILES",
+      "action": 1055,
+      "pooled_visits": {
+        "948": 4.0,
+        "951": 4.0,
+        "1046": 4.0,
+        "1047": 4.0,
+        "1055": 8.0,
+        "1158": 2.0,
+        "1240": 2.0,
+        "1263": 2.0,
+        "1356": 2.0,
+        "1444": 2.0,
+        "1454": 2.0,
+        "1544": 2.0,
+        "1554": 2.0,
+        "1649": 4.0,
+        "1650": 4.0
+      }
+    },
+    {
+      "ply": 19,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2502": 9.0,
+        "2503": 8.0,
+        "2508": 12.0,
+        "2509": 6.0,
+        "2510": 13.0
+      }
+    },
+    {
+      "ply": 20,
+      "phase": "TILES",
+      "action": 1346,
+      "pooled_visits": {
+        "1158": 6.0,
+        "1263": 6.0,
+        "1346": 18.0,
+        "1356": 6.0,
+        "1446": 6.0,
+        "1452": 6.0
+      }
+    },
+    {
+      "ply": 21,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2503": 10.0,
+        "2506": 12.0,
+        "2509": 12.0,
+        "2510": 14.0
+      }
+    },
+    {
+      "ply": 22,
+      "phase": "TILES",
+      "action": 1552,
+      "pooled_visits": {
+        "953": 6.0,
+        "1156": 4.0,
+        "1240": 8.0,
+        "1261": 4.0,
+        "1356": 4.0,
+        "1444": 4.0,
+        "1452": 4.0,
+        "1544": 8.0,
+        "1552": 6.0
+      }
+    },
+    {
+      "ply": 23,
+      "phase": "MEEPLES",
+      "action": 2506,
+      "pooled_visits": {
+        "2501": 6.0,
+        "2503": 6.0,
+        "2506": 29.0,
+        "2510": 7.0
+      }
+    },
+    {
+      "ply": 24,
+      "phase": "TILES",
+      "action": 1447,
+      "pooled_visits": {
+        "1157": 14.0,
+        "1158": 8.0,
+        "1262": 6.0,
+        "1263": 6.0,
+        "1356": 6.0,
+        "1359": 6.0,
+        "1447": 2.0
+      }
+    },
+    {
+      "ply": 25,
+      "phase": "MEEPLES",
+      "action": 2501,
+      "pooled_visits": {
+        "2501": 20.0,
+        "2504": 20.0,
+        "2510": 8.0
+      }
+    },
+    {
+      "ply": 26,
+      "phase": "TILES",
+      "action": 1553,
+      "pooled_visits": {
+        "852": 4.0,
+        "1057": 4.0,
+        "1141": 4.0,
+        "1160": 4.0,
+        "1257": 4.0,
+        "1340": 4.0,
+        "1353": 10.0,
+        "1457": 6.0,
+        "1553": 8.0
+      }
+    },
+    {
+      "ply": 27,
+      "phase": "MEEPLES",
+      "action": 2501,
+      "pooled_visits": {
+        "2501": 21.0,
+        "2503": 6.0,
+        "2507": 17.0,
+        "2510": 4.0
+      }
+    },
+    {
+      "ply": 28,
+      "phase": "TILES",
+      "action": 1341,
+      "pooled_visits": {
+        "848": 1.0,
+        "851": 1.0,
+        "853": 2.0,
+        "956": 2.0,
+        "957": 2.0,
+        "1058": 4.0,
+        "1140": 2.0,
+        "1163": 3.0,
+        "1242": 2.0,
+        "1243": 4.0,
+        "1256": 3.0,
+        "1341": 16.0,
+        "1354": 2.0,
+        "1558": 2.0,
+        "1652": 2.0
+      }
+    },
+    {
+      "ply": 29,
+      "phase": "MEEPLES",
+      "action": 2507,
+      "pooled_visits": {
+        "2501": 7.0,
+        "2504": 6.0,
+        "2506": 4.0,
+        "2507": 21.0,
+        "2510": 10.0
+      }
+    },
+    {
+      "ply": 30,
+      "phase": "TILES",
+      "action": 1457,
+      "pooled_visits": {
+        "852": 6.0,
+        "1057": 4.0,
+        "1141": 6.0,
+        "1160": 4.0,
+        "1257": 4.0,
+        "1353": 4.0,
+        "1440": 4.0,
+        "1457": 8.0,
+        "1557": 4.0,
+        "1653": 4.0
+      }
+    },
+    {
+      "ply": 31,
+      "phase": "MEEPLES",
+      "action": 2503,
+      "pooled_visits": {
+        "2501": 14.0,
+        "2503": 12.0,
+        "2507": 10.0,
+        "2510": 12.0
+      }
+    },
+    {
+      "ply": 32,
+      "phase": "TILES",
+      "action": 1160,
+      "pooled_visits": {
+        "1057": 23.0,
+        "1058": 12.0,
+        "1059": 9.0,
+        "1160": 4.0
+      }
+    },
+    {
+      "ply": 33,
+      "phase": "MEEPLES",
+      "action": 2503,
+      "pooled_visits": {
+        "2503": 15.0,
+        "2508": 10.0,
+        "2509": 9.0,
+        "2510": 14.0
+      }
+    },
+    {
+      "ply": 34,
+      "phase": "TILES",
+      "action": 1550,
+      "pooled_visits": {
+        "848": 2.0,
+        "849": 2.0,
+        "855": 2.0,
+        "944": 2.0,
+        "947": 2.0,
+        "957": 2.0,
+        "958": 2.0,
+        "1055": 2.0,
+        "1058": 2.0,
+        "1062": 2.0,
+        "1142": 2.0,
+        "1167": 2.0,
+        "1256": 2.0,
+        "1262": 2.0,
+        "1263": 2.0,
+        "1336": 2.0,
+        "1339": 2.0,
+        "1358": 2.0,
+        "1441": 2.0,
+        "1460": 2.0,
+        "1550": 4.0,
+        "1556": 2.0,
+        "1652": 2.0
+      }
+    },
+    {
+      "ply": 35,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2503": 19.0,
+        "2510": 29.0
+      }
+    },
+    {
+      "ply": 36,
+      "phase": "TILES",
+      "action": 1167,
+      "pooled_visits": {
+        "1058": 6.0,
+        "1062": 6.0,
+        "1167": 2.0,
+        "1441": 16.0,
+        "1442": 10.0,
+        "1443": 8.0
+      }
+    },
+    {
+      "ply": 37,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2508": 10.0,
+        "2510": 38.0
+      }
+    },
+    {
+      "ply": 38,
+      "phase": "TILES",
+      "action": 1354,
+      "pooled_visits": {
+        "845": 2.0,
+        "847": 2.0,
+        "848": 2.0,
+        "940": 2.0,
+        "942": 2.0,
+        "952": 2.0,
+        "954": 2.0,
+        "1054": 2.0,
+        "1058": 2.0,
+        "1060": 2.0,
+        "1139": 2.0,
+        "1165": 2.0,
+        "1252": 2.0,
+        "1257": 2.0,
+        "1259": 2.0,
+        "1262": 2.0,
+        "1332": 2.0,
+        "1354": 2.0,
+        "1438": 2.0,
+        "1457": 2.0,
+        "1540": 2.0,
+        "1542": 2.0,
+        "1644": 2.0,
+        "1648": 2.0
+      }
+    },
+    {
+      "ply": 39,
+      "phase": "MEEPLES",
+      "action": 2510,
+      "pooled_visits": {
+        "2502": 10.0,
+        "2504": 8.0,
+        "2507": 8.0,
+        "2509": 8.0,
+        "2510": 14.0
+      }
+    }
+  ],
+  "heur_moves": 40
+}

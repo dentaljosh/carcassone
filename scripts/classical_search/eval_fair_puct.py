@@ -908,7 +908,7 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
                    sighted_game=None, rep=None, batch_size=1,
                    oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
-                   meeple_dedup=None):
+                   meeple_dedup=None, intra_reuse=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     ``oracle_prior_mult`` (Track-F Gate A, CANDIDATE side only; None = OFF) engages the
@@ -948,9 +948,15 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
         # pre-feature one and the candidate is byte-identical to the deploy champion.
         _dedup_kw = ({} if meeple_dedup is None
                      else dict(meeple_dedup=bool(meeple_dedup)))
+        # C3-INTRA within-turn carry — same absent-when-OFF shape, same candidate-only
+        # scope. NOTE the read-out caveat: ON does MORE total work per turn at equal
+        # nominal sims (the meeple half searches on top of a carried subtree), so a
+        # positive screen needs an equal-WALL-CLOCK confirm before it means anything.
+        _intra_kw = ({} if intra_reuse is None
+                     else dict(intra_reuse=bool(intra_reuse)))
         prefix = champion_factory.build_fair_champion(
             game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
-            **_oracle_kw, **_dedup_kw)
+            **_oracle_kw, **_dedup_kw, **_intra_kw)
     elif info == "fair-netprior":
         if net is None and handles is None:
             raise ValueError(
@@ -1286,7 +1292,7 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
-                 opp_k_dets=None, meeple_dedup=None):
+                 opp_k_dets=None, meeple_dedup=None, intra_reuse=None):
     _W["info"] = info
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
@@ -1295,6 +1301,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     _W["oracle_prior_eps_coef"] = oracle_prior_eps_coef
     # MEEPLE-DEDUP search feature (CANDIDATE side; None = OFF = byte-identical).
     _W["meeple_dedup"] = meeple_dedup
+    # C3-INTRA within-turn tree carry (CANDIDATE side; None = OFF = byte-identical).
+    _W["intra_reuse"] = intra_reuse
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
     # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
@@ -1455,7 +1463,8 @@ def _play_one(args) -> GameResult | None:
                            batch_size=_W.get("batch_size", 1),
                            oracle_prior_mult=_W.get("oracle_prior_mult"),
                            oracle_prior_eps_coef=_W.get("oracle_prior_eps_coef", 1e-3),
-                           meeple_dedup=_W.get("meeple_dedup"))
+                           meeple_dedup=_W.get("meeple_dedup"),
+                           intra_reuse=_W.get("intra_reuse"))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -1752,7 +1761,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                batch_size=args.batch_size,
                                oracle_prior_mult=args.oracle_prior_mult,
                                oracle_prior_eps_coef=args.oracle_prior_eps_coef,
-                               meeple_dedup=(True if args.meeple_dedup else None))
+                               meeple_dedup=(True if args.meeple_dedup else None),
+                               intra_reuse=(True if args.intra_reuse else None))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -1978,6 +1988,25 @@ def main(argv=None) -> int:
                          "Per-AGENT, so the OPPONENT is never deduped. Default OFF = "
                          "byte-identical to the deploy champion. Grouping is INTRA-TILE "
                          "only (a lower bound) — see carcassonne_ai.meeple_equiv.")
+    ap.add_argument("--intra-reuse", action="store_true",
+                    help="C3-INTRA WITHIN-TURN TREE CARRY on the CANDIDATE side "
+                         "(--info fair). The fair champion makes TWO full-budget "
+                         "searches per turn — the tile decision, then the meeple "
+                         "decision — and the meeple half was measured at 52.5%% of "
+                         "champion search time. No hidden information arrives between "
+                         "them (the engine draws the next tile only at the END of the "
+                         "meeple phase), so this carries the k_dets trees AND their "
+                         "determinizations from the tile decision into the meeple "
+                         "decision, re-rooted at the action actually played. Fair-LEGAL, "
+                         "unlike the across-move reuse of CL-044 (clairvoyant-only). "
+                         "Falls back to a fresh search on any mismatch. Per-AGENT, so "
+                         "the OPPONENT never carries. Default OFF = byte-identical to "
+                         "the deploy champion. "
+                         "\u26a0 READ-OUT CAVEAT: ON does MORE total work per turn at "
+                         "equal nominal sims (the meeple search runs its full `sims` ON "
+                         "TOP of the carried subtree), so a positive result here is NOT "
+                         "a win until an equal-WALL-CLOCK confirm reproduces it — the "
+                         "house rule from CL-044's ms-ratio verification.")
     ap.add_argument("--oracle-prior-mult", type=int, default=None,
                     help="Track-F Gate A oracle-prior CONFIRM (CANDIDATE side, --info fair only). "
                          "When set to N (>=2), the fair PIMC candidate runs a PER-WORLD pre-search: "
@@ -2775,6 +2804,33 @@ def main(argv=None) -> int:
         }
         man_cfg["meeple_dedup"] = dedup_block
         man_cfg["champion"]["meeple_dedup"] = dedup_block
+    # C3-INTRA provenance — added ONLY when the carry is ON (CANDIDATE side), so a plain
+    # (OFF) manifest stays byte-identical to the pre-change output. Same shape and same
+    # candidate-only scope as the meeple-dedup block above.
+    if args.intra_reuse:
+        from carcassonne_ai import intra_reuse as _ir
+
+        intra_block = {
+            "enabled": True,
+            "flag": _ir.ENV_VAR,
+            "scope": ("carries the k_dets trees AND their determinized decks from a "
+                      "turn's TILE decision into the SAME turn's MEEPLE decision, "
+                      "re-rooted at the tile action actually played; any mismatch "
+                      "(opponent moved, restore, forced move, exact-endgame latch, new "
+                      "game) discards and searches fresh"),
+            "budget_semantics": ("the meeple decision still runs `sims` NEW simulations "
+                                 "per determinization ON TOP of the carried visits"),
+            "read_out_caveat": ("ON does MORE total work per turn at equal nominal sims "
+                                "-> a positive screen REQUIRES an equal-wall-clock "
+                                "confirm (CL-044 ms-ratio house rule)"),
+            "information_legality": ("no hidden information arrives between the two "
+                                     "decisions (StateUpdater draws the next tile only "
+                                     "at the END of the meeple phase), unlike the "
+                                     "ACROSS-move reuse of CL-044"),
+            "applies_to": "candidate",
+        }
+        man_cfg["intra_turn_reuse"] = intra_block
+        man_cfg["champion"]["intra_turn_reuse"] = intra_block
     write_manifest(out, kind="eval_fair_puct", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
 
@@ -2831,7 +2887,8 @@ def main(argv=None) -> int:
                           (args.opp_orch_shm_name or ""), args.batch_size,
                           args.opp_sims, args.oracle_prior_mult,
                           args.oracle_prior_eps_coef, args.opp_k_dets,
-                          (True if args.meeple_dedup else None)))
+                          (True if args.meeple_dedup else None),
+                          (True if args.intra_reuse else None)))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -2842,7 +2899,8 @@ def main(argv=None) -> int:
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, "",
                           args.batch_size, args.opp_sims, args.oracle_prior_mult,
                           args.oracle_prior_eps_coef, args.opp_k_dets,
-                          (True if args.meeple_dedup else None)))
+                          (True if args.meeple_dedup else None),
+                          (True if args.intra_reuse else None)))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
