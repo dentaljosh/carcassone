@@ -854,3 +854,71 @@ def test_cy_alias_is_published_under_the_carcassonne_ai_name():
     for name, loaded in B.CY_LOADED.items():
         if loaded:
             assert f"carcassonne_ai.{name}" in sys.modules, name
+
+
+# --------------------------------------------------------------------------- #
+# end-of-game score breakdown                                                   #
+# --------------------------------------------------------------------------- #
+def _play_to_the_end(seed: int, rng_seed: int = 0) -> dict:
+    """Random-but-legal human vs tier1, to termination. Returns the final state."""
+    st = new(seed=seed, opponent="tier1", human_player=0)
+    rng = random.Random(rng_seed)
+    for _ in range(400):
+        if st["is_terminated"]:
+            return st
+        if st["is_human_turn"]:
+            legal = j(B.get_state())["legal"]
+            ids = [i for c in legal["tile_cells"] for i in c["action_ids"]]
+            ids += [m["action_id"] for m in legal["meeple_slots"]]
+            ids += [legal[k] for k in ("tile_pass_id", "meeple_pass_id")
+                    if legal.get(k) is not None]
+            st = ok(B.apply_action(rng.choice(ids)))
+        else:
+            st = ok(B.ai_move(st["generation"]))
+    raise AssertionError("game did not terminate in 400 plies")
+
+
+def test_result_breakdown_reconciles_with_the_final_scores():
+    """The end-of-game jump, itemised — and it must ADD UP.
+
+    Base+Farmers banks most of its points on the last tile (farms settle, open
+    features pay a reduced rate), so the scoreboard leaps with nothing on screen
+    to explain it. `_final_breakdown` reconstructs that pass by re-applying the
+    terminating action to the retained previous board with `count_final_scores`
+    stubbed — the engine consumes the placed meeples inside the terminating move,
+    so the terminal state itself carries no attribution.
+
+    The bridge REFUSES to emit a block that does not balance (it returns None), so
+    a wrong split shows up here as a missing breakdown, not as a wrong number.
+    """
+    st = _play_to_the_end(seed=5)
+    rows = st["result"]["breakdown"]
+    assert rows is not None, "breakdown was dropped — the reconstruction failed"
+    assert len(rows) == len(st["result"]["scores"])
+    for p, row in enumerate(rows):
+        assert set(row) == {"during_play", "incomplete", "farms", "total"}
+        assert all(isinstance(v, int) for v in row.values())
+        assert row["during_play"] + row["incomplete"] + row["farms"] == row["total"]
+        assert row["total"] == st["result"]["scores"][p]
+    # A finished 72-tile game always settles SOME farm or open-feature points;
+    # an all-zero endgame column would mean the reconstruction scored nothing.
+    assert any(r["farms"] or r["incomplete"] for r in rows)
+
+
+def test_result_breakdown_survives_a_save_restore_round_trip():
+    """Replay goes through `_Session.apply`, so `prev_board` is rebuilt for free."""
+    st = new(seed=11, opponent="tier1", human_player=0)
+    saved = B.save_game()
+    ok(saved)
+    ok(B.restore_game(saved))
+    st = _play_to_the_end(seed=11, rng_seed=3)
+    assert st["result"]["breakdown"] is not None
+
+
+def test_breakdown_is_absent_rather_than_wrong_when_unreconstructable():
+    """`_final_breakdown` is best-effort: no previous board -> None, never a guess."""
+    st = new(seed=7, opponent="tier1")
+    s = B._S
+    s.prev_board = None
+    s.last_action = None
+    assert B._final_breakdown(s, [0, 0]) is None

@@ -19,11 +19,36 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private const val MEEPLE_FRACTION = 0.34f      // sprite edge, as a fraction of a tile
-private const val DOT_RADIUS = 0.085f          // slot dot radius, ditto
-private const val SLOT_TAP_RADIUS = 0.20f      // finger-sized, in tile fractions
+
+/**
+ * Slot dot radius, as a fraction of a tile.
+ *
+ * Adjacent slots can be a quarter of a tile apart (`top_left` at x=0.25 vs `top`
+ * at x=0.5), so 0.105 is about as large as the dots can be drawn before two of
+ * them touch. Everything else that makes the target thumb-sized has to come from
+ * the tap radius below and from the meeple-phase close-up in GameScreen.
+ */
+private const val DOT_RADIUS = 0.105f
+
+/**
+ * Tap catchment for a slot, in tile fractions — deliberately LARGER than the
+ * quarter-tile slot spacing, because [nearestWithin] resolves ties by distance:
+ * overlapping catchments cost nothing and a generous one is what turns a ~30px
+ * dot into something a thumb can hit. Kept under the ~0.41 distance from a corner
+ * slot to the tile centre so a stray tap in the middle of the tile still misses
+ * every corner rather than committing a meeple by accident.
+ */
+private const val SLOT_TAP_RADIUS = 0.25f
+
+/** Second tap must land within this of the first, in dp, to read as a double-tap. */
+private val DOUBLE_TAP_SLOP = 36.dp
+
+/** ...and within this long. Compose's own default is 300 ms. */
+private const val DOUBLE_TAP_MS = 300L
 
 /**
  * The board. Draws in **world units** (see [BoardGeometry]) inside a single
@@ -44,6 +69,8 @@ fun BoardCanvas(
     onTransform: (BoardTransform) -> Unit,
     onCellTap: (Cell) -> Unit,
     onMeepleSlot: (MeepleSlot) -> Unit,
+    /** Screen-space point of a double-tap that hit nothing interactive. */
+    onDoubleTap: (Float, Float) -> Unit,
     onViewportChanged: (Float, Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -54,12 +81,26 @@ fun BoardCanvas(
     val onTransformNow by rememberUpdatedState(onTransform)
     val onCellTapNow by rememberUpdatedState(onCellTap)
     val onMeepleSlotNow by rememberUpdatedState(onMeepleSlot)
+    val onDoubleTapNow by rememberUpdatedState(onDoubleTap)
     val onViewport by rememberUpdatedState(onViewportChanged)
 
     Canvas(
         modifier = modifier
             .onSizeChanged { onViewport(it.width.toFloat(), it.height.toFloat()) }
             .pointerInput(Unit) {
+                // Double-tap is tracked BY HAND rather than with
+                // `detectTapGestures(onDoubleTap = …)`, which would hold every
+                // single tap for ~300 ms to see whether a second one follows —
+                // and single-tap cell selection is the primary interaction of the
+                // whole screen. Instead each tap is dispatched immediately, and a
+                // tap only becomes a double-tap CANDIDATE when it hit nothing
+                // interactive (no meeple slot, no legal cell). That also keeps the
+                // gesture off the one place it would be ambiguous: tapping the
+                // same legal cell twice already means "next rotation".
+                var lastIdleMs = 0L
+                var lastIdleX = 0f
+                var lastIdleY = 0f
+                val slop = DOUBLE_TAP_SLOP.toPx()
                 detectTapGestures { p ->
                     val t = tf
                     val s = st
@@ -72,12 +113,31 @@ fun BoardCanvas(
                                 s.legal.meepleSlots, wx, wy, SLOT_TAP_RADIUS * TILE,
                             ) { slot -> slotCentre(target, slot.offsetX, slot.offsetY) }
                             if (hit != null) {
+                                lastIdleMs = 0L
                                 onMeepleSlotNow(hit)
                                 return@detectTapGestures
                             }
                         }
                     }
-                    onCellTapNow(t.cellAt(p.x, p.y))
+                    val cell = t.cellAt(p.x, p.y)
+                    if (s.isTilePhase && s.isHumanTurn && s.legal.cellAt(cell) != null) {
+                        lastIdleMs = 0L
+                        onCellTapNow(cell)
+                        return@detectTapGestures
+                    }
+                    val now = System.currentTimeMillis()
+                    if (now - lastIdleMs <= DOUBLE_TAP_MS &&
+                        abs(p.x - lastIdleX) <= slop && abs(p.y - lastIdleY) <= slop
+                    ) {
+                        lastIdleMs = 0L
+                        onDoubleTapNow(p.x, p.y)
+                        return@detectTapGestures
+                    }
+                    lastIdleMs = now
+                    lastIdleX = p.x
+                    lastIdleY = p.y
+                    // Unchanged behaviour: a tap on nothing cancels the ghost.
+                    onCellTapNow(cell)
                 }
             }
             .pointerInput(Unit) {

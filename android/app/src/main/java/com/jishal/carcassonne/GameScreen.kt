@@ -1,5 +1,6 @@
 package com.jishal.carcassonne
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
@@ -31,6 +32,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,20 +42,25 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -63,33 +70,79 @@ import kotlin.math.roundToInt
  * Board transform (zoom/pan) is screen-local state, not ViewModel state: it is
  * pure presentation, it changes at 60 Hz during a pinch, and it must not
  * participate in the save file.
+ *
+ * ### The camera
+ *
+ * There are four ways the view moves, in descending priority:
+ *
+ * 1. **The player** — pinch/pan (and double-tap on empty board). Always wins,
+ *    and sets [CameraPolicy.userAdjusted] so the automatic rules back off.
+ * 2. **Fit at game start** — instant, on a new session or a viewport change.
+ * 3. **Settle after a placement** — the *only* automatic motion during play, and
+ *    it fires only when something is genuinely not visible: either the board has
+ *    outgrown the viewport (re-fit) or the tile that just landed is off-screen
+ *    (recentre). Keyed on placements, never on interaction, so it cannot yank the
+ *    board while a finger is down.
+ * 4. **Meeple close-up** — a one-off zoom onto the tile whose slots are being
+ *    offered, when they would otherwise be a few pixels apart, undone when the
+ *    sub-phase ends.
+ *
+ * All of it runs in ONE effect so the four rules can never animate against each
+ * other; each step suspends until its animation finishes.
  */
 @Composable
 fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val assets by rememberTileAssets()
     val state = ui.state
+    val scope = rememberCoroutineScope()
 
-    // Held as the state object (not just the delegated value) so the recentre
-    // animation can be a plain function shared by the AI and human paths.
+    // Held as the state object (not just the delegated value) so the camera
+    // animations can be plain suspend functions shared by every path.
     val transformState = remember { mutableStateOf(BoardTransform()) }
     var transform by transformState
+    val camera = remember { CameraPolicy() }
     var viewW by remember { mutableStateOf(0f) }
     var viewH by remember { mutableStateOf(0f) }
     var confirmLeave by remember { mutableStateOf(false) }
 
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     // The board canvas runs the full height of the content area, with the action
-    // buttons + status bar floating over its bottom edge and the banners over its
-    // top. Those strips are not usable board, so the auto-recentre must not count
-    // them as "visible" — see BoardTransform.isCellVisible.
+    // buttons + status bar floating over its bottom edge. That strip is not usable
+    // board, so every fit/visibility decision must subtract it — see
+    // BoardTransform.isBoundsVisible.
     //
-    // The canvas is deliberately full-bleed at the bottom (it draws under the
-    // gesture pill), so the unusable bottom strip is the chrome PLUS that system
-    // inset — the chrome is pushed up by exactly that much.
-    val density = LocalDensity.current
-    val bottomSystemPx = WindowInsets.safeDrawing.getBottom(density).toFloat()
-    val insetTopPx = with(density) { TOP_OVERLAY.toPx() }
-    val insetBottomPx = with(density) { BOTTOM_OVERLAY.toPx() } + bottomSystemPx
+    // MEASURED, not guessed. The old fixed 132dp estimate was tuned by eye in
+    // portrait; in landscape the same chrome is a much larger share of a much
+    // shorter viewport, and fitting to the full height left the bottom rows of the
+    // board underneath the status panel with no way to see them.
+    //
+    // Held as a RUNNING MAXIMUM because the strip's height is not constant: the
+    // action-button row appears the moment a ghost is aimed and vanishes when it
+    // is played. Feeding that raw into the fit would re-fit the board twice per
+    // turn, trading one camera bug for a worse one. The max settles after a single
+    // turn at "status bar + buttons", which is the height the board must clear
+    // anyway.
+    //
+    // Scoped to the orientation (`remember(landscape)`), because the two layouts
+    // have genuinely different chrome and carrying portrait's taller strip into
+    // landscape would waste a third of a 1080px-high viewport.
+    //
+    // Reported via onGloballyPositioned, NOT onSizeChanged: the activity handles
+    // rotation itself (see AndroidManifest `configChanges`), so this state
+    // survives the flip and is re-initialised by the `remember` key — but
+    // onSizeChanged only fires when the size CHANGES, and after a re-init the
+    // strip's height often has not. That combination silently left landscape
+    // fitting to the full canvas, i.e. straight back into the bug being fixed.
+    var bottomChromePx by remember(landscape) { mutableStateOf(0f) }
+
+    // The top banners (thinking / error / save-mismatch) are deliberately NOT part
+    // of this. They are transient and, in the case of the one that is up the
+    // longest, they cover the board precisely while the opponent is thinking and
+    // the player cannot act. Reserving their height permanently would shrink the
+    // board on every screen for a strip that is usually not there.
 
     // Process death while on the Game screen: MainActivity restores `screen = GAME`
     // from the saved instance state, but the ViewModel — and with it the Python
@@ -107,30 +160,44 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
 
     // Fit at game start (and on any new session / viewport change). Keyed on the
     // bridge generation, which is bumped by new_game / restore_game / reset.
-    LaunchedEffect(state?.generation, viewW, viewH) {
+    //
+    // It is also keyed on the chrome measurement, because the first composition
+    // does not know it yet — but a chrome re-measure is NOT a new game, so it must
+    // not overrule a player who has meanwhile taken the camera. Hence the
+    // generation guard: only a genuinely new session resets the camera policy.
+    LaunchedEffect(state?.generation, viewW, viewH, bottomChromePx) {
         val st = state ?: return@LaunchedEffect
         if (viewW <= 0f || viewH <= 0f) return@LaunchedEffect
+        val newSession = st.generation != camera.fittedGeneration
+        if (camera.userAdjusted && !newSession) return@LaunchedEffect
         val bounds = st.boundsWithMargin()?.atLeast(7) ?: return@LaunchedEffect
-        transform = BoardTransform.fit(bounds, viewW, viewH)
+        transform = BoardTransform.fit(bounds, viewW, viewH, insetBottom = bottomChromePx)
+        camera.userAdjusted = false
+        if (newSession) {
+            camera.preMeeple = null
+            camera.fittedGeneration = st.generation
+        }
     }
 
-    // Gentle recentre after an AI move — ONLY when its tile landed off-screen,
-    // so a champion move inside the current view never yanks the board.
-    // Keyed on the cell alone, deliberately: keying on `turn` too would re-run
-    // after every HUMAN move and chase the champion's stale last tile around.
-    LaunchedEffect(state?.aiLastTile) {
-        recentreIfOffscreen(
-            state?.aiLastTile, transformState, viewW, viewH, insetTopPx, insetBottomPx,
-        )
-    }
+    // The subject of the meeple sub-phase, or null when it is not open. Its slots
+    // can be a quarter of a tile apart, so at a whole-board fit they are a handful
+    // of pixels from each other — hence the close-up in [settleCamera].
+    val meepleFocus = state?.legal?.meepleTarget
+        ?.takeIf { state.isHumanTurn && state.isMeeplePhase && state.legal.meepleSlots.isNotEmpty() }
 
-    // ...and after a HUMAN placement too. A tapped cell is by definition on
-    // screen, but it can be right at the edge — `isCellVisible`'s margin treats
-    // that as off-screen, so the board eases over and the newly opened
-    // neighbours become reachable without a manual pan.
-    LaunchedEffect(ui.lastHumanTile) {
-        recentreIfOffscreen(
-            ui.lastHumanTile, transformState, viewW, viewH, insetTopPx, insetBottomPx,
+    // Rules 3 and 4, in one place so they run in order rather than in parallel.
+    LaunchedEffect(
+        ui.lastPlacedTile, state?.board?.size, meepleFocus, viewW, viewH, bottomChromePx,
+    ) {
+        val st = state ?: return@LaunchedEffect
+        settleCamera(
+            state = st,
+            focus = ui.lastPlacedTile,
+            meepleFocus = meepleFocus,
+            transformState = transformState,
+            camera = camera,
+            viewW = viewW, viewH = viewH,
+            insetTop = 0f, insetBottom = bottomChromePx,
         )
     }
 
@@ -141,8 +208,31 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
         if (vm.isInFlight()) confirmLeave = true else onExit()
     }
 
+    // The dialog's whole premise is "a search is running that Leave would throw
+    // away". Searches finish on their own — at Instant they finish almost at once —
+    // and the dialog then sat there asking about nothing, with a Leave button whose
+    // warning text ("the move will be discarded") had become false. Close it the
+    // moment the premise expires; the player keeps the move and stays in the game.
+    LaunchedEffect(ui.thinking, ui.opActive) {
+        if (confirmLeave && !ui.thinking && !ui.opActive) confirmLeave = false
+    }
+
     Scaffold(
-        topBar = { if (state != null) GameHud(ui, state, assets) },
+        topBar = {
+            if (state != null) {
+                GameHud(
+                    ui, state, assets, landscape,
+                    onFit = {
+                        scope.launch {
+                            fitNow(
+                                state, transformState, camera,
+                                viewW, viewH, 0f, bottomChromePx,
+                            )
+                        }
+                    },
+                )
+            }
+        },
         // Zero, on purpose: the board must stay full-bleed. The HUD in the top bar
         // slot insets ITSELF against the status bar, and the floating bottom chrome
         // insets itself against the navigation bar — the canvas between them keeps
@@ -166,15 +256,31 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                         ghost = ui.ghost,
                         assets = assets!!,
                         transform = transform,
-                        onTransform = { transform = it },
+                        onTransform = { transform = it; camera.userAdjusted = true },
                         onCellTap = vm::onCellTap,
                         onMeepleSlot = vm::onMeepleSlot,
+                        onDoubleTap = { sx, sy ->
+                            scope.launch {
+                                toggleZoom(
+                                    state, transformState, camera, sx, sy,
+                                    viewW, viewH, 0f, bottomChromePx,
+                                )
+                            }
+                        },
                         onViewportChanged = { w, h -> viewW = w; viewH = h },
                         modifier = Modifier.fillMaxSize(),
                     )
+
                     Column(
                         Modifier
                             .align(Alignment.BottomCenter)
+                            // OUTERMOST of the size-affecting modifiers, so the
+                            // measurement includes the inset padding below — the
+                            // canvas is full-bleed under the gesture pill, so that
+                            // padding is unusable board too.
+                            .onGloballyPositioned {
+                                bottomChromePx = maxOf(bottomChromePx, it.size.height.toFloat())
+                            }
                             .fillMaxWidth()
                             // The board draws under the gesture pill; its chrome
                             // must not. Horizontal too, for a landscape nav bar
@@ -198,7 +304,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     containerColor = MaterialTheme.colorScheme.primary,
                                 ) {
                                     Text(
-                                        "Retry champion move",
+                                        "Retry ${MoveText.shortOpponent(state.opponentName)} move",
                                         Modifier.padding(horizontal = 16.dp),
                                         fontSize = 14.sp,
                                     )
@@ -206,23 +312,26 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                             }
                         }
                         ActionButtons(ui, state, vm)
-                        StatusBar(ui, state)
+                        StatusBar(ui, state, landscape)
                     }
+
                     // The banners hang below the HUD, which has already cleared the
                     // status bar; only the horizontal sides are still theirs to dodge.
-                    val bannerModifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
-                        )
-                    if (ui.thinking) {
-                        ThinkingBanner(ui, state, bannerModifier)
-                    }
-                    ui.error?.let { err ->
-                        ErrorBanner(err, vm::clearError, bannerModifier)
-                    }
-                    ui.saveMismatch?.let { note ->
-                        MismatchBanner(note, vm::dismissSaveMismatch, bannerModifier)
+                    // Stacked in one column (they used to be three independent
+                    // TopCenter children, which overlapped when two were up at once)
+                    // and measured as a unit for the fit inset.
+                    Column(
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                            ),
+                    ) {
+                        if (ui.thinking) ThinkingBanner(ui, state, Modifier)
+                        ui.error?.let { err -> ErrorBanner(err, vm::clearError, Modifier) }
+                        ui.saveMismatch?.let { note ->
+                            MismatchBanner(note, vm::dismissSaveMismatch, Modifier)
+                        }
                     }
                 }
             }
@@ -243,11 +352,11 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     if (confirmLeave) {
         AlertDialog(
             onDismissRequest = { confirmLeave = false },
-            title = { Text("Champion is thinking") },
+            title = { Text("${MoveText.shortOpponent(state?.opponentName ?: "")} is thinking") },
             text = {
                 Text(
                     "Leave anyway? The move will be discarded — the game resumes " +
-                        "from your last position and the champion thinks again."
+                        "from your last position and the opponent thinks again."
                 )
             },
             confirmButton = {
@@ -281,51 +390,236 @@ internal fun formatSeconds(seconds: Double): String =
  * player would recognise, so the HUD now reports the two quantities that are
  * unambiguous and directly countable on the board.
  *
- * [tilesRemaining] is the bridge's `k_remaining` — undrawn deck plus the tile in
- * hand — and [placed] is simply how many tiles are on the board, so neither needs
- * a hardcoded deck size to be honest.
+ * [tilesRemaining] is [GameState.tilesLeft] — NOT the raw bridge field, which
+ * double-counts the tile in hand for the whole meeple sub-phase — and [placed] is
+ * simply how many tiles are on the board, so the two always sum to the deck size
+ * and neither needs that size hardcoded to be honest.
  */
 internal fun tilesLeftLabel(tilesRemaining: Int): String =
     "$tilesRemaining tile${if (tilesRemaining == 1) "" else "s"} left"
 
 internal fun tilesPlacedLabel(placed: Int): String = "$placed placed"
 
-/**
- * Approximate heights of the chrome floating over the board canvas: the banner
- * strip at the top, and the action-button row plus status bar at the bottom.
- *
- * Fixed dp rather than measured values on purpose — this only decides *whether* to
- * ease the board towards a cell, so being a few dp out never produces a visibly
- * wrong result, and threading real measurements through would mean hoisting layout
- * state out of two child composables for no gain.
- */
-private val TOP_OVERLAY = 96.dp
-private val BOTTOM_OVERLAY = 132.dp
+// --------------------------------------------------------------------------- //
+// Camera                                                                       //
+// --------------------------------------------------------------------------- //
+
+/** Comfort slack, in px, before a cell counts as "off-screen". */
+private const val FOCUS_MARGIN = 12f
+
+/** Comfort slack for the whole-board test. Smaller, so a board that merely
+ *  touches the edges is not re-fitted every single move. */
+private const val BOARD_MARGIN = 4f
 
 /**
- * Ease the board so [cell] is centred — but only when it is not comfortably in
- * view already. A no-op for a null cell, a zero viewport, or a cell that is
- * already visible, so both callers can invoke it unconditionally.
+ * Below this scale the meeple slots are too close together to aim at.
+ *
+ * Calibrated on device, not guessed: adjacent slots are a quarter-tile apart, so
+ * at the opening fit (scale ~1.5 on a 1080px phone) they are only ~38px — about
+ * 13dp — from each other, well under the 48dp minimum. The trigger therefore has
+ * to sit ABOVE the natural whole-board scale or the close-up never fires when it
+ * is most needed.
  */
-private suspend fun recentreIfOffscreen(
-    cell: Cell?,
+private const val MEEPLE_ZOOM_TRIGGER = 1.9f
+
+/** ...and this is where the close-up takes them: a quarter-tile gap becomes ~58px
+ *  (~21dp), which with the enlarged dots is a target a thumb can actually find. */
+private const val MEEPLE_ZOOM_TARGET = 2.3f
+
+/** Double-tap zoom-in factor, relative to the whole-board fit. */
+private const val DOUBLE_TAP_FACTOR = 2f
+
+/** What the automatic camera should do after a placement. */
+internal enum class CameraMove { NONE, REFIT, RECENTRE }
+
+/**
+ * The automatic-camera rule table, as a pure function so it can be pinned by a
+ * JVM test instead of only by playing a game.
+ *
+ * Read it as a priority list:
+ *
+ *  * the board no longer fits **and** either the player has not taken the camera
+ *    or the move they just made is out of sight → **re-fit**. The second half is
+ *    what stops manual control from becoming a trap: once the camera has to move
+ *    anyway, fitting is strictly better than panning blind;
+ *  * the board fits but the new tile is off-screen (or tucked under the chrome)
+ *    → **recentre** at the current scale, the original round-1 behaviour;
+ *  * otherwise → **nothing**. Doing nothing is the common case and the whole
+ *    reason this is a decision function rather than an unconditional fit.
+ */
+internal fun cameraDecision(
+    boardVisible: Boolean,
+    focusVisible: Boolean,
+    userAdjusted: Boolean,
+    hasFocus: Boolean,
+): CameraMove = when {
+    !boardVisible && (!userAdjusted || !focusVisible) -> CameraMove.REFIT
+    !focusVisible && hasFocus -> CameraMove.RECENTRE
+    else -> CameraMove.NONE
+}
+
+/** Mutable, non-composable camera bookkeeping. Not `State`: nothing recomposes
+ *  on it, and making it observable would only invite a recomposition loop. */
+private class CameraPolicy {
+    /** The player has pinched, panned or double-tapped since the last automatic
+     *  fit. Suppresses the *re-fit* rule (but not the off-screen recentre — if the
+     *  camera has to move anyway, moving it to a good place is strictly better). */
+    var userAdjusted: Boolean = false
+
+    /** Where the view was before the meeple close-up, to be restored after. */
+    var preMeeple: BoardTransform? = null
+
+    /** The bridge generation the opening fit was taken for. Distinguishes "a new
+     *  game started" from "the chrome re-measured", which look identical to a
+     *  LaunchedEffect key but must not be treated the same. */
+    var fittedGeneration: Int = -1
+}
+
+private suspend fun animateTransform(
     transformState: MutableState<BoardTransform>,
+    to: BoardTransform,
+    durationMs: Int = 320,
+) {
+    val from = transformState.value
+    animate(0f, 1f, animationSpec = tween(durationMs)) { f, _ ->
+        transformState.value = lerpTransform(from, to, f)
+    }
+}
+
+/**
+ * The whole automatic-camera policy, run after every placement (and whenever the
+ * meeple sub-phase opens or closes).
+ *
+ * The bug this replaces: the fit ran **once**, at game start, and the only rule
+ * during play was "recentre on the AI's tile if it landed off-screen" — which
+ * pans at the *current* scale. So the board grew, the scale never followed, and
+ * by ~50 tiles half the position was off-screen or behind the status panel with
+ * no in-game way to get it back.
+ */
+private suspend fun settleCamera(
+    state: GameState,
+    focus: Cell?,
+    meepleFocus: Cell?,
+    transformState: MutableState<BoardTransform>,
+    camera: CameraPolicy,
     viewW: Float,
     viewH: Float,
     insetTop: Float,
     insetBottom: Float,
 ) {
-    if (cell == null || viewW <= 0f || viewH <= 0f) return
-    val from = transformState.value
-    if (from.isCellVisible(
-            cell, viewW, viewH, margin = 12f,
-            insetTop = insetTop, insetBottom = insetBottom,
+    if (viewW <= 0f || viewH <= 0f) return
+
+    // -- rule 3: keep the board visible -------------------------------------
+    // Skipped while the meeple close-up is up: the view is deliberately zoomed in
+    // on one tile, and re-fitting here would fight it. The restore below hands
+    // control back.
+    if (camera.preMeeple == null) {
+        val from = transformState.value
+        val placed = BoardBounds.of(state.board.map { it.cell })
+        val decision = cameraDecision(
+            boardVisible = placed == null || from.isBoundsVisible(
+                placed, viewW, viewH, BOARD_MARGIN, insetTop, insetBottom,
+            ),
+            focusVisible = focus == null || from.isCellVisible(
+                focus, viewW, viewH, FOCUS_MARGIN, insetTop, insetBottom,
+            ),
+            userAdjusted = camera.userAdjusted,
+            hasFocus = focus != null,
         )
-    ) return
-    val to = BoardTransform.centeredOn(cell, from.scale, viewW, viewH)
-    animate(0f, 1f, animationSpec = tween(320)) { f, _ ->
-        transformState.value = lerpTransform(from, to, f)
+        when (decision) {
+            CameraMove.REFIT -> {
+                val bounds = state.boundsWithMargin()?.atLeast(7)
+                if (bounds != null) {
+                    animateTransform(
+                        transformState,
+                        BoardTransform.fit(bounds, viewW, viewH, insetTop, insetBottom),
+                    )
+                    camera.userAdjusted = false
+                }
+            }
+            CameraMove.RECENTRE -> animateTransform(
+                transformState,
+                BoardTransform.centeredOn(
+                    focus!!, from.scale, viewW, viewH, insetTop, insetBottom,
+                ),
+            )
+            CameraMove.NONE -> Unit
+        }
     }
+
+    // -- rule 4: the meeple close-up ----------------------------------------
+    if (meepleFocus != null) {
+        if (camera.preMeeple != null) return          // already zoomed in
+        if (transformState.value.scale >= MEEPLE_ZOOM_TRIGGER) return
+        camera.preMeeple = transformState.value
+        animateTransform(
+            transformState,
+            BoardTransform.centeredOn(
+                meepleFocus, MEEPLE_ZOOM_TARGET, viewW, viewH, insetTop, insetBottom,
+            ),
+            durationMs = 220,
+        )
+    } else {
+        val back = camera.preMeeple ?: return
+        camera.preMeeple = null
+        // Not if the player took over during the sub-phase — they zoomed in to look
+        // at something and pulling the rug is the rudest thing the camera can do.
+        if (!camera.userAdjusted) animateTransform(transformState, back, durationMs = 220)
+    }
+}
+
+/** The "fit board" button, and the double-tap zoom-out: back to the whole board. */
+private suspend fun fitNow(
+    state: GameState?,
+    transformState: MutableState<BoardTransform>,
+    camera: CameraPolicy,
+    viewW: Float,
+    viewH: Float,
+    insetTop: Float,
+    insetBottom: Float,
+) {
+    val bounds = state?.boundsWithMargin()?.atLeast(7) ?: return
+    if (viewW <= 0f || viewH <= 0f) return
+    camera.preMeeple = null
+    camera.userAdjusted = false
+    animateTransform(
+        transformState,
+        BoardTransform.fit(bounds, viewW, viewH, insetTop, insetBottom),
+    )
+}
+
+/**
+ * Double-tap: toggle between the whole-board fit and a close-up anchored on the
+ * tapped point.
+ *
+ * Only reachable from a tap that hit nothing interactive (see [BoardCanvas]) —
+ * tapping the same legal cell twice already means "next rotation", and a Compose
+ * `onDoubleTap` would have put every single tap behind a ~300 ms timeout to
+ * disambiguate. Immediate cell selection is worth more than a universal gesture.
+ */
+private suspend fun toggleZoom(
+    state: GameState?,
+    transformState: MutableState<BoardTransform>,
+    camera: CameraPolicy,
+    sx: Float,
+    sy: Float,
+    viewW: Float,
+    viewH: Float,
+    insetTop: Float,
+    insetBottom: Float,
+) {
+    val bounds = state?.boundsWithMargin()?.atLeast(7) ?: return
+    if (viewW <= 0f || viewH <= 0f) return
+    val fitted = BoardTransform.fit(bounds, viewW, viewH, insetTop, insetBottom)
+    val cur = transformState.value
+    if (cur.scale > fitted.scale * 1.35f) {
+        fitNow(state, transformState, camera, viewW, viewH, insetTop, insetBottom)
+        return
+    }
+    val target = (fitted.scale * DOUBLE_TAP_FACTOR).coerceIn(MIN_SCALE, MAX_SCALE)
+    camera.userAdjusted = true
+    camera.preMeeple = null
+    animateTransform(transformState, cur.gesture(sx, sy, 0f, 0f, zoom = target / cur.scale))
 }
 
 // --------------------------------------------------------------------------- //
@@ -333,7 +627,13 @@ private suspend fun recentreIfOffscreen(
 // --------------------------------------------------------------------------- //
 
 @Composable
-private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
+private fun GameHud(
+    ui: GameUiState,
+    state: GameState,
+    assets: TileAssets?,
+    landscape: Boolean,
+    onFit: () -> Unit,
+) {
     // The inset goes on the Row, not the Surface: the Surface keeps painting its
     // tonal background all the way up behind the status bar (so the clock sits on
     // the HUD's colour, not on a torn edge), while the content starts below it.
@@ -346,7 +646,7 @@ private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
                         WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
                     ),
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = if (landscape) 3.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -356,13 +656,18 @@ private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
             // parenthetical; the full name (and the budget note) stay in the status
             // bar and the end-of-game dialog, where the warning belongs.
             ScoreChip(
-                state.opponentName.substringBefore('(').trim().take(14),
+                MoveText.shortOpponent(state.opponentName).take(14),
                 state.aiScore, state.aiMeeples, CarcColors.Ai,
             )
             Spacer(Modifier.weight(1f))
+            // In the HUD rather than floating over the canvas, because the Scaffold
+            // already reserves the top bar's height — a button anywhere on the board
+            // occludes it, and at the right edge it sat squarely on a legal cell.
+            FitBoardButton(onFit)
+            Spacer(Modifier.width(2.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    tilesLeftLabel(state.tilesRemaining),
+                    tilesLeftLabel(state.tilesLeft),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -378,7 +683,7 @@ private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
             // The tile in hand, shown at the rotation the ghost is currently
             // aiming so the thumbnail and the board agree.
             if (state.isHumanTurn && state.isTilePhase && assets != null) {
-                NextTileThumb(state, ui.ghost?.rotation ?: 0, assets)
+                NextTileThumb(state, ui.ghost?.rotation ?: 0, assets, landscape)
             }
         }
     }
@@ -410,9 +715,14 @@ private fun ScoreChip(label: String, score: Int, meeples: Int, colour: Color) {
 }
 
 @Composable
-private fun NextTileThumb(state: GameState, rotation: Int, assets: TileAssets) {
+private fun NextTileThumb(
+    state: GameState,
+    rotation: Int,
+    assets: TileAssets,
+    landscape: Boolean,
+) {
     val bmp = assets.tile(state.nextTile?.image) ?: return
-    Canvas(Modifier.size(44.dp)) {
+    Canvas(Modifier.size(if (landscape) 34.dp else 44.dp)) {
         // Same clockwise rule as the board (see drawTileArt).
         rotate(90f * rotation, pivot = Offset(size.width / 2f, size.height / 2f)) {
             drawImage(
@@ -427,6 +737,42 @@ private fun NextTileThumb(state: GameState, rotation: Int, assets: TileAssets) {
 // --------------------------------------------------------------------------- //
 // Overlays                                                                     //
 // --------------------------------------------------------------------------- //
+
+/**
+ * Re-fit the board — the in-game recovery the round-2 build had no equivalent of
+ * (no fit control, and double-tap did nothing).
+ *
+ * A drawn glyph rather than a font character or a Material icon: the icon set
+ * shipped with the app does not carry a "fit to bounds" mark, and a Unicode
+ * box-corner glyph renders as tofu on a device without it.
+ */
+@Composable
+private fun FitBoardButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val tint = MaterialTheme.colorScheme.onSecondaryContainer
+    SmallFloatingActionButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Canvas(Modifier.size(20.dp)) { fitGlyph(tint) }
+    }
+}
+
+/** Four corner brackets around a centre dot — the universal "frame it" mark. */
+private fun DrawScope.fitGlyph(colour: Color) {
+    val s = size.minDimension
+    val w = s * 0.11f
+    val arm = s * 0.30f
+    val lo = w / 2f                 // inset so the round caps are not clipped
+    val hi = s - lo
+    fun line(x1: Float, y1: Float, x2: Float, y2: Float) =
+        drawLine(colour, Offset(x1, y1), Offset(x2, y2), w, StrokeCap.Round)
+    line(lo, lo + arm, lo, lo); line(lo, lo, lo + arm, lo)
+    line(hi - arm, lo, hi, lo); line(hi, lo, hi, lo + arm)
+    line(hi, hi - arm, hi, hi); line(hi, hi, hi - arm, hi)
+    line(lo + arm, hi, lo, hi); line(lo, hi, lo, hi - arm)
+    drawCircle(colour, radius = s * 0.09f, center = Offset(s / 2f, s / 2f))
+}
 
 @Composable
 private fun LoadingPane(ui: GameUiState) {
@@ -493,11 +839,12 @@ private fun ThinkingBanner(ui: GameUiState, state: GameState, modifier: Modifier
     Card(modifier.padding(12.dp).fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
             val elapsed = p?.elapsedS?.toInt() ?: 0
-            // The ETA is a rolling mean of this session's last few moves, so it
-            // is only shown once there IS one — never a guess from the preset.
+            // The ETA is a rolling mean of this session's last few moves OF THE SAME
+            // KIND, so it is only shown once there is one — never a guess from the
+            // preset, and never a meeple-decision mean during a tile search.
             val eta = ui.etaSeconds?.let { " of ~${formatSeconds(it)}" } ?: ""
             Text(
-                "${state.opponentName} is thinking… ${elapsed}s$eta",
+                "${MoveText.shortOpponent(state.opponentName)} is thinking… ${elapsed}s$eta",
                 fontWeight = FontWeight.Medium,
             )
             Spacer(Modifier.height(6.dp))
@@ -569,6 +916,8 @@ private fun ActionButtons(ui: GameUiState, state: GameState, vm: GameViewModel) 
                 containerColor = MaterialTheme.colorScheme.primary,
             ) { Text("✓", fontSize = 22.sp) }
         } else if (showSkip) {
+            // Rendered but inert for GameViewModel.PHASE_LOCK_MS — see
+            // GameUiState.phaseLock. Hiding it instead would make the row jump.
             FloatingActionButton(onClick = vm::skipMeeple) {
                 Text("Skip meeple", Modifier.padding(horizontal = 12.dp), fontSize = 14.sp)
             }
@@ -577,37 +926,52 @@ private fun ActionButtons(ui: GameUiState, state: GameState, vm: GameViewModel) 
 }
 
 @Composable
-private fun StatusBar(ui: GameUiState, state: GameState) {
+private fun StatusBar(ui: GameUiState, state: GameState, landscape: Boolean) {
     // `ui.ghost` has a custom getter, so it is read into a local before use
     // (no smart cast on a property getter).
     val ghost = ui.ghost
+    val opponent = MoveText.shortOpponent(state.opponentName)
     val text = when {
         state.isTerminated -> state.result?.verdict ?: "Game over."
-        ui.aiFailed -> "The champion's move failed — retry, or press Back to leave."
-        ui.thinking -> "${state.opponentName} is thinking…"
+        ui.aiFailed -> "$opponent's move failed — retry, or press Back to leave."
+        ui.thinking -> "$opponent is thinking…"
         ui.busy -> "…"
-        !state.isHumanTurn -> "${state.opponentName}'s turn"
+        !state.isHumanTurn -> "$opponent's turn"
         state.isTilePhase && ghost != null ->
-            // 1-based POSITION in the legal list, not the raw engine rotation value:
-            // the legal set is often sparse ({1,3}), which printed as "Rotation 3 of 2".
-            "Rotation ${ghost.index + 1} of ${ghost.rotationCount} — ✓ to place, ⟳ to rotate"
+            MoveText.tilePhaseHint(ghost.index, ghost.rotationCount)
         state.isTilePhase -> "Your move — tap a highlighted square to place the tile"
         state.isMeeplePhase -> "Place a meeple, or skip"
         else -> ""
     }
     val last = state.aiLastMove
+    val lastLine = last?.let {
+        MoveText.lastMoveLine(state.opponentName, it.describe, it.elapsedS)
+    }
     Surface(
         Modifier.fillMaxWidth(),
         tonalElevation = 3.dp,
     ) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-            Text(text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            if (last != null) {
-                val secs = last.elapsedS?.let { " (${"%.1f".format(it)}s)" } ?: ""
-                Text("Last champion move: ${last.describe}$secs", fontSize = 10.sp)
+        // Landscape has ~40% of the vertical room and the same three lines to
+        // print, so they share a row instead of stacking.
+        if (landscape) {
+            Row(
+                Modifier.padding(horizontal = 12.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(text, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                lastLine?.let { Text(it, fontSize = 10.sp, maxLines = 1) }
+                state.budgetNote?.let {
+                    Text(it, fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.error)
+                }
             }
-            state.budgetNote?.let {
-                Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.error)
+        } else {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                Text(text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                lastLine?.let { Text(it, fontSize = 10.sp) }
+                state.budgetNote?.let {
+                    Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
@@ -627,7 +991,7 @@ private fun ResultDialog(
     val you = result.scores.getOrElse(humanPlayer) { 0 }
     val them = result.scores.getOrElse(1 - humanPlayer) { 0 }
     // Same parenthetical trim as the HUD chip; the full name is printed below.
-    val themLabel = opponentName.substringBefore('(').trim().ifEmpty { "Champion" }
+    val themLabel = MoveText.shortOpponent(opponentName)
     AlertDialog(
         onDismissRequest = { },
         title = { Text(result.verdict) },
@@ -638,6 +1002,10 @@ private fun ResultDialog(
                     if (result.diff == 0) "A dead heat."
                     else "Margin: ${result.diff} point${if (result.diff == 1) "" else "s"}",
                 )
+                result.breakdown?.let { rows ->
+                    Spacer(Modifier.height(8.dp))
+                    ScoreBreakdown(rows, humanPlayer, themLabel)
+                }
                 Spacer(Modifier.height(8.dp))
                 Text("Opponent: $opponentName", fontSize = 12.sp)
                 result.budgetNote?.let {
@@ -649,4 +1017,46 @@ private fun ResultDialog(
         confirmButton = { TextButton(onClick = onNewGame) { Text("New game") } },
         dismissButton = { TextButton(onClick = onHome) { Text("Back to home") } },
     )
+}
+
+/**
+ * Where the end-of-game jump came from.
+ *
+ * Base + Farmers scores most of its points in one lump at the last tile — farms
+ * pay out, and every unfinished city/road/monastery pays a reduced rate — so the
+ * scoreboard can go 11–56 to 15–106 in a single step with nothing on screen to
+ * explain it. This is that step, itemised.
+ */
+@Composable
+private fun ScoreBreakdown(rows: List<ScoreBreakdownRow>, humanPlayer: Int, themLabel: String) {
+    val you = rows.getOrNull(humanPlayer)
+    val them = rows.getOrNull(1 - humanPlayer)
+    if (you == null || them == null) return
+    @Composable
+    fun line(label: String, a: Int, b: Int, bold: Boolean = false) {
+        Row(Modifier.fillMaxWidth()) {
+            Text(
+                label, Modifier.weight(1f), fontSize = 12.sp,
+                fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            )
+            Text(
+                "$a", Modifier.width(44.dp), fontSize = 12.sp,
+                fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            )
+            Text(
+                "$b", Modifier.width(44.dp), fontSize = 12.sp,
+                fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            )
+        }
+    }
+    Text("How it finished", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    Row(Modifier.fillMaxWidth()) {
+        Text("", Modifier.weight(1f), fontSize = 11.sp)
+        Text("You", Modifier.width(44.dp), fontSize = 11.sp)
+        Text(themLabel.take(8), Modifier.width(44.dp), fontSize = 11.sp)
+    }
+    line("Scored during play", you.duringPlay, them.duringPlay)
+    line("Unfinished features", you.incomplete, them.incomplete)
+    line("Farms", you.farms, them.farms)
+    line("Total", you.total, them.total, bold = true)
 }

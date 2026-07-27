@@ -108,12 +108,27 @@ data class GameUiState(
     /** The persisted difficulty preset; the next [GameViewModel.newGame] uses it. */
     val difficulty: Difficulty = Difficulty.DEFAULT,
     /**
-     * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations, in
-     * seconds — `null` until the champion has moved once this session.
+     * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations **for
+     * the decision now in flight**, in seconds — `null` until there is a usable
+     * sample of that kind.
      */
     val etaSeconds: Double? = null,
-    /** The cell the human last committed a tile to (drives the auto-recentre). */
-    val lastHumanTile: Cell? = null,
+    /**
+     * The cell of the most recently placed tile, whoever placed it — the single
+     * input to the auto-camera. Was two fields (`lastHumanTile` here and
+     * `GameState.aiLastTile` from the bridge), which forced two competing
+     * LaunchedEffects that could animate the board in different directions at
+     * once; the bridge's `ai_last_tile` also *persists* across the human's reply,
+     * so "the AI's last tile" is not the same thing as "the last tile placed".
+     */
+    val lastPlacedTile: Cell? = null,
+    /**
+     * Set for [GameViewModel.PHASE_LOCK_MS] after the human's tile lands and the
+     * meeple phase opens. Confirm-✓ and Skip-meeple occupy the same screen
+     * position in consecutive phases, so an impatient second tap on ✓ used to
+     * land on Skip and silently forfeit the meeple.
+     */
+    val phaseLock: Boolean = false,
 ) {
     /**
      * The live ghost, or `null` when nothing is aimed. Recomputed from the
@@ -192,13 +207,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private var opJob: Job? = null
     private var progressJob: Job? = null
+    private var phaseLockJob: Job? = null
 
     /**
-     * Durations of the last [ETA_WINDOW] AI moves, oldest first. Session-scoped
-     * (cleared by [resetSession]) because a preset change makes older samples
-     * describe a different search budget entirely.
+     * Durations of the last [ETA_WINDOW] AI moves, oldest first, **bucketed by the
+     * phase the decision was made in**. Session-scoped because a preset change
+     * makes older samples describe a different search budget entirely.
+     *
+     * Bucketed, not one window, because the champion's turn is two `ai_move` calls
+     * on the same seat — a full search for the tile, then a near-instant meeple
+     * decision. Averaging them together dragged the mean to ~0.02s and produced the
+     * "2s of ~0.0s" read-out: an ETA for the wrong kind of decision entirely.
      */
-    private val aiDurations = ArrayDeque<Double>()
+    private val aiDurations = HashMap<String, ArrayDeque<Double>>()
 
     init {
         // The persisted preset is the source of truth for the whole app; the
@@ -306,7 +327,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // The save carries its OWN opponent/sims/k_dets, so resuming keeps the
         // difficulty the game was started at regardless of the current setting.
         aiDurations.clear()
-        _ui.update { it.copy(busy = true, error = null, etaSeconds = null, lastHumanTile = null) }
+        _ui.update { it.copy(busy = true, error = null, etaSeconds = null, lastPlacedTile = null) }
         runBridge(e) { PythonBridge.restoreGame(json) }
     }
 
@@ -348,21 +369,23 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // selection, and the board state carries no "human last tile" field. The
         // cell is all the recentre needs, and each placement is a fresh cell (the
         // square is occupied afterwards), so the value always changes.
-        _ui.update { it.copy(lastHumanTile = ghost.cell) }
+        _ui.update { it.copy(lastPlacedTile = ghost.cell) }
         applyHumanAction(ghost.actionId)
     }
 
     // ----------------------------------------------------- human meeple phase
 
     fun onMeepleSlot(slot: MeepleSlot) {
-        if (!_ui.value.canInteract) return
+        if (!_ui.value.canInteract || _ui.value.phaseLock) return
         if (_ui.value.state?.isMeeplePhase != true) return
         applyHumanAction(slot.actionId)
     }
 
     fun skipMeeple() {
         val st = _ui.value.state ?: return
-        if (!_ui.value.canInteract || !st.isMeeplePhase) return
+        // `phaseLock`: Skip sits exactly where Confirm-✓ was a frame ago, so the
+        // second half of a double-tap on ✓ would otherwise forfeit the meeple.
+        if (!_ui.value.canInteract || _ui.value.phaseLock || !st.isMeeplePhase) return
         val pass = st.legal.meeplePassId ?: return
         applyHumanAction(pass)
     }
@@ -498,6 +521,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val st = BridgeJson.state(obj)
+        val wasMeeplePhase = _ui.value.state?.isMeeplePhase == true
         // `opActive` stays true: the bridge call is done, but persist (and possibly
         // the whole AI leg) still is not, and a tap accepted now would be dropped.
         _ui.update {
@@ -507,6 +531,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     ?.optString("message").orEmpty().ifEmpty { null } ?: it.saveMismatch,
             )
         }
+        // The human's tile just landed and the meeple phase is now open under their
+        // finger: swallow taps for a moment (see [GameUiState.phaseLock]).
+        if (st.isHumanTurn && st.isMeeplePhase && !wasMeeplePhase) armPhaseLock()
         afterState(e, st)
     }
 
@@ -564,7 +591,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 return
             }
 
-            _ui.update { it.copy(thinking = true, progress = null) }
+            // The ETA is published BEFORE the search, from the bucket for the kind
+            // of decision about to be made — so the banner never advertises a
+            // meeple-decision mean while a full tile search is running.
+            val decisionPhase = st.phase
+            _ui.update {
+                it.copy(thinking = true, progress = null, etaSeconds = etaFor(decisionPhase))
+            }
             val myPoll = startProgressPoll()
             val raw = try {
                 PythonBridge.aiMove(st.generation)
@@ -613,9 +646,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             val next = BridgeJson.state(obj)
-            val eta = recordAiDuration(obj.optDouble("elapsed_s", Double.NaN))
+            recordAiDuration(decisionPhase, obj.optDouble("elapsed_s", Double.NaN))
             _ui.update {
-                it.copy(state = next, error = null, aiFailed = false, etaSeconds = eta)
+                it.copy(
+                    state = next, error = null, aiFailed = false,
+                    // `ai_last_tile` PERSISTS across the human's reply, so it only
+                    // counts as a fresh placement when it actually changed.
+                    lastPlacedTile = next.aiLastTile ?: it.lastPlacedTile,
+                )
             }
             if (next.isTerminated) {
                 saveStore.clear()
@@ -627,19 +665,46 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Feed one `ai_move` duration into the rolling window and return the new mean
-     * (or null if the sample was unusable, e.g. an older bridge without the field).
+     * Feed one `ai_move` duration into the rolling window for [phase].
      *
      * A *mean of the last few* rather than the last value alone: move cost swings
      * a lot with position (an endgame exact solve is nothing like a midgame
      * search), and a single sample makes the "~Ns" hint jump around enough to read
      * as broken.
      */
-    private fun recordAiDuration(seconds: Double): Double? {
-        if (!seconds.isFinite() || seconds <= 0.0) return _ui.value.etaSeconds
-        aiDurations.addLast(seconds)
-        while (aiDurations.size > ETA_WINDOW) aiDurations.removeFirst()
-        return aiDurations.average()
+    private fun recordAiDuration(phase: String, seconds: Double) {
+        if (!seconds.isFinite() || seconds <= 0.0) return
+        val window = aiDurations.getOrPut(phase) { ArrayDeque() }
+        window.addLast(seconds)
+        while (window.size > ETA_WINDOW) window.removeFirst()
+    }
+
+    /**
+     * The ETA to advertise for the next [phase] decision, or `null` for no suffix
+     * at all.
+     *
+     * Null in two cases, both of which used to print nonsense: no sample yet (the
+     * first think of a session), and a mean too small to survive one-decimal
+     * rounding — an "Instant" preset answers in ~20ms, and `"of ~0.0s"` beside a
+     * ticking elapsed counter reads as a broken estimate rather than as "fast".
+     */
+    private fun etaFor(phase: String): Double? =
+        aiDurations[phase]?.takeIf { it.isNotEmpty() }?.average()?.takeIf { it >= ETA_MIN_S }
+
+    /**
+     * Swallow input for [PHASE_LOCK_MS] (see [GameUiState.phaseLock]).
+     *
+     * The button is deliberately left on screen and merely inert: hiding it would
+     * make the row jump, and the whole complaint is about a tap that lands where
+     * the eye has not caught up yet.
+     */
+    private fun armPhaseLock() {
+        phaseLockJob?.cancel()
+        _ui.update { it.copy(phaseLock = true) }
+        phaseLockJob = viewModelScope.launch {
+            delay(PHASE_LOCK_MS)
+            _ui.update { it.copy(phaseLock = false) }
+        }
     }
 
     /** Start the 250 ms progress poll and return ITS job, so the caller can stop
@@ -676,6 +741,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        phaseLockJob?.cancel()
         stopProgressPoll()
         super.onCleared()
     }
@@ -687,7 +753,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         /** A 72-tile game is ~150 plies; anything past this is a bug, not a game. */
         private const val MAX_AI_STEPS = 400
 
-        /** How many AI move durations the ETA averages over. */
+        /** How many AI move durations the ETA averages over, per phase. */
         const val ETA_WINDOW = 5
+
+        /** Below this the "of ~Ns" suffix is suppressed rather than shown as 0.0s. */
+        const val ETA_MIN_S = 0.15
+
+        /** How long taps are swallowed across the tile -> meeple phase change. */
+        const val PHASE_LOCK_MS = 400L
     }
 }

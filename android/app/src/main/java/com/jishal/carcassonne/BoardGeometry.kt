@@ -134,11 +134,33 @@ data class BoardTransform(
         margin: Float = 0f,
         insetTop: Float = 0f,
         insetBottom: Float = 0f,
+    ): Boolean = isBoundsVisible(
+        BoardBounds(cell.row, cell.row, cell.col, cell.col),
+        viewW, viewH, margin, insetTop, insetBottom,
+    )
+
+    /**
+     * True when the whole of [bounds] is inside the usable viewport — the test the
+     * *growing board* needs, as opposed to [isCellVisible]'s single-tile test.
+     *
+     * A game-start fit goes stale as soon as the board outgrows it, and nothing in
+     * the old design ever noticed: the only camera rule was "recentre if the tile
+     * that just landed is off-screen", which happily pans a board that is by then
+     * twice the size of the screen. This is the predicate that says "the player can
+     * no longer see the game".
+     */
+    fun isBoundsVisible(
+        bounds: BoardBounds,
+        viewW: Float,
+        viewH: Float,
+        margin: Float = 0f,
+        insetTop: Float = 0f,
+        insetBottom: Float = 0f,
     ): Boolean {
-        val x0 = worldToScreenX(cell.col * TILE)
-        val y0 = worldToScreenY(cell.row * TILE)
-        val x1 = x0 + TILE * scale
-        val y1 = y0 + TILE * scale
+        val x0 = worldToScreenX(bounds.minCol * TILE)
+        val y0 = worldToScreenY(bounds.minRow * TILE)
+        val x1 = worldToScreenX((bounds.maxCol + 1) * TILE)
+        val y1 = worldToScreenY((bounds.maxRow + 1) * TILE)
         return x0 >= margin &&
             y0 >= insetTop + margin &&
             x1 <= viewW - margin &&
@@ -146,32 +168,62 @@ data class BoardTransform(
     }
 
     companion object {
-        /** Scale-preserving recentre so [cell] sits in the middle of the viewport. */
-        fun centeredOn(cell: Cell, scale: Float, viewW: Float, viewH: Float): BoardTransform {
+        /**
+         * Scale-preserving recentre so [cell] sits in the middle of the *usable*
+         * viewport — the band between the top banners and the bottom action/status
+         * strip, not the raw canvas. Centring on the raw canvas is what pushed the
+         * subject of the move under the landscape status panel.
+         */
+        fun centeredOn(
+            cell: Cell,
+            scale: Float,
+            viewW: Float,
+            viewH: Float,
+            insetTop: Float = 0f,
+            insetBottom: Float = 0f,
+        ): BoardTransform {
             val cx = (cell.col + 0.5f) * TILE
             val cy = (cell.row + 0.5f) * TILE
-            return BoardTransform(scale, viewW / 2f - cx * scale, viewH / 2f - cy * scale)
+            val usableH = max(1f, viewH - insetTop - insetBottom)
+            return BoardTransform(
+                scale,
+                viewW / 2f - cx * scale,
+                insetTop + usableH / 2f - cy * scale,
+            )
         }
 
         /**
-         * Fit [bounds] into the viewport with [padding] px of slack, centred.
-         * Scale is clamped to [MIN_SCALE]..[MAX_SCALE], so a 1-tile board opens
-         * at 3x rather than absurdly zoomed.
+         * Fit [bounds] into the *usable* viewport with [padding] px of slack,
+         * centred. Scale is clamped to [MIN_SCALE]..[MAX_SCALE], so a 1-tile board
+         * opens at 3x rather than absurdly zoomed.
+         *
+         * [insetTop] / [insetBottom] are the measured heights of the chrome floating
+         * over the canvas. They must be subtracted *before* the scale is chosen, not
+         * after: fitting to the full height and then centring leaves the bottom rows
+         * of the board underneath the status panel, which is exactly what landscape
+         * play looked like.
          */
         fun fit(
             bounds: BoardBounds,
             viewW: Float,
             viewH: Float,
+            insetTop: Float = 0f,
+            insetBottom: Float = 0f,
             padding: Float = 24f,
         ): BoardTransform {
             val w = bounds.cols * TILE
             val h = bounds.rows * TILE
+            val usableH = max(1f, viewH - insetTop - insetBottom)
             val availW = max(1f, viewW - 2 * padding)
-            val availH = max(1f, viewH - 2 * padding)
+            val availH = max(1f, usableH - 2 * padding)
             val scale = min(availW / w, availH / h).coerceIn(MIN_SCALE, MAX_SCALE)
             val cx = (bounds.minCol * TILE + w / 2f)
             val cy = (bounds.minRow * TILE + h / 2f)
-            return BoardTransform(scale, viewW / 2f - cx * scale, viewH / 2f - cy * scale)
+            return BoardTransform(
+                scale,
+                viewW / 2f - cx * scale,
+                insetTop + usableH / 2f - cy * scale,
+            )
         }
     }
 }

@@ -86,12 +86,30 @@ data class AiLastMove(
     val elapsedS: Double?,
 )
 
+/**
+ * One seat's share of the final scoring pass, in ENGINE SEAT ORDER.
+ *
+ * `duringPlay + incomplete + farms == total` is a bridge-side invariant (the
+ * bridge drops the whole block rather than emit one that does not balance), so
+ * the UI can print it without re-deriving anything.
+ */
+data class ScoreBreakdownRow(
+    /** Points banked before the final pass — completed features, as they closed. */
+    val duringPlay: Int,
+    /** Cities/roads/monasteries still open at the end, scored at the reduced rate. */
+    val incomplete: Int,
+    val farms: Int,
+    val total: Int,
+)
+
 data class GameResult(
     val scores: List<Int>,
     val diff: Int,
     val winner: Int?,
     val verdict: String,
     val budgetNote: String?,
+    /** Null on any bridge that does not supply it, or when it did not balance. */
+    val breakdown: List<ScoreBreakdownRow>? = null,
 )
 
 /** The full UI state object (`get_state` / the tail of every mutating call). */
@@ -120,6 +138,26 @@ data class GameState(
 ) {
     val isTilePhase: Boolean get() = phase == "tiles"
     val isMeeplePhase: Boolean get() = phase == "meeples"
+
+    /**
+     * Tiles still to come, counted so that **`tilesLeft + board.size` is the same
+     * number at every instant of the game**.
+     *
+     * The bridge's `tiles_remaining` is `len(deck) + (1 if next_tile)` — the
+     * fair-agent `k_remaining` band, which is the right quantity for the search and
+     * the wrong one for the HUD. The engine does not clear `next_tile` when a tile
+     * is played (`StateUpdater.play_tile`); it is replaced later, by `draw_tile`, at
+     * the *end* of the meeple phase. So for the whole meeple sub-phase the tile the
+     * player just placed is counted twice — once on the board and once "in hand" —
+     * and the HUD read `36 tiles left / 37 placed` for a 72-tile game.
+     *
+     * Subtracting the in-hand tile during the meeple phase is the "delay the
+     * increment" fix without hardcoding a deck size: the pair stays consistent for
+     * any deck, including the tile-phase pass (which stays in `tiles` and keeps a
+     * genuinely unplaced tile in hand).
+     */
+    val tilesLeft: Int
+        get() = if (isMeeplePhase) (tilesRemaining - 1).coerceAtLeast(0) else tilesRemaining
 
     /** Score for the seat the human is sitting in. */
     val humanScore: Int get() = scores.getOrElse(humanPlayer) { 0 }
@@ -216,6 +254,16 @@ object BridgeJson {
                 winner = if (it.isNull("winner")) null else it.optInt("winner"),
                 verdict = it.optString("verdict", ""),
                 budgetNote = it.optNullableString("budget_note"),
+                breakdown = it.optJSONArray("breakdown")
+                    ?.map { row ->
+                        ScoreBreakdownRow(
+                            duringPlay = row.optInt("during_play"),
+                            incomplete = row.optInt("incomplete"),
+                            farms = row.optInt("farms"),
+                            total = row.optInt("total"),
+                        )
+                    }
+                    ?.takeIf { rows -> rows.isNotEmpty() },
             )
         },
     )

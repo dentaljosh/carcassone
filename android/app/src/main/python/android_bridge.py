@@ -371,6 +371,18 @@ class _Session:
         self.ai_last_tile: tuple[int, int] | None = None
         self.ai_last_move: dict | None = None
 
+        # The position BEFORE the most recent action, kept solely so the end-of-game
+        # breakdown can be reconstructed (see `_final_breakdown`). Free: the engine's
+        # `get_next_state` already deepcopies, so the previous Board was going to be
+        # discarded anyway — this just holds the reference instead of dropping it.
+        self.prev_board: Board | None = None
+        self.last_action: int | None = None
+        # Memoised `_final_breakdown` (the terminal `_state_dict` is rebuilt on
+        # every `get_state`, and the reconstruction is a deepcopy + a full
+        # feature traversal — not something to repeat on a poll).
+        self.breakdown: list[dict] | None = None
+        self.breakdown_done: bool = False
+
     # -- opponent construction (mirrors play_vs_tier1_gui.build_opponent) ----
     def _build_opponent(self) -> None:
         if self.opponent_kind == "tier1":
@@ -432,6 +444,8 @@ class _Session:
                 else meeple_pass_index(size))
 
     def apply(self, action_id: int) -> None:
+        self.prev_board = self.board
+        self.last_action = int(action_id)
         self.board, _ = self.game.get_next_state(self.board, int(action_id))
         self.action_log.append(int(action_id))
         self.turn += 1
@@ -549,6 +563,76 @@ def _legal_block(s: _Session) -> dict:
     return block
 
 
+def _final_breakdown(s: _Session, final_scores: list[int]) -> list[dict] | None:
+    """Split each seat's final score into (banked during play, unfinished, farms).
+
+    Base+Farmers pays most of its points in one lump on the last tile — farms
+    settle, and every still-open city/road pays a reduced rate — so the scoreboard
+    jumps (11-56 to 15-106 in the round-2 playtest) with nothing on screen to
+    explain it. This is that jump, itemised.
+
+    Why it needs the PREVIOUS board rather than the terminal one: the engine runs
+    the endgame pass *inside* the terminating move
+    (``StateUpdater._apply_action_to`` -> ``PointsCollector.count_final_scores``),
+    and that pass CONSUMES the placed meeples. By the time the bridge sees the
+    terminal state there is nothing left to attribute the points to. So the last
+    action is re-applied to a copy of the previous board with the final-scoring
+    pass stubbed for that one call, which leaves the meeple-intact terminal state
+    that ``aux_targets.extract_terminal_ownership`` documents as its input. Same
+    reconstruction ``selfplay`` already uses for its ownership labels; ``engine/``
+    is untouched and nothing here can reach the live session's board.
+
+    Best-effort by construction: anything unexpected — no previous board (a save
+    restored directly onto a terminal position), a reconstruction that does not
+    land terminal, or a split that does not add up — returns ``None`` and the
+    dialog simply omits the block. A breakdown that does not reconcile with the
+    score the player can see would be worse than no breakdown at all.
+    """
+    if s.prev_board is None or s.last_action is None:
+        return None
+    try:
+        import copy
+
+        from carcassonne_ai.aux_targets import extract_terminal_ownership
+        from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+
+        term = copy.deepcopy(s.prev_board)
+        # A private, cache-free Game: `apply_action_inplace` mutates the board it
+        # is given, and the session's Games carry a legal-moves cache that has no
+        # business seeing a throwaway state.
+        replay_game = Game()
+        orig_cfs = PointsCollector.count_final_scores
+        PointsCollector.count_final_scores = classmethod(lambda cls, game_state: None)
+        try:
+            replay_game.apply_action_inplace(term, int(s.last_action))
+        finally:
+            PointsCollector.count_final_scores = orig_cfs
+        if not term.state.is_terminated():
+            return None
+
+        n = len(final_scores)
+        during = [int(x) for x in term.state.scores][:n]
+        if len(during) != n:
+            return None
+        farms = [0] * n
+        incomplete = [0] * n
+        for r in extract_terminal_ownership(term.state):
+            bucket = farms if r.terrain == "farm" else incomplete
+            for w in r.winners:
+                if 0 <= w < n:
+                    bucket[w] += int(r.points)
+
+        rows = []
+        for p in range(n):
+            if during[p] + incomplete[p] + farms[p] != int(final_scores[p]):
+                return None
+            rows.append({"during_play": during[p], "incomplete": incomplete[p],
+                         "farms": farms[p], "total": int(final_scores[p])})
+        return rows
+    except Exception:
+        return None
+
+
 def _state_dict(s: _Session) -> dict:
     state = s.board.state
     terminated = bool(state.is_terminated())
@@ -589,8 +673,12 @@ def _state_dict(s: _Session) -> dict:
             winner = 0 if diff > 0 else 1
             verdict = ("You win!" if winner == s.human_player
                        else f"{s.opponent_name} wins.")
+        if not s.breakdown_done:
+            s.breakdown = _final_breakdown(s, scores)
+            s.breakdown_done = True
         d["result"] = {"scores": scores, "diff": abs(diff), "winner": winner,
-                       "verdict": verdict, "budget_note": s.budget_note}
+                       "verdict": verdict, "budget_note": s.budget_note,
+                       "breakdown": s.breakdown}
     return d
 
 
