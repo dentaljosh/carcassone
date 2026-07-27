@@ -144,6 +144,11 @@ from carcassonne_ai.action_space import (  # noqa: E402
     tile_pass_index,
 )
 from carcassonne_ai.game_wrapper import Board, Game  # noqa: E402
+# The intra-tile meeple grouping of record. It USED to be defined in this file; it moved
+# into the package (2026-07-27) when the search grew a MEEPLE-DEDUP mode that needs the
+# same definition, and a second copy would drift. Re-exported here so `feature_groups`
+# stays part of this module's API for existing importers (the census, tests/android).
+from carcassonne_ai.meeple_equiv import feature_groups  # noqa: E402,F401
 from wingedsheep.carcassonne.objects.actions.meeple_action import MeepleAction  # noqa: E402
 from wingedsheep.carcassonne.objects.actions.tile_action import TileAction  # noqa: E402
 from wingedsheep.carcassonne.objects.coordinate import Coordinate  # noqa: E402
@@ -273,77 +278,6 @@ def legal_meeple_indices(game: Game, board: Board) -> list[int]:
 def _terrain_name(tile, side: Side) -> str:
     t = tile.get_type(side)
     return t.name if t is not None else "GRASS"
-
-
-def feature_groups(tile) -> dict[str, int]:
-    """Map each meeple-able ``Side.value`` on ONE tile to an intra-tile feature id.
-
-    Two sides sharing an id are two openings onto the SAME feature, so a meeple on
-    either claims the same thing — the duplicate choice the UI should collapse to a
-    single dot. A city spanning two edges is the common case (``city=[[TOP, RIGHT]]``);
-    a straight road is the other (``road=[Connection(LEFT, RIGHT)]``).
-
-    Purely a READ of the tile model — no engine call, no board, no action space. The
-    champion still gets every action; this only tells the renderer which of them are
-    interchangeable.
-
-    The tile model is already in placed orientation: ``Tile.turn(n)`` rotates ``city``,
-    ``road`` and ``farms`` along with the art, and the board stores the rotated tile.
-    So the sides here are the sides as they appear on screen, and nothing needs
-    un-rotating.
-
-    Three structures, three rules:
-
-    * ``tile.city: [[Side]]`` — already grouped by the engine, one inner list per
-      connected city region. Adopt it verbatim.
-    * ``tile.road: [Connection]`` — one ``Connection(a, b)`` per road segment, so its
-      two endpoints are one feature. ``Side.CENTER`` endpoints are SKIPPED: they mark
-      a road dying mid-tile (a crossroads is four separate ``(side, CENTER)``
-      connections, which must stay four features) and CENTER is the monastery's own
-      slot, which a road must never be merged into.
-    * ``tile.farms: [FarmerConnection]`` — every ``farmer_positions`` entry of one
-      connection is an equivalent placement on the same field.
-
-    A monastery (``chapel``/``flowers``) is a feature of one slot, ``CENTER``.
-    Anything the model does not describe is simply absent from the returned map, and
-    ``meeple_slots_for`` gives it a private group — never a shared one.
-    """
-    groups: dict[str, int] = {}
-    nxt = 0
-    if tile is None:
-        return groups
-
-    for side_group in getattr(tile, "city", ()) or ():
-        touched = False
-        for side in side_group:
-            groups[side.value] = nxt
-            touched = True
-        if touched:
-            nxt += 1
-
-    for conn in getattr(tile, "road", ()) or ():
-        touched = False
-        for side in (conn.a, conn.b):
-            if side is None or side == Side.CENTER:
-                continue
-            groups[side.value] = nxt
-            touched = True
-        if touched:
-            nxt += 1
-
-    if getattr(tile, "chapel", False) or getattr(tile, "flowers", False):
-        groups[Side.CENTER.value] = nxt
-        nxt += 1
-
-    for farm in getattr(tile, "farms", ()) or ():
-        touched = False
-        for side in getattr(farm, "farmer_positions", ()) or ():
-            groups[side.value] = nxt
-            touched = True
-        if touched:
-            nxt += 1
-
-    return groups
 
 
 def format_action(idx: int, board: Board) -> str:

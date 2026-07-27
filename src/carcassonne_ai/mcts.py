@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from . import meeple_equiv
 from .game_wrapper import Board, Game
 
 
@@ -440,6 +441,7 @@ class NeuralMCTS:
         fair_isolate: bool = False,
         fpu_reduction: float | None = None,
         record_boards: bool = False,
+        meeple_dedup: bool | None = None,
     ):
         if game._legal_cache is None:
             game._legal_cache = {}
@@ -499,6 +501,24 @@ class NeuralMCTS:
         # DECISIONS 2026-06-04). Default False → eval/anchor searches keep the
         # lean per-node footprint; only the learner's self-play MCTS turns it on.
         self.record_boards = bool(record_boards)
+        # MEEPLE-DEDUP (flag-gated, default OFF — `CARCASSONNE_MEEPLE_DEDUP=1`).
+        # At a meeple-phase node the action space offers one slot per SIDE, so a
+        # feature with two openings on the just-placed tile (a city spanning two
+        # edges, a straight road, one farm field reachable from two corners) is
+        # offered as two actions that are GAME-IDENTICAL forever after — features
+        # only merge, never split. Their successor boards encode differently, so the
+        # existing byte-identical-transposition machinery (`child_canon` /
+        # `child_aliases`) cannot see them and the search builds duplicate subtrees
+        # with the prior mass split between them. The census measured this at 60.75%
+        # of the champion's real meeple decisions.
+        #
+        # When on, `_expand_with_priors` keeps only the lowest-action-id member of
+        # each equivalence group, BEFORE the priors are normalized and before any
+        # child exists — so the mass is not split and the duplicate subtree is never
+        # created. `None` = inherit the process-wide flag; True/False overrides it
+        # per agent, which is what lets a dedup-ON candidate face a dedup-OFF
+        # champion inside ONE worker process.
+        self.meeple_dedup = meeple_equiv.resolve(meeple_dedup)
         self.rng = random.Random(seed)
         self._np_rng = np.random.default_rng(seed)
         self.dirichlet_alpha = float(dirichlet_alpha)
@@ -1047,6 +1067,37 @@ class NeuralMCTS:
         if not math.isfinite(v):
             v = 0.0
         v = max(-1.0, min(1.0, v))
+
+        # --- MEEPLE-DEDUP (default OFF; see __init__) ------------------------ #
+        # THE choke point. Every node in this tree — the root (search() and
+        # _gumbel_root_search call _expand_with_priors directly) and every interior
+        # node (_expand delegates here) — gets its action list from exactly these two
+        # lines, so narrowing `legal`/`legal_priors` here is sufficient AND complete:
+        # PUCT only ever selects from `node.valid_actions`, so a dropped duplicate is
+        # never selected, never expanded, and never becomes a child. The true legal
+        # mask from `game.get_valid_moves` is untouched — other consumers (the UI, the
+        # solver, the agents' own legality checks) still see every action.
+        if self.meeple_dedup:
+            dd = meeple_equiv.dedup_legal(board, legal)
+            if dd is not None:
+                keep, folds = dd
+                if meeple_equiv.PRIOR_MODE == "fold":
+                    # The group competes ONCE carrying the mass the evaluator gave the
+                    # concept — the same convention `_link_child` uses for byte-
+                    # identical aliases (`prior_bonus`). `legal_priors` is always a
+                    # fresh array here (a fancy-indexed copy or np.full), so the
+                    # in-place add cannot touch the evaluator's own prior vector.
+                    for dst, src in folds:
+                        legal_priors[dst] += legal_priors[src]
+                legal = legal[keep]
+                legal_priors = legal_priors[keep]
+                s2 = float(legal_priors.sum())
+                if s2 > 0 and math.isfinite(s2):
+                    legal_priors = legal_priors / s2
+                else:
+                    legal_priors = np.full(
+                        legal.size, 1.0 / legal.size, dtype=np.float32
+                    )
 
         node.valid_actions = [int(a) for a in legal]
         node.priors = {int(a): float(p) for a, p in zip(legal, legal_priors)}

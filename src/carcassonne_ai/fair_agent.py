@@ -428,7 +428,8 @@ class FairHeuristicPriorAgent:
                  batch_size: int = 1, batch_evaluator=None,
                  virtual_loss: float = 1.0,
                  oracle_prior_mult: int | None = None,
-                 oracle_prior_eps_coef: float = 1e-3):
+                 oracle_prior_eps_coef: float = 1e-3,
+                 meeple_dedup: bool | None = None):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -477,6 +478,15 @@ class FairHeuristicPriorAgent:
         self._batch_size = int(batch_size)
         self._batch_evaluator = batch_evaluator
         self._virtual_loss = float(virtual_loss)
+        # MEEPLE-DEDUP, per agent. None (default) = inherit the process-wide
+        # CARCASSONNE_MEEPLE_DEDUP flag, which itself defaults OFF -> byte-for-byte
+        # the deployed champion. An explicit True/False binds THIS agent regardless
+        # of the env, so a dedup-ON candidate and a dedup-OFF champion can play each
+        # other inside one worker process. Forwarded to every per-determinization
+        # NeuralMCTS below (the pre-search tree of the oracle probe included, so the
+        # probe's two trees never disagree about the action space).
+        self._meeple_dedup = meeple_dedup
+        self.meeple_dedup = meeple_dedup   # public alias (harness/manifest read-off)
         # The heuristic-prior evaluator is STATELESS (a pure Callable[[Board],
         # (priors, value)] over `game`), so build it ONCE and share it across the
         # fresh per-determinization NeuralMCTS trees — exactly how HeuristicPriorAgent
@@ -568,7 +578,8 @@ class FairHeuristicPriorAgent:
                 # (its own reshuffled deck -> its own pre-search distribution).
                 pre = NeuralMCTS(game=self._game, evaluator=LeafCounter(self._evaluator),
                                  simulations=self._sims * self._oracle_prior_mult,
-                                 c_puct=self._c_puct, seed=base + 100 + i)
+                                 c_puct=self._c_puct, seed=base + 100 + i,
+                                 meeple_dedup=self._meeple_dedup)
                 _t = time.perf_counter()
                 pre.search(b)
                 counts, actions = pre.root_visit_distribution(b)
@@ -586,7 +597,8 @@ class FairHeuristicPriorAgent:
                                seed=base + 100 + i,
                                batch_size=self._batch_size,
                                batch_evaluator=self._batch_evaluator,
-                               virtual_loss=self._virtual_loss)
+                               virtual_loss=self._virtual_loss,
+                               meeple_dedup=self._meeple_dedup)
                 m.set_root_prior_override(override)   # one-shot, survives the search's expand
                 _t = time.perf_counter()
                 m.search(b)
@@ -598,7 +610,8 @@ class FairHeuristicPriorAgent:
                                seed=base + 100 + i,
                                batch_size=self._batch_size,
                                batch_evaluator=self._batch_evaluator,
-                               virtual_loss=self._virtual_loss)
+                               virtual_loss=self._virtual_loss,
+                               meeple_dedup=self._meeple_dedup)
                 m.search(b)
             # deck order isn't in the key, so the reshuffled root shares the
             # original board's key (same fallback as FairHeuristicMCTSAgent).

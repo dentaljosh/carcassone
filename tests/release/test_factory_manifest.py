@@ -72,6 +72,31 @@ def test_leaf_value_panel_is_the_golden():
         "empty_meeples_0v7_int": -16, "empty_meeples_5v5_float": 0.0}
 
 
+def test_meeple_dedup_off_leaves_the_manifest_byte_identical():
+    """The flag-gated MEEPLE-DEDUP search must be INVISIBLE when off: no manifest key,
+    therefore no config_hash / leaf_hash drift and no re-review of the champion."""
+    agent = cf.make_production_champion("fair", seed=1)
+    assert "meeple_dedup" not in agent.manifest
+    assert getattr(agent, "meeple_dedup", None) is None      # = inherit the env flag
+    assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
+        cf.resolved_manifest("fair"), sort_keys=True)
+
+
+def test_meeple_dedup_on_is_stamped_without_moving_any_hash():
+    """When on it MUST be visible in the manifest — and it must still not perturb the
+    leaf/config hashes, which describe the leaf and the config, not the search mask."""
+    off = cf.make_production_champion("fair", seed=1)
+    on = cf.make_production_champion("fair", seed=1, meeple_dedup=True)
+    assert on.manifest["meeple_dedup"]["enabled"] is True
+    assert on.manifest["meeple_dedup"]["source"] == "kwarg"
+    assert on.meeple_dedup is True
+    assert on.manifest["search"] == off.manifest["search"]
+    assert on.manifest["leaf_hashes"] == off.manifest["leaf_hashes"]
+    # ... and the ONLY difference is that one added key.
+    assert set(on.manifest) - set(off.manifest) == {"meeple_dedup"}
+    assert {k: v for k, v in on.manifest.items() if k != "meeple_dedup"} == off.manifest
+
+
 def test_verify_raises_on_wrong_curve_and_caps():
     import dataclasses as dc
     with pytest.raises(ep.ProvenanceError):

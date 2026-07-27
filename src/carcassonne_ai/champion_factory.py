@@ -375,7 +375,8 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         net=_UNSET, evaluator=_UNSET, sighted_game=_UNSET,
                         batch_size=_UNSET, batch_evaluator=_UNSET,
                         virtual_loss=_UNSET,
-                        oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET):
+                        oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET,
+                        meeple_dedup=_UNSET):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
     agent's OWN defaults — i.e. constructing via this factory is byte-for-byte identical
@@ -393,12 +394,13 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
         oracle_prior_mult=oracle_prior_mult,
         oracle_prior_eps_coef=oracle_prior_eps_coef,
+        meeple_dedup=meeple_dedup,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
 
 def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
-                               reuse_tree=_UNSET):
+                               reuse_tree=_UNSET, meeple_dedup=_UNSET):
     """Construct the clairvoyant PUCT champion (HeuristicPriorAgent) — the dev/ruler
     agent (reads the true deck). Byte-identical to a direct construction; ``cfg=None``
     defaults to the production curve125 config."""
@@ -406,7 +408,8 @@ def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
 
     if cfg is None:
         cfg = production_prior_cfg()
-    kw = {k: v for k, v in dict(seed=seed, reuse_tree=reuse_tree).items()
+    kw = {k: v for k, v in dict(seed=seed, reuse_tree=reuse_tree,
+                                meeple_dedup=meeple_dedup).items()
           if v is not _UNSET}
     return HeuristicPriorAgent(game, cfg, simulations=int(simulations), **kw)
 
@@ -416,7 +419,8 @@ def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
 # --------------------------------------------------------------------------- #
 def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              sims: int | None = None, k_dets: int | None = None,
-                             exact_endgame: bool = True, verify: bool = True):
+                             exact_endgame: bool = True, verify: bool = True,
+                             meeple_dedup: bool | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -425,7 +429,13 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     mode="clairvoyant" -> HeuristicPriorAgent (dev/ruler; k_dets*sims_per_det total sims).
 
     ``game`` defaults to a fresh Game(enable_legal_moves_cache=True). ``sims``/``k_dets``
-    override the YAML budget (e.g. a smoke); the manifest still records the YAML config."""
+    override the YAML budget (e.g. a smoke); the manifest still records the YAML config.
+
+    ``meeple_dedup`` binds the MEEPLE-DEDUP search feature for THIS agent
+    (None = inherit ``CARCASSONNE_MEEPLE_DEDUP``, which defaults OFF). It is stamped
+    onto the attached manifest ONLY when it resolves ON, so an OFF champion's manifest
+    — and every hash computed from it — is byte-identical to before the feature existed."""
+    from . import meeple_equiv
     from .game_wrapper import Game
 
     spec = load_production_spec()
@@ -435,17 +445,21 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     cfg = production_prior_cfg(spec, leaf_cfg)
     manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify)
 
+    # Left at _UNSET when the caller said nothing, so the agent constructor is called
+    # with EXACTLY the argument list it had before this feature existed.
+    dedup_kw = {} if meeple_dedup is None else {"meeple_dedup": bool(meeple_dedup)}
+
     if mode == "fair":
         agent = build_fair_champion(
             game, cfg=cfg,
             sims=(spec.sims_per_det if sims is None else int(sims)),
             k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
             seed=int(seed), exact_endgame=bool(exact_endgame),
-            exact_max_k=spec.exact_max_k)
+            exact_max_k=spec.exact_max_k, **dedup_kw)
     elif mode == "clairvoyant":
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         agent = build_clairvoyant_champion(
-            game, cfg=cfg, simulations=total, seed=int(seed))
+            game, cfg=cfg, simulations=total, seed=int(seed), **dedup_kw)
     else:
         raise ValueError(f"mode must be 'fair'|'clairvoyant'; got {mode!r}")
 
@@ -469,6 +483,21 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             manifest["runtime_budget_override"] = {
                 "total_sims": total,
                 "note": "the budget the agent ACTUALLY runs; fair_deploy above is intent."}
+
+    # MEEPLE-DEDUP: stamped ONLY when the feature actually resolves ON (whether from
+    # the kwarg or the env flag). An OFF champion therefore carries a manifest that is
+    # byte-identical to the pre-feature one — no key, no hash drift, no re-review.
+    if meeple_equiv.resolve(meeple_dedup):
+        manifest = dict(manifest)
+        manifest["meeple_dedup"] = {
+            "enabled": True,
+            "prior_mode": meeple_equiv.PRIOR_MODE,
+            "source": "kwarg" if meeple_dedup is not None else meeple_equiv.ENV_VAR,
+            "scope": "intra-tile feature equivalence at meeple-phase nodes "
+                     "(meeple_equiv.dedup_legal); the true legal mask is unchanged",
+            "note": "NON-CHAMPION search variant — this agent is NOT the deployed "
+                    "champion of governance/PRODUCTION.yaml.",
+        }
 
     agent.manifest = manifest
     return agent

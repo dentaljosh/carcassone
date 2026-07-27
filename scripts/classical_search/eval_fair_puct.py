@@ -907,13 +907,21 @@ def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
 def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
                    sighted_game=None, rep=None, batch_size=1,
-                   oracle_prior_mult=None, oracle_prior_eps_coef=1e-3):
+                   oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
+                   meeple_dedup=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     ``oracle_prior_mult`` (Track-F Gate A, CANDIDATE side only; None = OFF) engages the
     per-world oracle-prior probe on the ``fair`` arm — see FairHeuristicPriorAgent. It is
     passed ONLY by the candidate call sites (_play_one / _smoke); _make_opponent never
     forwards it, so the opponent side is never oracle-armed.
+
+    ``meeple_dedup`` (CANDIDATE side only; None = OFF = byte-identical) collapses
+    game-equivalent meeple actions inside the candidate's search — see
+    carcassonne_ai.meeple_equiv. It is a per-AGENT kwarg rather than the process-wide
+    ``CARCASSONNE_MEEPLE_DEDUP`` env flag for exactly the reason the oracle probe is:
+    both players live in ONE worker process, and a screen needs a dedup-ON candidate
+    against a dedup-OFF champion. ``_make_opponent`` never forwards it.
 
     info=="fair"     -> FairHeuristicPriorAgent prefix (fair PIMC, endgame OFF here —
                         the _MarginalizedHandoff owns the endgame so both arms share it).
@@ -936,9 +944,13 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
         _oracle_kw = ({} if oracle_prior_mult is None
                       else dict(oracle_prior_mult=int(oracle_prior_mult),
                                 oracle_prior_eps_coef=float(oracle_prior_eps_coef)))
+        # Same shape as _oracle_kw: absent when OFF, so the constructor call is the
+        # pre-feature one and the candidate is byte-identical to the deploy champion.
+        _dedup_kw = ({} if meeple_dedup is None
+                     else dict(meeple_dedup=bool(meeple_dedup)))
         prefix = champion_factory.build_fair_champion(
             game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
-            **_oracle_kw)
+            **_oracle_kw, **_dedup_kw)
     elif info == "fair-netprior":
         if net is None and handles is None:
             raise ValueError(
@@ -1274,13 +1286,15 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
-                 opp_k_dets=None):
+                 opp_k_dets=None, meeple_dedup=None):
     _W["info"] = info
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
     # Track-F Gate A oracle-prior probe (CANDIDATE side; None = OFF).
     _W["oracle_prior_mult"] = oracle_prior_mult
     _W["oracle_prior_eps_coef"] = oracle_prior_eps_coef
+    # MEEPLE-DEDUP search feature (CANDIDATE side; None = OFF = byte-identical).
+    _W["meeple_dedup"] = meeple_dedup
     _W["champ_cfg_dict"] = champ_cfg_dict
     # candidate-side leaf override (--cand-leaf-json; None -> DEFAULT_CONFIG). Reaches
     # ONLY the FAIR champion's search (via _cfg_from_dict below); the rung stays DEFAULT.
@@ -1440,7 +1454,8 @@ def _play_one(args) -> GameResult | None:
                            sighted_game=_W.get("sighted_game"), rep=_W.get("rep"),
                            batch_size=_W.get("batch_size", 1),
                            oracle_prior_mult=_W.get("oracle_prior_mult"),
-                           oracle_prior_eps_coef=_W.get("oracle_prior_eps_coef", 1e-3))
+                           oracle_prior_eps_coef=_W.get("oracle_prior_eps_coef", 1e-3),
+                           meeple_dedup=_W.get("meeple_dedup"))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
@@ -1736,7 +1751,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                sighted_game=smoke_sighted_game, rep=rep,
                                batch_size=args.batch_size,
                                oracle_prior_mult=args.oracle_prior_mult,
-                               oracle_prior_eps_coef=args.oracle_prior_eps_coef)
+                               oracle_prior_eps_coef=args.oracle_prior_eps_coef,
+                               meeple_dedup=(True if args.meeple_dedup else None))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -1948,6 +1964,20 @@ def main(argv=None) -> int:
                          "vloss CHANGES the search, so a batched run is a DIFFERENT — faster — agent). "
                          "ONLY the net-prior candidate batches; the fair-champion opponent stays serial. "
                          "SHM caps a request at MAX_K=8, so >8 chunks into ceil(N/8) round-trips.")
+    ap.add_argument("--meeple-dedup", action="store_true",
+                    help="MEEPLE-DEDUP on the CANDIDATE side (--info fair). At every "
+                         "meeple-phase node the search keeps only the lowest-action-id "
+                         "member of each set of GAME-EQUIVALENT actions (same connected "
+                         "on-tile feature reachable from several sides), before the "
+                         "priors are normalized and before any child exists — so the "
+                         "prior mass is not split and no duplicate subtree is built. "
+                         "The census measured 60.75%% of the champion's actionable "
+                         "meeple decisions as carrying >=2 equivalent actions and 28.6%% "
+                         "of its placements as chosen from a visit-diluted group "
+                         "(measurement/classical_search/meeple_dedup_census_20260727.json). "
+                         "Per-AGENT, so the OPPONENT is never deduped. Default OFF = "
+                         "byte-identical to the deploy champion. Grouping is INTRA-TILE "
+                         "only (a lower bound) — see carcassonne_ai.meeple_equiv.")
     ap.add_argument("--oracle-prior-mult", type=int, default=None,
                     help="Track-F Gate A oracle-prior CONFIRM (CANDIDATE side, --info fair only). "
                          "When set to N (>=2), the fair PIMC candidate runs a PER-WORLD pre-search: "
@@ -2725,6 +2755,26 @@ def main(argv=None) -> int:
         man_cfg["champion"]["oracle_prior"] = oracle_block
         man_cfg["champion"]["priors_source"] = (
             "heuristic_softmax_dleaf_tau + per-world oracle ROOT-prior override (Gate A)")
+    # MEEPLE-DEDUP provenance — added ONLY when the feature is ON (CANDIDATE side), so a
+    # plain (OFF) manifest stays byte-identical to the pre-change output. Same shape and
+    # same candidate-only scope as the oracle-prior block above.
+    if args.meeple_dedup:
+        from carcassonne_ai import meeple_equiv as _me
+
+        dedup_block = {
+            "enabled": True,
+            "prior_mode": _me.PRIOR_MODE,
+            "grouping": "carcassonne_ai.meeple_equiv.feature_groups (INTRA-TILE only)",
+            "scope": ("meeple-phase nodes ONLY (root and interior); keeps the lowest "
+                      "action id of each group, folds the dropped members' prior mass "
+                      "onto it, renormalizes over the survivors. The true legal mask "
+                      "from game.get_valid_moves is UNCHANGED; tile-phase actions and "
+                      "the pass action are untouched."),
+            "applies_to": "candidate",
+            "census": "measurement/classical_search/meeple_dedup_census_20260727.json",
+        }
+        man_cfg["meeple_dedup"] = dedup_block
+        man_cfg["champion"]["meeple_dedup"] = dedup_block
     write_manifest(out, kind="eval_fair_puct", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
 
@@ -2780,7 +2830,8 @@ def main(argv=None) -> int:
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep,
                           (args.opp_orch_shm_name or ""), args.batch_size,
                           args.opp_sims, args.oracle_prior_mult,
-                          args.oracle_prior_eps_coef, args.opp_k_dets))
+                          args.oracle_prior_eps_coef, args.opp_k_dets,
+                          (True if args.meeple_dedup else None)))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -2790,7 +2841,8 @@ def main(argv=None) -> int:
                           "", None, cand_leaf_cfg, netprior_rep,
                           args.opponent, opp_leaf_cfg, args.opp_net, opp_rep, "",
                           args.batch_size, args.opp_sims, args.oracle_prior_mult,
-                          args.oracle_prior_eps_coef, args.opp_k_dets))
+                          args.oracle_prior_eps_coef, args.opp_k_dets,
+                          (True if args.meeple_dedup else None)))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):

@@ -927,6 +927,7 @@ class HeuristicPriorAgent:
         simulations: int,
         seed: int | None = None,
         reuse_tree: bool | None = None,
+        meeple_dedup: bool | None = None,
     ):
         self.game = game
         self.cfg = cfg
@@ -937,12 +938,17 @@ class HeuristicPriorAgent:
         # Default None -> cfg.reuse_tree (False) -> byte-for-byte the champion.
         self._reuse_tree = bool(cfg.reuse_tree) if reuse_tree is None else bool(reuse_tree)
         self.evaluator = make_heuristic_prior_evaluator(game, cfg)
+        # meeple_dedup: None -> inherit the process-wide CARCASSONNE_MEEPLE_DEDUP
+        # flag (default OFF = byte-for-byte the champion); True/False overrides it
+        # for THIS agent only. See meeple_equiv's module docstring.
+        self.meeple_dedup = meeple_dedup
         self.mcts = NeuralMCTS(
             game=game,
             evaluator=self.evaluator,
             simulations=self.simulations,
             c_puct=cfg.c_puct,
             seed=seed,
+            meeple_dedup=meeple_dedup,
         )
         # Harness-symmetry counters (mirror the hybrid/exact agents).
         self.neural_moves = 0

@@ -12,9 +12,10 @@ that lead to literally the same successor state.
 Two legal meeple actions are duplicates when they claim the SAME on-tile connected
 feature -- e.g. a city with two openings (`city=[[TOP, RIGHT]]`) offers a knight
 slot on each opening, but either one claims the one city. The grouping is
-`android_bridge.feature_groups` + `_renumber_groups`, IMPORTED not reimplemented:
-they are the tested functions the Android UI already uses to collapse duplicate
-dots, and a second implementation here would drift.
+`carcassonne_ai.meeple_equiv.feature_groups` + `android_bridge._renumber_groups`,
+IMPORTED not reimplemented: they are the tested functions the Android UI already uses
+to collapse duplicate dots (and, since 2026-07-27, that the flag-gated MEEPLE-DEDUP
+search uses to collapse duplicate subtrees); a second copy would drift.
 
 ⚠️ **This is a LOWER BOUND on true duplication.** `feature_groups` is a pure read of
 ONE tile, so it merges only openings that are already connected *on the placed tile*.
@@ -57,13 +58,15 @@ for _p in (str(_REPO), str(_REPO / "android" / "app" / "src" / "main" / "python"
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-# The grouping logic of record. Imported, never reimplemented (drift risk).
+# The grouping logic of record. Imported, never reimplemented (drift risk). It lives in
+# the package (2026-07-27) because the MEEPLE-DEDUP search reads the same definition;
+# `_renumber_groups` / `meeple_slots_for` stay in the bridge — they are UI slot shapes.
 from android_bridge import (  # noqa: E402
     _renumber_groups,
-    feature_groups,
     meeple_slots_for,
 )
 from carcassonne_ai.action_space import meeple_pass_index, tile_action_count  # noqa: E402
+from carcassonne_ai.meeple_equiv import feature_groups  # noqa: E402
 from root_replay import load_games  # noqa: E402
 from wingedsheep.carcassonne.objects.game_phase import GamePhase  # noqa: E402
 

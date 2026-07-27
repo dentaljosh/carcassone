@@ -1,0 +1,188 @@
+{
+  "kind": "meeple_dedup_off_behaviour_fixture",
+  "note": "Recorded on the pre-MEEPLE_DEDUP tree. Any diff means the flag-OFF search path changed \u2014 that is a production regression, not a test bug.",
+  "deck_seed": 20260727,
+  "agent_seed": 11,
+  "sims": 24,
+  "k_dets": 2,
+  "plies": 40,
+  "probe_sims": 40,
+  "probe_seed": 5,
+  "actions": [
+    1248,
+    2505,
+    1348,
+    2501,
+    1149,
+    2502,
+    1448,
+    2510,
+    1153,
+    2510,
+    1048,
+    2501,
+    1147,
+    2510,
+    950,
+    2501,
+    1257,
+    2502,
+    1055,
+    2510,
+    1346,
+    2510,
+    1552,
+    2506,
+    1447,
+    2501,
+    1553,
+    2501,
+    1341,
+    2507,
+    1457,
+    2503,
+    1160,
+    2503,
+    1550,
+    2510,
+    1167,
+    2510,
+    1354,
+    2510
+  ],
+  "final_key": "(((3, 15, 'city_diagonal_top_left_road', (('road', 'city', 'city', 'road'), False, False, False)), (3, 16, 'city_top_road_bend_left', (('grass', 'road', 'road', 'city'), False, False, False)), (4, 15, 'city_diagonal_top_right', (('city', 'city', 'grass', 'grass'), False, False, False)), (5, 14, 'bent_road', (('grass', 'road', 'road', 'grass'), False, False, False)), (5, 15, 'straight_road', (('grass', 'road', 'grass', 'road'), False, False, False)), (5, 16, 'straight_road', (('grass', 'road', 'grass', 'road'), False, False, False)), (5, 17, 'city_bottom_road_shield', (('city', 'city', 'city', 'road'), True, False, False)), (5, 18, 'city_bottom_road_shield', (('city', 'city', 'road', 'city'), True, False, False)), (5, 19, 'city_top', (('grass', 'grass', 'grass', 'city'), False, False, False)), (6, 14, 'city_top_road_bend_right', (('road', 'grass', 'city', 'road'), False, False, False)), (6, 15, 'chapel_with_road', (('grass', 'grass', 'road', 'grass'), False, True, False)), (7, 13, 'city_top_road_bend_left', (('road', 'city', 'grass', 'road'), False, False, False)), (7, 14, 'city_diagonal_top_right_shield_flowers', (('city', 'grass', 'grass', 'city'), True, False, True)), (7, 15, 'straight_road', (('road', 'grass', 'road', 'grass'), False, False, False)), (7, 17, 'city_top_straight_road', (('grass', 'road', 'city', 'road'), False, False, False)), (8, 15, 'straight_road', (('road', 'grass', 'road', 'grass'), False, False, False)), (8, 16, 'city_top_bottom_flowers', (('city', 'grass', 'city', 'grass'), False, False, True)), (8, 17, 'city_narrow', (('city', 'grass', 'city', 'grass'), False, False, False)), (9, 15, 'city_top_road_bend_right', (('road', 'grass', 'city', 'road'), False, False, False)), (9, 16, 'city_left_right', (('city', 'grass', 'city', 'grass'), False, False, False))), ((('normal', 6, 15, 'center'), ('normal', 5, 15, 'right'), ('normal', 5, 17, 'right'), ('farmer', 7, 13, 'top_right'), ('normal', 5, 18, 'bottom')), (('normal', 7, 15, 'top'), ('normal', 4, 15, 'top'), ('normal', 3, 15, 'top'), ('farmer', 8, 16, 'top_left'), ('normal', 8, 17, 'bottom'))), (8, 4), (2, 2), 0, 'tiles', 51, 'straight_road', (7, 17))",
+  "probes": [
+    {
+      "ply": 1,
+      "visits_by_action": {
+        "2503": 11,
+        "2505": 13,
+        "2510": 10,
+        "2506": 6
+      },
+      "deduped_actions": [
+        2503,
+        2505,
+        2506,
+        2510
+      ],
+      "deduped_visits": [
+        11,
+        13,
+        6,
+        10
+      ],
+      "best_action": 2505
+    },
+    {
+      "ply": 3,
+      "visits_by_action": {
+        "2501": 12,
+        "2503": 12,
+        "2510": 7,
+        "2506": 5,
+        "2507": 4
+      },
+      "deduped_actions": [
+        2501,
+        2503,
+        2506,
+        2507,
+        2510
+      ],
+      "deduped_visits": [
+        12,
+        12,
+        5,
+        4,
+        7
+      ],
+      "best_action": 2501
+    },
+    {
+      "ply": 5,
+      "visits_by_action": {
+        "2502": 10,
+        "2504": 10,
+        "2510": 10,
+        "2507": 5,
+        "2509": 5
+      },
+      "deduped_actions": [
+        2502,
+        2504,
+        2507,
+        2509,
+        2510
+      ],
+      "deduped_visits": [
+        10,
+        10,
+        5,
+        5,
+        10
+      ],
+      "best_action": 2502
+    },
+    {
+      "ply": 7,
+      "visits_by_action": {
+        "2510": 18,
+        "2506": 11,
+        "2507": 11
+      },
+      "deduped_actions": [
+        2506,
+        2507,
+        2510
+      ],
+      "deduped_visits": [
+        11,
+        11,
+        18
+      ],
+      "best_action": 2510
+    },
+    {
+      "ply": 9,
+      "visits_by_action": {
+        "2510": 18,
+        "2507": 11,
+        "2509": 11
+      },
+      "deduped_actions": [
+        2507,
+        2509,
+        2510
+      ],
+      "deduped_visits": [
+        11,
+        11,
+        18
+      ],
+      "best_action": 2510
+    },
+    {
+      "ply": 11,
+      "visits_by_action": {
+        "2501": 11,
+        "2502": 11,
+        "2510": 9,
+        "2506": 9
+      },
+      "deduped_actions": [
+        2501,
+        2502,
+        2506,
+        2510
+      ],
+      "deduped_visits": [
+        11,
+        11,
+        9,
+        9
+      ],
+      "best_action": 2501
+    }
+  ]
+}
