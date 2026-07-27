@@ -219,3 +219,36 @@ class BoardGeometryTest {
         assertEquals(50f, lerpTransform(a, b, 0.5f).offsetX, eps)
     }
 }
+
+class EmptyBoardBoundsTest {
+    private fun state(board: List<PlacedTile>, legal: LegalBlock) = GameState(
+        generation = 1, phase = "tiles", turn = 0, currentPlayer = 0,
+        humanPlayer = 0, aiPlayer = 1, isHumanTurn = true,
+        scores = listOf(0, 0), meeplesFree = listOf(7, 7),
+        deckRemaining = 72, tilesRemaining = 72, nextTile = null,
+        board = board, meeples = emptyList(), legal = legal,
+        opponentName = "champ", budgetNote = null, aiLastTile = null,
+        aiLastMove = null, isTerminated = false, result = null,
+    )
+
+    @org.junit.Test
+    fun emptyBoardFallsBackToLegalCells() {
+        // "You first" start: no placed tiles, one legal start cell — the fit
+        // transform must still get bounds or the board renders off-screen.
+        val st = state(
+            board = emptyList(),
+            legal = LegalBlock(tileCells = listOf(
+                LegalTileCell(row = 6, col = 15, rotations = listOf(0),
+                              actionIds = listOf(0)))),
+        )
+        val b = st.boundsWithMargin()
+        org.junit.Assert.assertNotNull(b)
+        org.junit.Assert.assertTrue(b!!.minRow <= 6 && 6 <= b.maxRow && b.minCol <= 15 && 15 <= b.maxCol)
+    }
+
+    @org.junit.Test
+    fun trulyEmptyStateStillNull() {
+        org.junit.Assert.assertNull(
+            state(board = emptyList(), legal = LegalBlock()).boundsWithMargin())
+    }
+}

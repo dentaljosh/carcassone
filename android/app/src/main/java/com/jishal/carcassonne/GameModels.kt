@@ -127,8 +127,12 @@ data class GameState(
     val humanMeeples: Int get() = meeplesFree.getOrElse(humanPlayer) { 0 }
     val aiMeeples: Int get() = meeplesFree.getOrElse(aiPlayer) { 0 }
 
+    // Falls back to the legal cells when no tile is placed yet: a "You first" game
+    // starts with an empty board list, and a null here would leave the identity
+    // transform showing empty space (the start position is at world ~(6,15)).
     fun boundsWithMargin(): BoardBounds? =
-        BoardBounds.of(board.map { it.cell })?.expanded(1)
+        (BoardBounds.of(board.map { it.cell })
+            ?: BoardBounds.of(legal.tileCells.map { it.cell }))?.expanded(1)
 }
 
 data class Progress(
