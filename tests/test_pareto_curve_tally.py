@@ -80,6 +80,56 @@ def test_self_delta_is_exactly_zero():
     assert n == 200
 
 
+# (cell dir, published minutes, published % of clock) — TOURNAMENT_TIMING_2026-07-26.md
+CLOCK_FIXTURES = [
+    ("cl060_h2h_k8x1376_vs_deploy_k4x688", 13.6, 91),
+    ("curve_k16x1376_22016_vs_deploy_k4x688", 26.7, 178),
+]
+
+
+@pytest.mark.parametrize("cell,pub_min,pub_pct", CLOCK_FIXTURES)
+def test_clock_matches_published_table(cell, pub_min, pub_pct):
+    """The cost axis must reproduce the published tournament-clock table.
+
+    Regression for a real bug: computing the clock from the cell's ABSOLUTE
+    ms/move uses loaded latencies and inflates it ~1.30x (teacher 17.5 min vs
+    the published 13.6). The ratio-to-opponent form cancels contention.
+    Tolerance is 5% -- the published table rounds s/move to 3 significant figures.
+    """
+    d = SHARE / "classical_search" / cell
+    if not d.is_dir():
+        pytest.skip(f"fixture not mounted: {d}")
+    summ = pareto.load_summary(d)
+    if summ is None:
+        pytest.skip(f"fixture has no summary.json: {d}")
+    secs = pareto.candidate_clock(summ, pareto.load_games(d))
+    assert secs / 60.0 == pytest.approx(pub_min, rel=0.05)
+    assert 100.0 * secs / pareto.CLOCK_SECS == pytest.approx(pub_pct, rel=0.05)
+
+
+def test_clock_of_the_champion_against_itself_is_the_deploy_anchor():
+    """A cell whose candidate IS the deploy champion must land on 26% of clock."""
+    secs = pareto.candidate_clock(
+        {"champ_prefix_ms_per_move": 1000.0, "rung_ms_per_move": 1000.0}, []
+    )
+    assert secs / 60.0 == pytest.approx(3.8, abs=0.15)
+    assert 100.0 * secs / pareto.CLOCK_SECS == pytest.approx(26, abs=1)
+
+
+@pytest.mark.parametrize("cell", [c for c, _, _ in CLOCK_FIXTURES])
+def test_leaf_guard_passes_on_known_good_cells(cell):
+    """The leaf guard must NOT fire on cells known to be valid curve125.
+
+    Regression: the first version looked for a label tag that summary.json does
+    not carry, so it flagged every valid cell — a guard that always fires is a
+    guard nobody reads.
+    """
+    d = SHARE / "classical_search" / cell
+    if not d.is_dir():
+        pytest.skip(f"fixture not mounted: {d}")
+    assert pareto.leaf_guard(d) == []
+
+
 def test_per_deck_margin_drops_incomplete_decks():
     """Only decks with BOTH seats count — a half-played deck is seat-biased."""
     games = _games("k4")

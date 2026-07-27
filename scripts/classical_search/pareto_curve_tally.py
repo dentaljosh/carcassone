@@ -37,9 +37,22 @@ CELLS = [
     ("pareto_k2x688_1376_vs_deploy", 2, 688, 60, "0.5x"),
     ("pareto_k4x1376_5504_vs_deploy", 4, 1376, 64, "2x"),
 ]
-CURVE125_TAG = "leafa36d2e15"       # appears in the run label emitted by the harness
 CLOCK_SECS = 900.0                  # 15 min per player, sudden death, no increment
 DEPLOY_TOTAL = 2752
+# The deploy champion's UNLOADED per-move cost + per-game solver time, measured by
+# distill_strong_iter03_cost_probe_unloaded_w2 (results.csv) and used to build the
+# clock table in docs/research/TOURNAMENT_TIMING_2026-07-26.md. This is the anchor
+# the whole cost axis hangs on -- see candidate_clock().
+DEPLOY_UNLOADED_MS_PER_MOVE = 2752.0
+DEPLOY_SOLVER_SECS = 34.0
+# The champion's leaf env as recorded in every valid cell's manifest. The DEFINITIVE
+# curve125 check is the harness's own "BOTH SIDES curve125: YES" line, captured in
+# the queue log; this is the cross-check available from the run directory alone.
+EXPECTED_LEAF_ENV = {
+    "CARCASSONNE_V25_CAP": "8", "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0", "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+}
 
 
 def cell_dir(share: pathlib.Path, name: str) -> pathlib.Path:
@@ -65,12 +78,22 @@ def load_games(d: pathlib.Path) -> list[dict]:
     return out
 
 
+def leaf_guard(d: pathlib.Path) -> list[str]:
+    """Cross-check the recorded leaf env against the champion's."""
+    p = d / "manifest.json"
+    if not p.exists():
+        return ["manifest.json missing — leaf provenance unverifiable"]
+    with p.open() as fh:
+        env = (json.load(fh) or {}).get("leaf_env", {})
+    if env != EXPECTED_LEAF_ENV:
+        diff = {k: (env.get(k), v) for k, v in EXPECTED_LEAF_ENV.items() if env.get(k) != v}
+        return [f"leaf env differs from champion: {diff}"]
+    return []
+
+
 def guards(summ: dict, games: list[dict]) -> list[str]:
     """Pre-registered validity guards. Failing one makes a cell INVALID, not negative."""
     bad = []
-    label = json.dumps(summ)
-    if CURVE125_TAG not in label and CURVE125_TAG not in str(summ.get("opponent_label", "")):
-        bad.append("curve125 leaf tag absent from the run label — verify manifest by hand")
     n = summ.get("n", 0)
     if n < 400:
         bad.append(f"short cell: {n}/400 games")
@@ -109,12 +132,28 @@ def deck_matched_delta(a: list[dict], b: list[dict]):
 
 
 def candidate_clock(summ: dict, games: list[dict]) -> float:
-    """Whole-game seconds the CANDIDATE would burn on its own tournament clock."""
-    ms = summ.get("champ_prefix_ms_per_move")
-    if ms is None:
+    """Whole-game seconds the CANDIDATE would burn on its own tournament clock.
+
+    ⚠️ NOT computed from the cell's absolute ms/move. Those are measured UNDER LOAD
+    (W16 x 2 boxes), and loaded latencies overstate deployed cost -- the exact
+    distinction the CL-067 cost thread turned on (4.29x at W28 / 5.48x at W48 /
+    4.24x UNLOADED at W2). Taking them literally inflates the clock by ~1.30x:
+    it puts the 4x teacher at 17.5 min against its published 13.6, and the 8x
+    config at 34.8 against 26.7.
+
+    Instead: every cell's OPPONENT is the deploy champion, so the in-run
+    candidate/opponent ratio is contention-CANCELLING (both sides pay the same
+    queue). Anchor that ratio on the champion's MEASURED UNLOADED per-move cost
+    and the deployed cost follows. Validated against the published table: the
+    teacher's 4.07x ratio -> 11.2 s/move -> 13.6 min -> 91% of clock, exactly.
+    """
+    cand_ms = summ.get("champ_prefix_ms_per_move")
+    opp_ms = summ.get("rung_ms_per_move")          # head-to-head => the champion's own counter
+    if not cand_ms or not opp_ms:
         return float("nan")
+    ratio = cand_ms / opp_ms
     moves = statistics.fmean([g.get("champ_prefix_moves", 70) for g in games]) if games else 70.0
-    return (ms / 1000.0) * moves + (summ.get("solver_secs_per_game") or 0.0)
+    return (ratio * DEPLOY_UNLOADED_MS_PER_MOVE / 1000.0) * moves + DEPLOY_SOLVER_SECS
 
 
 def main() -> int:
@@ -133,7 +172,7 @@ def main() -> int:
             rows.append((tier, f"k{kd}x{sims}", kd * sims, None, None, None, None, None, st))
             continue
         games = load_games(d)
-        bad = guards(summ, games)
+        bad = guards(summ, games) + leaf_guard(d)
         clk = candidate_clock(summ, games)
         rows.append((tier, f"k{kd}x{sims}", kd * sims, summ.get("elo"),
                      summ.get("elo_sig_1sigma"), summ.get("winrate_z"), summ.get("paired_z"),
