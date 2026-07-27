@@ -74,7 +74,7 @@ Phase-4-era entry, still live and now E4-shaped: 30–50 labeled tactical positi
 
 ## 4. SPECIAL FOCUS — the no-warmstart AlphaZero flywheel (E3)
 
-**Is it outside the CL-039 closure? YES, formally.** The scope guard (CL-039, autopsy §"scope", CL-042) restricts the closure to 7M-net / ≤5 iters / ≤400 games-iter / **warmstart** / sims≤200, and explicitly does "not [make] a claim about 10–100× scale, Gumbel search, or fundamentally different architectures." From-scratch was never run (STATUS 2026-07-06: the two never-tested cells = tabula-rasa and bigger nets); Gumbel was "never examined" as a *training* recipe (autopsy row 5). A from-scratch, larger, Gumbel-trained attempt is the enumerated un-sampled cell.
+**Is it outside the CL-039 closure? YES, formally.** The scope guard (CL-039, autopsy §"scope", CL-042) restricts the closure to 7M-net / ≤5 iters / ≤400 games-iter / **warmstart** / sims≤200, and explicitly does "not [make] a claim about 10–100× scale, Gumbel search, or fundamentally different architectures." From-scratch was never run **[SUPERSEDED 2026-07-27: ran 2026-07-24 as `az_zero` → FLATLINE, CL-066 — do not re-derive "open cell" from this sentence]** (STATUS 2026-07-06: the two never-tested cells = tabula-rasa and bigger nets); Gumbel was "never examined" as a *training* recipe (autopsy row 5). A from-scratch, larger, Gumbel-trained attempt is the enumerated un-sampled cell.
 
 **But formally-open ≠ good bet. The honest prior stack:**
 1. **Eight value-inertness nulls**, ending with C-cheap v2 (CL-050): a properly-shaped residual value that *passed* its offline gate and still converted to ~0 online. The offline→online disconnect is the program's most reproduced finding.

@@ -102,7 +102,7 @@
 | **policy-scale** (clean-policy iteration at scale) · "the +87 ceiling" | TRIED — failed to climb past the ceiling | DECISIONS 2026-06-04 (pm) |
 | **root-action / policy-mixing role audit** (standalone · root-prior · candidate-generator · specialist) | TRIED (offline) — the net is not a useful standalone root-prior | `measurement/search_policy_mixing/ROOT_ACTION_AUDIT.md` |
 | **hybrid handoff** (net early/mid → deep heuristic endgame) · `l2hyb_K*` | TRIED — real and monotone in K; superseded by the classical champion | CL-026; results.csv `l2hyb_K*` |
-| **tabula-rasa / from-scratch net** · **"az_zero"** · `make_random_ckpt.py` · `run_az_zero.sh` | **IN FLIGHT** (launched 2026-07-24) — first true zero-start. Tests the *scaffolding confound*, explicitly **not** a strength lever. ⚠️ supersedes the roadmap's "never-run / don't fund" line | [PREREG](../measurement/az_zero_20260724/PREREG.md) + [DESIGN](../measurement/az_zero_20260724/DESIGN.md); roadmap GATE #3 |
+| **tabula-rasa / from-scratch net** · **"az_zero"** · `make_random_ckpt.py` · `run_az_zero.sh` | **TRIED 2026-07-24 → FLATLINE (CL-066)** — see the complete row below (launched-then-closed same day; this row kept for its script pointers) — first true zero-start. Tests the *scaffolding confound*, explicitly **not** a strength lever. ⚠️ supersedes the roadmap's "never-run / don't fund" line | [PREREG](../measurement/az_zero_20260724/PREREG.md) + [DESIGN](../measurement/az_zero_20260724/DESIGN.md); roadmap GATE #3 |
 | **distil to a small fast student** (4×64 / 6×64, KL to teacher) | NEVER-TRIED — a *latency* play, not strength; distinct from the two distillation rows above | BACKLOG.md 2026-05-27 |
 
 ## 4. Representation / input features
