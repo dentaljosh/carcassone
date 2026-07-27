@@ -7,8 +7,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -59,17 +61,26 @@ private fun CarcApp() {
     val vm: GameViewModel = viewModel()
     var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
 
+    // Every navigation drops a stale error. A BridgeError is about the operation
+    // that just failed, not about the app, so carrying it across a screen change
+    // left Home showing an error banner for something the user had already moved
+    // on from (and, on Home, with no context left to interpret it).
+    fun navigate(to: Screen) {
+        vm.clearError()
+        screen = to
+    }
+
     when (screen) {
         Screen.HOME -> HomeScreen(
             vm = vm,
             onPlay = { screen = Screen.GAME },
-            onSettings = { screen = Screen.SETTINGS },
-            onDebug = { screen = Screen.DEBUG },
+            onSettings = { navigate(Screen.SETTINGS) },
+            onDebug = { navigate(Screen.DEBUG) },
         )
 
         Screen.SETTINGS -> SettingsScreen(
             vm = vm,
-            onBack = { screen = Screen.HOME },
+            onBack = { navigate(Screen.HOME) },
         )
 
         Screen.GAME -> GameScreen(
@@ -80,15 +91,17 @@ private fun CarcApp() {
                 // when a bridge call is still running.
                 vm.leaveGame()
                 vm.refreshSaveSlot()
-                screen = Screen.HOME
+                navigate(Screen.HOME)
             },
         )
 
         Screen.DEBUG -> {
-            BackHandler { screen = Screen.HOME }
-            Scaffold { insets ->
+            BackHandler { navigate(Screen.HOME) }
+            // safeDrawing (not the Scaffold default systemBars) so a display
+            // cutout in landscape also keeps its distance.
+            Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
                 Column(Modifier.fillMaxSize().padding(insets)) {
-                    TextButton(onClick = { screen = Screen.HOME }) { Text("← Home") }
+                    TextButton(onClick = { navigate(Screen.HOME) }) { Text("← Home") }
                     DebugScreen()
                 }
             }

@@ -1,8 +1,8 @@
 package com.jishal.carcassonne
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -81,18 +80,10 @@ fun DebugScreen(vm: DebugViewModel = viewModel()) {
         ) { Text("AI move") }
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OutlinedButton(onClick = vm::getState, enabled = !state.busy, modifier = Modifier.weight(1f)) {
-                Text("state", fontSize = 13.sp)
-            }
-            OutlinedButton(onClick = vm::getProgress, modifier = Modifier.weight(1f)) {
-                Text("progress", fontSize = 13.sp)
-            }
-            OutlinedButton(onClick = vm::saveGame, enabled = !state.busy, modifier = Modifier.weight(1f)) {
-                Text("save", fontSize = 13.sp)
-            }
-            OutlinedButton(onClick = vm::clear, modifier = Modifier.weight(1f)) {
-                Text("clear", fontSize = 13.sp)
-            }
+            ConsoleButton("state", vm::getState, enabled = !state.busy, modifier = Modifier.weight(1f))
+            ConsoleButton("progress", vm::getProgress, modifier = Modifier.weight(1f))
+            ConsoleButton("save", vm::saveGame, enabled = !state.busy, modifier = Modifier.weight(1f))
+            ConsoleButton("clear", vm::clear, modifier = Modifier.weight(1f))
         }
 
         if (state.busy) {
@@ -115,9 +106,32 @@ fun DebugScreen(vm: DebugViewModel = viewModel()) {
     }
 }
 
+/**
+ * One of the four equal-width console buttons.
+ *
+ * The label is a single unbreakable line: at the default OutlinedButton content
+ * padding (24.dp a side) "progress" did not fit a quarter-width button and wrapped
+ * mid-word to "progre/ss". Narrow padding buys the ~50dp the longest label needs.
+ */
+@Composable
+private fun ConsoleButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+    ) {
+        Text(label, fontSize = 13.sp, maxLines = 1, softWrap = false)
+    }
+}
+
 @Composable
 private fun LogCard(line: LogLine) {
-    val scroll = rememberScrollState()
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = if (line.isError) {
@@ -142,14 +156,16 @@ private fun LogCard(line: LogLine) {
                     Text("$it ms", fontFamily = FontFamily.Monospace, fontSize = 12.sp)
                 }
             }
+            // Wrap rather than pan: a per-row horizontal scroll inside a vertically
+            // scrolling list is close to unusable on a phone, and the raw bridge JSON
+            // is one long line, so everything past the card's width simply vanished.
             Text(
                 line.body,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
-                softWrap = false,
+                softWrap = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(scroll)
                     .padding(top = 4.dp),
                 color = if (line.isError) MaterialTheme.colorScheme.onErrorContainer else Color.Unspecified,
             )

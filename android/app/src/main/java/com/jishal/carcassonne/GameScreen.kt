@@ -10,12 +10,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -76,9 +82,14 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     // buttons + status bar floating over its bottom edge and the banners over its
     // top. Those strips are not usable board, so the auto-recentre must not count
     // them as "visible" — see BoardTransform.isCellVisible.
+    //
+    // The canvas is deliberately full-bleed at the bottom (it draws under the
+    // gesture pill), so the unusable bottom strip is the chrome PLUS that system
+    // inset — the chrome is pushed up by exactly that much.
     val density = LocalDensity.current
+    val bottomSystemPx = WindowInsets.safeDrawing.getBottom(density).toFloat()
     val insetTopPx = with(density) { TOP_OVERLAY.toPx() }
-    val insetBottomPx = with(density) { BOTTOM_OVERLAY.toPx() }
+    val insetBottomPx = with(density) { BOTTOM_OVERLAY.toPx() } + bottomSystemPx
 
     // Process death while on the Game screen: MainActivity restores `screen = GAME`
     // from the saved instance state, but the ViewModel — and with it the Python
@@ -132,6 +143,11 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
 
     Scaffold(
         topBar = { if (state != null) GameHud(ui, state, assets) },
+        // Zero, on purpose: the board must stay full-bleed. The HUD in the top bar
+        // slot insets ITSELF against the status bar, and the floating bottom chrome
+        // insets itself against the navigation bar — the canvas between them keeps
+        // every pixel.
+        contentWindowInsets = WindowInsets(0),
     ) { insets ->
         Box(
             Modifier
@@ -159,7 +175,15 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                     Column(
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            // The board draws under the gesture pill; its chrome
+                            // must not. Horizontal too, for a landscape nav bar
+                            // or a cutout.
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(
+                                    WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                                ),
+                            ),
                         horizontalAlignment = Alignment.End,
                     ) {
                         // The champion's turn failed. It is not the human's turn, so
@@ -184,16 +208,21 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                         ActionButtons(ui, state, vm)
                         StatusBar(ui, state)
                     }
+                    // The banners hang below the HUD, which has already cleared the
+                    // status bar; only the horizontal sides are still theirs to dodge.
+                    val bannerModifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                        )
                     if (ui.thinking) {
-                        ThinkingBanner(ui, state, Modifier.align(Alignment.TopCenter))
+                        ThinkingBanner(ui, state, bannerModifier)
                     }
                     ui.error?.let { err ->
-                        ErrorBanner(err, vm::clearError, Modifier.align(Alignment.TopCenter))
+                        ErrorBanner(err, vm::clearError, bannerModifier)
                     }
                     ui.saveMismatch?.let { note ->
-                        MismatchBanner(
-                            note, vm::dismissSaveMismatch, Modifier.align(Alignment.TopCenter),
-                        )
+                        MismatchBanner(note, vm::dismissSaveMismatch, bannerModifier)
                     }
                 }
             }
@@ -241,6 +270,27 @@ internal fun formatSeconds(seconds: Double): String =
     else "%.0fs".format(Locale.US, seconds)
 
 /**
+ * The HUD's game-progress read-out.
+ *
+ * These replace the old `turn N`, which printed the bridge's `turn` field — a
+ * count of every APPLIED ACTION, bumped once per phase per seat (and once more
+ * for each auto-passed forced move). Placing a tile and then deciding its meeple
+ * are two separate actions, so between two consecutive human views the number
+ * jumped unevenly — 2 → 3 → 6 → 7 → 10 → 11 → 14 was a real game — and read like
+ * a turn counter dropping numbers. Nothing in the state maps to a "turn" the
+ * player would recognise, so the HUD now reports the two quantities that are
+ * unambiguous and directly countable on the board.
+ *
+ * [tilesRemaining] is the bridge's `k_remaining` — undrawn deck plus the tile in
+ * hand — and [placed] is simply how many tiles are on the board, so neither needs
+ * a hardcoded deck size to be honest.
+ */
+internal fun tilesLeftLabel(tilesRemaining: Int): String =
+    "$tilesRemaining tile${if (tilesRemaining == 1) "" else "s"} left"
+
+internal fun tilesPlacedLabel(placed: Int): String = "$placed placed"
+
+/**
  * Approximate heights of the chrome floating over the board canvas: the banner
  * strip at the top, and the action-button row plus status bar at the bottom.
  *
@@ -284,10 +334,18 @@ private suspend fun recentreIfOffscreen(
 
 @Composable
 private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
+    // The inset goes on the Row, not the Surface: the Surface keeps painting its
+    // tonal background all the way up behind the status bar (so the clock sits on
+    // the HUD's colour, not on a torn edge), while the content starts below it.
     Surface(tonalElevation = 3.dp) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                    ),
+                )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -303,8 +361,19 @@ private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
             )
             Spacer(Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
-                Text("${state.tilesRemaining} tiles", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                Text("turn ${state.turn}", fontSize = 10.sp)
+                Text(
+                    tilesLeftLabel(state.tilesRemaining),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text(
+                    tilesPlacedLabel(state.board.size),
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
             // The tile in hand, shown at the rotation the ghost is currently
             // aiming so the thumbnail and the board agree.
@@ -362,7 +431,9 @@ private fun NextTileThumb(state: GameState, rotation: Int, assets: TileAssets) {
 @Composable
 private fun LoadingPane(ui: GameUiState) {
     Column(
-        Modifier.fillMaxSize(),
+        // No HUD is composed while `state` is null, so these two panes are the
+        // only thing on screen and must inset themselves.
+        Modifier.fillMaxSize().safeDrawingPadding(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -379,7 +450,7 @@ private fun LoadingPane(ui: GameUiState) {
 @Composable
 private fun FatalPane(err: BridgeError, onHome: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().padding(24.dp),
+        Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

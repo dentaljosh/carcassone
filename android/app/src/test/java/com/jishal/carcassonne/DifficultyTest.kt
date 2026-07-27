@@ -125,4 +125,56 @@ class DifficultyTest {
         assertEquals("1.5s", formatSeconds(1.52))
         assertEquals("12s", formatSeconds(12.4))
     }
+
+    // -- the HUD's game-progress read-out ------------------------------------
+    //
+    // These replaced `turn N`, which printed a count of applied ACTIONS and so
+    // stepped 2, 3, 6, 7, 10 through a normal game. Both labels below are derived
+    // from quantities the player can count on the board.
+
+    @Test
+    fun `tiles-left label singularises`() {
+        assertEquals("71 tiles left", tilesLeftLabel(71))
+        assertEquals("1 tile left", tilesLeftLabel(1))
+        assertEquals("0 tiles left", tilesLeftLabel(0))
+    }
+
+    @Test
+    fun `tiles-placed label counts the board`() {
+        // The start tile is on the board before anyone has moved.
+        assertEquals("1 placed", tilesPlacedLabel(1))
+        assertEquals("36 placed", tilesPlacedLabel(36))
+    }
+
+    // -- the Home screen's seed field ----------------------------------------
+
+    @Test
+    fun `a typed seed is used verbatim`() {
+        assertEquals(12345, resolveSeed("12345") { 999 })
+    }
+
+    @Test
+    fun `an unusable seed field falls back to a fresh random one`() {
+        // Blank, zero and overflowing-Int all mean "just pick one" rather than
+        // starting a game at seed 0 (or crashing on toInt()).
+        assertEquals(999, resolveSeed("") { 999 })
+        assertEquals(999, resolveSeed("0") { 999 })
+        assertEquals(999, resolveSeed("999999999999") { 999 })
+    }
+
+    @Test
+    fun `random seeds stay inside the typeable range`() {
+        repeat(200) {
+            val s = randomSeed()
+            assertTrue("seed $s out of range", s in 1 until SEED_MAX)
+        }
+    }
+
+    @Test
+    fun `the new-game form defaults to a usable seat and seed`() {
+        val form = NewGameForm()
+        assertEquals(Seat.HUMAN_FIRST, form.seat)
+        assertTrue(form.seedText.isNotEmpty())
+        assertEquals(form.seedText.toInt(), resolveSeed(form.seedText) { -1 })
+    }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,19 +25,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlin.random.Random
-
-private const val SEED_MAX = 1_000_000
 
 /**
  * One line naming the opponent the *current preset* will produce.
@@ -76,8 +71,9 @@ fun HomeScreen(
     onDebug: () -> Unit,
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
-    var seat by rememberSaveable { mutableStateOf(Seat.HUMAN_FIRST) }
-    var seedText by rememberSaveable { mutableStateOf(Random.nextInt(1, SEED_MAX).toString()) }
+    // Seat and seed live in the ViewModel, not in a `rememberSaveable` here: this
+    // screen leaves the composition on every navigation, which re-rolled the seed.
+    val form by vm.newGameForm.collectAsStateWithLifecycle()
 
     // Warms the (slow) Python import and reads the YAML budget + save slot, so
     // the first new_game is not also paying for `import numpy`.
@@ -86,6 +82,9 @@ fun HomeScreen(
     Column(
         Modifier
             .fillMaxSize()
+            // The status-bar clock used to sit on the title and the gesture pill
+            // clipped the error banner at the bottom of the scroll.
+            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -105,8 +104,8 @@ fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (option in Seat.entries) {
                         FilterChip(
-                            selected = seat == option,
-                            onClick = { seat = option },
+                            selected = form.seat == option,
+                            onClick = { vm.setSeat(option) },
                             label = { Text(option.label, fontSize = 12.sp) },
                         )
                     }
@@ -114,17 +113,15 @@ fun HomeScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = seedText,
-                        onValueChange = { new -> seedText = new.filter(Char::isDigit).take(9) },
+                        value = form.seedText,
+                        onValueChange = vm::setSeedText,
                         label = { Text("Deck seed") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(8.dp))
-                    OutlinedButton(onClick = {
-                        seedText = Random.nextInt(1, SEED_MAX).toString()
-                    }) { Text("Random") }
+                    OutlinedButton(onClick = vm::rerollSeed) { Text("Random") }
                 }
 
                 Text("Difficulty", fontSize = 12.sp)
@@ -162,9 +159,7 @@ fun HomeScreen(
 
                 Button(
                     onClick = {
-                        val seed = seedText.toIntOrNull()?.takeIf { it > 0 }
-                            ?: Random.nextInt(1, SEED_MAX)
-                        vm.newGame(seat, seed)
+                        vm.newGame(form.seat, resolveSeed(form.seedText))
                         onPlay()
                     },
                     enabled = !ui.busy && !ui.thinking,

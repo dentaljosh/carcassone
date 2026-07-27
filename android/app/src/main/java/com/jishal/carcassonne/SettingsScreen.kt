@@ -1,7 +1,6 @@
 package com.jishal.carcassonne
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -62,6 +62,9 @@ fun SettingsScreen(vm: GameViewModel, onBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
+            // Without this the "← Back" button was drawn UNDER the status bar and
+            // was not merely ugly but untappable — the system window took the taps.
+            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -258,14 +261,20 @@ private fun ManifestDialog(onDismiss: () -> Unit) {
             if (body == null) {
                 Text("Resolving the champion manifest…", fontSize = 12.sp)
             } else {
+                // Wrap, don't pan. The manifest is mostly long unbroken tokens —
+                // absolute paths and hashes — and a horizontal scroll on a
+                // dialog-width viewport just cut them off mid-character with no
+                // affordance saying there was more. `heightIn` only caps: in
+                // landscape the dialog's own max height wins and this still fits.
                 Text(
                     body,
                     Modifier
+                        .fillMaxWidth()
                         .heightIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState())
-                        .horizontalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState()),
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
+                    softWrap = true,
                 )
             }
         },
@@ -306,7 +315,13 @@ private fun AboutDialog(budget: ProductionBudget?, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("About") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text("Carcassonne AI", fontWeight = FontWeight.Bold)
                 Text(
                     "2-player Base + Farmers against the production champion, " +

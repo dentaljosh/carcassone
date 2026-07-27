@@ -32,6 +32,33 @@ enum class Seat(val label: String) {
     }
 }
 
+/**
+ * The Home screen's new-game form.
+ *
+ * Session state, deliberately NOT part of [GameUiState]: that object is rebuilt
+ * wholesale by `newGame`/`leaveGame`, which is exactly what used to throw away a
+ * hand-typed seed. Held by the activity-scoped [GameViewModel] instead of a
+ * `rememberSaveable`, because the plain `when (screen)` navigation drops Home
+ * out of the composition entirely — so the seed was re-rolled on every return
+ * from Settings.
+ */
+data class NewGameForm(
+    val seat: Seat = Seat.HUMAN_FIRST,
+    val seedText: String = randomSeed().toString(),
+)
+
+/** Deck seeds are user-visible, so they stay short enough to read out and retype. */
+const val SEED_MAX: Int = 1_000_000
+
+fun randomSeed(): Int = Random.nextInt(1, SEED_MAX)
+
+/**
+ * The seed a Start tap actually uses: the typed digits when they parse to a
+ * usable seed, a fresh random one when the field is blank or zero.
+ */
+fun resolveSeed(seedText: String, fallback: () -> Int = ::randomSeed): Int =
+    seedText.toIntOrNull()?.takeIf { it > 0 } ?: fallback()
+
 /** The tile-placement ghost the human is currently aiming. */
 data class Ghost(
     val cell: Cell,
@@ -140,6 +167,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _ui = MutableStateFlow(GameUiState())
     val ui: StateFlow<GameUiState> = _ui
+
+    private val _newGameForm = MutableStateFlow(NewGameForm())
+
+    /** The Home screen's seat + seed, kept for the life of the process. */
+    val newGameForm: StateFlow<NewGameForm> = _newGameForm
+
+    fun setSeat(seat: Seat) {
+        _newGameForm.update { it.copy(seat = seat) }
+        // Touching the new-game config means the user has moved on from whatever
+        // failed last; the banner would otherwise sit there for the whole session.
+        clearError()
+    }
+
+    fun setSeedText(text: String) {
+        _newGameForm.update { it.copy(seedText = text.filter(Char::isDigit).take(9)) }
+        clearError()
+    }
+
+    fun rerollSeed() {
+        _newGameForm.update { it.copy(seedText = randomSeed().toString()) }
+        clearError()
+    }
 
     private var opJob: Job? = null
     private var progressJob: Job? = null
