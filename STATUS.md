@@ -29,7 +29,7 @@
 
 ## Side project (2026-07-27) — 📱 **Android app: play the deploy champion on-device** (branch `android-app`)
 
-Joshua-requested. Kotlin/Compose GUI + Chaquopy-embedded Python running the REAL fair champion (bundle synced from the repo at build time, `verify=True` on device; no torch/Rust in the play path). M0–M3 committed on `android-app`: APK builds (Chaquopy 17/Py3.12/numpy), 22 bridge pytests + 32 JVM tests green, two independent reviews done, consolidated fix pass + M4 (arm64 Cython leaf) in flight. Plan: `~/.claude/plans/i-want-am-android-quizzical-dragon.md`; build docs: [android/README.md](android/README.md). **Open gate: on-device latency at full budget (needs Joshua's phone paired).** Not a strength lever; nothing here touches PRODUCTION.yaml or measurement.
+Joshua-requested. Kotlin/Compose GUI + Chaquopy-embedded Python running the REAL fair champion (bundle synced from the repo at build time, `verify=True` on device; no torch/Rust in the play path; Cython leaf cross-compiled to arm64/x86_64 wheels with NDK clang). M0–M4 + 2 review passes + 3 agent playtest rounds all committed on `android-app`: **champion verified playing ON-DEVICE (emulator) at full k4×688 fair budget, 3.3–4.2 s/move with live progress**; full-game scoring verified in play; end dialog shows a during-play/incomplete/farms breakdown. 48 bridge pytests + 68 JVM tests green. Plan: `~/.claude/plans/i-want-am-android-quizzical-dragon.md`; build docs: [android/README.md](android/README.md). **Open gate: install + latency check on Joshua's real phone (wireless adb pair).** Not a strength lever; nothing here touches PRODUCTION.yaml or measurement.
 
 ---
 
