@@ -1,37 +1,78 @@
-"""Click-through GUI for human-vs-Tier1 Carcassonne.
+"""Click-through GUI for human-vs-AI Carcassonne (locked scope: 2p, Base + Farmers).
 
-Adapted from `play_vs_mcts_gui.py` (play-vs-mcts branch) with MCTS replaced by
-the rule-based Tier-1 player. Tier-1 picks instantly (no thread needed; the
-1-ply virtual_score lookup is ~50-200 ms even mid-game), so the threading +
-"thinking..." UI is dropped.
+The DEFAULT opponent is the CURRENT DEPLOY CHAMPION — the fair (non-clairvoyant)
+``FairHeuristicPriorAgent`` built by
+``carcassonne_ai.champion_factory.make_production_champion("fair", ...)``, which reads
+``governance/PRODUCTION.yaml`` and PROVES the curve125 v2.9 Bmild_cap8 leaf on real
+boards at construction (it RAISES on any mismatch). No strength knob is hardcoded in
+this file — the YAML owns them (today: k_dets=4 x sims_per_det=688 = 2752 sims/move,
+exact-K<=2 marginalized endgame, c_puct=1.5, tau_p=5, visit-argmax final select).
+The resolved runtime manifest is printed at startup, same as play_harness.py logs it.
 
-  python scripts/play_vs_tier1_gui.py --player 0 --seed 42
+⚠️ THE CHAMPION IS SLOW (~3 s/move, longer when the box is loaded), and tkinter is
+single-threaded. So the agent runs on a DAEMON WORKER THREAD and hands its answer back
+through a ``queue.Queue`` that the Tk main loop drains on a ``root.after(100, ...)``
+tick; the same tick repaints a live "thinking… (Xs)" counter so a multi-second wait
+reads as progress rather than a hang. NO tkinter call is ever made from the worker
+thread. This restores the threading design of ``play_vs_mcts_gui.py`` (play-vs-mcts
+branch, commit 04e4330), which this file was adapted from and which had dropped the
+threading only because the Tier-1 stand-in answered instantly.
+
+``--opponent tier1`` keeps the old instant rule-based player (the SATURATED Tier-1
+reference — far weaker than the champion). It uses the same worker-thread path and
+simply returns almost immediately.
+
+``--sims`` / ``--k-dets`` default to the PRODUCTION.yaml budget. Lowering them for a
+faster casual game plays a WEAKER-THAN-CHAMPION agent, so the window title AND the
+sidebar both say "BELOW CHAMPION BUDGET" — mirroring the ``runtime_budget_override``
+that ``scripts/human_anchor/play_harness.py`` records into its game logs. A bare
+invocation is always the full champion budget.
+
+  # play the champion (you move first)
+  .venv/bin/python scripts/play_vs_tier1_gui.py --player 0 --seed 42
 
 Requires a DISPLAY: WSLg on Windows 11 (WSL2), an X server with X11 forwarding,
 or run on a desktop with tkinter installed.
 
 Interaction:
-  TILES phase   - legal cells outlined green; click a cell to select it,
+  TILES phase   - legal cells outlined orange; click a cell to select it,
                   click again to cycle rotation, click [Confirm] to commit.
                   [Cancel] clears the selection.
   MEEPLES phase - colored dots appear on each legal slot of the just-placed
                   tile. Click a dot to commit, or [Skip] to decline.
-  Tier-1 turn   - sidebar shows the chosen move + score impact after each
-                  Tier-1 turn.
+  AI turn       - board clicks are ignored, the sidebar shows a live thinking
+                  timer, then the chosen move + its score impact.
+
+⚠️ This module imports ``scripts/human_anchor/env_preamble`` BEFORE ``carcassonne_ai``
+— the production leaf env (curve125 / FLAT_LEAF / CY_REPR / single-thread BLAS) must be
+in ``os.environ`` at library-import time or champion_factory's verify raises. That
+preamble also shapes the leaf knobs the ``tier1`` opponent reads, so ``--opponent
+tier1`` here is Tier-1-under-production-leaf-env, not a pristine Tier-1 baseline; this
+GUI is for play, never for measurement.
 """
 from __future__ import annotations
 
 import argparse
+import queue
 import random
 import sys
+import threading
+import time
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 import numpy as np
 
+_REPO = Path(__file__).resolve().parent.parent
 # Allow running directly without `pip install -e .`.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(_REPO / "src"))
+# The production leaf knobs must be in os.environ BEFORE carcassonne_ai is imported.
+# scripts/human_anchor/env_preamble.py owns those values (curve125, caps, FLAT_LEAF,
+# CY_REPR, CUDA off, 1 BLAS thread) — import it instead of duplicating the knob list.
+sys.path.insert(0, str(_REPO / "scripts" / "human_anchor"))
+import env_preamble  # noqa: E402,F401  MUST precede any carcassonne_ai import
 
 from carcassonne_ai.action_space import (
     decode,
@@ -40,13 +81,16 @@ from carcassonne_ai.action_space import (
     tile_pass_index,
 )
 from carcassonne_ai.game_wrapper import Board, Game
-from carcassonne_ai.rule_based_player import RuleBasedPlayer
+# RuleBasedPlayer / champion_factory are imported lazily in `build_opponent` so a
+# champion game never pays for the Tier-1 module and vice versa.
 
 from wingedsheep.carcassonne.objects.actions.meeple_action import MeepleAction
 from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
 from wingedsheep.carcassonne.objects.coordinate import Coordinate
 from wingedsheep.carcassonne.objects.side import Side
 from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+from wingedsheep.carcassonne.tile_sets.supplementary_rules import SupplementaryRule
+from wingedsheep.carcassonne.tile_sets.tile_sets import TileSet
 
 
 # Layout. The board canvas uses TILE_PX/CANVAS_W/CANVAS_H, all rescaled by
@@ -155,13 +199,35 @@ class AiSummary:
     chosen_str: str
     score_p0_before: int
     score_p1_before: int
+    elapsed_s: float
+
+
+@dataclass
+class Opponent:
+    """Uniform façade over the two opponent kinds — their pick signatures differ
+    (the champion's is ``choose_action(board)``, RuleBasedPlayer's is
+    ``choose_action(game, board, mask)``), and only the champion has a budget to be
+    honest about.
+
+    name          short label shown in the sidebar / title / game-over verdict
+    pick          (board, mask) -> action index; called ONLY on the worker thread
+    manifest      champion_factory runtime manifest, or None for Tier-1
+    budget_note   None when running at (or above) the PRODUCTION.yaml champion budget;
+                  otherwise the loud "BELOW CHAMPION BUDGET …" string that must appear
+                  in the UI so a win over a weakened agent can never read as a win
+                  over the champion.
+    """
+    name: str
+    pick: Callable[[Board, np.ndarray], int]
+    manifest: dict | None = None
+    budget_note: str | None = None
 
 
 class GameGUI:
     def __init__(
         self,
         game: Game,
-        ai: RuleBasedPlayer,
+        ai: Opponent,
         visualiser,
         human_player: int,
     ) -> None:
@@ -178,6 +244,15 @@ class GameGUI:
         self.rotation_options: list[int] = []
         self.rotation_idx: int = 0
         self.last_ai: AiSummary | None = None
+
+        # --- AI worker thread plumbing -------------------------------------
+        # The champion needs seconds per move. It runs on a daemon thread; the
+        # ONLY channel back to Tk is this queue, drained by _tick() on the main
+        # thread. The worker touches no widget (tkinter is not thread-safe).
+        self.ai_thread: threading.Thread | None = None
+        self.ai_queue: queue.Queue = queue.Queue()
+        self.ai_t0: float = 0.0
+        self.ai_error: str | None = None
 
         # Cache for tile-preview PhotoImages, keyed by (filename, rot, size).
         # Without keeping a Python ref the image is GC'd and disappears.
@@ -208,7 +283,10 @@ class GameGUI:
         # pixel sizes; never zooms or pans.
         self.sidebar_canvas = None  # type: ignore[assignment]
 
-        self.root.title("Carcassonne — you vs Tier-1")
+        title = f"Carcassonne — you vs {self.ai.name}"
+        if self.ai.budget_note:
+            title += f"   ⚠ {self.ai.budget_note}"
+        self.root.title(title)
         self._add_scrollbars_and_center()
 
     def _add_scrollbars_and_center(self) -> None:
@@ -379,7 +457,38 @@ class GameGUI:
     # -------------------- main loop tick --------------------
 
     def start(self) -> None:
+        self._tick()
         self._advance()
+
+    def _tick(self) -> None:
+        """Tk-main-thread heartbeat (100 ms). Two jobs, both cheap:
+          1. while the AI thread is alive, repaint the sidebar with a live
+             elapsed-seconds counter so a multi-second think reads as progress;
+          2. drain the result queue and apply the move.
+        This is the ONLY place a worker result crosses into Tk."""
+        if self.ai_thread is not None and self.ai_thread.is_alive():
+            # Sidebar only — the board is untouched while the AI thinks, so there
+            # is nothing else to repaint and no reason to burn CPU redrawing it.
+            self._draw_sidebar(thinking_elapsed=time.perf_counter() - self.ai_t0)
+        try:
+            kind, payload = self.ai_queue.get_nowait()
+        except queue.Empty:
+            pass
+        else:
+            self.ai_thread = None
+            if kind == "err":
+                # A crashed worker would otherwise leave the GUI "thinking" forever.
+                self.ai_error = payload
+                print(payload, file=sys.stderr)
+                self._draw_sidebar()
+            else:
+                self._commit_ai_move(payload)
+        try:
+            self.root.after(100, self._tick)
+        except Exception:
+            # Window closed (Close button / WM delete) between ticks — the pending
+            # after() would otherwise raise TclError against a destroyed root.
+            pass
 
     def _advance(self) -> None:
         if self.board.state.is_terminated():
@@ -399,34 +508,57 @@ class GameGUI:
             if legal == [pass_idx]:
                 self.root.after(400, lambda: self._apply_action(pass_idx))
         else:
-            # Defer Tier-1 turn so the just-played human move renders first.
-            self.root.after(250, self._run_ai_turn)
+            # Defer the AI turn so the just-played human move renders first.
+            self.root.after(250, self._start_ai_turn)
 
-    def _run_ai_turn(self) -> None:
-        mask = self.game.get_valid_moves(self.board)
-        s0_before, s1_before = self.board.state.scores
-        idx = self.ai.choose_action(self.game, self.board, mask)
-        chosen_str = format_action(idx, self.board)
+    def _start_ai_turn(self) -> None:
+        """Launch the AI on a worker thread. Returns immediately — the Tk main
+        loop keeps servicing expose/resize/scroll events the whole time."""
+        if self.ai_thread is not None:            # defensive: never two in flight
+            return
+        board = self.board                        # snapshot: Board is not mutated
+        mask = self.game.get_valid_moves(board)   # main thread owns self.game
+        s0_before, s1_before = board.state.scores
+        self.ai_t0 = time.perf_counter()
+        self.ai_thread = threading.Thread(
+            target=self._ai_worker, args=(board, mask, s0_before, s1_before),
+            daemon=True, name="carc-ai",
+        )
+        self.ai_thread.start()
+        self._draw_sidebar(thinking_elapsed=0.0)
 
+    def _ai_worker(self, board, mask, s0_before: int, s1_before: int) -> None:
+        """WORKER THREAD. Pure computation + a queue.put — NO tkinter, ever.
+        Everything it touches (board, mask, its own Game/agent) is thread-local
+        or read-only for the duration."""
+        try:
+            idx = int(self.ai.pick(board, mask))
+            self.ai_queue.put(("ok", AiSummary(
+                idx=idx,
+                chosen_str=format_action(idx, board),
+                score_p0_before=s0_before,
+                score_p1_before=s1_before,
+                elapsed_s=time.perf_counter() - self.ai_t0,
+            )))
+        except BaseException:                     # noqa: BLE001 — must not die silently
+            self.ai_queue.put(("err", traceback.format_exc()))
+
+    def _commit_ai_move(self, summary: AiSummary) -> None:
+        """MAIN THREAD. Apply the worker's chosen action to the live board."""
         # If the AI played a tile this turn, remember the coordinate so we can
         # highlight it on the board (border in the AI's player color). For
         # meeple actions, leave the prior tile highlight in place.
         phase = self.board.state.phase.value
-        if phase == "tiles" and idx != tile_pass_index(self.board.offset.size):
+        if phase == "tiles" and summary.idx != tile_pass_index(self.board.offset.size):
             tile_action = decode(
-                idx, off=self.board.offset, phase="tiles",
+                summary.idx, off=self.board.offset, phase="tiles",
                 next_tile=self.board.state.next_tile,
             )
             assert isinstance(tile_action, TileAction)
             self.ai_last_tile_coord = tile_action.coordinate
 
-        self.last_ai = AiSummary(
-            idx=idx,
-            chosen_str=chosen_str,
-            score_p0_before=s0_before,
-            score_p1_before=s1_before,
-        )
-        self._apply_action(idx)
+        self.last_ai = summary
+        self._apply_action(summary.idx)
 
     def _apply_action(self, idx: int) -> None:
         self.board, _ = self.game.get_next_state(self.board, idx)
@@ -443,7 +575,7 @@ class GameGUI:
         if self.board.state.is_terminated():
             return
         if self.board.state.current_player != self.human:
-            return  # ignore clicks during Tier-1 turn
+            return  # ignore board clicks while the AI thinks (its turn)
 
         # Translate window coords -> canvas coords (the canvas is scrolled).
         x, y = int(self.canvas.canvasx(event.x)), int(self.canvas.canvasy(event.y))
@@ -625,9 +757,10 @@ class GameGUI:
 
     # -------------------- sidebar --------------------
 
-    def _draw_sidebar(self) -> None:
+    def _draw_sidebar(self, thinking_elapsed: float | None = None) -> None:
         # Sidebar lives on its own canvas — wipe and redraw. Canvas's own
         # bg color (#f6f6f6) shows through, no manual bg rect needed.
+        # `thinking_elapsed` is set only by _tick while the AI worker runs.
         sb = self.sidebar_canvas
         sb.delete("all")
         self._buttons: dict[str, tuple[int, int, int, int, Callable[[], None]]] = {}
@@ -639,9 +772,10 @@ class GameGUI:
         s0, s1 = self.board.state.scores
         cur = self.board.state.current_player
         phase = self.board.state.phase.value
-        who = "you" if cur == self.human else "Tier-1"
+        who = "you" if cur == self.human else self.ai.name
         you_label = "You (P0)" if self.human == 0 else "You (P1)"
-        ai_label = "Tier-1 (P1)" if self.human == 0 else "Tier-1 (P0)"
+        ai_label = (f"{self.ai.name} (P1)" if self.human == 0
+                    else f"{self.ai.name} (P0)")
         you_score = s0 if self.human == 0 else s1
         ai_score = s1 if self.human == 0 else s0
         tiles_left = len(self.board.state.deck)
@@ -670,6 +804,34 @@ class GameGUI:
             sb.create_text(x, y, text=line, anchor="nw", font=("Arial", 14))
             y += line_h
         y += 12
+
+        # Honesty banner: a sub-champion budget must be impossible to miss, so it
+        # sits above the fold in the sidebar as well as in the window title.
+        if self.ai.budget_note:
+            sb.create_rectangle(x - 6, y - 4, x + 340, y + line_h + 4,
+                                fill="#ffe0b2", outline="#e65100", width=2)
+            sb.create_text(x, y, text=f"⚠ {self.ai.budget_note}", anchor="nw",
+                           font=("Arial", 11, "bold"), fill="#bf360c")
+            y += line_h + 14
+
+        if self.ai_error is not None:
+            sb.create_text(x, y, text="AI ERROR — see terminal", anchor="nw",
+                           font=("Arial", 13, "bold"), fill="#b71c1c")
+            y += line_h
+            sb.create_text(x, y, text=self.ai_error.strip().splitlines()[-1][:44],
+                           anchor="nw", font=("Arial", 9), fill="#b71c1c")
+            y += line_h + 8
+
+        if thinking_elapsed is not None:
+            # Live counter driven by _tick; the whole point is that a 3 s think
+            # looks like progress, not a frozen window.
+            sb.create_rectangle(x - 6, y - 4, x + 340, y + line_h + 4,
+                                fill="#e3f2fd", outline="#1976d2", width=2)
+            sb.create_text(
+                x, y, text=f"{self.ai.name} thinking… ({thinking_elapsed:.1f}s)",
+                anchor="nw", font=("Arial", 13, "bold"), fill="#0d47a1",
+            )
+            y += line_h + 14
 
         if phase == "tiles" and self.board.state.next_tile is not None:
             tile = self.board.state.next_tile
@@ -723,9 +885,9 @@ class GameGUI:
                 y += line_h
             y += 12
 
-        if self.last_ai is not None:
+        if self.last_ai is not None and thinking_elapsed is None:
             sb.create_text(
-                x, y, text="Tier-1's last move:", anchor="nw",
+                x, y, text=f"{self.ai.name}'s last move:", anchor="nw",
                 font=("Arial", 13, "bold"),
             )
             y += line_h
@@ -740,7 +902,8 @@ class GameGUI:
             you_delta = ds0 if self.human == 0 else ds1
             sb.create_text(
                 x, y,
-                text=f"  scored: Tier-1 +{ai_delta}, you +{you_delta}",
+                text=f"  scored: {self.ai.name} +{ai_delta}, you +{you_delta}"
+                     f"   ({self.last_ai.elapsed_s:.1f}s)",
                 anchor="nw", font=("Arial", 11), fill="#666",
             )
             y += line_h
@@ -798,20 +961,21 @@ class GameGUI:
             verdict = "Tie!"
         else:
             winner = 0 if diff > 0 else 1
-            verdict = "You win!" if winner == self.human else "Tier-1 wins."
+            verdict = "You win!" if winner == self.human else f"{self.ai.name} wins."
         x = SIDEBAR_PAD
         y = 100
-        for line in [
-            "GAME OVER",
-            "",
-            f"P0: {s0}",
-            f"P1: {s1}",
-            f"Diff: {abs(diff)}",
-            "",
-            verdict,
-        ]:
+        for line in ["GAME OVER", "", f"P0: {s0}", f"P1: {s1}",
+                     f"Diff: {abs(diff)}", "", verdict]:
             sb.create_text(x, y, text=line, anchor="nw", font=("Arial", 18, "bold"))
             y += 36
+        sb.create_text(x, y, text=f"(opponent: {self.ai.name})", anchor="nw",
+                       font=("Arial", 11), fill="#666", width=340)
+        y += 26
+        if self.ai.budget_note:
+            # Never let a win over a throttled agent read as a win over the champion.
+            sb.create_text(x, y, text="⚠ " + self.ai.budget_note, anchor="nw",
+                           font=("Arial", 12, "bold"), fill="#bf360c", width=340)
+            y += 56
         self._buttons = {}
         self._draw_button("Close", x, y + 20, "#555", self.root.destroy)
 
@@ -879,28 +1043,133 @@ def _apply_scale(scale: float) -> None:
     }
 
 
+def build_opponent(kind: str, *, seed: int, sims: int | None,
+                   k_dets: int | None, verbose: bool = True) -> Opponent:
+    """Construct the AI side and wrap it in the uniform `Opponent` façade.
+
+    The agent gets its OWN `Game` instance: the GUI's Game carries a legal-moves
+    cache and the agent runs on a worker thread, so giving each side a private
+    Game removes any possibility of a cross-thread cache race. (The turn structure
+    already serialises them, but the isolation is free.)
+
+    Strength knobs are NEVER hardcoded here — `make_production_champion` reads
+    governance/PRODUCTION.yaml. `sims`/`k_dets` are honest overrides only."""
+    ai_game = Game(enable_legal_moves_cache=True)
+
+    if kind == "tier1":
+        from carcassonne_ai.rule_based_player import RuleBasedPlayer
+        tier1 = RuleBasedPlayer(seed=seed)
+        return Opponent(
+            name="Tier-1",
+            pick=lambda board, mask: tier1.choose_action(ai_game, board, mask),
+            # Not a budget override — a different (much weaker) agent entirely,
+            # so it is named, not flagged.
+            budget_note=None,
+        )
+
+    from carcassonne_ai.champion_factory import (
+        load_production_spec, make_production_champion,
+    )
+    spec = load_production_spec()
+    eff_sims = spec.sims_per_det if sims is None else int(sims)
+    eff_k = spec.k_dets if k_dets is None else int(k_dets)
+    # verify=True PROVES the curve125 leaf on real boards and RAISES on mismatch.
+    agent = make_production_champion(
+        "fair", game=ai_game, seed=seed, sims=eff_sims, k_dets=eff_k,
+        exact_endgame=True, verify=True,
+    )
+    manifest = getattr(agent, "manifest", None)
+
+    # Honesty: mirror play_harness.py's runtime_budget_override. Anything short of
+    # the YAML budget is NOT the champion and must say so, everywhere it is visible.
+    budget_note = None
+    name = "Champion"
+    if (eff_sims, eff_k) != (spec.sims_per_det, spec.k_dets):
+        full = spec.k_dets * spec.sims_per_det
+        budget_note = (
+            f"BELOW CHAMPION BUDGET — running k{eff_k}x{eff_sims}={eff_k * eff_sims} "
+            f"sims/move vs the champion's k{spec.k_dets}x{spec.sims_per_det}={full}. "
+            f"This is a WEAKENED agent; beating it is not beating the champion."
+        )
+        name = f"Champion(weakened k{eff_k}x{eff_sims})"
+
+    if verbose:
+        print(f"[champion] {spec.champion_id}  agent=FairHeuristicPriorAgent  "
+              f"k_dets={eff_k} sims_per_det={eff_sims} total={eff_k * eff_sims} "
+              f"exact_K<={spec.exact_max_k}")
+        if manifest is not None:
+            import json
+            print("[champion] runtime manifest:")
+            print(json.dumps(manifest, indent=1, default=str))
+        if budget_note:
+            print(f"[champion] ⚠ {budget_note}")
+
+    return Opponent(
+        name=name,
+        pick=lambda board, mask: agent.choose_action(board),
+        manifest=manifest,
+        budget_note=budget_note,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="play_vs_tier1_gui")
+    p = argparse.ArgumentParser(
+        prog="play_vs_tier1_gui",
+        description="Play the current deploy champion (or Tier-1) with a mouse.",
+    )
+    p.add_argument("--opponent", choices=("champion", "tier1"), default="champion",
+                   help="champion = the PRODUCTION.yaml fair deploy champion "
+                        "(FairHeuristicPriorAgent, ~3 s/move). tier1 = the old "
+                        "instant rule-based player (SATURATED reference, much weaker).")
     p.add_argument("--player", type=int, choices=(0, 1), default=0,
-                   help="0 = you go first, 1 = Tier-1 goes first")
-    p.add_argument("--seed", type=int, default=None)
+                   help="your seat: 0 = you go first, 1 = the AI goes first")
+    p.add_argument("--seed", type=int, default=None,
+                   help="deck seed (also seeds the agent); random if unset")
+    p.add_argument("--sims", type=int, default=None,
+                   help="sims per determinization. DEFAULT = the PRODUCTION.yaml "
+                        "budget (fair_deploy.sims_per_det). Lowering it ONLY speeds "
+                        "the AI up and plays a WEAKER-THAN-CHAMPION agent — the title "
+                        "bar and sidebar then both say BELOW CHAMPION BUDGET. "
+                        "Ignored for --opponent tier1.")
+    p.add_argument("--k-dets", type=int, default=None,
+                   help="determinizations per move. DEFAULT = the PRODUCTION.yaml "
+                        "budget (fair_deploy.k_dets). Same honesty rule as --sims.")
     p.add_argument("--scale", type=float, default=1.0,
                    help="UI scale factor (0.5 = half size, 1.0 = original)")
     args = p.parse_args(argv)
 
-    if args.seed is not None:
-        random.seed(args.seed)
+    if args.opponent == "tier1" and (args.sims is not None or args.k_dets is not None):
+        print("[warn] --sims/--k-dets are champion-only; ignored for --opponent tier1",
+              file=sys.stderr)
+
+    # Build the agent BEFORE any Tk work: champion_factory's verify raises on a leaf
+    # mismatch, and a traceback in a terminal beats one behind a half-drawn window.
+    opponent = build_opponent(
+        args.opponent, seed=args.seed if args.seed is not None else 0,
+        sims=args.sims, k_dets=args.k_dets,
+    )
 
     _patch_pillow_antialias()
     _apply_scale(args.scale)
 
+    # Seed HERE, not earlier: the engine shuffles the deck inside GameGUI.__init__'s
+    # get_init_board() off the global `random`, so seeding immediately before it keeps
+    # --seed -> deck reproducible regardless of what agent construction consumed.
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    # Locked scope (2p, Base + Farmers, no River/I&C/Abbots/Big meeples) is enforced
+    # by Game's own defaults + its constructor guards — this GUI passes no tile_sets
+    # or supplementary_rules, so it inherits exactly that.
     game = Game(enable_legal_moves_cache=True)
-    ai = RuleBasedPlayer(seed=args.seed if args.seed is not None else 0)
+    assert game.players == 2 and game.tile_sets == (TileSet.BASE,)
+    assert game.supplementary_rules == (SupplementaryRule.FARMERS,)
 
     from wingedsheep.carcassonne.carcassonne_visualiser import CarcassonneVisualiser
     visualiser = CarcassonneVisualiser()
 
-    gui = GameGUI(game=game, ai=ai, visualiser=visualiser, human_player=args.player)
+    gui = GameGUI(game=game, ai=opponent, visualiser=visualiser,
+                  human_player=args.player)
     gui.start()
 
     visualiser.canvas.master.mainloop()
