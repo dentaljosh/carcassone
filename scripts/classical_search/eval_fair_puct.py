@@ -118,6 +118,16 @@ The opponent's play knobs are PINNED (sims=200, c_puct=3.0, residual_scale=0.25,
 bare) to the rod_v2 anchor harness — see BARE_NET_* below — so --opp-sims /
 --opp-k-dets are REJECTED for this mode rather than silently reshaping the anchor.
 
+TRANSPORT (net on GPU): the anchor's forwards may be served EITHER by a per-worker
+CPU net (the historical path) or by the carc-orch SHM GPU server
+(--opp-orch-shm-name; wrapper: scripts/classical_search/bare_net_opp_orch.sh). Only
+ONE server is needed because the candidate side is net-free. This is a TRANSPORT
+choice, not an identity change — same weights, same leaf, same knobs, same
+clairvoyance — but GPU fp32 and CPU fp32 do not agree bit-for-bit, so a near-tied
+argmax can flip. The anchor rows on record were played net-on-CPU; measure the
+divergence (scripts/classical_search/bare_net_gpu_divergence.py) and disclose it in
+the cell write-up rather than assuming it away. See BARE_NET_GPU_NOTE.
+
 EQUAL-WALL-CLOCK: the fair champion's total per-move search budget = k_dets*sims,
 targeted at the deployed clairvoyant champion's ~2750 sims (default k_dets=4 *
 sims=688 ~= 2752 — ADOPTED 2026-07-13, CL-054; was k8*344, k4 beat k8 +5.18/z4.17
@@ -214,6 +224,21 @@ Usage:
       --out-root /mnt/c/carc-shared/classical_search \
       --out-subdir blind_k4x1376_vs_sighted_rodv2_it02_b68e9 \
       --shared-claim --no-results-csv
+
+  # SAME cell with the anchor's net on the GPU via carc-orch SHM (the standing default
+  # for neural eval — per-worker batch-1 CPU forwards are latency-bound). ONE server:
+  # the candidate side is net-free. Use the wrapper, which owns the server lifecycle,
+  # the OMP pin and max_batch>=W:
+  #   OPP_CKPT=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt OW=14 \
+  #     bash scripts/classical_search/bare_net_opp_orch.sh \
+  #       --exact-k 2 --k-dets 4 --sims 344 --n 200 --paired \
+  #       --seed-start 68000000000 --out-root /mnt/c/carc-shared/classical_search \
+  #       --out-subdir blind_k4x1376_vs_sighted_rodv2_it02_b68e9 \
+  #       --shared-claim --no-results-csv
+  # ⚠️ GPU fp32 != CPU fp32 (reduction order). The anchor rows on record were played
+  #    net-on-CPU; measure the decision divergence before citing a GPU cell against them:
+  #      .venv/bin/python scripts/classical_search/bare_net_gpu_divergence.py \
+  #          --opp-net <iter_02.pt> --max-positions 60
 """
 from __future__ import annotations
 
@@ -659,6 +684,24 @@ BARE_NET_MEEPLE_K = 2.0        # == eval_puct_priors.NET_MEEPLE_K (inert under a
 # The anchor's leaf, in this harness's _leaf_hash dialect. NOT curve125 — see above.
 BARE_NET_LEAF_HASH = "4bc26f12badbb10b"
 
+# ⚠️ TRANSPORT vs IDENTITY. The anchor's *play knobs* are pinned above; where the
+# forward physically runs is NOT one of them, but it is not free either.
+#
+# Every RoD-v2 anchor row on record (rodv2_iter02_vs_heur6400_v29_n200 / _vs_heur3200)
+# was played with the net on the CPU in fp32. Serving the same weights from the GPU
+# (carc-orch, --opp-orch-shm-name) is the standing default for neural eval and is far
+# faster, but GPU fp32 reduction order != CPU fp32 reduction order, so priors/value
+# differ by ~1e-6..1e-4 and a NEAR-TIED argmax can flip. Over a 200-sim NeuralMCTS the
+# per-move decision-divergence rate is an EMPIRICAL quantity, measured by
+# scripts/classical_search/bare_net_gpu_divergence.py — read its output before citing a
+# GPU-transport cell against a CPU-transport anchor row. The measured rate is recorded
+# in the manifest under opponent.transport_numerics.
+BARE_NET_GPU_NOTE = (
+    "The anchor rows on record were played net-on-CPU (fp32). This cell served the "
+    "SAME weights from the GPU via carc-orch SHM. Weights, leaf, search knobs and "
+    "clairvoyance are identical; only float reduction order differs, which can flip a "
+    "near-tied argmax. See scripts/classical_search/bare_net_gpu_divergence.py.")
+
 
 def _bare_net_leaf_cfg():
     """The bare-net opponent's leaf: env DEFAULT_CONFIG (v2.9 Bmild_cap8, curve100 —
@@ -758,24 +801,49 @@ class _BareNetPrefix:
         return int(self._m.best_action(board))
 
 
-def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None):
-    """Per-game bare sighted NeuralMCTS opponent from a worker-local CPU net.
+def _make_bare_net_opponent(net, rep, seed, leaf_cfg=None, handles=None):
+    """Per-game bare sighted NeuralMCTS opponent.
+
+    The (priors, value) source is EITHER a worker-local CPU net (`net`) OR the
+    carc-orch SHM eval-server (`handles`, --opp-orch-shm-name). Both factories have
+    the identical call contract — `Callable[[Board], (priors[A], value)]` with the
+    masked softmax already applied (evaluators.make_single_evaluator applies
+    `net.policy_softmax_with_mask`; the orch server's TorchScript module bakes the
+    same masked softmax in, see scripts/export_torchscript.py::_ScriptedEvaluator) —
+    so NOTHING downstream of `base` changes: the same make_v25_value_wrapper, the
+    same leaf, the same NeuralMCTS knobs, the same clairvoyance.
+
+    ⚠️ NUMERICS: the orch path runs the net on the GPU in fp32 (carc-orch never
+    enables fp16/TF32-only kernels beyond torch's defaults), the CPU path runs it on
+    the CPU in fp32. Those are not bit-identical, so a near-tied argmax can flip.
+    See BARE_NET_GPU_NOTE and scripts/classical_search/bare_net_gpu_divergence.py —
+    the divergence is MEASURED, not assumed.
 
     The encoder width comes from the OPPONENT's own checkpoint rep (RoD-v2 iter_02 is
     the non-sighted 78ch/12sc 'Step-E farm-scalar' rep). For that rep this is exactly
     eval_puct_priors._make_net_prefix's `Game(enable_legal_moves_cache=True,
     include_farm_scalars=net_ns > 10)` (sighted defaults False there)."""
-    if net is None:
-        raise ValueError("--opponent bare-net requires a loaded opponent net")
     if rep is None:
         raise ValueError("--opponent bare-net requires the opponent's checkpoint rep")
-    from carcassonne_ai.evaluators import make_single_evaluator
-    import torch
+    if (net is None) == (handles is None):
+        raise ValueError(
+            "--opponent bare-net requires EXACTLY ONE evaluator source: a loaded CPU "
+            "net (per-worker) or carc-orch SHM handles (--opp-orch-shm-name). "
+            f"got net={net is not None} handles={handles is not None}")
     gf = Game(enable_legal_moves_cache=True,
               sighted=bool(rep["sighted"]),
               include_farm_scalars=bool(rep.get(
                   "include_farm_scalars", int(rep["n_scalar_features"]) > 10)))
-    base = make_single_evaluator(net, torch.device("cpu"), gf)
+    if handles is not None:
+        # GPU-batched: the carc-orch server owns the only net; this process ships
+        # (obs, scalars, mask) over shared memory. The client stays CPU-only, so
+        # _CANON_ENV's CUDA_VISIBLE_DEVICES="" is untouched (see BARE_NET_GPU_NOTE).
+        from carcassonne_ai.remote_evaluators import make_remote_single_evaluator
+        base = make_remote_single_evaluator(handles, gf)
+    else:
+        from carcassonne_ai.evaluators import make_single_evaluator
+        import torch
+        base = make_single_evaluator(net, torch.device("cpu"), gf)
     return _BareNetPrefix(base, gf, seed, leaf_cfg=leaf_cfg)
 
 
@@ -985,7 +1053,10 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
         # NO endgame handoff (no _MarginalizedHandoff wrapper — the candidate-only
         # tail is the same shape the default h800 rung has always had). `seed + 1`
         # keeps the two sides off a shared stream, as for every other opponent.
-        return _make_bare_net_opponent(net, rep, seed + 1, leaf_cfg=opp_leaf_cfg)
+        # `handles` (carc-orch SHM, --opp-orch-shm-name) and `net` (per-worker CPU) are
+        # the two transports for the SAME weights; exactly one must be set.
+        return _make_bare_net_opponent(net, rep, seed + 1, leaf_cfg=opp_leaf_cfg,
+                                       handles=handles)
     if opponent not in _HEAD_TO_HEAD:
         raise ValueError(f"unknown opponent mode {opponent!r}")
     opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg)
@@ -1301,25 +1372,42 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                 sighted=bool(opp_rep["sighted"]),
                 include_farm_scalars=bool(opp_rep.get("include_farm_scalars", False)))
     elif opponent == _BARE_NET:
-        # BLIND vs SIGHTED: the opponent is a bare sighted NeuralMCTS on a per-worker
-        # CPU net (both boxes are CPU-only for this cell, and the champion side is pure
-        # CPU anyway). No orch path — --opp-orch-shm-name is rejected for this mode.
-        # Same re-load cross-check as the `net` opponent above: main() resolved the rep
-        # from the checkpoint, the worker re-loads and must agree.
-        import torch
-        torch.set_num_threads(1)     # mirrors eval_puct_priors._load_net_cpu
-        _W["opp_net"], _oloaded = _load_net_rep(opp_net_ckpt, device="cpu")
-        if (bool(_oloaded["sighted"]) != bool(opp_rep["sighted"])
-                or int(_oloaded["n_input_channels"]) != int(opp_rep["n_input_channels"])
-                or int(_oloaded["n_scalar_features"]) != int(opp_rep["n_scalar_features"])):
-            raise SystemExit(
-                f"FATAL: worker re-loaded bare-net opponent {opp_net_ckpt} as "
-                f"sighted={_oloaded['sighted']} {_oloaded['n_input_channels']}ch/"
-                f"{_oloaded['n_scalar_features']}sc but main() resolved "
-                f"sighted={opp_rep['sighted']} {opp_rep['n_input_channels']}ch/"
-                f"{opp_rep['n_scalar_features']}sc")
-        # _make_bare_net_opponent builds the encoder Game per game from `opp_rep`.
-        _W["opp_sighted_game"] = None
+        # BLIND vs SIGHTED: the opponent is a bare sighted NeuralMCTS. Two transports
+        # for the SAME weights — carc-orch SHM (the GPU server owns the only net; the
+        # standing default for neural eval) or a per-worker CPU net. The AGENT is
+        # identical either way; only float reduction order differs (BARE_NET_GPU_NOTE).
+        if opp_orch_shm_name:
+            # Slot dims come from the OPPONENT's OWN resolved rep — hardcoding 78/12
+            # would corrupt every forward for any other rep (the n_ch trap).
+            from carcassonne_ai.shm_eval_handles import connect_shm
+            # No net is loaded here (the server owns it), but evaluators/torch still
+            # get imported downstream — pin the intra-op pool so W workers can't each
+            # spin up a box-sized OpenMP pool. Same discipline as the CPU branch.
+            import torch
+            torch.set_num_threads(1)
+            _W["opp_handles"] = connect_shm(opp_orch_shm_name, _wid,
+                                            int(opp_rep["n_scalar_features"]),
+                                            int(opp_rep["n_input_channels"]))
+            # _make_bare_net_opponent builds the encoder Game per game from `opp_rep`
+            # (it is BOTH the encoder and the NeuralMCTS game), exactly as on CPU.
+            _W["opp_sighted_game"] = None
+        else:
+            # Same re-load cross-check as the `net` opponent above: main() resolved the
+            # rep from the checkpoint, the worker re-loads and must agree.
+            import torch
+            torch.set_num_threads(1)     # mirrors eval_puct_priors._load_net_cpu
+            _W["opp_net"], _oloaded = _load_net_rep(opp_net_ckpt, device="cpu")
+            if (bool(_oloaded["sighted"]) != bool(opp_rep["sighted"])
+                    or int(_oloaded["n_input_channels"]) != int(opp_rep["n_input_channels"])
+                    or int(_oloaded["n_scalar_features"]) != int(opp_rep["n_scalar_features"])):
+                raise SystemExit(
+                    f"FATAL: worker re-loaded bare-net opponent {opp_net_ckpt} as "
+                    f"sighted={_oloaded['sighted']} {_oloaded['n_input_channels']}ch/"
+                    f"{_oloaded['n_scalar_features']}sc but main() resolved "
+                    f"sighted={opp_rep['sighted']} {opp_rep['n_input_channels']}ch/"
+                    f"{opp_rep['n_scalar_features']}sc")
+            # _make_bare_net_opponent builds the encoder Game per game from `opp_rep`.
+            _W["opp_sighted_game"] = None
 
 
 def _cfg_from_dict(d, leaf_cfg=None):
@@ -1798,7 +1886,12 @@ def main(argv=None) -> int:
                          "eval-server (a server owns exactly one net, so a net-vs-net orch run "
                          "needs two servers with distinct --shm-name, each sized --n-ch/--n-scalar "
                          "for ITS OWN net's rep and --workers to match). Omit for a per-worker CPU "
-                         "opponent net.")
+                         "opponent net. "
+                         "--opponent bare-net: same flag, one server — it serves the anchor's "
+                         "priors AND value (the candidate side is net-free, so no second server). "
+                         "⚠️ The anchor rows on record were played net-on-CPU; GPU fp32 is not "
+                         "bit-identical, so a near-tied argmax can flip. Quantify with "
+                         "scripts/classical_search/bare_net_gpu_divergence.py before citing.")
     ap.add_argument("--net", type=str, default=None,
                     help="fair-net: path to the sighted (81ch/42-scalar) value-net checkpoint. "
                          "fair-netprior: path to the DISTILLED policy net (sighted 81ch/42 OR "
@@ -1974,9 +2067,11 @@ def main(argv=None) -> int:
         ap.error(f"--opponent {args.opponent} requires --opp-net <checkpoint>")
     if args.opp_net and args.opponent not in _NET_OPPONENTS:
         ap.error("--opp-net only applies to --opponent net / bare-net")
-    if args.opp_orch_shm_name and args.opponent != "net":
-        ap.error("--opp-orch-shm-name only applies to --opponent net (the bare-net "
-                 "anchor runs net-on-CPU per worker)")
+    if args.opp_orch_shm_name and args.opponent not in _NET_OPPONENTS:
+        # h800 / fair-champion are net-free — there is nothing for a server to serve.
+        ap.error("--opp-orch-shm-name only applies to a net opponent "
+                 "(--opponent net / bare-net); "
+                 f"--opponent {args.opponent} is net-free")
     if args.opponent == _BARE_NET:
         # The anchor's play knobs are PINNED (BARE_NET_*). Swallowing a budget flag here
         # would silently produce a DIFFERENT agent than the results.csv anchor rows, so
@@ -2534,7 +2629,13 @@ def main(argv=None) -> int:
                              f"(residual_scale={BARE_NET_RESIDUAL_SCALE:g}) — "
                              "make_v25_value_wrapper, the rod_v2 anchor construction"),
             "net": args.opp_net,
-            "priors_transport": "per-worker CPU net",
+            # bare-net consumes BOTH net heads over whichever transport is in use.
+            # ⚠️ ADDITIVITY: under the CPU transport this key keeps its exact
+            # pre-change value and NO new key is introduced (see the orch-only block
+            # below), so a per-worker-CPU manifest stays byte-identical to the ones
+            # last night's cells wrote.
+            "priors_transport": (("carc-orch SHM (" + args.opp_orch_shm_name + ")")
+                                 if args.opp_orch_shm_name else "per-worker CPU net"),
             "c_puct": BARE_NET_CPUCT,
             "sims": BARE_NET_SIMS,
             "k_dets": None,          # not a PIMC agent
@@ -2558,6 +2659,26 @@ def main(argv=None) -> int:
                            "(rodv2_iter02_vs_heur6400_v29_n200 / _vs_heur3200_v29_n200); "
                            "play knobs pinned, NOT CLI-settable"),
         })
+        # ---- GPU transport (--opp-orch-shm-name): keys added ONLY when the orch path
+        # is in use, so a per-worker-CPU bare-net manifest stays byte-identical to the
+        # pre-change output. The anchor rows on record were played net-on-CPU; a reader
+        # of THIS manifest must be able to see that this cell was not, without having to
+        # know the flag. Same discipline as the `net` opponent's priors_transport.
+        if args.opp_orch_shm_name:
+            man_cfg["opponent"].update({
+                "value_transport": "carc-orch SHM (" + args.opp_orch_shm_name + ")",
+                "net_device": "cuda (the carc-orch server owns the net; workers are CPU)",
+                "transport_numerics": {
+                    "anchor_rows_played_on": "cpu fp32 (per-worker net)",
+                    "this_cell_played_on": "cuda fp32 (carc-orch SHM TorchScript)",
+                    "identical": ["weights", "leaf", "sims", "c_puct", "residual_scale",
+                                  "clairvoyance (fair_chance=False)",
+                                  "masked-softmax priors", "bare (no endgame tail)"],
+                    "differs": "float reduction order only",
+                    "note": BARE_NET_GPU_NOTE,
+                    "measure_with": "scripts/classical_search/bare_net_gpu_divergence.py",
+                },
+            })
         man_cfg["asymmetry"] = {
             "mode": "BLIND (candidate) vs SIGHTED (opponent) — DELIBERATE, DO NOT SYMMETRISE",
             "information": {"candidate": "fair PIMC root determinization (blind)",
@@ -2615,7 +2736,7 @@ def main(argv=None) -> int:
     sys.stdout.flush()
 
     _cand_orch = bool(args.orch_shm_name) and args.info in ("fair-net", "fair-netprior")
-    _opp_orch = bool(args.opp_orch_shm_name) and args.opponent == "net"
+    _opp_orch = bool(args.opp_orch_shm_name) and args.opponent in _NET_OPPONENTS
     orch = _cand_orch or _opp_orch
     results = []
     if todo:
@@ -2642,7 +2763,13 @@ def main(argv=None) -> int:
                       f"{workers} CPU workers attach to "
                       f"/dev/shm/carc_{args.opp_orch_shm_name} "
                       f"({opp_rep['n_input_channels']}ch/{opp_rep['n_scalar_features']}-scalar "
-                      f"{'sighted' if opp_rep['sighted'] else 'non-sighted'} PRIORS)",
+                      f"{'sighted' if opp_rep['sighted'] else 'non-sighted'} "
+                      # bare-net consumes BOTH heads (priors steer PUCT, value feeds the
+                      # residual leaf); the `net` opponent discards the remote value.
+                      f"{'PRIORS+VALUE' if args.opponent == _BARE_NET else 'PRIORS'})",
+                      flush=True)
+            if _opp_orch and args.opponent == _BARE_NET:
+                print("  [orch] ⚠️ bare-net TRANSPORT NOTE: " + BARE_NET_GPU_NOTE,
                       flush=True)
             _pool_cm = _ctx.Pool(
                 processes=workers, initializer=_worker_init,

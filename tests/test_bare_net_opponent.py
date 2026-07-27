@@ -124,8 +124,19 @@ def test_opponent_leaf_construction_matches_the_anchor_harness_verbatim():
     assert (E.BARE_NET_SIMS, E.BARE_NET_CPUCT,
             E.BARE_NET_RESIDUAL_SCALE, E.BARE_NET_MEEPLE_K) == \
            (P.NET_SIMS, P.NET_CPUCT, P.NET_RESIDUAL_SCALE, P.NET_MEEPLE_K)
-    # the two harnesses share a verbatim _CANON_ENV -> the same DEFAULT_CONFIG value
+    # the two harnesses share a verbatim _CANON_ENV -> the same DEFAULT_CONFIG value.
+    #
+    # ⚠️ This stays a VERBATIM equality even though eval_fair_puct now supports running
+    # the anchor's net on the GPU. Putting the net on the GPU did NOT require relaxing
+    # `CUDA_VISIBLE_DEVICES: ""`: the GPU path is the carc-orch SHM orchestrator, where
+    # a SEPARATE Rust server process owns the only net and this process stays CPU-only,
+    # shipping (obs, scalars, mask) over shared memory. So the leaf env AND the CUDA
+    # masking are both untouched, and this assertion keeps its full strength. If someone
+    # ever adds a per-worker net-on-CUDA fallback, THAT is the change that would need
+    # this to become a leaf-keys-only comparison — do not pre-weaken it for a path that
+    # does not exist.
     assert E._CANON_ENV == P._CANON_ENV
+    assert E._CANON_ENV["CUDA_VISIBLE_DEVICES"] == ""
     inline = dc.replace(DEFAULT_CONFIG, residual_scale=P.NET_RESIDUAL_SCALE,
                         meeple_k=P.NET_MEEPLE_K)
     assert E._bare_net_leaf_cfg() == inline
@@ -320,8 +331,13 @@ def _run_main(argv):
      "does not apply to --opponent bare-net"),
     (["--opponent", "bare-net", "--opp-net", "/x.pt", "--opp-k-dets", "8"],
      "does not apply to --opponent bare-net"),
-    (["--opponent", "bare-net", "--opp-net", "/x.pt", "--opp-orch-shm-name", "s"],
-     "only applies to --opponent net"),
+    # --opp-orch-shm-name is now VALID for bare-net (the GPU transport); it stays
+    # rejected for the two NET-FREE opponents, where a server would have nothing to
+    # serve. See test_orch_shm_name_is_accepted_for_bare_net below for the positive case.
+    (["--opponent", "h800", "--opp-orch-shm-name", "s"],
+     "only applies to a net opponent"),
+    (["--opponent", "fair-champion", "--opp-orch-shm-name", "s"],
+     "only applies to a net opponent"),
     (["--opponent", "h800", "--opp-net", "/x.pt"],
      "only applies to --opponent net / bare-net"),
 ])
@@ -380,3 +396,251 @@ def test_summary_uses_the_driver_timing_for_a_bare_opponent():
     assert summ["opponent"] == "bare-net"
     assert summ["rung_ms_per_move"] == pytest.approx(7.0 / 35 * 1e3)
     assert summ["champ_prefix_ms_per_move"] == pytest.approx(3.0 / 30 * 1e3)
+
+
+# --------------------------------------------------------------------------- #
+# 4. GPU TRANSPORT (--opp-orch-shm-name) — the net on the GPU, not per-worker   #
+#    CPU. carc-orch owns the only net; this process stays CPU-only and ships    #
+#    (obs, scalars, mask) over shared memory.                                   #
+#                                                                               #
+# The load-bearing claim is that this is a TRANSPORT change and nothing else:   #
+# same weights, same leaf, same sims/c_puct, same clairvoyance, same bare tail. #
+# The loopback test below proves the WIRING is identity-preserving exactly (an  #
+# in-process "server" running the same CPU net must reproduce the CPU agent's   #
+# move bit-for-bit); the CUDA test proves the real path lands on the GPU. What  #
+# neither can prove is float equality between CPU and GPU — that is measured,   #
+# not asserted: scripts/classical_search/bare_net_gpu_divergence.py.            #
+# --------------------------------------------------------------------------- #
+import os          # noqa: E402
+import shutil      # noqa: E402
+import subprocess  # noqa: E402
+
+ORCH_BIN = REPO / "rust" / "carc-orch" / "target" / "release" / "carc-orch"
+
+
+def _cuda_present() -> bool:
+    """Is there a usable GPU on this box?
+
+    ⚠️ NOT `torch.cuda.is_available()`: importing eval_fair_puct sets
+    CUDA_VISIBLE_DEVICES="" process-wide (its _CANON_ENV), so torch would report
+    False on a box that has a perfectly good GPU and the CUDA test would SKIP
+    SILENTLY — the exact "a skipped test reads as green" failure this file's header
+    warns about. Ask the driver instead, out of band."""
+    if not shutil.which("nvidia-smi"):
+        return False
+    try:
+        out = subprocess.check_output(["nvidia-smi", "-L"], text=True, timeout=30)
+    except Exception:
+        return False
+    return "GPU 0" in out
+
+
+class _LoopbackHandles:
+    """A `ServerHandles`-shaped stand-in that answers each request IN-PROCESS from the
+    same CPU net, doing exactly what the carc-orch server does to the arrays (net
+    forward + masked softmax — see scripts/export_torchscript.py::_ScriptedEvaluator).
+
+    Because it runs the SAME weights on the SAME device with the SAME ops, its answers
+    are bit-identical to `evaluators.make_single_evaluator`'s. So any difference between
+    a CPU-transport agent and a loopback-transport agent can only come from the WIRING,
+    which is what this isolates: no GPU, no subprocess, no float noise."""
+
+    def __init__(self, net, game):
+        import queue as _queue
+        from carcassonne_ai.eval_server import EvalResponse
+        self.worker_id = 0
+        self.response_q = _queue.Queue()
+        self.n_requests = 0
+        outer = self
+
+        class _RequestQ:
+            def put(self, req):
+                import torch
+                outer.n_requests += 1
+                with torch.no_grad():
+                    logits, value = net(torch.from_numpy(req.obs).float(),
+                                        torch.from_numpy(req.scalars).float())
+                    priors = net.policy_softmax_with_mask(
+                        logits, torch.from_numpy(req.mask.copy()).bool())
+                outer.response_q.put(EvalResponse(
+                    request_id=req.request_id,
+                    priors=priors.numpy(),
+                    values=value.reshape(-1).numpy()))
+
+        self.request_q = _RequestQ()
+
+
+def test_orch_shm_name_is_accepted_for_bare_net(capsys):
+    """The POSITIVE case for the flag the validation table now rejects only for the
+    net-free opponents: bare-net + --opp-orch-shm-name must get PAST validation.
+    (It then dies loading the bogus checkpoint, which is the point — the failure is
+    the missing file, not the flag.)"""
+    with pytest.raises((FileNotFoundError, OSError)):
+        E.main(["--opponent", "bare-net", "--opp-net", "/x.pt",
+                "--opp-orch-shm-name", "s", "--smoke"])
+    err = capsys.readouterr().err
+    assert "only applies" not in err, err
+
+
+def test_make_bare_net_opponent_requires_exactly_one_transport():
+    """net XOR handles. Neither = nothing to evaluate with; BOTH = an ambiguous
+    agent where the reader cannot tell which forward actually ran."""
+    net, rep = _random_anchor_net()
+    with pytest.raises(ValueError, match="EXACTLY ONE"):
+        E._make_bare_net_opponent(None, rep, seed=1)
+    with pytest.raises(ValueError, match="EXACTLY ONE"):
+        E._make_bare_net_opponent(net, rep, seed=1,
+                                  handles=_LoopbackHandles(net, Game()))
+    # ...and the rep is still mandatory on the orch path (slot dims come from it)
+    with pytest.raises(ValueError, match="rep"):
+        E._make_bare_net_opponent(None, None, seed=1,
+                                  handles=_LoopbackHandles(net, Game()))
+
+
+def test_orch_transport_preserves_every_pinned_anchor_knob():
+    """The three asymmetry axes + the pinned play knobs must be IDENTICAL on the orch
+    path. A transport change that quietly re-shaped the agent would still produce a
+    plausible number."""
+    net, rep = _random_anchor_net()
+    h = _LoopbackHandles(net, Game())
+    opp = E._make_bare_net_opponent(None, rep, seed=1,
+                                    leaf_cfg=E._bare_net_leaf_cfg(), handles=h)
+    assert isinstance(opp, E._BareNetPrefix)
+    assert not isinstance(opp, E._MarginalizedHandoff)      # still BARE
+    assert opp.mcts.fair_chance is False                    # still CLAIRVOYANT
+    assert opp.mcts.fair_isolate is False
+    assert opp.mcts.simulations == E.BARE_NET_SIMS == 200
+    assert opp.mcts.c_puct == E.BARE_NET_CPUCT == 3.0
+    assert _leaf_hash(opp.leaf_cfg) == ANCHOR_HASH          # still the ANCHOR leaf
+    # the encoder still comes from the OPPONENT's own rep
+    assert opp.mcts.game.get_input_channels() == rep["n_input_channels"]
+    assert opp.mcts.game.get_scalar_feature_size() == rep["n_scalar_features"]
+
+
+def test_orch_transport_reproduces_the_cpu_agents_move_exactly():
+    """THE wiring proof. Same weights, same seed, same board — one agent evaluating
+    through the local factory, one through the remote (handles) factory whose 'server'
+    is the same CPU net. The chosen action must match EXACTLY, and the remote path must
+    actually have been used (n_requests > 0, so a silent local fallback cannot pass).
+
+    This is what makes the GPU number interpretable: it isolates the transport wiring
+    from the CPU-vs-GPU float question, which is measured separately by
+    scripts/classical_search/bare_net_gpu_divergence.py."""
+    net, rep = _random_anchor_net(seed=3)
+    leaf = E._bare_net_leaf_cfg()
+    cpu = E._make_bare_net_opponent(net, rep, seed=5, leaf_cfg=leaf)
+    h = _LoopbackHandles(net, Game())
+    orch = E._make_bare_net_opponent(None, rep, seed=5, leaf_cfg=leaf, handles=h)
+    cpu.mcts.simulations = orch.mcts.simulations = 24       # keep the unit test cheap
+
+    game = Game(enable_legal_moves_cache=True)
+    board = _board_with_a_real_choice(game)
+    true_deck = [t.description for t in board.state.deck]
+    a_cpu = cpu.move(board)
+    a_orch = orch.move(board)
+    assert h.n_requests > 0, "the remote evaluator was never called — silent fallback"
+    assert a_cpu == a_orch, (
+        f"orch transport changed the move ({a_cpu} -> {a_orch}) with IDENTICAL "
+        "arithmetic; that is a wiring bug, not float noise")
+    # and it is still clairvoyant + non-mutating
+    assert [t.description for t in board.state.deck] == true_deck
+
+
+def test_worker_init_wires_the_bare_net_orch_handles(monkeypatch):
+    """`_worker_init` must take the SHM path when --opp-orch-shm-name is set (and size
+    the slots from the OPPONENT's own rep, not a hardcoded 78/12), and must NOT load a
+    per-worker CPU net in that case."""
+    _net, rep = _random_anchor_net()
+    seen = {}
+
+    def fake_connect(name, wid, n_scalar, n_ch):
+        seen.update(name=name, wid=wid, n_scalar=n_scalar, n_ch=n_ch)
+        return "HANDLES"
+
+    import carcassonne_ai.shm_eval_handles as SH
+    monkeypatch.setattr(SH, "connect_shm", fake_connect)
+    monkeypatch.setattr(E, "_load_net_rep",
+                        lambda *a, **k: pytest.fail("orch path must not load a CPU net"))
+
+    class _Q:
+        def get(self):
+            return 7
+
+    E._W.clear()
+    E._worker_init("fair", {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
+                            "final_select": "visits", "value_norm": 15.0},
+                   sims=8, k_dets=2, exact_k=2, rung_sims=800, shared_claim=False,
+                   claim_host="h", claim_stale=1, opponent="bare-net",
+                   opp_net_ckpt="/x.pt", opp_rep=rep, opp_orch_shm_name="s",
+                   id_q=_Q())
+    assert E._W["opp_handles"] == "HANDLES"
+    assert E._W["opp_net"] is None
+    assert seen == {"name": "s", "wid": 7,
+                    "n_scalar": rep["n_scalar_features"],
+                    "n_ch": rep["n_input_channels"]}
+    E._W.clear()
+
+
+@pytest.mark.skipif(not _cuda_present(),
+                    reason="no GPU on this box (nvidia-smi -L found none)")
+@pytest.mark.skipif(not ORCH_BIN.is_file(),
+                    reason=f"carc-orch not built at {ORCH_BIN} "
+                           "(cargo build --release --manifest-path rust/carc-orch/Cargo.toml)")
+def test_carc_orch_really_serves_the_bare_net_opponent_from_the_GPU(tmp_path):
+    """END-TO-END on the real path: export a random anchor-rep net, launch carc-orch on
+    CUDA, and drive a bare-net opponent through it.
+
+    Proves the thing a mock cannot: the net is ON THE GPU (nvidia-smi memory delta) and
+    a silent CPU fallback did not happen. Slow (~30-60s: TorchScript export + parity
+    gate + server warmup)."""
+    import torch
+    import bare_net_gpu_divergence as D          # server lifecycle helpers
+    from carcassonne_ai.shm_eval_handles import connect_shm
+
+    from carcassonne_ai.network import DEFAULT_BLOCKS, DEFAULT_FILTERS
+
+    net, rep = _random_anchor_net(seed=11)      # built at the module defaults
+    ckpt = tmp_path / "anchor_rand.pt"
+    torch.save({"model_state": net.state_dict(),
+                "n_filters": DEFAULT_FILTERS, "n_blocks": DEFAULT_BLOCKS,
+                "n_input_channels": rep["n_input_channels"],
+                "n_scalar_features": rep["n_scalar_features"],
+                "sighted": rep["sighted"],
+                "value_global_pool": rep["value_global_pool"]}, ckpt)
+
+    shm = f"bntest{os.getpid()}"
+    before = D._gpu_mem_mib()
+    proc, log = D._start_server(str(ckpt), rep, shm, workers=1, max_batch=8)
+    try:
+        after = D._gpu_mem_mib()
+        assert before is not None and after is not None, "nvidia-smi gave no reading"
+        assert after - before > 0, (
+            f"carc-orch allocated NO GPU memory ({before} -> {after} MiB) — it is "
+            "almost certainly running on the CPU. A silent CPU fallback is the worst "
+            "outcome here: it still 'works', at 1/Nx the speed and different floats.")
+        assert "cuda" in log.read_text().lower() or after - before > 0
+
+        handles = connect_shm(shm, 0, int(rep["n_scalar_features"]),
+                              int(rep["n_input_channels"]))
+        opp = E._make_bare_net_opponent(None, rep, seed=1,
+                                        leaf_cfg=E._bare_net_leaf_cfg(), handles=handles)
+        opp.mcts.simulations = 16                 # wiring proof, not a strength check
+        assert opp.mcts.fair_chance is False
+        assert _leaf_hash(opp.leaf_cfg) == ANCHOR_HASH
+
+        game = Game(enable_legal_moves_cache=True)
+        board = _board_with_a_real_choice(game)
+        act = opp.move(board)
+        assert game.get_valid_moves(board)[act], "GPU-served opponent returned an illegal action"
+    finally:
+        proc.send_signal(__import__("signal").SIGTERM)
+        try:
+            proc.wait(timeout=10)
+        except Exception:
+            proc.kill()
+        for f in [pathlib.Path(f"/dev/shm/carc_{shm}"),
+                  *pathlib.Path("/dev/shm").glob(f"sem.carc_{shm}_*")]:
+            try:
+                os.remove(f)
+            except OSError:
+                pass
