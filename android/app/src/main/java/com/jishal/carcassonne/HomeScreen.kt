@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -38,14 +39,40 @@ import kotlin.random.Random
 private const val SEED_MAX = 1_000_000
 
 /**
- * Entry screen: start a game, resume the autosave, or drop into the M0 debug
- * console. The difficulty control itself is M3 — for now the opponent is fixed
- * at the full champion budget and this screen only *reports* it.
+ * One line naming the opponent the *current preset* will produce.
+ *
+ * The champion stop has no client-side numbers by design (the YAML owns them),
+ * so it prints what `production_budget()` read back — and says it is still
+ * reading rather than inventing a figure.
+ */
+private fun homeOpponentLine(ui: GameUiState): String {
+    val d = ui.difficulty
+    if (d.isTier1) return "Opponent: Tier-1 rule-based player — no search."
+    val b = ui.budget
+    val id = b?.championId ?: "champion"
+    return when {
+        d.totalSims != null ->
+            "Opponent: $id at k${d.kDets}×${d.sims} = ${d.totalSims} sims/move."
+        b != null ->
+            "Opponent: $id — k${b.kDets}×${b.simsPerDet} = ${b.totalSims} sims/move."
+        ui.warmingUp -> "Opponent: champion — reading the production budget…"
+        else -> "Opponent: champion (full production budget)."
+    }
+}
+
+/**
+ * Entry screen: start a game, resume the autosave, change difficulty, or drop
+ * into the M0 debug console.
+ *
+ * The difficulty *chip* here is a read-out plus a shortcut — the setting itself
+ * is owned by [SettingsScreen] and persisted in DataStore, so there is exactly
+ * one place it can be changed.
  */
 @Composable
 fun HomeScreen(
     vm: GameViewModel,
     onPlay: () -> Unit,
+    onSettings: () -> Unit,
     onDebug: () -> Unit,
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -100,24 +127,38 @@ fun HomeScreen(
                     }) { Text("Random") }
                 }
 
-                val budget = ui.budget
-                Text(
-                    if (budget != null) {
-                        "Opponent: ${budget.championId} — k${budget.kDets}×${budget.simsPerDet} " +
-                            "= ${budget.totalSims} sims/move (full champion budget)"
-                    } else if (ui.warmingUp) {
-                        "Opponent: champion — reading the production budget…"
-                    } else {
-                        "Opponent: champion (full production budget)"
+                Text("Difficulty", fontSize = 12.sp)
+                AssistChip(
+                    onClick = onSettings,
+                    label = {
+                        Text(
+                            "${ui.difficulty.label} — ${ui.difficulty.estPerMove}/move",
+                            fontSize = 12.sp,
+                        )
                     },
-                    fontSize = 11.sp,
+                    trailingIcon = { Text("›", fontSize = 16.sp) },
                 )
-                Text(
-                    "Full champion budget — moves may take ~10s. " +
-                        "A difficulty slider arrives in the next milestone.",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Text(homeOpponentLine(ui), fontSize = 11.sp)
+                if (ui.difficulty.belowChampionBudget) {
+                    Text(
+                        "BELOW CHAMPION BUDGET — a weakened champion. Beating it is " +
+                            "not beating the champion.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                } else if (ui.difficulty.isTier1) {
+                    Text(
+                        "A different agent (Tier-1 rule-based), not a weakened champion.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                } else {
+                    Text(
+                        "Full champion budget — moves may take ~10s.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
 
                 Button(
                     onClick = {
@@ -154,7 +195,10 @@ fun HomeScreen(
         }
 
         Spacer(Modifier.height(4.dp))
-        TextButton(onClick = onDebug) { Text("Debug console", fontSize = 12.sp) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = onSettings) { Text("Settings", fontSize = 12.sp) }
+            TextButton(onClick = onDebug) { Text("Debug console", fontSize = 12.sp) }
+        }
 
         ui.error?.let {
             Text(

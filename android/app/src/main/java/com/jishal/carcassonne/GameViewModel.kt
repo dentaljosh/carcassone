@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -50,6 +51,15 @@ data class GameUiState(
     val hasSave: Boolean = false,
     val showResult: Boolean = false,
     val warmingUp: Boolean = false,
+    /** The persisted difficulty preset; the next [GameViewModel.newGame] uses it. */
+    val difficulty: Difficulty = Difficulty.DEFAULT,
+    /**
+     * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations, in
+     * seconds — `null` until the champion has moved once this session.
+     */
+    val etaSeconds: Double? = null,
+    /** The cell the human last committed a tile to (drives the auto-recentre). */
+    val lastHumanTile: Cell? = null,
 ) {
     /**
      * The live ghost, or `null` when nothing is aimed. Recomputed from the
@@ -98,12 +108,36 @@ data class GameUiState(
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private val saveStore = SaveStore(app)
+    private val settings = SettingsStore(app)
 
     private val _ui = MutableStateFlow(GameUiState())
     val ui: StateFlow<GameUiState> = _ui
 
     private var opJob: Job? = null
     private var progressJob: Job? = null
+
+    /**
+     * Durations of the last [ETA_WINDOW] AI moves, oldest first. Session-scoped
+     * (cleared by [resetSession]) because a preset change makes older samples
+     * describe a different search budget entirely.
+     */
+    private val aiDurations = ArrayDeque<Double>()
+
+    init {
+        // The persisted preset is the source of truth for the whole app; the
+        // Settings screen writes it, everything else reads this flow.
+        viewModelScope.launch {
+            settings.difficulty.collect { d -> _ui.update { it.copy(difficulty = d) } }
+        }
+    }
+
+    /** Persist a new difficulty. The change applies to the NEXT game, not this one. */
+    fun setDifficulty(d: Difficulty) {
+        viewModelScope.launch {
+            runCatching { settings.setDifficulty(d) }
+                .onFailure { Log.w(TAG, "difficulty write failed", it) }
+        }
+    }
 
     // ------------------------------------------------------------------ home
 
@@ -139,19 +173,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun launchNewGame(seat: Seat, seed: Int) = launchOp { e ->
         saveStore.clear()
+        aiDurations.clear()
+        // Read the PERSISTED value rather than the mirrored one: the DataStore
+        // collect is asynchronous, so a Start tapped in the first moments after a
+        // cold launch could otherwise silently start a game at the default budget
+        // instead of the saved preset.
+        val difficulty = runCatching { settings.difficulty.first() }
+            .getOrElse { _ui.value.difficulty }
         _ui.update {
-            GameUiState(budget = it.budget, busy = true, hasSave = false)
+            GameUiState(budget = it.budget, busy = true, hasSave = false, difficulty = difficulty)
         }
-        // sims / k_dets are deliberately ABSENT from the config: omitting them
-        // makes the bridge fall through to governance/PRODUCTION.yaml, which is
-        // the only place a strength knob is allowed to live. `budget` is read
-        // separately and used for DISPLAY only.
-        val cfg = JSONObject().apply {
-            put("seed", seed)
-            put("human_player", seat.humanPlayer())
-            put("opponent", "champion")
-            put("verify", true)
-        }.toString()
+        // The preset owns the whole opponent/budget decision, including the choice
+        // to OMIT sims/k_dets at Champion so the bridge falls through to
+        // governance/PRODUCTION.yaml — the only place a strength knob is allowed
+        // to live. `budget` is read separately and used for DISPLAY only.
+        val cfg = difficulty.newGameConfig(seed = seed, humanPlayer = seat.humanPlayer())
         runBridge(e) { PythonBridge.newGame(cfg) }
     }
 
@@ -172,7 +208,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             _ui.update { it.copy(hasSave = false, error = BridgeError("no_save", "No saved game found.")) }
             return@launchOp
         }
-        _ui.update { it.copy(busy = true, error = null) }
+        // The save carries its OWN opponent/sims/k_dets, so resuming keeps the
+        // difficulty the game was started at regardless of the current setting.
+        aiDurations.clear()
+        _ui.update { it.copy(busy = true, error = null, etaSeconds = null, lastHumanTile = null) }
         runBridge(e) { PythonBridge.restoreGame(json) }
     }
 
@@ -210,6 +249,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun confirmPlacement() {
         val ghost = _ui.value.ghost ?: return
+        // Recorded BEFORE the action is applied: `applyHumanAction` clears the
+        // selection, and the board state carries no "human last tile" field. The
+        // cell is all the recentre needs, and each placement is a fresh cell (the
+        // square is occupied afterwards), so the value always changes.
+        _ui.update { it.copy(lastHumanTile = ghost.cell) }
         applyHumanAction(ghost.actionId)
     }
 
@@ -251,7 +295,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun leaveGame() {
         if (!isInFlight()) return   // idle: keep the session, Game reopens unchanged
         takeOver()
-        _ui.update { GameUiState(budget = it.budget, hasSave = it.hasSave) }
+        aiDurations.clear()
+        _ui.update {
+            GameUiState(budget = it.budget, hasSave = it.hasSave, difficulty = it.difficulty)
+        }
     }
 
     private fun isInFlight(): Boolean = _ui.value.thinking || opJob?.isActive == true
@@ -402,7 +449,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             val next = BridgeJson.state(obj)
-            _ui.update { it.copy(state = next, error = null) }
+            val eta = recordAiDuration(obj.optDouble("elapsed_s", Double.NaN))
+            _ui.update { it.copy(state = next, error = null, etaSeconds = eta) }
             if (next.isTerminated) {
                 saveStore.clear()
                 _ui.update { it.copy(hasSave = false, showResult = true) }
@@ -410,6 +458,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
             persist(e)
         }
+    }
+
+    /**
+     * Feed one `ai_move` duration into the rolling window and return the new mean
+     * (or null if the sample was unusable, e.g. an older bridge without the field).
+     *
+     * A *mean of the last few* rather than the last value alone: move cost swings
+     * a lot with position (an endgame exact solve is nothing like a midgame
+     * search), and a single sample makes the "~Ns" hint jump around enough to read
+     * as broken.
+     */
+    private fun recordAiDuration(seconds: Double): Double? {
+        if (!seconds.isFinite() || seconds <= 0.0) return _ui.value.etaSeconds
+        aiDurations.addLast(seconds)
+        while (aiDurations.size > ETA_WINDOW) aiDurations.removeFirst()
+        return aiDurations.average()
     }
 
     private fun startProgressPoll() {
@@ -444,5 +508,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
         /** A 72-tile game is ~150 plies; anything past this is a bug, not a game. */
         private const val MAX_AI_STEPS = 400
+
+        /** How many AI move durations the ETA averages over. */
+        const val ETA_WINDOW = 5
     }
 }

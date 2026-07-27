@@ -809,10 +809,23 @@ def restore_game(json_str: str) -> str:
 
 
 def get_manifest() -> str:
-    """The champion's resolved runtime manifest (Settings sheet). ``null`` for Tier-1."""
+    """The champion's resolved runtime manifest (Settings sheet). ``null`` for Tier-1.
+
+    With a live session this is the manifest of the agent that is ACTUALLY playing,
+    budget override included. With no session — Settings opened before any game — it
+    falls back to ``resolved_manifest("fair")``, the deterministic spec-derived
+    manifest for the champion of record, so the sheet is never empty.
+    ``manifest_source`` says which one you are looking at; never read a budget out of
+    the ``spec`` variant and assume a game is running at it."""
     try:
-        s = _require_session()
-        return _ok({"ok": True, "manifest": s.manifest,
+        s = _S
+        if s is None:
+            return _ok({"ok": True, "manifest_source": "spec",
+                        "manifest": champion_factory.resolved_manifest("fair"),
+                        "production_yaml": PRODUCTION_YAML_PATH,
+                        "opponent_name": "Champion (no game in progress)",
+                        "budget_note": None})
+        return _ok({"ok": True, "manifest_source": "session", "manifest": s.manifest,
                     "production_yaml": PRODUCTION_YAML_PATH,
                     "opponent_name": s.opponent_name,
                     "budget_note": s.budget_note})

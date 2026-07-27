@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -61,7 +63,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     val assets by rememberTileAssets()
     val state = ui.state
 
-    var transform by remember { mutableStateOf(BoardTransform()) }
+    // Held as the state object (not just the delegated value) so the recentre
+    // animation can be a plain function shared by the AI and human paths.
+    val transformState = remember { mutableStateOf(BoardTransform()) }
+    var transform by transformState
     var viewW by remember { mutableStateOf(0f) }
     var viewH by remember { mutableStateOf(0f) }
     var confirmLeave by remember { mutableStateOf(false) }
@@ -80,14 +85,15 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     // Keyed on the cell alone, deliberately: keying on `turn` too would re-run
     // after every HUMAN move and chase the champion's stale last tile around.
     LaunchedEffect(state?.aiLastTile) {
-        val cell = state?.aiLastTile ?: return@LaunchedEffect
-        if (viewW <= 0f || viewH <= 0f) return@LaunchedEffect
-        if (transform.isCellVisible(cell, viewW, viewH, margin = 12f)) return@LaunchedEffect
-        val from = transform
-        val to = BoardTransform.centeredOn(cell, from.scale, viewW, viewH)
-        animate(0f, 1f, animationSpec = tween(320)) { f, _ ->
-            transform = lerpTransform(from, to, f)
-        }
+        recentreIfOffscreen(state?.aiLastTile, transformState, viewW, viewH)
+    }
+
+    // ...and after a HUMAN placement too. A tapped cell is by definition on
+    // screen, but it can be right at the edge — `isCellVisible`'s margin treats
+    // that as off-screen, so the board eases over and the newly opened
+    // neighbours become reachable without a manual pan.
+    LaunchedEffect(ui.lastHumanTile) {
+        recentreIfOffscreen(ui.lastHumanTile, transformState, viewW, viewH)
     }
 
     BackHandler(enabled = true) {
@@ -169,6 +175,32 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     }
 }
 
+/** Compact seconds: one decimal under 10s, whole seconds above (a "~12.3s" ETA
+ *  implies a precision the rolling mean does not have). */
+internal fun formatSeconds(seconds: Double): String =
+    if (seconds < 10.0) "%.1fs".format(Locale.US, seconds)
+    else "%.0fs".format(Locale.US, seconds)
+
+/**
+ * Ease the board so [cell] is centred — but only when it is not comfortably in
+ * view already. A no-op for a null cell, a zero viewport, or a cell that is
+ * already visible, so both callers can invoke it unconditionally.
+ */
+private suspend fun recentreIfOffscreen(
+    cell: Cell?,
+    transformState: MutableState<BoardTransform>,
+    viewW: Float,
+    viewH: Float,
+) {
+    if (cell == null || viewW <= 0f || viewH <= 0f) return
+    val from = transformState.value
+    if (from.isCellVisible(cell, viewW, viewH, margin = 12f)) return
+    val to = BoardTransform.centeredOn(cell, from.scale, viewW, viewH)
+    animate(0f, 1f, animationSpec = tween(320)) { f, _ ->
+        transformState.value = lerpTransform(from, to, f)
+    }
+}
+
 // --------------------------------------------------------------------------- //
 // HUD                                                                          //
 // --------------------------------------------------------------------------- //
@@ -184,8 +216,13 @@ private fun GameHud(ui: GameUiState, state: GameState, assets: TileAssets?) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ScoreChip("You", state.humanScore, state.humanMeeples, CarcColors.Human)
+            // A weakened preset names itself "Champion(weakened k4x172)", which a
+            // 14-char chip renders as "Champion(weake". The chip drops the
+            // parenthetical; the full name (and the budget note) stay in the status
+            // bar and the end-of-game dialog, where the warning belongs.
             ScoreChip(
-                state.opponentName.take(14), state.aiScore, state.aiMeeples, CarcColors.Ai,
+                state.opponentName.substringBefore('(').trim().take(14),
+                state.aiScore, state.aiMeeples, CarcColors.Ai,
             )
             Spacer(Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
@@ -267,8 +304,11 @@ private fun ThinkingBanner(ui: GameUiState, state: GameState, modifier: Modifier
     Card(modifier.padding(12.dp).fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
             val elapsed = p?.elapsedS?.toInt() ?: 0
+            // The ETA is a rolling mean of this session's last few moves, so it
+            // is only shown once there IS one — never a guess from the preset.
+            val eta = ui.etaSeconds?.let { " of ~${formatSeconds(it)}" } ?: ""
             Text(
-                "${state.opponentName} is thinking… ${elapsed}s",
+                "${state.opponentName} is thinking… ${elapsed}s$eta",
                 fontWeight = FontWeight.Medium,
             )
             Spacer(Modifier.height(6.dp))

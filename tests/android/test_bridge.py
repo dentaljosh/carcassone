@@ -200,9 +200,26 @@ def test_champion_budget_note_and_manifest():
     st = new(opponent="champion", seed=2, **TINY)
     assert st["budget_note"] and "BELOW CHAMPION BUDGET" in st["budget_note"]
     assert "k1x8" in st["opponent_name"]
-    man = ok(B.get_manifest())["manifest"]
+    d = ok(B.get_manifest())
+    assert d["manifest_source"] == "session"
+    man = d["manifest"]
     assert man["agent_class"] == "FairHeuristicPriorAgent"
     assert man["runtime_budget_override"]["total_sims"] == 8
+
+
+def test_manifest_without_session_falls_back_to_the_spec():
+    """The Settings sheet is reachable before any game exists, so get_manifest must
+    answer with the spec-derived manifest rather than a no_session error — and must
+    SAY it is the spec one (no runtime budget override to read)."""
+    ok(B.reset())
+    d = ok(B.get_manifest())
+    assert d["manifest_source"] == "spec"
+    man = d["manifest"]
+    assert man["agent_class"] == "FairHeuristicPriorAgent"
+    assert "runtime_budget_override" not in man
+    # The spec manifest carries the YAML budget, which is what the sheet shows.
+    budget = ok(B.production_budget())
+    assert man["fair_deploy"]["total_sims"] == budget["total_sims"]
 
 
 # --------------------------------------------------------------------------- #

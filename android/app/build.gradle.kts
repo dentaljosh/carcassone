@@ -159,6 +159,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+    // Persists the difficulty preset (SettingsStore). Preferences-only — no
+    // proto codegen, so no extra plugin.
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     val composeBom = platform("androidx.compose:compose-bom:2025.04.01")
     implementation(composeBom)
@@ -175,4 +178,8 @@ dependencies {
     // JVM unit tests cover BoardGeometry only — the board <-> screen transform,
     // hit-testing and fit math. Everything else on the game path needs a device.
     testImplementation("junit:junit:4.13.2")
+    // The platform's org.json is a stub in JVM unit tests ("not mocked"); the real
+    // implementation on the test classpath lets DifficultyTest assert the actual
+    // new_game config JSON rather than just the enum fields.
+    testImplementation("org.json:json:20240303")
 }

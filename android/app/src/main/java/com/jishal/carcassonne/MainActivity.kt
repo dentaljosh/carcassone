@@ -33,7 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * must survive — the game — lives in an activity-scoped [GameViewModel] (and,
  * underneath it, the Python session and the autosave file), not in a back stack.
  */
-private enum class Screen { HOME, GAME, DEBUG }
+private enum class Screen { HOME, GAME, SETTINGS, DEBUG }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +63,13 @@ private fun CarcApp() {
         Screen.HOME -> HomeScreen(
             vm = vm,
             onPlay = { screen = Screen.GAME },
+            onSettings = { screen = Screen.SETTINGS },
             onDebug = { screen = Screen.DEBUG },
+        )
+
+        Screen.SETTINGS -> SettingsScreen(
+            vm = vm,
+            onBack = { screen = Screen.HOME },
         )
 
         Screen.GAME -> GameScreen(

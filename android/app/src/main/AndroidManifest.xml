@@ -4,6 +4,8 @@
     <application
         android:name=".CarcApplication"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.CarcassonneAI">
@@ -11,8 +13,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:label="@string/app_name"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density|fontScale|layoutDirection"
             android:theme="@style/Theme.CarcassonneAI">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
