@@ -549,6 +549,67 @@ def test_bundle_runs_standalone(tmp_path):
     assert str(out) in result["bridge"]
 
 
+_STRICT_HOOK_DRIVER = r'''
+import json, os, sys
+bundle = sys.argv[1]
+sys.path.insert(0, bundle)
+
+# Chaquopy's AssetFinder path hook RAISES FileNotFoundError for a sys.path entry
+# that does not exist, where desktop CPython silently skips it. That asymmetry is
+# exactly what let champion_factory._hashers()'s REPO-relative sys.path inserts
+# pass every desktop test and then kill every champion construction on the phone
+# (playtest P0, 2026-07-27). Reproduce the device semantics here.
+# Only entries inserted AFTER interpreter startup get the strict treatment: the
+# desktop interpreter legitimately carries nonexistent baseline entries (e.g.
+# /usr/lib/python312.zip) that real Chaquopy never has.
+_BASELINE = set(sys.path)
+
+def chaquopy_strict(path):
+    if path not in _BASELINE and path.startswith("/") and not os.path.exists(path):
+        raise FileNotFoundError(path)
+    raise ImportError  # decline: fall through to the normal hooks
+
+sys.path_hooks.insert(0, chaquopy_strict)
+sys.path_importer_cache.clear()
+
+import android_bridge as B
+assert B.FACTORY_REPO_SHIM is not None, "repo shim should activate outside a checkout"
+
+st = json.loads(B.new_game(json.dumps(
+    {"seed": 7, "human_player": 1, "opponent": "champion",
+     "sims": 8, "k_dets": 1, "verify": True})))
+assert st["ok"], st                      # champion constructs under strict semantics
+st = json.loads(B.ai_move(st["generation"]))   # human_player=1 -> AI moves first
+assert st["ok"], st
+
+bad = [p for p in sys.path
+       if p not in _BASELINE and p.startswith("/") and not os.path.exists(p)]
+assert not bad, "nonexistent sys.path entries would poison Chaquopy imports: %r" % bad
+print(json.dumps({"ok": True, "shim": B.FACTORY_REPO_SHIM}))
+'''
+
+
+def test_bundle_survives_chaquopy_strict_path_hook(tmp_path):
+    """Regression for the on-device P0: construct the champion (verify=True) in the
+    bundle layout under a path hook that raises for nonexistent sys.path entries,
+    the way Chaquopy's AssetFinder does. Without ``_shim_factory_repo`` this fails
+    with FileNotFoundError from ``champion_factory._hashers()``."""
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)
+    (out / "android_bridge.py").write_bytes(
+        (BRIDGE_DIR / "android_bridge.py").read_bytes())
+
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    env["PYTHONPATH"] = str(out)
+    proc = subprocess.run(
+        [sys.executable, "-c", _STRICT_HOOK_DRIVER, str(out)],
+        cwd=str(tmp_path), env=env, capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, (
+        f"strict-hook subprocess failed\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
+    assert json.loads(proc.stdout.strip().splitlines()[-1])["ok"] is True
+
+
 # --------------------------------------------------------------------------- #
 # tier-1 restore determinism                                                    #
 # --------------------------------------------------------------------------- #
@@ -741,3 +802,55 @@ def test_import_gate_notices_a_module_missing_from_the_bundle(tmp_path):
     offenders = {m for m, targets in report["violations"].items()
                  if any(t.endswith("action_space") for t in targets)}
     assert offenders, "deleting action_space.py went unnoticed by the gate"
+
+
+# --------------------------------------------------------------------------- #
+# runtime_info — the Cython fast-path report                                    #
+# --------------------------------------------------------------------------- #
+# On desktop the compiled extensions may or may not be present (they are gitignored,
+# per-box `.so` builds), and on device they arrive via the carc-cy wheel. So these
+# tests assert the SCHEMA and the internal consistency of the report, never that
+# Cython happens to be loaded here.
+def test_runtime_info_schema():
+    d = ok(B.runtime_info())
+    assert isinstance(d["python"], str) and d["python"].startswith("3.")
+    assert d["python_implementation"] == "CPython"
+    assert isinstance(d["numpy"], str) and d["numpy"][0].isdigit()
+    assert isinstance(d["flat_leaf"], bool)
+
+    assert set(d["cython"]) == {"flat_leaf_cy", "flat_repr_cy"}
+    for name, block in d["cython"].items():
+        assert isinstance(block["enabled"], bool), name
+        assert isinstance(block["loaded"], bool), name
+        assert block["bound"] in {"unbound", "active", "pure_python"}, name
+
+    assert set(d["spec"]) == {"champion_id", "leaf_hash"}
+    assert isinstance(d["env"], dict) and "CARCASSONNE_USE_FLAT_LEAF" in d["env"]
+
+
+def test_runtime_info_env_matches_the_frozen_resolved_env():
+    """The report must quote RESOLVED_ENV — the knobs as they were the instant before
+    carcassonne_ai was imported — not a later os.environ that no longer affects the leaf."""
+    d = ok(B.runtime_info())
+    assert d["env"] == B.RESOLVED_ENV
+
+
+def test_runtime_info_bound_state_is_consistent_with_loading():
+    """`bound == "active"` is only reachable if the extension actually loaded."""
+    d = ok(B.runtime_info())
+    for name, block in d["cython"].items():
+        if block["bound"] == "active":
+            assert block["loaded"], f"{name} bound active without being loaded"
+
+
+def test_cy_alias_table_covers_both_modules():
+    """_install_cy_aliases must report on both extensions whether or not they exist."""
+    assert set(B.CY_LOADED) == set(B.CY_MODULES) == {"flat_leaf_cy", "flat_repr_cy"}
+    assert all(isinstance(v, bool) for v in B.CY_LOADED.values())
+
+
+def test_cy_alias_is_published_under_the_carcassonne_ai_name():
+    """Whatever loaded must be reachable under the dotted name flat_leaf.py imports."""
+    for name, loaded in B.CY_LOADED.items():
+        if loaded:
+            assert f"carcassonne_ai.{name}" in sys.modules, name

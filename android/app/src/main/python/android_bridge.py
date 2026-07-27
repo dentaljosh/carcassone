@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import random
 import sys
 import time
@@ -79,6 +80,59 @@ if _MAYBE_REPO is not None and (_MAYBE_REPO / "src" / "carcassonne_ai").is_dir()
     _src = str(_MAYBE_REPO / "src")
     if _src not in sys.path:
         sys.path.append(_src)   # append, never prepend: an installed copy still wins
+
+# --------------------------------------------------------------------------- #
+# 1b. Cython fast paths — republish carc_cy.* under their carcassonne_ai names. #
+#                                                                              #
+# The compiled extensions ship in a standalone `carc_cy` wheel (see            #
+# android/native/carc-cy). They CANNOT ship inside `carcassonne_ai` itself: on  #
+# device that package arrives via Chaquopy's *source* asset while pip           #
+# requirements arrive via a *separate* asset, and Python binds a package's      #
+# __path__ to the first sys.path entry that provides it — so a package split    #
+# across the two finders would make `carcassonne_ai.flat_leaf_cy` unimportable. #
+#                                                                              #
+# Aliasing into sys.modules is what the LAZY `from . import flat_leaf_cy` in    #
+# flat_leaf.py (and `from .flat_repr_cy import ...` in board_repr.py) then      #
+# resolves against. Must run BEFORE the first leaf evaluation, because both     #
+# sites cache a False sentinel on ImportError and never retry.                  #
+# No wheel (desktop, or an NDK-less build) -> stays pure Python, which is       #
+# correct, just slower.                                                        #
+# --------------------------------------------------------------------------- #
+CY_MODULES: tuple[str, ...] = ("flat_leaf_cy", "flat_repr_cy")
+
+
+def _install_cy_aliases() -> dict[str, bool]:
+    """Map ``carc_cy.<m>`` onto ``carcassonne_ai.<m>``. Returns which ones loaded."""
+    import importlib
+
+    loaded: dict[str, bool] = {}
+    for name in CY_MODULES:
+        target = f"carcassonne_ai.{name}"
+        if target in sys.modules:            # already importable the ordinary way
+            loaded[name] = True
+            continue
+        try:
+            mod = importlib.import_module(f"carc_cy.{name}")
+        except ImportError:
+            loaded[name] = False
+            continue
+        sys.modules[target] = mod
+        loaded[name] = True
+    if any(loaded.values()):
+        # Also bind on the parent package, so plain attribute access agrees with
+        # sys.modules (CPython's IMPORT_FROM falls back to sys.modules, but only
+        # after an AttributeError — this keeps the two views consistent).
+        try:
+            import carcassonne_ai as _ca
+            for name, got in loaded.items():
+                if got:
+                    setattr(_ca, name, sys.modules[f"carcassonne_ai.{name}"])
+        except ImportError:
+            pass
+    return loaded
+
+
+CY_LOADED: dict[str, bool] = _install_cy_aliases()
 
 import numpy as np  # noqa: E402
 
@@ -136,6 +190,36 @@ def _resolve_production_yaml() -> str:
 
 
 PRODUCTION_YAML_PATH = _resolve_production_yaml()
+
+
+def _shim_factory_repo() -> str | None:
+    """Make ``champion_factory._hashers()``'s sys.path inserts harmless on device.
+
+    The factory inserts ``REPO/scripts/classical_search`` and
+    ``REPO/scripts/measurement_infra`` at ``sys.path[0]`` before importing the hash
+    dialects. On device REPO resolves inside Chaquopy's AssetFinder tree where those
+    dirs don't exist — and Chaquopy's path hook RAISES FileNotFoundError for a missing
+    path entry (desktop CPython silently skips it), so the insert poisons the very next
+    import and the champion can never construct. Worse, the entry stays in sys.path, so
+    one failed construction poisons every import after it.
+
+    Fix: when the real repo layout is absent, point REPO at a scratch dir that really
+    contains those two (empty) subdirs. The inserted entries then exist and are
+    harmlessly empty; the bundled top-level ``c5_leaf_override``/``snapshot`` modules
+    satisfy the imports. Must run at import time, before the first construction.
+    """
+    if (champion_factory.REPO / "scripts" / "classical_search").is_dir():
+        return None  # desktop checkout — leave it alone
+    import tempfile
+
+    shim = Path(tempfile.mkdtemp(prefix="carc_repo_shim_"))
+    for rel in ("scripts/classical_search", "scripts/measurement_infra"):
+        (shim / rel).mkdir(parents=True, exist_ok=True)
+    champion_factory.REPO = shim
+    return str(shim)
+
+
+FACTORY_REPO_SHIM = _shim_factory_repo()
 
 
 # --------------------------------------------------------------------------- #
@@ -917,6 +1001,59 @@ def production_budget() -> str:
                     "total_sims": spec.k_dets * spec.sims_per_det,
                     "exact_max_k": spec.exact_max_k,
                     "production_yaml": PRODUCTION_YAML_PATH})
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def runtime_info() -> str:
+    """What the Python layer actually resolved to at runtime — for the About/Debug view.
+
+    Answers the question the APK alone cannot: did the compiled Cython fast paths make
+    it onto THIS device, or is the champion running the pure-Python leaf?
+
+    Per module, three distinct facts (do not collapse them):
+      ``enabled``  the env toggle (``flat_leaf.USE_CY_LEAF`` / ``board_repr.USE_CY_REPR``)
+      ``loaded``   the .so genuinely imported and dlopened
+      ``bound``    the lazy binding state inside the consuming module —
+                   ``active`` (calls go to Cython), ``pure_python`` (import failed, a
+                   False sentinel is cached and will not be retried), or ``unbound``
+                   (nothing has evaluated a leaf yet, so it has not tried).
+
+    ``bound == "unbound"`` before the first move is normal, not a fault."""
+    try:
+        import importlib.util
+
+        from carcassonne_ai import board_repr, flat_leaf
+
+        def _state(sentinel) -> str:
+            if sentinel is None:
+                return "unbound"
+            return "active" if sentinel else "pure_python"
+
+        cython = {
+            "flat_leaf_cy": {
+                "enabled": bool(flat_leaf.USE_CY_LEAF),
+                "loaded": bool(CY_LOADED.get("flat_leaf_cy", False))
+                or importlib.util.find_spec("carcassonne_ai.flat_leaf_cy") is not None,
+                "bound": _state(flat_leaf._CY_FLAT_V2),
+            },
+            "flat_repr_cy": {
+                "enabled": bool(board_repr.USE_CY_REPR),
+                "loaded": bool(CY_LOADED.get("flat_repr_cy", False))
+                or importlib.util.find_spec("carcassonne_ai.flat_repr_cy") is not None,
+                "bound": _state(board_repr._CY_ENCODE),
+            },
+        }
+        return _ok({
+            "ok": True,
+            "python": platform.python_version(),
+            "python_implementation": platform.python_implementation(),
+            "numpy": np.__version__,
+            "cython": cython,
+            "flat_leaf": bool(flat_leaf.USE_FLAT_LEAF),
+            "spec": _spec_fingerprint(),
+            "env": RESOLVED_ENV,
+        })
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))
 

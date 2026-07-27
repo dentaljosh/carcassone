@@ -1,0 +1,12 @@
+# Synced copies of src/carcassonne_ai/*.pyx — the repo keeps ONE copy of each source,
+# in src/. These are written by `build_cy_wheels.py --sync-only` before every build.
+carc_cy/*.pyx
+# Cython output + compiled artefacts.
+carc_cy/*.c
+carc_cy/*.so
+# Downloaded Chaquopy python-target zips (Android Python.h + libpython3.12.so).
+.cache/
+# Ordinary desktop build droppings.
+build/
+dist/
+*.egg-info/

@@ -49,6 +49,17 @@ DEFAULT_OUT_REL = Path("android") / "app" / "build" / "python"
 BRIDGE_SRC_REL = Path("android") / "app" / "src" / "main" / "python"
 
 # The ONLY third-party distributions the APK installs (app/build.gradle.kts `pip`).
+#
+# `carc_cy` (the prebuilt Cython fast-path wheels) is deliberately NOT listed, and adding
+# it would be dead weight. The gate only ever reports on MODULE-SCOPE imports
+# (`_ImportVisitor._record` records into `required` only at `_depth == 0`), and every
+# reference to the compiled modules is inside a function body:
+#   * flat_leaf.py   `from . import flat_leaf_cy`        -> inside flat_virtual_score_v2
+#   * board_repr.py  `from .flat_repr_cy import ...`     -> inside encode_board
+#   * android_bridge `importlib.import_module("carc_cy.…")` -> inside _install_cy_aliases
+# So the closure never sees them and the gate cannot fail on them. That is the correct
+# outcome for a genuinely OPTIONAL accelerator: both call sites catch ImportError and
+# cache a pure-Python fallback, so a build with no wheels is still correct.
 ALLOWED_EXTERNAL = {"numpy", "yaml"}
 
 # The entry point the on-device app actually imports. Reachability is computed from it.

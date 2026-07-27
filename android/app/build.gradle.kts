@@ -82,6 +82,97 @@ val syncPythonFromRepo by tasks.registering(SyncPythonFromRepo::class) {
 }
 
 // ---------------------------------------------------------------------------
+// Cython fast paths (carc-cy) -> prebuilt Android wheels
+//
+// Chaquopy 17 CANNOT compile native code: its pip wrapper always runs
+//   pip install --only-binary :all: --platform android_<minSdk>_<abi>
+// so a source dir with a C/Cython extension dies with
+//   "error: CCompiler.compile: Chaquopy cannot compile native code".
+// The only supported route is to hand pip a FINISHED Android wheel, so
+// `tools/build_cy_wheels.py` cross-compiles src/carcassonne_ai/*.pyx with NDK clang
+// and drops one wheel per ABI into a --find-links directory.
+//
+// If no NDK is installed we simply omit the requirement: flat_leaf.py / board_repr.py
+// both fall back to pure Python on ImportError, so the app still works (just slower).
+// ---------------------------------------------------------------------------
+val cyBuildScript: File = rootProject.file("tools/build_cy_wheels.py")
+val cyWheelDir: Provider<Directory> = layout.buildDirectory.dir("generated/cyWheels")
+val cyPyxSources: List<File> =
+    listOf("flat_leaf_cy", "flat_repr_cy").map { repoRoot.resolve("src/carcassonne_ai/$it.pyx") }
+
+val androidSdkDir: File = run {
+    val props = Properties()
+    val f = rootProject.file("local.properties")
+    if (f.isFile) f.inputStream().use { props.load(it) }
+    val p = props.getProperty("sdk.dir")
+        ?: System.getenv("ANDROID_HOME")
+        ?: "${System.getProperty("user.home")}/Android/Sdk"
+    File(p)
+}
+
+// Highest installed side-by-side NDK, or an env override. Null => skip the wheels.
+val cyNdkDir: File? = sequenceOf(System.getenv("ANDROID_NDK_HOME"), System.getenv("ANDROID_NDK_ROOT"))
+    .filterNotNull().map { File(it) }.firstOrNull { it.isDirectory }
+    ?: androidSdkDir.resolve("ndk").listFiles()?.filter { it.isDirectory }?.maxByOrNull { it.name }
+
+val cyEnabled: Boolean =
+    cyBuildScript.isFile && cyNdkDir != null && cyPyxSources.all { it.isFile }
+
+// Content-addressed version, asked of the build script itself so the hashing rule lives
+// in exactly ONE place. Any .pyx edit changes this string, which changes the pip
+// requirement, which invalidates Chaquopy's task inputs -- so a stale wheel can never be
+// served out of pip's cache after a source edit.
+val cyVersion: String? = if (!cyEnabled) null else providers.exec {
+    commandLine(buildPythonPath, cyBuildScript.absolutePath, "--print-version")
+}.standardOutput.asText.get().trim()
+
+abstract class BuildCyWheels @Inject constructor(
+    private val execOps: ExecOperations,
+) : DefaultTask() {
+
+    @get:InputFile abstract val script: RegularFileProperty
+    @get:InputFiles abstract val pyx: ConfigurableFileCollection
+    @get:Input abstract val interpreter: Property<String>
+    @get:Input abstract val version: Property<String>
+    @get:Input abstract val sdkDir: Property<String>
+    @get:OutputDirectory abstract val outDir: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        logger.lifecycle("[buildCyWheels] carc-cy==${version.get()} -> ${outDir.get().asFile}")
+        execOps.exec {
+            commandLine(
+                interpreter.get(), script.get().asFile.absolutePath,
+                "--out", outDir.get().asFile.absolutePath,
+                "--version", version.get(),
+                "--sdk-dir", sdkDir.get(),
+            )
+        }
+    }
+}
+
+val buildCyWheels by tasks.registering(BuildCyWheels::class) {
+    group = "build"
+    description = "Cross-compile the repo's Cython fast paths into Android wheels."
+    onlyIf { cyEnabled }
+    script.set(cyBuildScript)
+    pyx.setFrom(cyPyxSources)
+    interpreter.set(buildPythonPath)
+    version.set(cyVersion ?: "0")
+    sdkDir.set(androidSdkDir.absolutePath)
+    outDir.set(cyWheelDir)
+}
+
+if (!cyEnabled) {
+    logger.warn(
+        "[buildCyWheels] SKIPPED: no Android NDK found under ${androidSdkDir.resolve("ndk")}. " +
+            "The APK will run the PURE-PYTHON leaf and board encoder (correct, ~1.5-2.5x slower " +
+            "on the leaf+repr share of move time). Install one with: " +
+            "sdkmanager --install 'ndk;27.3.13750724'"
+    )
+}
+
+// ---------------------------------------------------------------------------
 // Tile-art gate
 //
 // `app/src/main/assets/tiles/` is gitignored (generated art, not source), so a
@@ -127,7 +218,7 @@ val checkTileAssets by tasks.registering(CheckTileAssets::class) {
     outputs.upToDateWhen { false }
 }
 
-tasks.named("preBuild") { dependsOn(syncPythonFromRepo, checkTileAssets) }
+tasks.named("preBuild") { dependsOn(syncPythonFromRepo, checkTileAssets, buildCyWheels) }
 
 // preBuild ordering alone does not guarantee Chaquopy's source-merge tasks see a
 // populated dir, so wire them explicitly too.
@@ -136,6 +227,14 @@ tasks.matching { t ->
         t.name.contains("Python") &&
         (t.name.startsWith("merge") || t.name.startsWith("generate"))
 }.configureEach { dependsOn(syncPythonFromRepo) }
+
+// The wheels must exist before Chaquopy's pip runs against --find-links. That is the
+// `...PythonRequirements` task; the generate/merge ones are wired for good measure.
+tasks.matching { t ->
+    t.name != "buildCyWheels" &&
+        t.name.contains("Python") &&
+        (t.name.contains("Requirements") || t.name.startsWith("generate") || t.name.startsWith("merge"))
+}.configureEach { dependsOn(buildCyWheels) }
 
 android {
     namespace = "com.jishal.carcassonne"
@@ -208,6 +307,13 @@ chaquopy {
         buildPython(buildPythonPath)
 
         pip {
+            // Prebuilt Cython fast paths, one wheel per ABI (see buildCyWheels above).
+            // --find-links (NOT --extra-index-url: v17 dropped local paths there) plus an
+            // exact == pin, so the requirement string itself changes whenever a .pyx does.
+            if (cyEnabled) {
+                options("--find-links", cyWheelDir.get().asFile.absolutePath)
+                install("carc-cy==$cyVersion")
+            }
             install("numpy")
             install("pyyaml")
         }

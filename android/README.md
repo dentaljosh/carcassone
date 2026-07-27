@@ -22,7 +22,8 @@ Milestones: M0 de-risk · M1 bridge · M2 board GUI · **M3 settings/polish** ·
 | Android SDK | `android/local.properties` → `sdk.dir=/home/doctor/Android/Sdk` (git-ignored, machine-local — create it if the checkout is fresh) |
 | `buildPython` | defaults to `/usr/bin/python3.12`; override per machine with `chaquopy.buildPython=/path/to/python3.12` in `android/local.properties`. Must exist and its **major.minor must match** `chaquopy { defaultConfig { version = "3.12" } }` (a Chaquopy 17 hard requirement). The same interpreter runs `tools/sync_python.py`. |
 | JDK | 17 (`compileOptions`/`kotlinOptions` target 17) |
-| Network | first build only, to fetch Gradle/AGP/Compose/Chaquopy and the numpy + pyyaml wheels |
+| Android NDK | **optional.** Highest side-by-side NDK under `$sdk.dir/ndk/` (or `ANDROID_NDK_HOME`), used to cross-compile the Cython fast paths. Install with `sdkmanager --install 'ndk;27.3.13750724'`. With no NDK the build still succeeds and the app runs the pure-Python leaf — correct, just slower. |
+| Network | first build only, to fetch Gradle/AGP/Compose/Chaquopy, the numpy + pyyaml wheels, and (if the NDK is present) the `com.chaquo.python:target` Android Python headers |
 
 ```bash
 cd /home/doctor/projects/carcassone/android
@@ -45,6 +46,32 @@ module named, and prints a warn-list of modules that ship with no import path fr
 `android_bridge` at all. The torch-importing neural cluster is excluded outright via
 `EXCLUDE_MODULES` in `tools/sync_python.py`: the production champion is classical, so
 `heuristic_prior_mcts`'s `net is not None` branches are dead on device.
+
+### Cython fast paths (`native/carc-cy/`)
+
+**Chaquopy 17 cannot compile native code.** Its pip wrapper always runs
+`pip install --only-binary :all: --platform android_<minSdk>_<abi>`, so a source
+directory containing a C/Cython extension fails with
+`error: CCompiler.compile: Chaquopy cannot compile native code`. The only supported
+route is to hand pip a *finished* Android wheel.
+
+So `preBuild` also runs `buildCyWheels` → `tools/build_cy_wheels.py`, which syncs
+`src/carcassonne_ai/{flat_leaf_cy,flat_repr_cy}.pyx` into `native/carc-cy/carc_cy/`
+(gitignored copies — the repo keeps one copy of each source), runs Cython, compiles each
+module for `arm64-v8a` and `x86_64` with NDK clang against the Android `Python.h` /
+`libpython3.12.so` from `com.chaquo.python:target`, and emits one wheel per ABI. Gradle
+then feeds them to Chaquopy as `pip { options("--find-links", …); install("carc-cy==<v>") }`.
+
+The wheel version is **content-addressed from the `.pyx` bytes**, so any source edit
+changes the pip requirement string — which is what stops a stale wheel being served from
+pip's cache or Chaquopy's up-to-date checks.
+
+The extensions ship as a standalone `carc_cy` package rather than inside
+`carcassonne_ai`, because on device `carcassonne_ai` arrives via Chaquopy's *source*
+asset while pip requirements arrive via a *separate* asset, and a package cannot span the
+two finders. `android_bridge._install_cy_aliases()` republishes them in `sys.modules`
+under the `carcassonne_ai.*` names that `flat_leaf.py` / `board_repr.py` lazily import.
+Call `runtime_info()` to see what a given device actually resolved.
 
 `preBuild` also runs **`checkTileAssets`**, which fails the build if
 `app/src/main/assets/tiles/base_game` does not hold all 32 tile PNGs. Those assets are
