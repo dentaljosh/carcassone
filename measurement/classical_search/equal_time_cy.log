@@ -1,0 +1,38 @@
+[cy-equal-time] host=Doctor cpu=x86_64
+[cy-equal-time] cython leaf ACTIVE (int+float): True
+[cy-equal-time] 20 positions (plies 30-140, legal 1-55)
+[cy-equal-time] champion h6400: median 3139 ms/move (mean 3187, p90 3744) [64s]
+[cy-equal-time] candidate float sims=800: median 718 ms/move (ratio 0.23x champ) [15s]
+[cy-equal-time] candidate float sims=1500: median 1409 ms/move (ratio 0.45x champ) [30s]
+[cy-equal-time] candidate float sims=2000: median 2090 ms/move (ratio 0.67x champ) [42s]
+[cy-equal-time] candidate float sims=2500: median 2845 ms/move (ratio 0.91x champ) [55s]
+[cy-equal-time] candidate float sims=3000: median 3423 ms/move (ratio 1.09x champ) [68s]
+[cy-equal-time] candidate float sims=3500: median 4029 ms/move (ratio 1.28x champ) [82s]
+[cy-equal-time] candidate int sims=800: median 737 ms/move (ratio 0.23x champ) [16s]
+[cy-equal-time] candidate int sims=1500: median 1527 ms/move (ratio 0.49x champ) [32s]
+[cy-equal-time] candidate int sims=2000: median 2531 ms/move (ratio 0.81x champ) [47s]
+[cy-equal-time] candidate int sims=2500: median 3023 ms/move (ratio 0.96x champ) [58s]
+[cy-equal-time] candidate int sims=3000: median 3390 ms/move (ratio 1.08x champ) [68s]
+[cy-equal-time] candidate int sims=3500: median 4019 ms/move (ratio 1.28x champ) [80s]
+
+=== CY EQUAL-TIME MATCH ===
+champion h6400: 3139 ms/move (band 2825-3453)
+-- candidate float (cython) --
+  s=800: 718 ms/move (0.23x)
+  s=1500: 1409 ms/move (0.45x)
+  s=2000: 2090 ms/move (0.67x)
+  s=2500: 2845 ms/move (0.91x) <= within band
+  s=3000: 3423 ms/move (1.09x) <= within band
+  s=3500: 4029 ms/move (1.28x)
+  interpolated exact-match sims ~ 2754
+  CHOSEN candidate sims = 2500 (2845 ms/move)
+-- candidate int (cython) --
+  s=800: 737 ms/move (0.23x)
+  s=1500: 1527 ms/move (0.49x)
+  s=2000: 2531 ms/move (0.81x)
+  s=2500: 3023 ms/move (0.96x) <= within band
+  s=3000: 3390 ms/move (1.08x) <= within band
+  s=3500: 4019 ms/move (1.28x)
+  interpolated exact-match sims ~ 2657
+  CHOSEN candidate sims = 2500 (3023 ms/move)
+[cy-equal-time] DONE -> /home/doctor/projects/carcassone/measurement/classical_search/equal_time_raw_cy.json

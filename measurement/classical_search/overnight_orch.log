@@ -1,0 +1,20 @@
+[orch 2026-07-06_16:19:46] start (pid 770216)
+[orch 2026-07-06_16:31:41] start (pid 775465)
+[orch 2026-07-06_16:47:20] round-5 complete:
+cell	c	tau	n	W	D	L	elo	sigma	paired_z	secs
+c1.0_tau5_float_visits_s800_k2	1.0	5	100	67	3	30	135.0	37.4	3.58	2
+c1.5_tau5_float_visits_s800_k2	1.5	5	100	56	3	41	52.5	35.1	1.99	1344
+c2.5_tau5_float_visits_s800_k2	2.5	5	100	62	2	36	92.5	36.0	1.79	1480
+c1.0_tau5_float_visits_s2750_k2	1.0	5	100	71	3	26	168.4	38.9	4.85	3002
+c1.5_tau5_float_visits_s2750_k2	1.5	5	100	72	1	27	168.4	38.9	6.75	2425
+c2.5_tau5_float_visits_s2750_k2	2.5	5	100	69	1	30	143.1	37.7	5.01	2587
+c1.5_tau5_float_Q_s2750_k2	1.5	5	100	72	1	27	168.4	38.9	6.11	2370
+[orch 2026-07-06_16:47:20] launcher synced to laptop
+[orch 2026-07-06_16:47:20] STAGE confirm launched (round=6 localW=30 laptopW=22 env=[  ])
+   6812 bash scripts/classical_search/run_screen_sweep.sh helper 22 /mnt/carc-shared/puct_confirm 6
+[orch 2026-07-06_18:54:30] STAGE confirm primary exited
+[orch 2026-07-06_18:54:30] CONFIRM VERDICT: branch=fire (n elo z = 400 148.2 10.17)
+[orch 2026-07-06_18:54:30] FIRE (>=+35): champion-flip is PROPOSABLE (pending human review).
+[orch 2026-07-06_18:54:30] -> K=4 n=200 same-band CRN endgame check (conservative W10/W6 for solver RAM)
+[orch 2026-07-06_18:54:30] STAGE k4 launched (round=6 localW=10 laptopW=6 env=[CONF_K=4 CONF_N=200 ])
+   7119 bash scripts/classical_search/run_screen_sweep.sh helper 6 /mnt/carc-shared/puct_confirm 6

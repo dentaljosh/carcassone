@@ -1,0 +1,28 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[warn] --opp-sims/--opp-k-dets: ASYMMETRIC search budgets — candidate k8x2752 (total 22016) vs opponent fair-champion k4x688 (total 2752). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s2752_vs_fairchamp-k4x688_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=8 sims=2752 | 0 cached, 200 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/curve_k8x2752_22016_vs_deploy_k4x688
+  10/200 played (230.5s/game, ~730 min left)
+  20/200 played (215.6s/game, ~647 min left)
+  30/200 played (172.9s/game, ~490 min left)
+  40/200 played (173.9s/game, ~464 min left)
+  50/200 played (174.1s/game, ~435 min left)
+  60/200 played (161.8s/game, ~378 min left)
+  70/200 played (166.1s/game, ~360 min left)
+  80/200 played (160.8s/game, ~322 min left)
+  90/200 played (160.0s/game, ~293 min left)
+  100/200 played (163.7s/game, ~273 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=2752, total~22016) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 200   candidate: 99W / 4D / 97L   winrate 0.505 (z=+0.14)
+avg score diff (candidate - opponent): +0.35
+ELO: +3.5  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +0.35   z = +0.27
+prefix ms/move: candidate 29760  opponent 3705  (ratio 8.03x)
+fair endgame: candidate latched 200/200 games, 13.29s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 14.83s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/classical_search/curve_k8x2752_22016_vs_deploy_k4x688/summary.json
+[2026-07-23_16:07:55] local curve-8x cell exited (pool exhausted on this box)

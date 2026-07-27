@@ -1,0 +1,22 @@
+[equal-time] host=Doctor cpu=x86_64
+[equal-time] cython leaf ACTIVE: True
+[equal-time] 20 positions (plies 30-140, legal 1-55)
+[equal-time] champion h6400: median 3081 ms/move (mean 3106, p90 3704) [62s]
+[equal-time] candidate float sims=100: median 407 ms/move (ratio 0.13x champ) [10s]
+[equal-time] candidate float sims=200: median 878 ms/move (ratio 0.29x champ) [21s]
+[equal-time] candidate float sims=400: median 1422 ms/move (ratio 0.46x champ) [35s]
+[equal-time] candidate float sims=600: median 2279 ms/move (ratio 0.74x champ) [47s]
+[equal-time] candidate float sims=800: median 2953 ms/move (ratio 0.96x champ) [59s]
+[equal-time] candidate float sims=1000: median 3384 ms/move (ratio 1.10x champ) [71s]
+
+=== EQUAL-TIME MATCH ===
+champion h6400: 3081 ms/move (band 2773-3389)
+  candidate float s=100: 407 ms/move (0.13x)
+  candidate float s=200: 878 ms/move (0.29x)
+  candidate float s=400: 1422 ms/move (0.46x)
+  candidate float s=600: 2279 ms/move (0.74x)
+  candidate float s=800: 2953 ms/move (0.96x) <= within band
+  candidate float s=1000: 3384 ms/move (1.10x) <= within band
+  interpolated exact-match sims ~ 859
+CHOSEN candidate sims = 800 (2953 ms/move, 0.96x champ)
+[equal-time] DONE -> measurement/classical_search/equal_time_raw.json

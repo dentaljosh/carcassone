@@ -4,7 +4,25 @@
 
 > **📋 The full work queue now lives in [docs/PROGRAM_ROADMAP_2026-07-07.md](docs/PROGRAM_ROADMAP_2026-07-07.md)** (created 2026-07-07 after Phase 1.1 fired + the transitivity round-robin + the Fable premise-expiration audit stacked ~3-5 box-days of gated work). This block stays the live-state snapshot; the roadmap is the queue. Update BOTH on close-out.
 
-## Right now (2026-07-27 08:10) — **✅ PARETO CURVE COMPLETE (5 cells, 2000 deck-paired games). THE SEARCH-BUDGET LEVER IS CLOSED IN BOTH DIRECTIONS FOR CLOCKED PLAY. Boxes idle. Nothing promoted; a fresh-band confirmation is OWED.**
+## Right now (2026-07-27 14:10) — **🔬 RUNNING: the BLIND CURVE — a sub-production budget ladder graded on an OUT-OF-LINEAGE opponent. Local W=40 / laptop W=24, net on GPU via carc-orch. ⚠️ MEMORY IS THE KNOWN RISK (see below); Joshua's call: "let it ride", report-only.**
+
+**WHY IT EXISTS.** Last night's Pareto curve (below) graded the champion **against itself**, and on that anchor halving the budget looked free (**+0.9 ±17.4** at 1376). Against **RoD-v2 iter_02** — an independent lineage — the same halving looked **~50 elo costly** (2750 → +230.2 · 1376 → **+179.5**; diff **−50.7 ±41.1, z 1.23**, n.s. and cross-band). No contradiction is established, but a self-anchored comparison **structurally cannot see a weakness both sides share**, and the point estimates diverge in a direction that matters. This ladder is the instrument without that blind spot.
+
+**THE LADDER** — blind champion (fair PIMC, curve125, exact-K≤2) vs **sighted** RoD-v2 iter_02 (bare NeuralMCTS, `fair_chance=False`, anchor knobs, its OWN v2.9+rs0.25 leaf, no tail). Fixed **k4**, rungs **344 / 688 / 1376 / 2064 / 2752**, n=200 paired each, **one shared band 70e9** so adjacent rungs are deck-matched (CL-046 CRN design ⇒ the *deltas* are sharp; the absolutes are correlated and must not be quoted as independent). Driver [blind_curve_queue.sh](scripts/classical_search/blind_curve_queue.sh); the 1376 rung doubles as the owed fresh-band replication of the 68e9 result below.
+
+**✅ THE ANCHOR RESULT ALREADY IN HAND — `blind_k4x1376_vs_sighted_rodv2_it02_b68e9`, n=200 paired, band 68e9, 0 timeouts:**
+**127W – 5D – 68L · winrate 0.6475 (z +4.17) · elo +105.6 ±25.7 · deck-paired margin +6.59 pts/deck (z +4.92).**
+Both statistics past 2σ; **not saturated** (wr 0.65), so there is range in both directions.
+
+**⚠️ INTERPRETATION — NOT a clean "conservative lower bound" (corrected 2026-07-27; the harness banner still says otherwise and is queued for a fix once the run ends).** The asymmetries do **not** all run our way: **information → we are HANDICAPPED** (blind vs sighted; measured clairvoyance tax ~156 elo, large) · **leaf → we are ADVANTAGED** (curve125 vs curve100+residual; CL-051 established curve125 is a real leaf-strength win) · **endgame → we are ADVANTAGED** (exact-K≤2 tail vs their bare none) · **cost → we SPEND MORE** (1745 vs 1266 ms/move = 1.38×, not cost-matched). Net direction **undetermined** ⇒ the licensed claim is the narrow one: *our champion, blind and at half budget, beats the RoD-v2 anchor agent playing sighted.* It does **NOT** license "the lineage gap is at least +105.6".
+
+**⚠️ MEMORY — the live risk, flagged and accepted.** On the *cheapest* rung: local **10G free of 41G**, laptop **2G free of 11G**. Per-worker footprint grows ~1.8× toward rung 5 (8× the sims/det of rung 1), projecting ~52G local / ~13.5G laptop — i.e. **both boxes are projected to run short before the top rungs**, laptop first. `CARCASSONNE_TT_CAP=200000` is already applied by the orch wrapper, so this is MCTS tree + per-process overhead, which that cap does not touch. **Joshua's call 2026-07-27: "let it ride, lets keep an eye on it, but dont change anything without my okay."** ⇒ monitors are REPORT-ONLY. If it OOMs the loss is bounded: completed games persist per-record, the queue skips finished cells, and recovery is only a stranded-`.claim` cleanup (which needs his authorisation).
+
+**Ops:** GPU serves **only the opponent** (our champion is classical, no net). One carc-orch server **per box, on its own GPU** (local RTX 5060 Ti, laptop RTX 4070 Laptop), per-host SHM names, `OMP_NUM_THREADS=1` on each **server's own** env line (unpinned it takes ~2574% CPU from the workers), `max_batch = W`, `78ch/12sc` peeked from the checkpoint rather than trusting carc-orch's defaults — a wrong plane count is a *silent* mis-encode, not a crash. ⚠️ **Transport caveat:** every RoD2 anchor row on record was net-on-**CPU**; these cells serve the same weights from the **GPU**. Measured divergence 0/140 chosen actions, but rule-of-three bounds that at ≤2.1%/move ⇒ cite as "same weights, GPU transport", never as bit-identical.
+
+---
+
+## Last verdict (2026-07-27 08:10) — **✅ PARETO CURVE COMPLETE (5 cells, 2000 deck-paired games). THE SEARCH-BUDGET LEVER IS CLOSED IN BOTH DIRECTIONS FOR CLOCKED PLAY. Nothing promoted; a fresh-band confirmation is OWED.**
 
 **THE CURVE** — elo vs the **deploy champion head-to-head**, best allocation per budget, with % of the 900 s tournament clock. Full read-out + design in [PARETO_CURVE_PREREG.md](measurement/classical_search/PARETO_CURVE_PREREG.md) (pre-registered before launch, design section unedited after); claim **CL-068**; `results.csv pareto_*_vs_deploy`.
 

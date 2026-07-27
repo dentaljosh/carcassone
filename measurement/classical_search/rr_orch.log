@@ -1,0 +1,81 @@
+[rr-orch 2026-07-06_23:29:20] start (pid 46427) HEAD=f288c4d
+[rr-orch 2026-07-06_23:29:20] exporting torchscript + starting orch servers
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_rr_iter02.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[rr-orch 2026-07-06_23:29:26] local TS export OK
+[rr-orch 2026-07-06_23:29:34] local orch server UP
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=6.09e-05  max|dvalue|=1.49e-07  OK
+[export] OK -> /tmp/carc_rr_iter02.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+laptop TS export OK
+laptop orch server UP
+[rr-orch 2026-07-06_23:29:48] laptop server phase done
+[rr-orch 2026-07-06_23:29:48] PRE-FLIGHT: n=4 RR-1 smoke (orch, throwaway band 9.99e9)
+[rr-orch 2026-07-06_23:50:15] start (pid 58434) HEAD=085206b
+[rr-orch 2026-07-06_23:50:15] exporting torchscript + starting orch servers
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_rr_iter02.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[rr-orch 2026-07-06_23:50:21] local TS export OK
+[rr-orch 2026-07-06_23:50:29] local orch server UP
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=6.09e-05  max|dvalue|=1.49e-07  OK
+[export] OK -> /tmp/carc_rr_iter02.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+laptop TS export OK
+laptop orch server UP
+[rr-orch 2026-07-06_23:50:41] laptop server phase done
+[rr-orch 2026-07-06_23:50:41] PRE-FLIGHT: n=4 RR-1 smoke (orch, throwaway band 9.99e9, 40min hang-guard)
+preflight OK n=4
+[rr-orch 2026-07-06_23:56:37] PRE-FLIGHT OK -> full cells
+[rr-orch 2026-07-06_23:56:37] CELL rr1 launch (orch=1)
+   1542 bash scripts/classical_search/run_round_robin.sh helper rr1
+[rr-orch 2026-07-07_00:30:28] CELL rr1 primary exited -> rr1	200	155	6	39	230.2	30.2	11.03	2031
+[rr-orch 2026-07-07_00:30:28] CELL rr2 launch (orch=1)
+   1890 bash scripts/classical_search/run_round_robin.sh helper rr2
+[rr-orch 2026-07-07_01:46:44] CELL rr2 primary exited -> rr2	200	109	3	88	36.6	24.7	1.36	4576
+[rr-orch 2026-07-07_01:46:44] stopping orch servers
+[rr-orch 2026-07-07_01:46:44] CELL rr3 launch (orch=0)
+   6512 bash scripts/classical_search/run_round_robin.sh helper rr3
+[rr-orch 2026-07-07_03:56:30] CELL rr3 primary exited -> rr3	200	139	3	58	149.3	26.9	6.69	7786
+[rr-orch 2026-07-07_03:56:30] CELL rr4 launch (orch=0)
+   6929 bash scripts/classical_search/run_round_robin.sh helper rr4
+[rr-orch 2026-07-07_06:31:05] CELL rr4 primary exited -> rr4	200	96	3	101	-8.7	24.6	-0.96	9275
+[rr-orch 2026-07-07_06:31:05] ALL CELLS DONE:
+cell	n	W	D	L	elo	sigma	paired_z	secs
+rr1	200	155	6	39	230.2	30.2	11.03	2031
+rr2	200	109	3	88	36.6	24.7	1.36	4576
+rr3	200	139	3	58	149.3	26.9	6.69	7786
+rr4	200	96	3	101	-8.7	24.6	-0.96	9275
+M1(puct vs net)=+230.2 M2(h6400 vs net)=+36.6  diff=+193.5 (2sd=78.0)
+M3(puct vs h12800)=+149.3 M4(h6400 vs h12800)=-8.7  transitivity predicts M1-M2~+148, M3~148+M4
+G1 (RPS gate): PASS   G2 (compute-odds): PASS
+[rr-orch 2026-07-07_06:31:05] rr-orchestrator exit

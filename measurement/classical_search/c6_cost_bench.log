@@ -1,0 +1,37 @@
+[ab-cost] host=Doctor cpu=x86_64
+[ab-cost] cython leaf ACTIVE (int+float): True
+[ab-cost] 20 positions (plies 30-140)
+[ab-cost] champion PUCT@2750 reuse-off: median 2986.2 ms/move [59s]
+[ab-cost] micro early (plies 30-59): leaf=19.41us next_state=25.008us
+[ab-cost] micro mid (plies 65-99): leaf=24.192us next_state=32.746us
+[ab-cost] micro late (plies 105-140): leaf=28.829us next_state=23.885us
+[ab-cost] branching: tiles p50=37 meeples p50=1
+[ab-cost] pos 1/20 ply=30: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2488ms [39s]
+[ab-cost] pos 2/20 ply=36: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2308ms [18s]
+[ab-cost] pos 3/20 ply=42: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=3653ms [28s]
+[ab-cost] pos 4/20 ply=47: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2593ms [7s]
+[ab-cost] pos 5/20 ply=53: deepest-completed(TT-off)=8 achievable(TT-on)=8 champ=2267ms [5s]
+[ab-cost] pos 6/20 ply=59: deepest-completed(TT-off)=8 achievable(TT-on)=4 champ=2235ms [47s]
+[ab-cost] pos 7/20 ply=65: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=3084ms [8s]
+[ab-cost] pos 8/20 ply=71: deepest-completed(TT-off)=8 achievable(TT-on)=8 champ=3133ms [10s]
+[ab-cost] pos 9/20 ply=76: deepest-completed(TT-off)=8 achievable(TT-on)=8 champ=2498ms [12s]
+[ab-cost] pos 10/20 ply=82: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2917ms [10s]
+[ab-cost] pos 11/20 ply=88: deepest-completed(TT-off)=8 achievable(TT-on)=4 champ=3752ms [71s]
+[ab-cost] pos 12/20 ply=94: deepest-completed(TT-off)=8 achievable(TT-on)=8 champ=3869ms [9s]
+[ab-cost] pos 13/20 ply=99: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2679ms [14s]
+[ab-cost] pos 14/20 ply=105: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2715ms [14s]
+[ab-cost] pos 15/20 ply=111: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=2084ms [18s]
+[ab-cost] pos 16/20 ply=117: deepest-completed(TT-off)=6 achievable(TT-on)=4 champ=3094ms [198s]
+[ab-cost] pos 17/20 ply=123: deepest-completed(TT-off)=6 achievable(TT-on)=6 champ=3687ms [148s]
+[ab-cost] pos 18/20 ply=128: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=3345ms [22s]
+[ab-cost] pos 19/20 ply=134: deepest-completed(TT-off)=8 achievable(TT-on)=6 champ=3055ms [31s]
+[ab-cost] pos 20/20 ply=140: deepest-completed(TT-off)=8 achievable(TT-on)=8 champ=3473ms [3s]
+
+=== C6 STAGE-0 COST SURFACE ===
+champion budget: 2986.2 ms/move (median)
+median midgame achievable depth: TT-off=6 TT-on=6
+d=6 TT step ratio=1.21 exact-hit frac=0.0022
+
+VERDICT (§7): GO — median midgame completed depth >= 6 plies (3 full turns) within the champion budget — proceed to the Stage-1 agent build (§8).
+[ab-cost] DONE -> /home/doctor/projects/carcassone/measurement/classical_search/ab_cost_raw.json
+              -> /home/doctor/projects/carcassone/measurement/classical_search/C6_COST_SURFACE.md

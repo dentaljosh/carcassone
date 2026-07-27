@@ -1,0 +1,56 @@
+[t3-optuna] champion leaf hash a36d2e15a3b3d71d (curve125) OK; band 20000000000 stage=s1 n_trials=32 workers=30
+/home/doctor/projects/carcassone/scripts/classical_search/optuna_knob_sweep.py:383: ExperimentalWarning: Argument ``multivariate`` is an experimental feature. The interface can change in the future.
+  sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=12,
+[I 2026-07-14 11:44:31,690] A new study created in RDB with name: t3_knob_sweep
+[t3-optuna] rung A trial 0 (ask) params={'c_puct': 1.5, 'tau_p': 5.0, 'value_norm': 15.0, 'curve_scale': 1.0, 'pclose_scale': 1.0, 'bonus_cap': 8.0, 'opp_bonus_cap': 8.0}
+[t3-optuna] rung A trial 1 (ask) params={'c_puct': 1.5, 'tau_p': 5.0, 'value_norm': 15.0, 'curve_scale': 1.4, 'pclose_scale': 1.0, 'bonus_cap': 8.0, 'opp_bonus_cap': 8.0}
+[t3-optuna] rung A trial 2 (ask) params={'c_puct': 1.27, 'tau_p': 4.56, 'value_norm': 18.48, 'curve_scale': 1.104, 'pclose_scale': 1.126, 'bonus_cap': 8.63, 'opp_bonus_cap': 6.92}
+[t3-optuna] rung A trial 3 (ask) params={'c_puct': 1.55, 'tau_p': 6.36, 'value_norm': 18.18, 'curve_scale': 1.177, 'pclose_scale': 1.104, 'bonus_cap': 11.6, 'opp_bonus_cap': 9.84}
+[t3-optuna] rung A trial 4 (ask) params={'c_puct': 1.99, 'tau_p': 3.35, 'value_norm': 16.76, 'curve_scale': 1.369, 'pclose_scale': 1.179, 'bonus_cap': 10.31, 'opp_bonus_cap': 8.31}
+[t3-optuna] rung A trial 5 (ask) params={'c_puct': 2.23, 'tau_p': 5.07, 'value_norm': 21.24, 'curve_scale': 1.077, 'pclose_scale': 0.906, 'bonus_cap': 9.31, 'opp_bonus_cap': 8.4}
+[t3-optuna] rung A trial 6 (ask) params={'c_puct': 1.65, 'tau_p': 4.57, 'value_norm': 11.28, 'curve_scale': 1.368, 'pclose_scale': 1.152, 'bonus_cap': 9.11, 'opp_bonus_cap': 9.78}
+[t3-optuna] rung A trial 7 (ask) params={'c_puct': 1.83, 'tau_p': 4.77, 'value_norm': 17.88, 'curve_scale': 1.348, 'pclose_scale': 1.049, 'bonus_cap': 8.43, 'opp_bonus_cap': 8.92}
+[t3-optuna] rung A trial 8 (ask) params={'c_puct': 1.94, 'tau_p': 3.67, 'value_norm': 17.73, 'curve_scale': 1.429, 'pclose_scale': 0.809, 'bonus_cap': 11.18, 'opp_bonus_cap': 9.62}
+[t3-optuna] rung A trial 9 (ask) params={'c_puct': 1.69, 'tau_p': 6.2, 'value_norm': 20.0, 'curve_scale': 1.142, 'pclose_scale': 0.892, 'bonus_cap': 11.44, 'opp_bonus_cap': 7.59}
+[t3-optuna] rung A trial 10 (ask) params={'c_puct': 2.22, 'tau_p': 5.44, 'value_norm': 18.61, 'curve_scale': 0.807, 'pclose_scale': 0.877, 'bonus_cap': 6.08, 'opp_bonus_cap': 7.09}
+[t3-optuna] rung A trial 11 (ask) params={'c_puct': 1.68, 'tau_p': 3.62, 'value_norm': 10.11, 'curve_scale': 1.152, 'pclose_scale': 0.93, 'bonus_cap': 6.04, 'opp_bonus_cap': 7.23}
+[t3-optuna] rung A trial 12 (ask) params={'c_puct': 2.07, 'tau_p': 4.11, 'value_norm': 19.87, 'curve_scale': 1.375, 'pclose_scale': 0.801, 'bonus_cap': 11.8, 'opp_bonus_cap': 9.84}
+[t3-optuna] rung A trial 13 (ask) params={'c_puct': 1.81, 'tau_p': 3.24, 'value_norm': 19.13, 'curve_scale': 1.393, 'pclose_scale': 0.819, 'bonus_cap': 11.5, 'opp_bonus_cap': 9.18}
+[t3-optuna] rung A trial 14 (ask) params={'c_puct': 2.14, 'tau_p': 5.32, 'value_norm': 17.65, 'curve_scale': 1.351, 'pclose_scale': 0.886, 'bonus_cap': 11.8, 'opp_bonus_cap': 9.57}
+[t3-optuna] rung A trial 15 (ask) params={'c_puct': 2.23, 'tau_p': 3.39, 'value_norm': 15.66, 'curve_scale': 1.086, 'pclose_scale': 1.015, 'bonus_cap': 10.71, 'opp_bonus_cap': 9.66}
+[t3-optuna] rung A trial 16 (ask) params={'c_puct': 1.74, 'tau_p': 3.71, 'value_norm': 18.61, 'curve_scale': 1.161, 'pclose_scale': 0.803, 'bonus_cap': 8.95, 'opp_bonus_cap': 9.23}
+[t3-optuna] rung A trial 17 (ask) params={'c_puct': 1.95, 'tau_p': 3.42, 'value_norm': 12.44, 'curve_scale': 1.396, 'pclose_scale': 0.972, 'bonus_cap': 11.69, 'opp_bonus_cap': 9.47}
+[t3-optuna] rung A trial 18 (ask) params={'c_puct': 2.12, 'tau_p': 4.32, 'value_norm': 16.69, 'curve_scale': 1.224, 'pclose_scale': 0.821, 'bonus_cap': 9.0, 'opp_bonus_cap': 9.94}
+[t3-optuna] rung A trial 19 (ask) params={'c_puct': 2.0, 'tau_p': 3.37, 'value_norm': 13.28, 'curve_scale': 1.203, 'pclose_scale': 0.981, 'bonus_cap': 6.0, 'opp_bonus_cap': 9.52}
+[t3-optuna] rung A trial 20 (ask) params={'c_puct': 1.88, 'tau_p': 5.42, 'value_norm': 13.79, 'curve_scale': 1.262, 'pclose_scale': 0.828, 'bonus_cap': 8.55, 'opp_bonus_cap': 9.79}
+[t3-optuna] rung A trial 21 (ask) params={'c_puct': 1.88, 'tau_p': 5.31, 'value_norm': 14.4, 'curve_scale': 1.216, 'pclose_scale': 0.825, 'bonus_cap': 5.91, 'opp_bonus_cap': 9.87}
+[t3-optuna] rung A trial 22 (ask) params={'c_puct': 1.82, 'tau_p': 5.86, 'value_norm': 13.13, 'curve_scale': 1.363, 'pclose_scale': 0.87, 'bonus_cap': 10.83, 'opp_bonus_cap': 9.95}
+[t3-optuna] rung A trial 23 (ask) params={'c_puct': 2.13, 'tau_p': 7.3, 'value_norm': 12.31, 'curve_scale': 1.346, 'pclose_scale': 0.852, 'bonus_cap': 11.36, 'opp_bonus_cap': 9.72}
+[t3-optuna] rung A trial 24 (ask) params={'c_puct': 1.58, 'tau_p': 5.36, 'value_norm': 13.38, 'curve_scale': 1.426, 'pclose_scale': 0.914, 'bonus_cap': 10.14, 'opp_bonus_cap': 9.16}
+[t3-optuna] rung A trial 25 (ask) params={'c_puct': 1.83, 'tau_p': 5.01, 'value_norm': 12.21, 'curve_scale': 1.169, 'pclose_scale': 0.817, 'bonus_cap': 8.95, 'opp_bonus_cap': 8.87}
+[t3-optuna] rung A trial 26 (ask) params={'c_puct': 1.59, 'tau_p': 6.11, 'value_norm': 10.89, 'curve_scale': 1.302, 'pclose_scale': 0.816, 'bonus_cap': 11.18, 'opp_bonus_cap': 9.85}
+[t3-optuna] rung A trial 27 (ask) params={'c_puct': 1.51, 'tau_p': 5.94, 'value_norm': 15.32, 'curve_scale': 1.261, 'pclose_scale': 0.805, 'bonus_cap': 8.74, 'opp_bonus_cap': 9.91}
+[t3-optuna] rung A trial 28 (ask) params={'c_puct': 1.89, 'tau_p': 5.31, 'value_norm': 12.39, 'curve_scale': 1.046, 'pclose_scale': 0.868, 'bonus_cap': 11.98, 'opp_bonus_cap': 9.89}
+[t3-optuna] rung A trial 29 (ask) params={'c_puct': 2.12, 'tau_p': 7.05, 'value_norm': 15.14, 'curve_scale': 1.341, 'pclose_scale': 0.862, 'bonus_cap': 8.24, 'opp_bonus_cap': 9.31}
+[t3-optuna] rung A trial 30 (ask) params={'c_puct': 2.05, 'tau_p': 7.66, 'value_norm': 11.36, 'curve_scale': 1.343, 'pclose_scale': 0.931, 'bonus_cap': 7.13, 'opp_bonus_cap': 9.14}
+[t3-optuna] rung A trial 31 (ask) params={'c_puct': 2.09, 'tau_p': 6.98, 'value_norm': 15.36, 'curve_scale': 1.11, 'pclose_scale': 0.959, 'bonus_cap': 8.64, 'opp_bonus_cap': 9.69}
+[t3-optuna] rung B: extending top-10 by rung-A margin -> trials [20, 29, 12, 22, 23, 27, 24, 18, 28, 8]
+===== RESUME 2026-07-15_11:04:25: cap=7200 claim_stale=9000 workers=18 (was 30), local-only =====
+[t3-optuna] champion leaf hash a36d2e15a3b3d71d (curve125) OK; band 20000000000 stage=s1 n_trials=32 workers=18
+/home/doctor/projects/carcassone/scripts/classical_search/optuna_knob_sweep.py:383: ExperimentalWarning: Argument ``multivariate`` is an experimental feature. The interface can change in the future.
+  sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=12,
+[I 2026-07-15 11:04:26,065] Using an existing study with name 't3_knob_sweep' instead of creating a new one.
+[t3-optuna] rung B: extending top-10 by rung-A margin -> trials [20, 29, 12, 22, 23, 27, 24, 18, 28, 8]
+[t3-optuna]   trial 29 rung B cached (n=120)
+[t3-optuna]   trial 12 rung B cached (n=120)
+[t3-optuna]   trial 23 rung B cached (n=120)
+[t3-optuna]   trial 27 rung B cached (n=120)
+[t3-optuna] rung C: extending top-4 by rung-B margin -> trials [20, 12, 18, 27]
+
+=== T3 STAGE-1 rung-C table (THE verdict; study.best_trial is NOT it) ===
+  trial 20: margin +2.958 pts/deck  elo +36.3  z +2.97  fresh +1.442  n=240
+  trial 27: margin +2.350 pts/deck  elo +34.9  z +2.36  fresh +2.825  n=240
+  trial 18: margin +1.821 pts/deck  elo +24.7  z +1.83  fresh +1.617  n=240
+  trial 12: margin +1.517 pts/deck  elo +0.0  z +1.46  fresh +0.783  n=230
+
+[t3-optuna] STAGE-1 FIRE: best trial 20 elo +36.3 z +2.97 (gate +30 / z2.0). -> operator runs Stage-2 (fresh band 2.01e10, top-3, n=400).

@@ -1,0 +1,7 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opp-sims/--opp-k-dets: ASYMMETRIC search budgets — candidate k8x1376 (total 11008) vs opponent fair-champion k4x688 (total 2752). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp-k4x688_k2-leafa36d2e15]: info=fair n=400 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 400 to play, 16 workers, out=/mnt/c/carc-shared/classical_search/cl060_h2h_k8x1376_vs_deploy_k4x688
+  10/400 played (133.8s/game, ~870 min left)

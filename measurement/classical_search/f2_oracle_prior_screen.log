@@ -1,0 +1,7 @@
+puct-priors[rr_puct2750-oracle3_vs_puctchamp2750_k2]: n=200 paired=True | 0 cached, 200 to play, 30 workers, out=/mnt/c/carc-shared/classical_search/f2_oracle_prior_screen
+  10/200 played (258.5s/game, ~818 min left)
+  20/200 played (138.9s/game, ~417 min left)
+[watchdog] seed=25000000008 a_seat=1 ABANDONED after 3626s / 141 moves (>3600s); recorded as game_timeout
+  30/200 played (120.9s/game, ~343 min left)
+  40/200 played (128.7s/game, ~343 min left)
+  50/200 played (110.4s/game, ~276 min left)
