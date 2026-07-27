@@ -14,6 +14,10 @@
 
 **Ops:** pure CPU (`--info fair` builds no net ⇒ no carc-orch, no GPU, no OMP-pin concern). Driver [pareto_curve_queue.sh](scripts/classical_search/pareto_curve_queue.sh) on both boxes, `--shared-claim` one pool per cell, cells individually resumable, skipped if `summary.json` exists. Pre-flight smoke confirmed both sides on frozen curve125 `a36d2e15`. Comparability with CL-060's cells verified: the only `src/` change since its rev is `ee38534`'s F6 soft-cap, whose `slope=0.0` default short-circuits to the unchanged path (bit-exact). ⚠️ **If it must be killed, clean stranded `.claim` files before resuming.**
 
+## Side project (2026-07-27) — 📱 **Android app: play the deploy champion on-device** (branch `android-app`)
+
+Joshua-requested. Kotlin/Compose GUI + Chaquopy-embedded Python running the REAL fair champion (bundle synced from the repo at build time, `verify=True` on device; no torch/Rust in the play path). M0–M3 committed on `android-app`: APK builds (Chaquopy 17/Py3.12/numpy), 22 bridge pytests + 32 JVM tests green, two independent reviews done, consolidated fix pass + M4 (arm64 Cython leaf) in flight. Plan: `~/.claude/plans/i-want-am-android-quizzical-dragon.md`; build docs: [android/README.md](android/README.md). **Open gate: on-device latency at full budget (needs Joshua's phone paired).** Not a strength lever; nothing here touches PRODUCTION.yaml or measurement.
+
 ---
 
 ## Last verdict (2026-07-26 ~19:40) — **🎯 DISTILL-STRONG-TEACHER: THE EQUAL-SIMS STRENGTH CLAIM IS CONFIRMED ON TWO BANDS (pooled +35.7 elo, winrate z +2.90, margin z +2.12 over 800 deck-paired games) — the programme's first CONFIRMED positive strength result. ⛔ BUT DEPLOYABILITY IS REFUTED: the unloaded cost ratio is 4.24× (W-invariant), and at the SAME 11 s/move the RAW TEACHER beats the distillation by +14 elo — sub-teacher strength at teacher cost. The strength question is answered; the open problem is now COST (~4× cheaper needed). NOT PROMOTED.**
