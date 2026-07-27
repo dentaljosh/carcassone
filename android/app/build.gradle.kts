@@ -1,3 +1,4 @@
+import java.util.Properties
 import javax.inject.Inject
 import org.gradle.process.ExecOperations
 
@@ -20,6 +21,16 @@ plugins {
 
 val repoRoot: File = rootProject.projectDir.parentFile          // .../carcassone
 val syncScript: File = rootProject.file("tools/sync_python.py")
+
+// The interpreter used for BOTH the bundle sync and Chaquopy's own buildPython.
+// Machine-local, so it comes from local.properties (untracked) with the CI/dev
+// default as the fallback. See android/README.md "Prerequisites".
+val buildPythonPath: String = run {
+    val props = Properties()
+    val f = rootProject.file("local.properties")
+    if (f.isFile) f.inputStream().use { props.load(it) }
+    props.getProperty("chaquopy.buildPython") ?: "/usr/bin/python3.12"
+}
 // NOTE: NOT build/python — Chaquopy's own installPythonRequirements task owns
 // that directory, and sharing it makes Gradle fail the build with an implicit
 // -dependency validation error.
@@ -65,12 +76,58 @@ val syncPythonFromRepo by tasks.registering(SyncPythonFromRepo::class) {
     script.set(syncScript)
     repo.set(repoRoot)
     outDir.set(pythonBundleDir)
-    interpreter.set("/usr/bin/python3.12")
+    interpreter.set(buildPythonPath)
     // Cheap file copy; always re-run so an edit in src/ is never stale in the APK.
     outputs.upToDateWhen { false }
 }
 
-tasks.named("preBuild") { dependsOn(syncPythonFromRepo) }
+// ---------------------------------------------------------------------------
+// Tile-art gate
+//
+// `app/src/main/assets/tiles/` is gitignored (generated art, not source), so a
+// clean clone has NO tile PNGs and would happily build a tile-less APK that only
+// fails once it is on a phone. This task turns that into a build error with the
+// exact command to run. It deliberately does NOT invoke prepare_assets.py itself:
+// that needs Pillow in a venv Gradle knows nothing about.
+// ---------------------------------------------------------------------------
+val tileAssetsDir: File = file("src/main/assets/tiles/base_game")
+val expectedTileCount = 32
+
+abstract class CheckTileAssets : DefaultTask() {
+    @get:Internal abstract val dir: DirectoryProperty
+    @get:Input abstract val expected: Property<Int>
+
+    @TaskAction
+    fun run() {
+        val d = dir.get().asFile
+        val found = d.listFiles { f -> f.isFile && f.name.endsWith(".png") }?.size ?: 0
+        if (found < expected.get()) {
+            throw GradleException(
+                """
+                |Tile art is missing: found $found of ${expected.get()} PNGs in
+                |  ${d.path}
+                |
+                |These assets are generated, not checked in (see .gitignore), so a fresh
+                |clone has to build them once:
+                |
+                |  .venv/bin/python android/tools/prepare_assets.py
+                |
+                |(needs Pillow: .venv/bin/pip install pillow)
+                """.trimMargin()
+            )
+        }
+    }
+}
+
+val checkTileAssets by tasks.registering(CheckTileAssets::class) {
+    group = "verification"
+    description = "Fail early if the generated tile art is missing from assets/."
+    dir.set(tileAssetsDir)
+    expected.set(expectedTileCount)
+    outputs.upToDateWhen { false }
+}
+
+tasks.named("preBuild") { dependsOn(syncPythonFromRepo, checkTileAssets) }
 
 // preBuild ordering alone does not guarantee Chaquopy's source-merge tasks see a
 // populated dir, so wire them explicitly too.
@@ -94,6 +151,22 @@ android {
 
         ndk {
             // Chaquopy's Python 3.12+ runtime ships 64-bit ABIs only.
+            // arm64-v8a = phones, x86_64 = emulator.
+            //
+            // ⚠️ This CANNOT be narrowed per build type, though it would be worth ~8 MB
+            // of release APK to drop x86_64. Two AGP/Chaquopy facts block every version
+            // of that change, both verified here by building and unzipping the APKs:
+            //   1. defaultConfig and buildType `abiFilters` are UNIONed, never
+            //      subtracted — a `release { ndk { abiFilters.clear() } }` is a no-op on
+            //      its own empty set and x86_64 still shipped.
+            //   2. Inverting it (narrow default, `debug` widens) configures cleanly and
+            //      silently produces a BROKEN debug APK: Chaquopy reads this
+            //      defaultConfig list alone when it resolves wheels and generates
+            //      assets/chaquopy/bootstrap-native/, so debug got AGP's x86_64 .so
+            //      files with no x86_64 CPython or numpy behind them.
+            // Chaquopy takes ABI overrides only per product FLAVOR, and adding a flavour
+            // dimension renames every task (assembleDebug -> assemble<Flavour>Debug).
+            // Not worth it while the release build is a local artefact.
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
@@ -132,7 +205,7 @@ chaquopy {
     defaultConfig {
         // Must match buildPython's major.minor (Chaquopy 17 breaking change).
         version = "3.12"
-        buildPython("/usr/bin/python3.12")
+        buildPython(buildPythonPath)
 
         pip {
             install("numpy")

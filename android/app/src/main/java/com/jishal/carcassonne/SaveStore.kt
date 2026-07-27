@@ -23,7 +23,11 @@ class SaveStore(context: Context) {
 
     private val file = File(context.filesDir, FILE_NAME)
 
-    fun exists(): Boolean = file.isFile && file.length() > 0
+    /** Suspending like its siblings: `isFile`/`length` are both disk hits, and this
+     *  is called from the Home screen's first composition. */
+    suspend fun exists(): Boolean = withContext(Dispatchers.IO) {
+        file.isFile && file.length() > 0
+    }
 
     suspend fun read(): String? = withContext(Dispatchers.IO) {
         runCatching { if (file.isFile) file.readText() else null }

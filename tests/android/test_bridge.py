@@ -547,3 +547,197 @@ def test_bundle_runs_standalone(tmp_path):
     assert result["n_actions"] >= 4
     assert result["champion_id"]
     assert str(out) in result["bridge"]
+
+
+# --------------------------------------------------------------------------- #
+# tier-1 restore determinism                                                    #
+# --------------------------------------------------------------------------- #
+# The champion re-seats deterministically from `_move_idx`, but RuleBasedPlayer's
+# randomness lives in a STREAM (`_rng`, one `choice` per virtual-score tie-break) whose
+# consumption is data-dependent — `Random.choice` rejection-samples over the number of
+# TIED-best actions, which cannot be counted without scoring the position. So the bridge
+# rebuilds it by replaying the decisions. Measured before that landed: 12/12 seeds
+# played a DIFFERENT game after a mid-game restore.
+_TIER1_SEEDS = (0, 1, 2, 3, 4, 5)
+_CUT = 40      # plies played before the save
+_TAIL = 30     # plies compared after it
+
+
+def _step(st: dict) -> tuple[dict, int]:
+    """One ply, deterministic human (lowest legal id). Returns (new_state, action_id)."""
+    if st["is_human_turn"]:
+        a = int(st["legal"]["action_ids"][0])
+        return ok(B.apply_action(a)), a
+    r = ok(B.ai_move(st["generation"]))
+    return r, int(r["action_id"])
+
+
+def _play(st: dict, n: int) -> tuple[dict, list[int]]:
+    moves: list[int] = []
+    for _ in range(n):
+        if st["is_terminated"]:
+            break
+        st, a = _step(st)
+        moves.append(a)
+    return st, moves
+
+
+def _continuous(seed: int) -> tuple[dict, list[int]]:
+    """Play _CUT plies, snapshot the save, play _TAIL more. Returns (save, tail)."""
+    st = new(seed=seed, opponent="tier1")
+    st, _ = _play(st, _CUT)
+    save = ok(B.save_game())
+    _, tail = _play(st, _TAIL)
+    return save, tail
+
+
+def _after_restore(save: dict) -> tuple[list[int], dict]:
+    restored = ok(B.restore_game(json.dumps(save)))
+    _, tail = _play(restored, _TAIL)
+    return tail, restored
+
+
+@pytest.mark.parametrize("seed", _TIER1_SEEDS)
+def test_tier1_restore_continues_the_same_game(seed):
+    """save -> restore -> continue must replay the SAME moves as never having stopped."""
+    save, continuous = _continuous(seed)
+    assert continuous, "the tail is empty; the cut is past the end of the game"
+    restored_tail, restored = _after_restore(save)
+    assert restored["restored"]["rng_replayed"] is True
+    assert restored_tail == continuous, (
+        f"seed {seed}: tier-1 diverged after restore\n"
+        f"  continuous: {continuous}\n  restored:   {restored_tail}")
+
+
+def test_tier1_restore_rng_replay_is_load_bearing(monkeypatch):
+    """Negative control: with the RNG replay disabled the same check FAILS.
+
+    Without this, `test_tier1_restore_continues_the_same_game` could pass for a reason
+    that has nothing to do with the fix (e.g. no tie-break ever firing in the window)."""
+    save, continuous = _continuous(_TIER1_SEEDS[0])
+    monkeypatch.setattr(B, "_replays_rng", lambda agent: False)
+    restored = ok(B.restore_game(json.dumps(save)))
+    assert restored["restored"]["rng_replayed"] is False
+    _, tail = _play(restored, _TAIL)
+    assert tail != continuous, (
+        "tier-1 did NOT diverge with the RNG replay disabled — the positive test is "
+        "not actually exercising the fix; widen _CUT/_TAIL")
+
+
+def test_tier1_restore_does_not_replay_the_champion_rng():
+    """The champion must keep the cheap `_move_idx` path — replaying its decisions
+    would cost a full search per ply."""
+    new(seed=11, opponent="champion", **TINY)
+    assert B._replays_rng(B._S.agent) is False
+    new(seed=11, opponent="tier1")
+    assert B._replays_rng(B._S.agent) is True
+
+
+def test_restore_rejects_a_bad_human_player():
+    st = new(seed=13, opponent="tier1")
+    save = ok(B.save_game())
+    save["human_player"] = 2
+    d = j(B.restore_game(json.dumps(save)))
+    assert d["ok"] is False and d["error"]["code"] == "bad_save"
+    assert st["ok"]
+
+
+# --------------------------------------------------------------------------- #
+# save stamp / mismatch warning                                                 #
+# --------------------------------------------------------------------------- #
+def test_save_carries_the_champion_stamp():
+    new(seed=31, opponent="tier1")
+    save = ok(B.save_game())
+    assert save["champion_id"] and save["leaf_hash"]
+    # A save from the running build restores without a warning.
+    restored = ok(B.restore_game(json.dumps(save)))
+    assert "save_mismatch" not in restored
+
+
+def test_restore_warns_but_does_not_refuse_on_a_stale_stamp():
+    new(seed=37, opponent="tier1")
+    save = ok(B.save_game())
+    save["champion_id"] = "some-older-champion"
+    restored = ok(B.restore_game(json.dumps(save)))
+    assert restored["ok"] is True                       # advisory, never fatal
+    mm = restored["save_mismatch"]
+    assert mm["fields"]["champion_id"]["saved"] == "some-older-champion"
+    assert mm["message"]
+
+
+def test_restore_of_a_stampless_save_is_not_a_mismatch():
+    """Saves written before the stamp existed must not trip the warning."""
+    new(seed=41, opponent="tier1")
+    save = ok(B.save_game())
+    save.pop("champion_id", None)
+    save.pop("leaf_hash", None)
+    assert "save_mismatch" not in ok(B.restore_game(json.dumps(save)))
+
+
+# --------------------------------------------------------------------------- #
+# the import-closure gate                                                       #
+# --------------------------------------------------------------------------- #
+def test_import_gate_passes_for_the_current_bundle(tmp_path):
+    """The shipped bundle's module-scope import closure resolves to
+    {bundle, stdlib, numpy, yaml} — nothing else exists on the phone."""
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)               # raises SystemExit if the gate fails
+    report = sync_python.check_imports([out, BRIDGE_DIR])
+    assert report["violations"] == {}
+    assert "android_bridge" in report["reachable"]
+    assert "carcassonne_ai.champion_factory" in report["reachable"]
+    # fair_agent is imported INSIDE a champion_factory function, so it is absent from
+    # the start-up set and present in the any-scope one. That asymmetry is exactly why
+    # the gate must never treat "unreachable at module scope" as "safe to delete".
+    assert "carcassonne_ai.fair_agent" not in report["reachable"]
+    assert "carcassonne_ai.fair_agent" in report["reachable_any"]
+    # The torch cluster is declared dead weight (EXCLUDE_MODULES) and never copied.
+    for gone in sync_python.EXCLUDE_MODULES:
+        assert not (out / "carcassonne_ai" / gone).exists(), f"{gone} still shipped"
+
+
+def test_import_gate_catches_a_synthetic_violation(tmp_path):
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)
+    # champion_factory is on android_bridge's module-scope import path, so an
+    # unsatisfiable import here is fatal rather than droppable.
+    f = out / "carcassonne_ai" / "champion_factory.py"
+    f.write_text("import torch\n" + f.read_text())
+    with pytest.raises(SystemExit) as exc:
+        sync_python.enforce_imports([out, BRIDGE_DIR])
+    msg = str(exc.value)
+    assert "torch" in msg and "champion_factory" in msg
+
+
+def test_import_gate_exempts_function_scope_imports(tmp_path):
+    """The lazy-import idiom the library already uses must stay legal."""
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)
+    f = out / "carcassonne_ai" / "champion_factory.py"
+    f.write_text(f.read_text() +
+                 "\n\ndef _lazy_torch():\n    import torch\n    return torch\n")
+    report = sync_python.enforce_imports([out, BRIDGE_DIR])
+    assert report["violations"] == {}
+
+
+def test_import_gate_exempts_type_checking_blocks(tmp_path):
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)
+    f = out / "carcassonne_ai" / "champion_factory.py"
+    f.write_text("from typing import TYPE_CHECKING\n"
+                 "if TYPE_CHECKING:\n    import torch\n" + f.read_text())
+    report = sync_python.enforce_imports([out, BRIDGE_DIR])
+    assert report["violations"] == {}
+
+
+def test_import_gate_notices_a_module_missing_from_the_bundle(tmp_path):
+    """A bundle-internal import that no longer resolves is a violation too — this is
+    what a lenient root-only check would have waved through."""
+    out = tmp_path / "bundle"
+    sync_python.sync(REPO, out)
+    # action_space IS imported at module scope (by android_bridge itself).
+    (out / "carcassonne_ai" / "action_space.py").unlink()
+    report = sync_python.check_imports([out, BRIDGE_DIR])
+    offenders = {m for m, targets in report["violations"].items()
+                 if any(t.endswith("action_space") for t in targets)}
+    assert offenders, "deleting action_space.py went unnoticed by the gate"

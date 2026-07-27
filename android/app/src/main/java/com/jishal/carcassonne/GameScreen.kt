@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -71,6 +72,28 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     var viewH by remember { mutableStateOf(0f) }
     var confirmLeave by remember { mutableStateOf(false) }
 
+    // The board canvas runs the full height of the content area, with the action
+    // buttons + status bar floating over its bottom edge and the banners over its
+    // top. Those strips are not usable board, so the auto-recentre must not count
+    // them as "visible" — see BoardTransform.isCellVisible.
+    val density = LocalDensity.current
+    val insetTopPx = with(density) { TOP_OVERLAY.toPx() }
+    val insetBottomPx = with(density) { BOTTOM_OVERLAY.toPx() }
+
+    // Process death while on the Game screen: MainActivity restores `screen = GAME`
+    // from the saved instance state, but the ViewModel — and with it the Python
+    // session — is gone, so `state` is null with nothing in flight that would ever
+    // fill it and the LoadingPane would spin forever. Any game that was in progress
+    // has an autosave (it is written after every applied action), so resume it;
+    // if there genuinely is none, go home rather than sit on the spinner.
+    LaunchedEffect(Unit) {
+        if (ui.state == null && !ui.busy && !ui.opActive && !ui.warmingUp &&
+            ui.error == null
+        ) {
+            if (vm.hasSavedGame()) vm.resume() else onExit()
+        }
+    }
+
     // Fit at game start (and on any new session / viewport change). Keyed on the
     // bridge generation, which is bumped by new_game / restore_game / reset.
     LaunchedEffect(state?.generation, viewW, viewH) {
@@ -85,7 +108,9 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     // Keyed on the cell alone, deliberately: keying on `turn` too would re-run
     // after every HUMAN move and chase the champion's stale last tile around.
     LaunchedEffect(state?.aiLastTile) {
-        recentreIfOffscreen(state?.aiLastTile, transformState, viewW, viewH)
+        recentreIfOffscreen(
+            state?.aiLastTile, transformState, viewW, viewH, insetTopPx, insetBottomPx,
+        )
     }
 
     // ...and after a HUMAN placement too. A tapped cell is by definition on
@@ -93,11 +118,16 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     // that as off-screen, so the board eases over and the newly opened
     // neighbours become reachable without a manual pan.
     LaunchedEffect(ui.lastHumanTile) {
-        recentreIfOffscreen(ui.lastHumanTile, transformState, viewW, viewH)
+        recentreIfOffscreen(
+            ui.lastHumanTile, transformState, viewW, viewH, insetTopPx, insetBottomPx,
+        )
     }
 
+    // Gated on isInFlight(), the same predicate leaveGame() uses to decide whether
+    // to tear the session down. When the two disagreed (this read `ui.thinking`),
+    // a Back pressed mid-apply exited silently AND kept the session.
     BackHandler(enabled = true) {
-        if (ui.thinking) confirmLeave = true else onExit()
+        if (vm.isInFlight()) confirmLeave = true else onExit()
     }
 
     Scaffold(
@@ -109,6 +139,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                 .padding(insets),
         ) {
             when {
+                // A fatal error before any board arrived (bad restore, bridge import
+                // failure): the spinner would never stop, so show the error and a way
+                // out instead.
+                ui.error != null && state == null -> FatalPane(ui.error!!, onExit)
                 state == null || assets == null -> LoadingPane(ui)
                 else -> {
                     BoardCanvas(
@@ -128,6 +162,25 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.End,
                     ) {
+                        // The champion's turn failed. It is not the human's turn, so
+                        // ActionButtons is empty and there would otherwise be nothing
+                        // to press — the seat is simply stuck. Offer the turn again.
+                        if (ui.aiFailed) {
+                            Row(
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            ) {
+                                FloatingActionButton(
+                                    onClick = vm::retryAiTurn,
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                ) {
+                                    Text(
+                                        "Retry champion move",
+                                        Modifier.padding(horizontal = 16.dp),
+                                        fontSize = 14.sp,
+                                    )
+                                }
+                            }
+                        }
                         ActionButtons(ui, state, vm)
                         StatusBar(ui, state)
                     }
@@ -136,6 +189,11 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                     }
                     ui.error?.let { err ->
                         ErrorBanner(err, vm::clearError, Modifier.align(Alignment.TopCenter))
+                    }
+                    ui.saveMismatch?.let { note ->
+                        MismatchBanner(
+                            note, vm::dismissSaveMismatch, Modifier.align(Alignment.TopCenter),
+                        )
                     }
                 }
             }
@@ -147,6 +205,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
         ResultDialog(
             result = result,
             opponentName = state.opponentName,
+            humanPlayer = state.humanPlayer,
             onNewGame = { vm.dismissResult(); vm.rematch() },
             onHome = { vm.dismissResult(); onExit() },
         )
@@ -182,6 +241,18 @@ internal fun formatSeconds(seconds: Double): String =
     else "%.0fs".format(Locale.US, seconds)
 
 /**
+ * Approximate heights of the chrome floating over the board canvas: the banner
+ * strip at the top, and the action-button row plus status bar at the bottom.
+ *
+ * Fixed dp rather than measured values on purpose — this only decides *whether* to
+ * ease the board towards a cell, so being a few dp out never produces a visibly
+ * wrong result, and threading real measurements through would mean hoisting layout
+ * state out of two child composables for no gain.
+ */
+private val TOP_OVERLAY = 96.dp
+private val BOTTOM_OVERLAY = 132.dp
+
+/**
  * Ease the board so [cell] is centred — but only when it is not comfortably in
  * view already. A no-op for a null cell, a zero viewport, or a cell that is
  * already visible, so both callers can invoke it unconditionally.
@@ -191,10 +262,16 @@ private suspend fun recentreIfOffscreen(
     transformState: MutableState<BoardTransform>,
     viewW: Float,
     viewH: Float,
+    insetTop: Float,
+    insetBottom: Float,
 ) {
     if (cell == null || viewW <= 0f || viewH <= 0f) return
     val from = transformState.value
-    if (from.isCellVisible(cell, viewW, viewH, margin = 12f)) return
+    if (from.isCellVisible(
+            cell, viewW, viewH, margin = 12f,
+            insetTop = insetTop, insetBottom = insetBottom,
+        )
+    ) return
     val to = BoardTransform.centeredOn(cell, from.scale, viewW, viewH)
     animate(0f, 1f, animationSpec = tween(320)) { f, _ ->
         transformState.value = lerpTransform(from, to, f)
@@ -298,6 +375,47 @@ private fun LoadingPane(ui: GameUiState) {
     }
 }
 
+/** Terminal state with no board to fall back to — the spinner would never stop. */
+@Composable
+private fun FatalPane(err: BridgeError, onHome: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Could not start the game", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            err.toString(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+        Spacer(Modifier.height(16.dp))
+        TextButton(onClick = onHome) { Text("Back to home") }
+    }
+}
+
+/** The restored save was stamped with a different champion build (advisory). */
+@Composable
+private fun MismatchBanner(note: String, onDismiss: () -> Unit, modifier: Modifier) {
+    Card(
+        modifier.padding(12.dp).fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                note,
+                Modifier.weight(1f),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            TextButton(onClick = onDismiss) { Text("OK") }
+        }
+    }
+}
+
 @Composable
 private fun ThinkingBanner(ui: GameUiState, state: GameState, modifier: Modifier) {
     val p = ui.progress
@@ -394,11 +512,14 @@ private fun StatusBar(ui: GameUiState, state: GameState) {
     val ghost = ui.ghost
     val text = when {
         state.isTerminated -> state.result?.verdict ?: "Game over."
+        ui.aiFailed -> "The champion's move failed — retry, or press Back to leave."
         ui.thinking -> "${state.opponentName} is thinking…"
         ui.busy -> "…"
         !state.isHumanTurn -> "${state.opponentName}'s turn"
         state.isTilePhase && ghost != null ->
-            "Rotation ${ghost.rotation} of ${ghost.rotationCount} — ✓ to place, ⟳ to rotate"
+            // 1-based POSITION in the legal list, not the raw engine rotation value:
+            // the legal set is often sparse ({1,3}), which printed as "Rotation 3 of 2".
+            "Rotation ${ghost.index + 1} of ${ghost.rotationCount} — ✓ to place, ⟳ to rotate"
         state.isTilePhase -> "Your move — tap a highlighted square to place the tile"
         state.isMeeplePhase -> "Place a meeple, or skip"
         else -> ""
@@ -425,15 +546,23 @@ private fun StatusBar(ui: GameUiState, state: GameState) {
 private fun ResultDialog(
     result: GameResult,
     opponentName: String,
+    humanPlayer: Int,
     onNewGame: () -> Unit,
     onHome: () -> Unit,
 ) {
+    // `result.scores` is in ENGINE SEAT order (index 0 = player 0), while the HUD
+    // always puts the human chip first. Printing the raw list therefore reversed the
+    // reading whenever the human sat in seat 1. Label the seats instead.
+    val you = result.scores.getOrElse(humanPlayer) { 0 }
+    val them = result.scores.getOrElse(1 - humanPlayer) { 0 }
+    // Same parenthetical trim as the HUD chip; the full name is printed below.
+    val themLabel = opponentName.substringBefore('(').trim().ifEmpty { "Champion" }
     AlertDialog(
         onDismissRequest = { },
         title = { Text(result.verdict) },
         text = {
             Column {
-                Text("Final score  ${result.scores.joinToString(" – ")}")
+                Text("Final score  You $you – $them $themLabel")
                 Text(
                     if (result.diff == 0) "A dead heat."
                     else "Margin: ${result.diff} point${if (result.diff == 1) "" else "s"}",

@@ -20,7 +20,7 @@ Milestones: M0 de-risk · M1 bridge · M2 board GUI · **M3 settings/polish** ·
 | Thing | Value used here |
 |---|---|
 | Android SDK | `android/local.properties` → `sdk.dir=/home/doctor/Android/Sdk` (git-ignored, machine-local — create it if the checkout is fresh) |
-| `buildPython` | `/usr/bin/python3.12` — must exist and its **major.minor must match** `chaquopy { defaultConfig { version = "3.12" } }` (a Chaquopy 17 hard requirement) |
+| `buildPython` | defaults to `/usr/bin/python3.12`; override per machine with `chaquopy.buildPython=/path/to/python3.12` in `android/local.properties`. Must exist and its **major.minor must match** `chaquopy { defaultConfig { version = "3.12" } }` (a Chaquopy 17 hard requirement). The same interpreter runs `tools/sync_python.py`. |
 | JDK | 17 (`compileOptions`/`kotlinOptions` target 17) |
 | Network | first build only, to fetch Gradle/AGP/Compose/Chaquopy and the numpy + pyyaml wheels |
 
@@ -37,8 +37,38 @@ checked-in copies of repo Python under `android/`** — a stale bundle is the mo
 way an on-device champion could silently differ from the measured one, so the sync
 always re-runs (`outputs.upToDateWhen { false }`).
 
-ABIs are `arm64-v8a` (phone) + `x86_64` (emulator); Chaquopy's 3.12 runtime is 64-bit
-only.
+The sync ends with an **import-closure gate**: every module-scope import across the
+bundle must resolve to a bundled module, the stdlib, `numpy` or `yaml` — the only things
+that exist on the phone. Imports inside function bodies are exempt (that is the lazy
+idiom `champion_factory`/`fair_agent` already use). It fails the build with the offending
+module named, and prints a warn-list of modules that ship with no import path from
+`android_bridge` at all. The torch-importing neural cluster is excluded outright via
+`EXCLUDE_MODULES` in `tools/sync_python.py`: the production champion is classical, so
+`heuristic_prior_mcts`'s `net is not None` branches are dead on device.
+
+`preBuild` also runs **`checkTileAssets`**, which fails the build if
+`app/src/main/assets/tiles/base_game` does not hold all 32 tile PNGs. Those assets are
+git-ignored, so without the gate a clean clone silently produces a tile-less APK. It
+prints the exact command to run; it does *not* invoke Python itself (that needs Pillow in
+a venv Gradle knows nothing about).
+
+ABIs are `arm64-v8a` (phone) + `x86_64` (emulator) for **both** build types; Chaquopy's
+3.12 runtime is 64-bit only. Dropping x86_64 from `release` would save ~8 MB but is not
+currently possible: AGP unions `defaultConfig` and buildType `abiFilters` (never
+subtracts), and inverting it — narrow default, `debug` widens — silently breaks the debug
+APK, because Chaquopy resolves its wheels and `assets/chaquopy/bootstrap-native/` from
+`defaultConfig` alone. Chaquopy accepts ABI overrides only per product *flavour*, and a
+flavour dimension would rename every Gradle task. See the comment in `app/build.gradle.kts`.
+
+### numpy version skew (known, tested-tolerable)
+
+Chaquopy installs the numpy **wheel it has for Android** — currently 1.26.2 — while the
+repo `.venv` runs a newer 2.x. The bridge and the engine were patched for numpy 2.x and
+use only long-stable API (`flatnonzero`, boolean masks, `int64` arrays), so the two agree
+on every value that reaches a decision; `tests/android/test_bridge.py` proves bridge/champion
+parity on the desktop version and the on-device `verify=True` leaf fingerprint re-proves
+the leaf itself on the phone. Treat a numpy bump on either side as something to re-check,
+not as something guaranteed to be free.
 
 ### Regenerating the tile art
 
@@ -137,7 +167,8 @@ Nothing here needs a device:
 
 ```bash
 # The bridge suite: imports without Android, plays scripted games at k1x8,
-# save/restore round trip, parity vs a direct make_production_champion() call,
+# save/restore round trip (including tier-1 RNG-stream determinism), the
+# import-closure gate, parity vs a direct make_production_champion() call,
 # and a subprocess run of the SYNCED bundle with src/ absent from sys.path.
 .venv/bin/python -m pytest tests/android/ -q
 

@@ -118,18 +118,31 @@ data class BoardTransform(
         )
     }
 
-    /** True when the whole cell square is inside the viewport, inset by [margin] px. */
+    /**
+     * True when the whole cell square is inside the *usable* viewport.
+     *
+     * The canvas runs edge to edge under the HUD and the action/status bars, so its
+     * raw height is not what the player can see: a cell tucked under the top HUD is
+     * "visible" by pixel arithmetic and invisible in fact. [insetTop] / [insetBottom]
+     * carve those overlays back off, so the auto-recentre fires for a cell that has
+     * slipped behind one. [margin] is the extra comfort slack on all four sides.
+     */
     fun isCellVisible(
         cell: Cell,
         viewW: Float,
         viewH: Float,
         margin: Float = 0f,
+        insetTop: Float = 0f,
+        insetBottom: Float = 0f,
     ): Boolean {
         val x0 = worldToScreenX(cell.col * TILE)
         val y0 = worldToScreenY(cell.row * TILE)
         val x1 = x0 + TILE * scale
         val y1 = y0 + TILE * scale
-        return x0 >= margin && y0 >= margin && x1 <= viewW - margin && y1 <= viewH - margin
+        return x0 >= margin &&
+            y0 >= insetTop + margin &&
+            x1 <= viewW - margin &&
+            y1 <= viewH - insetBottom - margin
     }
 
     companion object {

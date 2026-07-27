@@ -34,8 +34,14 @@ class DebugViewModel : ViewModel() {
     val state: StateFlow<DebugUiState> = _state
 
     /**
-     * Bumped on every new game so a late `ai_move` result from the previous
-     * game can be identified and dropped (the bridge echoes it back).
+     * The bridge's session generation, as REPORTED BY the bridge.
+     *
+     * It used to be a local counter bumped on every debug `new_game`, which only
+     * agreed with the bridge while the debug screen was the only thing driving it.
+     * `_GENERATION` is a module global shared with the real game, so after a single
+     * played game the local count trailed and every debug `ai_move` came back
+     * `stale_generation`. Parse it out of the `new_game` response instead — the same
+     * thing [GameViewModel] does.
      */
     private var generation = 0
 
@@ -52,16 +58,16 @@ class DebugViewModel : ViewModel() {
     }.toString()
 
     /**
-     * The full fair champion budget: k_dets=4 x 688 sims = 2752 determinized
-     * simulations, verify=True so the on-device fingerprint guard runs.
-     * This is the M0 latency measurement that gates the whole project.
+     * The full champion budget, verify=True so the on-device fingerprint guard runs.
+     * This is the latency measurement that gates the whole project — so it has to be
+     * the REAL budget, which means NOT naming one here: `sims`/`k_dets` are omitted so
+     * the bridge falls through to governance/PRODUCTION.yaml. (They used to be pinned
+     * at 688/4, which silently became a *weakened* agent the moment the YAML moved.)
      */
     private fun championConfig(): String = JSONObject().apply {
         put("seed", System.currentTimeMillis().toInt() and 0x7fffffff)
         put("human_player", 0)
         put("opponent", "champion")
-        put("sims", 688)
-        put("k_dets", 4)
         put("verify", true)
     }.toString()
 
@@ -70,17 +76,17 @@ class DebugViewModel : ViewModel() {
     fun warmUp() = run("import android_bridge") { PythonBridge.warmUp() }
 
     fun newGameTiny() {
-        generation++
         val cfg = tinyConfig()
         append(LogLine("config (tiny)", null, cfg))
-        run("new_game tier1 k1x16") { PythonBridge.newGame(cfg) }
+        run("new_game tier1 k1x16", adoptGeneration = true) { PythonBridge.newGame(cfg) }
     }
 
     fun newGameChampion() {
-        generation++
         val cfg = championConfig()
         append(LogLine("config (champion)", null, cfg))
-        run("new_game champion k4x688") { PythonBridge.newGame(cfg) }
+        run("new_game champion (YAML budget)", adoptGeneration = true) {
+            PythonBridge.newGame(cfg)
+        }
     }
 
     fun aiMove() {
@@ -98,7 +104,11 @@ class DebugViewModel : ViewModel() {
 
     // --- plumbing ----------------------------------------------------------
 
-    private fun run(label: String, block: suspend () -> String) {
+    private fun run(
+        label: String,
+        adoptGeneration: Boolean = false,
+        block: suspend () -> String,
+    ) {
         if (_state.value.busy) {
             append(LogLine(label, null, "BUSY — bridge thread is occupied", isError = true))
             return
@@ -108,6 +118,10 @@ class DebugViewModel : ViewModel() {
             val t0 = System.nanoTime()
             val line = try {
                 val result = block()
+                if (adoptGeneration) {
+                    runCatching { JSONObject(result).optInt("generation", generation) }
+                        .onSuccess { generation = it }
+                }
                 LogLine(label, elapsedMsSince(t0), result)
             } catch (e: PyException) {
                 // Python-side traceback: the message carries the full chain.

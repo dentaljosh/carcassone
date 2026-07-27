@@ -698,13 +698,32 @@ def get_progress() -> str:
         return _err(type(exc).__name__, str(exc))
 
 
+def _spec_fingerprint() -> dict:
+    """``{champion_id, leaf_hash}`` for the CURRENT PRODUCTION.yaml, or empty strings.
+
+    Recorded in every save and re-checked on restore (see ``restore_game``'s
+    ``save_mismatch``). The leaf hash matters for BOTH opponents, not just the
+    champion: ``RuleBasedPlayer`` ranks its candidates with ``virtual_score``, so a
+    leaf change moves tier-1's play too."""
+    try:
+        spec = champion_factory.load_production_spec()
+        return {"champion_id": str(spec.champion_id),
+                "leaf_hash": str(spec.yaml_leaf_hash)}
+    except Exception:                             # noqa: BLE001 — never break a save
+        return {"champion_id": "", "leaf_hash": ""}
+
+
 def save_game() -> str:
     """Serialise the game to ``{deck_seed, actions, human_player, opponent, sims,
     k_dets, verify}`` — a few hundred ints. Losslessly restorable via
-    ``restore_game`` (the root_replay contract)."""
+    ``restore_game`` (the root_replay contract).
+
+    Also stamps the champion identity (``champion_id`` + the YAML ``leaf_hash``) so a
+    save written by an older build can be RECOGNISED as such on restore. The stamp is
+    advisory: ``restore_game`` warns, never refuses."""
     try:
         s = _require_session()
-        return _ok({
+        out = {
             "ok": True,
             "schema": SAVE_SCHEMA,
             "deck_seed": s.seed,
@@ -714,9 +733,42 @@ def save_game() -> str:
             "sims": s.req_sims,
             "k_dets": s.req_k_dets,
             "verify": s.verify,
-        })
+        }
+        out.update(_spec_fingerprint())
+        return _ok(out)
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))
+
+
+def _replays_rng(agent) -> bool:
+    """Does this agent need its RNG rebuilt by REPLAYING decisions?
+
+    True for a stream-random agent (``RuleBasedPlayer``: one ``_rng`` advanced by every
+    tie-break, no per-move seed). False for the champion, whose search seeds are derived
+    from ``_move_idx`` — re-seating that integer is exact and free, and replaying its
+    decisions would cost a full search per ply."""
+    return hasattr(agent, "_rng") and not hasattr(agent, "_move_idx")
+
+
+def _save_mismatch(blob: dict) -> dict | None:
+    """Compare the save's champion stamp with the running one; ``None`` if they agree.
+
+    Saves written before the stamp existed carry no fields and are treated as matching
+    — an absent stamp is not evidence of a difference."""
+    cur = _spec_fingerprint()
+    fields = {}
+    for key in ("champion_id", "leaf_hash"):
+        was = str(blob.get(key, "") or "")
+        now = str(cur.get(key, "") or "")
+        if was and now and was != now:
+            fields[key] = {"saved": was, "current": now}
+    if not fields:
+        return None
+    return {
+        "fields": fields,
+        "message": ("This game was saved against a different champion build; the "
+                    "opponent may now play differently from here on."),
+    }
 
 
 def restore_game(json_str: str) -> str:
@@ -726,7 +778,15 @@ def restore_game(json_str: str) -> str:
     ``_move_idx`` = the number of AI *decisions* replayed (its per-move search seeds
     derive from it, ``fair_agent.det_seed_base``) and ``_latched`` = whether the
     exact-endgame latch would already have fired. Without both, a restored game would
-    silently play a different champion than the one that was saved."""
+    silently play a different champion than the one that was saved.
+
+    An agent whose randomness lives in a *stream* rather than a per-move seed —
+    ``RuleBasedPlayer._rng``, which breaks virtual-score ties — cannot be re-seated by
+    an index: ``Random.choice`` consumes a data-dependent number of ``getrandbits``
+    calls (rejection sampling over ``len(best_local)``, the count of TIED-best actions,
+    which is unknowable without scoring the position). So its stream is rebuilt the only
+    exact way there is — by replaying the decisions themselves (see ``_replays_rng``).
+    Measured before this was added: 12/12 seeds diverged after a mid-game restore."""
     global _S, _GENERATION, _prog_leaf_calls, _prog_expected, _prog_t0
     global _prog_thinking, _agent_ref
     try:
@@ -737,11 +797,14 @@ def restore_game(json_str: str) -> str:
         if schema != SAVE_SCHEMA:
             return _err("bad_save", f"unknown save schema {schema!r}")
         actions = [int(a) for a in blob.get("actions", [])]
+        human_player = int(blob.get("human_player", 0))
+        if human_player not in (0, 1):
+            return _err("bad_save", "human_player must be 0 or 1")
 
         _GENERATION += 1
         s = _Session(
             seed=int(blob.get("deck_seed", 0)),
-            human_player=int(blob.get("human_player", 0)),
+            human_player=human_player,
             opponent=str(blob.get("opponent", "champion")),
             sims=blob.get("sims"),
             k_dets=blob.get("k_dets"),
@@ -753,6 +816,7 @@ def restore_game(json_str: str) -> str:
         # played on — human auto-passes are logged too but never consume an AI decision.
         exact_max_k = int(getattr(s.agent, "_exact_max_k", 2))
         exact_on = bool(getattr(s.agent, "_exact_endgame", False))
+        replay_rng = _replays_rng(s.agent)
         ai_decisions = 0
         latched = False
         for a in actions:
@@ -772,6 +836,13 @@ def restore_game(json_str: str) -> str:
                 return _err("bad_save",
                             f"replay hit an illegal action {a} at ply "
                             f"{len(s.action_log)}")
+            if is_ai_turn and replay_rng:
+                # Burn the agent's RNG stream exactly as live play did: same board,
+                # same rng state in, therefore identical consumption out. The RETURNED
+                # action is discarded — the log is authoritative — but it should equal
+                # `a`, and a mismatch means the save predates a strength change (the
+                # `save_mismatch` warning below is the user-visible half of that).
+                s.pick(s.board)
             # Cosmetic parity with live play: rebuild the AI's last-move highlight so a
             # restored state deep-compares equal to the state that was saved (only the
             # un-reconstructable wall-clock is left None).
@@ -802,7 +873,11 @@ def restore_game(json_str: str) -> str:
         s.auto_pass_forced()
         out = _state_dict(s)
         out["restored"] = {"actions": len(actions), "ai_decisions": ai_decisions,
-                           "latched": latched}
+                           "latched": latched, "rng_replayed": replay_rng}
+        # Advisory, never fatal: an old save still restores and still plays.
+        mismatch = _save_mismatch(blob)
+        if mismatch is not None:
+            out["save_mismatch"] = mismatch
         return _ok(out)
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))

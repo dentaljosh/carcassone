@@ -4,8 +4,11 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -32,9 +35,13 @@ enum class Seat(val label: String) {
 /** The tile-placement ghost the human is currently aiming. */
 data class Ghost(
     val cell: Cell,
+    /** The engine rotation value (0..3) — NOT an ordinal; the legal set at a cell
+     *  is often sparse, e.g. {1, 3}. Use [index] to say "2nd of 2". */
     val rotation: Int,
     val actionId: Int,
     val rotationCount: Int,
+    /** 0-based position of [rotation] within this cell's legal rotation list. */
+    val index: Int,
 )
 
 data class GameUiState(
@@ -51,6 +58,26 @@ data class GameUiState(
     val hasSave: Boolean = false,
     val showResult: Boolean = false,
     val warmingUp: Boolean = false,
+    /**
+     * An operation coroutine is still running. Distinct from [busy], which covers
+     * only the bridge call itself: an op stays active through the post-move
+     * bookkeeping (persist), and a tap accepted in that window would be silently
+     * dropped by `launchOp`. Also the flag the Game screen's process-death probe
+     * reads, so it is set SYNCHRONOUSLY in `launchOp` (before the coroutine runs).
+     */
+    val opActive: Boolean = false,
+    /**
+     * The champion's turn ended in an error rather than a move. The game is not
+     * over and the position is intact — the turn is simply retryable, which is
+     * what [GameViewModel.retryAiTurn] does. Without this the seat is stuck: it
+     * is not the human's turn, so there is nothing to press.
+     */
+    val aiFailed: Boolean = false,
+    /**
+     * Set once after a restore whose save was stamped with a different champion
+     * build; the message the bridge supplied. Advisory only — the game still plays.
+     */
+    val saveMismatch: String? = null,
     /** The persisted difficulty preset; the next [GameViewModel.newGame] uses it. */
     val difficulty: Difficulty = Difficulty.DEFAULT,
     /**
@@ -75,11 +102,12 @@ data class GameUiState(
             val lc = st.legal.cellAt(cell) ?: return null
             if (lc.rotations.isEmpty() || lc.rotations.size != lc.actionIds.size) return null
             val i = rotationIndex.mod(lc.rotations.size)
-            return Ghost(cell, lc.rotations[i], lc.actionIds[i], lc.rotations.size)
+            return Ghost(cell, lc.rotations[i], lc.actionIds[i], lc.rotations.size, i)
         }
 
     val canInteract: Boolean
-        get() = state != null && !busy && !thinking && state.isHumanTurn && !state.isTerminated
+        get() = state != null && !busy && !thinking && !opActive &&
+            state.isHumanTurn && !state.isTerminated
 }
 
 /**
@@ -146,12 +174,25 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (_ui.value.warmingUp) return
         _ui.update { it.copy(warmingUp = true) }
         viewModelScope.launch {
-            runCatching { PythonBridge.warmUp() }
-                .onFailure { Log.e(TAG, "warmUp failed", it) }
-            val budget = runCatching { PythonBridge.productionBudget() }
-                .getOrNull()
-                ?.let { raw -> BridgeJson.parseOrError(raw).getOrNull() }
-                ?.let(BridgeJson::budget)
+            // Same rule as `persist`: a real failure is survivable (the app falls back
+            // to the previous budget), a cancellation means this scope is going away
+            // and must not be swallowed into the `_ui.update` below.
+            try {
+                PythonBridge.warmUp()
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Log.e(TAG, "warmUp failed", t)
+            }
+            val budget = try {
+                BridgeJson.parseOrError(PythonBridge.productionBudget())
+                    .getOrNull()?.let(BridgeJson::budget)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Log.w(TAG, "production_budget failed", t)
+                null
+            }
             val hasSave = saveStore.exists()
             _ui.update { it.copy(warmingUp = false, budget = budget ?: it.budget, hasSave = hasSave) }
         }
@@ -160,6 +201,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshSaveSlot() {
         viewModelScope.launch { _ui.update { it.copy(hasSave = saveStore.exists()) } }
     }
+
+    /** Is there an autosave on disk? Used by the Game screen's process-death probe. */
+    suspend fun hasSavedGame(): Boolean = saveStore.exists()
+
+    fun dismissSaveMismatch() = _ui.update { it.copy(saveMismatch = null) }
 
     // ----------------------------------------------------------- game set-up
 
@@ -284,24 +330,45 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun clearError() = _ui.update { it.copy(error = null) }
 
     /**
-     * Leaving the game screen. Only meaningful mid-search: the in-flight
-     * `ai_move` cannot be cancelled, so we drop the whole session instead —
-     * `reset()` bumps the bridge generation, and when the search finally returns
-     * it sees the mismatch and discards its move rather than applying it.
+     * Re-enter the champion's turn after it failed ([GameUiState.aiFailed]).
      *
-     * The autosave already holds the position *before* that move, so Resume
-     * replays the human position and the champion simply thinks again.
+     * Safe to repeat: the board never advanced, so this simply asks for the move
+     * again. `ai_move` is idempotent from the caller's side — a stale generation
+     * comes back flagged and is dropped.
+     */
+    fun retryAiTurn() {
+        if (!_ui.value.aiFailed) return
+        _ui.update { it.copy(aiFailed = false, error = null) }
+        launchOp { e -> runAiTurns(e) }
+    }
+
+    /**
+     * Leaving the game screen. Two cases need the session dropped:
+     *
+     *  - **mid-search** — the in-flight `ai_move` cannot be cancelled, so we drop
+     *    the whole session instead. `reset()` bumps the bridge generation, and
+     *    when the search finally returns it sees the mismatch and discards its
+     *    move rather than applying it. The autosave already holds the position
+     *    *before* that move, so Resume replays the human position and the
+     *    champion simply thinks again.
+     *  - **wedged on a failed AI turn** ([GameUiState.aiFailed]) — nothing is in
+     *    flight, but keeping the session would reopen the Game screen straight
+     *    back into the same stuck turn. Drop it; Resume rebuilds from the save.
+     *
+     * Otherwise this is a no-op and the Game screen reopens exactly as it was.
      */
     fun leaveGame() {
-        if (!isInFlight()) return   // idle: keep the session, Game reopens unchanged
-        takeOver()
+        if (!isInFlight() && !_ui.value.aiFailed) return
+        dropSession()
         aiDurations.clear()
         _ui.update {
             GameUiState(budget = it.budget, hasSave = it.hasSave, difficulty = it.difficulty)
         }
     }
 
-    private fun isInFlight(): Boolean = _ui.value.thinking || opJob?.isActive == true
+    /** Is a bridge operation running? Public so the Back handler and `leaveGame`
+     *  agree on the answer — a mid-apply Back must confirm, not silently exit. */
+    fun isInFlight(): Boolean = _ui.value.thinking || opJob?.isActive == true
 
     /**
      * Abandon whatever the bridge is doing. The blocking `ai_move` cannot be
@@ -311,11 +378,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
      */
     private fun takeOver() {
         if (!isInFlight()) return
+        dropSession()
+        _ui.update { it.copy(thinking = false, busy = false, opActive = false, progress = null) }
+    }
+
+    /** Bump the epoch, cancel the local job, and queue a bridge `reset()`. */
+    private fun dropSession() {
         epoch++                     // everything already in flight is now stale
         opJob?.cancel()
         opJob = null
         stopProgressPoll()
-        _ui.update { it.copy(thinking = false, busy = false, progress = null) }
         viewModelScope.launch {
             runCatching { PythonBridge.reset() }
                 .onFailure { Log.w(TAG, "reset failed", it) }
@@ -344,6 +416,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun launchOp(block: suspend (Int) -> Unit) {
         if (opJob?.isActive == true) return
         val myEpoch = epoch
+        // Set BEFORE launching, not inside the coroutine: the Game screen's
+        // process-death probe reads this on its very first composition, which can
+        // happen before the coroutine has had a chance to run.
+        _ui.update { it.copy(opActive = true) }
         opJob = viewModelScope.launch {
             try {
                 block(myEpoch)
@@ -353,6 +429,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 if (isCurrent(myEpoch)) {
                     _ui.update { it.copy(busy = false, error = BridgeJson.errorOf(t)) }
                 }
+            } finally {
+                if (isCurrent(myEpoch)) _ui.update { it.copy(opActive = false) }
             }
         }
     }
@@ -371,12 +449,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val st = BridgeJson.state(obj)
-        _ui.update { it.copy(state = st, busy = false, error = null) }
+        // `opActive` stays true: the bridge call is done, but persist (and possibly
+        // the whole AI leg) still is not, and a tap accepted now would be dropped.
+        _ui.update {
+            it.copy(
+                state = st, busy = false, opActive = true, error = null, aiFailed = false,
+                saveMismatch = obj.optJSONObject("save_mismatch")
+                    ?.optString("message").orEmpty().ifEmpty { null } ?: it.saveMismatch,
+            )
+        }
         afterState(e, st)
     }
 
     /** Persist, surface a finished game, or hand the turn to the champion. */
     private suspend fun afterState(e: Int, st: GameState) {
+        currentCoroutineContext().ensureActive()
         if (st.isTerminated) {
             saveStore.clear()
             if (isCurrent(e)) _ui.update { it.copy(hasSave = false, showResult = true) }
@@ -386,8 +473,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (!st.isHumanTurn) runAiTurns(e)
     }
 
+    /**
+     * Write the autosave. Failures are non-fatal (the game plays on; only Resume
+     * is affected) — but a CANCELLATION is not a failure, it is this coroutine
+     * being torn down, and swallowing it would let the caller carry on into
+     * [afterState] and start an AI turn for a game that no longer exists.
+     */
     private suspend fun persist(e: Int) {
-        val raw = runCatching { PythonBridge.saveGame() }.getOrNull() ?: return
+        val raw = try {
+            PythonBridge.saveGame()
+        } catch (c: CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            Log.w(TAG, "save_game failed", t)
+            return
+        }
         if (BridgeJson.parseOrError(raw).isFailure) return
         saveStore.write(raw)
         if (isCurrent(e)) _ui.update { it.copy(hasSave = true) }
@@ -398,6 +498,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
      * meeple are two separate agent decisions on the same seat.
      */
     private suspend fun runAiTurns(e: Int) {
+        currentCoroutineContext().ensureActive()
         var guard = 0
         while (true) {
             if (!isCurrent(e)) return
@@ -406,26 +507,36 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             if (guard++ > MAX_AI_STEPS) {
                 Log.e(TAG, "AI loop guard tripped at $guard steps")
                 _ui.update {
-                    it.copy(error = BridgeError("ai_loop", "The champion did not yield the turn."))
+                    it.copy(
+                        aiFailed = true,
+                        error = BridgeError("ai_loop", "The champion did not yield the turn."),
+                    )
                 }
                 return
             }
 
             _ui.update { it.copy(thinking = true, progress = null) }
-            startProgressPoll()
+            val myPoll = startProgressPoll()
             val raw = try {
                 PythonBridge.aiMove(st.generation)
             } finally {
-                stopProgressPoll()
-                // Epoch-guarded: a cancelled turn must NOT clear the thinking
-                // flag of the game that replaced it.
-                if (isCurrent(e)) _ui.update { it.copy(thinking = false, progress = null) }
+                // Epoch-guarded on BOTH counts: a stale continuation must neither
+                // clear the thinking flag of the game that replaced it, nor cancel
+                // that game's freshly started poll. `myPoll` is the job THIS turn
+                // started, so cancelling it can never touch a newer one.
+                myPoll.cancel()
+                if (isCurrent(e)) {
+                    if (progressJob === myPoll) progressJob = null
+                    _ui.update { it.copy(thinking = false, progress = null) }
+                }
             }
             if (!isCurrent(e)) return
 
             val obj = runCatching { JSONObject(raw) }.getOrNull()
             if (obj == null) {
-                _ui.update { it.copy(error = BridgeError("bad_json", raw.take(200))) }
+                _ui.update {
+                    it.copy(aiFailed = true, error = BridgeError("bad_json", raw.take(200)))
+                }
                 return
             }
             // Stale is checked BEFORE ok: a discarded move comes back as
@@ -439,9 +550,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 val errObj = obj.optJSONObject("error")
                 _ui.update {
                     it.copy(
+                        aiFailed = true,
                         error = BridgeError(
-                            errObj?.optString("code") ?: "ai_move",
-                            errObj?.optString("message") ?: raw.take(200),
+                            // org.json's optString returns "" (never null) for a
+                            // missing key, so the elvis below it was dead code.
+                            errObj?.optString("code").orEmpty().ifEmpty { "ai_move" },
+                            errObj?.optString("message").orEmpty()
+                                .ifEmpty { raw.take(200) },
                         )
                     )
                 }
@@ -450,7 +565,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
             val next = BridgeJson.state(obj)
             val eta = recordAiDuration(obj.optDouble("elapsed_s", Double.NaN))
-            _ui.update { it.copy(state = next, error = null, etaSeconds = eta) }
+            _ui.update {
+                it.copy(state = next, error = null, aiFailed = false, etaSeconds = eta)
+            }
             if (next.isTerminated) {
                 saveStore.clear()
                 _ui.update { it.copy(hasSave = false, showResult = true) }
@@ -476,11 +593,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return aiDurations.average()
     }
 
-    private fun startProgressPoll() {
+    /** Start the 250 ms progress poll and return ITS job, so the caller can stop
+     *  exactly the poll it started rather than whatever is current by then. */
+    private fun startProgressPoll(): Job {
         stopProgressPoll()
-        progressJob = viewModelScope.launch {
+        val job = viewModelScope.launch {
             while (isActive) {
-                val raw = runCatching { PythonBridge.getProgress() }.getOrNull()
+                // A poll failure is cosmetic (the bar just does not advance) — but a
+                // cancellation must still unwind, so it is rethrown, not swallowed.
+                val raw = try {
+                    PythonBridge.getProgress()
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (t: Throwable) {
+                    null
+                }
                 if (raw != null) {
                     BridgeJson.parseOrError(raw).getOrNull()?.let { o ->
                         val p = BridgeJson.progress(o)
@@ -490,6 +617,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 delay(POLL_MS)
             }
         }
+        progressJob = job
+        return job
     }
 
     private fun stopProgressPoll() {
