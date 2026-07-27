@@ -1,8 +1,15 @@
 # PRE-REGISTRATION — budget/elo Pareto curve for the deploy champion
 
-> **STATUS: PRE-REGISTERED 2026-07-26, BEFORE ANY CELL RAN.** Nothing in this file
-> may be edited after the first result lands; corrections go in a dated Results
-> section below. Approved by Joshua 2026-07-26 ("get it going, launch overnight").
+> **STATUS: COMPLETE 2026-07-27 08:10 — ALL 5 CELLS LANDED, 2000 deck-paired games,
+> 0 solver timeouts, 0 guard failures. Headline: the curve is FLAT-THEN-CLIFF.
+> 1376 → 5504 (a 4× span of budget) is statistically indistinguishable from the
+> deploy champion; below 1376 it falls off a cliff (−37.5 at 688). The knee is at
+> 1376 = 14.6% of the tournament clock vs deploy's 26%. Results in §Results below;
+> the design above is UNEDITED from before the run.**
+>
+> **PRE-REGISTERED 2026-07-26, BEFORE ANY CELL RAN.** Nothing above the Results
+> section may be edited now that results have landed; corrections go in the dated
+> Results section. Approved by Joshua 2026-07-26 ("get it going, launch overnight").
 
 ## Why
 
@@ -107,3 +114,94 @@ first four cells should land overnight.
 
 ⚠️ If the queue must be killed, **clean stranded `.claim` files before resuming** —
 a killed `--shared-claim` run strands claims and a resume stalls forever.
+
+---
+
+# Results (2026-07-27) — all five cells, read out under the rules above
+
+Every cell: n=400 deck-paired (200 decks × 2 seats), exact-K2, both sides frozen
+curve125 `a36d2e15`, **0 solver timeouts**, **0 guard failures**, cost ratio matching
+nominal budget to ±2% (an independent confirmation that each cell really ran the
+budget it claims).
+
+| tier | alloc | total | elo | 1σ | **wr z** | **margin z** | %clock |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 0.25× | k4×172 | 688 | −46.3 | 17.5 | −2.65 | −6.29 | 9.1% |
+| 0.25× | **k2×344** | 688 | **−37.5** | 17.5 | −2.15 | −3.28 | 9.2% |
+| 0.5× | **k4×344** | 1376 | **+0.9** | 17.4 | +0.05 | −1.26 | **14.6%** |
+| 0.5× | k2×688 | 1376 | −17.4 | 17.4 | −1.00 | −2.78 | 14.5% |
+| 1× | k4×688 | 2752 | 0 (anchor) | — | — | — | 26% |
+| 2× | **k4×1376** | 5504 | **+12.2** | 17.4 | +0.70 | +1.23 | 46.6% |
+| 4× | k8×1376 | 11008 | +49.9 | — | — | +3.48 | 91% *(CL-060)* |
+| 8× | k16×1376 | 22016 | +35.6 | — | — | +2.68 | 178% *(CL-060)* |
+
+## 1. The curve is FLAT-THEN-CLIFF, not a uniform slope
+
+**1376 → 5504 — a 4× span — is statistically indistinguishable from deploy**
+(+0.9, 0, +12.2; every |z| < 1.3 on both statistics). Below 1376 it falls off a
+cliff: −37.5 at 688, with both statistics significant. Above 5504 the real gain
+appears (+49.9 at 11008).
+
+⚠️ This **refutes the shape** CL-046's low-budget ladder suggested (~−27 to −34 elo
+per halving, roughly uniform). Its *levels* were already known not to transfer
+(k_dets=8); this says its *shape* does not either. The prereg called that ladder
+"indicative only" — it was not even that, in the region that matters.
+
+## 2. Optimal width GROWS with budget — the axis is now four points long
+
+The allocation contrast **flips sign** between tiers (deck-matched, shared band):
+
+| budget | 688 | 1376 | 2752 | 11008 |
+|---|---|---|---|---|
+| k4 − k2 (or k8−k4) | **−2.21** (z −1.92) | +1.34 (z +1.10) | +1.82 (z +1.33) *(CL-054)* | +22 elo (z +1.16) *(CL-060, k8−k4)* |
+| best width | **k2** | k4 | k4 | k8 (nominal) |
+
+This is the textbook determinization story, and it is exactly what CL-060
+hypothesised ("optimal width grows with budget") but **explicitly could not
+establish** from its own data. This run adds the downward half.
+
+⚠️ **Weight it honestly: no individual contrast clears 2σ** (−1.92 / +1.10 / +1.33
+/ +1.16). The evidence is the **monotone pattern across four independent budgets**,
+not any single cell — the same standard CL-054 used to call a coherent axis
+credible rather than a lone spike. Pooling was **blocked by rule 3 in both tiers**
+(|z| ≥ 1), which is the rule working: pooling arms that genuinely differ would
+have averaged a real effect into mush.
+
+## 3. What this means for the tournament clock
+
+The clock-legal range is where this bites. Within everything comfortably legal
+(≤ ~50% of clock), **budget buys nothing measurable**: 1376 (14.6%), 2752 (26%)
+and 5504 (46.6%) are one flat region. The only real gain we have measured, +49.9,
+sits at **91% of clock** — unusable in sudden death.
+
+⇒ This **sharpens** [TOURNAMENT_TIMING_2026-07-26](../../docs/research/TOURNAMENT_TIMING_2026-07-26.md).
+It is not merely that 4× is unspendable; it is that **everything you *can* spend is
+already spent.** Search budget is a closed lever for clocked play, in both directions.
+
+The one actionable option: **k4×344 (1376) halves clock usage to 14.6% for no
+resolvable strength cost** — real margin against time trouble.
+
+## 4. Rule-6 status, and what is OWED
+
+Under rule 6, `k4×344` **is proposal-eligible** (costs < 1σ while materially cutting
+clock). It is **NOT promoted**, and `governance/PRODUCTION.yaml` is UNTOUCHED.
+
+⚠️ **The honest limit on the headline.** +0.9 ± 17.4 gives a 95% interval of roughly
+**[−33, +35] elo**. That rules out a *large* loss, not a *moderate* one — "halving is
+free" is **not** established, and rule 3 blocked the pooling that would have tightened
+it. This project has overturned three findings that looked this clean at n=400
+(c=3 "+47", anchor-fraction "+39", flywheel "+88.7"). **What is owed before anyone
+acts: a fresh-band n=400 confirmation of `k4×344` vs deploy** (bands 60/62/64e9 now
+burned). Only after that is a production proposal appropriate, and it remains
+Joshua's call.
+
+## 5. Validity note — mid-run branch switch, checked and cleared
+
+The repo was switched to branch `android-app` by another session while the queue ran,
+so the cells recorded three different `code_rev` values (`0bfdc00` / `b2e6744` /
+`b9150a9`), and the two boxes differed *within* cells 3–4. **Verified harmless:**
+`eval_fair_puct.py` is md5-identical (`26b75b2bf6b3`) and the `src/carcassonne_ai/` +
+`engine/` tree hash is identical (`d634871ba112`) across all three revs. The
+intervening commits touch only docs, tests, the GUI, `play_harness` and the Android
+app — none on the eval import path. Results are comparable across cells and with
+CL-060's.
