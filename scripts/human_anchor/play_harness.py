@@ -106,8 +106,12 @@ class HumanCLIAgent:
         legal = C.legal_action_ids(self._game, board)
         print(C.render_board(board.state))
         s = board.state
+        tile_desc = getattr(s.next_tile, "description", None)
         print(f"  you are player {s.current_player}   scores(p0,p1)={list(s.scores)}"
               f"   phase={s.phase.value}   K={C.k_remaining(s)}")
+        # Without this the move list is bare coordinates and the human cannot tell WHICH
+        # tile they are placing / which tile they just placed a meeple on.
+        print(f"  tile in hand: {tile_desc}   meeples left(p0,p1)={list(s.meeples)}")
         for i, a in enumerate(legal):
             print(f"    [{i:>3}] a={a:<5} {C.describe_action(board, a)}")
         while True:
@@ -290,8 +294,14 @@ def main(argv=None) -> int:
     ap.add_argument("--human", type=int, choices=(0, 1), default=None,
                     help="play as this seat vs the fair champion")
     ap.add_argument("--seed", type=int, default=None, help="deck seed (random if unset)")
-    ap.add_argument("--sims", type=int, default=400)
-    ap.add_argument("--k-dets", type=int, default=4)
+    ap.add_argument("--sims", type=int, default=None,
+                    help="sims per determinization. DEFAULT = the PRODUCTION.yaml budget "
+                         "(fair_deploy.sims_per_det, currently 688). Lower it (e.g. --sims 200) "
+                         "ONLY to speed the AI up — that plays a WEAKER-than-champion agent and "
+                         "the game log records a runtime_budget_override.")
+    ap.add_argument("--k-dets", type=int, default=None,
+                    help="determinizations per move. DEFAULT = the PRODUCTION.yaml budget "
+                         "(fair_deploy.k_dets, currently 4).")
     ap.add_argument("--c-puct", type=float, default=3.0,
                     help="DEPRECATED / IGNORED (F1): the champion's exploration constant "
                          "(c_puct=1.5) is owned by champion_factory/PRODUCTION.yaml, not this "
@@ -303,7 +313,15 @@ def main(argv=None) -> int:
     if args.self_test:
         return self_test()
 
+    from carcassonne_ai.champion_factory import load_production_spec
     from carcassonne_ai.game_wrapper import Game
+    # Resolve the budget from governance/PRODUCTION.yaml unless the caller overrode it,
+    # so a bare `--human 0` plays the CHAMPION budget (k4x688) and not a weaker stand-in.
+    _spec = load_production_spec()
+    if args.sims is None:
+        args.sims = _spec.sims_per_det
+    if args.k_dets is None:
+        args.k_dets = _spec.k_dets
     game = Game(enable_legal_moves_cache=True)
     seed = args.seed if args.seed is not None else random.randint(1, 2_000_000_000)
     config = {"sims": args.sims, "k_dets": args.k_dets,
