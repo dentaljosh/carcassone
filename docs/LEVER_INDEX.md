@@ -153,6 +153,9 @@
 | **root parallelism** | **NEVER-TRIED and NEVER-NAMED** — the only parallelism ever pursued is process-level (workers / work-stealing / orchestrator batching) | absence confirmed by grep over DECISIONS.md + BACKLOG.md, 2026-07-24 |
 | **afterstate search** | **NEVER-TRIED under that name.** Nearest relatives are sibling *child-state* ranking (CL-033) and the action-conditioned comparator (CL-034) | CL-033, CL-034 |
 | **ISMCTS / belief-space / CFR-family rebuild** | NEVER-TRIED, NEVER-SCOPED — "an order of magnitude larger rebuild"; advisory read = ISMCTS marginal, CFR dead-on-mechanism | roadmap F3 body + Track B B5 |
+| **pondering / thinking on the opponent's clock** · "permanent brain" · background search · ponder-hit | **NEVER-NAMED** — nobody has proposed it here. ⚠️ It is **explicitly LEGAL and human-standard**: WC rules permit choosing/looking at your next tile during the opponent's turn, so a strong human's effective budget is ~2× ours while our engine idles. At 26% clock usage the champion has the headroom. Pure engineering, no learned component. | [docs/research/TOURNAMENT_TIMING_2026-07-26.md](research/TOURNAMENT_TIMING_2026-07-26.md) |
+| **batch the k determinizations into ONE eval request** (k=1-per-request → k=4) | **NEVER-TRIED** — the fair-netprior path uses `make_remote_single_evaluator` (k=1) and the worker BLOCKS on its response semaphore, so a deployed agent gets **no batching** and is latency-bound (42% worker CPU, 16 cores idle at W=2). `MAX_K=8` already permits k=4. Named 2026-07-26 as the cheapest route to the ~4× per-move cost cut CL-067 needs; needs no change to the net. | CL-067 falsifier field; `src/carcassonne_ai/shm_eval_handles.py` (`MAX_K`) |
+| **⛔ buying elo with raw compute AT TOURNAMENT TIME CONTROL** | **BLOCKED BY RULE, not by measurement** — CL-060's ~+50 elo at 4× budget is real but costs 11.2 s/move = **91% of a 15-min sudden-death clock**; 8× is 178% = automatic loss. Compute is an **unclocked-play knob only**. Any citation of CL-060's +50 as progress toward the superhuman goal must also cite this. | [docs/research/TOURNAMENT_TIMING_2026-07-26.md](research/TOURNAMENT_TIMING_2026-07-26.md) · CL-060 |
 
 ## 6. Leaf & heuristic
 
@@ -238,6 +241,10 @@ A standing short list so "what's actually left?" doesn't require re-reading the 
 7. **Leaf terms never tried:** "penalize large open cities" and "targeted denial on near-complete large opponent cities" (BACKLOG 2026-05-16); endgame depth boost and the forced-move shortcut on the search side.
 8. **2-ply heuristic policy labels at scale** — built, smoked, never diagnosed.
 9. **Root parallelism · afterstate search · ISMCTS/belief-space/CFR** — never even proposed here (the first two), or named-and-never-scoped (the third).
+
+10. **Pondering (search on the opponent's clock)** — NEVER-NAMED here, and it is *legal and human-standard*: WC rules let a human pre-select their next tile during your turn, so top humans get ~2× our effective budget while our engine sits idle. The champion uses only 26% of a 15-min clock, so the headroom exists. See [TOURNAMENT_TIMING_2026-07-26](research/TOURNAMENT_TIMING_2026-07-26.md).
+11. **Sub-2752 budget points at PRODUCTION width** — the champion's elo-vs-budget curve is measured at 1×/4×/8× but is **unmeasured BELOW deploy**; the only low-budget ladder (CL-046 D0, 800/1600/2752/5504) is `k_dets=8`, and k8→k4 alone is worth ~+66 elo at 2752 (CL-054), so its levels do not transfer. Wanted for **clock margin**, not completeness: if ~1376 sims costs only ~−20 elo it halves clock usage to ~13%.
+12. **Batching the k determinizations into one eval request** — the cheapest route to CL-067's needed ~4× per-move cost cut; workers are latency-bound, `MAX_K=8` already allows it, no change to the net.
 10. **Human anchor (E4)** — parked by Joshua, not closed. Still the highest-information measurement available.
 
 Everything else in the tables above has a verdict. Check it before proposing it.
