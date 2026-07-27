@@ -79,6 +79,7 @@ import numpy as np
 
 from wingedsheep.carcassonne.objects.game_phase import GamePhase
 
+from . import intra_reuse as intra_carry
 from .game_wrapper import Board, Game
 from .mcts import HeuristicMCTS, NeuralMCTS
 from .heuristic_prior_mcts import (
@@ -401,6 +402,28 @@ class FairHeuristicPriorAgent:
     virtual_loss : float        NeuralMCTS virtual loss (default 1.0; inert at
                                 batch_size=1 — it is only read on the batched path).
 
+    intra_reuse                 C3-INTRA WITHIN-TURN TREE CARRY (flag-gated, default
+                                OFF via ``CARCASSONNE_INTRA_TURN_REUSE``; None =
+                                inherit). When ON, the forest built for a turn's TILE
+                                decision — the k_dets trees AND their determinized decks
+                                — is carried into that same turn's MEEPLE decision:
+                                each tree is re-rooted at the child under the tile action
+                                actually played, and the meeple search runs its full
+                                ``sims`` on top of the carried visits instead of
+                                redrawing k_dets worlds and starting from nothing.
+                                FAIR-LEGAL because no hidden information arrives between
+                                the two decisions (the engine draws the next tile only at
+                                the END of the meeple phase — verified in
+                                ``StateUpdater._apply_action_to``), so the tile
+                                decision's determinizations are equally valid samples of
+                                the information state at the meeple decision. This is
+                                precisely what is NOT true across moves — see
+                                ``carcassonne_ai.intra_reuse`` for the full argument and
+                                the CL-044 boundary that must not be weakened.
+                                ⚠️ ON does MORE total work per turn at the same nominal
+                                ``sims``; a positive screen needs an equal-WALL-CLOCK
+                                confirm. Mutually exclusive with ``oracle_prior_mult``.
+
     ⚠️ BIT-EXACT DEFAULT: with net=None AND evaluator=None AND batch_size=1 (the
     defaults) the agent builds the SAME make_heuristic_prior_evaluator as before and
     constructs NeuralMCTS with its own defaults — byte-for-byte the heuristic-value
@@ -429,7 +452,8 @@ class FairHeuristicPriorAgent:
                  virtual_loss: float = 1.0,
                  oracle_prior_mult: int | None = None,
                  oracle_prior_eps_coef: float = 1e-3,
-                 meeple_dedup: bool | None = None):
+                 meeple_dedup: bool | None = None,
+                 intra_reuse: bool | None = None):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -460,6 +484,12 @@ class FairHeuristicPriorAgent:
                     "oracle_prior_mult requires batch_size=1: leaf batching perturbs PUCT "
                     "selection (virtual loss), which would confound the ROOT-prior probe. "
                     "Run the oracle candidate serial.")
+            if intra_carry.resolve(intra_reuse):
+                raise ValueError(
+                    "oracle_prior_mult and intra_reuse are mutually exclusive: the oracle "
+                    "probe deliberately runs its pre-search on a FRESH tree to isolate the "
+                    "prior channel from deeper search, which is exactly what a carried "
+                    "subtree would confound. Run one or the other.")
         self._game = game
         self._cfg = cfg if cfg is not None else HeuristicPriorConfig()
         self._sims = int(sims)
@@ -487,6 +517,14 @@ class FairHeuristicPriorAgent:
         # probe's two trees never disagree about the action space).
         self._meeple_dedup = meeple_dedup
         self.meeple_dedup = meeple_dedup   # public alias (harness/manifest read-off)
+        # C3-INTRA within-turn tree carry, per agent. None (default) = inherit the
+        # process-wide CARCASSONNE_INTRA_TURN_REUSE flag, which itself defaults OFF ->
+        # byte-for-byte the deployed champion. See carcassonne_ai.intra_reuse for the
+        # information-legality argument (no hidden info arrives between a turn's tile
+        # and meeple decisions) and for why the ACROSS-move sibling is not legal.
+        self._intra_reuse = intra_carry.resolve(intra_reuse)
+        self.intra_reuse = intra_reuse     # public alias (harness/manifest read-off)
+        self._intra: intra_carry.RetainedTurn | None = None
         # The heuristic-prior evaluator is STATELESS (a pure Callable[[Board],
         # (priors, value)] over `game`), so build it ONCE and share it across the
         # fresh per-determinization NeuralMCTS trees — exactly how HeuristicPriorAgent
@@ -538,6 +576,28 @@ class FairHeuristicPriorAgent:
         # per-world overrides of the LAST oracle move (evidence the distribution is
         # per-world, not shared) — None until an oracle move runs. Small (k_dets dicts).
         self.last_world_oracle_priors: list[dict] | None = None
+        # --- C3-INTRA telemetry. All zero/None/empty unless the carry is ON, so the
+        # OFF agent is byte-identical and pays only a couple of boolean tests per move.
+        self.intra_reuse_hits = 0          # decisions served from a carried forest
+        self.intra_turns_retained = 0      # tile decisions whose forest was kept
+        self.intra_carried_visits_total = 0  # summed carried root visits (all worlds)
+        # {reason: count} over every retained forest that was DISCARDED instead of
+        # reused — the fallback matrix, observable in a real game. Keys are the
+        # intra_reuse.R_* constants.
+        self.intra_reuse_discards: dict[str, int] = {}
+        # per-world carried root visits of the LAST decision — None when that decision
+        # did NOT reuse (forced move, tile decision, any fallback), a list of k_dets
+        # ints when it did. The primary "reuse fired" probe.
+        self.last_intra_carried_visits: list[int] | None = None
+        # per-world root visits AFTER the carried search — i.e. the EFFECTIVE budget the
+        # meeple decision actually searched with. The ON contract is
+        # last_intra_root_visits[i] == last_intra_carried_visits[i] + sims: the carry is
+        # a warm start, it does not replace any of the new simulations.
+        self.last_intra_root_visits: list[int] | None = None
+        # the determinized worlds the LAST decision actually searched (flag-ON only) —
+        # lets a test prove the meeple call kept the tile call's decks rather than
+        # redrawing them.
+        self.last_det_boards: list | None = None
 
     # --- deterministic per-move seed derivation (mirrors FairHeuristicMCTSAgent) --
     def det_seed_base(self, move_idx: int) -> int:
@@ -549,10 +609,17 @@ class FairHeuristicPriorAgent:
     # --- the fair PIMC move -------------------------------------------------
     def _pimc_move(self, board: Board, move_idx: int) -> int:
         self.heur_moves += 1
+        if self._intra_reuse:
+            self.last_intra_carried_visits = None   # per-decision; refilled on a hit
+            self.last_intra_root_visits = None
+            self.last_det_boards = None
         legal = np.flatnonzero(self._game.get_valid_moves(board))
         if legal.size == 0:
             raise ValueError("fair agent asked to move with no legal actions")
         if legal.size == 1:
+            # Forced move: no search runs, so there is nothing to carry INTO and the
+            # retained forest (if any) can never be continued past here.
+            self._intra_drop(intra_carry.R_FORCED)
             self.last_pooled_visits = {int(legal[0]): 1.0}   # forced: one-hot policy
             return int(legal[0])   # forced move: skip the K searches
         base = self.det_seed_base(move_idx)
@@ -565,7 +632,37 @@ class FairHeuristicPriorAgent:
             self.oracle_moves += 1
             self.last_world_oracle_priors = []
             _reached = True
+        # --- C3-INTRA (flag-gated) -------------------------------------------------
+        # `carried` is the tile decision's forest, re-rooted at the position we were
+        # just handed — or None, which means "search fresh" and is ALWAYS safe.
+        # `retain` says this decision's forest is worth keeping for the meeple half.
+        carried = self._intra_try_reuse(board, move_idx, root_key) if self._intra_reuse else None
+        retain = self._intra_reuse and board.state.phase == GamePhase.TILES
+        kept: list = []
+        worlds: list = []
         for i in range(self._k_dets):
+            if carried is not None:
+                # SAME determinization as the tile decision (its deck is provably
+                # untouched by the placement — see intra_reuse's module docstring), and
+                # the SAME tree, re-rooted at the child under the action we played. The
+                # search below adds a full `sims` on top of the carried visits.
+                m, b = carried[i]
+                m.search(b)
+                # POOL BEFORE CLEARING — clear() wipes _nodes, and the harvest below
+                # reads the root out of it.
+                root = m._nodes.get(root_key) or m._nodes[self._game.string_representation(b)]
+                pool_root_stats(root, agg_n, agg_w)
+                self.last_intra_root_visits.append(int(root.N))
+                if retain:
+                    kept.append((m, b))
+                    # clear() would ALSO wipe the tree we are keeping; do only its other
+                    # half so the shared Game's legal-cache cadence stays exactly what it
+                    # is with the flag OFF (Phase-0.3: never serve a stale rotation mask).
+                    self._game.clear_caches()
+                else:
+                    m.clear()
+                worlds.append(b)
+                continue
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
             if oracle:
                 # Track-F Gate A per-world pre-search: on THIS world's reshuffled deck,
@@ -617,16 +714,92 @@ class FairHeuristicPriorAgent:
             # original board's key (same fallback as FairHeuristicMCTSAgent).
             root = m._nodes.get(root_key) or m._nodes[self._game.string_representation(b)]
             pool_root_stats(root, agg_n, agg_w)
-            m.clear()
+            if retain:
+                kept.append((m, b))   # keep the tree ALIVE for the meeple decision
+                self._game.clear_caches()   # clear()'s other half — see the note above
+            else:
+                m.clear()
+            if self._intra_reuse:
+                worlds.append(b)
         if oracle:
             self.last_reached_root = bool(_reached)
+        if self._intra_reuse:
+            self.last_det_boards = worlds
         if not agg_n:                              # pathological: nothing visited
+            for _m, _b in kept:                    # nothing worth carrying
+                _m.clear()
             self.last_pooled_visits = {}           # no search signal -> value-only row
             return int(legal[0])
         # ADDITIVE: stash the pooled visit distribution (the fair policy target)
         # BEFORE the pooled-Q pick. This does NOT change the returned action.
         self.last_pooled_visits = dict(agg_n)
-        return pooled_q_argmax(agg_n, agg_w, self._min_pooled_visits)
+        action = pooled_q_argmax(agg_n, agg_w, self._min_pooled_visits)
+        if retain:
+            self._intra_retain(kept, action, board, move_idx, root_key)
+        return action
+
+    # --- C3-INTRA: within-turn tree carry (flag-gated; see intra_reuse.py) ------
+    def _intra_retain(self, kept: list, action: int, board: Board,
+                      move_idx: int, root_key: str) -> None:
+        """Hold this TILE decision's forest for the meeple decision that follows it."""
+        self._intra = intra_carry.RetainedTurn(
+            move_idx=move_idx, action=int(action),
+            player=int(board.state.current_player), root_key=root_key,
+            trees=[m for m, _ in kept], boards=[b for _, b in kept])
+        self.intra_turns_retained += 1
+
+    def _intra_drop(self, reason: str) -> None:
+        """Discard any retained forest, freeing its trees, and count why.
+
+        A no-op when nothing is retained (the common case), so the discard counter
+        reads as "forests we kept and then could not use" rather than being dominated
+        by decisions that never had one."""
+        if self._intra is None:
+            return
+        for m in self._intra.trees:
+            m.clear()
+        self._intra = None
+        self.intra_reuse_discards[reason] = self.intra_reuse_discards.get(reason, 0) + 1
+
+    def discard_intra_carry(self) -> None:
+        """Public invalidation hook for a harness that moves the agent off its own
+        game timeline (save/restore, a replayed prefix, seat reuse across games).
+
+        Calling it is never REQUIRED for correctness — ``intra_reuse.match`` re-derives
+        each retained world's post-placement position and demands it equal the position
+        actually presented, so a stale forest cannot be served even if ``_move_idx`` is
+        re-seated onto a colliding index (and if that derived check DID pass, the carry
+        would by definition be a correct continuation). It exists so a caller can drop
+        the memory eagerly and make the intent explicit."""
+        self._intra_drop(intra_carry.R_NOT_PRIOR)
+
+    def _intra_try_reuse(self, board: Board, move_idx: int, root_key: str):
+        """Return the re-rooted per-world ``(tree, board)`` pairs, or None to search fresh.
+
+        ALL-OR-NOTHING: if any world fails either the continuation check or the
+        search-side re-root guard, the whole forest is dropped and the decision runs a
+        normal fresh PIMC search. A partially-carried pool would mix worlds searched to
+        different depths into one pooled-Q, which is not a thing we want to reason about.
+        """
+        retained = self._intra
+        worlds, reason = intra_carry.match(self._game, retained, board, move_idx, root_key)
+        if worlds is None:
+            self._intra_drop(reason)
+            return None
+        out, carried = [], []
+        for m, nb in zip(retained.trees, worlds):
+            n = m.reroot_to(nb)
+            if n == 0:                 # guard rejected (see NeuralMCTS.reroot_to)
+                self._intra_drop(intra_carry.R_REROOT)
+                return None
+            out.append((m, nb))
+            carried.append(n)
+        self._intra = None             # consumed; the trees live on in `out`
+        self.intra_reuse_hits += 1
+        self.last_intra_carried_visits = carried
+        self.last_intra_root_visits = []   # filled per world as each search completes
+        self.intra_carried_visits_total += int(sum(carried))
+        return out
 
     # --- the fair exact endgame (marginalized; identical to FairHeuristicMCTSAgent
     #     but with the configurable exact_max_k band) --------------------------
@@ -661,9 +834,16 @@ class FairHeuristicPriorAgent:
         if self._latched:
             a = self._exact_move(board)
             if a is not None:
+                # The solver owns this decision — no search runs, so a retained forest
+                # can never be continued past it. Drop it here rather than leaving it
+                # to expire against the next continuation check.
+                self._intra_drop(intra_carry.R_LATCHED)
                 self.last_pooled_visits = {}   # exact-endgame row: value-only (no policy)
                 return a
-            # BudgetExceeded: fair PIMC fallback for THIS decision only.
+            # BudgetExceeded: fair PIMC fallback for THIS decision only. A forest
+            # retained by an EARLIER PIMC fallback in this same turn is still a valid
+            # continuation, so _pimc_move is allowed to use it (the derived key check
+            # is what decides, not the latch).
         return self._pimc_move(board, move_idx)
 
     move = choose_action

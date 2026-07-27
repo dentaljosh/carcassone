@@ -904,6 +904,73 @@ class NeuralMCTS:
         self._noisy_roots.clear()
         self.game.clear_caches()
 
+    # --- tree RE-ROOT (shared by reuse_tree and C3-INTRA within-turn carry) ---- #
+    def expected_valid_actions(self, board: Board) -> set[int]:
+        """The action set ``_expand_with_priors`` WOULD give a node for ``board``.
+
+        The full legal mask, narrowed by MEEPLE-DEDUP exactly as expansion narrows it.
+        Existing (dedup-OFF) callers get ``set(np.flatnonzero(get_valid_moves(board)))``.
+        It exists so a re-root guard can compare a retained node's frozen
+        ``valid_actions`` against what a FRESH expansion of the same board would hold —
+        comparing against the raw legal mask instead would reject every reuse whenever
+        dedup is on, since a deduped node legitimately carries a subset.
+        """
+        legal = np.flatnonzero(self.game.get_valid_moves(board))
+        if self.meeple_dedup:
+            dd = meeple_equiv.dedup_legal(board, legal)
+            if dd is not None:
+                keep, _folds = dd
+                legal = legal[keep]
+        return {int(a) for a in legal}
+
+    def prune_to_subtree(self, new_root: "_NeuralNode") -> None:
+        """Rebuild ``_nodes`` to hold ONLY the subtree reachable from ``new_root``
+        (drop every other retained node). Bounds memory and makes a stale
+        cross-move transposition collision structurally impossible — an unrelated
+        stale node can no longer be looked up. THE single implementation; the
+        ``HeuristicPriorAgent`` reuse_tree path delegates here."""
+        reachable: dict = {}
+        stack = [new_root]
+        while stack:
+            node = stack.pop()
+            k = node.state_key
+            if k in reachable:
+                continue
+            reachable[k] = node
+            for child in node.children.values():
+                if child.state_key not in reachable:
+                    stack.append(child)
+        self._nodes = reachable
+        self._noisy_roots = set()
+
+    def reroot_to(self, board: Board) -> int:
+        """Re-root this tree at ``board``'s retained node, keeping its statistics.
+
+        Returns the number of visits CARRIED IN (the retained node's ``N``), or 0 when
+        the tree could not be safely re-rooted — in which case ``_nodes`` is wiped, so
+        the caller's next ``search`` is a clean fresh one either way. Never raises, and
+        never serves a subtree that a fresh expansion would disagree with.
+
+        Rejects (returning 0) when the position is not usefully in the tree (absent,
+        unexpanded, terminal, or zero-visit) and when the retained node is a
+        WRONG-ROTATION SIBLING — same ``string_representation`` key but a different
+        legal action set (the Phase-0.3 farmer-index rotation family). That second guard
+        is the same discriminator ``HeuristicPriorAgent._reroot_or_clear`` uses, lifted
+        here so both reuse paths share one definition of "safe to re-root".
+        """
+        key = self.game.string_representation(board)
+        node = self._nodes.get(key)
+        if node is None or not node.expanded or node.is_terminal or node.N == 0:
+            self._nodes.clear()
+            self._noisy_roots.clear()
+            return 0
+        if set(node.valid_actions) != self.expected_valid_actions(board):
+            self._nodes.clear()
+            self._noisy_roots.clear()
+            return 0
+        self.prune_to_subtree(node)
+        return int(node.N)
+
     def set_root_prior_override(self, override: dict[int, float] | None) -> None:
         """Arm a ONE-SHOT root-prior override for the next ``search`` (Gate A
         oracle-prior probe). ``override`` maps every legal ROOT action to a prior;

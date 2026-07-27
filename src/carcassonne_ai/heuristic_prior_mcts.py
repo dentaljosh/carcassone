@@ -1196,23 +1196,10 @@ class HeuristicPriorAgent:
 
     def _prune_to_subtree(self, new_root) -> None:
         """Rebuild ``mcts._nodes`` to hold ONLY the subtree reachable from
-        ``new_root`` (drop every other retained node). Bounds memory and makes a
-        stale cross-move transposition collision structurally impossible (an
-        unrelated stale node can no longer be looked up)."""
-        m = self.mcts
-        reachable: dict = {}
-        stack = [new_root]
-        while stack:
-            node = stack.pop()
-            k = node.state_key
-            if k in reachable:
-                continue
-            reachable[k] = node
-            for child in node.children.values():
-                if child.state_key not in reachable:
-                    stack.append(child)
-        m._nodes = reachable
-        m._noisy_roots = set()
+        ``new_root``. Delegates to ``NeuralMCTS.prune_to_subtree`` — the single
+        implementation, shared with the C3-INTRA within-turn carry's re-root
+        (``NeuralMCTS.reroot_to``) so the two reuse paths cannot drift apart."""
+        self.mcts.prune_to_subtree(new_root)
 
 
 def make_heuristic_prior_mcts(
