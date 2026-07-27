@@ -1,0 +1,153 @@
+{
+  "kind": "meeple_slot_duplication_census",
+  "grouping": "android_bridge.feature_groups + _renumber_groups (imported)",
+  "grouping_scope": "INTRA-TILE ONLY -- lower bound on true duplication",
+  "source_games": "/home/doctor/projects/carcassone/measurement/champ_action_logs/champ_games.jsonl",
+  "n_games_requested": 449,
+  "phase_bounds_tiles_placed": [
+    24,
+    48
+  ],
+  "summary": {
+    "games": 449,
+    "plies": 64610,
+    "meeple_decisions": 32282,
+    "meeple_decisions_no_options": 6434,
+    "meeple_decisions_actionable": 20281,
+    "pct_decisions_with_duplicate": 38.16,
+    "pct_actionable_decisions_with_duplicate": 60.75,
+    "nonpass_actions_total": 79842,
+    "distinct_features_total": 64974,
+    "redundant_actions_total": 14868,
+    "pct_actions_redundant_nonpass": 18.62,
+    "pct_actions_redundant_incl_pass": 13.26,
+    "mean_nonpass_actions_per_decision": 2.473,
+    "mean_distinct_features_per_decision": 2.013,
+    "max_group_size_distribution": {
+      "0": {
+        "decisions": 6434,
+        "pct": 19.93
+      },
+      "1": {
+        "decisions": 13528,
+        "pct": 41.91
+      },
+      "2": {
+        "decisions": 10645,
+        "pct": 32.98
+      },
+      "3": {
+        "decisions": 1524,
+        "pct": 4.72
+      },
+      "4": {
+        "decisions": 151,
+        "pct": 0.47
+      }
+    },
+    "group_size_distribution": {
+      "1": {
+        "groups": 51932
+      },
+      "2": {
+        "groups": 11367
+      },
+      "3": {
+        "groups": 1524
+      },
+      "4": {
+        "groups": 151
+      }
+    },
+    "meeple_placed_decisions": 14655,
+    "pct_placed_choice_was_in_duplicate_group": 28.58,
+    "by_phase": {
+      "early": {
+        "decisions": 10327,
+        "pct_decisions_with_duplicate": 43.5,
+        "nonpass_actions": 30104,
+        "pct_actions_redundant_nonpass": 18.0,
+        "mean_nonpass_actions_per_decision": 2.915,
+        "pct_placed_choice_was_in_duplicate_group": 34.57
+      },
+      "mid": {
+        "decisions": 10776,
+        "pct_decisions_with_duplicate": 38.52,
+        "nonpass_actions": 27441,
+        "pct_actions_redundant_nonpass": 18.16,
+        "mean_nonpass_actions_per_decision": 2.546,
+        "pct_placed_choice_was_in_duplicate_group": 21.28
+      },
+      "late": {
+        "decisions": 11179,
+        "pct_decisions_with_duplicate": 32.89,
+        "nonpass_actions": 22297,
+        "pct_actions_redundant_nonpass": 20.02,
+        "mean_nonpass_actions_per_decision": 1.995,
+        "pct_placed_choice_was_in_duplicate_group": 26.73
+      }
+    }
+  },
+  "raw_accumulator": {
+    "games": 449,
+    "plies": 64610,
+    "decisions": 32282,
+    "decisions_with_dup": 12320,
+    "decisions_actionable": 20281,
+    "decisions_actionable_with_dup": 12320,
+    "decisions_no_options": 6434,
+    "actions_nonpass": 79842,
+    "distinct_features": 64974,
+    "pass_legal": 32282,
+    "placed": 14655,
+    "placed_chose_dup": 4189,
+    "max_group_hist": {
+      "1": 13528,
+      "2": 10645,
+      "0": 6434,
+      "3": 1524,
+      "4": 151
+    },
+    "group_size_hist": {
+      "1": 51932,
+      "2": 11367,
+      "3": 1524,
+      "4": 151
+    },
+    "n_actions_hist": {
+      "2": 4511,
+      "3": 5601,
+      "0": 6434,
+      "4": 5335,
+      "1": 5567,
+      "5": 2605,
+      "6": 1640,
+      "7": 467,
+      "8": 122
+    },
+    "phase_early": {
+      "decisions": 10327,
+      "decisions_with_dup": 4492,
+      "actions_nonpass": 30104,
+      "distinct_features": 24684,
+      "placed": 6549,
+      "placed_chose_dup": 2264
+    },
+    "phase_mid": {
+      "decisions": 10776,
+      "decisions_with_dup": 4151,
+      "actions_nonpass": 27441,
+      "distinct_features": 22457,
+      "placed": 4432,
+      "placed_chose_dup": 943
+    },
+    "phase_late": {
+      "decisions": 11179,
+      "decisions_with_dup": 3677,
+      "actions_nonpass": 22297,
+      "distinct_features": 17833,
+      "placed": 3674,
+      "placed_chose_dup": 982
+    }
+  }
+}

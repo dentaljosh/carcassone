@@ -107,3 +107,98 @@ def test_best_action_rule(short_game):
     assert SNAP.best_action_from(lm2)[0] == 9
     lm3 = {9: (10, 0.5), 5: (10, 0.5)}                 # tie Q and N -> lowest aid (5)
     assert SNAP.best_action_from(lm3)[0] == 5
+
+
+# ---------------------------------------------------------------------------
+# (E) MEEPLE-SLOT DUPLICATION CENSUS — the counting logic.
+#
+# Drives real base-deck tiles through the census' `dense_groups`, which is a thin
+# reuse of android_bridge.feature_groups + _renumber_groups (the grouping of record).
+# The contract under test: sides that open onto ONE connected on-tile feature share
+# a group id (interchangeable actions); separate features never do.
+# ---------------------------------------------------------------------------
+
+sys.path.insert(0, str(REPO / "android" / "app" / "src" / "main" / "python"))
+import meeple_dedup_census as MDC              # noqa: E402
+
+
+def _tile(name):
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+    return base_tiles[name]
+
+
+def _stats_for(tile_name, sides):
+    """decision_stats for a synthetic decision offering `sides` on one base-deck tile."""
+    return MDC.decision_stats(MDC.dense_groups(_tile(tile_name), sides))
+
+
+def test_two_opening_city_is_a_2way_duplicate():
+    """`city_diagonal_top_right` has city=[[top, right]] — ONE city, two openings."""
+    st = _stats_for("city_diagonal_top_right", ["top", "right"])
+    assert st["n_actions"] == 2
+    assert st["n_distinct_features"] == 1
+    assert st["n_redundant"] == 1
+    assert st["has_duplicate"] is True
+    assert st["max_group_size"] == 2
+    assert st["size_hist"] == {2: 1}
+
+
+def test_two_separate_cities_are_not_duplicates():
+    """`city_left_right` has city=[[left], [right]] — TWO cities that must stay distinct."""
+    st = _stats_for("city_left_right", ["left", "right"])
+    assert st["n_actions"] == 2
+    assert st["n_distinct_features"] == 2
+    assert st["n_redundant"] == 0
+    assert st["has_duplicate"] is False
+    assert st["max_group_size"] == 1
+    assert st["size_hist"] == {1: 2}
+
+
+def test_crossroads_four_road_stubs_stay_four_features():
+    """Four (side, CENTER) connections are four dead-end roads, not one 4-way group."""
+    st = _stats_for("crossroads", ["top", "right", "bottom", "left"])
+    assert st["n_distinct_features"] == 4
+    assert st["has_duplicate"] is False
+
+
+def test_full_city_is_a_4way_duplicate():
+    st = _stats_for("full_city_with_shield", ["top", "right", "bottom", "left"])
+    assert st["n_distinct_features"] == 1
+    assert st["n_redundant"] == 3
+    assert st["max_group_size"] == 4
+
+
+def test_farm_sides_of_one_field_are_duplicates():
+    """`city_narrow` farms=[[top_left, top_right], [bottom_left, bottom_right]] — two fields."""
+    st = _stats_for("city_narrow",
+                    ["top_left", "top_right", "bottom_left", "bottom_right"])
+    assert st["n_distinct_features"] == 2
+    assert st["n_redundant"] == 2
+    assert st["size_hist"] == {2: 2}
+
+
+def test_undescribed_side_gets_a_private_group():
+    """A side the tile model does not describe must never be merged with another."""
+    st = _stats_for("full_city_with_shield", ["top", "right", "top_left", "bottom_left"])
+    # top+right share the city; the two farm sides are undescribed -> private each.
+    assert st["n_distinct_features"] == 3
+    assert st["n_redundant"] == 1
+
+
+def test_chose_duplicate_flag_tracks_the_taken_action():
+    groups = MDC.dense_groups(_tile("city_diagonal_top_right"), ["top", "right"])
+    assert MDC.decision_stats(groups, chosen_group=groups[0])["chose_duplicate"] is True
+    solo = MDC.dense_groups(_tile("city_left_right"), ["left", "right"])
+    assert MDC.decision_stats(solo, chosen_group=solo[0])["chose_duplicate"] is False
+
+
+def test_accumulator_merge_is_additive():
+    a, b = MDC._new_acc(), MDC._new_acc()
+    st = _stats_for("city_diagonal_top_right", ["top", "right"])
+    MDC._record(a, st, "early", passed=False, pass_legal=True)
+    MDC._record(b, st, "early", passed=False, pass_legal=True)
+    MDC.merge(a, b)
+    assert a["decisions"] == 2 and a["decisions_with_dup"] == 2
+    assert a["actions_nonpass"] == 4 and a["distinct_features"] == 2
+    assert a["phase_early"]["decisions"] == 2
+    assert MDC.summarize(a)["pct_actions_redundant_nonpass"] == 50.0
