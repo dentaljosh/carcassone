@@ -74,3 +74,14 @@ measurement/probe_5a/arms_retrain/**/ranknet_best.pt
 measurement/leaf_residual_mining_20260721/records_primary.jsonl
 measurement/leaf_residual_mining_20260721/records_replication.jsonl
 measurement/leaf_residual_mining_20260721/freepass_k3champ.jsonl
+
+# Android app (android/): machine-local SDK path + Gradle/AGP build output.
+# The Gradle WRAPPER (gradlew, gradle/wrapper/**) stays tracked on purpose.
+# app/build/python is the sync_python.py target — generated from src/, never edited.
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/tiles/
+android/.idea/
+android/*.iml
