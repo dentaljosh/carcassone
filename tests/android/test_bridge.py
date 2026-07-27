@@ -922,3 +922,269 @@ def test_breakdown_is_absent_rather_than_wrong_when_unreconstructable():
     s.prev_board = None
     s.last_action = None
     assert B._final_breakdown(s, [0, 0]) is None
+
+
+# --------------------------------------------------------------------------- #
+# meeple-slot feature grouping (UI dedupe; the action space is UNTOUCHED)        #
+# --------------------------------------------------------------------------- #
+def _base_tiles():
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+
+    return base_tiles
+
+
+def test_feature_groups_merges_a_multi_opening_city():
+    """`city=[[TOP, RIGHT]]` is ONE city with two openings -> one group."""
+    tile = _base_tiles()["city_diagonal_top_right"]
+    assert [[s.value for s in g] for g in tile.city] == [["top", "right"]]
+    g = B.feature_groups(tile)
+    assert g["top"] == g["right"], "two openings onto one city must share a group"
+
+
+def test_feature_groups_keeps_two_separate_cities_apart():
+    """`city=[[LEFT], [RIGHT]]` is TWO cities -> two groups. The negative control."""
+    tile = _base_tiles()["city_left_right"]
+    assert [[s.value for s in g] for g in tile.city] == [["left"], ["right"]]
+    g = B.feature_groups(tile)
+    assert g["left"] != g["right"], "two distinct cities must NOT be merged"
+
+
+def test_feature_groups_merges_a_through_road_and_splits_a_crossroads():
+    g = B.feature_groups(_base_tiles()["straight_road"])
+    assert g["top"] == g["bottom"], "a road running through is one feature"
+    # A crossroads is four (side, CENTER) connections — four distinct roads.
+    g = B.feature_groups(_base_tiles()["crossroads"])
+    assert len({g["top"], g["right"], g["bottom"], g["left"]}) == 4
+
+
+def test_feature_groups_never_merges_a_road_end_into_the_monastery():
+    """`chapel_with_road` is `road=[(BOTTOM, CENTER)]` + `chapel=True`.
+
+    CENTER is the monastery's own slot, so the road's CENTER endpoint must be
+    skipped rather than grouped — otherwise the two would collapse into one dot."""
+    tile = _base_tiles()["chapel_with_road"]
+    assert tile.chapel is True
+    g = B.feature_groups(tile)
+    assert g["center"] != g["bottom"]
+
+
+def test_feature_groups_merges_equivalent_farmer_positions():
+    """One `FarmerConnection` = one field; all its `farmer_positions` are the same."""
+    tile = _base_tiles()["chapel"]
+    (farm,) = tile.farms
+    sides = [s.value for s in farm.farmer_positions]
+    assert len(sides) > 1, "this fixture needs a field with several entry points"
+    g = B.feature_groups(tile)
+    assert len({g[s] for s in sides}) == 1
+
+
+def test_every_base_face_groups_without_collision():
+    """No face may put a city/road side and the monastery in the same group."""
+    for name, tile in _base_tiles().items():
+        g = B.feature_groups(tile)
+        assert all(isinstance(v, int) and v >= 0 for v in g.values()), name
+        if tile.chapel or tile.flowers:
+            centre = g.get("center")
+            assert centre is not None, name
+            others = [k for k, v in g.items() if v == centre and k != "center"]
+            assert not others, f"{name}: monastery merged with {others}"
+
+
+def test_slots_carry_dense_feature_groups_and_keep_every_action():
+    """Grouping is ADVICE: every legal action still ships, ids stay dense."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    seen_multi = False
+    for _ in range(40):
+        if st["is_terminated"]:
+            break
+        if st["phase"] == "meeples" and st["is_human_turn"]:
+            slots = st["legal"]["meeple_slots"]
+            if slots:
+                groups = [s["feature_group"] for s in slots]
+                assert all(isinstance(x, int) for x in groups)
+                # dense: exactly 0..n-1 appear
+                assert set(groups) == set(range(len(set(groups))))
+                # every legal meeple action is still present
+                legal = set(B.legal_meeple_indices(B._S.game, B._S.board))
+                assert {s["action_id"] for s in slots} == legal
+                if len(set(groups)) < len(groups):
+                    seen_multi = True
+        st = ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"] \
+            else ok(B.ai_move(st["generation"]))
+    assert seen_multi, "expected at least one tile offering equivalent slots"
+
+
+# --------------------------------------------------------------------------- #
+# preview_meeple_slots — the ghost's prospective dots                           #
+# --------------------------------------------------------------------------- #
+def test_preview_matches_the_slots_the_move_actually_opens():
+    st = new(seed=5, opponent="tier1", human_player=0)
+    cell = st["legal"]["tile_cells"][0]
+    aid = cell["action_ids"][0]
+    preview = ok(B.preview_meeple_slots(aid))["slots"]
+    real = ok(B.apply_action(aid))["legal"]["meeple_slots"]
+    assert preview == real, "the preview must be the same builder as the real thing"
+
+
+def test_preview_does_not_mutate_the_session():
+    """The whole feature is read-only; prove the live board is untouched."""
+    st = new(seed=13, opponent="tier1", human_player=0)
+    before = ok(B.get_state())
+    for cell in st["legal"]["tile_cells"][:5]:
+        for aid in cell["action_ids"]:
+            ok(B.preview_meeple_slots(aid))
+    assert ok(B.get_state()) == before
+
+
+def test_preview_rejects_an_illegal_or_wrong_phase_action():
+    st = new(seed=5, opponent="tier1", human_player=0)
+    bad = j(B.preview_meeple_slots(999_999))
+    assert bad["ok"] is False and bad["error"]["code"] == "illegal_action"
+    assert j(B.preview_meeple_slots("nope"))["ok"] is False
+    # ...and once the tile is down, the tile-phase precondition is gone.
+    st = ok(B.apply_action(st["legal"]["tile_cells"][0]["action_ids"][0]))
+    assert st["phase"] == "meeples"
+    out = j(B.preview_meeple_slots(0))
+    assert out["ok"] is False and out["error"]["code"] == "not_tile_phase"
+
+
+# --------------------------------------------------------------------------- #
+# get_ownership — the feature overlay                                           #
+# --------------------------------------------------------------------------- #
+def test_ownership_reports_the_feature_a_placed_meeple_claims():
+    st = new(seed=5, opponent="tier1", human_player=0)
+    assert ok(B.get_ownership())["features"] == [], "nothing is claimed yet"
+
+    st = ok(B.apply_action(st["legal"]["tile_cells"][0]["action_ids"][0]))
+    slots = st["legal"]["meeple_slots"]
+    assert slots, "this fixture needs a placeable meeple"
+    slot = slots[0]
+    target = st["legal"]["meeple_target"]
+    me = st["current_player"]
+    st = ok(B.apply_action(slot["action_id"]))
+
+    feats = ok(B.get_ownership())["features"]
+    assert len(feats) == 1
+    f = feats[0]
+    assert f["kind"] in ("city", "road", "chapel", "farm")
+    assert [target["row"], target["col"]] in f["cells"], \
+        "the claimed feature must cover the tile the meeple stands on"
+    assert f["owners"] == [me]
+    assert f["meeple_count_per_player"][me] == 1
+    assert sum(f["meeple_count_per_player"]) == 1
+
+
+def test_ownership_dedupes_two_meeples_in_one_feature_and_is_read_only():
+    """Two meeples in one feature is ONE feature, and the walk mutates nothing."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    for _ in range(60):
+        if st["is_terminated"]:
+            break
+        st = ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"] \
+            else ok(B.ai_move(st["generation"]))
+        before = ok(B.get_state())
+        feats = ok(B.get_ownership())["features"]
+        assert ok(B.get_state()) == before, "get_ownership must not mutate the state"
+        keys = [(f["kind"], tuple(map(tuple, f["cells"]))) for f in feats]
+        assert len(keys) == len(set(keys)), "features must be deduped"
+        placed = sum(len(p) for p in B._S.board.state.placed_meeples)
+        claimed = sum(sum(f["meeple_count_per_player"]) for f in feats)
+        # Every placed meeple belongs to exactly one reported feature (big meeples
+        # are out of scope, so a count is a headcount).
+        assert claimed == placed, f"{claimed} claimed vs {placed} on the board"
+
+
+# --------------------------------------------------------------------------- #
+# get_bag — public information only                                             #
+# --------------------------------------------------------------------------- #
+def test_bag_totals_match_the_base_distribution():
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tile_counts
+
+    st = new(seed=5, opponent="tier1", human_player=0)
+    bag = ok(B.get_bag())
+    assert len(bag["faces"]) == len(base_tile_counts) == 32
+    assert sum(f["total"] for f in bag["faces"]) == sum(base_tile_counts.values()) == 72
+    for face in bag["faces"]:
+        assert face["total"] == base_tile_counts[face["description"]]
+        assert 0 <= face["remaining"] <= face["total"]
+        assert face["image"], "a face needs art to render"
+
+
+def test_bag_remaining_tracks_the_deck_without_ever_reading_it():
+    """The invariant that proves it is public info: `remaining` is derived from the
+    BOARD and the tile in hand, yet must equal `len(deck)` at every ply."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    for _ in range(50):
+        if st["is_terminated"]:
+            break
+        bag = ok(B.get_bag())
+        assert bag["total_remaining"] == bag["deck_remaining"] == st["deck_remaining"]
+        if st["phase"] == "tiles":
+            # The tile in hand is seen, so it is excluded from the bag.
+            assert bag["in_hand"] == st["next_tile"]["description"]
+        else:
+            # ...but in the meeple phase `next_tile` is the tile ALREADY on the
+            # board (the engine redraws only at the end of the sub-phase), so it
+            # must not be subtracted a second time.
+            assert bag["in_hand"] is None
+        st = ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"] \
+            else ok(B.ai_move(st["generation"]))
+
+
+def test_bag_counts_a_rotated_tile_against_its_own_face():
+    """`Tile.turn(n)` preserves `description`, which is what the bag counts by."""
+    st = new(seed=21, opponent="tier1", human_player=0)
+    st = play_out(st)
+    bag = ok(B.get_bag())
+    assert bag["total_remaining"] == 0, "a finished game has emptied the bag"
+    assert all(f["remaining"] == 0 for f in bag["faces"])
+
+
+# --------------------------------------------------------------------------- #
+# archive_record — the finished-game record                                     #
+# --------------------------------------------------------------------------- #
+def test_save_game_still_works_at_a_terminated_state():
+    """The archive is built on `save_game`, so this precondition is load-bearing."""
+    st = new(seed=7, opponent="tier1", human_player=0)
+    st = ok(B.debug_fast_forward("yes-destroy-this-game"))
+    assert st["is_terminated"]
+    saved = ok(B.save_game())
+    assert saved["deck_seed"] == 7
+    assert len(saved["actions"]) == st["n_actions"] > 0
+
+
+def test_archive_record_is_a_superset_of_the_save_and_replays():
+    st = new(seed=7, opponent="tier1", human_player=0)
+    st = ok(B.debug_fast_forward("yes-destroy-this-game"))
+    saved = ok(B.save_game())
+    rec = ok(B.archive_record())
+
+    assert rec["schema"] == B.ARCHIVE_SCHEMA
+    # the restorable core is byte-identical to the autosave
+    for key in ("deck_seed", "actions", "human_player", "opponent", "sims", "k_dets"):
+        assert rec[key] == saved[key], key
+    # ...plus the read-only summary the list needs without replaying anything
+    assert rec["result"]["verdict"] == st["result"]["verdict"]
+    assert rec["scores"] == st["scores"]
+    assert rec["result"]["breakdown"] is not None
+    assert rec["tiles_placed"] == len(st["board"]) == 72
+    assert isinstance(rec["finished_at"], int) and rec["finished_at"] > 0
+    assert rec["opponent_name"] == st["opponent_name"]
+    assert all(set(e) == {"ply", "elapsed_s"} for e in rec["ai_elapsed"])
+
+    # and the whole record restores by the same root_replay contract
+    back = ok(B.restore_game(json.dumps(rec)))
+    assert back["is_terminated"] and back["scores"] == rec["scores"]
+
+
+def test_archive_record_refuses_a_game_still_in_progress():
+    new(seed=5, opponent="tier1", human_player=0)
+    out = j(B.archive_record())
+    assert out["ok"] is False and out["error"]["code"] == "not_terminated"
+
+
+def test_debug_fast_forward_is_guarded():
+    new(seed=5, opponent="tier1", human_player=0)
+    out = j(B.debug_fast_forward())
+    assert out["ok"] is False and out["error"]["code"] == "not_confirmed"
+    assert j(B.debug_fast_forward("please"))["ok"] is False

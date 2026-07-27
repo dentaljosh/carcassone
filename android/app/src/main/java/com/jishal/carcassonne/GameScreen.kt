@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -23,6 +25,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -32,7 +36,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,13 +51,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -230,6 +237,8 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                             )
                         }
                     },
+                    onToggleOverlay = vm::toggleOverlay,
+                    onOpenBag = vm::openBag,
                 )
             }
         },
@@ -269,6 +278,8 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                         },
                         onViewportChanged = { w, h -> viewW = w; viewH = h },
                         modifier = Modifier.fillMaxSize(),
+                        ghostPreview = ui.ghostPreview,
+                        ownership = if (ui.overlayOn) ui.ownership else emptyList(),
                     )
 
                     Column(
@@ -347,6 +358,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             onNewGame = { vm.dismissResult(); vm.rematch() },
             onHome = { vm.dismissResult(); onExit() },
         )
+    }
+
+    if (ui.showBag) {
+        BagDialog(ui.bag, assets, vm::closeBag)
     }
 
     if (confirmLeave) {
@@ -633,6 +648,8 @@ private fun GameHud(
     assets: TileAssets?,
     landscape: Boolean,
     onFit: () -> Unit,
+    onToggleOverlay: () -> Unit,
+    onOpenBag: () -> Unit,
 ) {
     // The inset goes on the Row, not the Surface: the Surface keeps painting its
     // tonal background all the way up behind the status bar (so the clock sits on
@@ -646,9 +663,9 @@ private fun GameHud(
                         WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
                     ),
                 )
-                .padding(horizontal = 12.dp, vertical = if (landscape) 3.dp else 8.dp),
+                .padding(horizontal = 8.dp, vertical = if (landscape) 3.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             ScoreChip("You", state.humanScore, state.humanMeeples, CarcColors.Human)
             // A weakened preset names itself "Champion(weakened k4x172)", which a
@@ -663,8 +680,11 @@ private fun GameHud(
             // In the HUD rather than floating over the canvas, because the Scaffold
             // already reserves the top bar's height — a button anywhere on the board
             // occludes it, and at the right edge it sat squarely on a legal cell.
+            GlyphButton(onClick = onOpenBag, active = false) { bagGlyph(it) }
+            GlyphButton(onClick = onToggleOverlay, active = ui.overlayOn) {
+                layersGlyph(it)
+            }
             FitBoardButton(onFit)
-            Spacer(Modifier.width(2.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     tilesLeftLabel(state.tilesLeft),
@@ -748,14 +768,97 @@ private fun NextTileThumb(
  */
 @Composable
 private fun FitBoardButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val tint = MaterialTheme.colorScheme.onSecondaryContainer
-    SmallFloatingActionButton(
-        onClick = onClick,
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+    GlyphButton(onClick = onClick, active = false, modifier = modifier) { fitGlyph(it) }
+}
+
+/**
+ * A HUD button carrying a drawn glyph, optionally in an "on" state.
+ *
+ * Same reason as [FitBoardButton] for drawing rather than using an icon font: the
+ * shipped Material set has no layers/bag mark, and a Unicode glyph renders as tofu
+ * on a device without it. [active] swaps the container to the primary colour so the
+ * ownership toggle reads as a switch rather than as an action.
+ */
+@Composable
+private fun GlyphButton(
+    onClick: () -> Unit,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    glyph: DrawScope.(Color) -> Unit,
+) {
+    val container =
+        if (active) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.secondaryContainer
+    val tint =
+        if (active) MaterialTheme.colorScheme.onPrimary
+        else MaterialTheme.colorScheme.onSecondaryContainer
+    // A plain clickable box, NOT a SmallFloatingActionButton: the FAB carries a 40dp
+    // minimum plus elevation padding, and three of them alongside the two score chips
+    // overflowed a 360dp-wide portrait HUD — which pushed the tile-in-hand thumbnail
+    // clean off the screen. 34dp is still above the 32dp comfortable-target floor for
+    // a control sitting in a toolbar, and buys back the ~20dp the row needed.
+    Box(
+        modifier
+            .size(HUD_BUTTON)
+            .clip(RoundedCornerShape(10.dp))
+            .background(container)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(20.dp)) { fitGlyph(tint) }
+        Canvas(Modifier.size(19.dp)) { glyph(tint) }
     }
+}
+
+/** Every HUD control is this size, so the row's width is predictable. */
+private val HUD_BUTTON = 34.dp
+
+/** A drawstring pouch — the tile bag. */
+private fun DrawScope.bagGlyph(colour: Color) {
+    val s = size.minDimension
+    val w = s * 0.10f
+    // Body: a rounded sack occupying the lower two thirds.
+    drawRoundRect(
+        color = colour,
+        topLeft = Offset(s * 0.18f, s * 0.38f),
+        size = Size(s * 0.64f, s * 0.50f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(s * 0.16f),
+        style = Stroke(width = w),
+    )
+    // Neck: two strokes pinching in to the tie.
+    drawLine(
+        colour, Offset(s * 0.32f, s * 0.38f), Offset(s * 0.40f, s * 0.18f),
+        w, StrokeCap.Round,
+    )
+    drawLine(
+        colour, Offset(s * 0.68f, s * 0.38f), Offset(s * 0.60f, s * 0.18f),
+        w, StrokeCap.Round,
+    )
+    drawLine(
+        colour, Offset(s * 0.36f, s * 0.22f), Offset(s * 0.64f, s * 0.22f),
+        w, StrokeCap.Round,
+    )
+}
+
+/** Two stacked diamonds — the conventional "layers"/overlay mark. */
+private fun DrawScope.layersGlyph(colour: Color) {
+    val s = size.minDimension
+    val w = s * 0.09f
+    fun diamond(cy: Float, filled: Boolean) {
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(s * 0.5f, cy - s * 0.16f)
+            lineTo(s * 0.86f, cy)
+            lineTo(s * 0.5f, cy + s * 0.16f)
+            lineTo(s * 0.14f, cy)
+            close()
+        }
+        drawPath(
+            path, colour,
+            style = if (filled) androidx.compose.ui.graphics.drawscope.Fill
+            else Stroke(width = w),
+        )
+    }
+    diamond(s * 0.32f, filled = true)
+    diamond(s * 0.68f, filled = false)
 }
 
 /** Four corner brackets around a centre dot — the universal "frame it" mark. */
@@ -1020,6 +1123,98 @@ private fun ResultDialog(
 }
 
 /**
+ * What is still in the bag, per face.
+ *
+ * **Public information only.** The counts come from `get_bag()`, which derives them
+ * as `full distribution - on the board - in hand`; the deck itself is never read,
+ * because a shuffled deck's *order* is the future draw sequence. So this is exactly
+ * the knowledge the fair champion's determinizations work from — a memory aid, not
+ * an oracle.
+ *
+ * Faces with none left are greyed rather than removed, so the grid stays in one
+ * order all game and "there are no more of these" is itself readable.
+ */
+@Composable
+private fun BagDialog(bag: BagInfo?, assets: TileAssets?, onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = {
+            Text(
+                if (bag == null) "Tiles left"
+                else "Tiles left — ${bag.totalRemaining}",
+                fontSize = 18.sp,
+            )
+        },
+        text = {
+            if (bag == null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Counting the bag…", fontSize = 13.sp)
+                }
+            } else {
+                Column {
+                    Text(
+                        "Unseen tiles — not on the board and not the one in hand. " +
+                            "Public information; the deck order is never read.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 62.dp),
+                        modifier = Modifier.heightIn(max = 420.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(bag.faces.size) { i ->
+                            BagFaceCell(bag.faces[i], assets)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onClose) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun BagFaceCell(face: BagFace, assets: TileAssets?) {
+    val gone = face.remaining == 0
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val bmp = assets?.tile(face.image)
+        Box(
+            Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (bmp != null) {
+                Canvas(Modifier.size(52.dp)) {
+                    drawImage(
+                        image = bmp,
+                        dstOffset = IntOffset.Zero,
+                        dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                        // Exhausted faces stay in place but recede.
+                        alpha = if (gone) 0.22f else 1f,
+                    )
+                }
+            }
+        }
+        Text(
+            "×${face.remaining}",
+            fontSize = 11.sp,
+            fontWeight = if (gone) FontWeight.Normal else FontWeight.Bold,
+            color = if (gone) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/**
  * Where the end-of-game jump came from.
  *
  * Base + Farmers scores most of its points in one lump at the last tile — farms
@@ -1028,7 +1223,7 @@ private fun ResultDialog(
  * explain it. This is that step, itemised.
  */
 @Composable
-private fun ScoreBreakdown(rows: List<ScoreBreakdownRow>, humanPlayer: Int, themLabel: String) {
+internal fun ScoreBreakdown(rows: List<ScoreBreakdownRow>, humanPlayer: Int, themLabel: String) {
     val you = rows.getOrNull(humanPlayer)
     val them = rows.getOrNull(1 - humanPlayer)
     if (you == null || them == null) return
@@ -1040,23 +1235,40 @@ private fun ScoreBreakdown(rows: List<ScoreBreakdownRow>, humanPlayer: Int, them
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             )
             Text(
-                "$a", Modifier.width(44.dp), fontSize = 12.sp,
+                "$a", Modifier.width(BREAKDOWN_COL), fontSize = 12.sp,
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+                textAlign = TextAlign.End, maxLines = 1, softWrap = false,
             )
             Text(
-                "$b", Modifier.width(44.dp), fontSize = 12.sp,
+                "$b", Modifier.width(BREAKDOWN_COL), fontSize = 12.sp,
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+                textAlign = TextAlign.End, maxLines = 1, softWrap = false,
             )
         }
     }
     Text("How it finished", fontSize = 12.sp, fontWeight = FontWeight.Medium)
     Row(Modifier.fillMaxWidth()) {
         Text("", Modifier.weight(1f), fontSize = 11.sp)
-        Text("You", Modifier.width(44.dp), fontSize = 11.sp)
-        Text(themLabel.take(8), Modifier.width(44.dp), fontSize = 11.sp)
+        // maxLines/softWrap, not `take(8)`: the column is a fixed width and
+        // "Champion" is exactly the length that wrapped mid-word ("Champi/on").
+        // Clipping to one line is the honest failure mode for a name that is
+        // genuinely too long; the full name is printed under the table anyway.
+        Text(
+            "You", Modifier.width(BREAKDOWN_COL), fontSize = 11.sp,
+            textAlign = TextAlign.End, maxLines = 1, softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
+        Text(
+            themLabel, Modifier.width(BREAKDOWN_COL), fontSize = 11.sp,
+            textAlign = TextAlign.End, maxLines = 1, softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
     }
     line("Scored during play", you.duringPlay, them.duringPlay)
     line("Unfinished features", you.incomplete, them.incomplete)
     line("Farms", you.farms, them.farms)
     line("Total", you.total, them.total, bold = true)
 }
+
+/** Wide enough for "Champion" at 11.sp; the old 44.dp wrapped it mid-word. */
+private val BREAKDOWN_COL = 62.dp

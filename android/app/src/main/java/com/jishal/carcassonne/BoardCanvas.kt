@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
@@ -44,6 +45,24 @@ private const val DOT_RADIUS = 0.105f
  */
 private const val SLOT_TAP_RADIUS = 0.25f
 
+/**
+ * Farmers lie down (the physical convention), knights stand up.
+ *
+ * A quarter turn, not a tilt: the point is to be unmistakable at a glance on a
+ * board where the sprite is ~30px, and anything less reads as a rendering glitch.
+ */
+private const val FARMER_TILT = 90f
+
+/** The ghost's prospective slots — present, clearly not yet real. */
+private const val PREVIEW_ALPHA = 0.5f
+
+/** Ownership wash. Low enough that the tile art underneath stays legible. */
+private const val OWNER_FILL_ALPHA = 0.26f
+
+/** Farm hatching sits over the same cells as a city/road fill, so it is stronger
+ *  per stroke but covers only ~1/6 of the area. */
+private const val OWNER_HATCH_ALPHA = 0.34f
+
 /** Second tap must land within this of the first, in dp, to read as a double-tap. */
 private val DOUBLE_TAP_SLOP = 36.dp
 
@@ -73,6 +92,10 @@ fun BoardCanvas(
     onDoubleTap: (Float, Float) -> Unit,
     onViewportChanged: (Float, Float) -> Unit,
     modifier: Modifier = Modifier,
+    /** Prospective slots for the aimed ghost; drawn faint, never tappable. */
+    ghostPreview: List<MeepleSlot> = emptyList(),
+    /** Claimed features to tint, or empty when the overlay is off. */
+    ownership: List<OwnershipFeature> = emptyList(),
 ) {
     // Captured-once gesture lambdas must read these through State, not through a
     // stale closure, or panning would keep re-deriving from the first transform.
@@ -109,8 +132,12 @@ fun BoardCanvas(
                         if (target != null) {
                             val wx = t.screenToWorldX(p.x)
                             val wy = t.screenToWorldY(p.y)
+                            // Hit-test the SAME deduped list that was drawn: aiming at
+                            // a dot that is not on screen (a second opening onto a city
+                            // already represented) would be a phantom target.
                             val hit = nearestWithin(
-                                s.legal.meepleSlots, wx, wy, SLOT_TAP_RADIUS * TILE,
+                                dedupeByFeature(s.legal.meepleSlots),
+                                wx, wy, SLOT_TAP_RADIUS * TILE,
                             ) { slot -> slotCentre(target, slot.offsetX, slot.offsetY) }
                             if (hit != null) {
                                 lastIdleMs = 0L
@@ -154,10 +181,14 @@ fun BoardCanvas(
             scale(transform.scale, transform.scale, pivot = Offset.Zero)
         }) {
             drawPlacedTiles(state, assets)
+            // Between the art and every marker: the overlay is a wash over the
+            // terrain, not something that should dim the dots you aim at.
+            drawOwnership(ownership, state.humanPlayer)
             drawLegalCells(state, ghost, hair)
             drawGhost(ghost, state, assets)
             drawAiLastTile(state, hair)
             drawPlacedMeeples(state, assets, hair)
+            drawGhostPreview(ghost, ghostPreview, hair)
             drawMeepleSlots(state, hair)
         }
     }
@@ -255,51 +286,159 @@ private fun DrawScope.drawPlacedMeeples(state: GameState, assets: TileAssets, ha
         )
         val sprite = assets.meeple(m.player, state.humanPlayer)
         if (sprite != null) {
-            // Drawn UPRIGHT. The tkinter visualiser rotates meeple sprites by -90
-            // before blitting, but the source art is already upright (checked), so
-            // that rotation is a quirk of that tool and is deliberately not ported.
+            // A knight/monk stands UPRIGHT. The tkinter visualiser rotates every
+            // meeple sprite by -90 before blitting, but the source art is already
+            // upright (checked), so that rotation is a quirk of that tool.
+            //
+            // A FARMER lies down — the physical convention every Carcassonne player
+            // already knows, and the only cue that distinguishes the two at a glance
+            // once the piece is on the board.
             val e = if (m.isFarmer) edge * 0.8f else edge
-            drawImage(
-                image = sprite,
-                dstOffset = IntOffset((cx - e / 2f).roundToInt(), (cy - e / 2f).roundToInt()),
-                dstSize = IntSize(e.roundToInt(), e.roundToInt()),
-            )
+            val blit = {
+                drawImage(
+                    image = sprite,
+                    dstOffset = IntOffset(
+                        (cx - e / 2f).roundToInt(), (cy - e / 2f).roundToInt(),
+                    ),
+                    dstSize = IntSize(e.roundToInt(), e.roundToInt()),
+                )
+            }
+            if (m.isFarmer) rotate(FARMER_TILT, pivot = Offset(cx, cy)) { blit() }
+            else blit()
         }
     }
 }
 
+/**
+ * The meeple slots on offer — ONE dot per on-tile feature.
+ *
+ * A city with two openings is two engine actions claiming the same city, which the
+ * player reads as a decision that matters. [dedupeByFeature] collapses them; the
+ * action applied is still the representative's real action id, so the champion's
+ * action space is untouched.
+ */
 private fun DrawScope.drawMeepleSlots(state: GameState, hair: Float) {
     if (!state.isHumanTurn || !state.isMeeplePhase) return
     val target = state.legal.meepleTarget ?: return
-    for (slot in state.legal.meepleSlots) {
+    for (slot in dedupeByFeature(state.legal.meepleSlots)) {
         val (cx, cy) = slotCentre(target, slot.offsetX, slot.offsetY)
-        val colour = CarcColors.terrain(slot.terrain)
-        if (slot.isFarmer) {
-            // Farmers get a smaller diamond so a corner farm slot is never
-            // confused with the road/city dot it sits beside.
-            val r = TILE * DOT_RADIUS * 0.85f
-            rotate(45f, pivot = Offset(cx, cy)) {
+        drawSlotMark(slot, cx, cy, hair, alpha = 1f)
+    }
+}
+
+/**
+ * What a prospective placement would open, drawn on the ghost at half strength.
+ *
+ * Same marks as the real thing so the two are visibly the same language, but never
+ * hit-tested: this is a consequence preview, and the tile is not down yet.
+ */
+private fun DrawScope.drawGhostPreview(
+    ghost: Ghost?,
+    slots: List<MeepleSlot>,
+    hair: Float,
+) {
+    if (ghost == null || slots.isEmpty()) return
+    for (slot in dedupeByFeature(slots)) {
+        val (cx, cy) = slotCentre(ghost.cell, slot.offsetX, slot.offsetY)
+        drawSlotMark(slot, cx, cy, hair, alpha = PREVIEW_ALPHA)
+    }
+}
+
+/**
+ * One slot mark. Circle for a knight/monk, diamond for a farmer.
+ *
+ * The farmer diamond additionally gets an earth-toned ring instead of the white one
+ * every other dot wears — shape alone was doing all the work, and at a whole-board
+ * fit a small rotated square and a small circle are the same handful of pixels.
+ */
+private fun DrawScope.drawSlotMark(
+    slot: MeepleSlot,
+    cx: Float,
+    cy: Float,
+    hair: Float,
+    alpha: Float,
+) {
+    val colour = CarcColors.terrain(slot.terrain)
+    if (slot.isFarmer) {
+        val r = TILE * DOT_RADIUS * 0.85f
+        rotate(45f, pivot = Offset(cx, cy)) {
+            drawRect(
+                color = colour, alpha = alpha,
+                topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2),
+            )
+            drawRect(
+                color = CarcColors.FarmerRing, alpha = alpha,
+                topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2),
+                style = Stroke(width = hair * 1.8f),
+            )
+        }
+    } else {
+        val r = TILE * DOT_RADIUS
+        drawCircle(color = colour, radius = r, center = Offset(cx, cy), alpha = alpha)
+        drawCircle(
+            color = Color.White, radius = r, center = Offset(cx, cy),
+            style = Stroke(width = hair * 1.2f), alpha = alpha,
+        )
+    }
+}
+
+/**
+ * Tint every cell of a claimed feature in its owner's colour.
+ *
+ * Rendering rules, in the order they resolve:
+ *  * **contested** (a tie — the engine pays BOTH seats) → purple, so a shared
+ *    feature never reads as either player's;
+ *  * **farms** → a hatch of diagonal strokes rather than a fill, because a farm
+ *    covers whole tiles that also carry a city or a road, and two solid washes on
+ *    one cell would be indistinguishable from one strong one;
+ *  * everything else → a flat low-alpha fill in the owner's colour.
+ *
+ * Cells are drawn per feature, so a tile belonging to both a city and a farm gets
+ * both marks — which is the truth about that tile.
+ */
+private fun DrawScope.drawOwnership(features: List<OwnershipFeature>, humanPlayer: Int) {
+    if (features.isEmpty()) return
+    for (f in features) {
+        if (f.owners.isEmpty()) continue
+        val colour = when {
+            f.isContested -> CarcColors.Contested
+            else -> CarcColors.player(f.owners.first(), humanPlayer)
+        }
+        for (cell in f.cells) {
+            val x = cell.col * TILE
+            val y = cell.row * TILE
+            if (f.isFarm) {
+                hatchCell(x, y, colour)
+            } else {
                 drawRect(
                     color = colour,
-                    topLeft = Offset(cx - r, cy - r),
-                    size = Size(r * 2, r * 2),
-                )
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(cx - r, cy - r),
-                    size = Size(r * 2, r * 2),
-                    style = Stroke(width = hair * 1.2f),
+                    topLeft = Offset(x, y),
+                    size = Size(TILE, TILE),
+                    alpha = OWNER_FILL_ALPHA,
                 )
             }
-        } else {
-            val r = TILE * DOT_RADIUS
-            drawCircle(color = colour, radius = r, center = Offset(cx, cy))
-            drawCircle(
-                color = Color.White,
-                radius = r,
-                center = Offset(cx, cy),
-                style = Stroke(width = hair * 1.2f),
+        }
+    }
+}
+
+/** Diagonal hatching inside one cell — the farm marker. */
+private fun DrawScope.hatchCell(x: Float, y: Float, colour: Color) {
+    val step = TILE / 6f
+    val w = TILE / 26f
+    // The strokes are full-diagonal and would bleed into the neighbouring cells, so
+    // the whole family is clipped to this square. `i` walks from -TILE to +TILE so
+    // both triangles of the square are covered.
+    clipRect(left = x, top = y, right = x + TILE, bottom = y + TILE) {
+        var i = -TILE
+        while (i <= TILE) {
+            drawLine(
+                color = colour,
+                start = Offset(x + i, y),
+                end = Offset(x + i + TILE, y + TILE),
+                strokeWidth = w,
+                alpha = OWNER_HATCH_ALPHA,
             )
+            i += step
         }
     }
 }

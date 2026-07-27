@@ -129,6 +129,22 @@ data class GameUiState(
      * land on Skip and silently forfeit the meeple.
      */
     val phaseLock: Boolean = false,
+    /**
+     * Meeple slots the CURRENT ghost placement would open, drawn faint on the
+     * ghost. Empty until the bridge answers — the dots appear a beat after the
+     * ghost, which is the honest rendering of an asynchronous read.
+     */
+    val ghostPreview: List<MeepleSlot> = emptyList(),
+    /** The ownership overlay toggle (the layers button in the HUD). */
+    val overlayOn: Boolean = false,
+    /** Claimed features for the overlay; only refreshed while [overlayOn]. */
+    val ownership: List<OwnershipFeature> = emptyList(),
+    /** The tile-bag dialog is open. */
+    val showBag: Boolean = false,
+    /** Unseen-tile counts; fetched when the bag dialog opens. */
+    val bag: BagInfo? = null,
+    /** How many finished games are archived (the Home entry's subtitle). */
+    val archiveCount: Int = 0,
 ) {
     /**
      * The live ghost, or `null` when nothing is aimed. Recomputed from the
@@ -178,6 +194,7 @@ data class GameUiState(
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private val saveStore = SaveStore(app)
+    private val archiveStore = ArchiveStore(app)
     private val settings = SettingsStore(app)
 
     private val _ui = MutableStateFlow(GameUiState())
@@ -208,6 +225,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var opJob: Job? = null
     private var progressJob: Job? = null
     private var phaseLockJob: Job? = null
+
+    /**
+     * The ghost-preview fetch, and the action id it is for.
+     *
+     * Debounced by SELECTION, not by time: one call per ghost change is already the
+     * right granularity (a change is a tap or a rotate press, never a frame), so the
+     * only thing to suppress is re-asking for an answer we already hold. A different
+     * job than [opJob] on purpose — the preview is read-only and must never make the
+     * board look busy or block a tap.
+     */
+    private var previewJob: Job? = null
+    private var previewFor: Int? = null
+
+    private var ownershipJob: Job? = null
 
     /**
      * Durations of the last [ETA_WINDOW] AI moves, oldest first, **bucketed by the
@@ -264,7 +295,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 null
             }
             val hasSave = saveStore.exists()
-            _ui.update { it.copy(warmingUp = false, budget = budget ?: it.budget, hasSave = hasSave) }
+            val archived = runCatching { archiveStore.count() }.getOrDefault(0)
+            _ui.update {
+                it.copy(
+                    warmingUp = false, budget = budget ?: it.budget,
+                    hasSave = hasSave, archiveCount = archived,
+                )
+            }
         }
     }
 
@@ -296,8 +333,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // instead of the saved preset.
         val difficulty = runCatching { settings.difficulty.first() }
             .getOrElse { _ui.value.difficulty }
+        previewFor = null
         _ui.update {
-            GameUiState(budget = it.budget, busy = true, hasSave = false, difficulty = difficulty)
+            GameUiState(
+                budget = it.budget, busy = true, hasSave = false,
+                difficulty = difficulty, archiveCount = it.archiveCount,
+            )
         }
         // The preset owns the whole opponent/budget decision, including the choice
         // to OMIT sims/k_dets at Champion so the bridge falls through to
@@ -305,6 +346,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // to live. `budget` is read separately and used for DISPLAY only.
         val cfg = difficulty.newGameConfig(seed = seed, humanPlayer = seat.humanPlayer())
         runBridge(e) { PythonBridge.newGame(cfg) }
+    }
+
+    /**
+     * DEBUG ONLY — play the live game out to termination in one bridge call.
+     *
+     * Deliberately routed through the ordinary [launchOp] / [runBridge] / [afterState]
+     * pipeline rather than given a private path: the whole point of reaching a
+     * finished game quickly is to exercise what really happens at the end, so the
+     * archive write, the autosave clear and the result dialog all run exactly as they
+     * do after a played-out game. The only entry point is the Debug console.
+     */
+    fun debugFastForward() = launchOp { e ->
+        _ui.update { it.copy(busy = true, error = null) }
+        runBridge(e) { PythonBridge.debugFastForward() }
     }
 
     /** Same seat, fresh deck — the "New game" button on the end-of-game dialog. */
@@ -346,22 +401,122 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val lc = st.legal.cellAt(cell)
         if (lc == null || lc.actionIds.isEmpty()) {
             _ui.update { it.copy(selected = null, rotationIndex = 0) }
+            syncGhostPreview()
             return
         }
         _ui.update {
             if (it.selected == cell) it.copy(rotationIndex = it.rotationIndex + 1)
             else it.copy(selected = cell, rotationIndex = 0)
         }
+        syncGhostPreview()
     }
 
     fun cycleRotation() {
         if (_ui.value.ghost == null) return
         _ui.update { it.copy(rotationIndex = it.rotationIndex + 1) }
+        syncGhostPreview()
     }
 
     fun cancelPlacement() {
         _ui.update { it.copy(selected = null, rotationIndex = 0) }
+        syncGhostPreview()
     }
+
+    // ------------------------------------------------- prospective meeple dots
+
+    /**
+     * Bring [GameUiState.ghostPreview] in line with the current ghost.
+     *
+     * Called after every change that can move the ghost (select, rotate, cancel) and
+     * after every adopted state. Cheap when nothing changed: the guard is the action
+     * id the last fetch was for, so re-selecting the same cell+rotation is free.
+     *
+     * Failures are silent by design — this is a hint layer. A preview that does not
+     * arrive leaves the ghost exactly as it was before the feature existed.
+     */
+    private fun syncGhostPreview() {
+        val ghost = _ui.value.ghost
+        val want = ghost?.actionId
+        if (want == previewFor) return
+        previewFor = want
+        previewJob?.cancel()
+        if (want == null) {
+            _ui.update { it.copy(ghostPreview = emptyList()) }
+            return
+        }
+        val myEpoch = epoch
+        previewJob = viewModelScope.launch {
+            val raw = try {
+                PythonBridge.previewMeepleSlots(want)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Log.w(TAG, "preview_meeple_slots failed", t)
+                return@launch
+            }
+            if (!isCurrent(myEpoch)) return@launch
+            val slots = BridgeJson.parseOrError(raw).getOrNull()
+                ?.let(BridgeJson::previewSlots) ?: emptyList()
+            // The ghost may have moved on while the bridge was answering; only adopt
+            // an answer that is still about the placement now aimed.
+            _ui.update {
+                if (it.ghost?.actionId == want) it.copy(ghostPreview = slots) else it
+            }
+        }
+    }
+
+    // ------------------------------------------------------ ownership overlay
+
+    fun toggleOverlay() {
+        val on = !_ui.value.overlayOn
+        _ui.update { it.copy(overlayOn = on, ownership = if (on) it.ownership else emptyList()) }
+        if (on) refreshOwnership()
+    }
+
+    /**
+     * Re-read the claimed features. Only ever called while the overlay is on (and
+     * after a state change), never in the turn hot path — the walk is engine BFS per
+     * placed meeple, which is cheap at board scale but is not free.
+     */
+    private fun refreshOwnership() {
+        if (!_ui.value.overlayOn) return
+        ownershipJob?.cancel()
+        val myEpoch = epoch
+        ownershipJob = viewModelScope.launch {
+            val raw = try {
+                PythonBridge.getOwnership()
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Log.w(TAG, "get_ownership failed", t)
+                return@launch
+            }
+            if (!isCurrent(myEpoch)) return@launch
+            val feats = BridgeJson.parseOrError(raw).getOrNull()
+                ?.let(BridgeJson::ownership) ?: return@launch
+            _ui.update { if (it.overlayOn) it.copy(ownership = feats) else it }
+        }
+    }
+
+    // -------------------------------------------------------- the tile bag
+
+    fun openBag() {
+        _ui.update { it.copy(showBag = true) }
+        viewModelScope.launch {
+            val raw = try {
+                PythonBridge.getBag()
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Log.w(TAG, "get_bag failed", t)
+                return@launch
+            }
+            val bag = BridgeJson.parseOrError(raw).getOrNull()?.let(BridgeJson::bag)
+            if (bag != null) _ui.update { it.copy(bag = bag) }
+        }
+    }
+
+    fun closeBag() = _ui.update { it.copy(showBag = false) }
 
     fun confirmPlacement() {
         val ghost = _ui.value.ghost ?: return
@@ -434,7 +589,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         dropSession()
         aiDurations.clear()
         _ui.update {
-            GameUiState(budget = it.budget, hasSave = it.hasSave, difficulty = it.difficulty)
+            GameUiState(
+                budget = it.budget, hasSave = it.hasSave,
+                difficulty = it.difficulty, archiveCount = it.archiveCount,
+            )
         }
     }
 
@@ -459,6 +617,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         epoch++                     // everything already in flight is now stale
         opJob?.cancel()
         opJob = null
+        // The read-only side jobs are epoch-guarded, but cancelling is cheaper than
+        // letting them run to completion just to discard the answer. `previewFor`
+        // must be cleared too, or the next game's first ghost at the same action id
+        // would be taken for an answer we already have.
+        previewJob?.cancel()
+        previewJob = null
+        previewFor = null
+        ownershipJob?.cancel()
+        ownershipJob = null
         stopProgressPoll()
         viewModelScope.launch {
             runCatching { PythonBridge.reset() }
@@ -534,6 +701,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // The human's tile just landed and the meeple phase is now open under their
         // finger: swallow taps for a moment (see [GameUiState.phaseLock]).
         if (st.isHumanTurn && st.isMeeplePhase && !wasMeeplePhase) armPhaseLock()
+        // The board moved: the ghost (and so its preview) is gone, and any overlay
+        // on screen is now describing the previous position.
+        syncGhostPreview()
+        refreshOwnership()
         afterState(e, st)
     }
 
@@ -541,12 +712,68 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun afterState(e: Int, st: GameState) {
         currentCoroutineContext().ensureActive()
         if (st.isTerminated) {
-            saveStore.clear()
-            if (isCurrent(e)) _ui.update { it.copy(hasSave = false, showResult = true) }
+            finishGame(e)
             return
         }
         persist(e)
         if (!st.isHumanTurn) runAiTurns(e)
+    }
+
+    /**
+     * A game just ended: archive it, then drop the autosave.
+     *
+     * ORDER MATTERS. The archive is written FIRST, because the autosave is the only
+     * other copy of the action log and clearing it first would make a failed archive
+     * write an unrecoverable loss. `archive_record` reads the live session, so it
+     * also has to happen before anything can reset the bridge.
+     *
+     * Both terminal paths (the human's last move, and the champion's) funnel here so
+     * a finished game can never be recorded on one and lost on the other.
+     */
+    private suspend fun finishGame(e: Int) {
+        archiveFinishedGame()
+        saveStore.clear()
+        if (isCurrent(e)) _ui.update { it.copy(hasSave = false, showResult = true) }
+        refreshArchiveCount()
+    }
+
+    /** Best-effort: a failed archive write costs the record, never the result dialog. */
+    private suspend fun archiveFinishedGame() {
+        val raw = try {
+            PythonBridge.archiveRecord()
+        } catch (c: CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            Log.w(TAG, "archive_record failed", t)
+            return
+        }
+        val obj = BridgeJson.parseOrError(raw).getOrNull() ?: run {
+            Log.w(TAG, "archive_record returned an error payload")
+            return
+        }
+        archiveStore.write(
+            raw = raw,
+            finishedAt = obj.optLong("finished_at", 0L),
+            deckSeed = obj.optInt("deck_seed", 0),
+        )
+    }
+
+    // -------------------------------------------------------- past games
+
+    fun refreshArchiveCount() {
+        viewModelScope.launch {
+            val n = runCatching { archiveStore.count() }.getOrDefault(0)
+            _ui.update { it.copy(archiveCount = n) }
+        }
+    }
+
+    /** The Past-games list. Read straight from disk; no bridge call, no replay. */
+    suspend fun listArchivedGames(): List<ArchivedGame> = archiveStore.list()
+
+    suspend fun deleteArchivedGame(fileName: String): Boolean {
+        val gone = archiveStore.delete(fileName)
+        refreshArchiveCount()
+        return gone
     }
 
     /**
@@ -656,11 +883,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
             if (next.isTerminated) {
-                saveStore.clear()
-                _ui.update { it.copy(hasSave = false, showResult = true) }
+                finishGame(e)
                 return
             }
             persist(e)
+            if (isCurrent(e)) refreshOwnership()
         }
     }
 
@@ -742,6 +969,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         phaseLockJob?.cancel()
+        previewJob?.cancel()
+        ownershipJob?.cancel()
         stopProgressPoll()
         super.onCleared()
     }

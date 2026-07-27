@@ -172,6 +172,7 @@ Source of truth for the mapping: `app/src/main/java/com/jishal/carcassonne/Diffi
 | What | Path (app-private, `filesDir`) |
 |---|---|
 | Autosave (single slot) | `/data/data/com.jishal.carcassonne/files/current_game.json` |
+| Finished-game archive | `/data/data/com.jishal.carcassonne/files/games/<finished_at>_<seed>.json` |
 | Difficulty preference | `/data/data/com.jishal.carcassonne/files/datastore/carc_settings.preferences_pb` |
 | Chaquopy-extracted Python | `.../files/chaquopy/` (managed by Chaquopy; do not edit) |
 
@@ -186,9 +187,82 @@ adb shell run-as com.jishal.carcassonne cat files/current_game.json
 adb shell run-as com.jishal.carcassonne rm files/current_game.json   # forget the save
 ```
 
+### The finished-game archive (`files/games/`)
+
+The autosave is **deleted** at termination. Before that happens, `archive_record()` writes
+one permanent file per finished game — which is the only thing that keeps the
+`(deck_seed, action_log)` pair of a completed game from being thrown away.
+
+An archive record is a **superset of a save**: the same restorable core, plus a read-only
+summary (`result` with the end-of-game breakdown, `scores`, `opponent_name`,
+`finished_at`, `tiles_placed`, `ai_elapsed` per AI decision). The summary is what the
+**Home → Past games** list renders, so drawing 200 rows costs 200 file reads and *zero*
+replays. Nothing is capped or rotated: a record is a few hundred ints.
+
+Because the core is unchanged, `restore_game` accepts the archive schema directly — a
+finished game can be reloaded on the phone, and replayed on the desktop by the ordinary
+[`root_replay`](../scripts/measurement_infra/root_replay.py) contract (that module's
+docstring is the authority on *why* `(deck_seed, actions)` is lossless for any policy).
+
+```bash
+# pull one game off the phone
+adb shell run-as com.jishal.carcassonne ls files/games/
+adb shell run-as com.jishal.carcassonne cat files/games/1785171903_25080.json > game.json
+
+# replay it on the desktop and check it reproduces the score the phone reported
+.venv/bin/python - <<'PY'
+import json, sys
+sys.path.insert(0, "scripts/measurement_infra")
+from root_replay import RootRef
+
+rec = json.load(open("game.json"))
+ref = RootRef(rec["deck_seed"], tuple(rec["actions"]), len(rec["actions"]))
+_game, board = ref.replay()
+print("terminal:", board.state.is_terminated())
+print("replayed:", list(board.state.scores), "archived:", rec["scores"])
+PY
+```
+
+`RootRef(deck_seed, actions, ply)` also reconstructs any *intermediate* position — pass a
+smaller `ply` to land mid-game and hand the board to a solver or a stronger agent to ask
+what the better move was.
+
 ---
 
-## 5. Desktop test commands
+## 5. Presentation helpers (read-only bridge additions)
+
+Five functions added for the round-3 playtest findings. **Every one of them is a pure
+read**: none touches the champion's search, its action space, or `PRODUCTION.yaml`
+semantics, and none is on the move-decision path.
+
+| Bridge | Returns | Used by |
+|---|---|---|
+| `archive_record()` | the save payload + result/breakdown/`ai_elapsed`; refuses a live game | the finished-game archive (§4) |
+| `preview_meeple_slots(action_id)` | `{slots:[…]}` for a *prospective* tile action | the faint dots on the ghost |
+| `get_ownership()` | per claimed feature: `{kind, cells, owners, meeple_count_per_player, finished, points}` | the ownership overlay |
+| `get_bag()` | `{faces:[{description, image, remaining, total}], total_remaining}` | the tile-bag dialog |
+| `debug_fast_forward(confirm)` | plays the game out; **debug console only** | reaching a finished state in tests |
+
+Three things worth knowing about them:
+
+- **`preview_meeple_slots` cannot mutate the session.** It drives `Game.get_next_state`
+  (documented to leave its input board unmodified — it is MCTS's tree-expansion path) on a
+  *private, cache-free* `Game`, so the live board and its legal-moves cache never see the
+  throwaway state. It shares its slot builder with the real legal block, so the ghost's
+  dots and the sub-phase's dots cannot drift apart.
+- **`get_bag()` never reads `state.deck`.** The deck is a shuffled *list*, so its order is
+  the future draw sequence. The counts are derived as
+  `base_tile_counts − on the board − in hand`, which is strictly the public information
+  the fair champion's determinizations already work from. The invariant
+  `total_remaining == len(deck)` is asserted at every ply by
+  `test_bag_remaining_tracks_the_deck_without_ever_reading_it`.
+- **Meeple-slot grouping is advice, not filtering.** The engine offers one meeple action
+  per *side*, so a city spanning two edges arrives as two actions claiming the same city.
+  `feature_group` marks them equivalent and the UI draws one dot per group — but **every
+  slot stays in the JSON** and the dot carries a real `action_id`. The champion and the
+  tests see an unchanged action space; only the rendering collapses.
+
+## 6. Desktop test commands
 
 Nothing here needs a device:
 
@@ -213,22 +287,24 @@ were sized.
 
 ---
 
-## 6. Layout
+## 7. Layout
 
 ```
 android/
   app/src/main/java/com/jishal/carcassonne/
-    MainActivity.kt      state-based nav: HOME | GAME | SETTINGS | DEBUG
-    HomeScreen.kt        seat, seed, difficulty chip, resume
+    MainActivity.kt      state-based nav: HOME | GAME | SETTINGS | DEBUG | PAST_GAMES
+    HomeScreen.kt        seat, seed, difficulty chip, resume, past-games entry
     SettingsScreen.kt    difficulty slider, AI-manifest dialog, About
     Difficulty.kt        the 5 presets + the DataStore SettingsStore
-    GameScreen.kt        HUD, overlays, thinking banner (rolling ETA), result dialog
-    BoardCanvas.kt       tiles, meeple dots, ghost, gestures
+    GameScreen.kt        HUD (fit/overlay/bag), banners, bag dialog, result dialog
+    PastGamesScreen.kt   the archive list + per-game summary (no replay)
+    BoardCanvas.kt       tiles, meeple dots, ghost + preview, ownership tint, gestures
     BoardGeometry.kt     board<->screen transform (unit-tested)
     GameViewModel.kt     session state machine; one op in flight; epoch guard
     PythonBridge.kt      Chaquopy call surface; one bridge thread + one poll thread
     GameModels.kt        org.json parsers for every bridge response
     SaveStore.kt         the single-slot autosave
+    ArchiveStore.kt      files/games/ — one file per finished game
   app/src/main/python/android_bridge.py    the ONLY hand-written Python here
   app/src/main/res/                        icon vectors, strings, theme
   tools/                sync_python.py · prepare_assets.py · smoke_selfplay.py

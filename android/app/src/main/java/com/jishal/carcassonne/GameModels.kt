@@ -66,8 +66,109 @@ data class MeepleSlot(
     val offsetX: Float,
     val offsetY: Float,
     val describe: String,
+    /**
+     * Intra-tile feature id from the bridge. Slots sharing one are openings onto the
+     * SAME feature (a city spanning two edges, a road running through), so choosing
+     * between them is a choice without a difference. Dense over the offered slots.
+     */
+    val featureGroup: Int = -1,
 ) {
     val isFarmer: Boolean get() = type == "farmer" || type == "big_farmer"
+}
+
+/**
+ * One dot per on-tile feature, in stable group order.
+ *
+ * The engine offers a meeple action per *side*, so a city with two openings arrives
+ * as two actions that claim the same city — a duplicate choice the player reads as a
+ * decision. This collapses them for RENDERING and HIT-TESTING only: the JSON keeps
+ * every slot, and the chosen representative carries a real `actionId`, so what is
+ * applied is an action the champion's action space already contained.
+ *
+ * CENTER wins when present (a monastery dot belongs in the middle of the tile, not
+ * on an edge); otherwise the first slot in bridge order, which is ascending action id.
+ */
+fun dedupeByFeature(slots: List<MeepleSlot>): List<MeepleSlot> {
+    // LinkedHashMap: groups come out in FIRST-APPEARANCE order, which is the
+    // bridge's order (ascending action id). Stable without needing to sort, so the
+    // dots do not reshuffle between two renders of the same position.
+    val byGroup = LinkedHashMap<Int, MutableList<MeepleSlot>>()
+    slots.forEachIndexed { i, s ->
+        // A NEGATIVE group means "the bridge could not classify this slot". Such a
+        // slot must never be merged with anything — hiding a legal choice is a far
+        // worse failure than showing a duplicate one — so it is keyed by its own
+        // position instead. (The bridge already hands out a private group per
+        // unknown slot; this is the belt to that pair of braces, and it is what stops
+        // a payload with the field missing entirely from collapsing to a single dot.)
+        val key = if (s.featureGroup >= 0) s.featureGroup else UNGROUPED_KEY_BASE + i
+        byGroup.getOrPut(key) { mutableListOf() }.add(s)
+    }
+    return byGroup.values.map { members ->
+        members.firstOrNull { it.side == "center" } ?: members.first()
+    }
+}
+
+/** Far above any real dense group id, so a synthetic key can never collide. */
+private const val UNGROUPED_KEY_BASE = 1_000_000
+
+/** One claimed feature, for the ownership overlay (`get_ownership`). */
+data class OwnershipFeature(
+    /** `city` | `road` | `chapel` | `farm`. */
+    val kind: String,
+    val cells: List<Cell>,
+    /** Majority owners: empty (nobody), one seat, or BOTH on a tie = contested. */
+    val owners: List<Int>,
+    val meepleCountPerPlayer: List<Int>,
+    val finished: Boolean?,
+    val points: Int,
+) {
+    val isContested: Boolean get() = owners.size > 1
+    val isFarm: Boolean get() = kind == "farm"
+}
+
+/** One of the 32 base faces, with how many are still unseen (`get_bag`). */
+data class BagFace(
+    val description: String,
+    val image: String?,
+    val remaining: Int,
+    val total: Int,
+)
+
+data class BagInfo(
+    val faces: List<BagFace>,
+    val totalRemaining: Int,
+)
+
+/**
+ * A finished game as stored in `filesDir/games/`.
+ *
+ * [raw] is the whole archive JSON verbatim — it is also a valid `restore_game`
+ * payload (the bridge accepts the archive schema), so the record stays replayable
+ * rather than being flattened into just the numbers the list happens to show.
+ */
+data class ArchivedGame(
+    val fileName: String,
+    val finishedAt: Long,
+    val deckSeed: Int,
+    val humanPlayer: Int,
+    val opponentName: String,
+    val scores: List<Int>,
+    val result: GameResult?,
+    val tilesPlaced: Int,
+    val raw: String,
+) {
+    val humanScore: Int get() = scores.getOrElse(humanPlayer) { 0 }
+    val aiScore: Int get() = scores.getOrElse(1 - humanPlayer) { 0 }
+
+    /** `W` / `L` / `D` from the human's seat — the list's leading glyph. */
+    val outcome: String
+        get() = when {
+            humanScore > aiScore -> "W"
+            humanScore < aiScore -> "L"
+            else -> "D"
+        }
+
+    val seatLabel: String get() = if (humanPlayer == 0) "You first" else "AI first"
 }
 
 data class LegalBlock(
@@ -247,25 +348,27 @@ object BridgeJson {
             )
         },
         isTerminated = o.optBoolean("is_terminated", false),
-        result = o.optJSONObject("result")?.let {
-            GameResult(
-                scores = intList(it.optJSONArray("scores")),
-                diff = it.optInt("diff", 0),
-                winner = if (it.isNull("winner")) null else it.optInt("winner"),
-                verdict = it.optString("verdict", ""),
-                budgetNote = it.optNullableString("budget_note"),
-                breakdown = it.optJSONArray("breakdown")
-                    ?.map { row ->
-                        ScoreBreakdownRow(
-                            duringPlay = row.optInt("during_play"),
-                            incomplete = row.optInt("incomplete"),
-                            farms = row.optInt("farms"),
-                            total = row.optInt("total"),
-                        )
-                    }
-                    ?.takeIf { rows -> rows.isNotEmpty() },
-            )
-        },
+        result = o.optJSONObject("result")?.let(::gameResult),
+    )
+
+    /** Shared by the live state and by an archived record, which stores the same
+     *  object verbatim — so the Past-games summary renders from one parser. */
+    fun gameResult(o: JSONObject): GameResult = GameResult(
+        scores = intList(o.optJSONArray("scores")),
+        diff = o.optInt("diff", 0),
+        winner = if (o.isNull("winner")) null else o.optInt("winner"),
+        verdict = o.optString("verdict", ""),
+        budgetNote = o.optNullableString("budget_note"),
+        breakdown = o.optJSONArray("breakdown")
+            ?.map { row ->
+                ScoreBreakdownRow(
+                    duringPlay = row.optInt("during_play"),
+                    incomplete = row.optInt("incomplete"),
+                    farms = row.optInt("farms"),
+                    total = row.optInt("total"),
+                )
+            }
+            ?.takeIf { rows -> rows.isNotEmpty() },
     )
 
     fun progress(o: JSONObject): Progress = Progress(
@@ -275,6 +378,59 @@ object BridgeJson {
         phase = o.optString("phase", "idle"),
         fraction = if (o.isNull("fraction")) null else o.optDouble("fraction", 0.0).toFloat(),
     )
+
+    /** `preview_meeple_slots` -> the dots to draw on the ghost. */
+    fun previewSlots(o: JSONObject): List<MeepleSlot> =
+        o.optJSONArray("slots").map { meepleSlot(it) }
+
+    fun ownership(o: JSONObject): List<OwnershipFeature> =
+        o.optJSONArray("features").map { f ->
+            OwnershipFeature(
+                kind = f.optString("kind", ""),
+                cells = f.optJSONArray("cells").let { a ->
+                    if (a == null) emptyList() else List(a.length()) { i ->
+                        val pair = a.optJSONArray(i)
+                        Cell(pair?.optInt(0) ?: 0, pair?.optInt(1) ?: 0)
+                    }
+                },
+                owners = intList(f.optJSONArray("owners")),
+                meepleCountPerPlayer = intList(f.optJSONArray("meeple_count_per_player")),
+                finished = if (f.isNull("finished")) null else f.optBoolean("finished"),
+                points = f.optInt("points", 0),
+            )
+        }
+
+    fun bag(o: JSONObject): BagInfo = BagInfo(
+        faces = o.optJSONArray("faces").map {
+            BagFace(
+                description = it.optString("description", ""),
+                image = it.optNullableString("image"),
+                remaining = it.optInt("remaining", 0),
+                total = it.optInt("total", 0),
+            )
+        },
+        totalRemaining = o.optInt("total_remaining", 0),
+    )
+
+    /**
+     * One archive file. Total like every parser here: a record written by an older
+     * build (or a half-written one) degrades to zeros rather than throwing inside the
+     * list's coroutine.
+     */
+    fun archived(fileName: String, raw: String): ArchivedGame? = runCatching {
+        val o = JSONObject(raw)
+        ArchivedGame(
+            fileName = fileName,
+            finishedAt = o.optLong("finished_at", 0L),
+            deckSeed = o.optInt("deck_seed", 0),
+            humanPlayer = o.optInt("human_player", 0),
+            opponentName = o.optString("opponent_name", "Champion"),
+            scores = intList(o.optJSONArray("scores")),
+            result = o.optJSONObject("result")?.let(::gameResult),
+            tilesPlaced = o.optInt("tiles_placed", 0),
+            raw = raw,
+        )
+    }.getOrNull()
 
     fun budget(o: JSONObject): ProductionBudget = ProductionBudget(
         championId = o.optString("champion_id", "champion"),
@@ -298,6 +454,23 @@ object BridgeJson {
         turns = o.optInt("turns", 0),
     )
 
+    /** Shared by `legal.meeple_slots` and by `preview_meeple_slots`, which the
+     *  bridge builds with the same function — so the ghost's dots and the real
+     *  sub-phase's dots can never disagree about shape. */
+    private fun meepleSlot(o: JSONObject): MeepleSlot {
+        val (ox, oy) = offsetRatio(o)
+        return MeepleSlot(
+            actionId = o.optInt("action_id", -1),
+            side = o.optString("side", "center"),
+            type = o.optString("type", "normal"),
+            terrain = o.optString("terrain", "GRASS"),
+            offsetX = ox,
+            offsetY = oy,
+            describe = o.optString("describe", ""),
+            featureGroup = o.optInt("feature_group", -1),
+        )
+    }
+
     private fun placedMeeple(o: JSONObject): PlacedMeeple {
         val (ox, oy) = offsetRatio(o)
         return PlacedMeeple(
@@ -320,18 +493,7 @@ object BridgeJson {
                 actionIds = intList(it.optJSONArray("action_ids")),
             )
         },
-        meepleSlots = o.optJSONArray("meeple_slots").map {
-            val (ox, oy) = offsetRatio(it)
-            MeepleSlot(
-                actionId = it.optInt("action_id", -1),
-                side = it.optString("side", "center"),
-                type = it.optString("type", "normal"),
-                terrain = it.optString("terrain", "GRASS"),
-                offsetX = ox,
-                offsetY = oy,
-                describe = it.optString("describe", ""),
-            )
-        },
+        meepleSlots = o.optJSONArray("meeple_slots").map { meepleSlot(it) },
         meepleTarget = o.optJSONObject("meeple_target")
             ?.let { Cell(it.optInt("row"), it.optInt("col")) },
         tilePassId = o.optNullableInt("tile_pass_id"),

@@ -100,6 +100,12 @@ class DebugViewModel : ViewModel() {
 
     fun saveGame() = run("save_game") { PythonBridge.saveGame() }
 
+    fun getBag() = run("get_bag") { PythonBridge.getBag() }
+
+    fun getOwnership() = run("get_ownership") { PythonBridge.getOwnership() }
+
+    fun archiveRecord() = run("archive_record") { PythonBridge.archiveRecord() }
+
     fun clear() = _state.update { it.copy(lines = emptyList()) }
 
     // --- plumbing ----------------------------------------------------------

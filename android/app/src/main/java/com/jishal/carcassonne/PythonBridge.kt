@@ -94,6 +94,33 @@ object PythonBridge {
 
     suspend fun getManifest(): String = call("get_manifest")
 
+    /** The permanent record of a FINISHED game; refuses one still in progress. */
+    suspend fun archiveRecord(): String = call("archive_record")
+
+    /**
+     * What meeple options a prospective tile placement would open.
+     *
+     * Read-only (it drives a private copy of the board), but it still goes on the
+     * bridge dispatcher: it reads the live session, so it must not race a mutation.
+     * One call per ghost selection change, which is a tap, not a frame.
+     */
+    suspend fun previewMeepleSlots(actionId: Int): String =
+        call("preview_meeple_slots", actionId)
+
+    /** Every claimed feature + its owners, for the overlay. On demand only. */
+    suspend fun getOwnership(): String = call("get_ownership")
+
+    /** Unseen tiles per face — public information, never the deck order. */
+    suspend fun getBag(): String = call("get_bag")
+
+    /**
+     * DEBUG SCREEN ONLY. Plays the current game out so a finished state (and its
+     * archive entry) can be reached without ~150 taps. The confirm token is the
+     * bridge's own guard; keeping the single call site in [DebugScreen] is ours.
+     */
+    suspend fun debugFastForward(): String =
+        call("debug_fast_forward", "yes-destroy-this-game")
+
     /** The YAML champion budget, so the UI never hardcodes a strength knob. */
     suspend fun productionBudget(): String = call("production_budget")
 

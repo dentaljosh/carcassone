@@ -69,6 +69,7 @@ fun HomeScreen(
     onPlay: () -> Unit,
     onSettings: () -> Unit,
     onDebug: () -> Unit,
+    onPastGames: () -> Unit,
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     // Seat and seed live in the ViewModel, not in a `rememberSaveable` here: this
@@ -186,6 +187,29 @@ fun HomeScreen(
                     enabled = ui.hasSave && !ui.busy && !ui.thinking,
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Resume game") }
+            }
+        }
+
+        // ---- Past games ----------------------------------------------------
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Past games", fontWeight = FontWeight.Bold)
+                Text(
+                    if (ui.archiveCount > 0) {
+                        "${ui.archiveCount} finished game" +
+                            "${if (ui.archiveCount == 1) "" else "s"} archived — final " +
+                            "scores, plus the deck seed and move list that reproduce " +
+                            "each one exactly."
+                    } else {
+                        "Nothing yet. Games you play to the end are kept here."
+                    },
+                    fontSize = 11.sp,
+                )
+                OutlinedButton(
+                    onClick = onPastGames,
+                    enabled = ui.archiveCount > 0,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("View past games") }
             }
         }
 

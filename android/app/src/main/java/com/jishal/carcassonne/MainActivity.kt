@@ -35,7 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * must survive — the game — lives in an activity-scoped [GameViewModel] (and,
  * underneath it, the Python session and the autosave file), not in a back stack.
  */
-private enum class Screen { HOME, GAME, SETTINGS, DEBUG }
+private enum class Screen { HOME, GAME, SETTINGS, DEBUG, PAST_GAMES }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +76,13 @@ private fun CarcApp() {
             onPlay = { screen = Screen.GAME },
             onSettings = { navigate(Screen.SETTINGS) },
             onDebug = { navigate(Screen.DEBUG) },
+            onPastGames = { navigate(Screen.PAST_GAMES) },
         )
+
+        Screen.PAST_GAMES -> {
+            BackHandler { navigate(Screen.HOME) }
+            PastGamesScreen(vm = vm, onBack = { navigate(Screen.HOME) })
+        }
 
         Screen.SETTINGS -> SettingsScreen(
             vm = vm,
@@ -102,7 +108,9 @@ private fun CarcApp() {
             Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { insets ->
                 Column(Modifier.fillMaxSize().padding(insets)) {
                     TextButton(onClick = { navigate(Screen.HOME) }) { Text("← Home") }
-                    DebugScreen()
+                    // The shared game VM, so the debug fast-forward acts on the
+                    // session the Game screen is actually holding.
+                    DebugScreen(gameVm = vm)
                 }
             }
         }

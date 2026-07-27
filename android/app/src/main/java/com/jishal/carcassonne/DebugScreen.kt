@@ -37,7 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * the first time this runs on a real phone.
  */
 @Composable
-fun DebugScreen(vm: DebugViewModel = viewModel()) {
+fun DebugScreen(vm: DebugViewModel = viewModel(), gameVm: GameViewModel? = null) {
     val state by vm.state.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
@@ -84,6 +84,34 @@ fun DebugScreen(vm: DebugViewModel = viewModel()) {
             ConsoleButton("progress", vm::getProgress, modifier = Modifier.weight(1f))
             ConsoleButton("save", vm::saveGame, enabled = !state.busy, modifier = Modifier.weight(1f))
             ConsoleButton("clear", vm::clear, modifier = Modifier.weight(1f))
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            ConsoleButton("bag", vm::getBag, enabled = !state.busy, modifier = Modifier.weight(1f))
+            ConsoleButton("owners", vm::getOwnership, enabled = !state.busy, modifier = Modifier.weight(1f))
+            ConsoleButton("archive", vm::archiveRecord, enabled = !state.busy, modifier = Modifier.weight(1f))
+        }
+
+        // The ONLY entry point to the fast-forward. It drives the real
+        // GameViewModel, so the game it finishes is the one the Game screen is
+        // holding and termination runs the production archive/clear path.
+        if (gameVm != null) {
+            val gameUi by gameVm.ui.collectAsStateWithLifecycle()
+            OutlinedButton(
+                onClick = gameVm::debugFastForward,
+                enabled = gameUi.state != null && !gameUi.busy && !gameUi.opActive &&
+                    gameUi.state?.isTerminated != true,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when {
+                        gameUi.state == null -> "Fast-forward — no game in progress"
+                        gameUi.state?.isTerminated == true -> "Fast-forward — game already over"
+                        else -> "Fast-forward this game to the end (debug)"
+                    },
+                    fontSize = 13.sp,
+                )
+            }
         }
 
         if (state.busy) {

@@ -152,6 +152,10 @@ from wingedsheep.carcassonne.objects.side import Side  # noqa: E402
 
 SAVE_SCHEMA = "carcassonne-android-save/v1"
 STATE_SCHEMA = "carcassonne-android-state/v1"
+# A finished game's permanent record. A SUPERSET of a save: the same restorable
+# (deck_seed, actions) core plus the read-only result summary, so `filesDir/games/`
+# is both a scoreboard and a replay archive. See `archive_record`.
+ARCHIVE_SCHEMA = "carcassonne-android-archive/v1"
 
 # Meeple-dot placement, as RATIOS of the tile size, lifted from
 # CarcassonneVisualiser.meeple_position_offsets (tile_size=60, meeple_size=~21). The
@@ -271,6 +275,77 @@ def _terrain_name(tile, side: Side) -> str:
     return t.name if t is not None else "GRASS"
 
 
+def feature_groups(tile) -> dict[str, int]:
+    """Map each meeple-able ``Side.value`` on ONE tile to an intra-tile feature id.
+
+    Two sides sharing an id are two openings onto the SAME feature, so a meeple on
+    either claims the same thing — the duplicate choice the UI should collapse to a
+    single dot. A city spanning two edges is the common case (``city=[[TOP, RIGHT]]``);
+    a straight road is the other (``road=[Connection(LEFT, RIGHT)]``).
+
+    Purely a READ of the tile model — no engine call, no board, no action space. The
+    champion still gets every action; this only tells the renderer which of them are
+    interchangeable.
+
+    The tile model is already in placed orientation: ``Tile.turn(n)`` rotates ``city``,
+    ``road`` and ``farms`` along with the art, and the board stores the rotated tile.
+    So the sides here are the sides as they appear on screen, and nothing needs
+    un-rotating.
+
+    Three structures, three rules:
+
+    * ``tile.city: [[Side]]`` — already grouped by the engine, one inner list per
+      connected city region. Adopt it verbatim.
+    * ``tile.road: [Connection]`` — one ``Connection(a, b)`` per road segment, so its
+      two endpoints are one feature. ``Side.CENTER`` endpoints are SKIPPED: they mark
+      a road dying mid-tile (a crossroads is four separate ``(side, CENTER)``
+      connections, which must stay four features) and CENTER is the monastery's own
+      slot, which a road must never be merged into.
+    * ``tile.farms: [FarmerConnection]`` — every ``farmer_positions`` entry of one
+      connection is an equivalent placement on the same field.
+
+    A monastery (``chapel``/``flowers``) is a feature of one slot, ``CENTER``.
+    Anything the model does not describe is simply absent from the returned map, and
+    ``meeple_slots_for`` gives it a private group — never a shared one.
+    """
+    groups: dict[str, int] = {}
+    nxt = 0
+    if tile is None:
+        return groups
+
+    for side_group in getattr(tile, "city", ()) or ():
+        touched = False
+        for side in side_group:
+            groups[side.value] = nxt
+            touched = True
+        if touched:
+            nxt += 1
+
+    for conn in getattr(tile, "road", ()) or ():
+        touched = False
+        for side in (conn.a, conn.b):
+            if side is None or side == Side.CENTER:
+                continue
+            groups[side.value] = nxt
+            touched = True
+        if touched:
+            nxt += 1
+
+    if getattr(tile, "chapel", False) or getattr(tile, "flowers", False):
+        groups[Side.CENTER.value] = nxt
+        nxt += 1
+
+    for farm in getattr(tile, "farms", ()) or ():
+        touched = False
+        for side in getattr(farm, "farmer_positions", ()) or ():
+            groups[side.value] = nxt
+            touched = True
+        if touched:
+            nxt += 1
+
+    return groups
+
+
 def format_action(idx: int, board: Board) -> str:
     """Human-readable string for a flat action index in the board's current phase."""
     phase = board.state.phase.value
@@ -370,6 +445,12 @@ class _Session:
         self.turn = 0
         self.ai_last_tile: tuple[int, int] | None = None
         self.ai_last_move: dict | None = None
+        # One record per AI decision: {"ply", "elapsed_s"}. Live play only — a
+        # RESTORED game replays its log without searching, so the timings of the
+        # original session are simply not reconstructable and the list starts empty
+        # rather than carrying invented numbers. Two floats a move; the archive
+        # record is the only reader.
+        self.ai_elapsed: list[dict] = []
 
         # The position BEFORE the most recent action, kept solely so the end-of-game
         # breakdown can be reconstructed (see `_final_breakdown`). Free: the engine's
@@ -511,6 +592,64 @@ def _placed_meeples(state) -> list[dict]:
     return out
 
 
+def meeple_slots_for(game: Game, board: Board) -> list[dict]:
+    """The meeple slots offered on ``board``'s just-placed tile, UI-shaped.
+
+    Shared by the live legal block and by ``preview_meeple_slots`` (which runs it
+    against a throwaway copy of the board), so the two can never drift apart —
+    the preview dots are the same objects the real sub-phase will offer.
+
+    Each slot carries ``feature_group``: slots with the same group claim the SAME
+    on-tile feature and are therefore interchangeable (see ``feature_groups``).
+    Nothing is filtered here — the champion's action space and every test see the
+    full list; grouping is advice for the renderer only.
+    """
+    state = board.state
+    last = state.last_tile_action
+    if last is None:
+        return []
+    coord = last.coordinate
+    tile = state.board[coord.row][coord.column]
+    groups = feature_groups(tile)
+    slots = []
+    for idx in legal_meeple_indices(game, board):
+        action = decode(idx, off=board.offset, phase="meeples", last_tile_coord=coord)
+        assert isinstance(action, MeepleAction)
+        side = action.coordinate_with_side.side
+        slots.append({
+            "action_id": int(idx),
+            "side": side.value,
+            "type": action.meeple_type.value,
+            "terrain": _terrain_name(tile, side) if tile is not None else "GRASS",
+            "offset_ratio": list(MEEPLE_OFFSET_RATIO.get(side.value, (0.5, 0.5))),
+            "describe": format_action(idx, board),
+            "feature_group": int(groups.get(side.value, -1)),
+        })
+    return _renumber_groups(slots)
+
+
+def _renumber_groups(slots: list[dict]) -> list[dict]:
+    """Make ``feature_group`` dense (0,1,2,…) over the slots actually offered, and
+    give every ungrouped slot (``-1``) a private group of its own.
+
+    Two reasons this is not just ``feature_groups``' raw numbering: the raw ids are
+    per-tile and include features whose slots are not legal here (a city already
+    claimed elsewhere), and a side the tile model does not describe must never be
+    silently merged with another. A private group is the safe default — it renders
+    as its own dot, i.e. exactly today's behaviour."""
+    dense: dict = {}
+    nxt = 0
+    for slot in slots:
+        raw = slot["feature_group"]
+        # -1 (unknown) is deliberately never shared: key it by identity instead.
+        key = raw if raw >= 0 else ("solo", slot["action_id"])
+        if key not in dense:
+            dense[key] = nxt
+            nxt += 1
+        slot["feature_group"] = dense[key]
+    return slots
+
+
 def _legal_block(s: _Session) -> dict:
     """Legal moves for whoever is on turn, shaped for the Compose UI."""
     state = s.board.state
@@ -544,22 +683,8 @@ def _legal_block(s: _Session) -> dict:
     if last is None:
         return block
     coord = last.coordinate
-    tile = state.board[coord.row][coord.column]
     block["meeple_target"] = {"row": int(coord.row), "col": int(coord.column)}
-    slots = []
-    for idx in legal_meeple_indices(s.game, s.board):
-        action = decode(idx, off=s.board.offset, phase="meeples", last_tile_coord=coord)
-        assert isinstance(action, MeepleAction)
-        side = action.coordinate_with_side.side
-        slots.append({
-            "action_id": int(idx),
-            "side": side.value,
-            "type": action.meeple_type.value,
-            "terrain": _terrain_name(tile, side) if tile is not None else "GRASS",
-            "offset_ratio": list(MEEPLE_OFFSET_RATIO.get(side.value, (0.5, 0.5))),
-            "describe": format_action(idx, s.board),
-        })
-    block["meeple_slots"] = slots
+    block["meeple_slots"] = meeple_slots_for(s.game, s.board)
     return block
 
 
@@ -833,6 +958,8 @@ def ai_move(generation=None) -> str:
             s.ai_last_tile = (int(act.coordinate.row), int(act.coordinate.column))
         s.ai_last_move = {"action_id": idx, "describe": describe,
                           "elapsed_s": round(elapsed_s, 4)}
+        s.ai_elapsed.append({"ply": len(s.action_log),
+                             "elapsed_s": round(elapsed_s, 4)})
         s.apply(idx)
         s.auto_pass_forced()
 
@@ -885,6 +1012,24 @@ def _spec_fingerprint() -> dict:
         return {"champion_id": "", "leaf_hash": ""}
 
 
+def _save_payload(s: _Session) -> dict:
+    """The restorable core of a save. Shared by ``save_game`` and ``archive_record``
+    so an archived game is replayable by exactly the same contract as the autosave."""
+    out = {
+        "ok": True,
+        "schema": SAVE_SCHEMA,
+        "deck_seed": s.seed,
+        "actions": list(s.action_log),
+        "human_player": s.human_player,
+        "opponent": s.opponent_kind,
+        "sims": s.req_sims,
+        "k_dets": s.req_k_dets,
+        "verify": s.verify,
+    }
+    out.update(_spec_fingerprint())
+    return out
+
+
 def save_game() -> str:
     """Serialise the game to ``{deck_seed, actions, human_player, opponent, sims,
     k_dets, verify}`` — a few hundred ints. Losslessly restorable via
@@ -892,22 +1037,92 @@ def save_game() -> str:
 
     Also stamps the champion identity (``champion_id`` + the YAML ``leaf_hash``) so a
     save written by an older build can be RECOGNISED as such on restore. The stamp is
-    advisory: ``restore_game`` warns, never refuses."""
+    advisory: ``restore_game`` warns, never refuses.
+
+    Works at a TERMINATED state too — nothing here reads the phase — which is what
+    lets ``archive_record`` build on it after the last tile lands."""
+    try:
+        return _ok(_save_payload(_require_session()))
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def archive_record() -> str:
+    """The permanent record of a FINISHED game, for ``filesDir/games/``.
+
+    The autosave is deleted at termination, which threw away the one artefact worth
+    keeping: the ``(deck_seed, action_log)`` pair that reproduces the game exactly.
+    This is that pair — the full ``save_game`` payload, restorable by the same
+    ``restore_game`` contract and replayable on the desktop by ``root_replay`` — plus
+    the read-only summary the Past-games list needs so it never has to replay 150
+    plies just to print a score line.
+
+    Refuses a game that is not over: an archive entry is a *result*, and a
+    half-finished one would show up in the list as a game the player never lost.
+    """
     try:
         s = _require_session()
-        out = {
-            "ok": True,
-            "schema": SAVE_SCHEMA,
-            "deck_seed": s.seed,
-            "actions": list(s.action_log),
-            "human_player": s.human_player,
-            "opponent": s.opponent_kind,
-            "sims": s.req_sims,
-            "k_dets": s.req_k_dets,
-            "verify": s.verify,
-        }
-        out.update(_spec_fingerprint())
+        if not s.board.state.is_terminated():
+            return _err("not_terminated",
+                        "archive_record is only for a finished game")
+        st = _state_dict(s)
+        out = _save_payload(s)
+        out.update({
+            "schema": ARCHIVE_SCHEMA,
+            "save_schema": SAVE_SCHEMA,
+            "finished_at": int(time.time()),
+            "opponent_name": s.opponent_name,
+            "budget_note": s.budget_note,
+            "sims_effective": s.eff_sims,
+            "k_dets_effective": s.eff_k_dets,
+            "result": st.get("result"),
+            "scores": st["scores"],
+            "n_actions": len(s.action_log),
+            "tiles_placed": len(st["board"]),
+            "ai_elapsed": list(s.ai_elapsed),
+        })
         return _ok(out)
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def preview_meeple_slots(action_id) -> str:
+    """What meeple options a PROSPECTIVE tile placement would open.
+
+    Applies ``action_id`` to a COPY of the live board and reads the meeple slots off
+    the result, so the ghost can show its consequences before the player commits.
+    Same shape as ``legal.meeple_slots`` (``feature_group`` and ``offset_ratio``
+    included) because it is literally the same builder.
+
+    Read-only by construction, twice over: ``Game.get_next_state`` is documented to
+    leave its input board unmodified (it is MCTS's tree-expansion path), and the copy
+    is driven by a PRIVATE cache-free ``Game`` so the session's legal-moves cache
+    never sees the throwaway state. Nothing here touches ``_S``.
+    """
+    try:
+        s = _require_session()
+        try:
+            idx = int(action_id)
+        except (TypeError, ValueError):
+            return _err("illegal_action", f"action_id {action_id!r} is not an int")
+        if s.board.state.is_terminated():
+            return _err("game_over", "the game has ended")
+        if s.board.state.phase != GamePhase.TILES:
+            return _err("not_tile_phase",
+                        "preview_meeple_slots takes a TILE action")
+        mask = s.legal_mask()
+        if not (0 <= idx < len(mask)) or not bool(mask[idx]):
+            return _err("illegal_action", f"action {idx} is not legal here")
+        if idx == tile_pass_index(s.board.offset.size):
+            # A pass places no tile, so there is nothing to put a meeple on.
+            return _ok({"ok": True, "action_id": idx, "slots": []})
+
+        preview_game = Game()
+        next_board, _ = preview_game.get_next_state(s.board, idx)
+        slots = ([] if next_board.state.phase != GamePhase.MEEPLES
+                 else meeple_slots_for(preview_game, next_board))
+        return _ok({"ok": True, "action_id": idx, "slots": slots,
+                    "generation": s.generation})
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))
 
@@ -965,8 +1180,12 @@ def restore_game(json_str: str) -> str:
         blob = json.loads(json_str) if isinstance(json_str, str) else dict(json_str)
         if not isinstance(blob, dict):
             return _err("bad_save", "save payload must be a JSON object")
+        # An ARCHIVE record is a superset of a save — same `deck_seed` + `actions`
+        # core, extra read-only summary fields that replay simply ignores — so a
+        # finished game in `filesDir/games/` is replayable by the same call. Refusing
+        # it on the schema string alone would make the archive write-only.
         schema = blob.get("schema", SAVE_SCHEMA)
-        if schema != SAVE_SCHEMA:
+        if schema not in (SAVE_SCHEMA, ARCHIVE_SCHEMA):
             return _err("bad_save", f"unknown save schema {schema!r}")
         actions = [int(a) for a in blob.get("actions", [])]
         human_player = int(blob.get("human_player", 0))
@@ -1051,6 +1270,177 @@ def restore_game(json_str: str) -> str:
         if mismatch is not None:
             out["save_mismatch"] = mismatch
         return _ok(out)
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def get_ownership() -> str:
+    """Every CLAIMED feature on the board: kind, the cells it covers, and who owns it.
+
+    Feeds the ownership overlay. Read-only and on demand — the UI calls it when the
+    toggle is on and after each state change, never in the search hot path.
+
+    The walk is ``aux_targets.extract_terminal_ownership``'s, with one deliberate
+    difference: that function CONSUMES each feature's meeples (via
+    ``MeepleUtil.remove_meeples``) to avoid double-counting, which is why it must
+    deepcopy the state first. Two meeples in one city would otherwise be reported as
+    two cities. Here the same job is done by keying features on
+    ``(kind, frozenset(cells))`` — the engine's own BFS returns the identical cell set
+    from either meeple, so the second one dedupes away. Nothing is mutated, so no copy
+    is needed and the live session is untouchable by construction.
+
+    ``owners`` is the majority rule the engine actually scores by
+    (``PointsCollector.get_winning_players``): empty for nobody, one seat for a sole
+    owner, and BOTH seats on a tie — which is what the UI renders as contested.
+    """
+    try:
+        s = _require_session()
+        from wingedsheep.carcassonne.objects.meeple_type import MeepleType
+        from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+        from wingedsheep.carcassonne.utils.city_util import CityUtil
+        from wingedsheep.carcassonne.utils.farm_util import FarmUtil
+        from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+        from wingedsheep.carcassonne.utils.road_util import RoadUtil
+
+        state = s.board.state
+        n_players = len(state.placed_meeples)
+        seen: dict = {}
+        out: list[dict] = []
+
+        def _cells(positions) -> list[tuple[int, int]]:
+            uniq = {(int(p.coordinate.row), int(p.coordinate.column)) for p in positions}
+            return sorted(uniq)
+
+        for player, positions in enumerate(state.placed_meeples):
+            for mp in positions:
+                cws = mp.coordinate_with_side
+                coord = cws.coordinate
+                tile = state.board[coord.row][coord.column]
+                if tile is None:
+                    continue
+                kind, cells, finished, points, meeples = None, [], None, 0, None
+                try:
+                    if mp.meeple_type in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+                        farm = FarmUtil.find_farm_by_coordinate(state, position=cws)
+                        kind = "farm"
+                        cells = sorted({
+                            (int(f.coordinate.row), int(f.coordinate.column))
+                            for f in farm.farmer_connections_with_coordinate
+                        })
+                        meeples = FarmUtil.find_meeples(state, farm)
+                        points = int(PointsCollector.count_farm_points(state, farm))
+                    else:
+                        terrain = tile.get_type(cws.side)
+                        if terrain == TerrainType.CITY:
+                            city = CityUtil.find_city(state, cws)
+                            kind = "city"
+                            cells = _cells(city.city_positions)
+                            finished = bool(city.finished)
+                            meeples = CityUtil.find_meeples(state, city)
+                            points = int(PointsCollector.count_city_points(state, city))
+                        elif terrain == TerrainType.ROAD:
+                            road = RoadUtil.find_road(state, cws)
+                            kind = "road"
+                            cells = _cells(road.road_positions)
+                            finished = bool(road.finished)
+                            meeples = RoadUtil.find_meeples(state, road)
+                            points = int(PointsCollector.count_road_points(state, road))
+                        elif terrain in (TerrainType.CHAPEL, TerrainType.FLOWERS):
+                            kind = "chapel"
+                            cells = [(int(coord.row), int(coord.column))]
+                            points = int(
+                                PointsCollector.chapel_or_flowers_points(state, coord))
+                except Exception:                 # noqa: BLE001 — one odd feature must
+                    continue                      # not cost the whole overlay
+                if kind is None or not cells:
+                    continue
+                key = (kind, frozenset(cells))
+                if key in seen:
+                    continue
+                seen[key] = True
+
+                if meeples is not None:
+                    counts = [int(c) for c in
+                              PointsCollector.get_meeple_counts_per_player(meeples)]
+                else:
+                    # A monastery holds exactly the one meeple that is standing on it.
+                    counts = [0] * n_players
+                    counts[player] = 1
+                while len(counts) < n_players:
+                    counts.append(0)
+                owners = [int(w) for w in
+                          PointsCollector.get_winning_players(counts)]
+                out.append({
+                    "kind": kind,
+                    "cells": [[r, c] for (r, c) in cells],
+                    "owners": owners,
+                    "meeple_count_per_player": counts,
+                    "finished": finished,
+                    "points": points,
+                })
+
+        return _ok({"ok": True, "generation": s.generation, "features": out})
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def get_bag() -> str:
+    """What is still UNSEEN, per tile face — the bag viewer's data.
+
+    Strictly public information, and computed so that it cannot be anything else:
+    ``remaining = total_in_the_base_distribution - already_on_the_board - the tile in
+    hand``. ``state.deck`` is never read. That matters — the deck is a shuffled LIST,
+    so its contents in order are the future draws, and reading it would hand the player
+    knowledge the fair champion's determinizations deliberately do not have.
+
+    Faces are counted by ``tile.description``, the key ``base_tile_counts`` itself is
+    indexed by and the one field ``Tile.turn(n)`` preserves — so a rotated tile on the
+    board still counts against the face it came from.
+    """
+    try:
+        s = _require_session()
+        from wingedsheep.carcassonne.tile_sets.base_deck import (
+            base_tile_counts,
+            base_tiles,
+        )
+
+        state = s.board.state
+        placed: dict[str, int] = {}
+        for coord in state.placed_coords:
+            tile = state.board[coord.row][coord.column]
+            if tile is None:
+                continue
+            desc = str(getattr(tile, "description", ""))
+            placed[desc] = placed.get(desc, 0) + 1
+        # ONLY in the tile phase. The engine does not clear `next_tile` when a tile
+        # is played (`StateUpdater.play_tile`); it is replaced later, by `draw_tile`,
+        # at the END of the meeple sub-phase. So for the whole meeple phase the tile
+        # just placed is BOTH on the board and still "in hand", and subtracting it
+        # here as well would count it gone twice — the bag read one short of the deck
+        # for half of every turn. Same trap `GameState.tilesLeft` documents on the
+        # Kotlin side.
+        in_hand = (str(getattr(state.next_tile, "description", ""))
+                   if (state.next_tile is not None
+                       and state.phase == GamePhase.TILES) else None)
+
+        faces = []
+        total_remaining = 0
+        for desc, total in sorted(base_tile_counts.items()):
+            proto = base_tiles.get(desc)
+            gone = placed.get(desc, 0) + (1 if in_hand == desc else 0)
+            left = max(0, int(total) - int(gone))
+            total_remaining += left
+            faces.append({
+                "description": desc,
+                "image": getattr(proto, "image", None),
+                "remaining": left,
+                "total": int(total),
+            })
+
+        return _ok({"ok": True, "generation": s.generation, "faces": faces,
+                    "total_remaining": total_remaining,
+                    "in_hand": in_hand,
+                    "deck_remaining": int(len(state.deck))})
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))
 
@@ -1142,6 +1532,50 @@ def runtime_info() -> str:
             "spec": _spec_fingerprint(),
             "env": RESOLVED_ENV,
         })
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
+def debug_fast_forward(confirm: str = "", max_plies=600) -> str:
+    """DEBUG ONLY — play the current game out to termination, both seats.
+
+    Exists so a finished game can be reached in one call while testing the archive
+    and the end-of-game dialog; a real Instant game is ~150 taps. Reachable only from
+    the Debug console, and it additionally demands ``confirm`` be the exact token
+    below so no ordinary code path can trip it.
+
+    NOT a strength tool and never on the play path: the AI seat still uses the
+    session's real agent (``s.pick``), but the HUMAN seat just takes its first legal
+    action, so the resulting game is legal and replayable but the human side is
+    arbitrary. The action log stays a valid ``(deck_seed, actions)`` record, so the
+    archive entry it produces restores exactly like any other.
+    """
+    try:
+        s = _require_session()
+        if confirm != "yes-destroy-this-game":
+            return _err("not_confirmed",
+                        "debug_fast_forward needs confirm='yes-destroy-this-game'")
+        limit = int(max_plies)
+        plies = 0
+        while not s.board.state.is_terminated():
+            plies += 1
+            if plies > limit:
+                return _err("too_long", f"did not terminate within {limit} plies")
+            if int(s.board.state.current_player) == s.human_player:
+                legal = s.legal_ids()
+                if not legal:
+                    return _err("stuck", "no legal action for the human seat")
+                s.apply(legal[0])
+            else:
+                t0 = time.perf_counter()
+                idx = int(s.pick(s.board))
+                s.ai_elapsed.append({"ply": len(s.action_log),
+                                     "elapsed_s": round(time.perf_counter() - t0, 4)})
+                s.apply(idx)
+            s.auto_pass_forced()
+        out = _state_dict(s)
+        out["fast_forwarded"] = {"plies": plies}
+        return _ok(out)
     except Exception as exc:                      # noqa: BLE001
         return _err(type(exc).__name__, str(exc))
 

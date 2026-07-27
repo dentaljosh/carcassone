@@ -102,6 +102,21 @@ object CarcColors {
     val AiLastTile = Color(0xFFC43C3C)
     val BoardBackdrop = Color(0xFF1D2A22)
 
+    /**
+     * The ring around a farmer slot's diamond. Earth-toned rather than the white
+     * every other dot wears: shape alone was carrying the distinction, and at a
+     * whole-board fit a small rotated square and a small circle are the same
+     * handful of pixels.
+     */
+    val FarmerRing = Color(0xFF5A3E1B)
+
+    /**
+     * A feature the engine scores for BOTH seats (a meeple tie). Deliberately not a
+     * blend of the two player colours — a purple that is neither reads as "shared",
+     * where a mix reads as a rendering artefact of whichever colour won the pixel.
+     */
+    val Contested = Color(0xFF8E44AD)
+
     /** Engine `TerrainType.name` (uppercase) -> dot colour. */
     fun terrain(name: String): Color = when (name.uppercase()) {
         "CITY" -> City
