@@ -40,6 +40,17 @@ relaunches=0
 
 say() { echo "$(date '+%F %T') $*" >>"$LOG"; }
 
+# pgrep -f matches THIS script's own argv (PAT is in it) — a naive check reports
+# "workers alive" forever and never relaunches (found live 2026-07-28). Exclude
+# ourselves and our process group ancestors by pid.
+workers_alive() {
+  local p
+  for p in $(pgrep -f "$PAT" 2>/dev/null); do
+    [ "$p" = "$$" ] || [ "$p" = "$PPID" ] || return 0
+  done
+  return 1
+}
+
 count_records() { ls $GLOB 2>/dev/null | wc -l; }
 
 CELL_DIR="$(dirname "$GLOB")"   # dirname is a string op — glob chars in the basename are fine
@@ -60,7 +71,7 @@ while :; do
   sleep "$POLL"
   got="$(count_records)"
   if [ "$got" -ge "$N" ]; then say "DONE: $got/$N records"; exit 0; fi
-  if pgrep -f "$PAT" >/dev/null 2>&1; then
+  if workers_alive; then
     say "healthy: $got/$N records, workers alive"
     continue
   fi
