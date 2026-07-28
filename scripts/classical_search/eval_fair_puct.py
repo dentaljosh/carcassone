@@ -313,6 +313,7 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     make_sighted_net_value_fn,
 )
 from carcassonne_ai.mcts import DEFAULT_C, HeuristicMCTS  # noqa: E402
+from carcassonne_ai.rule_based_player import RuleBasedPlayer  # noqa: E402
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 
@@ -658,6 +659,32 @@ class _RungPrefix:
     def move(self, board) -> int:
         self._m.clear()
         return int(self._m.best_action(board))
+
+
+class _GreedyPrefix:
+    """tier1: the 1-ply RuleBasedPlayer — NO search, NO leaf, NO endgame handoff.
+
+    This is bit-for-bit the `greedy` rung the Level-2 ladder rated
+    (scripts/ladder_rung_eval.py::_GreedyAgent, leaf_name "v1_1ply"), which is what
+    makes a vs-greedy number here comparable to the *_vs_greedy_n200 rows in
+    experiments/results.csv. It owns its own Game only to resolve the legal mask
+    (RuleBasedPlayer.choose_action takes one); it never searches, so --rung-sims /
+    --opp-sims / --opp-k-dets are all inapplicable and are rejected in main().
+
+    PURPOSE: this rung is the DECK-LUCK FLOOR. A 1-ply player that still steals
+    games off the production champion is measuring variance the champion cannot
+    search away, not strength — read the loss fraction as a floor, not a gap.
+    """
+
+    leaf_name = "v1_1ply"
+
+    def __init__(self, game, seed):
+        self._game = game
+        self._p = RuleBasedPlayer(seed=seed)
+
+    def move(self, board) -> int:
+        mask = self._game.get_valid_moves(board)
+        return int(self._p.choose_action(self._game, board, mask))
 
 
 # --------------------------------------------------------------------------- #
@@ -1007,7 +1034,7 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
 # --------------------------------------------------------------------------- #
 # OPPONENT (--opponent) — the non-candidate seat.                              #
 # --------------------------------------------------------------------------- #
-OPPONENT_MODES = ("h800", "fair-champion", "net", "bare-net")
+OPPONENT_MODES = ("h800", "greedy", "fair-champion", "net", "bare-net")
 # _HEAD_TO_HEAD = the SYMMETRIC head-to-head modes: both sides are fair production
 # agents, both resolve curve125, both take the marginalized endgame at K, and both
 # ride the shared `champ_cfg_dict` search knobs. `bare-net` is DELIBERATELY NOT one
@@ -1018,6 +1045,11 @@ OPPONENT_MODES = ("h800", "fair-champion", "net", "bare-net")
 # the cell and destroy its meaning.
 _HEAD_TO_HEAD = ("fair-champion", "net")
 _BARE_NET = "bare-net"
+_GREEDY = "greedy"
+# LEAFLESS RUNGS = fixed reference opponents that are NOT production PIMC agents: no
+# determinizations, no per-det budget, no endgame tail, and (for greedy) no leaf at all.
+# Every manifest/summary field that is champion-shaped must be null for these.
+_LEAFLESS_RUNGS = ("h800", _GREEDY)
 # Opponent modes that need a checkpoint (--opp-net).
 _NET_OPPONENTS = ("net", _BARE_NET)
 
@@ -1057,6 +1089,12 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
     whole-config A/B like CL-060's k8x1376 candidate vs the k4x688 DEPLOY champion)
     rather than an equal-budget swap. None -> symmetric (uses `sims`/`k_dets`).
     """
+    if opponent == _GREEDY:
+        # tier1 / the L2 ladder's `greedy` rung. No budget knobs at all (rejected at the
+        # CLI); `seed + 1` keeps the two sides off a shared stream, as for every other
+        # opponent. No _MarginalizedHandoff wrapper — leafless and tail-less by design,
+        # the same shape the h800 rung has always had.
+        return _GreedyPrefix(Game(enable_legal_moves_cache=True), seed + 1)
     if opponent == "h800":
         # The h800 rung's budget is rung_sims; opp_sims/opp_k_dets are inapplicable here
         # (and are rejected for --opponent h800 in main()), so `sims`/`k_dets`/
@@ -1146,6 +1184,8 @@ def _opp_label(args, opp_rep=None):
     """Human label for the opponent side (summary header + manifest)."""
     if args.opponent == "h800":
         return f"HeuristicMCTS(h{args.rung_sims})"
+    if args.opponent == _GREEDY:
+        return "tier1 greedy (1-ply RuleBasedPlayer, no search, no leaf)"
     if args.opponent == _BARE_NET:
         rep = ("?" if opp_rep is None
                else ("sighted-rep" if opp_rep["sighted"] else "non-sighted-rep"))
@@ -1562,6 +1602,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
     solver_pergame = sum(r.champ_solver_secs for r in results) / n
     if opp_label is None:
         opp_label = (f"HeuristicMCTS(h{rung_sims})" if opponent == "h800"
+                     else "tier1 greedy (1-ply RuleBasedPlayer)" if opponent == _GREEDY
                      else f"{opponent}")
     print()
     print(f"=== FAIR-PUCT[{info}] (K={exact_k}, k_dets={k_dets}, sims={sims}, "
@@ -1740,6 +1781,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     print(f"[smoke] info={args.info} K={args.exact_k} k_dets={args.k_dets} sims={args.sims} "
           f"(total~{args.k_dets*args.sims}) | opponent={args.opponent}"
           + (f" (rung h{args.rung_sims} c{RUNG_C})" if args.opponent == "h800"
+             else " (tier1: 1-ply RuleBasedPlayer, no search)" if args.opponent == _GREEDY
              else f" (SIGHTED bare NeuralMCTS, sims={BARE_NET_SIMS} "
                   f"c_puct={BARE_NET_CPUCT:g}, bare)" if args.opponent == _BARE_NET
              else f" (k_dets={_opp_eff_k_dets(args)} sims={_opp_eff_sims(args)}, "
@@ -1800,7 +1842,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
         print(f"[smoke] a_seat={a_seat}: {s0}-{s1} diff(cand-opp)={diff:+d} moves={moves} | "
               f"cand prefix/exact={champ.prefix_moves}/{champ.exact_moves} "
               f"latch_k={champ.latch_k} solver={champ.solver_secs:.2f}s to={champ.n_timeouts}"
-              + ("" if args.opponent == "h800" else
+              + ("" if args.opponent in _LEAFLESS_RUNGS else
                  f" | opp prefix/exact={_os['opp_prefix_moves']}/{_os['opp_exact_moves']} "
                  f"latch_k={_os['opp_latch_k']} solver={_os['opp_solver_secs']:.2f}s "
                  f"to={_os['opp_timeouts']}"))
@@ -1883,7 +1925,14 @@ def main(argv=None) -> int:
     ap.add_argument("--opponent", choices=OPPONENT_MODES, default="h800",
                     help="WHO the candidate plays. h800 (DEFAULT, byte-unchanged) = the fixed "
                          "CL-022 HeuristicMCTS rung @ --rung-sims on the curve100 ruler leaf; "
-                         "every pre-existing arm/result is an h800 result. fair-champion = a "
+                         "every pre-existing arm/result is an h800 result. greedy = tier1, the "
+                         "1-ply RuleBasedPlayer (== the L2 ladder's `greedy` rung, so the "
+                         "number is comparable to the *_vs_greedy_n200 rows) — the DECK-LUCK "
+                         "FLOOR cell: it measures what a searchless player still steals from "
+                         "the champion on deck variance alone, so read the champion's non-win "
+                         "fraction as a floor, NOT a strength gap. Unlike the h800 path the "
+                         "candidate resolves curve125 here (it must be the SHIPPED champion); "
+                         "the greedy side is leafless so nothing can leak. fair-champion = a "
                          "DIRECT head-to-head vs the PRODUCTION champion (FairHeuristicPriorAgent, "
                          "heuristic softmax priors, curve125 leaf, same budget/machinery) — with "
                          "--info fair-netprior this is the pure PRIOR-SWAP 'did the distillation "
@@ -2112,6 +2161,10 @@ def main(argv=None) -> int:
             ap.error("--opp-sims applies to a head-to-head opponent "
                      "(--opponent fair-champion / net); the h800 rung's budget is "
                      "--rung-sims. Use --rung-sims for the h800 rung.")
+        if args.opponent == _GREEDY:
+            ap.error("--opp-sims applies to a head-to-head opponent "
+                     "(--opponent fair-champion / net); the greedy rung is a 1-ply "
+                     "RuleBasedPlayer with NO search budget at all.")
     if args.opp_k_dets is not None:
         if args.opp_k_dets < 1:
             ap.error("--opp-k-dets must be >= 1")
@@ -2122,6 +2175,10 @@ def main(argv=None) -> int:
             ap.error("--opp-k-dets applies to a head-to-head opponent "
                      "(--opponent fair-champion / net); the h800 rung is not a PIMC "
                      "agent (no determinizations) and its budget is --rung-sims.")
+        if args.opponent == _GREEDY:
+            ap.error("--opp-k-dets applies to a head-to-head opponent "
+                     "(--opponent fair-champion / net); the greedy rung is a 1-ply "
+                     "RuleBasedPlayer (no determinizations, no search).")
     if args.opponent in _NET_OPPONENTS and not args.opp_net:
         ap.error(f"--opponent {args.opponent} requires --opp-net <checkpoint>")
     if args.opp_net and args.opponent not in _NET_OPPONENTS:
@@ -2209,13 +2266,20 @@ def main(argv=None) -> int:
     opp_leaf_prov = None
     _h2h = args.opponent in _HEAD_TO_HEAD
     _bare_net = args.opponent == _BARE_NET
+    # --opponent greedy: the CANDIDATE must be the SHIPPED champion (curve125 per
+    # governance/PRODUCTION.yaml), because this cell's whole claim is "what the
+    # production agent drops to a 1-ply player". The opponent is LEAFLESS (a rule-based
+    # 1-ply player evaluates no leaf at all), so there is no opponent-side injection and
+    # no leak risk. NB this deliberately differs from the h800 default path, which keeps
+    # the candidate on curve100 so it matches the frozen CL-022 ruler cells.
+    _greedy = args.opponent == _GREEDY
     # The curve125 candidate injection fires for the fair-netprior arm (the net was
     # distilled against curve125), for any SYMMETRIC head-to-head (both sides are
     # production agents, so both must be the shipped curve125 champion leaf), AND for
     # --opponent bare-net — where it fires on the CANDIDATE ONLY, because that side is
     # the shipped production champion while the opponent must stay on the curve100
     # anchor leaf (see the BLIND vs SIGHTED block; the two leaves DIFFER by design).
-    if args.info == "fair-netprior" or _h2h or _bare_net:
+    if args.info == "fair-netprior" or _h2h or _bare_net or _greedy:
         if not _h2h:
             # The rung is the ruler ONLY when there IS a rung. Head-to-head has no rung,
             # so this assert is skipped there — but the curve125 asserts below are
@@ -2287,6 +2351,17 @@ def main(argv=None) -> int:
                   f"{'YES' if opp_leaf_prov['leaf_hash'] == netprior_leaf_prov['leaf_hash'] else 'NO'}"
                   f" | env DEFAULT_CONFIG (unmoved, no rung in play) "
                   f"leaf_hash={_leaf_hash(DEFAULT_CONFIG)}", flush=True)
+        elif _greedy:
+            print(f"[greedy] ⚠️ DECK-LUCK FLOOR cell: the PRODUCTION champion vs the "
+                  f"1-ply RuleBasedPlayer (tier1). Read the champion's non-win fraction "
+                  f"as the floor deck luck imposes, NOT as a strength gap.\n"
+                  f"[greedy] candidate frozen leaf: curve125 "
+                  f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
+                  f"frozen_config_hash="
+                  f"{netprior_leaf_prov['frozen_config_hash_champ_dialect']} (champ_env dialect)\n"
+                  f"[greedy] opponent: LEAFLESS 1-ply RuleBasedPlayer (no search, no "
+                  f"leaf, no exact tail) | env DEFAULT_CONFIG (unmoved) "
+                  f"leaf_hash={rung_ruler_hash}", flush=True)
         else:
             print(f"[fair-netprior] candidate frozen leaf: curve125 "
                   f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
@@ -2411,6 +2486,8 @@ def main(argv=None) -> int:
     # h800 tag is unchanged.
     if args.opponent == "h800":
         _vs = f"vs_h{args.rung_sims}"
+    elif args.opponent == _GREEDY:
+        _vs = "vs_greedy"
     elif args.opponent == "fair-champion":
         _vs = "vs_fairchamp"
     elif args.opponent == _BARE_NET:
@@ -2548,14 +2625,21 @@ def main(argv=None) -> int:
             "mode": args.opponent,
             "label": opp_label,
             "agent": ("HeuristicMCTS" if args.opponent == "h800" else
+                      "RuleBasedPlayer (1-ply greedy, tier1; == the L2 ladder's "
+                      "`greedy` rung, scripts/ladder_rung_eval.py::_GreedyAgent)"
+                      if args.opponent == _GREEDY else
                       "FairHeuristicPriorAgent" if args.opponent == "fair-champion" else
                       "FairHeuristicPriorAgent + distilled net POLICY priors "
                       "(frozen curve125 champion leaf value; severed value loop)"),
             "priors_source": ("random_expansion_uct (no priors)" if args.opponent == "h800"
+                              else "none (no search: 1-ply hand-coded rules)"
+                              if args.opponent == _GREEDY
                               else "net_policy_head" if args.opponent == "net"
                               else "heuristic_softmax_dleaf_tau"),
             "value_source": ("v2.9 curve100 heuristic leaf (DEFAULT_CONFIG ruler)"
-                             if args.opponent == "h800" else "frozen_v29_curve125_leaf"),
+                             if args.opponent == "h800"
+                             else "none (leafless: 1-ply rule ordering, no evaluation)"
+                             if args.opponent == _GREEDY else "frozen_v29_curve125_leaf"),
             "net": (args.opp_net if args.opponent == "net" else None),
             "rep": ((("sighted" if opp_rep["sighted"] else "non-sighted"))
                     if opp_rep else None),
@@ -2578,30 +2662,41 @@ def main(argv=None) -> int:
             "sims": (args.rung_sims if args.opponent == "h800" else None),
             # the OPPONENT's determinization count: --opp-k-dets when asymmetric, else the
             # shared --k-dets (== args.k_dets, byte-identical when --opp-k-dets is unset).
-            "k_dets": (None if args.opponent == "h800" else opp_eff_k_dets),
+            "k_dets": (None if args.opponent in _LEAFLESS_RUNGS else opp_eff_k_dets),
             # the OPPONENT's per-det budget: --opp-sims when asymmetric, else the shared
             # --sims (== args.sims, byte-identical to today when --opp-sims is unset).
-            "sims_per_det": (None if args.opponent == "h800" else opp_eff_sims),
-            "total_sims": (None if args.opponent == "h800"
+            "sims_per_det": (None if args.opponent in _LEAFLESS_RUNGS else opp_eff_sims),
+            "total_sims": (None if args.opponent in _LEAFLESS_RUNGS
                            else opp_eff_k_dets * opp_eff_sims),
-            "endgame": (None if args.opponent == "h800"
+            "endgame": (None if args.opponent in _LEAFLESS_RUNGS
                         else {"mode": "marginalized", "exact_k": args.exact_k,
                               "exact_budget": EXACT_BUDGET}),
             "leaf": (f"v2.9 Bmild_cap8 (DEFAULT_CONFIG, leaf{_leaf_hash(rung_leaf_cfg)[:8]})"
                      if args.opponent == "h800"
+                     else "none (LEAFLESS: the 1-ply RuleBasedPlayer evaluates no leaf)"
+                     if args.opponent == _GREEDY
                      else f"FROZEN v2.9 curve125 production champion leaf, auto-injected "
                           f"in-process (leaf{_leaf_hash(opp_leaf_cfg)[:8]})"),
             "leaf_hash": (_leaf_hash(rung_leaf_cfg) if args.opponent == "h800"
+                          else None if args.opponent == _GREEDY
                           else _leaf_hash(opp_leaf_cfg)),
             "leaf_cfg": (_leaf_dict(rung_leaf_cfg) if args.opponent == "h800"
+                         else None if args.opponent == _GREEDY
                          else _leaf_dict(opp_leaf_cfg)),
             "curve125_leaf_provenance": opp_leaf_prov,
-            "champ_cfg": (None if args.opponent == "h800" else champ_cfg_dict),
+            "champ_cfg": (None if args.opponent in _LEAFLESS_RUNGS else champ_cfg_dict),
             "production_config_deviations": (_prod_deviations(args, sims_override=opp_eff_sims,
                                                               k_dets_override=opp_eff_k_dets)
                                              if args.opponent in _HEAD_TO_HEAD else None),
             "provenance": ("CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"
                            if args.opponent == "h800"
+                           else "the Level-2 ladder's `greedy` rung (RuleBasedPlayer, "
+                                "1-ply, leaf v1_1ply) — bit-for-bit the opponent in the "
+                                "*_vs_greedy_n200 rows of experiments/results.csv, which "
+                                "is what makes this cell comparable to them. DECK-LUCK "
+                                "FLOOR cell: the champion's non-win fraction here is a "
+                                "variance floor, not a strength gap."
+                           if args.opponent == _GREEDY
                            else "governance/PRODUCTION.yaml champion config; both sides "
                                 "share every search knob (single-variable swap)"),
         },
