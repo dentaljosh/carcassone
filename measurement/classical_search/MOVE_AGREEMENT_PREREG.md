@@ -1,0 +1,291 @@
+# PRE-REGISTRATION — move agreement vs search budget (does the champion's move converge?)
+
+> **PRE-REGISTERED 2026-07-27, BEFORE ANY RESULT EXISTED.** Nothing above the Results
+> section may be edited once results land; corrections go in a dated Results section.
+> The read-out code (`scripts/measurement_infra/analyze_move_agreement.py`) is committed
+> in the same commit as this document, so the metric definitions are fixed in advance too.
+>
+> **STATUS: LAUNCHED 2026-07-27 — RUNNING, NO RESULTS YET.**
+
+## Why
+
+The blind budget curve (7 rungs, n=200 deck-paired each, band 70e9, candidate = the
+classical champion at fixed `k_dets=4`, opponent = sighted RoD-v2 iter_02) rises steeply
+to ~2064 sims and then goes **FLAT**. Every deck-matched step above 2752 is null on
+**both** pre-registered statistics:
+
+| step | wr z | margin z |
+|---|---:|---:|
+| 2752 − 2064 | +1.00 | −0.30 |
+| 5504 − 2752 | −0.92 | −0.27 |
+| 11008 − 5504 | +0.39 | +1.51 |
+
+Two hypotheses explain that flatness and **no game-playing experiment against RoD2 can
+separate them**, because both predict the same scoreline:
+
+- **H1 GENUINE CONVERGENCE** — above ~2064 the search stops changing its chosen move, so
+  extra sims cannot buy strength. The flatness is a property of the **agent**.
+- **H2 INSTRUMENT COMPRESSION** — the champion keeps improving, but RoD-v2 iter_02 (a
+  ~h3200-tier yardstick) is too weak to register it; elo against a fixed opponent
+  flattens near the ceiling regardless. The flatness is a property of the **ruler**.
+
+**H1 is directly measurable with no opponent at all**: does the FINAL SELECTED ACTION stop
+changing as budget grows? This probe measures exactly that. It is diagnostic, not a lever.
+
+## The design point the whole probe rests on — the same-budget noise floor
+
+`FairHeuristicPriorAgent` is **stochastic**: it samples `k_dets` determinizations per move
+(blind PIMC), so two runs at the SAME budget with different RNG disagree at some nonzero
+rate. **A raw cross-budget disagreement number is therefore uninterpretable on its own**,
+and this is built in from the start rather than bolted on.
+
+The seed derivation makes two cleanly separated contrasts available:
+
+```
+det_seed_base(move_idx) = (seed*1_000_003 + move_idx*8191) & 0x7FFFFFFF
+det_search_seed(move_idx, i) = det_seed_base(move_idx) + 100 + i
+```
+
+Neither depends on the sim budget. So **at a fixed agent seed, an agent at ANY budget draws
+the SAME `k_dets` worlds with the SAME per-world search seeds.** Each root is therefore run
+under **R = 3 independent seed lineages ("salts")**, giving, for position `i`, level `L`,
+salt `s`, the deployed pick `a_i(L,s)`:
+
+| statistic | definition | what it isolates |
+|---|---|---|
+| **D_paired(L1,L2)** | `E_i [ mean_s 1{a_i(L1,s) ≠ a_i(L2,s)} ]` | same salt ⇒ same worlds and seeds; **only depth varies**. Its same-budget null is **exactly 0** (a salt replayed at its own budget is bit-identical). Maximum power to detect "depth changes the move at all". |
+| **D_same(L)** | `E_i [ mean_{s<s'} 1{a_i(L,s) ≠ a_i(L,s')} ]` | **THE NOISE FLOOR** — the agent's own run-to-run churn from resampled determinizations. |
+| **D_cross(L1,L2)** | `E_i [ mean_{s≠s'} 1{a_i(L1,s) ≠ a_i(L2,s')} ]` | different budget AND different seed — **matched to the floor** (both vary worlds), so the comparison is apples-to-apples. |
+
+⚠️ D_paired and D_same are **not** directly comparable (one holds worlds fixed, the other
+does not). Comparing them would bias toward "converged". The matched contrast is D_cross
+against the floor, via an exact null: if the per-position move *distributions* at L1 and L2
+are identical (budget changed nothing about what the agent plays), then for independent
+reseeds `D_cross = 1 − Σ_a p_a q_a` with `p ≡ q`, so
+
+```
+D_cross_null(L1,L2) = 1 − sqrt( (1 − D_same(L1)) · (1 − D_same(L2)) )
+Delta(L1,L2)        = D_cross(L1,L2) − D_cross_null(L1,L2)
+```
+
+(the Cauchy–Schwarz equality case). **`Delta` is the decision-bearing quantity.** CI by
+**position-level bootstrap**, B = 10 000 (positions are the independent unit; all salts and
+levels within a position resample together). Bootstrap seed 20260727.
+
+## Budgets
+
+Fixed `k_dets = 4` — the clean axis from the curve. Seven **per-world** sim levels, whose
+totals are the curve's seven rungs:
+
+| per-world sims | 86 | 172 | 344 | 516 | 688 | 1376 | 2752 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **total budget** | 344 | 688 | 1376 | 2064 | **2752** *(deploy)* | 5504 | 11008 |
+
+The task named 688/1376/2752/5504/11008; **2064 and 344 are included because they are free**
+(see below) and 2064 is where the curve's knee sits. Reported pairs: every adjacent pair,
+every level vs the deepest, and the floor at every level.
+
+## Positions — the sampling frame
+
+**Source: `measurement/champ_action_logs/champ_games.jsonl`** — 449 complete
+`FairHeuristicPriorAgent` self-play games at **exactly the deploy budget** (k4×688 = 2752,
+exact-K≤2, leaf `v2_9_2_Bmild_cap8_curve125`, runtime hash `6dfffd57051690f2`), seed band
+28e9, each carrying the full `(deck_seed, actions)` action log. Round-trip proven lossless
+(`CORPUS_MANIFEST.json`: 25 full-game replays + 1448 per-ply `string_representation`
+comparisons, 0 mismatches). These are **realistic in-play positions from the champion's own
+distribution**, which is the requirement.
+
+⚠️ **The blind-curve game records CANNOT be used for this.** They were checked first: their
+`moves` field is an integer **count** (e.g. `144`), not an action sequence — the records
+carry `seed`, `deck_hash`, `a_seat`, scores and timings only. There is no way to replay them
+to an arbitrary position. The champion action-log corpus is the correct and available frame.
+
+**Census** (deterministic, no search): all 449 games replayed ply-by-ply → **64 610 plies**,
+of which **57 675 (89.3%)** are eligible.
+
+- **Eligibility:** `n_legal ≥ 2`. Forced moves are excluded because `_pimc_move`
+  short-circuits them without searching at all — they are trivially in agreement at every
+  budget and would dilute the headline.
+- **Sample:** **n = 1000** roots, uniform without replacement over eligible plies,
+  **max 2 per game** (bounds within-game correlation), **sampling seed 20260727**.
+- Roots are consumed via the measurement-infra lossless `(deck_seed, action_sequence, ply)`
+  contract (`root_replay.replay_actions`), with a per-root `string_representation` checksum
+  verified at both sample time and probe time.
+
+**Exclusions at read-out (pre-registered):** records with `ok != True`; `n_legal < 2`;
+and **`solver_region`** roots — `choose_action` latches to the marginalized exact solver at
+`k_remaining ≤ exact_max_k = 2` and stays latched, so those decisions are budget-independent
+*by construction* and would inflate agreement for an uninteresting reason. They are counted
+and reported separately, never silently pooled.
+
+## Stratification
+
+Agreement pooled over trivial positions would hide the effect, so two strata are registered
+in advance.
+
+1. **Decision criticality — PRIMARY stratifier: `h200_top2_q_gap`**, the measurement-infra
+   standard tag (`scripts/measurement_infra/tagging.py`): `HeuristicMCTS(200)`'s top-2
+   backed-up Q gap, **median split** over the analysed positions. It is deliberately
+   **exogenous** — a different search family (random-expansion UCT) and clairvoyant (it sees
+   the true deck), so it cannot be a restatement of the fair-PIMC quantity whose stability is
+   being measured. It is a position descriptor and is **never shown to the agent under test**.
+   **SECONDARY / robustness: `blind_top2_q_gap`** — a blind fair-PIMC k4×86 (total 344)
+   pooled top-2 Q gap computed on a **dedicated tag seed lineage (salt 9000/9001), disjoint
+   from the probe salts 1–3**, so it is independent of the picks it stratifies. Both are
+   recorded; the primary is fixed here and cannot be swapped after seeing results.
+   **If budget matters anywhere it is in the narrow-gap stratum**, and that is where the
+   headline must be read.
+2. **Game phase** — fixed cut points on `k_remaining` (undrawn deck + tile in hand), NOT
+   sample quantiles, so boundaries cannot drift: **early ≥ 48, mid 24–47, late < 24**
+   (base deck is 72 tiles). Reported additionally split by engine phase (TILES vs MEEPLES).
+
+## Infra note — the snapshot claim was VERIFIED, not assumed
+
+`scripts/measurement_infra/` advertises multi-depth snapshot search ("one deep search → all
+sim levels, bit-exact"). **That guarantee is written for the clairvoyant `HeuristicMCTS`
+path and does NOT automatically cover per-determinization fair PIMC.** It was therefore
+re-established for this agent rather than inherited, and is proven per run by two flags:
+
+- `--verify-bit-exact` — re-runs every world standalone at every level and asserts the visit
+  vectors equal the snapshot. Bit-exactness holds **within a world** (each world is an
+  ordinary serial `NeuralMCTS` on its own fixed reshuffled board with its own fixed seed);
+  it is not claimed across worlds, and does not need to be, because a fixed salt draws the
+  same worlds at every level.
+- `--verify-agent-parity` — runs the **real** `FairHeuristicPriorAgent._pimc_move` at the
+  deepest budget and asserts it returns the action the harness reports as the deepest
+  level's deployed pick. This is the strongest available check: it proves the harness
+  reproduces the **deployed decision**, not merely a plausible one.
+
+**Pre-launch smoke (throwaway sampling seed 999999, disjoint from the real seed; discarded
+and not part of the sample): 5/5 roots passed BOTH checks — `BE=True`, `PARITY=True` at all
+seven levels × four worlds.** The full run re-verifies on a subset.
+
+Because the claim holds, the whole 7-rung ladder costs what its **deepest rung alone** would
+(k_dets searches per salt, not k_dets × n_levels).
+
+## Decision rule
+
+**PRIMARY: `q_argmax_action` = `pooled_q_argmax`** (pooled Q = ΣW/ΣN, `min_pooled_visits`
+floor, (Q,N,−a) tiebreak) — **this is the deployed fair pick.** `played_action` (argmax
+pooled visits) is recorded too and **both are reported**; quoting only whichever is more
+flattering is how three findings in this project were later overturned.
+
+## Read-out rules and what each outcome MEANS (pre-registered)
+
+Headline is read on **`D_paired(2752, 11008)`** and **`Delta(2752, 11008)`**, both overall
+and **in the narrow-gap stratum**, with every pair reported.
+
+1. **SUPPORTS H1 — GENUINE CONVERGENCE.** `D_paired(2752,11008) ≤ 0.05` **and**
+   `Delta(2752,11008)`'s 95% CI covers 0, **and both hold in the narrow-gap stratum.**
+   ⇒ Above deploy the agent is choosing the same move; extra sims cannot buy strength; the
+   flat curve is a property of the agent, and budget is a **closed lever** — consistent with
+   the Pareto curve's "everything you can spend is already spent".
+2. **SUPPORTS H2 — INSTRUMENT COMPRESSION.** `D_paired(2752,11008) ≥ 0.10` **or**
+   `Delta(2752,11008) > 0` with a 95% CI excluding 0 — especially in the narrow-gap stratum.
+   ⇒ The move is still changing with budget, so the flat curve is telling us about our
+   **ruler**, not our agent. The consequence is a **measurement** action (a stronger,
+   non-saturated reference is required to price budget above 2752), not a strength claim.
+3. **H1-WEAK / INDIFFERENCE — a distinct, named outcome, registered so it cannot be spun
+   either way.** `D_paired(2752,11008)` is clearly > 0 **but** `Delta(2752,11008)` ≈ 0
+   (CI covers 0). ⇒ Depth changes the move, but **no more than a reseed does**: the extra
+   compute is churning among moves the agent treats as interchangeable rather than
+   concentrating on a distinguished one. This is evidence *for* the weak form of H1 (budget
+   is not converging on something new) but it does **not** rule out that the churned-to moves
+   are systematically better. If this is the outcome, say so plainly; do not report it as
+   either 1 or 2.
+4. Report the **absolute** disagreement levels, not only the contrasts — a floor of 0.02 and
+   a floor of 0.40 imply very different things about the agent even at the same `Delta`.
+5. **Both decision rules, every pair, both strata, and the excluded-root counts** are
+   reported regardless of which way the headline goes.
+
+### ⚠️ What this probe does NOT measure (registered to prevent over-claiming)
+
+**Agreement is stability, not quality.** This measures whether the move *changes*, never
+whether it is *better*. A converged agent can be converged on a mistake — which is exactly
+the standing project thesis that the hand-crafted leaf eval caps learned strength by
+construction. So an H1 result establishes **"budget is not the lever"**, and specifically
+does **NOT** establish that the champion is at its strength ceiling, nor that the leaf,
+width, or any other axis is exhausted.
+
+## Validity guards — the probe is INVALID, not merely negative, if any fire
+
+- **The floor swallows the signal.** If `D_same ≥ 0.5` at either of the top two budgets, the
+  deployed pick is near a coin-flip among several moves under reseeding, `D_cross` saturates,
+  and `Delta` loses the power to resolve anything. Then the argmax metric is the wrong
+  instrument and the result is reported as **INVALID / unresolvable** — not as convergence.
+  (This is the failure mode the task flagged, and it is a real possibility for a PIMC agent.)
+- Any `--verify-bit-exact` root reporting `BE=False`, or any `--verify-agent-parity` root
+  reporting `PARITY=False`.
+- `> 2%` of records failing (`ok != True`), or any `wall_hit`.
+- `< 80%` of sampled positions ending with ≥ 2 complete salts (the floor needs pairs).
+- Any record whose `checksum_ok` is false (replay drift).
+- `fair_agent` / `mcts` resolving outside the pinned source root (the harness asserts this at
+  startup via `CARC_REQUIRE_SRC_ROOT` and records `__file__` in the manifest).
+- The stratifier failing to separate — if narrow- and wide-gap floors are indistinguishable,
+  the criticality split is uninformative and must be reported as such rather than leaned on.
+
+## Nothing is promoted
+
+This is a **diagnostic**, not a lever. `governance/PRODUCTION.yaml` and the champion are
+**untouched** whatever the result. No configuration change follows from this run on its own;
+under outcome 2 the follow-up is a measurement build (a stronger reference), and under
+outcome 1 or 3 the follow-up is to stop pricing budget and move the search elsewhere.
+
+## Code provenance — how "the same agent the curve measured" is guaranteed
+
+The blind curve was produced at commit **c72053a**. Both boxes run source verified
+byte-identical to it:
+
+- **Local**: the pinned worktree `/home/doctor/projects/carc-pinned-c72053a`
+  (`.venv` + `rust/carc-orch/target` symlinked, Cython `.so` copied in), reached via
+  `CARC_SRC_ROOT`, with `CARC_REQUIRE_SRC_ROOT` asserting at startup that
+  `carcassonne_ai.fair_agent.__file__` and `carcassonne_ai.mcts.__file__` resolve inside it.
+- **Laptop**: its main tree is *already checked out at c72053a* (`HEAD=c72053ab8`, clean on
+  `src/` and `engine/`), so it needs no worktree.
+- **Verified, not assumed:** `fair_agent.py` / `mcts.py` / `champion_factory.py` /
+  `heuristic_prior_mcts.py` md5-match across the two boxes, and the git tree hashes agree —
+  `HEAD:src = 3cdae219feebe9c6719ea5cca88070187cf7f726`,
+  `HEAD:engine = 54182632722e34081bdcd230f01e5816a7688dfc`.
+
+The three harness scripts are new (they do not exist at c72053a) and are committed on the
+working branch; on the laptop they are dropped in as **untracked** files so the tracked
+c72053a tree is not disturbed. They import the agent through `champion_factory`, never a
+hand-rolled config.
+
+⚠️ Another session was editing `fair_agent` / `mcts` / `champion_factory` /
+`heuristic_prior_mcts` / `eval_fair_puct.py` in the **main** tree today (an `--intra-reuse`
+feature). Checked rather than trusted: `git status` shows `src/` clean and `git diff --stat`
+empty, and the pinned tree has no `_intra_reuse` at all. The harness additionally **refuses
+to run** if the constructed agent reports `_meeple_dedup` or `_intra_reuse` enabled, because
+this harness mirrors the pinned `_pimc_move` and would silently diverge from a knob it does
+not model.
+
+## Operational
+
+Pure CPU — the champion is classical: **no net, no GPU, no carc-orch, no OMP-pin concern**.
+All workers `nice -n 19`, all runs `setsid nohup … & disown`.
+
+**Work-stealing across both boxes** on the share via atomic `O_EXCL` `.claim` files
+(`/mnt/c/carc-shared` locally, `/mnt/carc-shared` on the laptop), one record per
+(root, salt), fully resumable.
+
+⚠️ If the run is killed, **clean stranded `.claim` files before resuming**
+(`--clean-stale-claims`) — a killed shared-claim run otherwise stalls a resume forever.
+
+**Jobs:** 1000 roots × 3 salts = **3000 records**.
+
+**ETA — benched, not extrapolated.** A 16-job smoke at production knobs (W16 local, all
+seven levels, k4×2752 deepest) measured **mean 21.2 s/job** ⇒ steady-state **≈ 2 700 jobs/h
+local at W16**. The laptop (12C/24T, W10) is unbenched for this workload and is expected to
+add roughly 1 000–1 500 jobs/h. Combined **≈ 3 700–4 200 jobs/h ⇒ ~45 min**; local-only
+fallback ≈ **1.1 h**. Both are comfortably inside one sitting, and the run is resumable, so
+a laptop shortfall costs wall-clock only.
+
+Cost is dominated by the deepest rung: the snapshot means the seven-rung ladder costs what
+11008 alone would, i.e. ~7× cheaper than running each level standalone.
+
+---
+
+# Results
+
+*(none yet — the run was launched after this document was committed)*
