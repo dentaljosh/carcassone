@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 # C3-INTRA (within-turn tree carry, tile -> meeple) — SCREEN, SYMMETRIC head-to-head.
 #
-# ⚠️⚠️ BAND IS A REQUIRED ARGUMENT AND YOU MUST ENUMERATE experiments/results.csv FIRST.
+# STATUS 2026-07-28: RUN (band 74e9, n=200 paired per cell) — screen is INCONCLUSIVE-POSITIVE:
+# k4x688 (the DEPLOY budget) +40.1 elo / z +1.62 with the deck-paired margin agreeing in sign
+# (+1.650 pts/deck, z +1.32) at measured ms-ratio 0.994x (candidate marginally CHEAPER, so the
+# header's "more work per turn" confound is empirically discharged); k4x344 flat (−5.2, z −0.21).
+# No cell clears the 2σ screen bar; the effect GROWS with depth (anti-washout). Winner's-curse
+# suspect — 2× compute buys only +12.2 elo (CL-068). A k4x688 n=600 deck-paired confirm on a
+# FRESH band is FUNDED (band 78e9 claimed in /mnt/c/carc-shared/BAND_CLAIMS.txt). NOT promoted.
+# See measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md; results.csv
+# intrareuse_k4x344_screen / intrareuse_k4x688_screen; LEVER_INDEX 'within-turn tree carry'.
+#
+# ⚠️⚠️ BAND IS A REQUIRED ARGUMENT AND YOU MUST ENUMERATE THE BURNED BANDS FIRST.
 # ⚠️⚠️ Many CRN bands are already burned, and ANOTHER THREAD IS BURNING MORE RIGHT NOW.
 # ⚠️⚠️ Re-using a band that this candidate (or its opponent) has already played makes the
 # ⚠️⚠️ result a re-read of old noise, not a new measurement. Before launching:
-# ⚠️⚠️     grep -o 'seed_start[^,]*' experiments/results.csv | sort -u
-# ⚠️⚠️     grep -rl '"seed_start"' /mnt/c/carc-shared/*/manifest.json | xargs grep -h seed_start | sort -u
-# ⚠️⚠️ then pick a band NOBODY has used and record your claim on it before you start.
+# ⚠️⚠️ ⛔ DO NOT grep experiments/results.csv for seed_start — it HAS NO BAND COLUMN and the
+# ⚠️⚠️ grep silently returns NOTHING (bands live only in prose in the `note` field), which
+# ⚠️⚠️ reads as "no bands burned". The share manifests are the enumeration surface:
+# ⚠️⚠️     grep -h seed_start /mnt/c/carc-shared/*/manifest.json /mnt/c/carc-shared/*/*/manifest.json | sort -u
+# ⚠️⚠️     cat /mnt/c/carc-shared/BAND_CLAIMS.txt          # bands claimed but not yet written
+# ⚠️⚠️ then pick a band NOBODY has used and append your claim to BAND_CLAIMS.txt before you start.
 #
 # ⚠️⚠️ READ-OUT CAVEAT — THIS SCREEN CANNOT BE READ AS A STRENGTH RESULT ON ITS OWN.
 # ⚠️⚠️ At equal NOMINAL sims the ON candidate does MORE total work per turn: its meeple

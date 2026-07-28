@@ -1,0 +1,38 @@
+=== intra-reuse-screen k_dets=4 (sims/det=344 total=1376) W=4 band=74000000000 n=200 12:54:33 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[warn] --opponent fair-champion: the search config deviates from governance/PRODUCTION.yaml (sims=344 (production 688)). BOTH sides use these values, so the swap stays single-variable, but the opponent is NOT the shipped production champion — do not report this cell as 'vs production'.
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s344_vs_fairchamp_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=344 | 200 cached, 0 to play, 4 workers, out=/mnt/c/carc-shared/intrareuse_k4x344_tot1376_vs_champ_off_b74000000000
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=344, total~1376) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x344) ===
+games: 200   candidate: 96W / 5D / 99L   winrate 0.492 (z=-0.21)
+avg score diff (candidate - opponent): +0.80
+ELO: -5.2  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +0.80   z = +0.72
+prefix ms/move: candidate 1963  opponent 1916  (ratio 1.02x)
+fair endgame: candidate latched 200/200 games, 21.79s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 23.17s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/intrareuse_k4x344_tot1376_vs_champ_off_b74000000000/summary.json
+=== cell k4x344 DONE rc=0 12:54:35 ===
+=== intra-reuse-screen k_dets=4 (sims/det=688 total=2752) W=4 band=74000000000 n=200 12:54:35 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s688_vs_fairchamp_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=4 sims=688 | 199 cached, 1 to play, 4 workers, out=/mnt/c/carc-shared/intrareuse_k4x688_tot2752_vs_champ_off_b74000000000
+  1/1 played (554.6s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=688, total~2752) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k4x688) ===
+games: 200   candidate: 109W / 5D / 86L   winrate 0.557 (z=+1.63)
+avg score diff (candidate - opponent): +1.65
+ELO: +40.1  (+/- 24.7 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +1.65   z = +1.32
+prefix ms/move: candidate 3795  opponent 3819  (ratio 0.99x)
+fair endgame: candidate latched 200/200 games, 22.19s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 18.07s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/intrareuse_k4x688_tot2752_vs_champ_off_b74000000000/summary.json
+=== cell k4x688 DONE rc=0 13:03:51 ===
+=== intra-reuse-screen ALL CELLS DONE W=4 band=74000000000 13:03:51 ===

@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 # MEEPLE-DEDUP — SCREEN (cheap-first), SYMMETRIC head-to-head.
 #
-# ⚠️⚠️ BAND IS A REQUIRED ARGUMENT AND YOU MUST ENUMERATE experiments/results.csv FIRST.
+# STATUS 2026-07-28: RUN (band 72e9, n=200 paired per cell) — VERDICT: the lever is KILLED at
+# screen. k4x172 (deploy width) is dead flat −1.7 elo / z −0.07; k2x172's +41.9 elo (z +1.69) is
+# contradicted by its own deck-paired margin (+0.500 pts/deck, z +0.48) = a win-rate noise
+# signature. Cost-neutral (ms-ratio 0.999x / 1.010x), so no wall-clock story rescues it. The
+# deploy-budget confirm is NOT funded. See measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md;
+# results.csv meepledup_k2x172_screen / meepledup_k4x172_screen; docs/LEVER_INDEX.md 'action-space dedup'.
+#
+# ⚠️⚠️ BAND IS A REQUIRED ARGUMENT AND YOU MUST ENUMERATE THE BURNED BANDS FIRST.
 # ⚠️⚠️ Many CRN bands are already burned, and ANOTHER THREAD IS BURNING MORE RIGHT NOW.
 # ⚠️⚠️ Re-using a band that this candidate (or its opponent) has already played makes the
 # ⚠️⚠️ result a re-read of old noise, not a new measurement. Before launching:
-# ⚠️⚠️     grep -o 'seed_start[^,]*' experiments/results.csv | sort -u
-# ⚠️⚠️     grep -rl '"seed_start"' /mnt/c/carc-shared/*/manifest.json | xargs grep -h seed_start | sort -u
-# ⚠️⚠️ then pick a band NOBODY has used and record your claim on it before you start.
+# ⚠️⚠️ ⛔ DO NOT grep experiments/results.csv for seed_start — it HAS NO BAND COLUMN and the
+# ⚠️⚠️ grep silently returns NOTHING (bands live only in prose in the `note` field), which
+# ⚠️⚠️ reads as "no bands burned". The share manifests are the enumeration surface:
+# ⚠️⚠️     grep -h seed_start /mnt/c/carc-shared/*/manifest.json /mnt/c/carc-shared/*/*/manifest.json | sort -u
+# ⚠️⚠️     cat /mnt/c/carc-shared/BAND_CLAIMS.txt          # bands claimed but not yet written
+# ⚠️⚠️ then pick a band NOBODY has used and append your claim to BAND_CLAIMS.txt before you start.
 #
 # THE QUESTION -------------------------------------------------------------------------
 # 60.75% of the fair champion's ACTIONABLE meeple decisions offer >=2 GAME-EQUIVALENT
