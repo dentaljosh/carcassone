@@ -72,6 +72,7 @@
 | [FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md](FLAT_LEAF_BENCH_DEPLOY_RUNBOOK_2026-06-09.md) | Flat-leaf throughput bench + deploy | VERDICT: DEPLOY |
 | [COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md](COMPACT_LEAF_REWRITE_PLAN_2026-06-09.md) · [ASBUILT](COMPACT_LEAF_REWRITE_ASBUILT_2026-06-09.md) | Compact-leaf attempt (`USE_COMPACT_LEAF`) | EXECUTED then SUPERSEDED by flat leaf — stays OFF |
 | [XEON_DIRECT_SSH_2026-06-04.md](XEON_DIRECT_SSH_2026-06-04.md) | `ssh xeon-wsl` direct-WSL access | AS-EXECUTED, LIVE |
+| [../android/README.md](../android/README.md) | **Android app** (side project 2026-07-27): on-device champion via Chaquopy — build/install/assets/difficulty/archive format | LIVE — SHIPPED to Joshua's Pixel (1.7 s/move full budget) |
 
 ## Governance spine
 | Doc | Role |
