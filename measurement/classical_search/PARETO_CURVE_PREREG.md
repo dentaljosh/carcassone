@@ -7,6 +7,18 @@
 > 1376 = 14.6% of the tournament clock vs deploy's 26%. Results in §Results below;
 > the design above is UNEDITED from before the run.**
 >
+> **⚠️ ADDENDUM 2026-07-28 — THE OWED CONFIRM RAN AND REFUTED THE HEADLINE. The banner
+> above is left as written on 2026-07-27; read it with this correction.** The fresh-band
+> n=400 confirmation demanded by §4 is COMPLETE (band 76e9, laptop W16, 0 timeouts,
+> 0 guard failures): `k4×344` (1376) vs the deploy champion = **166W/7D/227L, winrate
+> 0.4238 (z −3.05), elo −53.4 ± 17.6 (95% CI [−87.9, −18.9]), deck-paired margin
+> −3.285 pts/deck (z −3.54)** — both statistics past 3σ NEGATIVE, at a verified 0.50×
+> cost ratio. **"Halving to 1376 is free" is REFUTED; `k4×344` costs 3.1σ, FAILS rule 6,
+> and is NOT proposal-eligible.** The flat region shrinks to **2752 → 5504** and the cliff
+> starts one rung higher than §1 drew it. See §4 and
+> [G2_CONFIRM_READOUT_20260728.md](G2_CONFIRM_READOUT_20260728.md); `results.csv
+> pareto_k4x344_1376_vs_deploy_CONFIRM`; DECISIONS 2026-07-28.
+>
 > **PRE-REGISTERED 2026-07-26, BEFORE ANY CELL RAN.** Nothing above the Results
 > section may be edited now that results have landed; corrections go in the dated
 > Results section. Approved by Joshua 2026-07-26 ("get it going, launch overnight").
@@ -182,6 +194,23 @@ The one actionable option: **k4×344 (1376) halves clock usage to 14.6% for no
 resolvable strength cost** — real margin against time trouble.
 
 ## 4. Rule-6 status, and what is OWED
+
+> **✅ DEBT DISCHARGED / ❌ CLAIM REFUTED — 2026-07-28.** The confirmation this section
+> demanded ran on fresh band **76e9** (n=400 deck-paired, identical config, env replicated
+> byte-for-byte from the original cell's manifest, laptop-only W16, code_rev `4e67f2b`):
+> **elo −53.4 ± 17.6, winrate 0.4238 (z −3.05), deck-paired margin −3.285 pts/deck
+> (z −3.54)**, cost ratio 0.50× verified, 0 timeouts, 400/400 endgame latches, 0 deck_hash
+> mismatches. Versus the original cell (+0.9 ± 17.4, band 60e9) the difference is
+> **−54.3 ± 24.7 = z −2.20**, and the confirm lands *outside* the original's own 95% CI —
+> so pooling is BLOCKED by the same logic as rule 3 (an inverse-variance pool would read
+> −26.0 ± 12.4 and **must not be cited as an estimate**). Note the original's *margin*
+> statistic already leaned negative (z −1.26); it was the winrate dead-tie that failed to
+> reproduce — **rule 1 working exactly as designed.** ⇒ under rule 6 (`< ~1σ` to be
+> proposal-eligible) `k4×344` costs **3.1σ** and is **NOT proposal-eligible**; do not
+> propose it for production. The deploy budget k4×688 = 2752 (26% of clock) stays.
+> Read-out: [G2_CONFIRM_READOUT_20260728.md](G2_CONFIRM_READOUT_20260728.md);
+> `results.csv pareto_k4x344_1376_vs_deploy_CONFIRM`; DECISIONS 2026-07-28.
+> *The 2026-07-27 text below is preserved unedited.*
 
 Under rule 6, `k4×344` **is proposal-eligible** (costs < 1σ while materially cutting
 clock). It is **NOT promoted**, and `governance/PRODUCTION.yaml` is UNTOUCHED.
