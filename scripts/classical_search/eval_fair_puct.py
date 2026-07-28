@@ -105,11 +105,30 @@ THREE ways, every one of which HANDICAPS US:
      _make_champion wraps in _MarginalizedHandoff), so "candidate-only tail" IS
      the harness's existing shape.
 
-WHY ASYMMETRIC ON PURPOSE: our side is handicapped on all three axes. A WIN for
-the blind champion is therefore a STRONG, CONSERVATIVE LOWER BOUND on the
-lineage gap — it holds despite the ~156-elo clairvoyance tax. A LOSS is
-UNINTERPRETABLE: it confounds lineage strength with the cost of blindness, and
-must NOT be reported as "the net is stronger". If you find yourself wanting to
+WHY ASYMMETRIC ON PURPOSE — AND WHY THAT IS **NOT** A LOWER BOUND (corrected
+2026-07-27). This block used to say our side was "handicapped on all three axes",
+making a win a conservative lower bound on the lineage gap. That was WRONG: only
+the INFORMATION axis handicaps us. The asymmetries do not all point the same way:
+
+    information -> we are HANDICAPPED  (blind vs sighted; measured tax ~156 elo)
+    leaf        -> we are ADVANTAGED   (curve125 vs curve100+rs0.25 — CL-051
+                                        established curve125 is a real leaf win)
+    endgame     -> we are ADVANTAGED   (marginalized exact-K<=2 tail vs none)
+    cost        -> NOT MATCHED         (candidate/opponent ms/move ran 0.29x at
+                                        the 344 rung to 8.5x at 11008 in CL-069,
+                                        so its direction depends on the rung)
+
+The NET direction is therefore UNDETERMINED, and no bound exists in EITHER
+direction. The honest claim is the narrow one: OUR CHAMPION, BLIND AND AT BUDGET
+B, BEATS THE RoD-v2 ANCHOR AGENT PLAYING SIGHTED. It does NOT license "therefore
+the lineage gap is at least this". A LOSS is equally confounded — it mixes the
+blindness tax against our leaf/endgame edge — so do not report a loss as "the
+net is stronger" either. None of this makes the cell less valuable: its worth is
+that the opponent is OUT OF LINEAGE, which is exactly what made CL-069's flat
+top something other than a self-anchoring artifact. The same corrected wording
+is in scripts/classical_search/blind_curve_queue.sh — keep them in sync.
+
+If you find yourself wanting to
 give the opponent our leaf, take away its deck vision, or hand it the exact
 tail — stop. Any of those destroys the meaning of the cell and makes the number
 a different (and un-anchored) measurement.
@@ -1628,9 +1647,11 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         # sees the summary cannot mistake this for a like-for-like pairwise elo.
         print("  ⚠️ BLIND vs SIGHTED (deliberate): candidate is blind (fair PIMC) on the "
               "curve125 leaf with an exact-K tail; opponent is CLAIRVOYANT bare NeuralMCTS "
-              "on the curve100+rs0.25 anchor leaf with no tail. A candidate WIN is a "
-              "conservative LOWER BOUND on the lineage gap; a candidate LOSS is "
-              "UNINTERPRETABLE (blindness confound), NOT evidence the opponent is stronger.")
+              "on the curve100+rs0.25 anchor leaf with no tail. NOT A BOUND IN EITHER "
+              "DIRECTION: information handicaps us, but leaf and endgame ADVANTAGE us and "
+              "cost is unmatched, so the net direction is undetermined. Report only the "
+              "narrow claim — our blind champion at this budget beat/lost to the sighted "
+              "RoD-v2 anchor — never 'the lineage gap is at least this'.")
     if abs(elo) <= 35 and not math.isnan(elo_sig):
         print(f"  POWER NOTE: |elo|<=35 at n={n} (1σ≈±{elo_sig:.0f}); a >=35-elo verdict needs n>=400.")
     # Track-F Gate A oracle-prior cost aggregation (per-world pre-search vs main-search
@@ -1748,8 +1769,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
               f"c_puct={BARE_NET_CPUCT:g} rs={BARE_NET_RESIDUAL_SCALE:g} | "
               f"leaf=v2.9 curve100 anchor leaf (NOT curve125) | NO exact tail\n"
               f"[smoke] ⚠️ ASYMMETRIC BY DESIGN: candidate BLIND (fair PIMC) vs "
-              f"opponent SIGHTED (true deck). A candidate WIN is a conservative "
-              f"lower bound; a loss is uninterpretable.")
+              f"opponent SIGHTED (true deck). This is NOT a bound in either "
+              f"direction — information handicaps us, leaf and endgame advantage "
+              f"us, cost is unmatched. Report the narrow head-to-head claim only.")
     elif args.opponent == "fair-champion":
         print("[smoke] opponent = PRODUCTION fair champion (FairHeuristicPriorAgent, "
               "heuristic softmax priors, FROZEN curve125 champion leaf)")
@@ -1945,8 +1967,11 @@ def main(argv=None) -> int:
                          "SIGHTED (clairvoyant) BARE NeuralMCTS in its rod_v2 ANCHOR identity "
                          "(--opp-net; sims=200, c_puct=3.0, v2.9 curve100 leaf + "
                          "residual_scale=0.25, NO exact tail). The candidate keeps curve125 + "
-                         "exact-K; the opponent does NOT get either. A candidate WIN is a "
-                         "conservative lower bound on the lineage gap; a LOSS is uninterpretable. "
+                         "exact-K; the opponent does NOT get either. ⚠️ NOT A BOUND IN EITHER "
+                         "DIRECTION (corrected 2026-07-27): information handicaps us but leaf "
+                         "and endgame ADVANTAGE us and cost is unmatched, so the net sign is "
+                         "undetermined — report only the narrow head-to-head claim. The value "
+                         "of the cell is that the opponent is OUT OF LINEAGE. "
                          "Read the BLIND vs SIGHTED block in this file's module docstring before "
                          "changing anything about it — do NOT symmetrise it.")
     ap.add_argument("--opp-net", type=str, default=None,
@@ -2205,10 +2230,10 @@ def main(argv=None) -> int:
             # champion. Anything else is a different (and un-preregistered) measurement.
             print(f"[warn] --opponent bare-net with --info {args.info}: the intended cell is "
                   "--info fair (our BLIND champion vs the SIGHTED anchor). "
-                  + ("--info clair makes BOTH sides clairvoyant, so the "
-                     "conservative-lower-bound argument does NOT hold. "
+                  + ("--info clair makes BOTH sides clairvoyant, so this is not a "
+                     "blind-vs-sighted cell at all. "
                      if args.info == "clair" else "")
-                  + "Do not report this as the blind-vs-sighted lower bound.",
+                  + "Do not report this as the blind-vs-sighted result.",
                   file=sys.stderr)
     if args.opponent in _HEAD_TO_HEAD and args.info == "clair":
         # a clairvoyant candidate vs a fair opponent is a legitimate DIRECT tax
@@ -2441,10 +2466,13 @@ def main(argv=None) -> int:
               + f", BLIND (fair PIMC k{args.k_dets}x{args.sims} = "
               f"{args.k_dets * args.sims} total) with the exact-K<={args.exact_k} tail.",
               file=sys.stderr)
-        print("[bare-net] INTERPRETATION: a candidate WIN is a conservative LOWER BOUND on "
-              "the lineage gap (we are handicapped on information, leaf and endgame). A "
-              "candidate LOSS is UNINTERPRETABLE — it confounds lineage strength with the "
-              "cost of blindness. Do not report a loss as 'the net is stronger'.",
+        print("[bare-net] INTERPRETATION (corrected 2026-07-27): this is NOT a bound in "
+              "either direction. Information HANDICAPS us (~156 elo), but leaf (curve125) "
+              "and endgame (exact-K tail) ADVANTAGE us and cost is not matched, so the net "
+              "sign is undetermined. Report only the narrow claim — our blind champion at "
+              "this budget vs the sighted RoD-v2 anchor. Do NOT report a win as 'the "
+              "lineage gap is at least this', nor a loss as 'the net is stronger'. What "
+              "the cell buys is an OUT-OF-LINEAGE ruler.",
               file=sys.stderr)
 
     if args.smoke:
@@ -2844,11 +2872,25 @@ def main(argv=None) -> int:
                      "required_to_differ": True},
             "endgame": {"candidate": f"marginalized exact-K<={args.exact_k}",
                         "opponent": "none (bare)"},
-            "interpretation": ("Every axis handicaps the CANDIDATE. A candidate WIN is a "
-                               "conservative LOWER BOUND on the lineage gap. A candidate "
-                               "LOSS is UNINTERPRETABLE (confounds lineage strength with "
-                               "the cost of blindness) and must not be reported as the "
-                               "opponent being stronger."),
+            "cost": {"matched": False,
+                     "note": ("candidate/opponent ms/move ran 0.29x (344 rung) to 8.5x "
+                              "(11008 rung) across CL-069; see the per-cell ms/move "
+                              "fields for this cell's own ratio")},
+            "favours": {"information": "opponent", "leaf": "candidate",
+                        "endgame": "candidate", "cost": "unmatched"},
+            "is_bound": False,
+            "interpretation": ("CORRECTED 2026-07-27 — this is NOT a bound in either "
+                               "direction. Earlier manifests claimed 'every axis handicaps "
+                               "the candidate, so a WIN is a conservative LOWER BOUND on "
+                               "the lineage gap'; that was wrong. Only INFORMATION "
+                               "handicaps the candidate (~156 elo clairvoyance tax). LEAF "
+                               "(curve125 vs curve100+rs0.25) and ENDGAME (exact-K tail vs "
+                               "none) ADVANTAGE the candidate, and COST is unmatched, so "
+                               "the net sign is undetermined. Report only the narrow claim: "
+                               "the blind candidate at this budget beat/lost to the sighted "
+                               "RoD-v2 anchor. Neither a win ('the lineage gap is at least "
+                               "this') nor a loss ('the net is stronger') is licensed. The "
+                               "cell's value is that the opponent is OUT OF LINEAGE."),
         }
         man_cfg["result_semantics"]["note"] = (
             man_cfg["result_semantics"]["note"]
