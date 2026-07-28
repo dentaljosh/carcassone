@@ -105,10 +105,12 @@ def test_assert_rung_is_ruler_still_passes_under_canon_env():
 
 
 def test_opponent_mode_constants():
-    # `bare-net` (BLIND vs SIGHTED, added 2026-07-27) is additive: the three legacy
-    # modes and their order are unchanged, and it is deliberately NOT a head-to-head.
-    assert efp.OPPONENT_MODES[:3] == ("h800", "fair-champion", "net")
-    assert efp.OPPONENT_MODES == ("h800", "fair-champion", "net", "bare-net")
+    # `bare-net` (BLIND vs SIGHTED, added 2026-07-27) is additive, and `greedy`
+    # (tier1 luck-floor cell, added 2026-07-27, c236150) slots at index 1; the
+    # legacy modes keep their relative order. bare-net stays deliberately NOT a
+    # head-to-head.
+    assert efp.OPPONENT_MODES[:4] == ("h800", "greedy", "fair-champion", "net")
+    assert efp.OPPONENT_MODES == ("h800", "greedy", "fair-champion", "net", "bare-net")
     # h800 is deliberately NOT a head-to-head: it is the fixed ruler, so it keeps the
     # curve100 leaf, takes no endgame, and skips the two-sided curve125 injection.
     # bare-net is excluded for the mirror-image reason: its opponent must NOT get our
