@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 # C3-INTRA (within-turn tree carry, tile -> meeple) — SCREEN, SYMMETRIC head-to-head.
 #
-# STATUS 2026-07-28: RUN (band 74e9, n=200 paired per cell) — screen is INCONCLUSIVE-POSITIVE:
+# ⛔ FINAL STATUS 2026-07-28 (CONFIRM COMPLETE): the lever is 🅿️ PARKED — the screen's +40.1 was
+# WINNER'S CURSE. Two powered n=600 tranches on fresh bands decayed it monotonically:
+# +40.1 (n200, b74e9) -> +27.3 +- 14.2 (n600, b78e9, z1.92) -> +5.2 +- 14.2 (n600, b80e9, z0.37);
+# COMBINED n=1200 (screen EXCLUDED as the selecting observation) = +16.2 +- 10.0, z +1.62,
+# paired margin +0.770 (z +1.55), 95% CI [-3.5,+35.9] INCLUDES ZERO. Tranches consistent
+# (T1-T2 z +1.10) so pooling is legitimate. EQUAL-WALL-CLOCK OBLIGATION DISCHARGED: ms-ratio
+# 0.994/1.011/1.010x across all three cells — the carry is time-neutral, it just does not buy
+# resolvable strength. NOT ADOPTED, no PRODUCTION.yaml flip proposed, flag stays default OFF.
+# PARKED not killed (all three point estimates positive). Re-open bar: n~4800 paired (~32
+# box-hours) or a mechanism argument for a different budget/allocation. Confirm launcher:
+# intra_confirm.sh. See the CONFIRM section of DEDUP_INTRA_SCREEN_REPORT_20260728.md;
+# results.csv intrareuse_k4x688_confirm_COMBINED; DECISIONS 2026-07-28.
+#
+# STATUS 2026-07-28 (screen, superseded by the confirm above): RUN (band 74e9, n=200 paired per cell) — screen was INCONCLUSIVE-POSITIVE:
 # k4x688 (the DEPLOY budget) +40.1 elo / z +1.62 with the deck-paired margin agreeing in sign
 # (+1.650 pts/deck, z +1.32) at measured ms-ratio 0.994x (candidate marginally CHEAPER, so the
 # header's "more work per turn" confound is empirically discharged); k4x344 flat (−5.2, z −0.21).

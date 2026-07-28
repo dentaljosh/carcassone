@@ -2,6 +2,25 @@
 # C3-INTRA (within-turn tile->meeple tree carry) — POWERED CONFIRM, n=600 paired.
 # TRANCHE 2: band 80e9  (tranche 1 was band 78e9, n=600, COMPLETE)
 #
+# ⛔ STATUS 2026-07-28: BOTH TRANCHES RUN — VERDICT: the lever is 🅿️ PARKED (does not clear).
+# T1 (b78e9) +27.3 +- 14.2 (z 1.92) · T2 (b80e9) +5.2 +- 14.2 (z 0.37) · COMBINED n=1200
+# +16.2 +- 10.0 (z +1.62), paired margin +0.770 (z +1.55), 95% CI [-3.5,+35.9] INCLUDES ZERO.
+# The screen's +40.1 is EXCLUDED from the pool as the selecting observation; the monotone decay
+# +40.1 -> +27.3 -> +5.2 with rising power is the winner's-curse signature the screen read-out
+# pre-flagged (2x total compute buys only +12.2 elo, CL-068). Tranche heterogeneity z +1.10 =>
+# pooling legitimate. Equal-wall-clock obligation DISCHARGED (ms-ratio 0.994/1.011/1.010x).
+# NOT ADOPTED; PRODUCTION.yaml untouched; flag stays default OFF. PARKED not killed — all three
+# point estimates positive. Re-open bar: n~4800 paired (~32 box-hours) or a mechanism argument
+# for a different budget/allocation. See the CONFIRM section of
+# measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md;
+# results.csv intrareuse_k4x688_confirm_{t1,t2,COMBINED}; DECISIONS 2026-07-28.
+#
+# ⚠️ The CODE REV note below names tranche 1 as 4e67f2b — that was the pre-launch expectation.
+# The cell MANIFEST is the authority and records 693ef39 for tranche 1 (the tree advanced between
+# the HEAD check and the launch); tranche 2 is 81f6e5d as stated. The bit-exactness argument is
+# unaffected and was independently corroborated: solver time/game fell 1.27x (candidate) and
+# 1.26x (opponent) between tranches — BOTH arms equally, so it cannot bias the comparison.
+#
 # Lineage:
 #   SCREEN    (band 74e9, n=200, selection-biased — the cell that motivated the confirm):
 #             +40.1 elo (z +1.62), paired margin +1.65 pts/deck (z +1.32), ms-ratio 0.994x
