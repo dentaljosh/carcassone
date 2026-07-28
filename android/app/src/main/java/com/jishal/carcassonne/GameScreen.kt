@@ -177,6 +177,13 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
         if (viewW <= 0f || viewH <= 0f) return@LaunchedEffect
         val newSession = st.generation != camera.fittedGeneration
         if (camera.userAdjusted && !newSession) return@LaunchedEffect
+        // Same reasoning for the meeple close-up, which owns the camera until the
+        // sub-phase ends (settleCamera's rule 3 already stands aside for it). Without
+        // this, entering the meeple phase while the chrome is still settling — a
+        // Resume that lands straight in it — re-fits the board a frame after the
+        // close-up zoomed, and the player is handed back the tiny targets the
+        // close-up exists to avoid.
+        if (camera.preMeeple != null && !newSession) return@LaunchedEffect
         val bounds = st.boundsWithMargin()?.atLeast(7) ?: return@LaunchedEffect
         transform = BoardTransform.fit(bounds, viewW, viewH, insetBottom = bottomChromePx)
         camera.userAdjusted = false
@@ -237,7 +244,6 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                             )
                         }
                     },
-                    onToggleOverlay = vm::toggleOverlay,
                     onOpenBag = vm::openBag,
                 )
             }
@@ -279,7 +285,8 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                         onViewportChanged = { w, h -> viewW = w; viewH = h },
                         modifier = Modifier.fillMaxSize(),
                         ghostPreview = ui.ghostPreview,
-                        ownership = if (ui.overlayOn) ui.ownership else emptyList(),
+                        ownership = ui.ownership,
+                        pendingSlot = ui.selectedSlot,
                     )
 
                     Column(
@@ -338,6 +345,9 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
                             ),
                     ) {
+                        if (ui.lastEvents.isNotEmpty()) {
+                            LastMoveChip(ui.lastEvents, vm::dismissEvents, Modifier)
+                        }
                         if (ui.thinking) ThinkingBanner(ui, state, Modifier)
                         ui.error?.let { err -> ErrorBanner(err, vm::clearError, Modifier) }
                         ui.saveMismatch?.let { note ->
@@ -435,11 +445,19 @@ private const val BOARD_MARGIN = 4f
  * to sit ABOVE the natural whole-board scale or the close-up never fires when it
  * is most needed.
  */
-private const val MEEPLE_ZOOM_TRIGGER = 1.9f
+private const val MEEPLE_ZOOM_TRIGGER = 3.6f
 
-/** ...and this is where the close-up takes them: a quarter-tile gap becomes ~58px
- *  (~21dp), which with the enlarged dots is a target a thumb can actually find. */
-private const val MEEPLE_ZOOM_TARGET = 2.3f
+/**
+ * ...and this is where the close-up takes them.
+ *
+ * Was 2.3, which put a quarter-tile gap at ~58px (~21dp) — better than the fit, still
+ * under half a Material touch target, and mis-taps between adjacent farmer corners
+ * were the single most reported annoyance of playing on the phone. At 4.2 the same
+ * gap is 105px (~40dp) and the tile fills roughly a quarter of the screen, which is
+ * the right framing for a decision about one tile. The old ceiling of 3.0 could not
+ * express this at all — see [MAX_SCALE].
+ */
+private const val MEEPLE_ZOOM_TARGET = 4.2f
 
 /** Double-tap zoom-in factor, relative to the whole-board fit. */
 private const val DOUBLE_TAP_FACTOR = 2f
@@ -648,7 +666,6 @@ private fun GameHud(
     assets: TileAssets?,
     landscape: Boolean,
     onFit: () -> Unit,
-    onToggleOverlay: () -> Unit,
     onOpenBag: () -> Unit,
 ) {
     // The inset goes on the Row, not the Surface: the Surface keeps painting its
@@ -680,10 +697,10 @@ private fun GameHud(
             // In the HUD rather than floating over the canvas, because the Scaffold
             // already reserves the top bar's height — a button anywhere on the board
             // occludes it, and at the right edge it sat squarely on a legal cell.
+            // The ownership overlay used to have a toggle here. It is now always on
+            // (a claim you have to ask to see is a claim you forget to ask about),
+            // which also buys the HUD row back ~39dp on a 360dp-wide portrait phone.
             GlyphButton(onClick = onOpenBag, active = false) { bagGlyph(it) }
-            GlyphButton(onClick = onToggleOverlay, active = ui.overlayOn) {
-                layersGlyph(it)
-            }
             FitBoardButton(onFit)
             Column(horizontalAlignment = Alignment.End) {
                 Text(
@@ -839,28 +856,6 @@ private fun DrawScope.bagGlyph(colour: Color) {
     )
 }
 
-/** Two stacked diamonds — the conventional "layers"/overlay mark. */
-private fun DrawScope.layersGlyph(colour: Color) {
-    val s = size.minDimension
-    val w = s * 0.09f
-    fun diamond(cy: Float, filled: Boolean) {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(s * 0.5f, cy - s * 0.16f)
-            lineTo(s * 0.86f, cy)
-            lineTo(s * 0.5f, cy + s * 0.16f)
-            lineTo(s * 0.14f, cy)
-            close()
-        }
-        drawPath(
-            path, colour,
-            style = if (filled) androidx.compose.ui.graphics.drawscope.Fill
-            else Stroke(width = w),
-        )
-    }
-    diamond(s * 0.32f, filled = true)
-    diamond(s * 0.68f, filled = false)
-}
-
 /** Four corner brackets around a centre dot — the universal "frame it" mark. */
 private fun DrawScope.fitGlyph(colour: Color) {
     val s = size.minDimension
@@ -936,6 +931,58 @@ private fun MismatchBanner(note: String, onDismiss: () -> Unit, modifier: Modifi
     }
 }
 
+/**
+ * What the last move materially did — "City completed — Champion +6, 1 meeple back".
+ *
+ * The gap this fills: the board shows a score CHANGED, never why, and Base+Farmers
+ * pays in lumps big enough that an unexplained jump is the most confusing moment of a
+ * game. It covers both seats — closing a city yourself is worth seeing too.
+ *
+ * A chip rather than a dialog, on purpose: it must never interrupt, and it must never
+ * be the thing standing between the player and their next move. It stands until the
+ * next move that scores replaces it, or until it is dismissed; a timeout was
+ * considered and rejected, because the whole point is the player who looks up from
+ * the board a few seconds later and asks "where did those points come from?".
+ */
+@Composable
+private fun LastMoveChip(
+    events: List<MoveEvent>,
+    onDismiss: () -> Unit,
+    modifier: Modifier,
+) {
+    Card(
+        modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Row(
+            Modifier.padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                for (e in events) {
+                    Text(
+                        e.text,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+            }
+            Text(
+                "✗",
+                Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onDismiss)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }
+    }
+}
+
 @Composable
 private fun ThinkingBanner(ui: GameUiState, state: GameState, modifier: Modifier) {
     val p = ui.progress
@@ -996,13 +1043,23 @@ private fun ErrorBanner(err: BridgeError, onDismiss: () -> Unit, modifier: Modif
     }
 }
 
+/**
+ * The floating action row.
+ *
+ * The two phases now share one grammar — **aim, then confirm**. The tile phase always
+ * worked that way (tap a cell, ⟳ to rotate, ✓ to place); the meeple phase used to
+ * commit on the first tap on a slot, which on targets a quarter-tile apart made every
+ * mis-tap permanent. So the meeple phase gets the same ✗/✓ pair, and both phases get
+ * a way back: ✗ un-aims, and ↶ takes the whole tile back (see
+ * [GameViewModel.undoTilePlacement]).
+ */
 @Composable
 private fun ActionButtons(ui: GameUiState, state: GameState, vm: GameViewModel) {
     if (!ui.canInteract) return
     val ghost = ui.ghost
+    val slot = ui.selectedSlot
     val showTileFabs = state.isTilePhase && ghost != null
-    val showSkip = state.isMeeplePhase && state.legal.meeplePassId != null
-    if (!showTileFabs && !showSkip) return
+    if (!showTileFabs && !state.isMeeplePhase) return
 
     Row(
         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -1018,11 +1075,28 @@ private fun ActionButtons(ui: GameUiState, state: GameState, vm: GameViewModel) 
                 onClick = vm::confirmPlacement,
                 containerColor = MaterialTheme.colorScheme.primary,
             ) { Text("✓", fontSize = 22.sp) }
-        } else if (showSkip) {
-            // Rendered but inert for GameViewModel.PHASE_LOCK_MS — see
-            // GameUiState.phaseLock. Hiding it instead would make the row jump.
-            FloatingActionButton(onClick = vm::skipMeeple) {
-                Text("Skip meeple", Modifier.padding(horizontal = 12.dp), fontSize = 14.sp)
+        } else if (state.isMeeplePhase) {
+            // Always available in this sub-phase: the tile is down but nothing else
+            // has happened yet, which is the exact window in which taking it back is
+            // free of consequence for the opponent's determinism.
+            FloatingActionButton(
+                onClick = vm::undoTilePlacement,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            ) {
+                Text("↶ Tile", Modifier.padding(horizontal = 10.dp), fontSize = 14.sp)
+            }
+            if (slot != null) {
+                FloatingActionButton(onClick = vm::cancelMeeple) { Text("✗", fontSize = 22.sp) }
+                FloatingActionButton(
+                    onClick = vm::confirmMeeple,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ) { Text("✓", fontSize = 22.sp) }
+            } else if (state.legal.meeplePassId != null) {
+                // Rendered but inert for GameViewModel.PHASE_LOCK_MS — see
+                // GameUiState.phaseLock. Hiding it instead would make the row jump.
+                FloatingActionButton(onClick = vm::skipMeeple) {
+                    Text("Skip meeple", Modifier.padding(horizontal = 12.dp), fontSize = 14.sp)
+                }
             }
         }
     }
@@ -1043,7 +1117,9 @@ private fun StatusBar(ui: GameUiState, state: GameState, landscape: Boolean) {
         state.isTilePhase && ghost != null ->
             MoveText.tilePhaseHint(ghost.index, ghost.rotationCount)
         state.isTilePhase -> "Your move — tap a highlighted square to place the tile"
-        state.isMeeplePhase -> "Place a meeple, or skip"
+        state.isMeeplePhase && ui.selectedSlot != null ->
+            "✓ to place the meeple, ✗ to pick another"
+        state.isMeeplePhase -> "Tap a spot for your meeple, skip, or ↶ take the tile back"
         else -> ""
     }
     val last = state.aiLastMove

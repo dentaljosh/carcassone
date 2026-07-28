@@ -306,6 +306,170 @@ def k_remaining(state) -> int:
 
 
 # --------------------------------------------------------------------------- #
+# 3b. What just happened — the last-move event summary                          #
+# --------------------------------------------------------------------------- #
+def _meeple_key(player: int, mp) -> tuple:
+    cws = mp.coordinate_with_side
+    return (int(player), int(cws.coordinate.row), int(cws.coordinate.column),
+            str(cws.side.value), str(mp.meeple_type.value))
+
+
+def _meeple_index(state) -> dict:
+    """``{key: (player, MeeplePosition)}`` for every meeple standing on the board."""
+    out = {}
+    for player, positions in enumerate(state.placed_meeples):
+        for mp in positions:
+            out[_meeple_key(player, mp)] = (int(player), mp)
+    return out
+
+
+def scoring_events(prev_state, new_state, human_player: int, opponent_name: str,
+                   claims: list | None = None) -> list[dict]:
+    """What the just-applied action(s) actually paid, itemised.
+
+    The board only *tells* you a score changed; it does not say why, and Base+Farmers
+    pays in lumps large enough that "11 -> 17" with no explanation is the single most
+    confusing thing about watching the champion play. This is the explanation.
+
+    METHOD — a meeple leaving the board is the signal. The engine returns a meeple to
+    its owner's hand exactly when the feature it was standing on completes and scores
+    (``PointsCollector.remove_meeples_and_collect_points``, run at the END of the
+    meeple sub-phase), so the meeples in ``prev_state`` but not in ``new_state`` are
+    precisely the features that just paid out. Each one is re-found in the NEW state —
+    ``find_city``/``find_road`` take a ``CoordinateWithSide`` and do not need a meeple,
+    and the feature is *complete* there, so ``count_*_points`` returns the finished
+    rate rather than the reduced one the previous state would have given.
+
+    ``claims`` closes the one hole in that diff. A player may claim a feature the tile
+    they just laid ALREADY completed — the meeple is placed and collected inside the
+    same ``get_next_state``, so it is in neither state and the plain diff reports a
+    score out of nowhere. The caller therefore passes the ``(player, MeeplePosition)``
+    this decision placed, and it is treated as having been on the board. (Only the
+    primary action can claim: ``auto_pass_forced`` applies passes, which never place
+    a meeple.)
+
+    Farmers are deliberately not handled: farms score only in the final pass, which
+    this function refuses outright (see below).
+
+    THREE HONESTY RULES, in the spirit of ``_final_breakdown``:
+
+    * **A terminated state yields nothing.** The engine's endgame pass consumes EVERY
+      remaining meeple inside the terminating action, so the diff would report the
+      whole board closing at once. The result dialog's breakdown is the right surface
+      for that, and it already exists.
+    * **The itemisation must reconcile.** The per-player sum of what these events
+      claim was paid is checked against the real score delta; if they disagree the
+      whole list is replaced by a bare "+N" event. A wrong itemisation is worse than a
+      coarse one.
+    * **Nothing is mutated.** Both states are read; the meeple-consuming walk that
+      ``aux_targets.extract_terminal_ownership`` needs a deepcopy for is not used here.
+    """
+    if new_state.is_terminated():
+        return []
+    prev_scores = [int(x) for x in prev_state.scores]
+    new_scores = [int(x) for x in new_state.scores]
+    n = min(len(prev_scores), len(new_scores))
+    delta = [new_scores[p] - prev_scores[p] for p in range(n)]
+    if not any(d > 0 for d in delta):
+        return []
+
+    def _who(winners: list[int]) -> str:
+        names = [("You" if w == human_player else opponent_name) for w in winners]
+        return " and ".join(names) if names else "nobody"
+
+    def _generic() -> list[dict]:
+        out = []
+        for p in range(n):
+            if delta[p] <= 0:
+                continue
+            out.append({
+                "kind": "score", "points": delta[p], "winners": [p],
+                "meeples_returned": 0,
+                "text": f"{_who([p])} +{delta[p]}",
+            })
+        return out
+
+    try:
+        from wingedsheep.carcassonne.objects.meeple_type import MeepleType
+        from wingedsheep.carcassonne.objects.terrain_type import TerrainType
+        from wingedsheep.carcassonne.utils.city_util import CityUtil
+        from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+        from wingedsheep.carcassonne.utils.road_util import RoadUtil
+
+        before = _meeple_index(prev_state)
+        for player, mp in (claims or []):
+            before[_meeple_key(player, mp)] = (int(player), mp)
+        after = _meeple_index(new_state)
+        gone = [before[k] for k in before.keys() - after.keys()]
+        if not gone:
+            return _generic()
+
+        # feature key -> {"kind", "points", "cells", "counts"}
+        features: dict = {}
+        for player, mp in gone:
+            if mp.meeple_type in (MeepleType.FARMER, MeepleType.BIG_FARMER):
+                return _generic()      # a farm paid out mid-game: not a thing we model
+            cws = mp.coordinate_with_side
+            coord = cws.coordinate
+            tile = new_state.board[coord.row][coord.column]
+            if tile is None:
+                return _generic()
+            terrain = tile.get_type(cws.side)
+            if terrain == TerrainType.CITY:
+                feat = CityUtil.find_city(new_state, cws)
+                kind, cells = "city", frozenset(feat.city_positions)
+                points = int(PointsCollector.count_city_points(new_state, feat))
+            elif terrain == TerrainType.ROAD:
+                feat = RoadUtil.find_road(new_state, cws)
+                kind, cells = "road", frozenset(feat.road_positions)
+                points = int(PointsCollector.count_road_points(new_state, feat))
+            elif terrain in (TerrainType.CHAPEL, TerrainType.FLOWERS):
+                kind = "cloister"
+                cells = frozenset({(int(coord.row), int(coord.column))})
+                points = int(PointsCollector.chapel_or_flowers_points(new_state, coord))
+            else:
+                return _generic()
+            entry = features.setdefault(
+                (kind, cells), {"kind": kind, "points": points, "counts": [0] * n})
+            if 0 <= player < n:
+                entry["counts"][player] += 1
+
+        events: list[dict] = []
+        implied = [0] * n
+        for entry in features.values():
+            winners = [int(w) for w in
+                       PointsCollector.get_winning_players(entry["counts"])]
+            for w in winners:
+                if 0 <= w < n:
+                    implied[w] += entry["points"]
+            returned = sum(entry["counts"])
+            label = {"city": "City completed", "road": "Road completed",
+                     "cloister": "Cloister completed"}[entry["kind"]]
+            paid = ", ".join(
+                f"{'You' if w == human_player else opponent_name} +{entry['points']}"
+                for w in winners) or f"+{entry['points']}"
+            back = (f", {returned} meeple{'' if returned == 1 else 's'} back"
+                    if returned else "")
+            events.append({
+                "kind": entry["kind"],
+                "points": entry["points"],
+                "winners": winners,
+                "meeples_returned": returned,
+                "text": f"{label} — {paid}{back}",
+            })
+
+        if implied != delta[:n]:
+            # The parts do not add up to the whole; say the honest coarse thing.
+            return _generic()
+        # Biggest payout first: the one line a glance catches should be the one that
+        # moved the game most.
+        events.sort(key=lambda e: -e["points"])
+        return events
+    except Exception:                             # noqa: BLE001 — never break a move
+        return _generic()
+
+
+# --------------------------------------------------------------------------- #
 # 4. Progress counters — module globals, read WITHOUT the session lock.         #
 # --------------------------------------------------------------------------- #
 _prog_leaf_calls = 0        # cumulative evaluator calls for the CURRENT ai_move
@@ -398,6 +562,11 @@ class _Session:
         self.breakdown: list[dict] | None = None
         self.breakdown_done: bool = False
 
+        # What the most recent DECISION paid out (see `scoring_events`). Replaced
+        # wholesale by `apply_and_collect`, so it always describes exactly one
+        # decision — never an accumulation across a turn.
+        self.last_events: list[dict] = []
+
     # -- opponent construction (mirrors play_vs_tier1_gui.build_opponent) ----
     def _build_opponent(self) -> None:
         if self.opponent_kind == "tier1":
@@ -464,6 +633,51 @@ class _Session:
         self.board, _ = self.game.get_next_state(self.board, int(action_id))
         self.action_log.append(int(action_id))
         self.turn += 1
+
+    def _claim_of(self, action_id: int) -> tuple | None:
+        """``(player, MeeplePosition)`` if ``action_id`` puts a meeple down here.
+
+        Needed because a meeple can be placed AND collected inside one engine call —
+        see ``scoring_events``' ``claims``. Read-only, and best-effort: anything it
+        cannot decode simply yields ``None`` and the diff falls back to its coarse
+        answer rather than the move failing."""
+        try:
+            state = self.board.state
+            if state.phase != GamePhase.MEEPLES:
+                return None
+            if int(action_id) == meeple_pass_index(self.board.offset.size):
+                return None
+            last = state.last_tile_action
+            if last is None:
+                return None
+            act = decode(int(action_id), off=self.board.offset, phase="meeples",
+                         last_tile_coord=last.coordinate)
+            if not isinstance(act, MeepleAction) or getattr(act, "remove", False):
+                return None
+            from wingedsheep.carcassonne.objects.meeple_position import MeeplePosition
+
+            return (int(state.current_player),
+                    MeeplePosition(meeple_type=act.meeple_type,
+                                   coordinate_with_side=act.coordinate_with_side))
+        except Exception:                         # noqa: BLE001
+            return None
+
+    def apply_and_collect(self, action_id: int) -> None:
+        """Apply one decision (plus any forced human pass it triggers) and record
+        what it paid out in ``last_events``.
+
+        The reference to the pre-action board is taken by hand rather than reusing
+        ``prev_board``: ``auto_pass_forced`` can apply further actions, each of which
+        moves ``prev_board`` on, and the events must describe the whole decision.
+        Keeping the reference is free — ``get_next_state`` deepcopies, so that board
+        was going to be discarded anyway and is guaranteed not to be mutated."""
+        before = self.board
+        claim = self._claim_of(action_id)
+        self.apply(action_id)
+        self.auto_pass_forced()
+        self.last_events = scoring_events(
+            before.state, self.board.state, self.human_player, self.opponent_name,
+            claims=[claim] if claim is not None else None)
 
     def auto_pass_forced(self) -> int:
         """Auto-apply a forced pass on the HUMAN seat so the UI never renders a phase
@@ -723,6 +937,11 @@ def _state_dict(s: _Session) -> dict:
         "ai_last_move": s.ai_last_move,
         "is_terminated": terminated,
         "n_actions": len(s.action_log),
+        # What the LAST decision paid out (see `scoring_events`). A list, because one
+        # tile can close two features at once. Empty for a move that scored nothing —
+        # which is most moves — and empty on a freshly restored session, whose
+        # decisions were replayed rather than played.
+        "events": list(s.last_events),
     }
     if terminated:
         diff = scores[0] - scores[1]
@@ -831,8 +1050,7 @@ def apply_action(action_id) -> str:
                         f"{s.board.state.phase.value}",
                         legal_action_ids=s.legal_ids())
         describe = format_action(idx, s.board)
-        s.apply(idx)
-        s.auto_pass_forced()
+        s.apply_and_collect(idx)
         out = _state_dict(s)
         out["applied"] = {"action_id": idx, "describe": describe}
         return _ok(out)
@@ -894,8 +1112,7 @@ def ai_move(generation=None) -> str:
                           "elapsed_s": round(elapsed_s, 4)}
         s.ai_elapsed.append({"ply": len(s.action_log),
                              "elapsed_s": round(elapsed_s, 4)})
-        s.apply(idx)
-        s.auto_pass_forced()
+        s.apply_and_collect(idx)
 
         out = _state_dict(s)
         out.update({"action_id": idx, "describe": describe,
@@ -1208,11 +1425,108 @@ def restore_game(json_str: str) -> str:
         return _err(type(exc).__name__, str(exc))
 
 
+def undo_last_tile() -> str:
+    """Take the human's just-placed tile back, returning to the tile decision point.
+
+    Only legal in the HUMAN's meeple sub-phase — i.e. the tile is down, its meeple is
+    not yet chosen, and *nothing else has happened*. That window is what makes the
+    undo exact rather than approximate:
+
+    * **No AI decision sits inside it.** ``auto_pass_forced`` only auto-passes the
+      HUMAN seat, and the champion never moves between a human tile and its meeple.
+      So dropping the last action removes a human decision and nothing else.
+    * **The rebuild is the ordinary restore.** A game is fully determined by
+      ``(deck_seed, action_log)`` (the ``root_replay`` contract), so this is literally
+      ``restore_game`` on the save payload with the last action sliced off. That
+      re-seats the champion's ``_move_idx`` / exact-endgame latch and replays a
+      stream-random Tier-1's RNG, exactly as a Resume does — the opponent that plays
+      on is bit-identical to the one that would have played had the tile never been
+      placed. Nothing here needs its own determinism argument.
+    * **The undone action leaves no trace.** The new session's log is the truncated
+      one, so the autosave written after this call, and any archive built from it
+      later, replay the game the player actually played.
+
+    Two deliberate non-defaults on the rebuilt session:
+
+    ``generation`` is carried over rather than bumped. The UI keys its opening
+    camera fit on it, and an undo is not a new game — bumping would yank the board
+    back to a whole-board fit mid-turn. Staleness is still sound: ``ai_move``'s guard
+    is ``_S is not s`` *or* a generation mismatch, and the identity half catches this
+    (the session object is new). Nothing can be in flight anyway — it is the human's
+    turn on a single-threaded bridge.
+
+    ``ai_elapsed`` is carried over. A restore cannot reconstruct the original
+    session's wall-clock, but no AI decision was removed, so those timings all still
+    describe moves that are still in the log; dropping them would silently blank the
+    archive's timing record for the whole game.
+    """
+    try:
+        s = _require_session()
+        state = s.board.state
+        if state.is_terminated():
+            return _err("game_over", "the game has ended")
+        if state.phase != GamePhase.MEEPLES:
+            return _err("not_meeple_phase",
+                        "undo_last_tile only applies during the meeple sub-phase")
+        if int(state.current_player) != s.human_player:
+            return _err("not_human_turn", "it is not the human's turn")
+        if not s.action_log:
+            return _err("nothing_to_undo", "no action has been played yet")
+
+        undone = int(s.action_log[-1])
+        keep_generation = s.generation
+        carry_elapsed = list(s.ai_elapsed)
+        payload = _save_payload(s)
+        payload["actions"] = [int(a) for a in s.action_log[:-1]]
+
+        raw = restore_game(json.dumps(payload))
+        out = json.loads(raw)
+        if not out.get("ok"):
+            return raw                     # the rebuild failed; _S is now the rebuilt
+                                           # session or the old one, either way honest
+        new_s = _require_session()
+        # The truncation must land exactly where the player was standing when they
+        # chose the tile. Anything else means the log was not what this function
+        # assumed, and silently handing back a different position would be worse
+        # than refusing.
+        if (new_s.board.state.phase != GamePhase.TILES
+                or int(new_s.board.state.current_player) != new_s.human_player):
+            return _err("undo_failed",
+                        "undoing did not land on the human's tile decision")
+        # `_GENERATION` (the monotonic counter) keeps the value restore_game bumped
+        # it to; only the SESSION's label is rolled back, so a later new_game still
+        # hands out an id nothing has seen.
+        new_s.generation = keep_generation
+        new_s.ai_elapsed = carry_elapsed
+        out = _state_dict(new_s)
+        out["undone"] = {"action_id": undone, "n_actions": len(new_s.action_log)}
+        return _ok(out)
+    except Exception as exc:                      # noqa: BLE001
+        return _err(type(exc).__name__, str(exc))
+
+
 def get_ownership() -> str:
     """Every CLAIMED feature on the board: kind, the cells it covers, and who owns it.
 
-    Feeds the ownership overlay. Read-only and on demand — the UI calls it when the
-    toggle is on and after each state change, never in the search hot path.
+    Feeds the always-on ownership shading. Read-only — the UI calls it after each
+    state change, never in the search hot path.
+
+    Two levels of geometry are reported and they are NOT redundant:
+
+    ``cells``    the tile coordinates the feature touches. Coarse; a whole-tile mark.
+    ``regions``  ``[row, col, side]`` triples — the *part* of each tile the feature
+                 actually occupies, which is what the overlay draws. ``side`` is the
+                 engine's own ``Side`` value, so it is one of the four edges (a city
+                 band or a road band, rendered as a triangle from that edge to the
+                 tile centre), ``center`` (a monastery), or one of the four farmer
+                 corners ``top_left``/``top_right``/``bottom_left``/``bottom_right``
+                 (rendered as that quadrant).
+
+    The tile art is a raster scan with no vector mask, so a region is an
+    APPROXIMATION of the painted feature, not its outline — see the renderer's note
+    in ``BoardCanvas.drawOwnership``. It is nonetheless the engine's own topology:
+    every triple comes from the same ``city_positions`` / ``road_positions`` /
+    ``farmer_positions`` the scoring pass walks, never from a guess about the art.
 
     The walk is ``aux_targets.extract_terminal_ownership``'s, with one deliberate
     difference: that function CONSUMES each feature's meeples (via
@@ -1245,6 +1559,13 @@ def get_ownership() -> str:
             uniq = {(int(p.coordinate.row), int(p.coordinate.column)) for p in positions}
             return sorted(uniq)
 
+        def _side_regions(positions) -> list[tuple[int, int, str]]:
+            """``CoordinateWithSide`` list -> the (row, col, side) triples it covers."""
+            return sorted({
+                (int(p.coordinate.row), int(p.coordinate.column), str(p.side.value))
+                for p in positions
+            })
+
         for player, positions in enumerate(state.placed_meeples):
             for mp in positions:
                 cws = mp.coordinate_with_side
@@ -1253,6 +1574,7 @@ def get_ownership() -> str:
                 if tile is None:
                     continue
                 kind, cells, finished, points, meeples = None, [], None, 0, None
+                regions: list[tuple[int, int, str]] = []
                 try:
                     if mp.meeple_type in (MeepleType.FARMER, MeepleType.BIG_FARMER):
                         farm = FarmUtil.find_farm_by_coordinate(state, position=cws)
@@ -1260,6 +1582,15 @@ def get_ownership() -> str:
                         cells = sorted({
                             (int(f.coordinate.row), int(f.coordinate.column))
                             for f in farm.farmer_connections_with_coordinate
+                        })
+                        # A farm occupies the CORNERS of a tile, not its edges: one
+                        # tile can carry two different fields split by a road, and
+                        # `farmer_positions` is exactly which corners this one holds.
+                        regions = sorted({
+                            (int(f.coordinate.row), int(f.coordinate.column),
+                             str(side.value))
+                            for f in farm.farmer_connections_with_coordinate
+                            for side in f.farmer_connection.farmer_positions
                         })
                         meeples = FarmUtil.find_meeples(state, farm)
                         points = int(PointsCollector.count_farm_points(state, farm))
@@ -1269,6 +1600,7 @@ def get_ownership() -> str:
                             city = CityUtil.find_city(state, cws)
                             kind = "city"
                             cells = _cells(city.city_positions)
+                            regions = _side_regions(city.city_positions)
                             finished = bool(city.finished)
                             meeples = CityUtil.find_meeples(state, city)
                             points = int(PointsCollector.count_city_points(state, city))
@@ -1276,12 +1608,14 @@ def get_ownership() -> str:
                             road = RoadUtil.find_road(state, cws)
                             kind = "road"
                             cells = _cells(road.road_positions)
+                            regions = _side_regions(road.road_positions)
                             finished = bool(road.finished)
                             meeples = RoadUtil.find_meeples(state, road)
                             points = int(PointsCollector.count_road_points(state, road))
                         elif terrain in (TerrainType.CHAPEL, TerrainType.FLOWERS):
                             kind = "chapel"
                             cells = [(int(coord.row), int(coord.column))]
+                            regions = [(int(coord.row), int(coord.column), "center")]
                             points = int(
                                 PointsCollector.chapel_or_flowers_points(state, coord))
                 except Exception:                 # noqa: BLE001 — one odd feature must
@@ -1307,6 +1641,7 @@ def get_ownership() -> str:
                 out.append({
                     "kind": kind,
                     "cells": [[r, c] for (r, c) in cells],
+                    "regions": [[r, c, side] for (r, c, side) in regions],
                     "owners": owners,
                     "meeple_count_per_player": counts,
                     "finished": finished,
@@ -1491,6 +1826,9 @@ def debug_fast_forward(confirm: str = "", max_plies=600) -> str:
                         "debug_fast_forward needs confirm='yes-destroy-this-game'")
         limit = int(max_plies)
         plies = 0
+        # This drives many decisions in one call, so "what the last move paid" has no
+        # meaning afterwards; leaving the previous one would be a lie.
+        s.last_events = []
         while not s.board.state.is_terminated():
             plies += 1
             if plies > limit:

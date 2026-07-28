@@ -23,7 +23,26 @@ import kotlin.math.min
 const val TILE: Float = 100f
 
 const val MIN_SCALE: Float = 0.4f
-const val MAX_SCALE: Float = 3.0f
+
+/**
+ * How far in the player may pinch.
+ *
+ * Was 3.0, which made meeple placement the hardest thing in the app: adjacent slots
+ * are a quarter-tile apart, so even at the ceiling two of them were only 75px (~29dp)
+ * apart on a Pixel-class screen and a mis-tap between two farmer corners was routine.
+ * At 8.0 that same gap is 200px (~76dp) — larger than a Material touch target — so
+ * the *aim* is no longer the hard part. (The other half of that fix is the explicit
+ * meeple confirm in GameScreen: deep zoom makes a mis-tap unlikely, Confirm makes it
+ * recoverable.)
+ *
+ * Nothing else needs to change to support it: tile art is drawn into integer world
+ * rects inside one `translate + scale`, so it stays seam-free at any scale, and the
+ * board is at most a few hundred tiles — there is no level-of-detail cliff to fall
+ * off. The only thing this ceiling gates is [BoardTransform.gesture]'s clamp and the
+ * tiny-board clamp in [BoardTransform.Companion.fit], and every real `fit` call site
+ * passes `atLeast(7)` bounds, which cannot reach it.
+ */
+const val MAX_SCALE: Float = 8.0f
 
 data class Cell(val row: Int, val col: Int)
 
@@ -44,7 +63,8 @@ data class BoardBounds(
     /**
      * Grows the box symmetrically until it is at least [side] cells across in
      * both axes. Without this the opening fit — a 1-tile board — would clamp to
-     * [MAX_SCALE] and open absurdly zoomed in on the start tile.
+     * [MAX_SCALE] and open absurdly zoomed in on the start tile. (Load-bearing, and
+     * more so since [MAX_SCALE] went to 8: EVERY fit call site passes `atLeast(7)`.)
      */
     fun atLeast(side: Int): BoardBounds {
         var b = this
@@ -194,8 +214,10 @@ data class BoardTransform(
 
         /**
          * Fit [bounds] into the *usable* viewport with [padding] px of slack,
-         * centred. Scale is clamped to [MIN_SCALE]..[MAX_SCALE], so a 1-tile board
-         * opens at 3x rather than absurdly zoomed.
+         * centred. Scale is clamped to [MIN_SCALE]..[MAX_SCALE] — which is a
+         * backstop, not the tiny-board answer: callers pass [BoardBounds.atLeast]
+         * bounds so a 1-tile board is fitted as a 7x7 one and never reaches the
+         * ceiling.
          *
          * [insetTop] / [insetBottom] are the measured heights of the chrome floating
          * over the canvas. They must be subtracted *before* the scale is chosen, not

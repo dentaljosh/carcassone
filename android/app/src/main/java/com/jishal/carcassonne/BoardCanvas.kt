@@ -12,7 +12,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
@@ -56,12 +56,21 @@ private const val FARMER_TILT = 90f
 /** The ghost's prospective slots — present, clearly not yet real. */
 private const val PREVIEW_ALPHA = 0.5f
 
-/** Ownership wash. Low enough that the tile art underneath stays legible. */
-private const val OWNER_FILL_ALPHA = 0.26f
+/** Ownership wash over a city/road/monastery region. Low enough that the tile art
+ *  underneath stays legible; the shading is always on, so it has to be liveable. */
+private const val OWNER_FILL_ALPHA = 0.32f
 
-/** Farm hatching sits over the same cells as a city/road fill, so it is stronger
- *  per stroke but covers only ~1/6 of the area. */
-private const val OWNER_HATCH_ALPHA = 0.34f
+/** A field is the largest thing on the board and would swamp it at the same weight
+ *  as a city, so it gets a lighter wash plus hatching for texture. */
+private const val OWNER_FARM_FILL_ALPHA = 0.15f
+
+/** Farm hatching is stronger per stroke than [OWNER_FARM_FILL_ALPHA] but covers only
+ *  ~1/6 of the area, which is what keeps a field readable AS a field. */
+private const val OWNER_HATCH_ALPHA = 0.30f
+
+/** Outline on a shaded region — the edge is what makes a claim read as a boundary
+ *  rather than as a stain on the artwork. */
+private const val OWNER_EDGE_ALPHA = 0.55f
 
 /** Second tap must land within this of the first, in dp, to read as a double-tap. */
 private val DOUBLE_TAP_SLOP = 36.dp
@@ -94,8 +103,10 @@ fun BoardCanvas(
     modifier: Modifier = Modifier,
     /** Prospective slots for the aimed ghost; drawn faint, never tappable. */
     ghostPreview: List<MeepleSlot> = emptyList(),
-    /** Claimed features to tint, or empty when the overlay is off. */
+    /** Every claimed feature. Always drawn — see [drawOwnership]. */
     ownership: List<OwnershipFeature> = emptyList(),
+    /** The meeple slot the player has aimed but not yet confirmed. */
+    pendingSlot: MeepleSlot? = null,
 ) {
     // Captured-once gesture lambdas must read these through State, not through a
     // stale closure, or panning would keep re-deriving from the first transform.
@@ -189,7 +200,8 @@ fun BoardCanvas(
             drawAiLastTile(state, hair)
             drawPlacedMeeples(state, assets, hair)
             drawGhostPreview(ghost, ghostPreview, hair)
-            drawMeepleSlots(state, hair)
+            drawMeepleSlots(state, hair, pendingSlot)
+            drawPendingMeeple(state, assets, pendingSlot, hair)
         }
     }
 }
@@ -317,13 +329,63 @@ private fun DrawScope.drawPlacedMeeples(state: GameState, assets: TileAssets, ha
  * action applied is still the representative's real action id, so the champion's
  * action space is untouched.
  */
-private fun DrawScope.drawMeepleSlots(state: GameState, hair: Float) {
+private fun DrawScope.drawMeepleSlots(
+    state: GameState,
+    hair: Float,
+    pendingSlot: MeepleSlot?,
+) {
     if (!state.isHumanTurn || !state.isMeeplePhase) return
     val target = state.legal.meepleTarget ?: return
     for (slot in dedupeByFeature(state.legal.meepleSlots)) {
         val (cx, cy) = slotCentre(target, slot.offsetX, slot.offsetY)
-        drawSlotMark(slot, cx, cy, hair, alpha = 1f)
+        // The alternatives recede once one is aimed, so the choice on the table is
+        // "this one, or change my mind" rather than a field of equal dots.
+        val alpha = if (pendingSlot == null || pendingSlot.actionId == slot.actionId) 1f
+        else UNAIMED_SLOT_ALPHA
+        drawSlotMark(slot, cx, cy, hair, alpha = alpha)
     }
+}
+
+/** How far the slots the player did NOT aim at fade back. */
+private const val UNAIMED_SLOT_ALPHA = 0.30f
+
+/**
+ * The meeple the player has aimed but not yet confirmed.
+ *
+ * Drawn as the real sprite at the real slot, ringed — so what Confirm is about to do
+ * is shown as the thing itself, not as a differently-coloured dot. This is the whole
+ * point of the confirm step: adjacent slots are a quarter-tile apart and the previous
+ * build committed on the first tap, so a mis-tap between two farmer corners was
+ * unrecoverable.
+ */
+private fun DrawScope.drawPendingMeeple(
+    state: GameState,
+    assets: TileAssets,
+    slot: MeepleSlot?,
+    hair: Float,
+) {
+    if (slot == null || !state.isMeeplePhase) return
+    val target = state.legal.meepleTarget ?: return
+    val (cx, cy) = slotCentre(target, slot.offsetX, slot.offsetY)
+    val edge = TILE * MEEPLE_FRACTION
+    drawCircle(Color.White, radius = edge * 0.78f, center = Offset(cx, cy), alpha = 0.85f)
+    drawCircle(
+        color = CarcColors.player(state.humanPlayer, state.humanPlayer),
+        radius = edge * 0.78f,
+        center = Offset(cx, cy),
+        style = Stroke(width = hair * 3f),
+    )
+    val sprite = assets.meeple(state.humanPlayer, state.humanPlayer) ?: return
+    val e = if (slot.isFarmer) edge * 0.8f else edge
+    val blit = {
+        drawImage(
+            image = sprite,
+            dstOffset = IntOffset((cx - e / 2f).roundToInt(), (cy - e / 2f).roundToInt()),
+            dstSize = IntSize(e.roundToInt(), e.roundToInt()),
+            alpha = 0.9f,
+        )
+    }
+    if (slot.isFarmer) rotate(FARMER_TILT, pivot = Offset(cx, cy)) { blit() } else blit()
 }
 
 /**
@@ -383,63 +445,140 @@ private fun DrawScope.drawSlotMark(
 }
 
 /**
- * Tint every cell of a claimed feature in its owner's colour.
+ * Shade every claimed feature in its owner's colour — **always on**, every frame.
  *
- * Rendering rules, in the order they resolve:
+ * ### How close to the artwork can this get?
+ *
+ * Not pixel-close, and deliberately not trying. The tile faces are raster scans with
+ * no vector masks and no per-pixel terrain map, so there is no way to trace the
+ * painted edge of a city wall or a field. What the bridge *can* hand over is the
+ * engine's own topology: which SIDE of which tile each feature occupies
+ * (`get_ownership`'s `regions`). So a claim is drawn as the union of per-tile region
+ * approximations — the same side/quadrant carve-up the meeple slots already use:
+ *
+ *  * a city band or a road on an edge → the triangle from that edge to the tile
+ *    centre. A city spanning two edges gets both triangles, which for the common
+ *    faces is very close to the painted shape; a road running straight through gets
+ *    the two opposite triangles, which is wider than the painted ribbon but reads
+ *    correctly as "this road".
+ *  * a monastery → the centre.
+ *  * a field → the quadrant(s) the engine says the farmer connection covers, so a
+ *    tile split by a road correctly shades only the half that is this field.
+ *
+ * The failure mode is over-coverage (a triangle claims a little grass beside the
+ * road), never mis-attribution: no region is ever drawn on a tile the feature does
+ * not genuinely occupy. At a glance "that whole city is red's" is exactly what it
+ * reads as, which is the job.
+ *
+ * ### Weight
+ *
+ * Rules in the order they resolve:
  *  * **contested** (a tie — the engine pays BOTH seats) → purple, so a shared
  *    feature never reads as either player's;
- *  * **farms** → a hatch of diagonal strokes rather than a fill, because a farm
- *    covers whole tiles that also carry a city or a road, and two solid washes on
- *    one cell would be indistinguishable from one strong one;
- *  * everything else → a flat low-alpha fill in the owner's colour.
+ *  * **farms** → drawn FIRST and lightest, with hatching for texture. A field is by
+ *    far the largest thing on the board and at city weight it would swamp everything
+ *    drawn over it;
+ *  * everything else → a flat fill plus an outline in the owner's colour.
  *
- * Cells are drawn per feature, so a tile belonging to both a city and a farm gets
- * both marks — which is the truth about that tile.
+ * A tile belonging to both a city and a field gets both marks on different parts of
+ * itself — which is the truth about that tile, and is why regions beat whole-cell
+ * washes (two stacked whole-cell washes were indistinguishable from one strong one).
  */
 private fun DrawScope.drawOwnership(features: List<OwnershipFeature>, humanPlayer: Int) {
     if (features.isEmpty()) return
-    for (f in features) {
+    // Fields underneath: they are the widest marks, and a city/road drawn over one
+    // has to stay the thing your eye lands on.
+    for (f in features.sortedBy { if (it.isFarm) 0 else 1 }) {
         if (f.owners.isEmpty()) continue
         val colour = when {
             f.isContested -> CarcColors.Contested
             else -> CarcColors.player(f.owners.first(), humanPlayer)
         }
-        for (cell in f.cells) {
-            val x = cell.col * TILE
-            val y = cell.row * TILE
-            if (f.isFarm) {
-                hatchCell(x, y, colour)
-            } else {
-                drawRect(
-                    color = colour,
-                    topLeft = Offset(x, y),
-                    size = Size(TILE, TILE),
-                    alpha = OWNER_FILL_ALPHA,
-                )
-            }
+        if (f.regions.isNotEmpty()) {
+            for (r in f.regions) shadeRegion(r.cell, r.side, colour, f.isFarm)
+        } else {
+            // A bridge that does not report regions: fall back to the whole tile
+            // rather than showing nothing.
+            for (cell in f.cells) shadeRegion(cell, WHOLE_CELL, colour, f.isFarm)
         }
     }
 }
 
-/** Diagonal hatching inside one cell — the farm marker. */
-private fun DrawScope.hatchCell(x: Float, y: Float, colour: Color) {
-    val step = TILE / 6f
-    val w = TILE / 26f
-    // The strokes are full-diagonal and would bleed into the neighbouring cells, so
-    // the whole family is clipped to this square. `i` walks from -TILE to +TILE so
-    // both triangles of the square are covered.
-    clipRect(left = x, top = y, right = x + TILE, bottom = y + TILE) {
-        var i = -TILE
-        while (i <= TILE) {
-            drawLine(
-                color = colour,
-                start = Offset(x + i, y),
-                end = Offset(x + i + TILE, y + TILE),
-                strokeWidth = w,
-                alpha = OWNER_HATCH_ALPHA,
-            )
-            i += step
+/** Sentinel side meaning "the entire tile" — the no-regions fallback. */
+private const val WHOLE_CELL = "*"
+
+/**
+ * The world-space outline of one region of one tile.
+ *
+ * Unrecognised sides fall back to the whole square: an unknown region is a bridge
+ * that knows something this build does not, and showing the claim coarsely beats
+ * dropping it silently.
+ */
+private fun regionPath(cell: Cell, side: String): androidx.compose.ui.graphics.Path {
+    val x = cell.col * TILE
+    val y = cell.row * TILE
+    val h = TILE / 2f
+    fun p(vararg pts: Pair<Float, Float>) =
+        androidx.compose.ui.graphics.Path().apply {
+            moveTo(x + pts[0].first * TILE, y + pts[0].second * TILE)
+            for (i in 1 until pts.size) lineTo(x + pts[i].first * TILE, y + pts[i].second * TILE)
+            close()
         }
+    fun quadrant(qx: Float, qy: Float) =
+        androidx.compose.ui.graphics.Path().apply {
+            addRect(
+                androidx.compose.ui.geometry.Rect(
+                    Offset(x + qx * TILE, y + qy * TILE), Size(h, h),
+                ),
+            )
+        }
+    return when (side) {
+        // Edge bands: the wedge from that edge in to the tile centre.
+        "top" -> p(0f to 0f, 1f to 0f, 0.5f to 0.5f)
+        "right" -> p(1f to 0f, 1f to 1f, 0.5f to 0.5f)
+        "bottom" -> p(1f to 1f, 0f to 1f, 0.5f to 0.5f)
+        "left" -> p(0f to 1f, 0f to 0f, 0.5f to 0.5f)
+        // A monastery owns the middle of its tile and nothing else.
+        "center" -> p(0.5f to 0.16f, 0.84f to 0.5f, 0.5f to 0.84f, 0.16f to 0.5f)
+        // Farmer connections are corners.
+        "top_left" -> quadrant(0f, 0f)
+        "top_right" -> quadrant(0.5f, 0f)
+        "bottom_left" -> quadrant(0f, 0.5f)
+        "bottom_right" -> quadrant(0.5f, 0.5f)
+        else -> androidx.compose.ui.graphics.Path().apply {
+            addRect(
+                androidx.compose.ui.geometry.Rect(Offset(x, y), Size(TILE, TILE)),
+            )
+        }
+    }
+}
+
+private fun DrawScope.shadeRegion(cell: Cell, side: String, colour: Color, isFarm: Boolean) {
+    val path = regionPath(cell, side)
+    if (isFarm) {
+        drawPath(path, colour, alpha = OWNER_FARM_FILL_ALPHA)
+        // Hatching, clipped to the region, so a field reads as texture rather than
+        // as another flat wash competing with the cities drawn on top of it.
+        clipPath(path) {
+            val step = TILE / 7f
+            var i = -TILE
+            while (i <= TILE) {
+                drawLine(
+                    color = colour,
+                    start = Offset(cell.col * TILE + i, cell.row * TILE),
+                    end = Offset(cell.col * TILE + i + TILE, cell.row * TILE + TILE),
+                    strokeWidth = TILE / 30f,
+                    alpha = OWNER_HATCH_ALPHA,
+                )
+                i += step
+            }
+        }
+    } else {
+        drawPath(path, colour, alpha = OWNER_FILL_ALPHA)
+        drawPath(
+            path, colour, alpha = OWNER_EDGE_ALPHA,
+            style = Stroke(width = TILE / 45f),
+        )
     }
 }
 

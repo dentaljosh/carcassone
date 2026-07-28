@@ -54,7 +54,7 @@ STATE_KEYS = {
     "ai_player", "is_human_turn", "scores", "meeples_free", "deck_remaining",
     "tiles_remaining", "next_tile", "board", "meeples", "legal", "opponent",
     "opponent_name", "budget_note", "ai_last_tile", "ai_last_move", "is_terminated",
-    "n_actions",
+    "n_actions", "events",
 }
 LEGAL_KEYS = {"tile_cells", "meeple_slots", "meeple_target", "tile_pass_id",
               "meeple_pass_id", "action_ids"}
@@ -328,11 +328,15 @@ def test_get_progress_shape():
 # save / restore                                                                #
 # --------------------------------------------------------------------------- #
 def _normalise_for_compare(st: dict) -> dict:
-    """Drop the two genuinely-ephemeral fields: the session generation (a restore is a
-    new session by construction) and the AI's wall-clock (not reconstructable)."""
+    """Drop the genuinely-ephemeral fields: the session generation (a restore is a new
+    session by construction), the AI's wall-clock, and `events` — a restore REPLAYS
+    its decisions rather than playing them, so "what the last move just paid" is not a
+    property of the position and is deliberately empty (see
+    `test_restored_and_undone_sessions_report_no_events`)."""
     d = copy.deepcopy(st)
     d.pop("generation", None)
     d.pop("restored", None)
+    d.pop("events", None)
     if d.get("ai_last_move"):
         d["ai_last_move"].pop("elapsed_s", None)
     return d
@@ -1049,8 +1053,339 @@ def test_preview_rejects_an_illegal_or_wrong_phase_action():
 
 
 # --------------------------------------------------------------------------- #
-# get_ownership — the feature overlay                                           #
+# the last-move event summary                                                   #
 # --------------------------------------------------------------------------- #
+def _implied_deltas(events: list[dict], n: int = 2) -> list[int]:
+    out = [0] * n
+    for e in events:
+        for w in e["winners"]:
+            out[w] += e["points"]
+    return out
+
+
+def test_events_itemise_every_mid_game_payout():
+    """Over whole games: every score change is explained, every explanation adds up,
+    and no move that scored nothing invents an event.
+
+    This is the contract the UI chip depends on — a wrong itemisation next to a
+    visible scoreboard is worse than no itemisation at all."""
+    kinds: dict[str, dict] = {}
+    scoring_moves = 0
+    # (seed, seat). Seat is varied so the "You"/opponent naming is exercised from
+    # both sides; (1, 0) is in the list because it is the cheapest game that closes a
+    # CLOISTER — the one payout kind the others never happen to reach.
+    for seed, seat in ((1, 0), (3, 1), (5, 0), (11, 1), (20, 0), (56, 1)):
+        st = new(seed=seed, opponent="tier1", human_player=seat)
+        prev = st["scores"]
+        assert st["events"] == [], "a fresh game has paid out nothing"
+        for _ in range(300):
+            if st["is_terminated"]:
+                break
+            lg = st["legal"]
+            if st["is_human_turn"]:
+                pick = (lg["meeple_slots"][0]["action_id"]
+                        if (st["phase"] == "meeples" and lg["meeple_slots"])
+                        else lg["action_ids"][0])
+                st = ok(B.apply_action(pick))
+            else:
+                st = ok(B.ai_move(st["generation"]))
+            delta = [a - b for a, b in zip(st["scores"], prev)]
+            events = st["events"]
+            if st["is_terminated"]:
+                # The engine's endgame pass consumes every remaining meeple inside
+                # the terminating action; itemising that is the result dialog's job.
+                assert events == [], "a terminal state must not itemise the endgame"
+            else:
+                if any(d > 0 for d in delta):
+                    assert events, f"seed {seed}: scored {delta} with no explanation"
+                    scoring_moves += 1
+                else:
+                    assert events == [], f"seed {seed}: invented {events}"
+                assert _implied_deltas(events) == delta, (seed, events, delta)
+                for e in events:
+                    assert e["text"] and e["points"] > 0
+                    kinds[e["kind"]] = e
+            prev = st["scores"]
+    assert scoring_moves >= 20, f"only {scoring_moves} scoring moves exercised"
+    # `score` is the coarse fallback; it must never be needed on a base+farmers game.
+    assert "score" not in kinds, f"fell back to an unexplained payout: {kinds['score']}"
+    assert {"city", "road", "cloister"} <= set(kinds), sorted(kinds)
+
+
+def test_event_for_a_closed_city_names_the_points_and_the_meeples():
+    """A specific, hand-checked completion: find the move that closes a city and
+    assert the whole event, not just that one arrived."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    found = None
+    for _ in range(300):
+        if st["is_terminated"]:
+            break
+        lg = st["legal"]
+        if st["is_human_turn"]:
+            pick = (lg["meeple_slots"][0]["action_id"]
+                    if (st["phase"] == "meeples" and lg["meeple_slots"])
+                    else lg["action_ids"][0])
+            st = ok(B.apply_action(pick))
+        else:
+            st = ok(B.ai_move(st["generation"]))
+        city = next((e for e in st["events"] if e["kind"] == "city"), None)
+        if city is not None:
+            found = (city, st)
+            break
+    assert found is not None, "no city closed in 300 plies"
+    city, st = found
+    assert set(city) == {"kind", "points", "winners", "meeples_returned", "text"}
+    # A finished city pays 2/tile (+2 per shield), so anything under 4 is impossible.
+    assert city["points"] >= 4 and city["points"] % 2 == 0, city
+    assert 1 <= city["meeples_returned"] <= 7
+    assert city["winners"], "a payout with no winner is not a payout"
+    assert city["text"].startswith("City completed — ")
+    assert f"+{city['points']}" in city["text"]
+    assert f"{city['meeples_returned']} meeple" in city["text"]
+    # ...and the seats named match the winners.
+    for w in city["winners"]:
+        assert ("You" if w == st["human_player"] else "Tier-1") in city["text"]
+    # The meeples really came back to their owners' hands.
+    assert sum(st["meeples_free"]) > 0
+
+
+def test_events_describe_only_the_latest_decision():
+    """`events` is replaced per decision, never accumulated — otherwise the chip
+    would keep re-announcing a city that closed five moves ago."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    scored_at = None
+    for i in range(300):
+        if st["is_terminated"]:
+            break
+        lg = st["legal"]
+        st = (ok(B.apply_action(lg["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+        if st["events"]:
+            scored_at = i
+            break
+    assert scored_at is not None
+    # ...and a plain get_state re-reads the same decision's events, unchanged.
+    assert ok(B.get_state())["events"] == st["events"]
+    # The next decision that pays nothing clears them.
+    for _ in range(300):
+        if st["is_terminated"]:
+            break
+        lg = st["legal"]
+        st = (ok(B.apply_action(lg["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+        if not st["events"]:
+            break
+    assert st["events"] == []
+
+
+def test_events_survive_the_claim_that_scores_instantly():
+    """Claiming a feature the tile you just laid ALREADY completed places and
+    collects the meeple inside one engine call, so it appears in neither state — the
+    hole the `claims` argument closes. Without it the bridge falls back to a bare
+    '+N', which this asserts does not happen."""
+    hits = 0
+    for seed in (5, 11, 20, 56, 3):
+        st = new(seed=seed, opponent="tier1", human_player=0)
+        for _ in range(300):
+            if st["is_terminated"]:
+                break
+            lg = st["legal"]
+            if st["is_human_turn"] and st["phase"] == "meeples" and lg["meeple_slots"]:
+                before = ok(B.get_state())["scores"]
+                st = ok(B.apply_action(lg["meeple_slots"][0]["action_id"]))
+                gained = [a - b for a, b in zip(st["scores"], before)]
+                if not st["is_terminated"] and any(g > 0 for g in gained):
+                    hits += 1
+                    assert st["events"], gained
+                    assert all(e["kind"] != "score" for e in st["events"]), st["events"]
+                    assert _implied_deltas(st["events"]) == gained
+                continue
+            st = (ok(B.apply_action(lg["action_ids"][0])) if st["is_human_turn"]
+                  else ok(B.ai_move(st["generation"])))
+    assert hits > 0, "never hit an instantly-scoring claim; the fixture is stale"
+
+
+def test_restored_and_undone_sessions_report_no_events():
+    """A replayed decision was not *played*, so claiming it just happened would be a
+    lie — and an undo un-does the thing the chip was describing."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    for _ in range(300):
+        if st["is_terminated"] or st["events"]:
+            break
+        lg = st["legal"]
+        st = (ok(B.apply_action(lg["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    assert st["events"], "fixture needs a scoring move"
+    assert ok(B.restore_game(json.dumps(ok(B.save_game()))))["events"] == []
+
+    st = new(seed=5, opponent="tier1", human_player=0)
+    st = _to_human_meeple_phase(st, min_actions=12)
+    assert ok(B.undo_last_tile())["events"] == []
+
+
+# --------------------------------------------------------------------------- #
+# undo_last_tile — take the tile back inside the meeple sub-phase                #
+# --------------------------------------------------------------------------- #
+def _to_human_meeple_phase(st: dict, *, limit: int = 80, min_actions: int = 0) -> dict:
+    """Advance until the HUMAN is in the meeple sub-phase with something to place.
+
+    ``min_actions`` walks past the opening first: the very first placement often has
+    only ONE legal square, which is no use to a test that needs an alternative."""
+    for _ in range(limit):
+        if st["is_terminated"]:
+            break
+        if (st["is_human_turn"] and st["phase"] == "meeples"
+                and st["legal"]["meeple_slots"] and st["n_actions"] >= min_actions):
+            return st
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    raise AssertionError("never reached a human meeple sub-phase with slots")
+
+
+def test_undo_last_tile_returns_to_the_tile_decision():
+    st = new(seed=5, opponent="tier1", human_player=0)
+    st = _to_human_meeple_phase(st)
+    before_log = list(B._S.action_log)
+    placed = st["legal"]["meeple_target"]
+    generation = st["generation"]
+
+    out = ok(B.undo_last_tile())
+    assert_state_schema(out)
+    assert out["phase"] == "tiles" and out["is_human_turn"]
+    assert out["undone"]["action_id"] == before_log[-1]
+    assert B._S.action_log == before_log[:-1]
+    assert out["n_actions"] == len(before_log) - 1
+    # The tile really came off the board, and its square is choosable again.
+    assert [placed["row"], placed["col"]] not in [[t["row"], t["col"]] for t in out["board"]]
+    assert (placed["row"], placed["col"]) in {
+        (c["row"], c["col"]) for c in out["legal"]["tile_cells"]
+    }
+    # The session label is deliberately NOT bumped: the UI keys its opening camera
+    # fit on it and an undo is not a new game.
+    assert out["generation"] == generation
+
+
+def test_undo_last_tile_then_replacing_matches_never_having_placed_it():
+    """The undo is exact, not approximate: undo + place elsewhere is
+    indistinguishable from having placed there in the first place."""
+    def run(detour: bool) -> dict:
+        st = new(seed=11, opponent="tier1", human_player=0)
+        st = _to_human_meeple_phase(st, min_actions=12)
+        original = B._S.action_log[-1]
+        if detour:
+            back = ok(B.undo_last_tile())
+            pre = ok(B.save_game())          # the position before the tile went down
+            alt = next((c["action_ids"][0] for c in reversed(back["legal"]["tile_cells"])
+                        if c["action_ids"][0] != original), None)
+            assert alt is not None, "this fixture needs a second legal square"
+            probe = ok(B.apply_action(alt))
+            if probe["is_human_turn"] and probe["phase"] == "meeples":
+                ok(B.undo_last_tile())       # take the WRONG placement back
+            else:
+                # The alternative had no meeple choice, so the bridge auto-passed
+                # straight out of the undo window; rewind by the ordinary restore.
+                ok(B.restore_game(json.dumps(pre)))
+            st = ok(B.apply_action(original))
+        return play_out(st)
+
+    plain = run(detour=False)
+    detoured = run(detour=True)
+    assert plain["scores"] == detoured["scores"]
+    assert plain["n_actions"] == detoured["n_actions"]
+    assert ok(B.save_game())["actions"] == B._S.action_log
+
+
+def test_undo_last_tile_leaves_no_trace_in_the_save_or_the_archive():
+    """An undone action must not survive into the autosave — and therefore cannot
+    reach the archive, which is built on the same payload and replays it."""
+    st = new(seed=13, opponent="tier1", human_player=0)
+    st = _to_human_meeple_phase(st)
+    undone = B._S.action_log[-1]
+    ok(B.undo_last_tile())
+    saved = ok(B.save_game())
+    assert saved["actions"] == B._S.action_log
+    assert len(saved["actions"]) == 0 or saved["actions"][-1] != undone
+
+    st = play_out(ok(B.get_state()))
+    rec = ok(B.archive_record())
+    assert rec["actions"] == ok(B.save_game())["actions"]
+    # the archive still replays — the truncated log is a valid game
+    back = ok(B.restore_game(json.dumps(rec)))
+    assert back["is_terminated"] and back["scores"] == rec["scores"]
+
+
+def test_undo_last_tile_preserves_the_ai_timing_record():
+    """A restore cannot reconstruct wall-clock, but no AI decision was removed, so
+    the timings already collected still describe moves that are still in the log."""
+    st = new(seed=13, opponent="tier1", human_player=1)     # AI moves first
+    st = _to_human_meeple_phase(st)
+    before = list(B._S.ai_elapsed)
+    assert before, "this fixture needs at least one AI decision behind it"
+    ok(B.undo_last_tile())
+    assert B._S.ai_elapsed == before
+
+
+def test_undo_last_tile_refuses_outside_its_window():
+    B.reset()
+    out = j(B.undo_last_tile())
+    assert out["ok"] is False              # no session at all
+    st = new(seed=5, opponent="tier1", human_player=0)
+    out = j(B.undo_last_tile())
+    assert out["ok"] is False and out["error"]["code"] == "not_meeple_phase"
+    st = _to_human_meeple_phase(st)
+    ok(B.undo_last_tile())
+    # ...and having undone, the window is closed again
+    out = j(B.undo_last_tile())
+    assert out["ok"] is False and out["error"]["code"] == "not_meeple_phase"
+
+    st = new(seed=7, opponent="tier1", human_player=0)
+    st = ok(B.debug_fast_forward("yes-destroy-this-game"))
+    out = j(B.undo_last_tile())
+    assert out["ok"] is False and out["error"]["code"] == "game_over"
+
+
+def test_undo_last_tile_keeps_the_champion_bit_identical():
+    """The champion's per-move search seeds derive from ``_move_idx``; undoing a
+    HUMAN action must not consume one."""
+    st = new(seed=17, opponent="champion", human_player=0, **TINY)
+    st = _to_human_meeple_phase(st)
+    move_idx = B._S.agent._move_idx
+    ok(B.undo_last_tile())
+    assert B._S.agent._move_idx == move_idx
+    assert B._S.agent._latched is False
+
+
+# --------------------------------------------------------------------------- #
+# get_ownership — the always-on feature shading                                 #
+# --------------------------------------------------------------------------- #
+def test_ownership_regions_are_engine_topology_not_guesswork():
+    """Every reported region names a real (cell, side) of the feature, and the four
+    kinds use the side vocabulary the renderer expects."""
+    edges = {"top", "right", "bottom", "left"}
+    corners = {"top_left", "top_right", "bottom_left", "bottom_right"}
+    allowed = {"city": edges, "road": edges, "chapel": {"center"}, "farm": corners}
+    seen = set()
+    st = new(seed=5, opponent="tier1", human_player=0)
+    for _ in range(80):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+        for f in ok(B.get_ownership())["features"]:
+            assert f["regions"], f"{f['kind']} reported no regions to draw"
+            cells = {tuple(c) for c in f["cells"]}
+            for row, col, side in f["regions"]:
+                assert isinstance(row, int) and isinstance(col, int)
+                # A region may never appear on a tile the feature does not occupy —
+                # over-coverage inside a tile is an approximation, a region on the
+                # wrong tile would be a lie.
+                assert (row, col) in cells, (f["kind"], row, col)
+                assert side in allowed[f["kind"]], (f["kind"], side)
+                assert side in B.MEEPLE_OFFSET_RATIO, side
+            seen.add(f["kind"])
+    assert {"city", "road", "farm"} <= seen, f"only exercised {sorted(seen)}"
+
+
 def test_ownership_reports_the_feature_a_placed_meeple_claims():
     st = new(seed=5, opponent="tier1", human_player=0)
     assert ok(B.get_ownership())["features"] == [], "nothing is claimed yet"

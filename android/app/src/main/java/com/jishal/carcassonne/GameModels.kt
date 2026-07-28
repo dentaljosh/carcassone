@@ -111,11 +111,31 @@ fun dedupeByFeature(slots: List<MeepleSlot>): List<MeepleSlot> {
 /** Far above any real dense group id, so a synthetic key can never collide. */
 private const val UNGROUPED_KEY_BASE = 1_000_000
 
-/** One claimed feature, for the ownership overlay (`get_ownership`). */
+/**
+ * The part of ONE tile a claimed feature occupies.
+ *
+ * [side] is the engine's own `Side` value, and which values can appear is decided by
+ * the kind of feature: an edge (`top`/`right`/`bottom`/`left`) for a city band or a
+ * road, `center` for a monastery, and a farmer corner
+ * (`top_left`/`top_right`/`bottom_left`/`bottom_right`) for a field. The renderer
+ * turns each into a shape — see `BoardCanvas.regionPath`.
+ */
+data class FeatureRegion(val row: Int, val col: Int, val side: String) {
+    val cell: Cell get() = Cell(row, col)
+}
+
+/** One claimed feature, for the ownership shading (`get_ownership`). */
 data class OwnershipFeature(
     /** `city` | `road` | `chapel` | `farm`. */
     val kind: String,
     val cells: List<Cell>,
+    /**
+     * Which *part* of each cell the feature covers. Preferred over [cells] for
+     * drawing — a tile usually carries several features at once, and whole-tile
+     * washes stacked on one tile are unreadable. Empty only on a bridge too old to
+     * report it, in which case the renderer falls back to [cells].
+     */
+    val regions: List<FeatureRegion>,
     /** Majority owners: empty (nobody), one seat, or BOTH on a tie = contested. */
     val owners: List<Int>,
     val meepleCountPerPlayer: List<Int>,
@@ -188,6 +208,27 @@ data class AiLastMove(
 )
 
 /**
+ * One thing the last decision materially did — a feature completing and paying out.
+ *
+ * The board only shows that a number changed, and Base+Farmers pays in lumps big
+ * enough that an unexplained 11 -> 17 is the most confusing moment of watching the
+ * champion play. The bridge derives these by diffing the state across the applied
+ * action (`android_bridge.scoring_events`) and hands over [text] ready to print, so
+ * the UI never re-derives scoring rules it would get subtly wrong.
+ *
+ * [kind] is `city` | `road` | `cloister`, or `score` for the deliberately coarse
+ * fallback the bridge emits when its itemisation does not reconcile with the real
+ * score delta.
+ */
+data class MoveEvent(
+    val kind: String,
+    val points: Int,
+    val winners: List<Int>,
+    val meeplesReturned: Int,
+    val text: String,
+)
+
+/**
  * One seat's share of the final scoring pass, in ENGINE SEAT ORDER.
  *
  * `duringPlay + incomplete + farms == total` is a bridge-side invariant (the
@@ -236,6 +277,8 @@ data class GameState(
     val aiLastMove: AiLastMove?,
     val isTerminated: Boolean,
     val result: GameResult?,
+    /** What the LAST decision paid out. Usually empty — most moves score nothing. */
+    val events: List<MoveEvent> = emptyList(),
 ) {
     val isTilePhase: Boolean get() = phase == "tiles"
     val isMeeplePhase: Boolean get() = phase == "meeples"
@@ -349,6 +392,15 @@ object BridgeJson {
         },
         isTerminated = o.optBoolean("is_terminated", false),
         result = o.optJSONObject("result")?.let(::gameResult),
+        events = o.optJSONArray("events").map { e ->
+            MoveEvent(
+                kind = e.optString("kind", "score"),
+                points = e.optInt("points", 0),
+                winners = intList(e.optJSONArray("winners")),
+                meeplesReturned = e.optInt("meeples_returned", 0),
+                text = e.optString("text", ""),
+            )
+        }.filter { it.text.isNotEmpty() },
     )
 
     /** Shared by the live state and by an archived record, which stores the same
@@ -391,6 +443,16 @@ object BridgeJson {
                     if (a == null) emptyList() else List(a.length()) { i ->
                         val pair = a.optJSONArray(i)
                         Cell(pair?.optInt(0) ?: 0, pair?.optInt(1) ?: 0)
+                    }
+                },
+                regions = f.optJSONArray("regions").let { a ->
+                    if (a == null) emptyList() else List(a.length()) { i ->
+                        val t = a.optJSONArray(i)
+                        FeatureRegion(
+                            t?.optInt(0) ?: 0,
+                            t?.optInt(1) ?: 0,
+                            t?.optString(2).orEmpty().ifEmpty { "center" },
+                        )
                     }
                 },
                 owners = intList(f.optJSONArray("owners")),

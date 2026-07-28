@@ -135,9 +135,21 @@ data class GameUiState(
      * ghost, which is the honest rendering of an asynchronous read.
      */
     val ghostPreview: List<MeepleSlot> = emptyList(),
-    /** The ownership overlay toggle (the layers button in the HUD). */
-    val overlayOn: Boolean = false,
-    /** Claimed features for the overlay; only refreshed while [overlayOn]. */
+    /**
+     * The meeple slot the player has aimed but not yet confirmed.
+     *
+     * The meeple phase mirrors the tile phase now: a tap AIMS, and a second,
+     * deliberate press on ✓ commits. It used to commit on the first tap, which on a
+     * board where adjacent slots are a quarter-tile apart made a mis-tap between two
+     * farmer corners permanent. Derived state is avoided on purpose — this is the
+     * player's intent, not a function of the board.
+     */
+    val selectedSlot: MeepleSlot? = null,
+    /**
+     * Every claimed feature, for the always-on ownership shading. Refreshed after
+     * each adopted state; never a toggle (the whole complaint was that a claim you
+     * had to ask for is a claim you forget to ask for).
+     */
     val ownership: List<OwnershipFeature> = emptyList(),
     /** The tile-bag dialog is open. */
     val showBag: Boolean = false,
@@ -145,6 +157,17 @@ data class GameUiState(
     val bag: BagInfo? = null,
     /** How many finished games are archived (the Home entry's subtitle). */
     val archiveCount: Int = 0,
+    /**
+     * What the last decision that actually *paid* did — the "last move" chip.
+     *
+     * Held here rather than read straight off [GameState.events] because a turn is
+     * several bridge calls and only one of them scores: the champion's tile move and
+     * its meeple move are two `ai_move`s, so taking the newest state's events
+     * verbatim would blank the chip a fraction of a second after showing it.
+     * Replaced only by a NON-EMPTY event set, and otherwise stands until dismissed —
+     * which is what "last move" means.
+     */
+    val lastEvents: List<MoveEvent> = emptyList(),
 ) {
     /**
      * The live ghost, or `null` when nothing is aimed. Recomputed from the
@@ -465,21 +488,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // ------------------------------------------------------ ownership overlay
-
-    fun toggleOverlay() {
-        val on = !_ui.value.overlayOn
-        _ui.update { it.copy(overlayOn = on, ownership = if (on) it.ownership else emptyList()) }
-        if (on) refreshOwnership()
-    }
+    // ----------------------------------------------------- ownership shading
 
     /**
-     * Re-read the claimed features. Only ever called while the overlay is on (and
-     * after a state change), never in the turn hot path — the walk is engine BFS per
-     * placed meeple, which is cheap at board scale but is not free.
+     * Re-read the claimed features. Called after every adopted state and nowhere
+     * else — the walk is an engine BFS per placed meeple, cheap at board scale (at
+     * most 14 meeples) but not free, and never on the search hot path.
      */
     private fun refreshOwnership() {
-        if (!_ui.value.overlayOn) return
         ownershipJob?.cancel()
         val myEpoch = epoch
         ownershipJob = viewModelScope.launch {
@@ -494,7 +510,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             if (!isCurrent(myEpoch)) return@launch
             val feats = BridgeJson.parseOrError(raw).getOrNull()
                 ?.let(BridgeJson::ownership) ?: return@launch
-            _ui.update { if (it.overlayOn) it.copy(ownership = feats) else it }
+            _ui.update { it.copy(ownership = feats) }
         }
     }
 
@@ -530,9 +546,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     // ----------------------------------------------------- human meeple phase
 
+    /**
+     * Tap on a meeple slot: AIM it. Nothing is applied until [confirmMeeple].
+     *
+     * Deliberately NOT gated on [GameUiState.phaseLock], unlike Skip: aiming is now
+     * free to undo, so swallowing the tap would cost responsiveness to protect
+     * against a mistake that no longer has consequences. Tapping the slot that is
+     * already aimed clears it, which is the same "tap again to change your mind"
+     * grammar the tile ghost uses.
+     */
     fun onMeepleSlot(slot: MeepleSlot) {
-        if (!_ui.value.canInteract || _ui.value.phaseLock) return
+        if (!_ui.value.canInteract) return
         if (_ui.value.state?.isMeeplePhase != true) return
+        _ui.update {
+            it.copy(selectedSlot = if (it.selectedSlot?.actionId == slot.actionId) null else slot)
+        }
+    }
+
+    fun cancelMeeple() = _ui.update { it.copy(selectedSlot = null) }
+
+    fun confirmMeeple() {
+        val slot = _ui.value.selectedSlot ?: return
+        if (!_ui.value.canInteract || _ui.value.state?.isMeeplePhase != true) return
         applyHumanAction(slot.actionId)
     }
 
@@ -545,14 +580,53 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         applyHumanAction(pass)
     }
 
+    /**
+     * Take the tile back and return to choosing where it goes.
+     *
+     * Only offered in the human's meeple sub-phase, which is the only window in which
+     * it is exact: the champion has not moved since the tile landed (the bridge's
+     * `auto_pass_forced` only auto-passes the human seat), so the bridge can rebuild
+     * the session from `(deck_seed, action_log minus the last action)` and the
+     * opponent that plays on is bit-identical to the one that would have played had
+     * the tile never been placed. See `android_bridge.undo_last_tile`.
+     *
+     * Routed through [runBridge] like every other mutation, so the autosave is
+     * rewritten from the truncated log — an undone action must not survive in the
+     * save, and therefore cannot survive into the end-of-game archive either.
+     */
+    fun undoTilePlacement() {
+        val st = _ui.value.state ?: return
+        if (!_ui.value.canInteract || !st.isMeeplePhase) return
+        launchOp { e ->
+            _ui.update {
+                it.copy(
+                    busy = true, error = null, selectedSlot = null,
+                    selected = null, rotationIndex = 0,
+                    // The tile that was the camera's subject is about to stop
+                    // existing; leaving it set would recentre on a hole.
+                    lastPlacedTile = null,
+                )
+            }
+            runBridge(e) { PythonBridge.undoLastTile() }
+        }
+    }
+
     private fun applyHumanAction(actionId: Int) = launchOp { e ->
-        _ui.update { it.copy(busy = true, error = null, selected = null, rotationIndex = 0) }
+        _ui.update {
+            it.copy(
+                busy = true, error = null, selected = null, rotationIndex = 0,
+                selectedSlot = null,
+            )
+        }
         runBridge(e) { PythonBridge.applyAction(actionId) }
     }
 
     // -------------------------------------------------------------- teardown
 
     fun dismissResult() = _ui.update { it.copy(showResult = false) }
+
+    /** Dismiss the last-move chip. It comes back on the next move that scores. */
+    fun dismissEvents() = _ui.update { it.copy(lastEvents = emptyList()) }
 
     fun clearError() = _ui.update { it.copy(error = null) }
 
@@ -694,6 +768,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _ui.update {
             it.copy(
                 state = st, busy = false, opActive = true, error = null, aiFailed = false,
+                // The board moved, so an aimed meeple describes a position that is
+                // gone. Cleared here rather than at each call site so no mutating
+                // path can forget it.
+                selectedSlot = null,
+                lastEvents = st.events.ifEmpty { it.lastEvents },
                 saveMismatch = obj.optJSONObject("save_mismatch")
                     ?.optString("message").orEmpty().ifEmpty { null } ?: it.saveMismatch,
             )
@@ -877,6 +956,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             _ui.update {
                 it.copy(
                     state = next, error = null, aiFailed = false,
+                    lastEvents = next.events.ifEmpty { it.lastEvents },
                     // `ai_last_tile` PERSISTS across the human's reply, so it only
                     // counts as a fresh placement when it actually changed.
                     lastPlacedTile = next.aiLastTile ?: it.lastPlacedTile,

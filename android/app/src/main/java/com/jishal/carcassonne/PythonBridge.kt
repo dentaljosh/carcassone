@@ -107,7 +107,17 @@ object PythonBridge {
     suspend fun previewMeepleSlots(actionId: Int): String =
         call("preview_meeple_slots", actionId)
 
-    /** Every claimed feature + its owners, for the overlay. On demand only. */
+    /**
+     * Take back the tile just placed, returning to the tile decision point.
+     *
+     * Legal only in the human's meeple sub-phase. The bridge rebuilds the session by
+     * replaying `(deck_seed, action_log minus the last action)`, so the opponent that
+     * plays on is bit-identical; the caller must persist afterwards (the ordinary
+     * `runBridge` path does) so the autosave loses the undone action too.
+     */
+    suspend fun undoLastTile(): String = call("undo_last_tile")
+
+    /** Every claimed feature + its owners, for the always-on shading. */
     suspend fun getOwnership(): String = call("get_ownership")
 
     /** Unseen tiles per face — public information, never the deck order. */
