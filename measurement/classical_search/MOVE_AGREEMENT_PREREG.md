@@ -5,7 +5,12 @@
 > The read-out code (`scripts/measurement_infra/analyze_move_agreement.py`) is committed
 > in the same commit as this document, so the metric definitions are fixed in advance too.
 >
-> **STATUS: LAUNCHED 2026-07-27 — RUNNING, NO RESULTS YET.**
+> **STATUS: ✅ COMPLETE 2026-07-28 — VERDICT = the search has NOT converged (H1 refuted),
+> but the budget effect is small (~4pp) and this probe alone does NOT establish H2.** The
+> ruler is implicated by **CL-060**, not by this probe. Claim **CL-070**;
+> `results.csv move_agreement_k4_b28e9`; full pair matrix in
+> [MOVE_AGREEMENT_REPORT.json](MOVE_AGREEMENT_REPORT.json). See the Results section at the
+> foot of this document. Nothing above that section was edited after launch.
 
 ## Why
 
@@ -299,4 +304,110 @@ Cost is dominated by the deepest rung: the snapshot means the seven-rung ladder 
 
 # Results
 
-*(none yet — the run was launched after this document was committed)*
+**2026-07-28 — VERDICT: THE SEARCH HAS NOT CONVERGED (pre-registered H1 REFUTED). But the
+budget-attributable effect on the pick is SMALL (~4pp), and this probe ALONE does not
+establish H2.**
+
+> ⚠️ **CORRECTION, 2026-07-28, before any of this was committed.** The first draft of this
+> section read "H1 refuted ⇒ H2 established". **That is a false dichotomy, and it was baked
+> into the pre-registration above** (which is left unedited, as the rules require). Joshua
+> caught it with the obvious question: *if these disagreements are consequential, how does
+> the 11008 agent barely beat the 2752 agent?* A **third** explanation fits everything below
+> — the move changes, but the change is nearly **strength-neutral**. This probe measured
+> whether the pick MOVED, never whether it IMPROVED, so it cannot separate those two.
+> What implicates the ruler is **CL-060**, not this probe (see "What this licenses" below).
+
+Run: 898 roots sampled, 25 solver-region excluded per the pre-registered rule → **873
+analysable**; 7 levels × 3 salts = **2694 records, 0 failed**, 75 records excluded. Verify
+cell **41/41** on both `--verify-bit-exact` and `--verify-agent-parity`. Bootstrap B=10 000,
+seed 20260727. Stratifier median `h200_top2_q_gap` = 0.033854.
+
+## Headline — `D_paired(2752, 11008)` and `Delta(2752, 11008)`
+
+| | n | `D_cross` observed | `D_cross_null` (reseed alone) | **Delta** = budget's own | 95% CI | z | `D_paired` |
+|---|---:|---:|---:|---:|---|---:|---:|
+| **Overall** | 873 | 0.3039 | 0.2644 | **+0.0396** | [0.0283, 0.0517] | 6.72 | 0.2398 |
+| **Narrow-gap** *(headline stratum)* | 437 | 0.4622 | 0.4053 | **+0.0570** | [0.0374, 0.0776] | 5.57 | 0.3699 |
+| Wide-gap | 436 | 0.1453 | 0.1235 | +0.0218 | [0.0112, 0.0338] | 3.76 | 0.1093 |
+
+⚠️ **Read `Delta`, not `D_paired`.** Reseeding *alone*, at fixed budget, already produces
+**26.4%** disagreement; observed cross-budget is 30.4%. So budget contributes **+4.0 points
+— 13% of the disagreement**, and the other 87% is the agent's own churn. `D_paired` (worlds
+held fixed) is the maximum-power detector of *"does depth change anything at all"*; it is
+**not** the size of the budget effect and must not be quoted as one.
+
+Rule 1 (H1) required `D_paired ≤ 0.05` **and** `Delta` CI covering 0. Rule 2 (H2) required
+`D_paired ≥ 0.10` **or** `Delta` CI excluding 0. **Both H2 conditions hold, overall and in
+the narrow-gap stratum.** Rule 3 (H1-WEAK / INDIFFERENCE) requires `Delta ≈ 0` with the CI
+covering 0 — that **does not occur in any stratum**: `Delta`'s CI excludes 0 for both gap
+halves, all three game phases (early +0.0246 z 2.84 · mid +0.0233 z 3.26 · late +0.0758
+z 5.40) and both engine phases (TILES +0.0474 z 5.67 · MEEPLES +0.0295 z 3.68).
+
+⇒ **The search has not converged: budget still shifts the pick by ~4 points beyond reseed
+noise, decisively (z 6.72).** That refutes H1. It does **not** by itself say the flat curve
+is the ruler's fault — see below.
+
+## Secondary findings
+
+**1. The noise floor GROWS monotonically with depth** — more search means *more* run-to-run
+churn, not less. This is why the matched null was load-bearing rather than decorative: a raw
+cross-budget disagreement number would have been badly misread here.
+
+| total budget | 344 | 688 | 1376 | 2064 | 2752 | 5504 | 11008 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `D_same` | 0.1226 | 0.1615 | 0.2043 | 0.2089 | 0.2272 | 0.2684 | 0.2997 |
+
+**2. ⚠️ The validity guard passed, but narrowly in the headline stratum.** The pre-registered
+guard voids the probe if `D_same ≥ 0.5` at the top budgets (argmax would be the wrong
+instrument). Overall `D_same(11008)` = 0.2997 ✅ — but **narrow-gap `D_same(11008)` = 0.4493**,
+under the line and close to it. The stratum carrying the headline is approaching the
+instrument's own limit. **Quote both; never the overall figure alone.**
+
+**3. Volatility is lowest at deploy and rises above it.** Adjacent-step `D_paired` falls to a
+minimum at 2064→2752 and then climbs again:
+
+| step | 344→688 | 688→1376 | 1376→2064 | 2064→2752 | 2752→5504 | 5504→11008 |
+|---|---:|---:|---:|---:|---:|---:|
+| `D_paired` | 0.2104 | 0.1764 | 0.1466 | **0.1218** | 0.1749 | 0.1810 |
+| `Delta` | +0.0866 | +0.0497 | +0.0214 | +0.0179 | +0.0173 | +0.0206 |
+
+Every adjacent `Delta` CI excludes 0. Full pair matrix (all 21 pairs × 8 strata):
+[MOVE_AGREEMENT_REPORT.json](MOVE_AGREEMENT_REPORT.json).
+
+## What this licenses, and what it does not
+
+**Licensed by THIS probe:** the flat top of the blind curve (CL-069) and the self-anchored
+Pareto curve (CL-068) **cannot be attributed to the agent having converged**. That is the
+whole of it.
+
+**NOT licensed by this probe — that the flatness is instrument compression.** The probe
+never measured move *quality*, so "the move changes but the change is worth almost nothing"
+survives it untouched. Two facts actively support that reading:
+
+- **The agent disagrees with itself 30.0% of the time at 11008** at *fixed* budget (44.9% in
+  the narrow-gap stratum). A move set it cannot rank stably across seeds is close to by
+  definition a set of near-equal moves — which is exactly why 30% self-churn does not
+  destabilise its measured strength.
+- **Budget's own share of the disagreement is 13%.** The headline effect is 4 points, not 24.
+
+**What DOES implicate the ruler is CL-060, not this probe.** The same pair of agents,
+measured two ways, disagrees by ~70 elo:
+
+| 11008 vs 2752, measured by | result |
+|---|---|
+| direct head-to-head — `cl060_h2h_k8x1376_vs_deploy_k4x688`, n=400 paired, 221W–164L–15D | **+49.85 ± 17.55** |
+| via RoD-v2 as ruler — this band, deck-matched (11008 +105.6, 2752 +127.0) | **−21.4**, wrong sign, n.s. |
+
+**The honest synthesis — the exchange rate.** ~4 points of budget-attributable move change
+buys ~+50 elo. Real, but thin for 4× the compute: *weakly* consequential, not "deeper search
+finds much better moves". The practical decision stands either way — **RoD-v2 cannot price
+budget above 2752, so stop buying budget rungs graded against it** — but it rests on CL-060's
+contrast, not on this probe.
+
+**The successor experiment this points at**, and it needs no game-playing opponent: take the
+positions where 2752 and 11008 disagree and score **both** picks against a stronger reference
+(the exact solver where `k_remaining` allows, or a much deeper search). That converts "the
+move changed" into "the move improved" and prices budget directly, sidestepping structural
+blocker #1 for this one question.
+
+Nothing here promotes anything; `governance/PRODUCTION.yaml` is untouched.
