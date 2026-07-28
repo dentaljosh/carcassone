@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# C3-INTRA (within-turn tile->meeple tree carry) — POWERED CONFIRM, n=600 paired.
+# TRANCHE 2: band 80e9  (tranche 1 was band 78e9, n=600, COMPLETE)
+#
+# Lineage:
+#   SCREEN    (band 74e9, n=200, selection-biased — the cell that motivated the confirm):
+#             +40.1 elo (z +1.62), paired margin +1.65 pts/deck (z +1.32), ms-ratio 0.994x
+#   TRANCHE 1 (band 78e9, n=600, unbiased): +27.3 +/- 14.2 (z 1.92), paired +1.20 (z 1.76),
+#             ms-ratio 1.011x — just under the 2-sigma bar, sign-consistent across bands.
+#   TRANCHE 2 (this cell, band 80e9, n=600): settles it. Combined n=1200 across 78e9+80e9.
+#
+# ⚠️ CODE REV NOTE: tranche 1 ran at rev 4e67f2b; tranche 2 runs at 81f6e5d. The delta includes
+# a merged flat_base_score->Cython dispatch under USE_CY_LEAF, PROVEN bit-exact by
+# scripts/reconcile_cy_leaf.py (0 mismatches over ~87k base evals incl. 9k endgame states),
+# plus a golden-fixture regen (hash-only). Behaviour is identical, so combining the two tranches
+# is defensible — but the differing code_rev MUST be recorded in the read-out.
+#
+# ⚠️ This deliberately does NOT call scripts/classical_search/intra_reuse_screen.sh: that script
+# runs TWO cells (k4x344 then k4x688) and would spend hours on a k4x344 cell nobody asked for.
+# Everything below — env block, agent flags, endgame, claim knobs — is copied VERBATIM from that
+# script's k4x688 iteration so the confirm is config-identical to the screen cell it confirms.
+#
+# ⚠️ EQUAL-WALL-CLOCK: measured ms/move ratio candidate/opponent is 0.994x (screen) / 1.011x
+# (tranche 1) at this exact budget, i.e. nominal-equal sims ARE equal wall-clock here (tighter
+# than CL-044's accepted 1.06x). So these cells double as the mandatory equal-wall-clock confirm.
+#
+# Usage: intra_confirm.sh <WORKERS> <OUT_ROOT>
+#   local:  intra_confirm.sh 16 /mnt/c/carc-shared
+#   laptop: intra_confirm.sh 16 /mnt/carc-shared
+# Resume-safe: --shared-claim, so re-running resumes remaining games (the watchdog relies on this).
+set -uo pipefail
+cd /home/doctor/projects/carcassone            # line-1 cd (path-stable for ssh bash -s)
+
+W="${1:?worker count}"
+OUT_ROOT="${2:?out root (/mnt/c/carc-shared local | /mnt/carc-shared laptop)}"
+BAND=80000000000                               # claimed in /mnt/c/carc-shared/BAND_CLAIMS.txt
+N=600                                          # paired => even; 300 decks x 2 seats
+K=4
+S=688
+PY=/home/doctor/projects/carcassone/.venv/bin/python
+EVAL=/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py
+
+# ---- production leaf knobs + BLAS pins — VERBATIM from intra_reuse_screen.sh.
+# ---- NO CARCASSONNE_V29_MEEPLE_CURVE export (a head-to-head injects curve125 into BOTH sides
+# ---- itself; exporting it here would move env DEFAULT_CONFIG and change what "champion" means).
+# ---- NO CARCASSONNE_INTRA_TURN_REUSE export either: the flag is per-AGENT via --intra-reuse,
+# ---- so the OPPONENT in the same worker process stays OFF.
+export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
+export CARCASSONNE_V25_MEEPLE_K=2.0 CARCASSONNE_V25_VALUE_BLEND=0
+export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_USE_CY_REPR=1
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+export CARCASSONNE_TT_CAP=200000
+
+[ -d "$OUT_ROOT" ] || { echo "FATAL: share not mounted at $OUT_ROOT" >&2; exit 1; }
+
+echo "=== intra-reuse CONFIRM T2 k_dets=$K sims/det=$S total=$((K*S)) W=$W band=$BAND n=$N host=$(hostname -s) rev=$(git rev-parse --short HEAD) $(date -u +%H:%M:%S) ==="
+nice -n 19 "$PY" -u "$EVAL" \
+  --info fair --opponent fair-champion --exact-k 2 \
+  --k-dets "$K" --sims "$S" \
+  --intra-reuse \
+  --n "$N" --paired --seed-start "$BAND" --workers "$W" \
+  --out-root "$OUT_ROOT" --out-subdir "intrareuse_k${K}x${S}_tot$((K*S))_vs_champ_off_b${BAND}_n600" \
+  --shared-claim --claim-stale-secs 300 --no-results-csv
+echo "=== intra-reuse CONFIRM T2 DONE rc=$? $(date -u +%H:%M:%S) ==="
