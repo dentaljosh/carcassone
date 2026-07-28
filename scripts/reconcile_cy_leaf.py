@@ -20,12 +20,18 @@ Checks:
      plus two off-production configs (pre-v2.7 schedule w/ 3-open; one-open +
      asymmetric caps + meeple_k) to catch config-dependent divergence.
   2. BASE INT — flat_base_score (py) == flat_base_score_cy (pure-int path).
+     Reported ALSO for the ENDGAME stratum alone (<= --endgame-deck tiles left,
+     terminals included) — that is the exact solver's terminal leaf, the population
+     that matters for the USE_CY_LEAF dispatch added 2026-07-28
+     (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md lever #2).
   3. STRUCTURE (diagnostic, every --structs-every states) — the exported C
      decomposition equals flat_leaf.decompose field-for-field (root ids are
      bit-identical by construction: same enumeration + union order).
   4. WIRING — flipping flat_leaf.USE_CY_LEAF at runtime actually routes
-     flat_virtual_score_v2 through the compiled port (lazy bind fires) and
-     returns identical values.
+     flat_virtual_score_v2 AND flat_base_score through the compiled port (lazy
+     bind fires) and returns identical values. flat_base_score redirects only
+     when no `decomp` is supplied, so the caller-supplied-decomp path is checked
+     to stay on pure Python.
 
 Usage (production knobs):
   CARCASSONNE_V25_CAP=12 CARCASSONNE_V25_DROP_THREE_OPEN=1 \
@@ -125,6 +131,39 @@ def check_wiring(state) -> tuple[bool, bool]:
     return bound, routed == py
 
 
+def check_base_wiring(state) -> tuple[bool, bool, bool]:
+    """Same for flat_base_score's USE_CY_LEAF dispatch (added 2026-07-28). Returns
+    ``(bound, routed_ok, decomp_arg_stays_python)`` — the third checks that passing
+    an explicit `decomp` keeps the call on the pure-Python path (the cy entry takes
+    only (state, player) and would ignore the argument)."""
+    saved = flat_leaf.USE_CY_LEAF
+    try:
+        flat_leaf.USE_CY_LEAF = False
+        py = flat_leaf.flat_base_score(state, 0)
+        flat_leaf.USE_CY_LEAF = True
+        routed = flat_leaf.flat_base_score(state, 0)
+        # With a decomp supplied the cy port must NOT be consulted. Comparing values
+        # would be too weak (the port returns the same number anyway), so instead the
+        # bound function is POISONED: any redirect on this path raises.
+        bound_after = flat_leaf._CY_BASE
+        flat_leaf._CY_BASE = _POISON
+        try:
+            with_decomp = flat_leaf.flat_base_score(state, 0, flat_leaf.decompose(state))
+            decomp_ok = with_decomp == py
+        finally:
+            flat_leaf._CY_BASE = bound_after
+    finally:
+        flat_leaf.USE_CY_LEAF = saved
+    bound = bool(flat_leaf._CY_BASE)
+    return bound, routed == py, decomp_ok
+
+
+def _POISON(state, player):  # noqa: N802 - sentinel callable, must never be invoked
+    raise AssertionError(
+        "flat_base_score redirected to the Cython port despite being handed an "
+        "explicit decomp — the caller's decomposition would have been ignored.")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=400, help="games to play")
@@ -137,6 +176,11 @@ def main() -> int:
     ap.add_argument(
         "--skip-offprod", action="store_true",
         help="only check the env-built DEFAULT_CONFIG (faster)",
+    )
+    ap.add_argument(
+        "--endgame-deck", type=int, default=6,
+        help="a state counts as ENDGAME (reported as its own base-check stratum) "
+             "when <= this many tiles remain in the deck; terminals always count",
     )
     args = ap.parse_args()
 
@@ -174,6 +218,8 @@ def main() -> int:
     v2_mism = 0
     mism_by_cfg = {name: 0 for name, _ in configs}
     base_checks = base_mism = 0
+    base_end_checks = base_end_mism = 0
+    end_states = 0
     struct_checks = struct_mism = 0
     first_fail = None
 
@@ -181,6 +227,9 @@ def main() -> int:
         states = collect_states(game, args.seed + g, args.snap_every)
         for state in states:
             states_seen += 1
+            # ENDGAME stratum: the population the exact solver actually scores.
+            is_end = len(state.deck) <= args.endgame_deck
+            end_states += int(is_end)
             for p in range(2):
                 for name, cfg in configs:
                     py = flat_leaf.flat_virtual_score_v2(state, p, cfg)
@@ -199,10 +248,12 @@ def main() -> int:
                                 f"py={py} cy={cy} pyf={pyf!r} cyf={cyf!r}"
                             )
                 base_checks += 1
+                base_end_checks += int(is_end)
                 bpy = flat_leaf.flat_base_score(state, p)
                 bcy = flat_leaf_cy.flat_base_score_cy(state, p)
                 if bpy != bcy:
                     base_mism += 1
+                    base_end_mism += int(is_end)
                     if first_fail is None:
                         first_fail = f"BASE game_seed={args.seed + g} p={p}: py={bpy} cy={bcy}"
             if states_seen % args.structs_every == 0:
@@ -222,8 +273,9 @@ def main() -> int:
                 flush=True,
             )
 
-    # wiring check on the last state
+    # wiring checks on the last state (a terminal, i.e. the solver's own population)
     bound, routed_ok = check_wiring(states[-1])
+    base_bound, base_routed_ok, base_decomp_ok = check_base_wiring(states[-1])
 
     print("\n=== reconcile_cy_leaf summary ===")
     print(f"games                  : {args.n} (seed {args.seed}, snap-every {args.snap_every})")
@@ -232,8 +284,12 @@ def main() -> int:
     for name, _ in configs:
         print(f"  cfg {name:<14}: mismatches {mism_by_cfg[name]}")
     print(f"base int checks        : {base_checks:>8}   mismatches: {base_mism}")
+    print(f"  of which ENDGAME     : {base_end_checks:>8}   mismatches: {base_end_mism}   "
+          f"({end_states} states with <= {args.endgame_deck} tiles left)")
     print(f"structure compares     : {struct_checks:>8}   mismatches: {struct_mism}")
     print(f"wiring (USE_CY_LEAF)   : bound={bound} routed_value_ok={routed_ok}")
+    print(f"wiring (base dispatch) : bound={base_bound} routed_value_ok={base_routed_ok} "
+          f"decomp_arg_stays_python={base_decomp_ok}")
 
     if first_fail is not None:
         print(f"\nFIRST FAILURE: {first_fail}")
@@ -246,12 +302,17 @@ def main() -> int:
     if not (bound and routed_ok):
         print("\nFAIL: USE_CY_LEAF wiring did not route through the compiled port.")
         return 1
+    if not (base_bound and base_routed_ok and base_decomp_ok):
+        print("\nFAIL: flat_base_score dispatch is wrong (either it did not route to the "
+              "compiled port, or it routed while a decomp was supplied).")
+        return 1
     if v2_checks < 10000:
         print(f"\nWARN: only {v2_checks} leaf checks (<10k); re-run larger for the verdict.")
     print(
         f"\nPASS (BIT-EXACT): cy == py across {v2_checks} leaf evals "
         f"({states_seen} states x 2 players x {len(configs)} cfgs), "
-        f"{base_checks} base evals, {struct_checks} structure compares, wiring OK."
+        f"{base_checks} base evals ({base_end_checks} of them ENDGAME), "
+        f"{struct_checks} structure compares, wiring OK."
     )
     return 0
 
