@@ -491,6 +491,11 @@ These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-
 **Context:** Joshua noticed the retail game pre-places a fixed start tile (the city+road "D" pattern) before any draw. Verified: our engine does NOT — `initialize_deck` shuffles all base tiles into one deck and the first player draws a random tile onto an empty board (`engine/wingedsheep/carcassonne/carcassonne_game_state.py:112`). Tournament play uses the retail convention, so this is a rules-fidelity divergence for official-contest play (G1) and for app-feel.
 **Why deferred:** strategically near-null (first placement on an empty board is an almost-free decision; deck differs by one tile), but every training run, eval, and solver measurement to date consistently uses the random-start convention — switching is a rule change that shifts all baselines slightly and needs explicit approval per the locked-scope rule. Fix if and only if we register for an official contest (bundle with G1's re-baselining), or if Joshua wants the app retail-faithful (which would then diverge from the convention the champion was measured under).
 
+## 2026-07-28 — WC tie rule: starting player LOSES ties — PARKED, bundle with G1
+
+**Context:** the official World Championship rules resolve a tied final score by ruling the STARTING player the loser (source: TOURNAMENT_LANDSCAPE_MEMO_20260728.md, verbatim quote from WC rules). Our `game_wrapper.get_game_ended` returns a symmetric draw. Draws are ~1–2.5% of our games, so under WC rules the second seat is strictly preferable and correct endgame play differs by seat (the leader-by-seat should steer differently near ties). Never modeled, not in LEVER_INDEX.
+**Why deferred:** same shape as the fixed-start-tile gap above — a rules-fidelity change that shifts training/eval baselines and needs explicit approval; near-null in most games but strictly nonzero. Fix if we register for official contest (bundle with G1's re-baselining): tie handling becomes a game-wrapper option + the agent's value function needs the seat-asymmetric terminal value.
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
