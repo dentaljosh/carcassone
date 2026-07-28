@@ -70,6 +70,11 @@ RUNGS=(
 
 echo "[$(date +%F_%T)] === blind curve START on $(hostname -s) (OW=$OW n=$N band=$BAND) ===" | tee -a "$LOG"
 
+# ⚠️ NEVER write `echo "[$(date ...)] rc=$?"`. The command substitution RUNS during word
+#    expansion and resets $? to 0 before the later $? is read, so a FAILED rung logs
+#    "rc=0" (observed 2026-07-27 18:15 in blind_curve_top.sh). Capture rc on the very
+#    next line after the command, then log $rc.
+FAILED=0
 for rung in "${RUNGS[@]}"; do
   IFS=: read -r sims total tag <<< "$rung"
   name="blindcurve_k4x${sims}_${total}_vs_sighted_rodv2_b70e9"
@@ -86,7 +91,17 @@ for rung in "${RUNGS[@]}"; do
       --n "$N" --paired --seed-start "$BAND" \
       --out-root "$SHARE/classical_search" --out-subdir "$name" \
       --shared-claim --no-results-csv >> "$LOG" 2>&1
-  echo "[$(date +%F_%T)] --- RUNG $tag exited rc=$?" | tee -a "$LOG"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    FAILED=$((FAILED + 1))
+    echo "[$(date +%F_%T)] --- RUNG $tag FAILED rc=$rc — the cell is INCOMPLETE; do NOT read its summary. See $LOG" | tee -a "$LOG"
+  else
+    echo "[$(date +%F_%T)] --- RUNG $tag exited rc=0" | tee -a "$LOG"
+  fi
 done
 
-echo "[$(date +%F_%T)] === blind curve DONE on $(hostname -s) ===" | tee -a "$LOG"
+if [ "$FAILED" -ne 0 ]; then
+  echo "[$(date +%F_%T)] === blind curve FINISHED on $(hostname -s) with $FAILED FAILED RUNG(S) ===" | tee -a "$LOG"
+  exit 1
+fi
+echo "[$(date +%F_%T)] === blind curve DONE on $(hostname -s) (all rungs rc=0) ===" | tee -a "$LOG"

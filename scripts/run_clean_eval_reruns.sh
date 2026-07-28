@@ -29,7 +29,17 @@ mkdir -p "$OUT"
 cd "$REPO" || exit 2
 echo "[$(date -u +%H:%M:%S)] clean-eval reruns on $HOST | SHARE=$SHARE W=$W N=$N sims=$SIMS seed=$SEED"
 
-run() { echo "[$(date -u +%H:%M:%S)] >>> $*"; nice -n 19 "$@"; echo "[$(date -u +%H:%M:%S)] <<< rc=$?"; }
+# ⚠️ rc is captured BEFORE the $(date ...) in the log line. Inline `rc=$?` next to a
+#    command substitution always reads 0: bash expands the word left to right, so
+#    $(date) runs and overwrites $? before the later $? is expanded — a failed leg
+#    then logs "<<< rc=0". Also propagate: a failed leg must not look like a clean run.
+run() {
+  echo "[$(date -u +%H:%M:%S)] >>> $*"
+  nice -n 19 "$@"
+  local rc=$?
+  echo "[$(date -u +%H:%M:%S)] <<< rc=$rc"
+  return $rc
+}
 
 COMMON=(--n "$N" --sims "$SIMS" --paired --seed-start "$SEED" --shared-claim \
         --claim-host "$HOST" --workers "$W" --out-root "$OUT")

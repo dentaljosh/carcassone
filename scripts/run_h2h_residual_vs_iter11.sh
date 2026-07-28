@@ -36,4 +36,8 @@ nice -n 19 "$PY" -u scripts/eval_iter_head_to_head.py \
     --games "$N" --sims "$SIMS" --leaf-eval v2_5 --c-puct 3.0 \
     --workers "$W" --orchestrator --paired --seed-start "$SEED" \
     --shared-claim --claim-host "$HOST" --no-elo-log
-echo "[$(date -u +%H:%M:%S)] <<< rc=$?"
+# ⚠️ rc on the very next line — inline `rc=$?` beside $(date ...) always reads 0, because
+#    the command substitution runs during word expansion and clobbers $? first.
+rc=$?
+echo "[$(date -u +%H:%M:%S)] <<< rc=$rc"
+exit $rc

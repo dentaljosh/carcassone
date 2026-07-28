@@ -25,6 +25,10 @@ for W in $PTS; do
     --exact-k 2 --k-dets 2 --sims 200 --n "$N" --paired \
     --seed-start 90000000000 \
     --out-root "$ROOT" --out-subdir "$SUB" --no-results-csv
-  echo "[wbench2 $(ts)] POINT W=$W exit rc=$? ($(ls "$ROOT/$SUB"/seed*_a*.json 2>/dev/null | wc -l)/$N jsons, avail now $(free -g | awk 'NR==2{print $7}')G)"
+  # ⚠️ rc FIRST, before any $(...) in the log line: command substitutions execute during
+  #    word expansion and reset $?, so an inline `rc=$?` alongside $(ts)/$(ls) reports 0
+  #    for a failed point.
+  rc=$?
+  echo "[wbench2 $(ts)] POINT W=$W exit rc=$rc ($(ls "$ROOT/$SUB"/seed*_a*.json 2>/dev/null | wc -l)/$N jsons, avail now $(free -g | awk 'NR==2{print $7}')G)"
 done
 echo "[wbench2 $(ts)] SWEEP DONE"

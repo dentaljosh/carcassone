@@ -65,6 +65,13 @@ RUNGS=(
 
 echo "[$(date +%F_%T)] === blind curve TOP START on $(hostname -s) (OW=$OW n=$N band=$BAND) ===" | tee -a "$LOG"
 
+# ⚠️ NEVER write `echo "[$(date ...)] rc=$?"`. Bash expands the word LEFT TO RIGHT, so the
+#    command substitution RUNS FIRST and resets $? to date's status (0) before the later
+#    $? is expanded -- a failed rung then logs "rc=0". That is exactly how the 2026-07-27
+#    18:15 k8x1376 rung reported success after bare_net_opp_orch.sh correctly exited 1
+#    (missing carc-orch binary in the pinned worktree). The wrapper was never at fault.
+#    Capture rc into a variable on the VERY NEXT LINE after the command, then log $rc.
+FAILED=0
 for rung in "${RUNGS[@]}"; do
   IFS=: read -r kd sims total tag <<< "$rung"
   name="blindcurve_k${kd}x${sims}_${total}_vs_sighted_rodv2_b70e9"
@@ -81,7 +88,17 @@ for rung in "${RUNGS[@]}"; do
       --n "$N" --paired --seed-start "$BAND" \
       --out-root "$SHARE/classical_search" --out-subdir "$name" \
       --shared-claim --no-results-csv >> "$LOG" 2>&1
-  echo "[$(date +%F_%T)] --- RUNG $tag exited rc=$?" | tee -a "$LOG"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    FAILED=$((FAILED + 1))
+    echo "[$(date +%F_%T)] --- RUNG $tag FAILED rc=$rc — the cell is INCOMPLETE; do NOT read its summary. See $LOG" | tee -a "$LOG"
+  else
+    echo "[$(date +%F_%T)] --- RUNG $tag exited rc=0" | tee -a "$LOG"
+  fi
 done
 
-echo "[$(date +%F_%T)] === blind curve TOP DONE on $(hostname -s) ===" | tee -a "$LOG"
+if [ "$FAILED" -ne 0 ]; then
+  echo "[$(date +%F_%T)] === blind curve TOP FINISHED on $(hostname -s) with $FAILED FAILED RUNG(S) ===" | tee -a "$LOG"
+  exit 1
+fi
+echo "[$(date +%F_%T)] === blind curve TOP DONE on $(hostname -s) (all rungs rc=0) ===" | tee -a "$LOG"

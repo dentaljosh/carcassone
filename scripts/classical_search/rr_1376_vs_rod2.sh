@@ -68,5 +68,12 @@ nice -n 19 .venv/bin/python -u \
     --out-root "$SHARE/classical_search" \
     --out-subdir rr_puct1376_vs_net-iter02_k2 \
     --shared-claim --no-results-csv >> "$LOG" 2>&1
+# ⚠️ rc on the very next line: `echo "[$(date ...)] rc=$?"` logs 0 even for a FAILED run,
+#    because the command substitution runs during word expansion and clobbers $? first.
+rc=$?
 
-echo "[$(date +%F_%T)] exited rc=$? on $(hostname -s)" | tee -a "$LOG"
+if [ "$rc" -ne 0 ]; then
+  echo "[$(date +%F_%T)] FAILED rc=$rc on $(hostname -s) — cell INCOMPLETE, do NOT read its summary. See $LOG" | tee -a "$LOG"
+  exit 1
+fi
+echo "[$(date +%F_%T)] exited rc=0 on $(hostname -s)" | tee -a "$LOG"

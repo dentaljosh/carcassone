@@ -63,5 +63,13 @@ OPP_CKPT="$OPP_CKPT" OW="$OW" nice -n 19 \
     --n "$N" --paired --seed-start "$BAND" \
     --out-root "$SHARE/classical_search" --out-subdir "$NAME" \
     --shared-claim --no-results-csv >> "$LOG" 2>&1
+# ⚠️ rc MUST be captured on the very next line. `echo "[$(date ...)] rc=$?"` reports 0 for
+#    a FAILED run: the command substitution executes during word expansion and resets $?
+#    before the later $? is read (observed 2026-07-27 18:15 in blind_curve_top.sh).
+rc=$?
 
-echo "[$(date +%F_%T)] === exited rc=$? on $(hostname -s) ===" | tee -a "$LOG"
+if [ "$rc" -ne 0 ]; then
+  echo "[$(date +%F_%T)] === FAILED rc=$rc on $(hostname -s) — cell INCOMPLETE, do NOT read its summary. See $LOG ===" | tee -a "$LOG"
+  exit 1
+fi
+echo "[$(date +%F_%T)] === exited rc=0 on $(hostname -s) ===" | tee -a "$LOG"
