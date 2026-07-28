@@ -486,6 +486,11 @@ These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-
 
 **Verification when picked up:** rebench W={4,8,16} against a clean GPU (no other workload sharing). If throughput scales monotonically, the prior degradation was contention, not this bug. If W>4 still degrades, the bug is real — fix per above, re-bench.
 
+## 2026-07-28 — Fixed start tile (retail/tournament rules fidelity) — PARKED, bundle with G1
+
+**Context:** Joshua noticed the retail game pre-places a fixed start tile (the city+road "D" pattern) before any draw. Verified: our engine does NOT — `initialize_deck` shuffles all base tiles into one deck and the first player draws a random tile onto an empty board (`engine/wingedsheep/carcassonne/carcassonne_game_state.py:112`). Tournament play uses the retail convention, so this is a rules-fidelity divergence for official-contest play (G1) and for app-feel.
+**Why deferred:** strategically near-null (first placement on an empty board is an almost-free decision; deck differs by one tile), but every training run, eval, and solver measurement to date consistently uses the random-start convention — switching is a rule change that shifts all baselines slightly and needs explicit approval per the locked-scope rule. Fix if and only if we register for an official contest (bundle with G1's re-baselining), or if Joshua wants the app retail-faithful (which would then diverge from the convention the champion was measured under).
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
