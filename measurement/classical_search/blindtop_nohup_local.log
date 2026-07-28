@@ -1,0 +1,4 @@
+[2026-07-27_16:43:27] === blind curve TOP START on Doctor (OW=40 n=200 band=70000000000) ===
+[2026-07-27_16:43:27] --- RUNG 2x_k4optimal : k4x1376 = 5504 sims
+[2026-07-27_17:51:29] --- RUNG 2x_k4optimal exited rc=0
+[2026-07-27_17:51:29] --- RUNG 4x_k8optimal : k8x1376 = 11008 sims
