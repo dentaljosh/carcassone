@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
 """ORACLE-SCORED DISAGREEMENT PILOT — does the deeper pick IMPROVE, or merely MOVE?
 
-STATUS: PILOT ONLY. BUILT 2026-07-28, UNRUN. Nothing here promotes anything;
-`governance/PRODUCTION.yaml` is untouched by construction (this harness never plays a
-competitive game and never writes a results.csv row on its own).
+STATUS 2026-07-28: PILOT RUN (20/20 positions, 0 failed, crn_verified_all, ~28 min at
+W16) — **THE FULL RUN IS NOT FUNDED: it is UNDERPOWERED.** The deliverable sd landed on
+the memo's pessimistic branch: per-position sd of the CRN-paired delta = 2.43 pts at
+M=32, with an irreducible between-position floor of ~1.51 pts (within-position noise is
+115.9/M, so more worlds cannot rescue it). Implied z for the full 628-position bank at
+the pre-registered +0.07 pts assumed effect = 0.72 (M=32) / 0.87 (M=64). The approach is
+PARKED with its pilot data attached. Re-open bars (any one): a ~5000-position bank; or
+evidence the true per-disagreement effect exceeds ~3x the assumed 0.07 pts; or a
+variance-reduction design change attacking the BETWEEN-position term (world-CRN only
+touches the within-position part). ⚠️ Read DECISIONS 2026-07-28 item 5 before re-opening:
+this pilot's OWN mean delta is +1.91 pts (se 0.54, z +3.53), ~27x the assumed effect —
+either the probe is mis-sized or the same-family oracle self-prefers the deeper pick, and
+that is unresolved. Data: /mnt/c/carc-shared/classical_search/oracle_score_pilot/
+{manifest,summary}.json; measurement/classical_search/oracle_score_pilot.log.
+
+PILOT ONLY. Nothing here promotes anything; `governance/PRODUCTION.yaml` is untouched by
+construction (this harness never plays a competitive game and never writes a results.csv
+row on its own).
 
 WHAT THIS IS
 ------------
