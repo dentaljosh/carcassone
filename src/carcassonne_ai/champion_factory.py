@@ -369,6 +369,14 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
 _UNSET = object()
 
 
+def _default_exact_budget() -> int:
+    """The solver node budget an agent uses when nobody passes one. READ from
+    fair_agent (point-don't-copy) so the manifest can never quote a stale figure."""
+    from .fair_agent import DEFAULT_EXACT_BUDGET
+
+    return int(DEFAULT_EXACT_BUDGET)
+
+
 def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNSET,
                         exact_endgame=_UNSET, exact_max_k=_UNSET,
                         min_pooled_visits=_UNSET, exact_budget=_UNSET,
@@ -421,7 +429,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              sims: int | None = None, k_dets: int | None = None,
                              exact_endgame: bool = True, verify: bool = True,
                              meeple_dedup: bool | None = None,
-                             intra_reuse: bool | None = None):
+                             intra_reuse: bool | None = None,
+                             exact_budget: int | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -442,7 +451,22 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     — the carry lives in the PIMC agent's two-decisions-per-turn structure, which the
     clairvoyant single-search agent does not have; passing it with mode="clairvoyant"
     raises rather than silently doing nothing. Stamped onto the manifest ONLY when it
-    resolves ON, on the same no-hash-drift terms as ``meeple_dedup``."""
+    resolves ON, on the same no-hash-drift terms as ``meeple_dedup``.
+
+    ``exact_budget`` caps the endgame solver's NODE budget for this agent
+    (None = do not pass it at all, i.e. the agent's own
+    ``fair_agent.DEFAULT_EXACT_BUDGET`` = 2,000,000 — byte-identical to before this
+    kwarg existed). It exists because the budget was previously unreachable through
+    this entry point, so an embedder (the Android app) could not bound a solve; the
+    largest solve observed to date is 7,067 nodes (2,214 across the memo's 9 endgames,
+    7,067 in a later 3-position probe), but the budget has NO wall-clock component and
+    there is no mid-search cancel, so an unlucky board is an unbounded hang on a device
+    the user is holding (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md §3). It is a SAFETY bound, not a
+    speedup: if it ever fires, the agent takes its documented ``BudgetExceeded`` ->
+    fair-PIMC fallback for that ONE decision, which CHANGES PLAY — so it is stamped
+    onto the manifest whenever it is set. FAIR MODE ONLY (the clairvoyant agent has
+    no endgame solver); passing it with mode="clairvoyant" raises rather than
+    silently doing nothing."""
     from . import intra_reuse as intra_carry
     from . import meeple_equiv
     from .game_wrapper import Game
@@ -458,10 +482,15 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     # with EXACTLY the argument list it had before this feature existed.
     dedup_kw = {} if meeple_dedup is None else {"meeple_dedup": bool(meeple_dedup)}
     intra_kw = {} if intra_reuse is None else {"intra_reuse": bool(intra_reuse)}
+    budget_kw = {} if exact_budget is None else {"exact_budget": int(exact_budget)}
     if intra_reuse is not None and mode != "fair":
         raise ValueError(
             "intra_reuse is a FAIR-mode feature (the within-turn carry needs the PIMC "
             f"agent's tile+meeple decision pair); got mode={mode!r}")
+    if exact_budget is not None and mode != "fair":
+        raise ValueError(
+            "exact_budget is a FAIR-mode feature (only the PIMC agent runs the endgame "
+            f"solver); got mode={mode!r}")
 
     if mode == "fair":
         agent = build_fair_champion(
@@ -469,7 +498,7 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             sims=(spec.sims_per_det if sims is None else int(sims)),
             k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
             seed=int(seed), exact_endgame=bool(exact_endgame),
-            exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw)
+            exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw, **budget_kw)
     elif mode == "clairvoyant":
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         agent = build_clairvoyant_champion(
@@ -534,6 +563,24 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                                     "reuse of CL-044, which stays clairvoyant-only",
             "note": "NON-CHAMPION search variant — this agent is NOT the deployed "
                     "champion of governance/PRODUCTION.yaml.",
+        }
+
+    # EXACT-BUDGET: same no-hash-drift terms — stamped ONLY when the caller actually
+    # bound a budget, so a champion built without the kwarg carries a manifest that is
+    # byte-identical to the pre-kwarg one. Stamped even though the bound is expected
+    # never to fire, because the branch where it DOES fire changes play.
+    if exact_budget is not None:
+        manifest = dict(manifest)
+        manifest["exact_budget"] = {
+            "nodes": int(exact_budget),
+            "default": int(_default_exact_budget()),
+            "source": "kwarg",
+            "scope": "per-solve NODE budget for the exact endgame solver; on exhaustion "
+                     "the agent raises its documented BudgetExceeded and falls back to "
+                     "fair PIMC for THAT ONE decision",
+            "note": "a bound, not a speedup. It is expected never to fire (largest solve "
+                    "observed to date = 7,067 nodes); if it DOES fire the move is a PIMC "
+                    "fallback, not the champion's exact answer.",
         }
 
     agent.manifest = manifest

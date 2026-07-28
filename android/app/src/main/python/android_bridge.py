@@ -70,6 +70,20 @@ for _k, _v in PROD_ENV.items():
 # so RESOLVED_ENV, not os.environ, is the honest record for a manifest or a test.)
 RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
 
+# On-device endgame-solver NODE budget (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md,
+# lever #1). The desktop default is 2,000,000 nodes; the budget has no wall-clock
+# component and PythonBridge.reset() queues BEHIND a running ai_move, so on a phone a
+# runaway solve is an uncancellable hang with a progress-less spinner.
+#
+# Largest solve observed to date: 2,214 nodes across the memo's 9 endgames, and 7,067
+# nodes in a 3-position Tier-1-prefix probe run while wiring this up — so the observed
+# tail is WIDER than the memo's sample suggested, and 100,000 is ~14x the largest solve
+# seen anywhere (not the ~45x the memo estimated off 2,214). Still a bound that should
+# never fire (0 budget hits in 400 screen games), but the margin is thinner than it
+# looks and is worth re-checking if more endgames are ever sampled. If it DOES fire,
+# that ONE decision falls back to fair PIMC (stamped on agent.manifest).
+ANDROID_EXACT_BUDGET: int = 100_000
+
 # Desktop convenience: when the repo tree is visible above this file and the package is
 # not installed, make src/ importable. On device this resolves to a path that does not
 # exist and is skipped. (android/app/src/main/python/android_bridge.py -> parents[4] is
@@ -593,6 +607,13 @@ class _Session:
         agent = champion_factory.make_production_champion(
             "fair", game=self.ai_game, seed=self.seed, sims=eff_sims, k_dets=eff_k,
             exact_endgame=True, verify=self.verify,
+            # Bound the endgame solver on-device: the desktop default is 2,000,000
+            # nodes with no wall-clock component and no mid-search cancel, so a bad
+            # board is an unbounded hang on a phone. 100k is ~45x the largest solve
+            # ever observed (2,214 nodes across 9 real endgames) — it should never
+            # fire; if it does, that one move is the documented PIMC fallback.
+            # See measurement/ANDROID_WALLCLOCK_MEMO_20260728.md (lever #1).
+            exact_budget=ANDROID_EXACT_BUDGET,
         )
         _wrap_evaluator_with_counter(agent)
         self.agent = agent

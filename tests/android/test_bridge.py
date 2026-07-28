@@ -440,7 +440,8 @@ def test_ai_move_matches_direct_champion():
         (_g, board), n_ai = _replay(actions, human_player=0, Game=Game, deck_seed=seed)
         direct = make_production_champion(
             "fair", game=Game(enable_legal_moves_cache=True), seed=seed, sims=sims,
-            k_dets=k_dets, exact_endgame=True, verify=False)
+            k_dets=k_dets, exact_endgame=True, verify=False,
+            exact_budget=B.ANDROID_EXACT_BUDGET)
         direct._move_idx = n_ai
         expected = int(direct.choose_action(board))
 
@@ -450,6 +451,43 @@ def test_ai_move_matches_direct_champion():
             f"at ai decision #{n_ai}")
         checked += 1
     assert checked == 2, "the parity check never reached two AI decisions"
+
+
+# --------------------------------------------------------------------------- #
+# on-device endgame-solver bound (ANDROID_WALLCLOCK_MEMO_20260728 lever #1)      #
+# --------------------------------------------------------------------------- #
+def test_bridge_binds_the_android_exact_budget():
+    """The app MUST cap the solver's node budget. Unbounded, a single unlucky endgame
+    board is an uncancellable multi-hour hang on the phone (the budget has no wall-clock
+    component and reset() queues behind a running ai_move)."""
+    from carcassonne_ai.fair_agent import DEFAULT_EXACT_BUDGET
+
+    assert B.ANDROID_EXACT_BUDGET == 100_000
+    # >=10x the largest solve observed to date (7,067 nodes) but far under the desktop
+    # default -> a real bound that should never fire.
+    assert 7_067 * 10 < B.ANDROID_EXACT_BUDGET < DEFAULT_EXACT_BUDGET
+
+    new(seed=7, opponent="champion", sims=8, k_dets=1, verify=False)
+    agent = B._require_session().agent
+    assert agent._exact_budget == B.ANDROID_EXACT_BUDGET, (
+        "the bridge built a champion that is still pinned at the desktop node budget")
+
+
+def test_android_exact_budget_is_stamped_on_the_manifest():
+    """It is a play-affecting bound in the branch where it fires, so the archived game
+    must record it — E4 must never read a PIMC-fallback move as the champion's exact one."""
+    new(seed=8, opponent="champion", sims=8, k_dets=1, verify=False)
+    man = ok(B.get_manifest())["manifest"]
+    assert man["exact_budget"]["nodes"] == 100_000
+    assert man["exact_budget"]["default"] == 2_000_000
+
+
+def test_weakened_difficulty_tiers_are_also_bounded():
+    """Every tier goes through the one construction site — a tier that skipped the bound
+    would be the one that hangs."""
+    for sims, k in ((8, 1), (16, 2)):
+        new(seed=9, opponent="champion", sims=sims, k_dets=k, verify=False)
+        assert B._require_session().agent._exact_budget == B.ANDROID_EXACT_BUDGET
 
 
 @pytest.mark.slow

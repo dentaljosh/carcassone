@@ -66,6 +66,7 @@ _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind t
 _CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
 _CY_SUPPORTS_C7 = False  # set from flat_leaf_cy.SUPPORTS_V29_C7_TERMS at bind time (Term R + Term F)
 _CY_SUPPORTS_SOFT_CAP = False  # set from flat_leaf_cy.SUPPORTS_F6_SOFT_CAP at bind time (F6 soft cap)
+_CY_BASE = None  # lazily bound flat_leaf_cy.flat_base_score_cy (exact terminal score)
 
 # v2.10 bag-aware closure gate (2026-07-04, docs/V210_LEAF_SPEC_2026-07-04.md Track B;
 # BACKLOG 2026-05-16 item 1). When ON, the closure-anticipation bonus consults the
@@ -581,10 +582,36 @@ def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp |
     count_final_scores). Pure integer.
 
     `count_final_scores` ADDS to the running `state.scores`, so the differential
-    is the running-score diff plus the diff of the points it would add."""
+    is the running-score diff plus the diff of the points it would add.
+
+    Under USE_CY_LEAF this redirects to the compiled `flat_base_score_cy`, which
+    runs the SAME `_decompose_c` + `_final_scores_c` the Cython v2 leaf already
+    uses (bit-exact gate: scripts/reconcile_cy_leaf.py check 2 — integer output,
+    so the bar is plain ==). This is the exact endgame solver's terminal leaf and
+    was measured at >=37% of an 11.9 s latch solve while still pure Python
+    (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md §3, lever #2).
+
+    The redirect fires ONLY when `decomp is None`. A caller that passes a `decomp`
+    has already paid for the decomposition and expects THAT one to be scored — the
+    cy entry point takes only `(state, player)` and would both redo the work and
+    silently ignore the argument. The v2 leaf's pure-Python fallback is such a
+    caller, so its path is untouched."""
     if state.players != 2:
         raise ValueError(f"flat_base_score is 2-player only; got {state.players}")
     if decomp is None:
+        if USE_CY_LEAF:
+            global _CY_BASE  # noqa: PLW0603
+            if _CY_BASE is None:
+                try:
+                    from . import flat_leaf_cy as _cy
+
+                    # getattr, not attribute access: a STALE .so predating the export
+                    # must degrade to pure Python, not crash (the _CY_FLAT_V2 pattern).
+                    _CY_BASE = getattr(_cy, "flat_base_score_cy", None) or False
+                except ImportError:
+                    _CY_BASE = False  # .so missing on this box -> sentinel, no retry
+            if _CY_BASE:
+                return _CY_BASE(state, player)
         decomp = decompose(state)
     final = _final_scores(state, decomp)
     opp = 1 - player

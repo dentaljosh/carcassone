@@ -125,6 +125,85 @@ def test_intra_turn_reuse_on_is_stamped_without_moving_any_hash():
             if k != "intra_turn_reuse"} == off.manifest
 
 
+def test_exact_budget_omitted_keeps_the_agent_default():
+    """Omitting the kwarg must reach the solver with the agent's OWN default — the
+    desktop/production path has to stay bit-identical to before the kwarg existed
+    (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md lever #1)."""
+    from carcassonne_ai.fair_agent import DEFAULT_EXACT_BUDGET
+
+    agent = cf.make_production_champion("fair", seed=1)
+    assert DEFAULT_EXACT_BUDGET == 2_000_000       # the figure the memo measured against
+    assert agent._exact_budget == 2_000_000
+    assert "exact_budget" not in agent.manifest
+    assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
+        cf.resolved_manifest("fair"), sort_keys=True)
+
+
+def test_exact_budget_reaches_the_solver_config():
+    """The kwarg must actually bind on the constructed agent — a forward that stopped at
+    the factory would leave the phone pinned at 2,000,000 nodes while claiming otherwise."""
+    agent = cf.make_production_champion("fair", seed=1, exact_budget=100_000)
+    assert agent._exact_budget == 100_000
+
+
+def test_exact_budget_is_stamped_without_moving_any_hash():
+    """Stamped whenever set (unlike dedup/intra it is stamped even though it is expected
+    never to fire — the branch where it DOES fire is a PIMC fallback, i.e. a play change),
+    and it must not perturb the leaf/config hashes: it bounds the solver, not the leaf."""
+    off = cf.make_production_champion("fair", seed=1)
+    on = cf.make_production_champion("fair", seed=1, exact_budget=100_000)
+    assert on.manifest["exact_budget"]["nodes"] == 100_000
+    assert on.manifest["exact_budget"]["default"] == 2_000_000
+    assert on.manifest["exact_budget"]["source"] == "kwarg"
+    assert "BudgetExceeded" in on.manifest["exact_budget"]["scope"]
+    assert on.manifest["search"] == off.manifest["search"]
+    assert on.manifest["leaf_hashes"] == off.manifest["leaf_hashes"]
+    # ... and the ONLY difference is that one added key.
+    assert set(on.manifest) - set(off.manifest) == {"exact_budget"}
+    assert {k: v for k, v in on.manifest.items() if k != "exact_budget"} == off.manifest
+
+
+def test_exact_budget_rejects_clairvoyant_mode():
+    """The clairvoyant agent has no endgame solver; accepting the kwarg there would
+    silently do nothing (the intra_reuse precedent)."""
+    with pytest.raises(ValueError, match="FAIR-mode"):
+        cf.make_production_champion("clairvoyant", seed=1, sims=8, verify=False,
+                                    exact_budget=100_000)
+
+
+def test_verify_true_construction_survives_the_cy_base_dispatch():
+    """flat_base_score gained a USE_CY_LEAF dispatch (2026-07-28, lever #2). It is the
+    solver's terminal leaf, NOT the scored leaf the fingerprints cover — so the leaf
+    hashes and the value panel must be completely unmoved, and a verify=True champion
+    must still construct with the compiled base scorer actually bound."""
+    from carcassonne_ai import flat_leaf
+
+    if not flat_leaf.USE_CY_LEAF:
+        pytest.skip("USE_CY_LEAF off in this environment")
+    try:
+        from carcassonne_ai import flat_leaf_cy  # noqa: F401
+    except ImportError:
+        pytest.skip("flat_leaf_cy .so not built on this box")
+
+    agent = cf.make_production_champion("fair", seed=1, verify=True)
+    # Construction/verify never scores a TERMINAL, so the lazy bind is still cold here —
+    # which is itself the point: the dispatch cannot perturb the fingerprint path.
+    assert flat_leaf._CY_BASE is None or flat_leaf._CY_BASE
+
+    # Force the bind the way the solver would, and re-check the fingerprints after.
+    from carcassonne_ai.game_wrapper import Game
+
+    flat_leaf.flat_base_score(Game().get_init_board().state, 0)
+    assert flat_leaf._CY_BASE, "the compiled base scorer never bound — dispatch is dead"
+    assert agent.manifest["leaf_hashes"] == {
+        "harness_leaf_hash": "a36d2e15a3b3d71d",
+        "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+        "frozen_config_hash_meeple_k2": "158f17ff76adaa02",
+    }
+    assert agent.manifest["leaf_value_panel"] == cf.resolved_manifest("fair")[
+        "leaf_value_panel"]
+
+
 def test_verify_raises_on_wrong_curve_and_caps():
     import dataclasses as dc
     with pytest.raises(ep.ProvenanceError):
