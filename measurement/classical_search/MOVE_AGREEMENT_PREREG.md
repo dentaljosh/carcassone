@@ -106,8 +106,18 @@ of which **57 675 (89.3%)** are eligible.
 - **Eligibility:** `n_legal ≥ 2`. Forced moves are excluded because `_pimc_move`
   short-circuits them without searching at all — they are trivially in agreement at every
   budget and would dilute the headline.
-- **Sample:** **n = 1000** roots, uniform without replacement over eligible plies,
-  **max 2 per game** (bounds within-game correlation), **sampling seed 20260727**.
+- **Sample:** uniform without replacement over eligible plies, **max 2 per game** (bounds
+  within-game correlation), **sampling seed 20260727**.
+- ⚠️ **PRE-LAUNCH CORRECTION (2026-07-27, before any record was computed).** This section
+  originally asked for **n = 1000**, which is *inconsistent* with the max-2-per-game cap:
+  449 games × 2 = **898** is the maximum the cap allows. Resolved in favour of the **cap**,
+  because bounding within-game correlation is the load-bearing design choice and 898 vs 1000
+  is a negligible power difference. **The realized sample is n = 898 roots drawn from all
+  449 games.** No results existed when this was changed.
+- **Realized strata** (recorded before the probe ran): phase early 298 / mid 312 / late 288;
+  engine phase TILES 495 / MEEPLES 403; median `n_legal` = 11; median `h200_top2_q_gap` =
+  0.032; **25 roots are solver-region** (`k_remaining ≤ 2`) and will be excluded at read-out
+  per the rule below, leaving **873** analysable positions.
 - Roots are consumed via the measurement-infra lossless `(deck_seed, action_sequence, ply)`
   contract (`root_replay.replay_actions`), with a per-root `string_representation` checksum
   verified at both sample time and probe time.
@@ -272,13 +282,14 @@ All workers `nice -n 19`, all runs `setsid nohup … & disown`.
 ⚠️ If the run is killed, **clean stranded `.claim` files before resuming**
 (`--clean-stale-claims`) — a killed shared-claim run otherwise stalls a resume forever.
 
-**Jobs:** 1000 roots × 3 salts = **3000 records**.
+**Jobs:** 898 roots × 3 salts = **2694 records**.
 
 **ETA — benched, not extrapolated.** A 16-job smoke at production knobs (W16 local, all
 seven levels, k4×2752 deepest) measured **mean 21.2 s/job** ⇒ steady-state **≈ 2 700 jobs/h
 local at W16**. The laptop (12C/24T, W10) is unbenched for this workload and is expected to
-add roughly 1 000–1 500 jobs/h. Combined **≈ 3 700–4 200 jobs/h ⇒ ~45 min**; local-only
-fallback ≈ **1.1 h**. Both are comfortably inside one sitting, and the run is resumable, so
+add roughly 1 000–1 500 jobs/h. Combined **≈ 3 700–4 200 jobs/h ⇒ ~40 min** for 2694
+records; local-only fallback ≈ **1.0 h**. Both are inside one sitting, and the run is
+resumable with work-stealing, so
 a laptop shortfall costs wall-clock only.
 
 Cost is dominated by the deepest rung: the snapshot means the seven-rung ladder costs what
