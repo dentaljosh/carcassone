@@ -1,0 +1,13 @@
+2026-07-29 12:41:57 watchdog armed: glob=/mnt/c/carc-shared/oracle_22016_20260729/picks/records/*.json n=1905 pattern=kwidth_agreement_probe relaunch=bash scripts/measurement_infra/run_kwidth_22016_20260729.sh picksN 1905
+2026-07-29 12:47:23 healthy: 347/1905 records, workers alive
+2026-07-29 12:52:54 healthy: 512/1905 records, workers alive
+2026-07-29 12:58:23 healthy: 663/1905 records, workers alive
+2026-07-29 13:03:52 healthy: 807/1905 records, workers alive
+2026-07-29 13:09:25 healthy: 958/1905 records, workers alive
+2026-07-29 13:14:55 healthy: 1113/1905 records, workers alive
+2026-07-29 13:20:30 healthy: 1263/1905 records, workers alive
+2026-07-29 13:26:03 healthy: 1416/1905 records, workers alive
+2026-07-29 13:31:41 healthy: 1571/1905 records, workers alive
+2026-07-29 13:37:01 healthy: 1717/1905 records, workers alive
+2026-07-29 13:42:18 healthy: 1852/1905 records, workers alive
+2026-07-29 13:47:27 DONE: 1905/1905 records
