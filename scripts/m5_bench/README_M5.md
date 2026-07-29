@@ -27,7 +27,7 @@ rsync -a --info=progress2 \
     --exclude 'bundle/build/' --exclude 'bundle/carcassonne_ai/*.so' \
     --exclude 'bundle/carcassonne_ai/*.c' \
     /mnt/c/carc-shared/m5_bench_20260728/ \
-    <user>@100.64.175.108:~/m5_bench_20260728/
+    joshuaishal@100.64.175.108:~/m5_bench_20260728/
 ```
 
 ≈31 MB, almost all of it the optional CL-067 checkpoint — add `--exclude 'bundle/net/'`
@@ -44,7 +44,7 @@ give you a venv that cannot run and — far worse — an `.so` that fails to loa
 ## 1. Setup — THE FIRST COMMAND TO RUN
 
 ```bash
-ssh <user>@100.64.175.108 'bash ~/m5_bench_20260728/setup_m5.sh'
+ssh joshuaishal@100.64.175.108 'bash ~/m5_bench_20260728/setup_m5.sh'
 ```
 
 ⚠️ `setup_m5.sh` resolves its own directory from `$BASH_SOURCE`, so it does **not**
@@ -60,8 +60,8 @@ What it does, in order:
    bundle and silently bench the wrong tree;
 3. **optionally** `pip install cython` and builds `flat_leaf_cy` / `flat_repr_cy`
    natively for arm64 (`bundle/setup_cy.py build_ext --inplace`). **This step is allowed
-   to fail** — both call sites fall back to pure Python, which is *correct*, just ~2×
-   slower per leaf. Log: `cython_build.log`. If it fails for want of a compiler:
+   to fail** — both call sites fall back to pure Python, which is *correct*, just ~4.5×
+   slower per decision. Log: `cython_build.log`. If it fails for want of a compiler:
    `xcode-select --install`, then re-run `setup_m5.sh`.
 4. proves the bundle imports standalone with `PYTHONPATH` cleared, and constructs the
    champion with `verify=True` — the factory checks the leaf's curve *values*, its
@@ -71,12 +71,18 @@ What it does, in order:
 
 Runtime: ~1–2 min (mostly pip). Add `--no-cython` to skip step 3.
 
+The M5 is already provisioned with Python 3.12 and a venv at `~/carc-m5/.venv`
+(STATUS 2026-07-28, memory `reference_m5_access`). `setup_m5.sh` deliberately does **not**
+reuse it: the bench needs a venv with *no* `carcassonne_ai` installed, and its own
+`~/m5_bench_20260728/.venv` guarantees that. If the interpreter search picks something
+you do not want, pin it: `--python /opt/homebrew/bin/python3.12`.
+
 ---
 
 ## 2. Smoke the champion bench (do this before the long one)
 
 ```bash
-ssh <user>@100.64.175.108 '~/m5_bench_20260728/.venv/bin/python ~/m5_bench_20260728/bench_champion.py --budgets k1x32'
+ssh joshuaishal@100.64.175.108 '~/m5_bench_20260728/.venv/bin/python ~/m5_bench_20260728/bench_champion.py --budgets k1x32'
 ```
 
 k1×32 = 32 sims/move: **not a strength config**, just proof the loop runs end to end and
@@ -90,7 +96,7 @@ M5's k1×32 against it before trusting the bigger budgets.
 ## 3. The full ladder
 
 ```bash
-ssh <user>@100.64.175.108 'nohup ~/m5_bench_20260728/.venv/bin/python -u ~/m5_bench_20260728/bench_champion.py > ~/m5_bench_20260728/bench.log 2>&1 &'
+ssh joshuaishal@100.64.175.108 'nohup ~/m5_bench_20260728/.venv/bin/python -u ~/m5_bench_20260728/bench_champion.py > ~/m5_bench_20260728/bench.log 2>&1 &'
 ```
 
 Budgets, in order: **k1×32 · k4×172 · k4×344 · k4×688**. Only the last is the champion
@@ -141,8 +147,8 @@ treat as a controlled baseline):
 ## 4. The ANE probe (optional, run last)
 
 ```bash
-ssh <user>@100.64.175.108 '~/m5_bench_20260728/.venv/bin/pip install torch coremltools'
-ssh <user>@100.64.175.108 '~/m5_bench_20260728/.venv/bin/python ~/m5_bench_20260728/bench_ane_forward.py'
+ssh joshuaishal@100.64.175.108 '~/m5_bench_20260728/.venv/bin/pip install torch coremltools'
+ssh joshuaishal@100.64.175.108 '~/m5_bench_20260728/.venv/bin/python ~/m5_bench_20260728/bench_ane_forward.py'
 ```
 
 Loads the bundled **CL-067** checkpoint (`bundle/net/distill_iter_03.pt`, sha256 verified
@@ -228,7 +234,7 @@ actually reached, and:
 ## 7. Bringing results back
 
 ```bash
-rsync -a <user>@100.64.175.108:~/m5_bench_20260728/results/ \
+rsync -a joshuaishal@100.64.175.108:~/m5_bench_20260728/results/ \
     /mnt/c/carc-shared/m5_bench_20260728/results_m5/
 ```
 
