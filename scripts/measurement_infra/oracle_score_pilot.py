@@ -244,6 +244,30 @@ LEVEL_B_DEFAULT = 2752    # -> 11008 total (4x deploy)
 ASSUMED_EFFECT_DEFAULT = 0.07
 MEMO_N_POSITIONS = 265    # the memo's headline full-run N (873 roots x D_cross 0.3039)
 
+# The CL-070 bank's own allocation: k_dets is fixed at 4 there, so total = 4 * level and
+# `--level-*` IS the per-determinization sims count. That is a property of THAT bank, not
+# of this harness — a bank whose two arms differ in WIDTH (e.g. the 2026-07-29 k8x1376 vs
+# k16x1376 probe, where `q_pick_by_level` is keyed by TOTAL budget instead) says so with
+# `--alloc-a/--alloc-b`. Unset = the historical behaviour, byte-for-byte.
+DEFAULT_K_DETS = 4
+
+
+def parse_alloc(s, level: int) -> dict:
+    """``"k8x1376"`` -> the arm's real allocation. ``None`` -> the CL-070 default, where
+    `level` is sims-per-determinization at k_dets=4 and the total is 4x it."""
+    if s in (None, ""):
+        return {"k_dets": DEFAULT_K_DETS, "sims_per_det": int(level),
+                "total": DEFAULT_K_DETS * int(level), "label": None}
+    txt = str(s).strip().lower()
+    try:
+        k_txt, s_txt = txt.lstrip("k").split("x", 1)
+        k, spd = int(k_txt), int(s_txt)
+    except (ValueError, AttributeError) as exc:
+        raise ValueError(f"--alloc must look like 'k8x1376', got {s!r}") from exc
+    if k < 1 or spd < 1:
+        raise ValueError(f"--alloc components must be >= 1, got {s!r}")
+    return {"k_dets": k, "sims_per_det": spd, "total": k * spd, "label": f"k{k}x{spd}"}
+
 
 # --------------------------------------------------------------------------- #
 # Pure helpers — unit-tested in tests/test_oracle_score_pilot.py                #
@@ -564,7 +588,8 @@ def _process(item: dict) -> dict:
     rec.update({
         "schema": SCHEMA,
         "level_a": _G["level_a"], "level_b": _G["level_b"],
-        "total_budget_a": 4 * _G["level_a"], "total_budget_b": 4 * _G["level_b"],
+        "total_budget_a": _G["alloc_a"]["total"], "total_budget_b": _G["alloc_b"]["total"],
+        "alloc_a": _G["alloc_a"]["label"], "alloc_b": _G["alloc_b"]["label"],
         "m": _G["m"], "oracle_sims": _G["oracle_sims"],
         "oracle_policy": _G["oracle_policy"],
         "world_seed_salt": _G["world_seed_salt"],
@@ -679,6 +704,8 @@ ORACLE_POLICIES = {
 
 def build_manifest(args, population_n: int, chosen: list) -> dict:
     pol = ORACLE_POLICIES[args.oracle_policy]
+    alloc_a = parse_alloc(getattr(args, "alloc_a", None), args.level_a)
+    alloc_b = parse_alloc(getattr(args, "alloc_b", None), args.level_b)
     return {
         "schema": SCHEMA,
         "harness": "oracle_score_pilot",
@@ -717,9 +744,14 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
             "claim": "CL-070 / measurement/classical_search/MOVE_AGREEMENT_PREREG.md",
         },
         "levels": {
-            "level_a_sims_per_det": int(args.level_a), "total_budget_a": 4 * int(args.level_a),
-            "level_b_sims_per_det": int(args.level_b), "total_budget_b": 4 * int(args.level_b),
-            "k_dets": 4,
+            # `level_*` are the KEYS read out of each record's `q_pick_by_level`. What they
+            # MEAN is the arm's allocation: sims-per-det at k4 for the CL-070 bank (the
+            # default), or whatever `--alloc-*` says for a bank keyed differently.
+            "level_a_key": int(args.level_a), "level_b_key": int(args.level_b),
+            "alloc_a": alloc_a, "alloc_b": alloc_b,
+            "total_budget_a": alloc_a["total"], "total_budget_b": alloc_b["total"],
+            "budget_ratio_b_over_a": (alloc_b["total"] / alloc_a["total"]
+                                      if alloc_a["total"] else None),
             "decision_rule": "q_argmax_action (pooled_q_argmax) — the DEPLOYED fair pick",
         },
         "sampling": {
@@ -752,8 +784,18 @@ def main(argv=None) -> int:
                     help="CL-070 run dir holding records/ and roots.jsonl")
     ap.add_argument("--records-dir", default=None)
     ap.add_argument("--roots", default=None)
-    ap.add_argument("--level-a", type=int, default=LEVEL_A_DEFAULT)
-    ap.add_argument("--level-b", type=int, default=LEVEL_B_DEFAULT)
+    ap.add_argument("--level-a", type=int, default=LEVEL_A_DEFAULT,
+                    help="the KEY to read out of each record's q_pick_by_level for arm A")
+    ap.add_argument("--level-b", type=int, default=LEVEL_B_DEFAULT,
+                    help="the KEY to read out of each record's q_pick_by_level for arm B")
+    ap.add_argument("--alloc-a", default=None,
+                    help="arm A's real allocation as 'kKxS' (e.g. k8x1376). UNSET = the "
+                         "CL-070 bank's fixed k_dets=4, i.e. total = 4 x --level-a "
+                         "(byte-identical to before this flag existed). Set it when the "
+                         "two arms differ in PIMC WIDTH rather than in sims-per-det, so "
+                         "the manifest states the real budgets instead of a wrong 4x.")
+    ap.add_argument("--alloc-b", default=None,
+                    help="arm B's real allocation as 'kKxS' (e.g. k16x1376). See --alloc-a.")
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--head", type=int, default=0,
                     help="after sampling --n, keep only the first HEAD positions of the "
@@ -840,6 +882,8 @@ def main(argv=None) -> int:
         print(f"[pilot] resume: {len(items) - len(todo)} already done, {len(todo)} to go")
 
     cfg_kw = dict(level_a=int(args.level_a), level_b=int(args.level_b), m=int(args.m),
+                  alloc_a=parse_alloc(args.alloc_a, args.level_a),
+                  alloc_b=parse_alloc(args.alloc_b, args.level_b),
                   oracle_sims=int(args.oracle_sims), world_seed_salt=args.world_seed_salt,
                   oracle_policy=str(args.oracle_policy),
                   wall_cap=int(args.wall_cap), max_plies=int(args.max_plies),
