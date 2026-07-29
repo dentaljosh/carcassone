@@ -664,7 +664,11 @@ class FairHeuristicPriorAgent:
     """
 
     def __init__(self, game: Game, cfg: HeuristicPriorConfig | None = None,
-                 sims: int = 688, k_dets: int = 4, seed: int | None = None,   # deploy default = adopted k4×688=2752 (CL-054, 2026-07-13; was k8×344)
+                 sims: int = 688, k_dets: int = 4, seed: int | None = None,   # ⚠️ NO LONGER THE DEPLOY BUDGET (2026-07-29): the champion of record is
+                                                                             # k8×1376=11008 (governance/PRODUCTION.yaml champion.fair_deploy) and is
+                                                                             # reached via champion_factory, which passes these explicitly. These
+                                                                             # constructor defaults stay at the historical k4×688=2752 so every existing
+                                                                             # caller/test keeps its budget; do NOT read them as "the champion".
                  min_pooled_visits: int = DEFAULT_MIN_POOLED_VISITS,
                  exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
                  exact_budget: int = DEFAULT_EXACT_BUDGET,

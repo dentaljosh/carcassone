@@ -106,6 +106,11 @@ class ProductionSpec:
     # provenance
     yaml_leaf_hash: str
     env_knobs: dict
+    # deploy EXECUTION (champion.fair_deploy.parallel_workers / .deploy_profiles), added
+    # 2026-07-29 with the k8x1376 budget promotion. Parsed and exposed; NOT auto-applied —
+    # see deploy_profile() and the YAML's own "WIRING STATUS" comment.
+    parallel_workers: int | None = None
+    deploy_profiles: dict = dc.field(default_factory=dict)
 
 
 def load_production_spec(path: Path | None = None) -> ProductionSpec:
@@ -141,7 +146,44 @@ def load_production_spec(path: Path | None = None) -> ProductionSpec:
         exact_max_k=2,
         yaml_leaf_hash=str(champ.get("leaf_hash", "")),
         env_knobs=dict(champ.get("env_knobs", {})),
+        parallel_workers=(None if fair.get("parallel_workers") in (None, "")
+                          else int(fair["parallel_workers"])),
+        deploy_profiles=dict(fair.get("deploy_profiles") or {}),
     )
+
+
+# The profile an embedder asks for when it cannot pay the champion budget. The champion
+# of record is always fair_deploy.k_dets/.sims_per_det; a profile that differs from it is
+# a WEAKER configuration, and make_production_champion stamps `runtime_budget_override`
+# onto the manifest whenever the running budget differs, so a game log can never
+# misrepresent which budget played.
+DEPLOY_PROFILE_DEFAULT = "desktop"
+
+
+def deploy_profile(name: str = DEPLOY_PROFILE_DEFAULT,
+                   spec: ProductionSpec | None = None) -> dict:
+    """The named deploy EXECUTION profile from PRODUCTION.yaml, as
+    ``{"k_dets", "sims_per_det", "total_sims", "parallel_workers", "name", "found"}``.
+
+    FAIL-SAFE, NOT FAIL-OPEN: an unknown/absent profile falls back to the champion of
+    record with ``parallel_workers=None`` (i.e. the sequential, byte-identical path) and
+    ``found=False``. Callers that must NEVER inherit the champion budget — the Android
+    bridge is the live example, since Chaquopy has no multiprocessing and the champion
+    budget is ~25 s/move there — must check ``found`` and supply their own floor rather
+    than trusting this default."""
+    spec = spec or load_production_spec()
+    prof = dict((spec.deploy_profiles or {}).get(name) or {})
+    k = int(prof.get("k_dets", spec.k_dets))
+    s = int(prof.get("sims_per_det", spec.sims_per_det))
+    pw = prof.get("parallel_workers", None)
+    return {
+        "name": str(name),
+        "found": bool(prof),
+        "k_dets": k,
+        "sims_per_det": s,
+        "total_sims": k * s,
+        "parallel_workers": (None if pw in (None, "") else int(pw)),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -442,7 +484,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
 
-    mode="fair"        -> FairHeuristicPriorAgent (deployable PIMC, k4x688, exact-K<=2).
+    mode="fair"        -> FairHeuristicPriorAgent (deployable PIMC at the YAML budget —
+                          k8x1376 = 11008 since the 2026-07-29 promotion — exact-K<=2).
     mode="clairvoyant" -> HeuristicPriorAgent (dev/ruler; k_dets*sims_per_det total sims).
 
     ``game`` defaults to a fresh Game(enable_legal_moves_cache=True). ``sims``/``k_dets``
@@ -529,10 +572,11 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     else:
         raise ValueError(f"mode must be 'fair'|'clairvoyant'; got {mode!r}")
 
-    # The manifest's fair_deploy block records the PRODUCTION.yaml INTENT (k4x688=2752).
-    # If sims/k_dets override it (a smoke), record the budget the agent ACTUALLY runs so
-    # the game log never misrepresents what played. resolved_manifest itself stays
-    # canonical/byte-stable (the override note is added only on the attached copy).
+    # The manifest's fair_deploy block records the PRODUCTION.yaml INTENT (the champion of
+    # record). If sims/k_dets override it — a smoke, OR a deploy PROFILE that cannot pay the
+    # champion budget, e.g. the Android `mobile` profile — record the budget the agent
+    # ACTUALLY runs, so the game log never misrepresents what played. resolved_manifest
+    # itself stays canonical/byte-stable (the note is added only on the attached copy).
     if mode == "fair":
         es = spec.sims_per_det if sims is None else int(sims)
         ek = spec.k_dets if k_dets is None else int(k_dets)
@@ -541,7 +585,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             manifest["runtime_budget_override"] = {
                 "sims_per_det": es, "k_dets": ek, "total_sims": es * ek,
                 "note": "the budget the agent ACTUALLY runs; fair_deploy above is the "
-                        "PRODUCTION.yaml intent (k4x688=2752)."}
+                        "PRODUCTION.yaml intent (the champion of record). A budget BELOW "
+                        "the intent is a WEAKER agent and must be graded as such."}
     else:
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         if total != spec.k_dets * spec.sims_per_det:

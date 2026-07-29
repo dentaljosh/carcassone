@@ -173,6 +173,38 @@ def test_production_yaml_resolved():
     assert Path(d["production_yaml"]).is_file()
 
 
+def test_mobile_profile_is_the_device_budget_not_the_champion_of_record():
+    """THE CARVE-OUT GUARD (2026-07-29). The desktop champion was promoted to k8x1376 =
+    11008 sims/move, which is only clock-legal because the k worlds are split across 8
+    spawn processes — something Chaquopy cannot do, so on-device it would be ~25 s/move.
+    The bridge must resolve the YAML's `mobile` deploy profile, NEVER the champion-of-
+    record fields, and must fail CLOSED (its own floor) if that profile is missing."""
+    from carcassonne_ai import champion_factory as cf
+
+    spec = cf.load_production_spec()
+    mob = B.mobile_budget(spec)
+    assert mob["profile"] == "mobile" and mob["from_yaml"] is True
+    assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == (4, 688, 2752)
+    assert mob["total_sims"] <= spec.k_dets * spec.sims_per_det
+
+    # production_budget() reports what the DEVICE runs (what the UI prints), and carries
+    # the champion of record alongside so the record is not lost.
+    d = ok(B.production_budget())
+    assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == (4, 688, 2752)
+    assert d["champion_of_record_total_sims"] == spec.k_dets * spec.sims_per_det
+
+    # FAIL-CLOSED: a spec with no `mobile` profile must fall back to the module's own
+    # floor, never to the champion budget.
+    import dataclasses as dc
+
+    stripped = dc.replace(spec, deploy_profiles={})
+    fb = B.mobile_budget(stripped)
+    assert fb["from_yaml"] is False
+    assert (fb["k_dets"], fb["sims_per_det"]) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"], B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert fb["total_sims"] < spec.k_dets * spec.sims_per_det
+
+
 # --------------------------------------------------------------------------- #
 # new_game / get_state                                                          #
 # --------------------------------------------------------------------------- #
@@ -217,9 +249,12 @@ def test_manifest_without_session_falls_back_to_the_spec():
     man = d["manifest"]
     assert man["agent_class"] == "FairHeuristicPriorAgent"
     assert "runtime_budget_override" not in man
-    # The spec manifest carries the YAML budget, which is what the sheet shows.
+    # The spec manifest carries the CHAMPION OF RECORD budget. Since the 2026-07-29
+    # promotion that is NOT what the phone runs, so production_budget()'s headline
+    # figures are the mobile profile and the champion of record rides alongside.
     budget = ok(B.production_budget())
-    assert man["fair_deploy"]["total_sims"] == budget["total_sims"]
+    assert man["fair_deploy"]["total_sims"] == budget["champion_of_record_total_sims"]
+    assert budget["total_sims"] <= budget["champion_of_record_total_sims"]
 
 
 # --------------------------------------------------------------------------- #

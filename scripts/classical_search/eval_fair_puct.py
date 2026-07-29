@@ -2025,8 +2025,8 @@ def main(argv=None) -> int:
     ap.add_argument("--no-value-global-pool", dest="value_global_pool", action="store_false")
     ap.add_argument("--exact-k", type=int, default=2,
                     help="fair marginalized endgame handoff at k_remaining<=K (the A2 grid axis)")
-    ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC); deploy default k4 (CL-054, 2026-07-13; was 8)")
-    ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization (k4×688=2752 total; was 344 at k8)")
+    ap.add_argument("--k-dets", type=int, default=4, help="determinizations per move (fair PIMC). ⚠️ THIS DEFAULT IS NO LONGER THE DEPLOY CHAMPION: since 2026-07-29 the champion of record is k8×1376=11008 (governance/PRODUCTION.yaml). Pass --k-dets 8 --sims 1376 to grade against the champion")
+    ap.add_argument("--sims", type=int, default=688, help="PUCT sims per determinization. Default k4×688=2752 = the PRE-2026-07-29 deploy budget, kept so existing cells reproduce; the champion is k8×1376=11008")
     ap.add_argument("--opp-sims", type=int, default=None,
                     help="ASYMMETRIC search budgets: the head-to-head opponent "
                          "(--opponent fair-champion / net) runs at THIS per-determinization "

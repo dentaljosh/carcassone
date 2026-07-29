@@ -84,6 +84,35 @@ RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
 # that ONE decision falls back to fair PIMC (stamped on agent.manifest).
 ANDROID_EXACT_BUDGET: int = 100_000
 
+# --------------------------------------------------------------------------- #
+# 1a. THE MOBILE BUDGET PROFILE (added 2026-07-29 with the k8x1376 promotion).  #
+#                                                                              #
+# On 2026-07-29 the DESKTOP deploy budget was promoted k4x688 (2752) ->         #
+# k8x1376 (11008), which is +49.85 elo (CL-060, paired z 3.48) and is only      #
+# clock-legal because the k determinization worlds are split across 8 spawn     #
+# processes (6.37x, 2.16 s/move).                                               #
+#                                                                              #
+# ⚠️ THE PHONE CANNOT DO THAT. Chaquopy has no `multiprocessing`, so on-device   #
+# the ONLY available execution is the sequential k-loop -> 11008 sims would     #
+# cost ~25 s/move (4.26x the measured 1.7 s/move at 2752). So PRODUCTION.yaml    #
+# carries `champion.fair_deploy.deploy_profiles.mobile` pinning this platform   #
+# at k4x688, and this module resolves THAT, not the champion-of-record fields.  #
+#                                                                              #
+# DESIGN CONTRACT 3 ("the YAML is the champion, no strength knob is hardcoded   #
+# here") is preserved: the numbers still come from the YAML. The constant below #
+# is a FAIL-CLOSED floor for the one case the contract cannot cover — a bundled #
+# YAML with no `mobile` profile, where inheriting the champion budget would ship #
+# a 25 s/move hang. It must never be read when the profile is present.          #
+#                                                                              #
+# The phone is therefore running a WEAKER agent than the champion of record     #
+# (same family, same leaf a36d2e15, same priors, same exact-K<=2 tail; only the #
+# budget differs). `champion_factory` stamps `runtime_budget_override` on the   #
+# manifest automatically, so every archived game says which budget played —     #
+# E4 human-vs-champion games must be graded against k4x688.                     #
+# --------------------------------------------------------------------------- #
+ANDROID_DEPLOY_PROFILE: str = "mobile"
+ANDROID_FALLBACK_BUDGET: dict[str, int] = {"k_dets": 4, "sims_per_det": 688}
+
 # Desktop convenience: when the repo tree is visible above this file and the package is
 # not installed, make src/ importable. On device this resolves to a path that does not
 # exist and is skipped. (android/app/src/main/python/android_bridge.py -> parents[4] is
@@ -213,6 +242,29 @@ def _resolve_production_yaml() -> str:
 
 
 PRODUCTION_YAML_PATH = _resolve_production_yaml()
+
+
+def mobile_budget(spec=None) -> dict:
+    """The per-move budget THIS PLATFORM runs — the YAML's ``mobile`` deploy profile.
+
+    Returns ``{"k_dets", "sims_per_det", "total_sims", "profile", "from_yaml"}``.
+
+    FAIL-CLOSED, and that is the whole point of the function: if the bundled YAML has no
+    ``mobile`` profile (an old bundle, a hand-edited file), we fall back to
+    ``ANDROID_FALLBACK_BUDGET`` — **never** to ``spec.k_dets``/``spec.sims_per_det``.
+    Since 2026-07-29 the champion of record is k8x1376 = 11008 sims, which on a phone is
+    ~25 s/move sequentially (no ``multiprocessing`` under Chaquopy), so inheriting it
+    silently is the exact failure this guards. ``from_yaml=False`` in the response says
+    the fallback fired."""
+    spec = spec or champion_factory.load_production_spec()
+    prof = champion_factory.deploy_profile(ANDROID_DEPLOY_PROFILE, spec)
+    if prof["found"]:
+        k, s = int(prof["k_dets"]), int(prof["sims_per_det"])
+    else:
+        k = int(ANDROID_FALLBACK_BUDGET["k_dets"])
+        s = int(ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    return {"k_dets": k, "sims_per_det": s, "total_sims": k * s,
+            "profile": ANDROID_DEPLOY_PROFILE, "from_yaml": bool(prof["found"])}
 
 
 def _shim_factory_repo() -> str | None:
@@ -602,8 +654,15 @@ class _Session:
                              f"{self.opponent_kind!r}")
 
         spec = champion_factory.load_production_spec()
-        eff_sims = spec.sims_per_det if self.req_sims is None else int(self.req_sims)
-        eff_k = spec.k_dets if self.req_k_dets is None else int(self.req_k_dets)
+        # THE MOBILE PROFILE, not the champion-of-record fields: since 2026-07-29 the
+        # champion budget is k8x1376 = 11008, which needs the 8-way k-parallel split to
+        # be playable and Chaquopy has no multiprocessing. See mobile_budget().
+        mob = mobile_budget(spec)
+        eff_sims = mob["sims_per_det"] if self.req_sims is None else int(self.req_sims)
+        eff_k = mob["k_dets"] if self.req_k_dets is None else int(self.req_k_dets)
+        # parallel_workers is deliberately NEVER passed here: the fair agent's split uses
+        # spawn processes, which Chaquopy cannot provide. Omitting it is the byte-identical
+        # sequential path — the SAME player, just slower, not a different agent.
         agent = champion_factory.make_production_champion(
             "fair", game=self.ai_game, seed=self.seed, sims=eff_sims, k_dets=eff_k,
             exact_endgame=True, verify=self.verify,
@@ -623,14 +682,28 @@ class _Session:
 
         self.opponent_name = "Champion"
         self.budget_note = None
-        if (eff_sims, eff_k) != (spec.sims_per_det, spec.k_dets):
-            full = spec.k_dets * spec.sims_per_det
+        full = spec.k_dets * spec.sims_per_det
+        if (eff_sims, eff_k) != (mob["sims_per_det"], mob["k_dets"]):
+            # The user (or a debug screen) asked for LESS than this device's profile.
             self.budget_note = (
                 f"BELOW CHAMPION BUDGET — running k{eff_k}x{eff_sims}="
-                f"{eff_k * eff_sims} sims/move vs the champion's "
-                f"k{spec.k_dets}x{spec.sims_per_det}={full}. This is a WEAKENED agent; "
+                f"{eff_k * eff_sims} sims/move vs this device's "
+                f"k{mob['k_dets']}x{mob['sims_per_det']}="
+                f"{mob['total_sims']} (champion of record: "
+                f"k{spec.k_dets}x{spec.sims_per_det}={full}). This is a WEAKENED agent; "
                 f"beating it is not beating the champion.")
             self.opponent_name = f"Champion(weakened k{eff_k}x{eff_sims})"
+        elif mob["total_sims"] != full:
+            # Running exactly the device profile, but the profile is below the champion of
+            # record (the 2026-07-29 promotion made the phone a deliberate carve-out).
+            # Honest, and archived with the game — E4 must grade against THIS budget.
+            self.budget_note = (
+                f"MOBILE PROFILE — k{mob['k_dets']}x{mob['sims_per_det']}="
+                f"{mob['total_sims']} sims/move, the on-device budget. The desktop "
+                f"champion of record runs k{spec.k_dets}x{spec.sims_per_det}={full} "
+                f"across 8 worker processes, which Chaquopy cannot do; the same budget "
+                f"sequentially here would be ~25 s/move. Same agent, same leaf, smaller "
+                f"search — grade results against this budget, not the champion's.")
 
     # -- board mechanics ----------------------------------------------------
     @property
@@ -1761,12 +1834,24 @@ def get_manifest() -> str:
 
 
 def production_budget() -> str:
-    """The YAML champion budget, so the UI never hardcodes a strength knob."""
+    """The budget THIS DEVICE runs, so the UI never hardcodes a strength knob.
+
+    ``k_dets``/``sims_per_det``/``total_sims`` are the **mobile deploy profile** — what the
+    on-device agent actually searches — because those are the fields the UI prints and it
+    must never advertise a budget the phone does not run. The champion of record is carried
+    alongside under ``champion_of_record_*`` (since 2026-07-29 the two differ: desktop
+    k8x1376=11008, mobile k4x688=2752 — see mobile_budget())."""
     try:
         spec = champion_factory.load_production_spec()
+        mob = mobile_budget(spec)
         return _ok({"ok": True, "champion_id": spec.champion_id,
-                    "sims_per_det": spec.sims_per_det, "k_dets": spec.k_dets,
-                    "total_sims": spec.k_dets * spec.sims_per_det,
+                    "sims_per_det": mob["sims_per_det"], "k_dets": mob["k_dets"],
+                    "total_sims": mob["total_sims"],
+                    "profile": mob["profile"],
+                    "profile_from_yaml": mob["from_yaml"],
+                    "champion_of_record_k_dets": spec.k_dets,
+                    "champion_of_record_sims_per_det": spec.sims_per_det,
+                    "champion_of_record_total_sims": spec.k_dets * spec.sims_per_det,
                     "exact_max_k": spec.exact_max_k,
                     "production_yaml": PRODUCTION_YAML_PATH})
     except Exception as exc:                      # noqa: BLE001

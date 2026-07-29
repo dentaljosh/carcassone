@@ -26,6 +26,45 @@ fair_kdets_authorized_by: >
   (k_dets × sims/det = 2752) k4 beat the deployed k8 by +5.18±1.24 pts/deck (deck-matched delta-vs-k8, double-CRN,
   z4.17, n=400 confirm). The full width axis is an inverted-U peaked at k4 (k32<k16≈k8<k2<k4); k1/k6 ruled out (peak
   bracketed, k4-vs-k2 flat). FIRST fair (deployable) lever in the program to fire AND confirm. See fair_deploy block below.
+  ⚠️ SUPERSEDED FOR DESKTOP DEPLOY 2026-07-29 by the k8×1376 budget promotion below — k4 remains the correct
+  allocation AT total 2752 (that finding is untouched, and it is still what the MOBILE profile runs); the promotion
+  moves the total BUDGET to 11008, where k8 is the measured-optimal allocation (CL-060 / curve_k16 cells).
+budget_folded_in: "2026-07-29"   # desktop deploy budget 2752 (k4×688) → 11008 (k8×1376), executed parallel_workers=8.
+budget_authorized_by: >
+  Joshua, 2026-07-29 ('yes, lets promote k8x1376'). THE PROMOTION IN ONE LINE: the strongest fair configuration we have
+  ever MEASURED was never deployable because it cost 91% of the tournament clock single-stream; the k-parallel split
+  (roadmap G6) makes it cost ~14–17%, so it becomes deployable through ENGINEERING, with no new strength claim owed.
+  EVIDENCE, three links, each verified in its named source before this line was written:
+  (1) STRENGTH — results.csv `cl060_h2h_k8x1376_vs_deploy_k4x688` (2026-07-22, band 32e9, n=400 deck-paired,
+      200 decks × 2 seats): k8×1376 = 11008 sims vs the k4×688 = 2752 DEPLOY champion, BOTH SIDES the frozen curve125
+      leaf a36d2e15a3b3d71d, fair PIMC, exact-K≤2 → +49.85 elo (unpaired σ 17.55; PAIRED σ 14.32), W221/D15/L164,
+      wr 0.5713, paired z 3.48, +2.9775 pts/deck, 0 timeouts, 400/400 latched. This is a DIRECT head-to-head against
+      the incumbent, not a delta-of-deltas through a rung — it is the design CL-060's own falsifier named, and it
+      cleared the pre-registered ≥+35 re-open bar.
+  (2) PLATEAU CONTEXT — results.csv `curve_k16x1376_22016_vs_deploy_k4x688` (n=196, band 48e9): 8× budget at the
+      corrected allocation reads +35.58 / z 2.68, i.e. statistically the same place as the 4× point. The fair
+      budget→elo curve PLATEAUS at ~+40 over deploy and REACHES that plateau at ~4×. So k8×1376 is chosen as the
+      CHEAPEST point on the plateau, not as "more is better" — 8× is strictly dominated (2× the clock for ~0 elo).
+  (3) CLOCK LEGALITY — measurement/EFFJENSEN_BENCH_BATCH_20260729.md §2 (kparallel_latency_bench, 30 replayed real
+      mid-game roots, quiet 5900XT): k8×1376 sequential 13.7552 s/move → **W=8 2.1595 s/move mean / 2.6167 p90 =
+      6.370× (80% parallel efficiency)**, transport 7.24 ms/move (0.3% of the move). That is ~14.3–17.4% of the 900 s
+      clock (the band is an unreconciled 3.5×/4.262× sequential-cost anchor in the roadmap; the conclusion is
+      insensitive) and is FASTER than yesterday's deploy single-stream (3.2276 s/move).
+  ⭐ THE KEY LOGICAL STEP — WHY (1) TRANSFERS TO THE PARALLEL EXECUTION. CL-060 measured k8×1376 run SEQUENTIALLY.
+  We deploy it run on 8 workers. That is only legitimate because the split is BEHAVIOR-IDENTICAL, and that is PROVEN,
+  not asserted: the k determinization worlds are independent until the pooled-Q argmax, so `parallel_workers` runs the
+  same worlds with the same decks and the same per-world seeds and merges them through the SAME pooled-Q code in the
+  SAME world order. tests/test_kparallel.py steps sequential and parallel champions through FULL games side by side and
+  asserts the chosen action AND the pooled root (N, W) are equal at every move, including the K≤2 marginalized-endgame
+  latch; the latency bench re-verified action identity at PRODUCTION budget (30/30 identical roots on every parallel
+  row, and it fails loudly otherwise). ⇒ the parallel agent is the SAME PLAYER whose strength CL-060 measured, so
+  NO NEW STRENGTH MEASUREMENT IS OWED by this promotion. parallel_workers is a LATENCY lever, never a strength lever.
+  WHAT THIS DOES NOT CLAIM: nothing about absolute/superhuman strength or either structural blocker; and per the bench's
+  own caveat, "clock-legal" is a CLOCK claim — CL-060's +49.85 is a self-anchored head-to-head against the incumbent.
+  CONSEQUENCE, EVAL COST: the deploy baseline now costs ~4× per move in SIMS. Any future cell graded against the
+  champion pays ~4.26× sequential wall-clock (13.76 vs 3.23 s/move) unless it is run k-parallel. Throughput eval farms
+  are game-parallel and do NOT benefit from the split (workers already saturate the box), so budget future n=400
+  confirms against this champion at ~4× the old wall-clock, or run fewer/cheaper screens.
 supersedes:
   - deep_classical_v29_bmild_cap8   # HeuristicMCTS random-expansion UCT (C=3.0, one-random-child/sim, no priors) @ h6400
                                      # + exact-K<=4 — the PRIOR champion (2026-07-02 .. 2026-07-07); now LINEAGE. SAME v2.9
@@ -81,7 +120,16 @@ champion:
     # meeple_k OMITTED (was 2.0) — INERT under a non-null curve: flat_leaf.py:988 `if curve is not None`
     # takes the curve branch, never the flat meeple_k term. Removed 2026-07-14 (T4b hygiene, Joshua approved)
     # to kill the sweepable-but-ignored config trap. The launcher still exports CARCASSONNE_V25_MEEPLE_K=2.0 (unused here).
-  sims: "~2750 (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box; the sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number)"
+  sims: >
+    ~2750 was the CLAIRVOYANT confirm budget (EQUAL WALL-CLOCK to h6400 on the 5900XT ref box) — it is what the
+    +148.2 flip and every clairvoyant ruler/anchor number below were measured at, and that historical framing is
+    unchanged. ⚠️ CHANGED 2026-07-29 (k8×1376 promotion): champion_factory derives the CLAIRVOYANT mode's DEFAULT
+    sim count as fair_deploy.k_dets × fair_deploy.sims_per_det, so `make_production_champion("clairvoyant")` with no
+    explicit `sims` now builds at 11008, not 2752. Every real clairvoyant caller (oracle_score_pilot,
+    gate_b_depth_transfer, eval_fair_puct's prefix agent) passes its OWN explicit sims and is UNAFFECTED; only a
+    sims-less construction moves. If you are reproducing a clairvoyant RULER number, pass sims=2752 explicitly —
+    the ruler is the 2750-sim agent, and this promotion is a FAIR-DEPLOY budget change, not a ruler re-anchor.
+    The sim count floats with the compute budget — the CONFIG is the champion, not a fixed sim number.
   c_puct_note: "agent c_puct=1.5 is the PUCT exploration constant; distinct from the dethroned champion's plain-UCT C=3.0"
   endgame: >
     Two handoffs share this champion. (a) CLAIRVOYANT reference/eval agent — what the
@@ -95,13 +143,77 @@ champion:
     solves in 20 fair games; the marginalized solve is bit-invariant to deck permutation.
   fair_deploy:                          # the human-facing (non-clairvoyant) PIMC deploy config. Clairvoyant dev/ruler
                                         # play uses ONE true deck (no determinizations), so k_dets applies to fair deploy ONLY.
-    k_dets: 4                           # ADOPTED 2026-07-13 (CL-054). Determinizations per move; was the legacy k8.
-                                        # k4 beat k8 +5.18±1.24 pts/deck (deck-matched delta-vs-k8, z4.17, n=400) at the
-                                        # SAME total budget 2752 → COST-NEUTRAL. Width axis inverted-U peaked at k4.
-    sims_per_det: 688                   # k4 × 688 = 2752 total per-move budget (floats with compute like the clair sims;
-                                        # the CONFIG is k_dets=4 at ~2752 total, not a fixed sim number).
+    k_dets: 8                           # PROMOTED 2026-07-29 (budget_authorized_by above). Determinizations per move.
+                                        # k8 is the MEASURED-OPTIMAL allocation AT total 11008 — width must be re-solved
+                                        # per budget (CL-054's k4 was the optimum measured AT 2752, and remains so there;
+                                        # it is what the `mobile` profile below still runs).
+    sims_per_det: 1376                  # k8 × 1376 = 11008 total per-move budget (floats with compute like the clair sims;
+                                        # the CONFIG is k_dets=8 at ~11008 total, not a fixed sim number).
+                                        # Prior deploy budget was k4×688 = 2752 (2026-07-13 .. 2026-07-29) — now lineage.
     fair_agent: FairHeuristicPriorAgent # src/carcassonne_ai/fair_agent.py — PIMC wrapper of the champion HeuristicPriorAgent.
-                                        # Constructor default now k_dets=4/sims=688; eval_fair_puct.py --k-dets/--sims defaults track.
+                                        # eval_fair_puct.py --k-dets/--sims defaults track the constructor defaults; the
+                                        # AUTHORITATIVE budget is these two YAML fields, read by champion_factory.
+    # ---------------------------------------------------------------------------------
+    # DEPLOY EXECUTION PROFILES (added 2026-07-29 with the k8×1376 promotion).
+    #
+    # These describe HOW the champion is EXECUTED on a given class of hardware. Only
+    # `parallel_workers` is an execution knob (behavior-identical, latency-only); the
+    # k_dets/sims_per_det inside a profile are a genuine BUDGET override for platforms
+    # that cannot pay the champion budget, and such a platform is therefore running a
+    # WEAKER configuration — which its own manifest must say (it does: champion_factory
+    # stamps `runtime_budget_override` whenever the running budget != the two fields above).
+    #
+    # ⚠️ WIRING STATUS — deliberately partial, so the promotion stayed minimally invasive:
+    #   * `champion_factory.load_production_spec()` PARSES this block onto
+    #     `ProductionSpec.deploy_profiles` / `.parallel_workers` and exposes
+    #     `champion_factory.deploy_profile(name)`. It does NOT auto-apply parallel_workers:
+    #     `make_production_champion(..., parallel_workers=N)` stays an explicit caller
+    #     decision, because a spawn-process split is not safe to impose on every embedder
+    #     (daemonic eval-farm workers, Chaquopy, notebooks) and the factory cannot tell.
+    #     Callers that want the deploy execution profile read it from here and pass it.
+    #   * FOLLOW-UP (not done here): teach the human-anchor play harness
+    #     (scripts/human_anchor/play_harness.py) to read `desktop.parallel_workers` so
+    #     clocked human-facing play gets the 6.37× automatically instead of by hand.
+    # ---------------------------------------------------------------------------------
+    parallel_workers: 8                 # DESKTOP-CLASS DEPLOY EXECUTION. Splits the 8 determinization worlds across 8
+                                        # spawn processes. BEHAVIOR-IDENTICAL (tests/test_kparallel.py: same action AND
+                                        # same pooled root (N,W) at every move of full games, endgame latch included;
+                                        # latency bench re-verified 30/30 identical actions at production budget).
+                                        # MEASURED 6.370× (13.7552 → 2.1595 s/move mean, 2.6167 p90, 80% efficiency,
+                                        # transport 7.24 ms/move) — measurement/EFFJENSEN_BENCH_BATCH_20260729.md §2.
+                                        # `null`/absent = today's sequential k-loop, byte-for-byte identical play.
+    deploy_profiles:
+      desktop:                          # the DEFAULT and the champion of record. Identical to the two fields above.
+        k_dets: 8
+        sims_per_det: 1376
+        total_sims: 11008
+        parallel_workers: 8
+        measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~14.3–17.4% of the 900 s clock
+        note: >
+          The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
+          Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
+          problem, not a different agent.
+      mobile:                           # ⚠️ ANDROID / CHAQUOPY CARVE-OUT — read the note. THE PHONE DOES NOT GET 11008.
+        k_dets: 4
+        sims_per_det: 688
+        total_sims: 2752
+        parallel_workers: null          # Chaquopy has no multiprocessing; the phone can ONLY run the sequential k-loop.
+        note: >
+          PINNED at the PRE-PROMOTION deploy budget k4×688 = 2752 by the 2026-07-29 promotion decision
+          (Joshua approved the promotion as desktop-class; DECISIONS 2026-07-29). REASON: the phone has no
+          multiprocessing, so it cannot buy the 6.37× split — k8×1376 sequential on the Pixel is ≈25 s/move
+          (the M5 bench puts a fast ARM core at ~0.93–1.07× the Pixel at deploy budget, and 11008 is 4.26×
+          the sequential cost of 2752, whose on-device measurement is 1.7 s/move full budget). 25 s/move with
+          an uncancellable, progress-less spinner is not a shippable UX, so the phone stays where it was.
+          CONSEQUENCE, STATE IT PLAINLY: the on-device opponent is now WEAKER than the champion of record by
+          the CL-060 margin (~50 elo). It is the SAME agent family, same leaf a36d2e15, same priors, same
+          exact-K≤2 endgame — only the budget differs, and every on-device manifest records that via
+          `runtime_budget_override`. Human-vs-champion games archived on the phone for E4 must be graded
+          against k4×688, NOT against the champion of record.
+          UNPIN CONDITION: a native (non-Chaquopy) search core with real thread/process parallelism on the
+          device, benchmarked at ≤3 s/move at 11008 — not before.
+          READER: android/app/src/main/python/android_bridge.py resolves THIS profile (fail-closed: if the
+          profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).
     stale_path_flag: >
       ✅ CLEARED 2026-07-26 — the gap this flag described was FIXED on 2026-07-19 by F1 (91bff94) and the flag
       was simply never cleared (the 6-touch close-out leaking at touch 4, exactly where CLAUDE.md says it
@@ -110,7 +222,10 @@ champion:
       (champion_factory.py:417), its module docstring records the rewire in the past tense, and tests/release/
       is 38/38 green. The factory proves the leaf on real boards at construction and writes a runtime manifest
       into every game log. ⇒ the harness DOES run the current champion (FairHeuristicPriorAgent, PUCT heuristic
-      priors + curve125, c1.5/tau5/float/visits, k4x688); the "E4 landmine" is defused.
+      priors + curve125, c1.5/tau5/float/visits, and now k8x1376 — it reads the budget from this file, so the
+      2026-07-29 promotion propagated to it for free). ⚠️ ONE THING IT DOES NOT YET READ: `parallel_workers`, so
+      harness play is currently the SEQUENTIAL 13.76 s/move execution of the same player until the follow-up above
+      lands. The "E4 landmine" is defused.
       HISTORICAL (what the flag used to say): the harness wired the PRE-FLIP FairHeuristicMCTSAgent because the
       2026-07-07 champion flip and the 2026-07-13 curve125 adopt were never propagated there. E4 (the human exam)
       itself remains PARKED — that is Joshua's call and is NOT what this flag tracked.
@@ -134,6 +249,30 @@ validation:
     - rr_h6400_vs_net-iter02_k2                       # M2 +36.6
     - rr_puct2750_vs_h12800_k2                        # M3 +149.3
     - rr_h6400_vs_h12800_k2                           # M4 -8.7
+  budget_promotion_2026_07_29:                        # the k4x688 -> k8x1376 deploy-budget promotion
+    decision: "k_dets 4 -> 8, sims_per_det 688 -> 1376 (total 2752 -> 11008), executed parallel_workers=8. Joshua approved 2026-07-29."
+    strength_row: cl060_h2h_k8x1376_vs_deploy_k4x688  # +49.85 elo, unpaired sigma 17.55 / PAIRED sigma 14.32, paired z 3.48,
+                                                      # n=400 deck-paired (200 decks x 2 seats), band 32e9, W221/D15/L164,
+                                                      # wr 0.5713, +2.9775 pts/deck, both sides leaf a36d2e15a3b3d71d.
+    plateau_row: curve_k16x1376_22016_vs_deploy_k4x688  # 8x at the corrected allocation = +35.58 / z 2.68 (n=196, band 48e9)
+                                                        # => the curve PLATEAUS at ~+40 over deploy and is REACHED by ~4x;
+                                                        # k8x1376 is the CHEAPEST plateau point, and 8x is strictly dominated.
+    latency_evidence: measurement/EFFJENSEN_BENCH_BATCH_20260729.md   # sec 2: 13.7552 -> 2.1595 s/move at W=8 = 6.370x
+                                                                     # (p90 2.6167), 80% efficiency, transport 7.24 ms/move,
+                                                                     # 30/30 action-identical roots; ~14.3-17.4% of the 900 s clock.
+    behavior_identity: tests/test_kparallel.py         # full-game side-by-side: same action AND same pooled root (N,W) at
+                                                       # EVERY move incl. the K<=2 latch => the CL-060 strength measurement
+                                                       # (taken sequentially) TRANSFERS to the 8-worker execution unchanged.
+    what_did_NOT_change: >
+      leaf (curve125 a36d2e15a3b3d71d, caps 8/8) · priors (heuristic leaf-softmax, tau_p 5.0) · c_puct 1.5 ·
+      final_select visits · value_norm 15 · agent family (FairHeuristicPriorAgent, pooled-Q argmax) · exact K<=2
+      marginalized endgame · the MOBILE profile (phone stays k4x688). Only the fair-deploy BUDGET and its execution moved.
+    caveat: >
+      SELF-ANCHORED like every number in this file: +49.85 is a head-to-head against the OUTGOING champion, not an
+      absolute or out-of-lineage result, and it moves NEITHER structural blocker. Note also the bench's own caveat that
+      "tournament-legal" is a CLOCK claim; and CL-070 showed the RoD-v2 ruler to be ~70 elo unreliable on this exact
+      contrast, which is precisely why the promotion rests on the DIRECT head-to-head (CL-060 re-open trigger (a)) and
+      not on any rung-mediated read.
   caveat: >
     (1) SELF-ANCHORED: this is a search win over the prior CLASSICAL champion, measured on our own ruler — NOT an absolute
     superhuman result and it does NOT move the two structural blockers (no non-saturated external reference; no learned
@@ -169,4 +308,10 @@ notes: >
   fair-PIMC deployable verdict is now MEASURED at the champion config (ROADMAP A2, screen n=100): fair +49.0/z2.86 over
   a clairvoyant h800 rung while playing BLIND, clairvoyance tax ~156 elo (clair +205 − fair +49) → any human-facing
   claim must be graded FAIR and the clairvoyant ladders overstate deployable strength (Phase-3 re-anchor now load-bearing).
+  ⭐ 2026-07-29 — THE DEPLOY BUDGET MOVED: fair deploy is now k8x1376 = 11008 sims/move, executed on 8 workers
+  (2.16 s/move, ~14-17% of the 900 s clock). +49.85 elo / paired z 3.48 over the outgoing k4x688 (CL-060 head-to-head,
+  n=400 deck-paired). The k-parallel split is BEHAVIOR-IDENTICAL, so this is a budget promotion plus an execution
+  profile, NOT a new agent — nothing about the leaf, the priors, the search knobs or the endgame handoff changed.
+  ⚠️ THE PHONE IS CARVED OUT at k4x688 (fair_deploy.deploy_profiles.mobile) — Chaquopy has no multiprocessing.
+  ⚠️ EVAL COST: the deploy baseline is now ~4.26x more expensive per move sequentially; budget confirms accordingly.
   Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.

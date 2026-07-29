@@ -15,17 +15,48 @@ def test_spec_matches_production_yaml():
     assert spec.champion_id == "puct_priors_v29_bmild_cap8"
     assert (spec.c_puct, spec.tau_p, spec.value_norm) == (1.5, 5.0, 15.0)
     assert spec.leaf_quantize == "float" and spec.final_select == "visits"
-    assert (spec.k_dets, spec.sims_per_det) == (4, 688)
+    # PROMOTED 2026-07-29 (Joshua): fair deploy k4x688=2752 -> k8x1376=11008 on the CL-060
+    # head-to-head (+49.85, paired z 3.48), made clock-legal by the behavior-identical
+    # 8-way k-parallel split. Same agent/leaf/priors/endgame; budget + execution only.
+    assert (spec.k_dets, spec.sims_per_det) == (8, 1376)
     assert spec.exact_max_k == 2
     assert tuple(spec.curve) == cf.CURVE125
     assert (spec.bonus_cap, spec.opp_bonus_cap) == (8.0, 8.0)
+
+
+def test_deploy_profiles_and_the_mobile_carve_out():
+    """The 2026-07-29 promotion is DESKTOP-class. The phone cannot run 11008 sims (no
+    multiprocessing under Chaquopy => ~25 s/move sequentially), so PRODUCTION.yaml must
+    carry an explicit `mobile` profile pinning it at the pre-promotion k4x688, and
+    deploy_profile() must resolve it. If this test ever fails open, the phone silently
+    inherits the champion budget — the exact failure the carve-out exists to prevent."""
+    spec = cf.load_production_spec()
+    assert spec.parallel_workers == 8, "desktop deploy execution profile"
+
+    desktop = cf.deploy_profile("desktop", spec)
+    assert desktop["found"] is True
+    assert (desktop["k_dets"], desktop["sims_per_det"]) == (spec.k_dets, spec.sims_per_det)
+    assert desktop["total_sims"] == 11008 and desktop["parallel_workers"] == 8
+
+    mobile = cf.deploy_profile("mobile", spec)
+    assert mobile["found"] is True
+    assert (mobile["k_dets"], mobile["sims_per_det"]) == (4, 688)
+    assert mobile["total_sims"] == 2752
+    assert mobile["parallel_workers"] is None, "Chaquopy has no multiprocessing"
+    assert mobile["total_sims"] < desktop["total_sims"], "the phone is a WEAKER config"
+
+    # Unknown profile -> the champion of record on the SEQUENTIAL path, and it says so.
+    unknown = cf.deploy_profile("no_such_profile", spec)
+    assert unknown["found"] is False
+    assert (unknown["k_dets"], unknown["sims_per_det"]) == (spec.k_dets, spec.sims_per_det)
+    assert unknown["parallel_workers"] is None
 
 
 def test_fair_manifest_matches_intent():
     m = cf.resolved_manifest("fair")
     assert m["agent_class"] == "FairHeuristicPriorAgent"
     assert m["fair_deploy"] == {
-        "k_dets": 4, "sims_per_det": 688, "total_sims": 2752, "exact_max_k": 2,
+        "k_dets": 8, "sims_per_det": 1376, "total_sims": 11008, "exact_max_k": 2,
         "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"}
     assert m["leaf"]["curve125"] == list(cf.CURVE125)
     assert m["leaf"]["bonus_cap"] == 8.0 and m["leaf"]["value_blend"] == 0.0
@@ -217,7 +248,7 @@ def test_verify_raises_on_wrong_curve_and_caps():
 def test_fair_agent_is_the_production_shape():
     agent = cf.make_production_champion("fair", seed=101)
     assert type(agent).__name__ == "FairHeuristicPriorAgent"
-    assert agent._sims == 688 and agent._k_dets == 4 and agent._exact_max_k == 2
+    assert agent._sims == 1376 and agent._k_dets == 8 and agent._exact_max_k == 2
     assert agent._exact_endgame is True
     assert hasattr(agent, "manifest")
 
@@ -225,7 +256,12 @@ def test_fair_agent_is_the_production_shape():
 def test_clairvoyant_agent_uses_reuse_tree():
     agent = cf.make_production_champion("clairvoyant", seed=5)
     assert type(agent).__name__ == "HeuristicPriorAgent"
-    assert agent.simulations == 2752
+    # A sims-less clairvoyant build derives its budget as k_dets * sims_per_det, so the
+    # 2026-07-29 fair-deploy promotion moved this default 2752 -> 11008. Every REAL
+    # clairvoyant caller (oracle_score_pilot, gate_b_depth_transfer, eval_fair_puct's
+    # prefix agent) passes explicit sims and is unaffected; a clairvoyant RULER
+    # reproduction must pass sims=2752 explicitly (PRODUCTION.yaml champion.sims).
+    assert agent.simulations == 11008
     assert agent._reuse_tree is True   # YAML reuse_tree=true is live in clairvoyant mode
     assert agent.manifest["mode"] == "clairvoyant"
 

@@ -8,7 +8,13 @@ audited honest: it never peeks at the real deck).
 ⚠️ REWIRED 2026-07-19 (F1): the champion is now built by
 ``carcassonne_ai.champion_factory.make_production_champion("fair")`` — the CURRENT
 champion, ``FairHeuristicPriorAgent`` (PUCT heuristic priors + curve125 leaf,
-c_puct=1.5/tau_p=5/float/visits, k4x688). It previously wired the PRE-FLIP
+c_puct=1.5/tau_p=5/float/visits) at whatever budget PRODUCTION.yaml names — since the
+2026-07-29 promotion that is k8x1376 = 11008 sims/move, resolved automatically below.
+⚠️ FOLLOW-UP OWED: this harness does NOT yet read the deploy execution profile
+``fair_deploy.deploy_profiles.desktop.parallel_workers`` (=8), so it runs the champion's
+SEQUENTIAL k-loop at ~13.8 s/move instead of the split's ~2.2 s/move. Same player either
+way (the split is behavior-identical, tests/test_kparallel.py) — it is purely a clock cost.
+It previously wired the PRE-FLIP
 ``FairHeuristicMCTSAgent`` (random-expansion UCT + the old curve100 leaf), which the
 2026-07-07 champion flip and the 2026-07-13 curve125 adopt never propagated here — so
 this harness did NOT run the current champion (PRODUCTION.yaml stale_path_flag). The
@@ -316,7 +322,10 @@ def main(argv=None) -> int:
     from carcassonne_ai.champion_factory import load_production_spec
     from carcassonne_ai.game_wrapper import Game
     # Resolve the budget from governance/PRODUCTION.yaml unless the caller overrode it,
-    # so a bare `--human 0` plays the CHAMPION budget (k4x688) and not a weaker stand-in.
+    # so a bare `--human 0` plays the CHAMPION budget (k8x1376=11008 since 2026-07-29,
+    # was k4x688) and not a weaker stand-in. NOTE: the champion budget got 4x more
+    # expensive on that date, and this path is still SEQUENTIAL (see the module docstring's
+    # parallel_workers follow-up) — expect ~13.8 s/move, not the deploy split's ~2.2 s.
     _spec = load_production_spec()
     if args.sims is None:
         args.sims = _spec.sims_per_det
