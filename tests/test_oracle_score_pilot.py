@@ -5,6 +5,8 @@ Covers only the PURE parts — the ones that decide whether the run is interpret
   B. CRN seed derivation is pick- and budget-independent, and process-stable
   C. the paired delta / variance decomposition arithmetic
   D. the disagreement filter reads the CL-070 record schema correctly
+  E. the --oracle-policy discriminator switch: the default path is UNCHANGED, the
+     out-of-family path builds no search and no curve125 leaf, and both are stamped
 
 Scoring itself (replay + playout) is exercised by the harness's own smoke run, not here.
 """
@@ -279,3 +281,110 @@ def test_real_cl070_bank_has_both_picks_and_is_replayable():
     for c in OSP.sample_positions(pop, 20, 20260728):
         assert c["pick_a"] != c["pick_b"]
         assert c["root_id"] in roots
+
+
+# --------------------------------------------------------------------------- #
+# E. --oracle-policy — the out-of-family discriminator switch                    #
+#    (ORACLE_PILOT_EXT_READOUT_20260728.md §6 / DISCRIMINATOR)                  #
+# --------------------------------------------------------------------------- #
+def test_default_policy_is_the_untouched_clairvoyant_construction(monkeypatch):
+    """THE BYTE-IDENTITY CONTRACT. Defaulted, the harness must make the SAME
+    `build_clairvoyant_champion(game, cfg=_G['cfg'], simulations=..., seed=...)` call it
+    made before `--oracle-policy` existed — same callee, same kwargs, nothing added."""
+    seen = {}
+
+    def _spy(game, *, cfg, simulations, seed):
+        seen.update(game=game, cfg=cfg, simulations=simulations, seed=seed)
+        return "CLAIR"
+
+    monkeypatch.setitem(OSP._G, "cfg", "SENTINEL_CFG")
+    monkeypatch.setattr(OSP.CF, "build_clairvoyant_champion", _spy)
+
+    agent = OSP.build_continuation_agent("GAME", policy="clair-puct", sims=100, seed=7)
+    assert agent == "CLAIR"
+    assert seen == {"game": "GAME", "cfg": "SENTINEL_CFG", "simulations": 100, "seed": 7}
+
+
+def test_greedy_policy_builds_no_search_and_no_curve125(monkeypatch):
+    """The out-of-family arm must not touch the clairvoyant factory at all — no PUCT
+    search, and no `_G['cfg']` (the frozen curve125 leaf config) anywhere in it."""
+    def _boom(*a, **kw):                                   # pragma: no cover - must not run
+        raise AssertionError("tier1-greedy must not build the clairvoyant champion")
+
+    monkeypatch.setitem(OSP._G, "cfg", "SENTINEL_CFG")
+    monkeypatch.setattr(OSP.CF, "build_clairvoyant_champion", _boom)
+
+    agent = OSP.build_continuation_agent("GAME", policy="tier1-greedy", sims=100, seed=7)
+    assert isinstance(agent, OSP._GreedyContinuation)
+    assert agent.clear() is None                     # the playout loop calls this
+    assert "SENTINEL_CFG" not in repr(vars(agent))
+
+    from carcassonne_ai.rule_based_player import RuleBasedPlayer
+    assert isinstance(agent._p, RuleBasedPlayer)
+
+
+def test_greedy_policy_actually_plays_a_legal_move():
+    """The shim really satisfies the playout loop's `best_action(board) -> int` contract."""
+    import numpy as np
+
+    from carcassonne_ai.game_wrapper import Game
+
+    game = Game(enable_legal_moves_cache=True)
+    board = game.get_init_board()
+    agent = OSP.build_continuation_agent(game, policy="tier1-greedy", sims=0, seed=99)
+    a = agent.best_action(board)
+    assert isinstance(a, int)
+    assert int(game.get_valid_moves(board)[a]) == 1
+    assert a in set(int(x) for x in np.flatnonzero(game.get_valid_moves(board)))
+
+
+def test_unknown_policy_is_rejected():
+    with pytest.raises(ValueError):
+        OSP.build_continuation_agent("GAME", policy="h6400", sims=1, seed=1)
+
+
+def _fake_args(**over):
+    from types import SimpleNamespace
+    base = dict(run_dir="RD", records_dir="RD/records", roots="RD/roots.jsonl",
+                level_a=688, level_b=2752, n=100, head=30, sample_seed=20260728,
+                m=32, oracle_sims=100, oracle_policy="clair-puct", workers=16,
+                wall_cap=7200, max_plies=400, include_solver_region=False,
+                assumed_effect=0.07, strict_crn=True)
+    base.update(over)
+    return SimpleNamespace(**base)
+
+
+def test_manifest_records_the_policy(monkeypatch):
+    """Self-describing: the manifest must name the continuation policy and its family, so
+    a clair-puct run can never be mistaken for the out-of-family discriminator."""
+    monkeypatch.setattr(OSP.CF, "resolved_manifest", lambda *a, **kw: {"stub": True})
+    chosen = [{"rid": "s1_p2_r1"}]
+
+    d = OSP.build_manifest(_fake_args(), 628, chosen)
+    assert d["oracle"]["policy"] == "clair-puct"
+    assert "clairvoyant" in d["oracle"]["continuation_agent"].lower()
+    assert d["oracle"]["oracle_sims"] == 100
+    assert "IN-FAMILY" in d["oracle"]["policy_family"]
+
+    g = OSP.build_manifest(_fake_args(oracle_policy="tier1-greedy"), 628, chosen)
+    assert g["oracle"]["policy"] == "tier1-greedy"
+    assert "RuleBasedPlayer" in g["oracle"]["continuation_agent"]
+    assert "OUT-OF-FAMILY" in g["oracle"]["policy_family"]
+    # tier1-greedy has no search, so quoting a sims budget would be a lie.
+    assert g["oracle"]["oracle_sims"] is None
+    assert d["sampling"]["head"] == 30
+
+
+def test_head_is_a_nested_prefix_of_the_larger_draw():
+    """WHY --head exists: `--n 100 --head 30` must be a strict SUBSET of the scored 100,
+    which `--n 30` is not — `random.sample` switches algorithm with k, so the two draws
+    are unrelated. Nesting is what makes the discriminator comparable position-by-position."""
+    pop = _pop(200)
+    hundred = [x["rid"] for x in OSP.sample_positions(pop, 100, 20260728)]
+    head30 = hundred[:30]
+    assert len(head30) == 30
+    assert set(head30) <= set(hundred)
+    assert head30 == hundred[:30] == sorted(head30, key=lambda r: hundred.index(r))
+    # and it is order-stable: re-drawing the 100 reproduces the same first 30
+    again = [x["rid"] for x in OSP.sample_positions(pop, 100, 20260728)][:30]
+    assert again == head30

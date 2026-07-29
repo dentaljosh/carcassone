@@ -17,6 +17,15 @@ strength costs 11.2 s/move (91% of a 15-min sudden-death clock) and is clock-unu
 today excludes it. `governance/PRODUCTION.yaml` untouched; no `results.csv` row (this is not
 an elo cell, consistent with the morning's decision).
 
+> **AMENDED 2026-07-28 (late) — §8: THE §6 DISCRIMINATOR WAS RUN, AND THE SIGN SURVIVES.**
+> The Tier-1 greedy out-of-family rescore of a nested 30-position subset kept the mean
+> **positive** (+0.626 pts record-level) and agrees with the in-family judge on the sign of
+> **24 of 30** positions (80%, binomial p 0.0012). The damning outcome — a sign flip — did
+> **not** occur. ⚠️ It is a **sign check, and an underpowered one by construction** (1.83×
+> the noise at n=30): the out-of-family mean is not individually significant (z +0.68) and
+> the root-collapsed estimator is ~0. So §6's threat moves from **UNRESOLVED** to **TESTED
+> AND NOT SUPPORTED**, not to "excluded". Read §8 before citing §1.
+
 Extends the morning's n=20 pilot, which was parked as *"underpowered vs an assumed 0.07-pt
 effect, and the mean distrusted"* — DECISIONS 2026-07-28 (oracle-pilot entry, items 5–6);
 [LEVER_INDEX](../../docs/LEVER_INDEX.md) §8 'clairvoyant-champion reference'. This document
@@ -252,3 +261,99 @@ weaker alternative — raising `--oracle-sims` to 400/800 on the same subset —
   changes no production decision does not earn one; if the discriminating test in §6 is ever
   run and the finding is asserted as a claim, it gets a CL id then.
 - **No `results.csv` row** — not an elo cell. Consistent with the morning's decision.
+
+---
+
+## 8. DISCRIMINATOR — the §6 test was RUN. **THE SIGN SURVIVES OUT-OF-FAMILY.**
+
+**Run 2026-07-28 (late), local box W16, `nice -n 19`, `--resume`: 30/30 positions, 0 failed,
+`crn_verified_all: true`, M=32, 254.5 s wall.** Data
+`/mnt/c/carc-shared/classical_search/oracle_score_pilot_t1greedy/`; log
+`oracle_score_pilot_t1greedy.log` (this directory). Harness:
+`scripts/measurement_infra/oracle_score_pilot.py --oracle-policy tier1-greedy`.
+
+### 8.1 What was swapped, and what was not
+
+`--oracle-policy {clair-puct,tier1-greedy}` replaces **the continuation agent and nothing
+else**. World sampling, the SHA-256 CRN seed derivation, the lossless root replay, the
+deck-hash CRN witness and the terminal-score read are the *same* code path in both modes;
+`clair-puct` is the default and is the untouched original construction. **Byte-identity of
+the default path was proven, not asserted** — two already-banked positions
+(`s28000000001_p102_r2`, `s28000000009_p47_r2`) were re-scored with default flags into a
+scratch out-dir after the edit and every value-bearing field (`values_a/b`, `delta`,
+`per_world_delta`, the variance block, both afterstate hash arrays, `playout_plies_*`, both
+seed arrays, `crn_verified`) matched the banked record exactly; the edit adds exactly one
+key, `oracle_policy`.
+
+The out-of-family judge is the Tier-1 greedy `RuleBasedPlayer`: **no search** (1-ply argmax)
+and the **v1 OBJECT `virtual_score` leaf**, not the frozen curve125 flat leaf. It shares
+neither the search nor the leaf with the 2752/11008 agents whose picks are being compared,
+which is the whole point.
+
+**Subset:** the **first 30 rids of the same seeded n=100 draw** (`sample_seed 20260728`,
+population-sorted order) — a strict nested subset of the scored 100, so every position has
+an in-family score to compare against. (`--n 30` would *not* be nested: `random.sample`
+switches algorithm with k, so the two draws are unrelated. Hence the harness's `--head`.)
+Same world seeds, same playout seeds, same M=32, same CRN pairing.
+
+### 8.2 The table
+
+Sign convention unchanged: **positive = the 11008 (deeper) pick scores better.**
+
+| judge | n / G | mean (pts) | se (naive) | se (cluster-robust, root) | **z (CR)** | root-collapsed | sd | median |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **clair-puct** (in-family) — same 30 | 30 / 26 | **+1.766** | 0.506 | 0.565 | **+3.13** | +1.493 (z +2.75) | 2.771 | +2.094 |
+| **tier1-greedy** (OUT-of-family) — same 30 | 30 / 26 | **+0.626** | 0.928 | 0.918 | **+0.68** | +0.094 (z +0.10) | 5.080 | +1.469 |
+| *(context)* clair-puct, full bank | 100 / 89 | +0.738 | 0.241 | 0.249 | +2.97 | +0.592 (z +2.45) | 2.406 | +0.391 |
+
+| sign-based read | tier1-greedy | clair-puct (same 30) |
+|---|---|---|
+| sign test (records) | **19 + / 10 − / 1 zero**, one-sided binomial **p 0.068** | 21 + / 8 − / 1 zero, p 0.012 |
+| **per-position sign agreement between the two judges** | **24 / 30 = 80.0%** (non-zero pairs 23/29 = 79.3%) — one-sided binomial vs a coin **p 0.0012** | — |
+| Pearson r of the two judges' per-position deltas | **+0.415** | — |
+
+### 8.3 Verdict — **THE SIGN SURVIVES OUT-OF-FAMILY**
+
+Three independent scale-free reads all point the same way, and the damning outcome did not
+occur:
+
+1. **The mean stays positive** under an oracle that shares neither the search nor the leaf
+   (+0.626 record-level; median +1.469).
+2. **19 + / 10 −** on the sign test (p 0.068 one-sided).
+3. **80% per-position sign agreement with the in-family judge (p 0.0012)** — the strongest
+   statistic here precisely because it needs no common scale. A same-family self-preference
+   artefact would have no reason to reappear under a judge with a different leaf and no
+   search at all.
+
+⚠️ **What this does NOT establish, stated plainly.** The out-of-family mean is **not
+individually significant** (CR z +0.68), and the conservative root-collapsed estimator is
+**essentially zero** (+0.094). That is expected, not disappointing: it was **pre-registered
+as a sign check and is underpowered by construction.** The Tier-1 judge is **1.83× noisier**
+(sd 5.080 vs 2.771 on the same positions; mean within-position variance 259.2 vs 131.5) —
+so **even under perfect agreement with the in-family effect on this subset the run could
+only have reached z +1.90**, and ~264 positions would be needed for z 2 at the observed
+effect. **Never compare the +0.626 to the +0.738 or the +1.766 as magnitudes** (§6's
+instruction): a weak continuation is a differently-biased oracle, not a worse-calibrated
+one.
+
+⚠️ **Subset caveat.** The nested first-30 is a **chance-high draw** — the in-family judge
+reads **+1.766** on it versus +0.738 on the full 100 (only 7 of the 20 morning rids fall in
+it, so this is not the morning's high-mean subsample re-appearing). That *helps* the
+discriminator — a larger true effect is easier to detect — but it means the out-of-family
++0.626 must be read against **+1.766**, not against the headline +0.738.
+
+**What it does to the finding.** §6's threat moves from **UNRESOLVED** to **TESTED AND NOT
+SUPPORTED**. The n=100 headline (§1, +0.7375, cluster-robust z +2.97) stands and is no
+longer accompanied by an untested confound; "the deeper pick is genuinely better" survives
+its cheapest falsification test. It is **not** upgraded: family bias is not *excluded* to
+zero, the magnitude is not re-established, and the secondary weak-continuation threat (§6.2)
+is untouched — indeed the Tier-1 judge is a *more* extreme instance of it. **Everything else
+is unchanged:** still understanding and not a deploy lever (CL-068 / 11.2 s/move stands),
+still **no CL id** (a sign check that changes no production decision does not assert a
+claim), still **no `results.csv` row** (not an elo cell), `governance/PRODUCTION.yaml`
+untouched.
+
+**Not worth re-opening for.** Powering the out-of-family judge to z 2 needs ~264 positions
+(~37 min at W16 — cheap), but it would buy a tighter estimate of a quantity that already
+changes no decision, exactly the §5 argument that retired the 628-run. If it is ever wanted,
+the invocation is `--n 628 --oracle-policy tier1-greedy --resume`.

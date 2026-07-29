@@ -1,6 +1,27 @@
 #!/usr/bin/env python3
 """ORACLE-SCORED DISAGREEMENT PILOT — does the deeper pick IMPROVE, or merely MOVE?
 
+STATUS 2026-07-28 (LATE — the DISCRIMINATOR named in the evening banner was RUN):
+**THE SIGN SURVIVES OUT OF FAMILY.** New flag `--oracle-policy {clair-puct,tier1-greedy}`
+swaps ONLY the continuation agent (world sampling, CRN seed derivation, replay and the
+terminal-score read are one shared code path); `clair-puct` is the default and is
+byte-identical to the pre-flag construction — PROVEN by re-scoring two banked positions
+with default flags and diffing every value field against the banked records, not asserted.
+The out-of-family rescore (Tier-1 greedy `RuleBasedPlayer`: no search, v1 OBJECT leaf, no
+curve125) of the **nested first 30 rids of the same n=100 draw** (`--n 100 --head 30`, same
+world seeds / same CRN, M=32, 30/30 ok, 0 failed, `crn_verified_all`, 254 s at W16) gives
+**mean +0.626 pts, sign 19+/10-/1, and 24/30 = 80% per-position SIGN AGREEMENT with the
+in-family judge (binomial p 0.0012, Pearson r +0.415)**. ⚠️ **SIGN CHECK ONLY, and
+underpowered BY CONSTRUCTION** — the Tier-1 judge is 1.83x noisier (sd 5.08 vs 2.77 on the
+same 30), so its own mean is n.s. (cluster-robust z +0.68) and the root-collapsed estimator
+is ~0; even perfect agreement could only have reached z +1.90 at n=30. **NEVER compare the
++0.626 to the +0.7375 as magnitudes.** => the same-family self-preference threat moves from
+UNRESOLVED to **TESTED AND NOT SUPPORTED** (not "excluded"); the n=100 headline stands. Still
+understanding and NOT a deploy lever, still no CL id, still no results.csv row. Read-out
+§8 of measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md; log
+measurement/classical_search/oracle_score_pilot_t1greedy.log; data
+/mnt/c/carc-shared/classical_search/oracle_score_pilot_t1greedy/.
+
 STATUS 2026-07-28 (EVENING, supersedes the morning banner below): EXTENDED TO n=100 ON
 --resume (100/100 positions, 0 failed, crn_verified_all, M=32, ~81 min at W16) — **THE
 QUESTION IS ANSWERED: THE DEEPER PICK IS GENUINELY BETTER.** Mean delta +0.7375 pts per
@@ -20,7 +41,8 @@ citation of "deeper search finds better moves" must travel with that sentence.**
 ⚠️ **SOLE REMAINING THREAT TO VALIDITY: same-family self-preference** — the oracle is a
 clairvoyant PUCT search on the SAME frozen curve125 leaf as the agents whose picks it
 judges. That is a BIAS, so extension cannot shrink it and nothing measured excludes it.
-Cheapest discriminator (NAMED, NOT RUN): re-score a ~30-position subset with the
+Cheapest discriminator [**RUN 2026-07-28 late — see the top banner; the sign survives**]:
+re-score a ~30-position subset with the
 continuation swapped OUT of the family — the Tier-1 greedy RuleBasedPlayer (v1 1-ply
 leaf, no search, no curve125), same world seeds and CRN pairing; ~26 ms/move so the whole
 rescore is minutes. Read it as a SIGN check only, NEVER a magnitude check. Raising
@@ -467,17 +489,58 @@ def _deck_hash(board) -> str:
     return h.hexdigest()[:16]
 
 
+class _GreedyContinuation:
+    """Tier-1 greedy `RuleBasedPlayer` in the (`best_action`, `clear`) shape the playout
+    loop expects — the OUT-OF-FAMILY continuation policy.
+
+    Out-of-family by construction, and that is the entire point (§6 discriminator of
+    ORACLE_PILOT_EXT_READOUT_20260728.md): it shares NEITHER the search (there is none —
+    1-ply argmax) NOR the leaf (it scores with `virtual_score_inplace`, the v1 OBJECT
+    leaf, not the curve125 flat leaf the agents under test are steered by). A surviving
+    positive sign therefore cannot be same-family self-preference.
+
+    Both seats are played by it, exactly as the clairvoyant continuation plays both seats;
+    `seed` is the same pick-independent `playout_seed`, so the CRN policy-level pairing is
+    preserved (here it fixes the tie-break RNG rather than the search RNG).
+    """
+
+    def __init__(self, game, seed: int):
+        from carcassonne_ai.rule_based_player import RuleBasedPlayer
+
+        self._game = game
+        self._p = RuleBasedPlayer(seed=int(seed))
+
+    def best_action(self, board) -> int:
+        return int(self._p.choose_action(self._game, board,
+                                         self._game.get_valid_moves(board)))
+
+    def clear(self) -> None:
+        return None
+
+
+def build_continuation_agent(game, *, policy: str, sims: int, seed: int):
+    """The ONLY thing `--oracle-policy` changes. Everything else in the harness — world
+    sampling, CRN seed derivation, replay, the terminal-score read — is a shared code path.
+
+    `clair-puct` (default) is the untouched original construction, byte-for-byte."""
+    if policy == "tier1-greedy":
+        return _GreedyContinuation(game, int(seed))
+    if policy != "clair-puct":
+        raise ValueError(f"unknown oracle policy: {policy!r}")
+    return CF.build_clairvoyant_champion(game, cfg=_G["cfg"], simulations=int(sims),
+                                         seed=int(seed))
+
+
 def _playout_value(game, world_board, action: int, root_player: int,
-                   seed: int, sims: int, max_plies: int):
-    """Apply `action` to a COPY of `world_board`, play to terminal with the clairvoyant
-    champion on both seats, and return (margin_pts, afterstate_deck_hash,
+                   seed: int, sims: int, max_plies: int, policy: str = "clair-puct"):
+    """Apply `action` to a COPY of `world_board`, play to terminal with the continuation
+    policy on both seats, and return (margin_pts, afterstate_deck_hash,
     afterstate_board_key, n_plies)."""
     b = copy.deepcopy(world_board)
     b, _ = game.get_next_state(b, int(action))
     dh = _deck_hash(b)
     bk = hashlib.sha256(game.string_representation(b).encode()).hexdigest()[:16]
-    agent = CF.build_clairvoyant_champion(game, cfg=_G["cfg"], simulations=int(sims),
-                                          seed=int(seed))
+    agent = build_continuation_agent(game, policy=policy, sims=int(sims), seed=int(seed))
     plies = 0
     while not b.state.is_terminated():
         if plies >= max_plies:
@@ -503,6 +566,7 @@ def _process(item: dict) -> dict:
         "level_a": _G["level_a"], "level_b": _G["level_b"],
         "total_budget_a": 4 * _G["level_a"], "total_budget_b": 4 * _G["level_b"],
         "m": _G["m"], "oracle_sims": _G["oracle_sims"],
+        "oracle_policy": _G["oracle_policy"],
         "world_seed_salt": _G["world_seed_salt"],
     })
     t0 = time.time()
@@ -536,9 +600,11 @@ def _process(item: dict) -> dict:
             wb = FairHeuristicMCTSAgent.reshuffled_determinization(
                 board, random.Random(ws[j]))
             ma, ha, ka, pa = _playout_value(game, wb, item["pick_a"], item["root_player"],
-                                            ps[j], _G["oracle_sims"], _G["max_plies"])
+                                            ps[j], _G["oracle_sims"], _G["max_plies"],
+                                            _G["oracle_policy"])
             mb, hb, kb, pb = _playout_value(game, wb, item["pick_b"], item["root_player"],
-                                            ps[j], _G["oracle_sims"], _G["max_plies"])
+                                            ps[j], _G["oracle_sims"], _G["max_plies"],
+                                            _G["oracle_policy"])
             va.append(ma); vb.append(mb)
             dh_a.append(ha); dh_b.append(hb)
             bk_a.append(ka); bk_b.append(kb)
@@ -591,7 +657,28 @@ def _git_rev(path) -> str:
         return "unknown"
 
 
+ORACLE_POLICIES = {
+    "clair-puct": {
+        "continuation_agent": "HeuristicPriorAgent via "
+                              "champion_factory.build_clairvoyant_champion",
+        "family": "IN-FAMILY with the agents under test (PUCT search + curve125 leaf)",
+        "uses_oracle_sims": True,
+    },
+    "tier1-greedy": {
+        "continuation_agent": "RuleBasedPlayer (Tier-1 greedy) via "
+                              "oracle_score_pilot._GreedyContinuation",
+        "family": "OUT-OF-FAMILY: no search (1-ply argmax) and the v1 OBJECT "
+                  "virtual_score leaf, not curve125 — the §6 discriminator for "
+                  "same-family self-preference. SIGN CHECK ONLY, never a magnitude "
+                  "check: a Tier-1 continuation is weaker and noisier and carries its "
+                  "own bias (weak play rewards positions that survive bad follow-up).",
+        "uses_oracle_sims": False,
+    },
+}
+
+
 def build_manifest(args, population_n: int, chosen: list) -> dict:
+    pol = ORACLE_POLICIES[args.oracle_policy]
     return {
         "schema": SCHEMA,
         "harness": "oracle_score_pilot",
@@ -603,10 +690,11 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
         "oracle": {
             "definition": "mean over M sampled deck completions of the TERMINAL engine "
                           "score margin (root-player POV, points) after playing the "
-                          "afterstate out with the clairvoyant PUCT champion on both seats",
-            "continuation_agent": "HeuristicPriorAgent via "
-                                  "champion_factory.build_clairvoyant_champion",
-            "oracle_sims": int(args.oracle_sims),
+                          "afterstate out with the continuation policy on both seats",
+            "policy": str(args.oracle_policy),
+            "continuation_agent": pol["continuation_agent"],
+            "policy_family": pol["family"],
+            "oracle_sims": (int(args.oracle_sims) if pol["uses_oracle_sims"] else None),
             "value_units": "engine points (final score differential)",
             "pilot_only_caveats": [
                 "oracle_sims is far below the champion's own budget — weak-continuation bias",
@@ -637,6 +725,7 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
         "sampling": {
             "population_disagreements": population_n,
             "n_requested": int(args.n), "n_chosen": len(chosen),
+            "head": int(args.head),
             "sample_seed": int(args.sample_seed),
             "include_solver_region": bool(args.include_solver_region),
             "rids": [c["rid"] for c in chosen],
@@ -666,10 +755,22 @@ def main(argv=None) -> int:
     ap.add_argument("--level-a", type=int, default=LEVEL_A_DEFAULT)
     ap.add_argument("--level-b", type=int, default=LEVEL_B_DEFAULT)
     ap.add_argument("--n", type=int, default=20)
+    ap.add_argument("--head", type=int, default=0,
+                    help="after sampling --n, keep only the first HEAD positions of the "
+                         "sample's own sorted order. The point is NESTING: "
+                         "`--n 100 --head 30` is a strict prefix-subset of the scored 100, "
+                         "which `--n 30` is NOT (random.sample switches algorithm with k).")
     ap.add_argument("--sample-seed", type=int, default=20260728)
     ap.add_argument("--m", type=int, default=32, help="deck completions per position")
     ap.add_argument("--oracle-sims", type=int, default=100,
-                    help="clairvoyant sims/move for the continuation policy")
+                    help="clairvoyant sims/move for the continuation policy "
+                         "(IGNORED by --oracle-policy tier1-greedy, which has no search)")
+    ap.add_argument("--oracle-policy", choices=sorted(ORACLE_POLICIES),
+                    default="clair-puct",
+                    help="continuation policy played out from each afterstate. "
+                         "clair-puct (default) = today's in-family clairvoyant PUCT "
+                         "champion. tier1-greedy = the OUT-OF-FAMILY Tier-1 greedy "
+                         "RuleBasedPlayer discriminator (SIGN CHECK ONLY).")
     ap.add_argument("--world-seed-salt", default="oracle-pilot-v1")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--wall-cap", type=int, default=7200, help="per-position seconds")
@@ -701,6 +802,8 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 2
     chosen = sample_positions(pop, args.n, args.sample_seed)
+    if int(args.head) > 0:
+        chosen = chosen[:int(args.head)]
 
     # Join the sampled positions back to their replay sequences.
     roots = {}
@@ -724,7 +827,8 @@ def main(argv=None) -> int:
     (out_dir / "manifest.json").write_text(
         json.dumps(json_safe(manifest), indent=2, allow_nan=False))
     print(f"[pilot] population={len(pop)} disagreements | sampled n={len(items)} "
-          f"| M={args.m} | oracle_sims={args.oracle_sims} | W={args.workers}")
+          f"| M={args.m} | policy={args.oracle_policy} "
+          f"| oracle_sims={args.oracle_sims} | W={args.workers}")
     print(f"[pilot] out -> {out_dir}")
     if args.dry_run:
         print("[pilot] --dry-run: manifest written, nothing scored")
@@ -737,6 +841,7 @@ def main(argv=None) -> int:
 
     cfg_kw = dict(level_a=int(args.level_a), level_b=int(args.level_b), m=int(args.m),
                   oracle_sims=int(args.oracle_sims), world_seed_salt=args.world_seed_salt,
+                  oracle_policy=str(args.oracle_policy),
                   wall_cap=int(args.wall_cap), max_plies=int(args.max_plies),
                   strict_crn=bool(args.strict_crn))
 
@@ -769,6 +874,7 @@ def main(argv=None) -> int:
                         full_n_bank=len(pop))
     summary.update({
         "schema": SCHEMA,
+        "oracle_policy": str(args.oracle_policy),
         "n_attempted": len(items),
         "n_failed": sum(1 for r in rows if not r.get("ok")),
         "crn_verified_all": all(r.get("crn_verified") for r in rows if r.get("ok")),
