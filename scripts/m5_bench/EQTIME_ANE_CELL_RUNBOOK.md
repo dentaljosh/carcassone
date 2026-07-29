@@ -311,6 +311,12 @@ Report **both** statistics, as the gate did — a single number is not a verdict
    equal-clock number — say so rather than quietly reporting it.
 4. **Integrity counters**: deck_hash mismatches (want 0/200), timeouts (0/0), endgame
    latches (400/400 both sides), and both sides' leaf hash = `a36d2e15a3b3d71d`.
+   The backend stamp is at **`manifest.json` → `config.champion.net_backend`** —
+   `run_manifest.write_manifest` nests the harness dict under `config`, so a read of
+   `champion.net_backend` returns nothing and looks like a missing stamp (cost me a
+   diagnostic on 2026-07-29). Per-game records carry `champ_prefix_secs` /
+   `champ_prefix_moves` and `opp_prefix_secs` / `opp_prefix_moves` — there is no
+   `*_ms_per_move` field in a record; compute it as `secs/moves*1000`.
 5. **The measured `r`** on the day, next to the gate's projected 0.73 — this is the number
    §6's reopen condition is actually stated in, and the first thing a later reader wants.
 
