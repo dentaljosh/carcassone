@@ -1,0 +1,33 @@
+w_ladder: MacBook Air / Apple M5  (4P+6E, 10 logical)
+  ladder  : [1, 4, 6, 8, 10, 1]   budget k4x688
+  per wkr : 46 timed moves (24 positions x 2)
+  out     : /Users/joshuaishal/m5_bench_20260728/results/wladder_clean/W_LADDER_CLEAN.json
+
+  -> W=1 (cell 1) ...
+     per-worker 1.425 s/move [1.425-1.425]   aggregate 0.702 moves/s   (wall 68s, overlap 1.00)
+
+  -> W=4 (cell 4) ...
+     per-worker 1.937 s/move [1.917-1.957]   aggregate 2.065 moves/s   (wall 94s, overlap 0.98)
+
+  -> W=6 (cell 6) ...
+     per-worker 2.431 s/move [2.399-2.470]   aggregate 2.468 moves/s   (wall 118s, overlap 0.98)
+
+  -> W=8 (cell 8) ...
+     per-worker 2.981 s/move [2.927-3.006]   aggregate 2.684 moves/s   (wall 144s, overlap 0.99)
+
+  -> W=10 (cell 10) ...
+     per-worker 3.368 s/move [3.332-3.395]   aggregate 2.969 moves/s   (wall 163s, overlap 0.99)
+
+  -> W=1 (cell 1_post1) ...
+     per-worker 1.425 s/move [1.425-1.425]   aggregate 0.702 moves/s   (wall 68s, overlap 1.00)
+
+w_ladder: wrote /Users/joshuaishal/m5_bench_20260728/results/wladder_clean/W_LADDER_CLEAN.json
+      cell    s/move  agg mv/s  spread  wall s
+         1     1.425     0.702    1.00      68
+         4     1.937     2.065    1.02      94
+         6     2.431     2.468    1.03     118
+         8     2.981     2.684    1.03     144
+        10     3.368     2.969    1.02     163
+   1_post1     1.425     0.702    1.00      68
+  W optimum: 10 at 2.969 moves/s
+  throttle : W=1 open 1.425 -> post 1.425 s/move  (1.000x)

@@ -49,7 +49,7 @@ DEFAULT_OUT = Path("/mnt/c/carc-shared/m5_bench_20260728")
 
 # Copied verbatim into <out>/ (the things Joshua runs over ssh).
 TOP_LEVEL_FILES = ("README_M5.md", "LOCAL_REFERENCE.md", "setup_m5.sh",
-                   "bench_champion.py", "bench_ane_forward.py")
+                   "bench_champion.py", "bench_ane_forward.py", "w_ladder.py")
 
 # Copied into <out>/bundle/ (things the bundle needs but sync_python excludes).
 PYX_SOURCES = ("flat_leaf_cy.pyx", "flat_repr_cy.pyx")

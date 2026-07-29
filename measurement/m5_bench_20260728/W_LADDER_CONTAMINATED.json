@@ -1,0 +1,1582 @@
+{
+  "schema": "carcassonne-m5-bench/w_ladder-v1",
+  "kind": "aggregate_throughput_w_ladder",
+  "tag": "m5 aggregate throughput ladder, deploy budget",
+  "timestamp_utc": "2026-07-29T04:00:30Z",
+  "machine": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "node": "Mac",
+    "cpu_count": 10,
+    "python": "3.12.13",
+    "hw_model": "Mac17,4",
+    "cpu_brand": "Apple M5",
+    "mem_bytes": 34359738368,
+    "p_cores": 4,
+    "e_cores": 6,
+    "physical_cpus": 10,
+    "os_version": "26.5.2",
+    "system_profiler_hardware": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Air\n      Model Identifier: Mac17,4\n      Model Number: Z1LW000RELL/A\n      Chip: Apple M5\n      Total Number of Cores: 10 (4 Super and 6 Efficiency)\n      Memory: 32 GB\n      System Firmware Version: 18000.121.3\n      OS Loader Version: 18000.121.3\n      Serial Number (system): MJFVVVYGHC\n      Hardware UUID: 5618902A-A1E7-5B29-A2A6-E6EB3DF16A4F\n      Provisioning UDID: 00008142-000144E11E09401C\n      Activation Lock Status: Disabled",
+    "model_name": "MacBook Air",
+    "model_identifier": "Mac17,4"
+  },
+  "config": {
+    "ladder": [
+      1,
+      4,
+      6,
+      8,
+      10,
+      1
+    ],
+    "budget": "k4x688",
+    "limit": 24,
+    "repeat": 2,
+    "warmup": 2,
+    "seed": 101,
+    "settle_s": 15.0,
+    "moves_per_worker": 46
+  },
+  "cells": [
+    {
+      "label": "1",
+      "W": 1,
+      "budget": "k4x688",
+      "cell_wall_s": 69.00145411491394,
+      "workers_ok": 1,
+      "workers_failed": 0,
+      "loadavg_before": [
+        5.77294921875,
+        4.31494140625,
+        4.04052734375
+      ],
+      "loadavg_after": [
+        6.35595703125,
+        4.734375,
+        4.21484375
+      ],
+      "top_procs_before": [
+        "53653  47.7 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "596  29.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "53630  27.2 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "1374  16.4 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "74021  14.9 /Users/joshuaishal/m5_bench_20260728/.venv/bin/python",
+        "1869  11.8 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events"
+      ],
+      "top_procs_after": [
+        "53653  25.6 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "596  20.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "53630  14.6 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "1869   4.1 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "28533   3.7 /System/Applications/Music.app/Contents/MacOS/Music",
+        "1374   3.3 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297630.2931058,
+          "loadavg": [
+            5.77294921875,
+            4.31494140625,
+            4.04052734375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297640.303383,
+          "loadavg": [
+            6.2431640625,
+            4.4677734375,
+            4.09765625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297650.314687,
+          "loadavg": [
+            5.82421875,
+            4.435546875,
+            4.08984375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297660.325613,
+          "loadavg": [
+            5.7705078125,
+            4.47021484375,
+            4.10546875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297670.336674,
+          "loadavg": [
+            5.798828125,
+            4.52001953125,
+            4.126953125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297680.347923,
+          "loadavg": [
+            5.59521484375,
+            4.51904296875,
+            4.130859375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297690.35904,
+          "loadavg": [
+            5.26318359375,
+            4.48486328125,
+            4.123046875
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 69.00035214424133,
+          "t_start": 1785297630.288051,
+          "t_end": 1785297699.288403,
+          "n_moves": 46,
+          "mean_s_per_move": 1.4394864563915768,
+          "p50_s_per_move": 1.3927826660001301,
+          "p90_s_per_move": 1.8660787500011793,
+          "search_s": 66.21637699401253,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 1.5902206900872167,
+            "tiles": 1.2887522226959371
+          },
+          "overhead_s": 2.783975150228798
+        }
+      ],
+      "total_moves": 46,
+      "per_worker_mean_s_per_move": 1.4394864563915768,
+      "per_worker_mean_s_min": 1.4394864563915768,
+      "per_worker_mean_s_max": 1.4394864563915768,
+      "per_worker_spread_ratio": 1.0,
+      "aggregate_moves_per_s": 0.6946921907877781,
+      "aggregate_moves_per_s_wall": 0.6666526175432813,
+      "overlap_s": 69.00035214424133,
+      "overlap_fraction": 0.9999840297471011,
+      "mean_overhead_s": 2.783975150228798,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    },
+    {
+      "label": "4",
+      "W": 4,
+      "budget": "k4x688",
+      "cell_wall_s": 93.06186604499817,
+      "workers_ok": 4,
+      "workers_failed": 0,
+      "loadavg_before": [
+        6.35595703125,
+        4.734375,
+        4.21484375
+      ],
+      "loadavg_after": [
+        6.71240234375,
+        5.2294921875,
+        4.45263671875
+      ],
+      "top_procs_before": [
+        "53653  25.6 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "596  20.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "53630  14.6 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "1869   4.1 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "28533   3.7 /System/Applications/Music.app/Contents/MacOS/Music",
+        "1374   3.3 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor"
+      ],
+      "top_procs_after": [
+        "53653  41.9 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "53630  25.1 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "596  18.9 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "23616   7.7 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/150.0.7871.129/Helpers/Google Chrome Helper (Renderer",
+        "74959   4.3 osascript",
+        "28533   4.0 /System/Applications/Music.app/Contents/MacOS/Music"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297699.3617961,
+          "loadavg": [
+            6.35595703125,
+            4.734375,
+            4.21484375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297709.374462,
+          "loadavg": [
+            6.29443359375,
+            4.775390625,
+            4.2353515625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297719.3896,
+          "loadavg": [
+            6.162109375,
+            4.79833984375,
+            4.24951171875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297729.403074,
+          "loadavg": [
+            6.216796875,
+            4.85400390625,
+            4.275390625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297739.418781,
+          "loadavg": [
+            6.48388671875,
+            4.95654296875,
+            4.318359375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297749.434885,
+          "loadavg": [
+            6.341796875,
+            4.974609375,
+            4.33203125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297759.451173,
+          "loadavg": [
+            6.28857421875,
+            5.0078125,
+            4.35107421875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297769.4973729,
+          "loadavg": [
+            6.3173828125,
+            5.05615234375,
+            4.37548828125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297779.511372,
+          "loadavg": [
+            6.66845703125,
+            5.169921875,
+            4.42333984375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297789.5219,
+          "loadavg": [
+            6.71240234375,
+            5.2294921875,
+            4.45263671875
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 91.53115701675415,
+          "t_start": 1785297699.355823,
+          "t_end": 1785297790.88698,
+          "n_moves": 46,
+          "mean_s_per_move": 1.9156741531739458,
+          "p50_s_per_move": 1.8147107090007921,
+          "p90_s_per_move": 2.4446419999985665,
+          "search_s": 88.12101104600151,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.10396840578276,
+            "tiles": 1.7273799005651318
+          },
+          "overhead_s": 3.4101459707526374
+        },
+        {
+          "worker": 1,
+          "rc": 0,
+          "proc_wall_s": 93.05931901931763,
+          "t_start": 1785297699.3567529,
+          "t_end": 1785297792.416072,
+          "n_moves": 46,
+          "mean_s_per_move": 1.9450838550656835,
+          "p50_s_per_move": 1.875617624995357,
+          "p90_s_per_move": 2.335527417002595,
+          "search_s": 89.47385733302144,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.127326695565147,
+            "tiles": 1.76284101456622
+          },
+          "overhead_s": 3.585461686296185
+        },
+        {
+          "worker": 2,
+          "rc": 0,
+          "proc_wall_s": 93.05851292610168,
+          "t_start": 1785297699.357604,
+          "t_end": 1785297792.416117,
+          "n_moves": 46,
+          "mean_s_per_move": 1.8866763532392012,
+          "p50_s_per_move": 1.8538514169995324,
+          "p90_s_per_move": 2.3692603329982376,
+          "search_s": 86.78711224900326,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 1.997716548869547,
+            "tiles": 1.7756361576088555
+          },
+          "overhead_s": 6.271400677098427
+        },
+        {
+          "worker": 3,
+          "rc": 0,
+          "proc_wall_s": 93.057687997818,
+          "t_start": 1785297699.358439,
+          "t_end": 1785297792.416127,
+          "n_moves": 46,
+          "mean_s_per_move": 1.9256555091087648,
+          "p50_s_per_move": 1.926296249999723,
+          "p90_s_per_move": 2.3523215419991175,
+          "search_s": 88.58015341900318,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.098362909478095,
+            "tiles": 1.7529481087394347
+          },
+          "overhead_s": 4.4775345788148115
+        }
+      ],
+      "total_moves": 184,
+      "per_worker_mean_s_per_move": 1.918272467646899,
+      "per_worker_mean_s_min": 1.8866763532392012,
+      "per_worker_mean_s_max": 1.9450838550656835,
+      "per_worker_spread_ratio": 1.0309578808926096,
+      "aggregate_moves_per_s": 2.085462394897231,
+      "aggregate_moves_per_s_wall": 1.9771793519703393,
+      "overlap_s": 91.52854108810425,
+      "overlap_fraction": 0.9835235954096115,
+      "mean_overhead_s": 4.436135728240515,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    },
+    {
+      "label": "6",
+      "W": 6,
+      "budget": "k4x688",
+      "cell_wall_s": 121.30202174186707,
+      "workers_ok": 6,
+      "workers_failed": 0,
+      "loadavg_before": [
+        5.74755859375,
+        5.08740234375,
+        4.41455078125
+      ],
+      "loadavg_after": [
+        7.38037109375,
+        6.16552734375,
+        4.94677734375
+      ],
+      "top_procs_before": [
+        "53653  51.8 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "53630  27.1 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "596  25.9 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "1869  13.2 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "599   7.0 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow",
+        "28533   5.6 /System/Applications/Music.app/Contents/MacOS/Music"
+      ],
+      "top_procs_after": [
+        "1374  31.1 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "75699  10.3 (sshd-session)",
+        "596   8.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "737   7.4 /usr/libexec/sysmond",
+        "1869   4.2 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "599   4.1 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297807.525026,
+          "loadavg": [
+            5.74755859375,
+            5.08740234375,
+            4.41455078125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297817.541226,
+          "loadavg": [
+            6.2666015625,
+            5.216796875,
+            4.4677734375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297827.562544,
+          "loadavg": [
+            6.84033203125,
+            5.37353515625,
+            4.5322265625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297837.5764759,
+          "loadavg": [
+            7.412109375,
+            5.54248046875,
+            4.6015625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297847.591609,
+          "loadavg": [
+            7.4892578125,
+            5.62255859375,
+            4.640625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297857.606976,
+          "loadavg": [
+            7.720703125,
+            5.73291015625,
+            4.69140625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297867.6182048,
+          "loadavg": [
+            7.77587890625,
+            5.8076171875,
+            4.7294921875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297877.631032,
+          "loadavg": [
+            8.43115234375,
+            6.01123046875,
+            4.81396484375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297887.648745,
+          "loadavg": [
+            8.2109375,
+            6.04345703125,
+            4.83935546875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297897.662729,
+          "loadavg": [
+            8.33203125,
+            6.14013671875,
+            4.88720703125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297907.675933,
+          "loadavg": [
+            8.2802734375,
+            6.201171875,
+            4.92333984375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297917.689964,
+          "loadavg": [
+            8.0830078125,
+            6.22705078125,
+            4.94677734375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297927.701028,
+          "loadavg": [
+            7.76220703125,
+            6.21923828125,
+            4.95849609375
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 119.27320790290833,
+          "t_start": 1785297807.5180721,
+          "t_end": 1785297926.79128,
+          "n_moves": 46,
+          "mean_s_per_move": 2.4977354701083603,
+          "p50_s_per_move": 2.3901612920017214,
+          "p90_s_per_move": 3.112009374999616,
+          "search_s": 114.89583162498457,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.807731679347774,
+            "tiles": 2.187739260868946
+          },
+          "overhead_s": 4.377376277923759
+        },
+        {
+          "worker": 1,
+          "rc": 0,
+          "proc_wall_s": 121.13727688789368,
+          "t_start": 1785297807.5190542,
+          "t_end": 1785297928.656331,
+          "n_moves": 46,
+          "mean_s_per_move": 2.5357795000424592,
+          "p50_s_per_move": 2.3632427499978803,
+          "p90_s_per_move": 3.2667110830007005,
+          "search_s": 116.64585700195312,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.8144623895638254,
+            "tiles": 2.257096610521093
+          },
+          "overhead_s": 4.491419885940559
+        },
+        {
+          "worker": 2,
+          "rc": 0,
+          "proc_wall_s": 121.1362030506134,
+          "t_start": 1785297807.520174,
+          "t_end": 1785297928.656377,
+          "n_moves": 46,
+          "mean_s_per_move": 2.480201565195033,
+          "p50_s_per_move": 2.376276875002077,
+          "p90_s_per_move": 2.954807709000306,
+          "search_s": 114.08927199897153,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.6937786141307973,
+            "tiles": 2.266624516259269
+          },
+          "overhead_s": 7.046931051641877
+        },
+        {
+          "worker": 3,
+          "rc": 0,
+          "proc_wall_s": 121.13518500328064,
+          "t_start": 1785297807.521203,
+          "t_end": 1785297928.656388,
+          "n_moves": 46,
+          "mean_s_per_move": 2.5133783903482887,
+          "p50_s_per_move": 2.48461791700538,
+          "p90_s_per_move": 3.0415966250002384,
+          "search_s": 115.61540595602128,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.737999827739575,
+            "tiles": 2.288756952957002
+          },
+          "overhead_s": 5.519779047259362
+        },
+        {
+          "worker": 4,
+          "rc": 0,
+          "proc_wall_s": 121.2916431427002,
+          "t_start": 1785297807.526588,
+          "t_end": 1785297928.818231,
+          "n_moves": 46,
+          "mean_s_per_move": 2.538124564304978,
+          "p50_s_per_move": 2.4235980000012205,
+          "p90_s_per_move": 3.231267333001597,
+          "search_s": 116.753729958029,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.776493259043807,
+            "tiles": 2.299755869566149
+          },
+          "overhead_s": 4.537913184671197
+        },
+        {
+          "worker": 5,
+          "rc": 0,
+          "proc_wall_s": 121.29001379013062,
+          "t_start": 1785297807.528247,
+          "t_end": 1785297928.818261,
+          "n_moves": 46,
+          "mean_s_per_move": 2.4897623588255122,
+          "p50_s_per_move": 2.3740242089988897,
+          "p90_s_per_move": 2.8817539169976953,
+          "search_s": 114.52906850597356,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.7522026976088374,
+            "tiles": 2.2273220200421866
+          },
+          "overhead_s": 6.76094528415706
+        }
+      ],
+      "total_moves": 276,
+      "per_worker_mean_s_per_move": 2.509163641470772,
+      "per_worker_mean_s_min": 2.480201565195033,
+      "per_worker_mean_s_max": 2.538124564304978,
+      "per_worker_spread_ratio": 1.0233541498895837,
+      "aggregate_moves_per_s": 2.3914190493538463,
+      "aggregate_moves_per_s_wall": 2.275312447696322,
+      "overlap_s": 119.26303291320801,
+      "overlap_fraction": 0.983190809193617,
+      "mean_overhead_s": 5.455727455265635,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    },
+    {
+      "label": "8",
+      "W": 8,
+      "budget": "k4x688",
+      "cell_wall_s": 133.57619833946228,
+      "workers_ok": 8,
+      "workers_failed": 0,
+      "loadavg_before": [
+        6.1875,
+        5.9609375,
+        4.89404296875
+      ],
+      "loadavg_after": [
+        10.85302734375,
+        7.646484375,
+        5.70166015625
+      ],
+      "top_procs_before": [
+        "1869  11.4 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "18330   7.4 /Applications/WhatsApp.localized/WhatsApp.app/Contents/MacOS/WhatsApp",
+        "599   3.5 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow",
+        "737   3.5 /usr/libexec/sysmond",
+        "566   3.3 /System/Library/CoreServices/launchservicesd",
+        "1173   3.0 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+      ],
+      "top_procs_after": [
+        "53653  99.8 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "596  28.6 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "1374  19.3 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "53630  18.5 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "737   9.0 /usr/libexec/sysmond",
+        "53627   8.4 /Applications/Claude.app/Contents/MacOS/Claude"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297943.9288,
+          "loadavg": [
+            6.1875,
+            5.9609375,
+            4.89404296875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297953.952679,
+          "loadavg": [
+            6.61328125,
+            6.060546875,
+            4.94140625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297963.967437,
+          "loadavg": [
+            6.826171875,
+            6.12353515625,
+            4.9765625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297973.989486,
+          "loadavg": [
+            7.3935546875,
+            6.26708984375,
+            5.04052734375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297983.998784,
+          "loadavg": [
+            8.08837890625,
+            6.45458984375,
+            5.12109375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785297994.014571,
+          "loadavg": [
+            8.07421875,
+            6.5048828125,
+            5.154296875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298004.025965,
+          "loadavg": [
+            8.14208984375,
+            6.5703125,
+            5.19287109375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298014.047195,
+          "loadavg": [
+            8.27978515625,
+            6.64990234375,
+            5.23681640625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298024.062343,
+          "loadavg": [
+            8.236328125,
+            6.69384765625,
+            5.2685546875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298034.07644,
+          "loadavg": [
+            8.35986328125,
+            6.76953125,
+            5.3115234375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298044.093878,
+          "loadavg": [
+            10.15185546875,
+            7.2177734375,
+            5.48828125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298054.107737,
+          "loadavg": [
+            10.134765625,
+            7.30908203125,
+            5.54052734375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298064.124044,
+          "loadavg": [
+            10.18701171875,
+            7.41357421875,
+            5.59814453125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298074.1482902,
+          "loadavg": [
+            10.85302734375,
+            7.646484375,
+            5.70166015625
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 131.41884398460388,
+          "t_start": 1785297943.921623,
+          "t_end": 1785298075.340467,
+          "n_moves": 46,
+          "mean_s_per_move": 2.760575236457004,
+          "p50_s_per_move": 2.613784957997268,
+          "p90_s_per_move": 3.522952332998102,
+          "search_s": 126.98646087702218,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.0562691503921244,
+            "tiles": 2.4648813225218835
+          },
+          "overhead_s": 4.4323831075817
+        },
+        {
+          "worker": 1,
+          "rc": 0,
+          "proc_wall_s": 133.57162499427795,
+          "t_start": 1785297943.923063,
+          "t_end": 1785298077.494688,
+          "n_moves": 46,
+          "mean_s_per_move": 2.8011205335430494,
+          "p50_s_per_move": 2.7255032090033637,
+          "p90_s_per_move": 3.372312833998876,
+          "search_s": 128.85154454298026,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.042932405870132,
+            "tiles": 2.5593086612159666
+          },
+          "overhead_s": 4.72008045129769
+        },
+        {
+          "worker": 2,
+          "rc": 0,
+          "proc_wall_s": 133.570054769516,
+          "t_start": 1785297943.924704,
+          "t_end": 1785298077.4947588,
+          "n_moves": 46,
+          "mean_s_per_move": 2.7435506901962547,
+          "p50_s_per_move": 2.6798663340014173,
+          "p90_s_per_move": 3.5457138339988887,
+          "search_s": 126.20333174902771,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.9219593224349767,
+            "tiles": 2.565142057957533
+          },
+          "overhead_s": 7.36672302048828
+        },
+        {
+          "worker": 3,
+          "rc": 0,
+          "proc_wall_s": 133.56856489181519,
+          "t_start": 1785297943.926215,
+          "t_end": 1785298077.4947798,
+          "n_moves": 46,
+          "mean_s_per_move": 2.7814778278473606,
+          "p50_s_per_move": 2.7585427920057555,
+          "p90_s_per_move": 3.37172916700365,
+          "search_s": 127.9479800809786,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.0351085614776188,
+            "tiles": 2.5278470942171025
+          },
+          "overhead_s": 5.62058481083659
+        },
+        {
+          "worker": 4,
+          "rc": 0,
+          "proc_wall_s": 133.5674650669098,
+          "t_start": 1785297943.92733,
+          "t_end": 1785298077.494795,
+          "n_moves": 46,
+          "mean_s_per_move": 2.796685362304624,
+          "p50_s_per_move": 2.7501036659959937,
+          "p90_s_per_move": 3.5612045410016435,
+          "search_s": 128.6475266660127,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.0037586212606784,
+            "tiles": 2.58961210334857
+          },
+          "overhead_s": 4.919938400897081
+        },
+        {
+          "worker": 5,
+          "rc": 0,
+          "proc_wall_s": 133.56315684318542,
+          "t_start": 1785297943.931647,
+          "t_end": 1785298077.494804,
+          "n_moves": 46,
+          "mean_s_per_move": 2.751900347891142,
+          "p50_s_per_move": 2.6420175000021118,
+          "p90_s_per_move": 3.219102750001184,
+          "search_s": 126.58741600299254,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.9887072609126335,
+            "tiles": 2.5150934348696508
+          },
+          "overhead_s": 6.975740840192884
+        },
+        {
+          "worker": 6,
+          "rc": 0,
+          "proc_wall_s": 133.56188797950745,
+          "t_start": 1785297943.9329312,
+          "t_end": 1785298077.4948192,
+          "n_moves": 46,
+          "mean_s_per_move": 2.765923442912817,
+          "p50_s_per_move": 2.71993783400103,
+          "p90_s_per_move": 3.5300839170013205,
+          "search_s": 127.23247837398958,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.9878477301298636,
+            "tiles": 2.5439991556957704
+          },
+          "overhead_s": 6.329409605517867
+        },
+        {
+          "worker": 7,
+          "rc": 0,
+          "proc_wall_s": 133.56055688858032,
+          "t_start": 1785297943.934272,
+          "t_end": 1785298077.494829,
+          "n_moves": 46,
+          "mean_s_per_move": 2.7627757962385973,
+          "p50_s_per_move": 2.6519800419991952,
+          "p90_s_per_move": 3.3865926669968758,
+          "search_s": 127.08768662697548,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 2.9932503496520044,
+            "tiles": 2.5323012428251905
+          },
+          "overhead_s": 6.4728702616048395
+        }
+      ],
+      "total_moves": 368,
+      "per_worker_mean_s_per_move": 2.7705011546738563,
+      "per_worker_mean_s_min": 2.7435506901962547,
+      "per_worker_mean_s_max": 2.8011205335430494,
+      "per_worker_spread_ratio": 1.0209836995367039,
+      "aggregate_moves_per_s": 2.887704727913418,
+      "aggregate_moves_per_s_wall": 2.7549818348983672,
+      "overlap_s": 131.40619492530823,
+      "overlap_fraction": 0.9837545652509189,
+      "mean_overhead_s": 5.854716312302116,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    },
+    {
+      "label": "10",
+      "W": 10,
+      "budget": "k4x688",
+      "cell_wall_s": 161.31971192359924,
+      "workers_ok": 10,
+      "workers_failed": 0,
+      "loadavg_before": [
+        8.8974609375,
+        7.36962890625,
+        5.63623046875
+      ],
+      "loadavg_after": [
+        20.91552734375,
+        15.01123046875,
+        9.2060546875
+      ],
+      "top_procs_before": [
+        "596  36.4 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "53653  19.0 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+        "1374  17.6 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "53630  13.4 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+        "53627   7.4 /Applications/Claude.app/Contents/MacOS/Claude",
+        "23616   5.6 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/150.0.7871.129/Helpers/Google Chrome Helper (Renderer"
+      ],
+      "top_procs_after": [
+        "1869   3.9 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "599   3.1 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow",
+        "76692   2.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared",
+        "822   1.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+        "552   1.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+        "566   1.1 /System/Library/CoreServices/launchservicesd"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298092.594058,
+          "loadavg": [
+            8.8974609375,
+            7.36962890625,
+            5.63623046875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298102.719605,
+          "loadavg": [
+            11.73095703125,
+            8.0439453125,
+            5.896484375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298112.799188,
+          "loadavg": [
+            15.15771484375,
+            8.91162109375,
+            6.22998046875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298122.875895,
+          "loadavg": [
+            16.23828125,
+            9.35693359375,
+            6.41943359375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298132.991484,
+          "loadavg": [
+            18.47216796875,
+            10.05419921875,
+            6.7001953125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298143.03147,
+          "loadavg": [
+            18.908203125,
+            10.4296875,
+            6.87255859375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298153.059499,
+          "loadavg": [
+            23.82275390625,
+            11.76416015625,
+            7.3876953125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298163.225054,
+          "loadavg": [
+            23.1484375,
+            12.01806640625,
+            7.52880859375
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298173.307369,
+          "loadavg": [
+            23.27587890625,
+            12.39892578125,
+            7.71533203125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298183.3575182,
+          "loadavg": [
+            25.33740234375,
+            13.193359375,
+            8.05126953125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298193.463469,
+          "loadavg": [
+            27.1650390625,
+            13.99169921875,
+            8.39453125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298203.516489,
+          "loadavg": [
+            27.91748046875,
+            14.59765625,
+            8.67529296875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298213.6341288,
+          "loadavg": [
+            27.25390625,
+            14.89111328125,
+            8.84814453125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298223.69897,
+          "loadavg": [
+            25.22900390625,
+            15.056640625,
+            9.0126953125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298233.754242,
+          "loadavg": [
+            23.7490234375,
+            15.07177734375,
+            9.087890625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298243.8027399,
+          "loadavg": [
+            22.86474609375,
+            15.16748046875,
+            9.19140625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298253.8142169,
+          "loadavg": [
+            22.47509765625,
+            15.21435546875,
+            9.24267578125
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 159.73284077644348,
+          "t_start": 1785298092.584254,
+          "t_end": 1785298252.3170948,
+          "n_moves": 46,
+          "mean_s_per_move": 3.346796981869177,
+          "p50_s_per_move": 3.1952122080037952,
+          "p90_s_per_move": 4.32358949999616,
+          "search_s": 153.95266116598214,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.6955275270871506,
+            "tiles": 2.9980664366512033
+          },
+          "overhead_s": 5.780179610461346
+        },
+        {
+          "worker": 1,
+          "rc": 0,
+          "proc_wall_s": 161.06144905090332,
+          "t_start": 1785298092.585283,
+          "t_end": 1785298253.646732,
+          "n_moves": 46,
+          "mean_s_per_move": 3.368538583370695,
+          "p50_s_per_move": 3.2266939170003752,
+          "p90_s_per_move": 4.233141167002032,
+          "search_s": 154.95277483505197,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.6308749166536196,
+            "tiles": 3.10620225008777
+          },
+          "overhead_s": 6.108674215851352
+        },
+        {
+          "worker": 2,
+          "rc": 0,
+          "proc_wall_s": 161.06021785736084,
+          "t_start": 1785298092.586561,
+          "t_end": 1785298253.6467788,
+          "n_moves": 46,
+          "mean_s_per_move": 3.2987711711300465,
+          "p50_s_per_move": 3.2336455829936313,
+          "p90_s_per_move": 4.290963917002955,
+          "search_s": 151.74347387198213,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.516307615913557,
+            "tiles": 3.0812347263465356
+          },
+          "overhead_s": 9.316743985378707
+        },
+        {
+          "worker": 3,
+          "rc": 0,
+          "proc_wall_s": 161.11192107200623,
+          "t_start": 1785298092.587908,
+          "t_end": 1785298253.699829,
+          "n_moves": 46,
+          "mean_s_per_move": 3.364249621433808,
+          "p50_s_per_move": 3.3886418340043747,
+          "p90_s_per_move": 4.12080799999967,
+          "search_s": 154.75548258595518,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.628018869608438,
+            "tiles": 3.1004803732591784
+          },
+          "overhead_s": 6.356438486051047
+        },
+        {
+          "worker": 4,
+          "rc": 0,
+          "proc_wall_s": 161.31198382377625,
+          "t_start": 1785298092.589889,
+          "t_end": 1785298253.9018729,
+          "n_moves": 46,
+          "mean_s_per_move": 3.3691278650220067,
+          "p50_s_per_move": 3.3140639580014977,
+          "p90_s_per_move": 4.214517000000342,
+          "search_s": 154.9798817910123,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.5993578767830394,
+            "tiles": 3.138897853260974
+          },
+          "overhead_s": 6.332102032763942
+        },
+        {
+          "worker": 5,
+          "rc": 0,
+          "proc_wall_s": 161.30986881256104,
+          "t_start": 1785298092.592046,
+          "t_end": 1785298253.9019148,
+          "n_moves": 46,
+          "mean_s_per_move": 3.3345887228908553,
+          "p50_s_per_move": 3.1842654580032104,
+          "p90_s_per_move": 4.140803041998879,
+          "search_s": 153.39108125297935,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.615896829738631,
+            "tiles": 3.0532806160430797
+          },
+          "overhead_s": 7.918787559581688
+        },
+        {
+          "worker": 6,
+          "rc": 0,
+          "proc_wall_s": 161.30776190757751,
+          "t_start": 1785298092.594164,
+          "t_end": 1785298253.9019258,
+          "n_moves": 46,
+          "mean_s_per_move": 3.3557392880436017,
+          "p50_s_per_move": 3.2805965840016142,
+          "p90_s_per_move": 4.322156333000748,
+          "search_s": 154.36400725000567,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.633133161260997,
+            "tiles": 3.078345414826206
+          },
+          "overhead_s": 6.943754657571844
+        },
+        {
+          "worker": 7,
+          "rc": 0,
+          "proc_wall_s": 161.30642914772034,
+          "t_start": 1785298092.595505,
+          "t_end": 1785298253.9019341,
+          "n_moves": 46,
+          "mean_s_per_move": 3.3307496585656065,
+          "p50_s_per_move": 3.1736648750011227,
+          "p90_s_per_move": 4.2708490830045776,
+          "search_s": 153.2144842940179,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.5961433351742174,
+            "tiles": 3.065355981956995
+          },
+          "overhead_s": 8.091944853702444
+        },
+        {
+          "worker": 8,
+          "rc": 0,
+          "proc_wall_s": 161.30347800254822,
+          "t_start": 1785298092.598471,
+          "t_end": 1785298253.901949,
+          "n_moves": 46,
+          "mean_s_per_move": 3.3186986494783133,
+          "p50_s_per_move": 3.2472457500043674,
+          "p90_s_per_move": 4.236605375001091,
+          "search_s": 152.6601378760024,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.5512799040440335,
+            "tiles": 3.086117394912593
+          },
+          "overhead_s": 8.643340126545809
+        },
+        {
+          "worker": 9,
+          "rc": 0,
+          "proc_wall_s": 161.29500794410706,
+          "t_start": 1785298092.606952,
+          "t_end": 1785298253.90196,
+          "n_moves": 46,
+          "mean_s_per_move": 3.352646844174476,
+          "p50_s_per_move": 3.2738243749990943,
+          "p90_s_per_move": 4.249719334002293,
+          "search_s": 154.2217548320259,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 3.590297965566329,
+            "tiles": 3.1149957227826235
+          },
+          "overhead_s": 7.073253112081147
+        }
+      ],
+      "total_moves": 460,
+      "per_worker_mean_s_per_move": 3.3439907385978587,
+      "per_worker_mean_s_min": 3.2987711711300465,
+      "per_worker_mean_s_max": 3.3691278650220067,
+      "per_worker_spread_ratio": 1.0213281522852216,
+      "aggregate_moves_per_s": 2.9905682194630376,
+      "aggregate_moves_per_s_wall": 2.851480420556759,
+      "overlap_s": 159.71014285087585,
+      "overlap_fraction": 0.9900224897904252,
+      "mean_overhead_s": 7.256521863998932,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    },
+    {
+      "label": "1_post1",
+      "W": 1,
+      "budget": "k4x688",
+      "cell_wall_s": 68.3335280418396,
+      "workers_ok": 1,
+      "workers_failed": 0,
+      "loadavg_before": [
+        16.64453125,
+        14.3564453125,
+        9.07373046875
+      ],
+      "loadavg_after": [
+        6.80322265625,
+        11.90478515625,
+        8.53857421875
+      ],
+      "top_procs_before": [
+        "737   5.3 /usr/libexec/sysmond",
+        "1869   5.3 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "599   3.9 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow",
+        "1374   3.1 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "596   2.8 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        "566   2.0 /System/Library/CoreServices/launchservicesd"
+      ],
+      "top_procs_after": [
+        "1869   9.9 /System/Library/CoreServices/System Events.app/Contents/MacOS/System Events",
+        "599   3.9 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow",
+        "1374   2.8 /System/Applications/Utilities/Activity Monitor.app/Contents/MacOS/Activity Monitor",
+        "737   2.7 /usr/libexec/sysmond",
+        "1173   2.7 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+        "566   2.3 /System/Library/CoreServices/launchservicesd"
+      ],
+      "thermal_before": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_after": {
+        "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      },
+      "thermal_samples": [
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298269.014675,
+          "loadavg": [
+            16.64453125,
+            14.3564453125,
+            9.07373046875
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298279.0256371,
+          "loadavg": [
+            14.3125,
+            13.93212890625,
+            8.98486328125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298289.036702,
+          "loadavg": [
+            12.26513671875,
+            13.505859375,
+            8.89111328125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298299.0474381,
+          "loadavg": [
+            11.52294921875,
+            13.3310546875,
+            8.8564453125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298309.0581849,
+          "loadavg": [
+            10.1259765625,
+            12.9736328125,
+            8.78173828125
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298319.069555,
+          "loadavg": [
+            9.01708984375,
+            12.64404296875,
+            8.71337890625
+          ]
+        },
+        {
+          "raw": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+          "t": 1785298329.0804029,
+          "loadavg": [
+            7.85791015625,
+            12.27685546875,
+            8.62841796875
+          ]
+        }
+      ],
+      "workers": [
+        {
+          "worker": 0,
+          "rc": 0,
+          "proc_wall_s": 68.33039593696594,
+          "t_start": 1785298269.008196,
+          "t_end": 1785298337.338592,
+          "n_moves": 46,
+          "mean_s_per_move": 1.4262403948914257,
+          "p50_s_per_move": 1.3708740000001853,
+          "p90_s_per_move": 1.8597902500041528,
+          "search_s": 65.60705816500558,
+          "exact_latches": 0,
+          "leaf_path": "cython",
+          "by_phase_mean": {
+            "meeples": 1.575938799000616,
+            "tiles": 1.2765419907822355
+          },
+          "overhead_s": 2.7233377719603595
+        }
+      ],
+      "total_moves": 46,
+      "per_worker_mean_s_per_move": 1.4262403948914257,
+      "per_worker_mean_s_min": 1.4262403948914257,
+      "per_worker_mean_s_max": 1.4262403948914257,
+      "per_worker_spread_ratio": 1.0,
+      "aggregate_moves_per_s": 0.7011440733146015,
+      "aggregate_moves_per_s_wall": 0.6731688135849635,
+      "overlap_s": 68.33039593696594,
+      "overlap_fraction": 0.9999541644495256,
+      "mean_overhead_s": 2.7233377719603595,
+      "exact_latches_total": 0,
+      "leaf_paths": [
+        "cython"
+      ]
+    }
+  ],
+  "w_optimum": {
+    "label": "10",
+    "W": 10,
+    "aggregate_moves_per_s": 2.9905682194630376
+  },
+  "throttle_check": {
+    "w1_open_s_per_move": 1.4394864563915768,
+    "w1_post_s_per_move": 1.4262403948914257,
+    "post_over_open": 0.9907980645171505
+  }
+}

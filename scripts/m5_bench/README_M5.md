@@ -144,6 +144,38 @@ treat as a controlled baseline):
 
 ---
 
+## 3b. The W-ladder — aggregate throughput (`w_ladder.py`)
+
+§3 answers "what does ONE decision cost on an idle box". That is the number a *phone*
+pays, and it is **not** the number that decides whether a box joins the cluster: gen/eval
+run W independent worker processes, so a box is worth its **aggregate moves/s at its best
+W**. On the 5900XT that optimum is W=16 (a DRAM-latency wall, not a core count).
+
+```bash
+ssh joshuaishal@100.64.175.108 'nohup caffeinate -dimsu ~/m5_bench_20260728/.venv/bin/python -u \
+    ~/m5_bench_20260728/w_ladder.py --ladder 1,4,6,8,10,1 --budget k4x688 \
+    --limit 24 --repeat 2 > ~/m5_bench_20260728/w_ladder.log 2>&1 </dev/null &'
+```
+
+`w_ladder.py` spawns W **independent** `bench_champion.py` processes per cell (distinct
+seeds, `OMP_NUM_THREADS=1` each, no shared memory, no orchestrator) — deliberately the
+same shape as a `--shared-claim` fan-out, so the only coupling between workers is the
+hardware. It reports per-worker s/move, the spread across workers (which is how a
+P-core/E-core split shows up), and two aggregates: a steady-state one that excludes
+per-process startup, and a wall-clock lower bound that includes it.
+
+Two things it does that matter on a laptop:
+
+* **`caffeinate -dimsu` is not optional on a MacBook.** The Air idle-naps within minutes
+  and drops off the tailnet; without it the run dies mid-ladder and the ssh link is
+  unrecoverable until the machine happens to wake.
+* **The ladder repeats its W=1 cell at the end** (labelled `1_post`). A `1_post` slower
+  than the opening W=1 is sudo-free evidence the box got hot and stayed hot —
+  `powermetrics` is root-only, so `pmset -g therm` (sampled throughout every cell) is the
+  only other witness available.
+
+---
+
 ## 4. The ANE probe (optional, run last)
 
 ```bash

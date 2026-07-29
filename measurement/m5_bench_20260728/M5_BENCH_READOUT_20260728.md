@@ -1,7 +1,8 @@
 # Apple M5 — champion single-stream latency + CoreML/ANE net-forward probe
 
-**STATUS: MEASURED / COMPLETE 2026-07-28. Latency only — NO strength claim, no games played,
-`governance/PRODUCTION.yaml` untouched, no lever proposed or adopted.** Executed the run book in
+**STATUS: MEASURED / COMPLETE 2026-07-28; §6 (aggregate throughput W-ladder) added 2026-07-29.
+Latency and throughput only — NO strength claim, no games played, `governance/PRODUCTION.yaml`
+untouched, no lever proposed or adopted.** Executed the run book in
 [`scripts/m5_bench/README_M5.md`](../../scripts/m5_bench/README_M5.md) on Joshua's Apple M5 while the
 CL-067 equal-wall-clock gate owned local + laptop. Every number below is read off a JSON in this
 directory; none is transcribed from terminal scrollback.
@@ -222,9 +223,8 @@ confirming the mechanism.
   quality. `governance/PRODUCTION.yaml` was not touched and no lever is proposed here.
 * **That the M5 is 2.85× a 5900XT.** The local side was contended; that number is an upper bound and
   the clean rerun is owed (§3). No M5-vs-5900XT claim should be made from this document alone.
-* **Anything about throughput.** This is one process making one decision at a time. The cluster
-  question — how many concurrent workers an M5 sustains, where its memory bandwidth saturates — is a
-  different measurement that was not run.
+* ~~**Anything about throughput.**~~ **Superseded 2026-07-29 — the cluster question is answered in
+  §6.** §1 remains single-stream latency only; the aggregate W-ladder is a separate measurement.
 * **That CL-067 is deployable.** §2 measures a forward-pass atom. Turning 6.19× per forward into a
   per-move cost needs the forwards-per-move count and the search cost around them; neither was measured.
 * **That the fp16 CoreML net is play-identical.** One random-normal input agreed to 2.4e-03 of the logit
@@ -255,3 +255,142 @@ confirming the mechanism.
    C++ layer raises an uncaught `ios_base::failure` and **aborts the process**, taking any unwritten
    results with it. The probe therefore calls `coremltools.models.utils.compile_model` first and
    persists its JSON before touching the compute-plan API.
+
+---
+
+## 6. Aggregate throughput — the W-ladder (added 2026-07-29)
+
+**The question:** §1 measures what ONE decision costs with nothing else running. That is the number a
+*phone* pays. It is not what decides whether a box joins the cluster — gen/eval run W independent
+worker processes, so a box is worth its **aggregate moves/s at its best W**. The 5900XT's optimum is
+W=16. The M5's was unknown.
+
+**Method:** `scripts/m5_bench/w_ladder.py` spawns W independent `bench_champion.py` processes per cell
+(distinct seeds, `OMP_NUM_THREADS=1` each, no shared memory, no orchestrator — the shape of a
+`--shared-claim` fan-out), waits for all, and pools their JSONs. Deploy budget k4×688 throughout,
+24 positions × 2 passes = **46 timed decisions per worker**, cells run sequentially. `exact_latches: 0`
+and `leaf_path: cython` on every cell of every run; **4,416 timed decisions** in total.
+
+**Machine** (from `system_profiler`, not the tailnet hostname): **MacBook Air**, Apple M5, **4P+6E**,
+32 GiB, macOS 26.5.2 — a *fanless* chassis, which is why the throttle question below is not academic.
+
+### 6.1 The ladder
+
+Source: [`W_LADDER_CLEAN.json`](W_LADDER_CLEAN.json) (W=1…10), extended by
+[`W_LADDER_EXT.json`](W_LADDER_EXT.json) (W=10,12,14).
+
+| W | per-worker s/move | spread across workers | aggregate moves/s | vs 5900XT W16 | scaling efficiency |
+|---|---|---|---|---|---|
+| 1 | 1.425 | 1.00× | 0.702 | 0.17× | 100% |
+| 4 | 1.937 | 1.02× | 2.065 | 0.51× | 74% |
+| 6 | 2.431 | 1.03× | 2.468 | 0.61× | 59% |
+| 8 | 2.981 | 1.03× | 2.684 | 0.66× | 48% |
+| **10** | 3.156–3.368 | 1.02× | **3.043** (pooled, n=3 cells) | **0.75×** | 42% |
+| 12 | 4.305 | 1.02× | 2.787 | 0.69× | 33% |
+| 14 | 5.131 | 1.02× | 2.729 | 0.67× | 28% |
+
+**W optimum = 10, and it is bracketed** — W=12 and W=14 are both *below* it, so this is a real turnover
+and not a ladder endpoint. Notably the optimum equals the M5's physical core count (4P+6E=10), unlike
+the 5900XT whose W=16 optimum sits at *half* its 32 threads because it hits a DRAM-latency wall first.
+
+The W=10 figure pools three independent cells — 2.991 (contaminated run), 2.969 (clean run), 3.168
+(extension run) — mean **3.043 moves/s**, range 2.969–3.168 (±3%). Single cells elsewhere in the table
+carry that same ~±3% run-to-run noise; don't read the W=6 vs W=8 gap to three digits.
+
+**Per-worker spread never exceeds 1.03×.** With 4 P-cores and 6 E-cores this is the surprise of the
+run: macOS migrates the workers so effectively that no worker is measurably stuck on an E-core. There
+is no P/E bimodality to exploit or work around.
+
+### 6.2 The comparable — 5900XT at W=16
+
+**A clean comparable exists; it did not have to be owed.** Derived from the raw per-game records of the
+2026-07-28 intra-reuse screen and the pareto cell, filtered to `host == Doctor` (the runs were
+work-stolen across two boxes, so the laptop's games must be dropped) and taking the **opponent** arm,
+which in all four runs is the deploy champion itself:
+
+| run | n games (Doctor) | ms/move |
+|---|---|---|
+| `intrareuse_k4x688_tot2752_vs_champ_off_b74000000000` | 94 | 4034.6 |
+| `intrareuse_k4x688_tot2752_vs_champ_off_b78000000000_n600` | 600 | 3867.0 |
+| `intrareuse_k4x688_tot2752_vs_champ_off_b80000000000_n600` | 289 | 4035.5 |
+| `classical_search/pareto_k4x1376_5504_vs_deploy` | 192 | 3961.1 |
+| **pooled** | **1175** | **3937.2** |
+
+82,184 timed decisions. Same champion (`FairHeuristicPriorAgent`, leaf `a36d2e15a3b3d71d`, k4×688 =
+2752 sims — all matching `governance/PRODUCTION.yaml`), same Cython leaf, W16 per box
+(`DEDUP_INTRA_SCREEN_REPORT_20260728.md` §"Run by"). Per-worker 3.937 s/move × 16 workers =
+**4.064 aggregate moves/s** — constructed identically to the M5 column (per-worker rate × W).
+
+⚠️ Three caveats on this ratio, none of which move it below the bar:
+
+1. **Corpus mismatch, unquantified.** The M5 number is a 24-position *mid-game* slice; the 5900XT
+   number is a full-game mean over every non-latched decision. Mid-game boards carry more placed
+   meeples and so a more expensive leaf, which means the M5 is being measured on the harder slice —
+   the sign plausibly favours the M5, but nobody has measured the size.
+2. The 5900XT reference is self-contended by its own 16 workers (intended — that IS the W16
+   condition), but the screen report notes a window where G2's workers briefly put 32 workers on 24
+   threads. That inflates its ms/move slightly, i.e. also flatters the M5.
+3. `USE_CY_LEAF` is not recorded in that run's `leaf_env`; it defaults ON and both `.so` files are
+   present in the repo, so the Cython path is near-certain but is inferred, not measured. The M5 side
+   measures it (`leaf_path: cython`).
+
+### 6.3 Thermals — no throttling, and a clean-box gate that passed
+
+The ladder repeats its W=1 cell at the end (`1_post`). **`1_post` = 1.425 s/move against an opening
+W=1 of 1.425 s/move — a ratio of 1.000**, after ~12 minutes of sustained load including W=10
+saturation (loadavg 16). The contaminated run independently gives 0.991×. **A fanless MacBook Air did
+not throttle on this workload at all.** That is a low-power, DRAM-latency-bound integer workload rather
+than a wide-vector one, so it is plausible the part never approaches its thermal limit.
+
+⚠️ `pmset -g therm` returned **no numeric limit fields** on Apple Silicon across every sample of every
+cell, so it contributed nothing. `powermetrics` is root-only and was not run. The throttle evidence is
+therefore the `1_post` test and the flat per-worker spread — behavioural, not telemetric.
+
+**Cleanliness gate.** Restricting §1's full-ladder run to the *same* 24 positions this ladder uses
+predicts **1.498 s/move** for W=1 (the 1.576 headline is the full-60 mean, a different slice). Measured
+W=1 was **1.425 s/move = 0.951×** — the box was, if anything, *cleaner* than the §1 run that was billed
+as idle.
+
+### 6.4 The natural experiment: foreign load didn't matter
+
+Joshua closed Chrome/Music/Claude.app partway through the first ladder, which splits it. Rather than
+discard it, [`W_LADDER_CONTAMINATED.json`](W_LADDER_CONTAMINATED.json) is kept as a paired control. Its
+per-cell `top_procs` capture puts the transition **inside the W=6 cell, ≈04:05–04:06Z**: the first three
+cells ran with `Claude.app` at 25–52% of a core plus WindowServer at ~20–30%, and W=6's
+`top_procs_after` is the first sample with none of them.
+
+| W | contaminated agg moves/s | clean agg moves/s | Δ |
+|---|---|---|---|
+| 1 | 0.695 | 0.702 | +1% |
+| 4 | 2.085 | 2.065 | −1% |
+| 6 | 2.391 | 2.468 | +3% |
+| 8 | 2.888 | 2.684 | −7% |
+| 10 | 2.991 | 2.969 | −1% |
+
+**No consistent direction and every gap inside run-to-run noise.** Roughly one core of foreign
+desktop load is immaterial to aggregate throughput on a 10-core box once 8–10 workers are saturating
+it. Separately, the `mediaanalysisd` daemon that the pre-launch census caught at **208% CPU** (4 days
+straight) had fallen to **0.0%** by the time the ladders ran — see
+[`census_before_clean_ladder.txt`](census_before_clean_ladder.txt).
+
+### 6.5 Verdict
+
+**Yes — the M5 clears the bar comfortably. At its bracketed optimum W=10 it does 3.043 moves/s, which
+is 0.75× a 5900XT at W16 (4.064 moves/s); one 5900XT ≈ 1.34 M5s.** The 0.5× threshold for "worth
+adding as a cluster box" is cleared with ~50% margin, and every unquantified caveat in §6.2 points in
+the M5's favour rather than against it.
+
+Two things temper it, neither about the number:
+
+* **Scaling efficiency is only 42% at W=10** (3.043 vs a perfect-scaling 7.02). The M5 buys its
+  throughput with 10 cores that each run 2.2× slower under load than alone. That is the same
+  DRAM-latency wall the 5900XT hits — it is not an argument against the M5, but it does mean the M5's
+  *single-stream* advantage (§3) does not carry over to aggregate work.
+* **This says nothing about whether it SHOULD join.** It is a laptop on a relayed tailnet that
+  idle-naps within minutes of going quiet; every launch in this session needed `caffeinate -dimsu` and
+  a retry loop to catch a wake window. The throughput is there; the operational fit is a separate
+  decision and is not made here.
+
+**Raw JSON:** `W_LADDER_CLEAN.json`, `W_LADDER_EXT.json`, `W_LADDER_CONTAMINATED.json`,
+`census_before_clean_ladder.txt`, `w_ladder_clean.log`, `w_ladder_ext.log` — this directory and
+`/mnt/c/carc-shared/m5_bench_20260728/results/m5/`.
