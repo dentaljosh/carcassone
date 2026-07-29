@@ -1,0 +1,3 @@
+[cuda_b1         ] forward    1.882 ms (p50 1.839 / p90 1.961)   full    2.855 ms   350.3 pos/s
+
+wrote /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/cells/net_cuda_b1__wsl__rep3.json

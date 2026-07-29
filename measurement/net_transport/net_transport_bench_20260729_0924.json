@@ -1,0 +1,2180 @@
+{
+  "manifest": {
+    "script": "scripts/measurement_infra/net_transport_bench.py",
+    "purpose": "G3 forward-transport pricing (batch-1 GPU vs CPU-Nt vs batched GPU)",
+    "not_a_strength_measurement": true,
+    "decision_rule": "if clean CPU-1t batch-1 <= ~3x clean GPU batch-1, single-game deploy should default net-on-CPU (composes with k-parallel, frees the GPU)",
+    "ckpt": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+    "ckpt_sha256": "6e2679908d79a76cd2d66789d992676a5bfa85946a1543968982b308873751a1",
+    "ckpt_sha256_expected": "6e2679908d79a76cd2d66789d992676a5bfa85946a1543968982b308873751a1",
+    "smoke": false,
+    "smoke_is_not_a_measurement": false,
+    "forced": false,
+    "rows_requested": [
+      "cuda_b1",
+      "cpu_1t",
+      "cpu_2t",
+      "cpu_4t",
+      "cuda_b8",
+      "cuda_b32",
+      "cuda_b128",
+      "cpu_1t_compile"
+    ],
+    "calls": 2000,
+    "warmup": 200,
+    "boards": 16,
+    "torch_version": "2.11.0+cu128",
+    "torch_cuda_version": "12.8",
+    "cuda_available": true,
+    "cuda_device_names": [
+      "NVIDIA GeForce RTX 5060 Ti"
+    ],
+    "cpu_count": 32,
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "hostname": "Doctor",
+    "parent_thread_env": {
+      "OMP_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "CUDA_VISIBLE_DEVICES": null,
+      "CARCASSONNE_USE_FLAT_LEAF": null,
+      "CARCASSONNE_USE_CY_LEAF": null
+    },
+    "git_rev": "c6f0f96",
+    "started_utc": "2026-07-29T13:24:58Z"
+  },
+  "state_start": {
+    "t": 1785331498.90633,
+    "loadavg": {
+      "1m": 1.19,
+      "5m": 1.49,
+      "15m": 1.79
+    },
+    "loadavg_available": true,
+    "os": "Linux",
+    "nvidia_smi": {
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 5060 Ti",
+          "power_w": 4.98,
+          "util_pct": 0.0,
+          "mem_used_mib": 705.0,
+          "mem_total_mib": 16311.0,
+          "sm_clock_mhz": 180.0
+        }
+      ]
+    }
+  },
+  "rows": [
+    {
+      "row": "cuda_b1",
+      "spec": {
+        "device": "cuda",
+        "batch": 1,
+        "threads": null,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331499.8991537,
+        "loadavg": {
+          "1m": 1.25,
+          "5m": 1.5,
+          "15m": 1.79
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.91,
+              "util_pct": 2.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 16,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "device_name": "NVIDIA GeForce RTX 5060 Ti",
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 3.038866694997978,
+          "p50_ms": 3.012698999555141,
+          "p90_ms": 3.5646510000333365,
+          "p99_ms": 4.079520999766828,
+          "min_ms": 2.172549000079016,
+          "max_ms": 5.528441000024031,
+          "stdev_ms": 0.4308981694676268,
+          "per_item_mean_ms": 3.038866694997978,
+          "items_per_s": 329.07004497631164
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 2.0172990764979204,
+          "p50_ms": 1.9977220003966067,
+          "p90_ms": 2.155534999928932,
+          "p99_ms": 2.3890620000202034,
+          "min_ms": 1.8021330001829483,
+          "max_ms": 4.356926000127714,
+          "stdev_ms": 0.13381427421863396,
+          "per_item_mean_ms": 2.0172990764979204,
+          "items_per_s": 495.7123173505953
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331514.5058877,
+        "loadavg": {
+          "1m": 1.45,
+          "5m": 1.53,
+          "15m": 1.8
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 31.56,
+              "util_pct": 20.0,
+              "mem_used_mib": 928.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2835.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": null,
+        "MKL_NUM_THREADS": null,
+        "CUDA_VISIBLE_DEVICES": null
+      },
+      "wallclock_s": 13.477464628999769
+    },
+    {
+      "row": "cpu_1t",
+      "spec": {
+        "device": "cpu",
+        "batch": 1,
+        "threads": 1,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331515.7695487,
+        "loadavg": {
+          "1m": 1.45,
+          "5m": 1.53,
+          "15m": 1.8
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 10.24,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 1125.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 1,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 13.983705482496816,
+          "p50_ms": 12.573226000313298,
+          "p90_ms": 19.783812999776274,
+          "p99_ms": 21.64619799987122,
+          "min_ms": 11.06198100023903,
+          "max_ms": 22.72559499988347,
+          "stdev_ms": 3.12407276603037,
+          "per_item_mean_ms": 13.983705482496816,
+          "items_per_s": 71.51180359538351
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 11.750540276000947,
+          "p50_ms": 11.105062999831716,
+          "p90_ms": 12.126495999837061,
+          "p99_ms": 18.30050900025526,
+          "min_ms": 10.73536600006264,
+          "max_ms": 18.998307999936515,
+          "stdev_ms": 1.8419166230497646,
+          "per_item_mean_ms": 11.750540276000947,
+          "items_per_s": 85.10246988748071
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331575.1315868,
+        "loadavg": {
+          "1m": 3.85,
+          "5m": 2.26,
+          "15m": 2.04
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 4.81,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "wallclock_s": 57.866238091000014
+    },
+    {
+      "row": "cpu_2t",
+      "spec": {
+        "device": "cpu",
+        "batch": 1,
+        "threads": 2,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331576.2842724,
+        "loadavg": {
+          "1m": 3.85,
+          "5m": 2.26,
+          "15m": 2.04
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.66,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 2,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 7.991743972005452,
+          "p50_ms": 7.8109730002324795,
+          "p90_ms": 8.66946900032417,
+          "p99_ms": 11.900654999863036,
+          "min_ms": 6.886114999815618,
+          "max_ms": 13.264635000268754,
+          "stdev_ms": 0.8855474337723088,
+          "per_item_mean_ms": 7.991743972005452,
+          "items_per_s": 125.12913370384908
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 7.78749503699828,
+          "p50_ms": 6.82053199989241,
+          "p90_ms": 10.574507999990601,
+          "p99_ms": 10.981857999922795,
+          "min_ms": 6.456045000049926,
+          "max_ms": 11.48756200018397,
+          "stdev_ms": 1.7206467518660615,
+          "per_item_mean_ms": 7.78749503699828,
+          "items_per_s": 128.41099676455832
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331613.630257,
+        "loadavg": {
+          "1m": 3.86,
+          "5m": 2.44,
+          "15m": 2.1
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.02,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": "2",
+        "MKL_NUM_THREADS": "2",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "wallclock_s": 35.93182016500032
+    },
+    {
+      "row": "cpu_4t",
+      "spec": {
+        "device": "cpu",
+        "batch": 1,
+        "threads": 4,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331617.408039,
+        "loadavg": {
+          "1m": 3.86,
+          "5m": 2.44,
+          "15m": 2.1
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.03,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 4,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 6.097799592500678,
+          "p50_ms": 5.758643000262964,
+          "p90_ms": 7.961451000028319,
+          "p99_ms": 9.499681000306737,
+          "min_ms": 4.585072999816475,
+          "max_ms": 10.802413999954297,
+          "stdev_ms": 1.1391210531735974,
+          "per_item_mean_ms": 6.097799592500678,
+          "items_per_s": 163.99358241124236
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 4.778324480501169,
+          "p50_ms": 4.47797900005753,
+          "p90_ms": 5.444798000098672,
+          "p99_ms": 7.13803700000426,
+          "min_ms": 4.214610999952129,
+          "max_ms": 7.510629000080371,
+          "stdev_ms": 0.7014153555699915,
+          "per_item_mean_ms": 4.778324480501169,
+          "items_per_s": 209.27837866195227
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331641.89973,
+        "loadavg": {
+          "1m": 4.59,
+          "5m": 2.73,
+          "15m": 2.21
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.34,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "wallclock_s": 25.689110875000097
+    },
+    {
+      "row": "cuda_b8",
+      "spec": {
+        "device": "cuda",
+        "batch": 8,
+        "threads": null,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331643.1068447,
+        "loadavg": {
+          "1m": 4.59,
+          "5m": 2.73,
+          "15m": 2.21
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 5.25,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 16,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "device_name": "NVIDIA GeForce RTX 5060 Ti",
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 9.056478904495862,
+          "p50_ms": 9.880726000119466,
+          "p90_ms": 11.218152999845188,
+          "p99_ms": 16.325713000242104,
+          "min_ms": 5.669130000114819,
+          "max_ms": 17.070793999664602,
+          "stdev_ms": 2.5924949713224876,
+          "per_item_mean_ms": 1.1320598630619827,
+          "items_per_s": 883.3455125731703
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 3.134536237003431,
+          "p50_ms": 2.6986749999196036,
+          "p90_ms": 4.909961000066687,
+          "p99_ms": 5.100921000121161,
+          "min_ms": 2.0177060000605707,
+          "max_ms": 5.612510999981168,
+          "stdev_ms": 1.0121426905624737,
+          "per_item_mean_ms": 0.39181702962542886,
+          "items_per_s": 2552.211681447294
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331673.6519368,
+        "loadavg": {
+          "1m": 3.96,
+          "5m": 2.75,
+          "15m": 2.24
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 38.96,
+              "util_pct": 30.0,
+              "mem_used_mib": 928.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2827.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": null,
+        "MKL_NUM_THREADS": null,
+        "CUDA_VISIBLE_DEVICES": null
+      },
+      "wallclock_s": 29.32877508399997
+    },
+    {
+      "row": "cuda_b32",
+      "spec": {
+        "device": "cuda",
+        "batch": 32,
+        "threads": null,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331674.9922,
+        "loadavg": {
+          "1m": 3.96,
+          "5m": 2.75,
+          "15m": 2.24
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 11.93,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 1590.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 16,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "device_name": "NVIDIA GeForce RTX 5060 Ti",
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 27.372126118000093,
+          "p50_ms": 27.11400899988803,
+          "p90_ms": 29.224454000086553,
+          "p99_ms": 30.61576900017826,
+          "min_ms": 25.828799000009894,
+          "max_ms": 32.42653000006612,
+          "stdev_ms": 1.2158863835410052,
+          "per_item_mean_ms": 0.8553789411875029,
+          "items_per_s": 1169.0725032483533
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 4.416647430503872,
+          "p50_ms": 4.3888349996450415,
+          "p90_ms": 4.4792619996769645,
+          "p99_ms": 4.746099999920261,
+          "min_ms": 4.191642000023421,
+          "max_ms": 4.927158000100462,
+          "stdev_ms": 0.09381910650655574,
+          "per_item_mean_ms": 0.138020232203246,
+          "items_per_s": 7245.314574803922
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785331751.5612335,
+        "loadavg": {
+          "1m": 3.23,
+          "5m": 2.78,
+          "15m": 2.28
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 83.91,
+              "util_pct": 88.0,
+              "mem_used_mib": 968.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2820.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": null,
+        "MKL_NUM_THREADS": null,
+        "CUDA_VISIBLE_DEVICES": null
+      },
+      "wallclock_s": 72.84271689600018
+    },
+    {
+      "row": "cuda_b128",
+      "spec": {
+        "device": "cuda",
+        "batch": 128,
+        "threads": null,
+        "compile": false
+      },
+      "state_start": {
+        "t": 1785331752.995714,
+        "loadavg": {
+          "1m": 3.21,
+          "5m": 2.78,
+          "15m": 2.29
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 22.73,
+              "util_pct": 0.0,
+              "mem_used_mib": 705.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2850.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 16,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "device_name": "NVIDIA GeForce RTX 5060 Ti",
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 119.58896299700086,
+          "p50_ms": 117.67190199998367,
+          "p90_ms": 128.19522800009509,
+          "p99_ms": 140.70016899995608,
+          "min_ms": 107.41915400012658,
+          "max_ms": 228.0876720001288,
+          "stdev_ms": 8.365445162710676,
+          "per_item_mean_ms": 0.9342887734140692,
+          "items_per_s": 1070.332886850186
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 19.356365961503798,
+          "p50_ms": 19.302321999930427,
+          "p90_ms": 20.33084799995777,
+          "p99_ms": 20.73447099974146,
+          "min_ms": 18.546508000326867,
+          "max_ms": 21.495369999684044,
+          "stdev_ms": 0.5660968076957226,
+          "per_item_mean_ms": 0.15122160907424842,
+          "items_per_s": 6612.811529528225
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785332081.6794941,
+        "loadavg": {
+          "1m": 2.02,
+          "5m": 2.38,
+          "15m": 2.26
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 91.73,
+              "util_pct": 94.0,
+              "mem_used_mib": 1156.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2827.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": null,
+        "MKL_NUM_THREADS": null,
+        "CUDA_VISIBLE_DEVICES": null
+      },
+      "wallclock_s": 308.99168842200015
+    },
+    {
+      "row": "cpu_1t_compile",
+      "spec": {
+        "device": "cpu",
+        "batch": 1,
+        "threads": 1,
+        "compile": true
+      },
+      "state_start": {
+        "t": 1785332082.9660378,
+        "loadavg": {
+          "1m": 2.02,
+          "5m": 2.38,
+          "15m": 2.26
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 24.3,
+              "util_pct": 0.0,
+              "mem_used_mib": 757.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 2842.0
+            }
+          ]
+        }
+      },
+      "torch_num_threads": 1,
+      "torch_num_interop_threads": 32,
+      "rep": {
+        "sighted": true,
+        "n_input_channels": 81,
+        "n_scalar_features": 42,
+        "include_farm_scalars": false,
+        "value_global_pool": true,
+        "n_filters": 96,
+        "n_blocks": 6,
+        "iter": 3,
+        "provenance": {
+          "schema": "carcassonne-training-provenance/v1",
+          "created_iter": 3,
+          "code_commit": "e58db474ce88b6ac0b9f75d09d922a7ec505451a",
+          "dirty": true,
+          "ruleset": "base",
+          "parent_ckpt": {
+            "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "sha256": "28f6eef7b483e2ab3ba993de6b6fd287d9c37b8dd4eabf6fe0149ee501a8c59a"
+          },
+          "arch": {
+            "n_filters": 96,
+            "n_blocks": 6,
+            "value_global_pool": true,
+            "n_scalar_features": 42
+          },
+          "train_command": [
+            "--output-root",
+            "/mnt/c/carc-shared/distill_strong_20260723",
+            "--iter",
+            "3",
+            "--window",
+            "12",
+            "--warm-from",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_02.pt",
+            "--output",
+            "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+            "--epochs",
+            "3",
+            "--batch-size",
+            "256",
+            "--value-loss-weight",
+            "1.5",
+            "--aux-weight",
+            "0",
+            "--stage-local",
+            "/tmp/distill_stage_3",
+            "--prov-value-target",
+            "outcome",
+            "--prov-selfplay-leaf",
+            "v2_9_bmild_cap8_curve125",
+            "--prov-seed-range",
+            "50000300000-50000300599",
+            "--prov-run-tag",
+            "distill_stage1_it3"
+          ],
+          "dataset": {
+            "fingerprint": "6b362781945b33f3",
+            "n_files": 2400,
+            "total_bytes": 251698438,
+            "replay_iters": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "files": [
+              "seed_050000000000.npz",
+              "seed_050000000001.npz",
+              "seed_050000000002.npz",
+              "seed_050000000003.npz",
+              "seed_050000000004.npz",
+              "seed_050000000005.npz",
+              "seed_050000000006.npz",
+              "seed_050000000007.npz",
+              "seed_050000000008.npz",
+              "seed_050000000009.npz",
+              "seed_050000000010.npz",
+              "seed_050000000011.npz",
+              "seed_050000000012.npz",
+              "seed_050000000013.npz",
+              "seed_050000000014.npz",
+              "seed_050000000015.npz",
+              "seed_050000000016.npz",
+              "seed_050000000017.npz",
+              "seed_050000000018.npz",
+              "seed_050000000019.npz",
+              "seed_050000000020.npz",
+              "seed_050000000021.npz",
+              "seed_050000000022.npz",
+              "seed_050000000023.npz",
+              "seed_050000000024.npz",
+              "seed_050000000025.npz",
+              "seed_050000000026.npz",
+              "seed_050000000027.npz",
+              "seed_050000000028.npz",
+              "seed_050000000029.npz",
+              "seed_050000000030.npz",
+              "seed_050000000031.npz",
+              "seed_050000000032.npz",
+              "seed_050000000033.npz",
+              "seed_050000000034.npz",
+              "seed_050000000035.npz",
+              "seed_050000000036.npz",
+              "seed_050000000037.npz",
+              "seed_050000000038.npz",
+              "seed_050000000039.npz",
+              "seed_050000000040.npz",
+              "seed_050000000041.npz",
+              "seed_050000000042.npz",
+              "seed_050000000043.npz",
+              "seed_050000000044.npz",
+              "seed_050000000045.npz",
+              "seed_050000000046.npz",
+              "seed_050000000047.npz",
+              "seed_050000000048.npz",
+              "seed_050000000049.npz",
+              "seed_050000000050.npz",
+              "seed_050000000051.npz",
+              "seed_050000000052.npz",
+              "seed_050000000053.npz",
+              "seed_050000000054.npz",
+              "seed_050000000055.npz",
+              "seed_050000000056.npz",
+              "seed_050000000057.npz",
+              "seed_050000000058.npz",
+              "seed_050000000059.npz",
+              "seed_050000000060.npz",
+              "seed_050000000061.npz",
+              "seed_050000000062.npz",
+              "seed_050000000063.npz"
+            ],
+            "files_truncated": true,
+            "n_warmstart_files": 0
+          },
+          "policy_target": "mcts_visit_distribution",
+          "value_target": "outcome",
+          "loss_weights": {
+            "value": 1.5,
+            "aux": 0.0,
+            "rank": 0.0,
+            "center": 0.0,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "lr_schedule": "none"
+          },
+          "aux_heads": [],
+          "selfplay_leaf": "v2_9_bmild_cap8_curve125",
+          "selfplay_seed_range": "50000300000-50000300599",
+          "run_tag": "distill_stage1_it3"
+        },
+        "action_size": 2511,
+        "n_params": 7509167
+      },
+      "compile_wrapped_s": 1.1811385630003315,
+      "compile_target": "net.forward_policy_only (bound method)",
+      "board_plies": [
+        6,
+        13,
+        20,
+        27,
+        34,
+        41,
+        48,
+        55,
+        61,
+        68,
+        75,
+        82,
+        89,
+        96,
+        103,
+        110
+      ],
+      "forward_matches_evaluator_maxabs": 0.0,
+      "timings": {
+        "full": {
+          "n": 2000,
+          "mean_ms": 11.710049151995918,
+          "p50_ms": 11.633156000243616,
+          "p90_ms": 12.363991000256647,
+          "p99_ms": 13.483874000030482,
+          "min_ms": 10.54101499994431,
+          "max_ms": 20.56599300021844,
+          "stdev_ms": 0.6186748207215993,
+          "per_item_mean_ms": 11.710049151995918,
+          "items_per_s": 85.396738051228
+        },
+        "forward": {
+          "n": 2000,
+          "mean_ms": 10.50357573449719,
+          "p50_ms": 10.391663000064,
+          "p90_ms": 10.661795000032726,
+          "p99_ms": 14.582100000097853,
+          "min_ms": 10.065349000342394,
+          "max_ms": 17.397268999957305,
+          "stdev_ms": 0.5958058864859384,
+          "per_item_mean_ms": 10.50357573449719,
+          "items_per_s": 95.20567331329576
+        }
+      },
+      "n_warmup": 200,
+      "state_end": {
+        "t": 1785332139.990968,
+        "loadavg": {
+          "1m": 2.14,
+          "5m": 2.35,
+          "15m": 2.26
+        },
+        "loadavg_available": true,
+        "os": "Linux",
+        "nvidia_smi": {
+          "gpus": [
+            {
+              "name": "NVIDIA GeForce RTX 5060 Ti",
+              "power_w": 6.18,
+              "util_pct": 1.0,
+              "mem_used_mib": 757.0,
+              "mem_total_mib": 16311.0,
+              "sm_clock_mhz": 180.0
+            }
+          ]
+        }
+      },
+      "child_env": {
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "CUDA_VISIBLE_DEVICES": ""
+      },
+      "wallclock_s": 53.78381630199965
+    }
+  ],
+  "state_end": {
+    "t": 1785332140.5337842,
+    "loadavg": {
+      "1m": 2.14,
+      "5m": 2.35,
+      "15m": 2.26
+    },
+    "loadavg_available": true,
+    "os": "Linux",
+    "nvidia_smi": {
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 5060 Ti",
+          "power_w": 6.15,
+          "util_pct": 0.0,
+          "mem_used_mib": 757.0,
+          "mem_total_mib": 16311.0,
+          "sm_clock_mhz": 180.0
+        }
+      ]
+    }
+  }
+}

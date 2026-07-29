@@ -1,0 +1,21 @@
+bench_champion: AMD Ryzen 9 5900XT 16-Core Processor (x86_64, py3.13.12)
+  leaf path : CYTHON
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 60 from positions.jsonl
+  budgets   : k1x32,k4x172,k4x344,k4x688  repeat=3
+  out       : /home/doctor/projects/carcassone/measurement/m5_bench_20260728/bench_champion_5900XT_CLEAN_20260729.json
+  -> k1x32 (32 sims/move) ...
+     mean 0.025s  p50 0.025s  p90 0.034s  (n=178, 5s wall)
+  -> k4x172 (688 sims/move) ...
+     mean 0.665s  p50 0.637s  p90 0.891s  (n=178, 120s wall)
+  -> k4x344 (1376 sims/move) ...
+     mean 1.375s  p50 1.313s  p90 1.806s  (n=178, 248s wall)
+  -> k4x688 (2752 sims/move) ...
+     mean 2.747s  p50 2.662s  p90 3.542s  (n=178, 494s wall)
+
+bench_champion: wrote /home/doctor/projects/carcassone/measurement/m5_bench_20260728/bench_champion_5900XT_CLEAN_20260729.json
+  leaf_path=cython  machine=AMD Ryzen 9 5900XT 16-Core Processor
+  k1x32   (   32 sims/move): mean   0.025 s/move   p90   0.034 s/move
+  k4x172  (  688 sims/move): mean   0.665 s/move   p90   0.891 s/move
+  k4x344  ( 1376 sims/move): mean   1.375 s/move   p90   1.806 s/move
+  k4x688  ( 2752 sims/move): mean   2.747 s/move   p90   3.542 s/move

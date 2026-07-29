@@ -1,0 +1,53 @@
+== eff_linus WSL-vs-native A/B ==
+   stamp   : 20260729_093612
+   out     : /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729
+   cells   : champ_k1x32,champ_k4x172,net_cuda_b1,net_cpu_1t   reps=3   smoke=0
+   loadavg : 1.95 2.28 2.24 4/507 35473
+-- pre-flight census
+    PID     ELAPSED %CPU COMMAND
+  23124       39:51 93.5 python
+NVIDIA GeForce RTX 5060 Ti, 6.13 W, 0 %, 735 MiB
+-- staging source to /mnt/c/carc-shared/eff_linus_20260728
+   git_rev : c6f0f96
+-- warm-up (Defender first-touch of the venv; discarded)
+wsl warm 2.11.0+cu128
+'\\wsl.localhost\Ubuntu\home\doctor\projects\carcassone'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+win warm 2.11.0+cu128
+   champ_k1x32__wsl__rep1       rc=0  2.5s
+   champ_k1x32__win__rep1       rc=0  2.4s
+   champ_k1x32__win__rep2       rc=0  2.3s
+   champ_k1x32__wsl__rep2       rc=0  2.4s
+   champ_k1x32__wsl__rep3       rc=0  2.8s
+   champ_k1x32__win__rep3       rc=0  2.3s
+   champ_k4x172__wsl__rep1      rc=0  47.6s
+   champ_k4x172__win__rep1      rc=0  52.1s
+   champ_k4x172__win__rep2      rc=0  54.5s
+   champ_k4x172__wsl__rep2      rc=0  45.2s
+   champ_k4x172__wsl__rep3      rc=0  45.2s
+   champ_k4x172__win__rep3      rc=0  54.3s
+   net_cuda_b1__wsl__rep1       rc=0  18.6s
+   net_cuda_b1__win__rep1       rc=0  17.0s
+   net_cuda_b1__win__rep2       rc=0  18.4s
+   net_cuda_b1__wsl__rep2       rc=0  16.0s
+   net_cuda_b1__wsl__rep3       rc=0  17.8s
+   net_cuda_b1__win__rep3       rc=0  16.7s
+   net_cpu_1t__wsl__rep1        rc=0  61.6s
+   net_cpu_1t__win__rep1        rc=0  64.5s
+   net_cpu_1t__win__rep2        rc=0  64.9s
+   net_cpu_1t__wsl__rep2        rc=0  58.5s
+   net_cpu_1t__wsl__rep3        rc=0  60.9s
+   net_cpu_1t__win__rep3        rc=0  64.6s
+
+== eff_linus A/B summary ==
+   champ_k1x32    p50_s_per_move     wsl=0.1135  win=0.1429  ratio(win/wsl)=1.259  [spread wsl 22.3% / win 1.1%]
+   champ_k4x172   p50_s_per_move     wsl=2.7045  win=3.3829  ratio(win/wsl)=1.251  [spread wsl 1.2% / win 1.4%]
+   net_cuda_b1    forward_p50_ms     wsl=2.1042  win=2.2305  ratio(win/wsl)=1.060  [spread wsl 12.6% / win 0.6%]
+   net_cpu_1t     forward_p50_ms     wsl=11.2477  win=12.7901  ratio(win/wsl)=1.137  [spread wsl 2.7% / win 0.4%]
+   audit: OK — arms differ only by virtualisation.
+
+   merged -> /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/wsl_vs_native_ab_20260729_093612.json
+
+== done ==
+   merged JSON : /home/doctor/projects/carcassone/measurement/eff_linus/run_20260729/wsl_vs_native_ab_20260729_093612.json

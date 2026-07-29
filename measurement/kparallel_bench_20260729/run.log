@@ -1,0 +1,8 @@
+    sequential  k4x688   mean 3.228s  p90 4.036s
+   parallel_w2  k4x688   mean 1.863s  p90 2.260s  speedup 1.73x  transport 5.6ms
+   parallel_w4  k4x688   mean 1.020s  p90 1.339s  speedup 3.16x  transport 6.3ms
+    sequential  k8x1376  mean 13.755s  p90 16.783s
+   parallel_w4  k8x1376  mean 3.825s  p90 4.578s  speedup 3.60x  transport 6.0ms
+   parallel_w8  k8x1376  mean 2.159s  p90 2.617s  speedup 6.37x  transport 7.2ms
+
+wrote /home/doctor/projects/carcassone/measurement/kparallel_bench_20260729/manifest.json, rows.csv, rows.json

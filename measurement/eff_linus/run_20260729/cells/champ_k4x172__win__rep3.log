@@ -1,0 +1,15 @@
+'\\wsl.localhost\Ubuntu\home\doctor\projects\carcassone'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+bench_champion: AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD (AMD64, py3.13.14)
+  leaf path : PURE_PYTHON  <-- ~4.5x slower than the Cython path
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 12 from positions.jsonl
+  budgets   : k4x172  repeat=1
+  out       : C:\carc-shared\eff_linus_20260728\out_champ_k4x172__win__rep3.json
+  -> k4x172 (688 sims/move) ...
+     mean 4.293s  p50 3.383s  p90 7.437s  (n=11, 53s wall)
+
+bench_champion: wrote C:\carc-shared\eff_linus_20260728\out_champ_k4x172__win__rep3.json
+  leaf_path=pure_python  machine=AMD64
+  k4x172  (  688 sims/move): mean   4.293 s/move   p90   7.437 s/move
