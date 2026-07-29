@@ -3228,3 +3228,12 @@ CL-060 (reopened 2026-07-22) established that budget is purchasable at the deplo
 4. **Historical recap corrections made in-chat, recorded so they stick:** CL-067's confirmation debt is smaller than the roadmap phrasing suggests — a second band ran (+28.7 z1.65) and the pooled n=800 clears 2σ on both statistics (+35.7, wr z 2.90 / margin z 2.12); pooling was not pre-registered, hence not stamped. And the intra-carry warm-start figure to cite at deploy is 15–22%, not the k4×172-era 34% (LEVER_INDEX row already corrected).
 
 **Six touches:** results.csv — none owed yet (gate rows land with its read-out) · this entry · prereg = the spec stamp (`df93dcc`) · governance — none (no verdict yet) · STATUS top block rewritten (one run live, morning queue) · roadmap G3 amended + G6 added. Laptop bundle-sync owed at the morning quiet window (6 docs-only commits behind, tree mid-run).
+
+## 2026-07-29 (overnight) — luck floor REPLICATES on band 2 (Apple-silicon first) · cliff ladder rung 1 launched on shared band 88e9
+
+**Context:** stage Eff Jensen; the Air was donated for the evening ("batch it in. caffeinate away").
+
+1. **Luck-floor caveat (2) DISCHARGED.** `luckfloor_champ_k4x688_vs_greedy_n200_b86e9` (results.csv): 12/200 = 6.00% [3.47, 10.19] vs band 1's 13/200 = 6.50% — two-proportion z −0.21, winrate/elo identical to 3 s.f. ⇒ the floor is a property of the MATCHUP, not band 54e9. **Cite pooled: 25/400 = 6.25% [4.27%, 9.06%]** for the human-facing claim. Full row + platform verification in results.csv; readout [M5_CAMPAIGN_READOUT_20260729.md](measurement/classical_search/M5_CAMPAIGN_READOUT_20260729.md).
+2. **First results-bearing run on darwin-arm64.** Trust basis (in the row): verify=True on arm64, 3/3 leaf hashes, native Cython active, 7/7 harness md5 parity, and a pool-computed record replayed single-process bit-identical (spawn-vs-fork risk measured away, not assumed).
+3. **Cliff ladder rung 688 RUNNING on the Air, band 88e9 = the ladder's SHARED band** — rungs 1376/2752 must reuse it (deck-matching is the point). Watchdogged, per-record checkpointed; pending row drafted in readout §5, land on completion.
+4. **W-ladder verdict (cc73b3c):** Air aggregate optimum W=10 = 3.04 moves/s = **0.75× the 5900XT box** (bar was 0.5×), zero thermal throttle (1_post/1 = 1.000), efficiency ~5–6× per watt. Operational precondition for cluster membership: fix the 1-minute idle-sleep (Settings) — every launch tonight needed caffeinate + retry loops.
