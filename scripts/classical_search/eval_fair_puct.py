@@ -1811,7 +1811,13 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     import random
     results = []
     t0 = time.perf_counter()
-    for i in range(max(1, args.games)):
+    # `--games` is the OPTIONAL alias for `--n` (resolved into args.n in main(), but
+    # left as None here when the caller did not pass it). Reading it raw made a bare
+    # `--smoke` crash with TypeError: '>' not supported between NoneType and int.
+    # Fall back to a SINGLE game -- a smoke is a wiring proof, not an eval, so it must
+    # NOT inherit args.n's default of 100.
+    _n_smoke = args.games if args.games is not None else 1
+    for i in range(max(1, _n_smoke)):
         a_seat = i % 2
         seed = args.seed_start + (i // 2)
         random.seed(seed)

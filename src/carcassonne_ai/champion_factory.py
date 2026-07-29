@@ -113,7 +113,11 @@ def load_production_spec(path: Path | None = None) -> ProductionSpec:
     import yaml
 
     path = Path(path) if path is not None else PRODUCTION_YAML
-    doc = yaml.safe_load(path.read_text())
+    # encoding="utf-8" is MANDATORY, not cosmetic: Path.read_text() with no encoding
+    # uses locale.getpreferredencoding(), which is cp1252 on a stock Windows CPython.
+    # PRODUCTION.yaml carries non-ASCII prose, so the bare call raises UnicodeDecodeError
+    # there while passing everywhere else (found 2026-07-29 by the native-Windows A/B).
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     champ = doc["champion"]
     knobs = champ["agent_knobs"]
     leafc = champ["leaf_config"]
