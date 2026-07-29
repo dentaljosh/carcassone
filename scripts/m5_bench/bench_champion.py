@@ -221,7 +221,14 @@ def machine_info() -> dict:
             pass
         try:
             info["loadavg"] = list(os.getloadavg())
-        except OSError:
+        except (OSError, AttributeError):
+            # AttributeError, not OSError, is what WINDOWS raises: `os.getloadavg`
+            # does not exist there at all. This branch is "not Darwin", so native
+            # Windows CPython lands in it — and it does, because project
+            # "eff_linus" (scripts/measurement_infra/wsl_vs_native_ab.sh) runs
+            # this exact file under a native-Windows interpreter to price the
+            # WSL2 virtualisation tax. Everything above is already OSError-safe
+            # (the /proc reads simply find nothing); this was the one hard crash.
             pass
     return info
 

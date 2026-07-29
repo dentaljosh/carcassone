@@ -128,8 +128,25 @@ ROW_TIMEOUT_S = 1800
 # machine state / manifest                                                     #
 # --------------------------------------------------------------------------- #
 def read_loadavg() -> list[float]:
-    with open("/proc/loadavg") as fh:
-        return [float(x) for x in fh.read().split()[:3]]
+    """1/5/15m load, or ``[-1,-1,-1]`` where the OS has no such concept.
+
+    Windows has neither ``/proc/loadavg`` nor ``os.getloadavg`` — and this script
+    is run under native-Windows CPython by the project-"eff_linus" A/B driver
+    (``wsl_vs_native_ab.sh``), which prices the WSL2 virtualisation tax by running
+    the SAME file under both interpreters. A sentinel keeps the contention guard
+    from crashing there; the guard itself is then delegated to the driver, which
+    reads the real (WSL-side) loadavg for the shared physical box. `-1` is NOT
+    "quiet" — ``loadavg_available`` in the output says which regime produced it.
+    """
+    try:
+        with open("/proc/loadavg") as fh:
+            return [float(x) for x in fh.read().split()[:3]]
+    except (OSError, ValueError):
+        pass
+    try:
+        return list(os.getloadavg())
+    except (OSError, AttributeError):
+        return [-1.0, -1.0, -1.0]
 
 
 def nvidia_smi() -> dict | None:
@@ -168,6 +185,8 @@ def machine_state() -> dict:
     return {
         "t": time.time(),
         "loadavg": {"1m": la[0], "5m": la[1], "15m": la[2]},
+        "loadavg_available": la[0] >= 0.0,
+        "os": platform.system(),
         "nvidia_smi": nvidia_smi(),
     }
 
@@ -520,6 +539,15 @@ def main() -> int:
         args.calls = min(args.calls, 100)
         args.warmup = min(args.warmup, 10)
         args.boards = min(args.boards, 6)
+    elif la[0] < 0.0:
+        # Windows (the "eff_linus" native arm): no loadavg exists, so this guard
+        # CANNOT fire. Say so loudly rather than passing silently — the caller
+        # (wsl_vs_native_ab.sh) is responsible for the quiet-window check, and a
+        # hand-run here has no contention guard at all.
+        print("WARNING: no loadavg on this OS — the contention guard is DISABLED. "
+              "Only trust these numbers if you verified the box is quiet yourself "
+              "(the eff_linus driver does this WSL-side before invoking).",
+              file=sys.stderr)
     elif la[0] > LOADAVG_LIMIT and not args.force:
         print(f"REFUSING: 1m loadavg {la[0]:.2f} > {LOADAVG_LIMIT:.0f}. A latency "
               "bench on a contended box is not a measurement — run it in the quiet "
