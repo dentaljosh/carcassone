@@ -170,6 +170,29 @@ candidate sims/det   = round(equal_time_total_sims / 4)     # k_dets held at 4
 Both inputs come from §1: `champion_ms_per_move` from `bench_champion.py --budgets k4x688`
 (§1.2) and `forward_ms` from `verify_coreml_evaluator.py`'s latency block (§1.4).
 
+### MEASURED ON THE AIR 2026-07-29 — use these, not the projection
+
+| | gate §6 projection | **MEASURED (W6, paired probe)** |
+|---|---|---|
+| champion search ms/sim | 0.5741 | **1.0036** |
+| ANE forward ms (single-stream) | 0.420 | **0.427** |
+| candidate ms/sim | — | **1.5595** |
+| per-sim cost multiple cand/opp | — | **1.554×** (CUDA was 4.2–5.5×) |
+| **equal-time budget** | k4×397 | **k4×438** |
+| measured cost ratio at that budget | — | **0.9893** → guard **PASS** |
+
+Two things that projection got wrong, both worth carrying forward:
+
+* **Champion search is 1.75× slower than projected** (1.0036 vs 0.5741 ms/sim). The 0.5741
+  came from a *single-stream* `bench_champion` run; the cell runs **W6**, and six workers
+  on a 10-core M5 contend. Search cost is a function of W.
+* **Therefore do NOT compute r from the single-stream forward.** r = 0.427/1.0036 = 0.436
+  looks like it licenses k4×479 — but that divides an *uncontended* forward by a
+  *contended* search, and under W6 six processes serialise on the ONE shared ANE, so the
+  effective forward is not 0.427 ms. The **direct paired ratio already contains every
+  contention effect**; scale off it. Measured: k4×395 → 0.9014 (in-band but hugging the
+  floor, candidate short-changed 10%); k4×438 → **0.9893**.
+
 The gate's §6 projection, for reference **only** — these are the numbers to REPLACE, not
 to reuse:
 
@@ -251,9 +274,12 @@ claim because the run happens elsewhere.
 #!/bin/bash
 # /tmp/eqtime_ane_cell.sh — pipe with: ssh joshuaishal@100.64.175.108 'bash -s' < /tmp/eqtime_ane_cell.sh
 cd ~/carc-eqtime-ane/repo || exit 1
-CAND="${CAND:?set the sims from the §2 probe}"
-BAND="${BAND:?claim a fresh band}"
-W="${W:-6}"
+# MEASURED + STAGED 2026-07-29 (see §2): k4x438 gives a cost ratio of 0.9893, and band
+# 92e9 is verified unburned (ledger + 612 share manifests) and already claimed in
+# /mnt/c/carc-shared/BAND_CLAIMS.txt. Override only if you re-probe.
+CAND="${CAND:-438}"
+BAND="${BAND:-92000000000}"
+W="${W:-6}"          # the W the ratio was measured at — changing it invalidates CAND
 VENV=~/carc-eqtime-ane/.venv/bin/python
 
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
