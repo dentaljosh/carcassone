@@ -384,7 +384,8 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         batch_size=_UNSET, batch_evaluator=_UNSET,
                         virtual_loss=_UNSET,
                         oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET,
-                        meeple_dedup=_UNSET, intra_reuse=_UNSET):
+                        meeple_dedup=_UNSET, intra_reuse=_UNSET,
+                        parallel_workers=_UNSET):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
     agent's OWN defaults — i.e. constructing via this factory is byte-for-byte identical
@@ -403,6 +404,7 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
         oracle_prior_mult=oracle_prior_mult,
         oracle_prior_eps_coef=oracle_prior_eps_coef,
         meeple_dedup=meeple_dedup, intra_reuse=intra_reuse,
+        parallel_workers=parallel_workers,
     ).items() if v is not _UNSET}
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
@@ -430,7 +432,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              exact_endgame: bool = True, verify: bool = True,
                              meeple_dedup: bool | None = None,
                              intra_reuse: bool | None = None,
-                             exact_budget: int | None = None):
+                             exact_budget: int | None = None,
+                             parallel_workers: int | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -466,7 +469,16 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     fair-PIMC fallback for that ONE decision, which CHANGES PLAY — so it is stamped
     onto the manifest whenever it is set. FAIR MODE ONLY (the clairvoyant agent has
     no endgame solver); passing it with mode="clairvoyant" raises rather than
-    silently doing nothing."""
+    silently doing nothing.
+
+    ``parallel_workers`` splits the fair agent's ``k_dets`` determinization worlds
+    across that many SPAWN processes (None = do not pass it at all, i.e. today's
+    sequential k-loop — byte-identical to before this kwarg existed, which is what
+    the Chaquopy/Android bridge must keep getting since it has no multiprocessing).
+    It is BEHAVIOR-IDENTICAL by construction (the worlds are independent until the
+    pooled-Q argmax; same decks, same seeds, same merge order — proven in
+    tests/test_kparallel.py), so it is a single-GAME LATENCY lever and needs no
+    strength re-eval. FAIR MODE ONLY; passing it with mode="clairvoyant" raises."""
     from . import intra_reuse as intra_carry
     from . import meeple_equiv
     from .game_wrapper import Game
@@ -483,6 +495,12 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     dedup_kw = {} if meeple_dedup is None else {"meeple_dedup": bool(meeple_dedup)}
     intra_kw = {} if intra_reuse is None else {"intra_reuse": bool(intra_reuse)}
     budget_kw = {} if exact_budget is None else {"exact_budget": int(exact_budget)}
+    par_kw = ({} if parallel_workers is None
+              else {"parallel_workers": int(parallel_workers)})
+    if parallel_workers is not None and mode != "fair":
+        raise ValueError(
+            "parallel_workers is a FAIR-mode feature (it splits the PIMC agent's "
+            f"k_dets determinization worlds); got mode={mode!r}")
     if intra_reuse is not None and mode != "fair":
         raise ValueError(
             "intra_reuse is a FAIR-mode feature (the within-turn carry needs the PIMC "
@@ -498,7 +516,8 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             sims=(spec.sims_per_det if sims is None else int(sims)),
             k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
             seed=int(seed), exact_endgame=bool(exact_endgame),
-            exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw, **budget_kw)
+            exact_max_k=spec.exact_max_k, **dedup_kw, **intra_kw, **budget_kw,
+            **par_kw)
     elif mode == "clairvoyant":
         total = (spec.k_dets * spec.sims_per_det) if sims is None else int(sims)
         agent = build_clairvoyant_champion(
@@ -581,6 +600,23 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             "note": "a bound, not a speedup. It is expected never to fire (largest solve "
                     "observed to date = 7,067 nodes); if it DOES fire the move is a PIMC "
                     "fallback, not the champion's exact answer.",
+        }
+
+    # k-PARALLEL: stamped ONLY when the caller actually asked for the split, on the
+    # same no-hash-drift terms as the kwargs above. Stamped even though the split is
+    # behavior-IDENTICAL, so a game log records which execution mode produced it (a
+    # latency claim is only interpretable next to the worker count).
+    if parallel_workers is not None:
+        manifest = dict(manifest)
+        manifest["parallel_workers"] = {
+            "workers": int(parallel_workers),
+            "source": "kwarg",
+            "scope": "execution only — the k_dets determinization worlds run on "
+                     "min(workers, k_dets) spawn processes and are merged by the "
+                     "SAME pooled-Q code path, in the same world order",
+            "note": "BEHAVIOR-IDENTICAL (same decks, same per-world seeds, same "
+                    "merge order — tests/test_kparallel.py). A single-GAME latency "
+                    "lever; it does NOT change play and needs no strength re-eval.",
         }
 
     agent.manifest = manifest

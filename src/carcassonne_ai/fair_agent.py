@@ -68,7 +68,10 @@ sets no environment variables). `c_puct` is HeuristicMCTS's UCT `c`
 """
 from __future__ import annotations
 
+import atexit
 import copy
+import dataclasses
+import os
 import random
 import sys
 import time
@@ -122,14 +125,19 @@ def _import_solver():
     return S
 
 
-def pool_root_stats(root, agg_n: dict, agg_w: dict) -> None:
-    """Harvest one search tree's deduped root-child stats into the PIMC pools.
+def root_stats_list(root) -> list:
+    """One search tree's deduped root-child stats as ``[(action, N, W_rootpov)]``.
 
     Dedup by child object identity, lowest action kept — exactly the base
     MCTS.best_action convention (rotations of a symmetric tile share one child
     node; without dedup that move would be pooled once per alias). W is signed
-    into the ROOT player's perspective before pooling. Verbatim the probe's
-    `_pool_root_stats` (fairness_decision_probe.py)."""
+    into the ROOT player's perspective. Verbatim the harvest half of the probe's
+    `_pool_root_stats` (fairness_decision_probe.py), split out so the k-PARALLEL
+    split can ship a world's contribution across a process boundary and have the
+    PARENT do the identical accumulation (see `_merge_root_stats`). The emitted
+    tuple carries the RAW `a` / `ch.N` / signed `ch.W` objects — no casts — so a
+    pickled round trip reproduces the same additions bit-for-bit."""
+    out: list = []
     seen: set[int] = set()
     for a in sorted(root.children):
         ch = root.children[a]
@@ -137,8 +145,27 @@ def pool_root_stats(root, agg_n: dict, agg_w: dict) -> None:
             continue
         seen.add(id(ch))
         sw = ch.W if ch.player_to_move == root.player_to_move else -ch.W
-        agg_n[a] += ch.N
-        agg_w[a] += sw
+        out.append((a, ch.N, sw))
+    return out
+
+
+def _merge_root_stats(stats, agg_n: dict, agg_w: dict) -> None:
+    """Accumulate one world's `root_stats_list` into the PIMC pools.
+
+    THE single accumulation point for both the sequential and the k-parallel
+    path: float addition is order-sensitive, so identity across the two modes
+    rests on the parent merging worlds in the SAME order (0..k_dets-1) with the
+    SAME `+=` sequence."""
+    for a, n, w in stats:
+        agg_n[a] += n
+        agg_w[a] += w
+
+
+def pool_root_stats(root, agg_n: dict, agg_w: dict) -> None:
+    """Harvest one search tree's deduped root-child stats into the PIMC pools.
+
+    (Public API unchanged — now a thin `root_stats_list` + `_merge_root_stats`.)"""
+    _merge_root_stats(root_stats_list(root), agg_n, agg_w)
 
 
 def pooled_q_argmax(agg_n: dict, agg_w: dict,
@@ -153,6 +180,179 @@ def pooled_q_argmax(agg_n: dict, agg_w: dict,
     if not eligible:            # pathological (tiny sims): never return nothing
         eligible = list(agg_n)
     return int(max(eligible, key=lambda a: (agg_w[a] / agg_n[a], agg_n[a], -a)))
+
+
+# --------------------------------------------------------------------------- #
+# ONE determinization world's search — the shared body of the SEQUENTIAL loop   #
+# and of the k-PARALLEL worker (G6 stage 1). Single source of truth: if this    #
+# function is the only place a world is searched, the two modes cannot diverge. #
+# --------------------------------------------------------------------------- #
+def search_one_world(game, evaluator, det_board: Board, root_key: str, *,
+                     sims: int, c_puct: float, seed: int,
+                     batch_size: int = 1, batch_evaluator=None,
+                     virtual_loss: float = 1.0, meeple_dedup=None,
+                     oracle_prior_mult: int | None = None,
+                     oracle_prior_eps_coef: float = 1e-3):
+    """Run ONE already-determinized world's PUCT search.
+
+    Returns ``(tree, stats, telem)`` where ``stats`` is `root_stats_list(root)`
+    and ``telem`` is the oracle-probe cost dict (all zeros / None when the probe
+    is off). The caller owns the tree (``clear()`` it, or retain it for the
+    C3-INTRA carry)."""
+    telem = {"presearch_secs": 0.0, "mainsearch_secs": 0.0,
+             "presearch_leaf_calls": 0, "mainsearch_leaf_calls": 0,
+             "override": None}
+    if oracle_prior_mult is not None:
+        # Track-F Gate A per-world pre-search: on THIS world's reshuffled deck, run a
+        # fresh champion search at mult x sims, read its deduped root visit
+        # distribution, convert it to a ROOT-prior override (identical alias-fold +
+        # eps-floor as the clairvoyant screen), then run this world's normal
+        # sims-budget search with the ROOT priors REPLACED. The pre-search tree is NOT
+        # reused into the main search (a fresh NeuralMCTS) so the probe isolates the
+        # prior channel from deeper search. Each world gets ITS OWN override (its own
+        # reshuffled deck -> its own pre-search distribution).
+        pre = NeuralMCTS(game=game, evaluator=LeafCounter(evaluator),
+                         simulations=sims * oracle_prior_mult,
+                         c_puct=c_puct, seed=seed, meeple_dedup=meeple_dedup)
+        _t = time.perf_counter()
+        pre.search(det_board)
+        counts, actions = pre.root_visit_distribution(det_board)
+        telem["presearch_secs"] = time.perf_counter() - _t
+        telem["presearch_leaf_calls"] = pre.evaluator.n
+        groups = root_action_groups(game, det_board)
+        counts_by_action = {int(a): float(c) for a, c in zip(actions, counts)}
+        override = oracle_prior_from_visits(
+            groups, counts_by_action, oracle_prior_eps_coef)
+        telem["override"] = override
+        m = NeuralMCTS(game=game, evaluator=LeafCounter(evaluator), simulations=sims,
+                       c_puct=c_puct, seed=seed, batch_size=batch_size,
+                       batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
+                       meeple_dedup=meeple_dedup)
+        m.set_root_prior_override(override)   # one-shot, survives the search's expand
+        _t = time.perf_counter()
+        m.search(det_board)
+        telem["mainsearch_secs"] = time.perf_counter() - _t
+        telem["mainsearch_leaf_calls"] = m.evaluator.n
+    else:
+        m = NeuralMCTS(game=game, evaluator=evaluator, simulations=sims,
+                       c_puct=c_puct, seed=seed, batch_size=batch_size,
+                       batch_evaluator=batch_evaluator, virtual_loss=virtual_loss,
+                       meeple_dedup=meeple_dedup)
+        m.search(det_board)
+    # deck order isn't in the key, so the reshuffled root shares the original
+    # board's key (the fallback kept verbatim from the probe).
+    root = m._nodes.get(root_key) or m._nodes[game.string_representation(det_board)]
+    return m, root_stats_list(root), telem
+
+
+# --------------------------------------------------------------------------- #
+# k-PARALLEL INFERENCE (G6 stage 1, 2026-07-28) — the k determinization worlds  #
+# are fully independent until the pooled-Q argmax, so splitting them across     #
+# processes is BEHAVIOR-IDENTICAL, not a search change. Purely a single-GAME    #
+# LATENCY lever (eval farms already saturate throughput with game-level W).     #
+#                                                                              #
+# TRANSPORT (measured 2026-07-28 on a 15-tile midgame board): the parent ships  #
+# the CURRENT board once per WORKER (pickle ~19 KiB / ~0.5 ms) plus one         #
+# int-permutation per world; the worker rebuilds each determinization locally.  #
+# Shipping the k already-determinized boards instead would cost k pickles for   #
+# no gain, and the parent-side deepcopy would stay on the critical path.        #
+#                                                                              #
+# WHY A PERMUTATION AND NOT A DECK: `reshuffled_determinization` canonicalizes  #
+# the unseen deck (sort by description) and then `random.Random.shuffle`s it.   #
+# CPython's shuffle draws `_randbelow(i+1)` for i in reversed(range(1,n)) —     #
+# it depends on len(x) ONLY, never on the elements — so shuffling               #
+# `list(range(n))` in description-sorted order consumes the IDENTICAL rng draws #
+# and yields the identical permutation. The parent therefore reproduces every   #
+# world's deck order without a single deepcopy, and the shared `det_rng` state  #
+# advances exactly as the sequential loop advances it. This equivalence is not  #
+# assumed — tests/test_kparallel.py::test_permutation_recipe_matches_reshuffle  #
+# proves it against `reshuffled_determinization` on this interpreter.           #
+# --------------------------------------------------------------------------- #
+
+# Leaf-shaping env knobs. The spawn child inherits os.environ, so these MUST
+# already agree; the worker re-checks and raises rather than silently searching
+# a different leaf (a mismatch would be invisible in the pooled stats).
+_LEAF_ENV_KEYS = (
+    "CARCASSONNE_V25_CAP", "CARCASSONNE_V25_OPP_CAP",
+    "CARCASSONNE_V25_DROP_THREE_OPEN", "CARCASSONNE_V29_MEEPLE_CURVE",
+    "CARCASSONNE_V25_MEEPLE_K", "CARCASSONNE_USE_FLAT_LEAF",
+    "CARCASSONNE_USE_CY_LEAF", "CARCASSONNE_USE_CY_REPR",
+    "CARCASSONNE_V25_VALUE_BLEND", "CARCASSONNE_MEEPLE_DEDUP",
+)
+
+_KP_WORKER: dict | None = None
+
+# Every live k-parallel pool in THIS process. A killed mp main does not reap its
+# spawn children, so the pools are tracked (not the agents — an atexit closure over
+# a bound method would pin the agent forever) and torn down at interpreter exit.
+_KP_LIVE_POOLS: set = set()
+
+
+@atexit.register
+def _kparallel_close_all() -> None:      # pragma: no cover - interpreter teardown
+    for pool in list(_KP_LIVE_POOLS):
+        _KP_LIVE_POOLS.discard(pool)
+        try:
+            pool.terminate()
+            pool.join()
+        except Exception:
+            pass
+
+
+def _kparallel_worker_init(game_spec: dict, cfg, world_kw: dict,
+                           env_fp: dict) -> None:
+    """spawn-child bootstrap: build this worker's OWN Game + heuristic-prior
+    evaluator once, then reuse them for every move of the game.
+
+    A per-worker Game is correctness-neutral: `Game`'s only mutable state is the
+    legal-move MEMO (`_legal_cache`, a pure function of the board key) and its
+    hit/miss counters. `NeuralMCTS.clear()` flushes it per world exactly as it
+    does in the sequential path."""
+    global _KP_WORKER
+    from .game_wrapper import Game
+
+    bad = {k: (env_fp.get(k), os.environ.get(k))
+           for k in _LEAF_ENV_KEYS if env_fp.get(k) != os.environ.get(k)}
+    if bad:
+        raise RuntimeError(
+            f"k-parallel worker leaf-env mismatch (parent, child): {bad} — the "
+            "worker would search a DIFFERENT leaf than the parent. Export the "
+            "production preamble before constructing the agent.")
+    game = Game(**game_spec)
+    _KP_WORKER = {
+        "game": game,
+        "evaluator": make_heuristic_prior_evaluator(game, cfg),
+        "kw": world_kw,
+    }
+
+
+def _kparallel_worker_chunk(payload):
+    """Search this worker's slice of the move's determinization worlds.
+
+    payload = (board, root_key, [(world_idx, deck_perm, seed), ...]);
+    returns (chunk_wall_secs, [(world_idx, stats, telem), ...]).
+
+    `chunk_wall_secs` is the IN-WORKER wall time (determinization rebuild + the
+    searches). The parent's `dispatch - max(chunk_wall_secs)` is therefore the
+    measured TRANSPORT + scheduling overhead of the split — the number the G6
+    latency claim has to survive."""
+    t_chunk = time.perf_counter()
+    board, root_key, jobs = payload
+    st = _KP_WORKER
+    if st is None:                      # pragma: no cover - defensive
+        raise RuntimeError("k-parallel worker used before its initializer ran")
+    game, evaluator, kw = st["game"], st["evaluator"], st["kw"]
+    out = []
+    for world_idx, perm, seed in jobs:
+        b = copy.deepcopy(board)
+        src = list(b.state.deck)
+        b.state.deck[:] = [src[i] for i in perm]   # == reshuffled_determinization
+        b._str_repr_cache = None                   # deck order isn't in the key; be safe
+        m, stats, telem = search_one_world(
+            game, evaluator, b, root_key, seed=seed, **kw)
+        m.clear()
+        out.append((world_idx, stats, telem))
+    return time.perf_counter() - t_chunk, out
 
 
 class FairHeuristicMCTSAgent:
@@ -424,6 +624,27 @@ class FairHeuristicPriorAgent:
                                 ``sims``; a positive screen needs an equal-WALL-CLOCK
                                 confirm. Mutually exclusive with ``oracle_prior_mult``.
 
+    parallel_workers            k-PARALLEL INFERENCE (G6 stage 1, 2026-07-28). None
+                                (default) = the SEQUENTIAL k-loop, byte-for-byte the
+                                deployed champion — the Android/Chaquopy bridge, which
+                                has no ``multiprocessing`` at all, only ever sees this
+                                path. An int W runs the move's ``k_dets`` worlds on
+                                ``min(W, k_dets)`` SPAWN processes (ceil(k/W) worlds
+                                each) and merges them through the SAME pooled-Q code.
+                                BEHAVIOR-IDENTICAL, not a search change: the worlds are
+                                independent until the pooled argmax, each is handed the
+                                same determinized deck and the same
+                                ``det_seed_base+100+i`` seed, and the parent accumulates
+                                them in world order so even the float additions match.
+                                It buys single-GAME LATENCY only (an eval farm already
+                                saturates throughput with game-level W, which is why
+                                this was never built before) — the prize is CL-068's
+                                clock closure, measured under an unstated single-stream
+                                assumption. Requires the champion evaluator (net=None,
+                                evaluator=None), ``batch_size=1``, and ``intra_reuse``
+                                OFF; each is rejected loudly. The pool is persistent and
+                                torn down by ``close()``/atexit.
+
     ⚠️ BIT-EXACT DEFAULT: with net=None AND evaluator=None AND batch_size=1 (the
     defaults) the agent builds the SAME make_heuristic_prior_evaluator as before and
     constructs NeuralMCTS with its own defaults — byte-for-byte the heuristic-value
@@ -453,7 +674,8 @@ class FairHeuristicPriorAgent:
                  oracle_prior_mult: int | None = None,
                  oracle_prior_eps_coef: float = 1e-3,
                  meeple_dedup: bool | None = None,
-                 intra_reuse: bool | None = None):
+                 intra_reuse: bool | None = None,
+                 parallel_workers: int | None = None):
         if k_dets < 1:
             raise ValueError(f"k_dets must be >= 1, got {k_dets}")
         if exact_max_k < 0:
@@ -490,6 +712,46 @@ class FairHeuristicPriorAgent:
                     "probe deliberately runs its pre-search on a FRESH tree to isolate the "
                     "prior channel from deeper search, which is exactly what a carried "
                     "subtree would confound. Run one or the other.")
+        # --- k-PARALLEL INFERENCE (G6 stage 1). None (default) = today's SEQUENTIAL
+        # loop, byte-for-byte. An int W runs the k worlds on min(W, k_dets) spawn
+        # processes and merges them with the SAME pooled-argmax code path. It is a
+        # LATENCY lever only — the chosen action is identical (tests/test_kparallel.py).
+        if parallel_workers is not None:
+            if int(parallel_workers) < 1:
+                raise ValueError(
+                    f"parallel_workers must be >= 1 (None = sequential), got "
+                    f"{parallel_workers}")
+            if batch_size > 1 or batch_evaluator is not None:
+                raise ValueError(
+                    "parallel_workers requires batch_size=1 and no batch_evaluator: "
+                    "leaf batching exists to amortize a GPU/IPC round trip for the NET "
+                    "candidate, whose evaluator cannot be rebuilt inside a spawn worker. "
+                    "The champion's leaf is in-process Cython and gains nothing from it.")
+            if net is not None or evaluator is not None:
+                raise ValueError(
+                    "parallel_workers supports the CHAMPION evaluator only (net=None, "
+                    "evaluator=None): the worker rebuilds "
+                    "make_heuristic_prior_evaluator(game, cfg) from a pickled cfg, and "
+                    "an arbitrary callable / a CUDA net is not transportable.")
+            if intra_carry.resolve(intra_reuse):
+                raise ValueError(
+                    "parallel_workers and intra_reuse are mutually exclusive: the "
+                    "within-turn carry retains LIVE trees between two decisions, and a "
+                    "tree that lives in a worker process cannot be re-rooted by the "
+                    "parent. Run one or the other.")
+        self._parallel_workers = None if parallel_workers is None else int(parallel_workers)
+        self.parallel_workers = self._parallel_workers   # public alias (manifest read-off)
+        self._pool = None
+        self._pool_workers = 0
+        self._pool_closed = False
+        # per-move transport cost of the parallel path (parent-side): seconds spent
+        # building the permutations + the pool round trip MINUS the worlds' own search
+        # time is not separable here, so we record the two ends we CAN measure.
+        self.kparallel_moves = 0
+        self.kparallel_dispatch_secs = 0.0   # wall time inside pool.map (search + IPC)
+        self.kparallel_prep_secs = 0.0       # parent-side permutation build + payload
+        self.kparallel_worker_secs = 0.0     # summed SLOWEST in-worker chunk per move
+        # => transport+scheduling overhead == dispatch_secs - worker_secs (+ prep).
         self._game = game
         self._cfg = cfg if cfg is not None else HeuristicPriorConfig()
         self._sims = int(sims)
@@ -640,7 +902,20 @@ class FairHeuristicPriorAgent:
         retain = self._intra_reuse and board.state.phase == GamePhase.TILES
         kept: list = []
         worlds: list = []
-        for i in range(self._k_dets):
+        # --- k-PARALLEL (G6 stage 1): run the k independent worlds on min(W, k)
+        # spawn processes. Mutually exclusive with the C3-INTRA carry (rejected at
+        # construction), so `carried` is None and `retain` False here; everything
+        # after this block — the pooled accumulators, the pooled-Q pick — is the
+        # SAME code the sequential path runs, fed the SAME per-world stats in the
+        # SAME world order.
+        k_range = range(self._k_dets)
+        if self._parallel_workers is not None:
+            k_range = range(0)                    # the sequential loop below is inert
+            for stats, telem in self._parallel_worlds(board, base, det_rng, root_key):
+                if oracle:
+                    _reached = self._absorb_world_telem(telem) and _reached
+                _merge_root_stats(stats, agg_n, agg_w)
+        for i in k_range:
             if carried is not None:
                 # SAME determinization as the tile decision (its deck is provably
                 # untouched by the placement — see intra_reuse's module docstring), and
@@ -664,56 +939,16 @@ class FairHeuristicPriorAgent:
                 worlds.append(b)
                 continue
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
+            m, stats, telem = search_one_world(
+                self._game, self._evaluator, b, root_key,
+                sims=self._sims, c_puct=self._c_puct, seed=base + 100 + i,
+                batch_size=self._batch_size, batch_evaluator=self._batch_evaluator,
+                virtual_loss=self._virtual_loss, meeple_dedup=self._meeple_dedup,
+                oracle_prior_mult=self._oracle_prior_mult,
+                oracle_prior_eps_coef=self._oracle_prior_eps_coef)
             if oracle:
-                # Track-F Gate A per-world pre-search: on THIS world's reshuffled deck,
-                # run a fresh champion search at mult x sims, read its deduped root visit
-                # distribution, convert it to a ROOT-prior override (identical alias-fold
-                # + eps-floor as the clairvoyant screen), then run this world's normal
-                # sims-budget search with the ROOT priors REPLACED. The pre-search tree is
-                # NOT reused into the main search (a fresh NeuralMCTS) so the probe isolates
-                # the prior channel from deeper search. Each world gets ITS OWN override
-                # (its own reshuffled deck -> its own pre-search distribution).
-                pre = NeuralMCTS(game=self._game, evaluator=LeafCounter(self._evaluator),
-                                 simulations=self._sims * self._oracle_prior_mult,
-                                 c_puct=self._c_puct, seed=base + 100 + i,
-                                 meeple_dedup=self._meeple_dedup)
-                _t = time.perf_counter()
-                pre.search(b)
-                counts, actions = pre.root_visit_distribution(b)
-                self.oracle_presearch_secs += time.perf_counter() - _t
-                self.oracle_presearch_leaf_calls += pre.evaluator.n
-                self.oracle_presearch_worlds += 1
-                groups = root_action_groups(self._game, b)
-                counts_by_action = {int(a): float(c) for a, c in zip(actions, counts)}
-                override = oracle_prior_from_visits(
-                    groups, counts_by_action, self._oracle_prior_eps_coef)
-                self.last_world_oracle_priors.append(override)
-                _reached = _reached and bool(override)
-                m = NeuralMCTS(game=self._game, evaluator=LeafCounter(self._evaluator),
-                               simulations=self._sims, c_puct=self._c_puct,
-                               seed=base + 100 + i,
-                               batch_size=self._batch_size,
-                               batch_evaluator=self._batch_evaluator,
-                               virtual_loss=self._virtual_loss,
-                               meeple_dedup=self._meeple_dedup)
-                m.set_root_prior_override(override)   # one-shot, survives the search's expand
-                _t = time.perf_counter()
-                m.search(b)
-                self.oracle_mainsearch_secs += time.perf_counter() - _t
-                self.oracle_mainsearch_leaf_calls += m.evaluator.n
-            else:
-                m = NeuralMCTS(game=self._game, evaluator=self._evaluator,
-                               simulations=self._sims, c_puct=self._c_puct,
-                               seed=base + 100 + i,
-                               batch_size=self._batch_size,
-                               batch_evaluator=self._batch_evaluator,
-                               virtual_loss=self._virtual_loss,
-                               meeple_dedup=self._meeple_dedup)
-                m.search(b)
-            # deck order isn't in the key, so the reshuffled root shares the
-            # original board's key (same fallback as FairHeuristicMCTSAgent).
-            root = m._nodes.get(root_key) or m._nodes[self._game.string_representation(b)]
-            pool_root_stats(root, agg_n, agg_w)
+                _reached = self._absorb_world_telem(telem) and _reached
+            _merge_root_stats(stats, agg_n, agg_w)
             if retain:
                 kept.append((m, b))   # keep the tree ALIVE for the meeple decision
                 self._game.clear_caches()   # clear()'s other half — see the note above
@@ -737,6 +972,157 @@ class FairHeuristicPriorAgent:
         if retain:
             self._intra_retain(kept, action, board, move_idx, root_key)
         return action
+
+    # --- oracle-probe telemetry (shared by the sequential + parallel paths) -----
+    def _absorb_world_telem(self, telem: dict) -> bool:
+        """Fold ONE world's oracle-probe cost record into the agent counters.
+
+        Returns whether that world's root-prior override was non-empty (the
+        `last_reached_root` conjunct). Only called on an oracle move."""
+        self.oracle_presearch_secs += telem["presearch_secs"]
+        self.oracle_presearch_leaf_calls += telem["presearch_leaf_calls"]
+        self.oracle_presearch_worlds += 1
+        self.oracle_mainsearch_secs += telem["mainsearch_secs"]
+        self.oracle_mainsearch_leaf_calls += telem["mainsearch_leaf_calls"]
+        override = telem["override"]
+        self.last_world_oracle_priors.append(override)
+        return bool(override)
+
+    # --- k-PARALLEL: the process pool + the per-move dispatch -------------------
+    def _game_spec(self) -> dict:
+        """The kwargs that rebuild THIS agent's Game inside a spawn worker."""
+        g = self._game
+        return {
+            "players": g.players,
+            "tile_sets": g.tile_sets,
+            "supplementary_rules": g.supplementary_rules,
+            "window_size": g.window_size,
+            "enable_legal_moves_cache": True,
+            "include_farm_scalars": g.include_farm_scalars,
+            "sighted": g.sighted,
+        }
+
+    def _world_kw(self) -> dict:
+        """The `search_one_world` kwargs shared by every world of every move.
+
+        MEEPLE-DEDUP is RESOLVED here rather than shipped as None: the child would
+        re-resolve it from its own env, and binding the parent's answer makes the
+        split immune to an env that differs across the process boundary."""
+        from . import meeple_equiv
+
+        return {
+            "sims": self._sims,
+            "c_puct": self._c_puct,
+            "batch_size": self._batch_size,
+            "batch_evaluator": None,      # rejected at construction
+            "virtual_loss": self._virtual_loss,
+            "meeple_dedup": bool(meeple_equiv.resolve(self._meeple_dedup)),
+            "oracle_prior_mult": self._oracle_prior_mult,
+            "oracle_prior_eps_coef": self._oracle_prior_eps_coef,
+        }
+
+    def _ensure_pool(self, workers: int):
+        """Lazily create (and memoize) the spawn pool. Persistent for the agent's
+        life — a per-move pool would spend the whole latency win on fork+import."""
+        import multiprocessing as mp
+
+        if self._pool is not None and self._pool_workers == workers:
+            return self._pool
+        self.close()
+        # Bind the leaf cfg NOW so the worker's evaluator can never fall through to
+        # its own env-built DEFAULT_CONFIG (the env is inherited, but an explicitly
+        # resolved cfg removes the dependence entirely).
+        cfg = self._cfg
+        if getattr(cfg, "leaf_cfg", None) is None:
+            cfg = dataclasses.replace(cfg, leaf_cfg=cfg.resolved_leaf_cfg())
+        env_fp = {k: os.environ.get(k) for k in _LEAF_ENV_KEYS}
+        ctx = mp.get_context("spawn")
+        try:
+            self._pool = ctx.Pool(
+                processes=workers,
+                initializer=_kparallel_worker_init,
+                initargs=(self._game_spec(), cfg, self._world_kw(), env_fp),
+            )
+        except AssertionError as e:      # "daemonic processes are not allowed..."
+            raise RuntimeError(
+                "k-parallel could not start a worker pool — this agent is running "
+                "inside a DAEMONIC process (an eval-farm worker). The lever targets "
+                "single-GAME latency; an eval farm already parallelizes at the game "
+                "level, so run the farm's agents with parallel_workers=None."
+            ) from e
+        self._pool_workers = workers
+        self._pool_closed = False
+        _KP_LIVE_POOLS.add(self._pool)
+        return self._pool
+
+    def close(self) -> None:
+        """Terminate the k-parallel pool. Idempotent; safe to call when off.
+
+        Pool workers are daemonic AND block on the task pipe, so they also exit on
+        their own if the parent dies — but a killed mp main does NOT reap spawn
+        children in general, so the lifecycle is made explicit here and registered
+        with atexit."""
+        pool, self._pool = self._pool, None
+        self._pool_workers = 0
+        if pool is not None:
+            _KP_LIVE_POOLS.discard(pool)
+            pool.terminate()
+            pool.join()
+        self._pool_closed = True
+
+    def __del__(self):                   # pragma: no cover - interpreter teardown
+        try:
+            self.close()
+        except Exception:
+            pass
+
+    def _parallel_worlds(self, board: Board, base: int, det_rng: random.Random,
+                         root_key: str):
+        """Search this move's k determinization worlds on the pool.
+
+        Yields ``(stats, telem)`` in WORLD ORDER 0..k_dets-1 — the order the
+        sequential loop merges them in, which is what makes the float accumulation
+        bit-identical.
+
+        `det_rng` is consumed here exactly as `reshuffled_determinization` would
+        consume it (one shuffle of an n-element list per world), so the agent's RNG
+        stream is the same in both modes."""
+        workers = min(self._parallel_workers, self._k_dets)
+        pool = self._ensure_pool(workers)   # OUTSIDE the timers: one-off spawn cost
+        deck = board.state.deck
+        n = len(deck)
+        t0 = time.perf_counter()
+        # Stable sort by description == the canonicalization inside
+        # reshuffled_determinization; order[j] is the ORIGINAL index of the j-th
+        # canonical tile, so after the shuffle perm[j] is the original index of the
+        # tile the sequential path would have at deck position j.
+        order = sorted(range(n), key=lambda i: deck[i].description)
+        perms = []
+        for _ in range(self._k_dets):
+            p = list(order)
+            det_rng.shuffle(p)
+            perms.append(p)
+        per = -(-self._k_dets // workers)          # ceil(k / workers)
+        payloads = []
+        for s in range(0, self._k_dets, per):
+            jobs = [(i, perms[i], base + 100 + i)
+                    for i in range(s, min(s + per, self._k_dets))]
+            payloads.append((board, root_key, jobs))
+        self.kparallel_prep_secs += time.perf_counter() - t0
+        t1 = time.perf_counter()
+        results = pool.map(_kparallel_worker_chunk, payloads, chunksize=1)
+        self.kparallel_dispatch_secs += time.perf_counter() - t1
+        self.kparallel_moves += 1
+        by_world = {}
+        slowest = 0.0
+        for chunk_secs, chunk_out in results:
+            slowest = max(slowest, chunk_secs)
+            for world_idx, stats, telem in chunk_out:
+                by_world[world_idx] = (stats, telem)
+        # The critical path a perfect (zero-overhead) split would have cost.
+        self.kparallel_worker_secs += slowest
+        for i in range(self._k_dets):
+            yield by_world[i]
 
     # --- C3-INTRA: within-turn tree carry (flag-gated; see intra_reuse.py) ------
     def _intra_retain(self, kept: list, action: int, board: Board,
