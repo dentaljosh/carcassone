@@ -426,8 +426,14 @@ on exactly this contrast. Cheap ≠ strong.
 
 ## 7. Provenance and honesty notes
 
-* **Wall-clock:** ~2 h 05 m end to end (first census 12:38Z → last artifact 14:30Z),
-  including a full re-run of §2 after a session restart and a second run of §3.
+* **Wall-clock** (local, from git/artifact timestamps, not estimated):
+  * §1 merge + 265 tests + both fixes — committed **04:14:36** (`5e731de`, `7b5fc1a`).
+  * First §2 attempt 04:15 → **killed by a Claude session restart** ~04:21.
+  * **Dead gap 04:21 → 08:44** — nothing running; the batch was resumed from a cold
+    census, not from scrollback.
+  * Benches 08:44 → **10:17:29** (last artifact), commit **10:20:14** (`fe2f69c`).
+  * **≈1 h 55 m of actual execution**; 6 h 06 m from first commit to last, the difference
+    being the restart gap.
 * **Every number above is read off a committed JSON/manifest**, not from console
   scrollback. The one place scrollback existed (the killed §2 run) was **discarded**.
 * **Contention disclosure.** The batch was promised an exclusive box. It did not get one:
