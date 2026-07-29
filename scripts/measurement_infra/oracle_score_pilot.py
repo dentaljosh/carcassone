@@ -1,19 +1,52 @@
 #!/usr/bin/env python3
 """ORACLE-SCORED DISAGREEMENT PILOT — does the deeper pick IMPROVE, or merely MOVE?
 
-STATUS 2026-07-28: PILOT RUN (20/20 positions, 0 failed, crn_verified_all, ~28 min at
-W16) — **THE FULL RUN IS NOT FUNDED: it is UNDERPOWERED.** The deliverable sd landed on
+STATUS 2026-07-28 (EVENING, supersedes the morning banner below): EXTENDED TO n=100 ON
+--resume (100/100 positions, 0 failed, crn_verified_all, M=32, ~81 min at W16) — **THE
+QUESTION IS ANSWERED: THE DEEPER PICK IS GENUINELY BETTER.** Mean delta +0.7375 pts per
+disagreement (sign = V(11008 pick) - V(2752 pick)); **CITE THE CLUSTER-ROBUST z, NOT the
+summary's naive one** — the bank's records are NOT independent (628 records span only 385
+distinct roots; this sample of 100 covers 89). Recomputed off the on-disk records:
+cluster-robust sandwich on root **z +2.97** (se 0.2486, p 0.0030), naive z +3.07,
+conservative root-collapsed +0.5920 / z +2.45; cluster bootstrap of roots 95% CI
+[+0.251, +1.226], P(<=0) 0.0014; design effect only 1.067. The morning screen's +1.91 was
+REGRESSION TO THE MEAN, not a recompute (resume verified non-recomputing; new-80-only
++0.4434). => 2752 is NOT at the knee, corroborating CL-060's +49.85 elo with an
+instrument that has no opponent, no elo and no ruler compression. **THE FULL 628-POSITION
+RUN IS NOW UNNECESSARY, not merely unfunded** — it was sized to detect +0.07 pts and the
+effect is ~10x that. ⚠️ **UNDERSTANDING, NOT A DEPLOY LEVER: CL-068 stands — 11008 costs
+11.2 s/move = 91% of a 15-min sudden-death clock, so the strength is clock-unusable; any
+citation of "deeper search finds better moves" must travel with that sentence.**
+⚠️ **SOLE REMAINING THREAT TO VALIDITY: same-family self-preference** — the oracle is a
+clairvoyant PUCT search on the SAME frozen curve125 leaf as the agents whose picks it
+judges. That is a BIAS, so extension cannot shrink it and nothing measured excludes it.
+Cheapest discriminator (NAMED, NOT RUN): re-score a ~30-position subset with the
+continuation swapped OUT of the family — the Tier-1 greedy RuleBasedPlayer (v1 1-ply
+leaf, no search, no curve125), same world seeds and CRN pairing; ~26 ms/move so the whole
+rescore is minutes. Read it as a SIGN check only, NEVER a magnitude check. Raising
+--oracle-sims addresses only the secondary weak-continuation threat (the family is
+unchanged) and is NOT a discriminator. Read-out:
+measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md; DECISIONS 2026-07-28
+(evening amendment); log measurement/classical_search/oracle_score_pilot_ext.log.
+
+STATUS 2026-07-28 (MORNING, superseded above on the MEAN; its SD deliverable stands
+unchanged at n=100 — 2.406 pts at M=32): PILOT RUN (20/20 positions, 0 failed,
+crn_verified_all, ~28 min at W16) — **THE FULL RUN IS NOT FUNDED: it is UNDERPOWERED.**
+The deliverable sd landed on
 the memo's pessimistic branch: per-position sd of the CRN-paired delta = 2.43 pts at
 M=32, with an irreducible between-position floor of ~1.51 pts (within-position noise is
 115.9/M, so more worlds cannot rescue it). Implied z for the full 628-position bank at
 the pre-registered +0.07 pts assumed effect = 0.72 (M=32) / 0.87 (M=64). The approach is
 PARKED with its pilot data attached. Re-open bars (any one): a ~5000-position bank; or
-evidence the true per-disagreement effect exceeds ~3x the assumed 0.07 pts; or a
+evidence the true per-disagreement effect exceeds ~3x the assumed 0.07 pts [**MET** — the
+n=100 extension measured ~10x]; or a
 variance-reduction design change attacking the BETWEEN-position term (world-CRN only
 touches the within-position part). ⚠️ Read DECISIONS 2026-07-28 item 5 before re-opening:
 this pilot's OWN mean delta is +1.91 pts (se 0.54, z +3.53), ~27x the assumed effect —
 either the probe is mis-sized or the same-family oracle self-prefers the deeper pick, and
-that is unresolved. Data: /mnt/c/carc-shared/classical_search/oracle_score_pilot/
+that is unresolved [**RESOLVED in favour of "real, but ~2.5x smaller than the screen
+said"; the self-preference half is NOT resolved** — see the evening banner]. Data:
+/mnt/c/carc-shared/classical_search/oracle_score_pilot/
 {manifest,summary}.json; measurement/classical_search/oracle_score_pilot.log.
 
 PILOT ONLY. Nothing here promotes anything; `governance/PRODUCTION.yaml` is untouched by
