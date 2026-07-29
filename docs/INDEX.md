@@ -37,6 +37,7 @@
 | [../measurement/level2/LEVEL2_L23_VERDICT.md](../measurement/level2/LEVEL2_L23_VERDICT.md) | L2-3 endgame regret (CL-025) | VERDICT |
 | [../measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md](../measurement/clairvoyance/CLAIRVOYANCE_GAP_VERDICT.md) | Clairvoyance gap (CL-022) | VERDICT |
 | [../measurement/level2/LEVEL2_LADDER_PROTOCOL.md](../measurement/level2/LEVEL2_LADDER_PROTOCOL.md) · [LEVEL2_L23_PROTOCOL.md](../measurement/level2/LEVEL2_L23_PROTOCOL.md) · [CLAIRVOYANCE_GAP_PROTOCOL.md](../measurement/clairvoyance/CLAIRVOYANCE_GAP_PROTOCOL.md) | Pre-registered protocols for the above | pre-registered |
+| [../measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md](../measurement/classical_search/DEDUP_INTRA_SCREEN_REPORT_20260728.md) · [G2_CONFIRM_READOUT_20260728.md](../measurement/classical_search/G2_CONFIRM_READOUT_20260728.md) · [ORACLE_PILOT_EXT_READOUT_20260728.md](../measurement/classical_search/ORACLE_PILOT_EXT_READOUT_20260728.md) | The 2026-07-28 verdict batch: meeple-dedup KILLED + intra-carry PARKED (n=1200 confirm) · "halving is free" REFUTED (−53.4, 3σ) · oracle-scored disagreements MEASURED (2752 not at the knee, cluster-robust z +2.97; same-family caveat open) | VERDICTs |
 
 ## Research & audits (reference)
 | Doc | Role | Status |
