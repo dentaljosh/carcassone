@@ -413,6 +413,112 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
     return FairHeuristicPriorAgent(game, cfg, **kw)
 
 
+# --------------------------------------------------------------------------- #
+# NET-FORWARD BACKEND — which device computes the fair-net-prior candidate's      #
+# policy forward. Canonical definition lives in `coreml_evaluator` (a leaf module #
+# with no factory dependency); re-exported here so harnesses have ONE public seam #
+# and the factory owns the manifest stamp, exactly like exact_budget /            #
+# parallel_workers above.                                                         #
+# --------------------------------------------------------------------------- #
+from .coreml_evaluator import (  # noqa: E402  (kept next to its users)
+    DEFAULT_NET_BACKEND,
+    NET_BACKENDS,
+    resolve_net_backend,
+)
+
+__all_net_backend__ = (NET_BACKENDS, DEFAULT_NET_BACKEND, resolve_net_backend)
+
+
+def net_backend_manifest_block(backend: str, *, model_path=None,
+                               model_sha256=None, compute_units=None,
+                               source: str = "kwarg") -> dict:
+    """The manifest stamp for a non-default net-forward backend.
+
+    Shaped like the ``exact_budget`` / ``parallel_workers`` blocks and stamped on the
+    SAME no-hash-drift terms: emitted ONLY when the caller actually bound a backend, so
+    a candidate built without the kwarg carries a manifest byte-identical to the
+    pre-feature one.
+
+    Unlike ``parallel_workers`` this is NOT behaviour-identical. fp16 on the ANE is a
+    different arithmetic from fp32 on CUDA: the priors differ in the last bits and can
+    reorder near-ties, so the agent is a genuinely different player and its strength
+    claim is its own. That is the whole point of the M5 cell, and it is why the block
+    records the artifact hash — a strength number is only interpretable next to the
+    exact .mlpackage that produced it.
+    """
+    return {
+        "backend": str(backend),
+        "default": DEFAULT_NET_BACKEND,
+        "source": source,
+        "model_path": None if model_path is None else str(model_path),
+        "model_sha256": model_sha256,
+        "compute_units": compute_units,
+        "scope": "the POLICY forward only. The value stays the frozen champion v2.9 "
+                 "leaf, computed in-process by the same Cython float leaf as the "
+                 "torch backend — the backend cannot touch it.",
+        "mask": "applied HOST-side in float32 (masked_fill(-inf) then softmax), NOT "
+                "baked into the CoreML graph, so the only fp16 effect is on the "
+                "logits themselves (coreml_evaluator DESIGN DECISION 1).",
+        "note": "NOT behaviour-identical to the torch backend — fp16 accelerator "
+                "arithmetic perturbs the priors and can reorder near-ties. This agent "
+                "is NOT the deployed champion of governance/PRODUCTION.yaml.",
+    }
+
+
+def build_fair_netprior_candidate(game, *, cfg=None, net=None, handles=None,
+                                  coreml_model=None, net_backend=None,
+                                  sighted_game=None, sighted=None,
+                                  sims=_UNSET, k_dets=_UNSET, seed=_UNSET,
+                                  exact_endgame=_UNSET, exact_max_k=_UNSET,
+                                  min_pooled_visits=_UNSET, exact_budget=_UNSET,
+                                  batch_size=_UNSET, batch_evaluator=_UNSET,
+                                  virtual_loss=_UNSET):
+    """Construct the CL-067 fair-net-prior CANDIDATE: NET policy priors + the FROZEN
+    champion v2.9 leaf value, on the chosen forward backend.
+
+    One entry point for the agent the equal-wall-clock gate measured, so the M5/ANE cell
+    and the desktop CUDA cell differ in exactly ONE argument (``net_backend``) rather
+    than in two hand-assembled construction sites.
+
+    ``net_backend`` follows the ``exact_budget`` / ``parallel_workers`` convention:
+    None means "do not pass it at all", i.e. the torch resolution that existed before
+    this kwarg — so an unset call is byte-identical and carries no manifest key. When
+    it IS set, ``agent.manifest["net_backend"]`` is stamped (see
+    ``net_backend_manifest_block``).
+
+    ``cfg=None`` defaults to the production curve125 config — the same leaf the
+    candidate's net was distilled against, and the leaf ``_assert_netprior_leaf``
+    requires. Everything left at ``_UNSET`` falls through to the agent's own defaults.
+    """
+    from .heuristic_prior_mcts import make_fair_net_prior_evaluator
+
+    if cfg is None:
+        cfg = production_prior_cfg()
+    backend = resolve_net_backend(net_backend)
+
+    evaluator = make_fair_net_prior_evaluator(
+        cfg, net=net, handles=handles, coreml_model=coreml_model,
+        net_backend=net_backend, sighted_game=sighted_game, sighted=sighted)
+
+    agent = build_fair_champion(
+        game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed,
+        exact_endgame=exact_endgame, exact_max_k=exact_max_k,
+        min_pooled_visits=min_pooled_visits, exact_budget=exact_budget,
+        evaluator=evaluator, batch_size=batch_size,
+        batch_evaluator=batch_evaluator, virtual_loss=virtual_loss)
+
+    # Provenance the harness manifest reads back off the agent.
+    agent.netprior_evaluator = evaluator
+    agent.net_backend = backend
+    if net_backend is not None:
+        agent.manifest = {"net_backend": net_backend_manifest_block(
+            backend,
+            model_path=getattr(coreml_model, "carc_path", None),
+            compute_units=getattr(coreml_model, "carc_compute_units", None),
+        )}
+    return agent
+
+
 def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
                                reuse_tree=_UNSET, meeple_dedup=_UNSET):
     """Construct the clairvoyant PUCT champion (HeuristicPriorAgent) — the dev/ruler

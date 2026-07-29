@@ -541,6 +541,8 @@ def make_fair_net_prior_evaluator(
     *,
     net=None,
     handles=None,
+    coreml_model=None,
+    net_backend: str | None = None,
     sighted_game: Game | None = None,
     device=None,
     sighted: bool | None = None,
@@ -559,14 +561,22 @@ def make_fair_net_prior_evaluator(
     (which keeps heuristic PRIORS + swaps in a net VALUE): here we keep the frozen
     leaf VALUE and swap in the net PRIORS.
 
-    The net priors come from EITHER:
+    The net priors come from ONE OF:
       * ``handles`` — a carc-orch SHM ``ServerHandles`` (GPU-batched forwards; the
         PRODUCTION stage-2 path). The server owns the only (GPU) net; each worker
         ships (obs, scalars, mask) over shared memory and reads back the masked-
         softmax priors. The remote's VALUE is DISCARDED (we use the frozen leaf).
       * ``net`` — a per-worker CPU ``CarcassonneNet`` (the fallback / test path).
+      * ``coreml_model`` — an Apple CoreML ``MLModel`` on ``CPU_AND_NE``, selected by
+        ``net_backend="coreml"``. THE ANE PATH: the CL-067 equal-wall-clock gate
+        (``measurement/classical_search/NETPRIOR_EQTIME_GATE_20260728.md`` §6) ruled the
+        desktop CUDA batch-1 forward a WASH at r ~ 3.0 and fixed a reopen condition of
+        ``r = forward_ms / search_ms_per_sim <= ~1.5``. The ANE measures r ~ 0.73. This
+        branch is what lets the M5 cell put a real agent's forwards through it.
 
-    Exactly one of ``net`` / ``handles`` must be given (handles wins if both).
+    Exactly one transport is used. ``net_backend`` selects it explicitly; when left at
+    None the resolution is the pre-existing one (handles beat net), so every existing
+    caller is byte-identical.
 
     Parameters
     ----------
@@ -578,6 +588,17 @@ def make_fair_net_prior_evaluator(
                                 resolved rep (81ch/42 sighted, or 78ch/10 non-sighted)
                                 — checked here, fail-loud.
     handles : ServerHandles     carc-orch SHM handles (see ``connect_shm``).
+    coreml_model                an Apple CoreML model object (duck-typed on
+                                ``.predict``); load it with
+                                ``coreml_evaluator.load_coreml_model``. Requires
+                                ``net_backend="coreml"`` — passing the model without
+                                selecting the backend RAISES rather than silently
+                                running torch, because a run that thinks it measured
+                                the ANE and did not is the exact failure this cell
+                                exists to avoid.
+    net_backend : str | None    "torch" | "coreml"; None (default) == "torch" and
+                                resolves the transport exactly as before this kwarg
+                                existed.
     sighted_game : Game         the encoder for the net forward (built here if None).
                                 Despite the name it may be EITHER rep; when given, it
                                 is authoritative and ``sighted`` must not contradict it.
@@ -597,7 +618,39 @@ def make_fair_net_prior_evaluator(
     #     encode rep (see _resolve_fair_net_prior_rep — fail-loud, no rep guessing).
     sighted_game, rep = _resolve_fair_net_prior_rep(sighted_game, sighted)
 
-    if handles is not None:
+    from .coreml_evaluator import resolve_net_backend
+
+    backend = resolve_net_backend(net_backend)
+    if coreml_model is not None and backend != "coreml":
+        raise ValueError(
+            "make_fair_net_prior_evaluator got a `coreml_model` but net_backend "
+            f"resolved to {backend!r}. Pass net_backend='coreml' to use it — silently "
+            "running the torch forward would mislabel which device produced the "
+            "measurement.")
+
+    if backend == "coreml":
+        # Apple ANE via CoreML. Mirrors the CPU-net branch below exactly — the SAME
+        # masked-softmax-over-legal prior contract, the same 0.0 value sentinel that the
+        # frozen leaf overrides — but the forward is an MLModel.predict on CPU_AND_NE.
+        # The mask is applied host-side in float32; see coreml_evaluator's DESIGN
+        # DECISION 1 for why it is not baked into the graph.
+        from .coreml_evaluator import assert_coreml_rep, make_coreml_policy_evaluator
+
+        if coreml_model is None:
+            raise ValueError(
+                "net_backend='coreml' needs a `coreml_model` (load it with "
+                "coreml_evaluator.load_coreml_model)")
+        # No parameters to introspect, so the rep guard reads the model's declared
+        # input shape instead. Same fail-loud contract as _validate_fair_net_prior_dims.
+        assert_coreml_rep(coreml_model, rep)
+        _base_pol = make_coreml_policy_evaluator(coreml_model, sighted_game)
+
+        def _net_priors(board: Board):
+            return _base_pol(board)[0]   # (priors[A], 0.0) -> priors
+
+        _transport = (f"CoreML MLModel "
+                      f"({getattr(coreml_model, 'carc_compute_units', 'unknown units')})")
+    elif handles is not None:
         # carc-orch SHM: the server (a TorchScript net at the RESOLVED rep — 81ch/42
         # sighted or 78ch/10 non-sighted) batches the policy forward across all workers.
         # The remote returns masked-softmax priors already (export_torchscript bakes the
@@ -627,7 +680,8 @@ def make_fair_net_prior_evaluator(
         _transport = "per-worker CPU net"
     else:
         raise ValueError(
-            "make_fair_net_prior_evaluator needs a CPU `net` or carc-orch `handles`"
+            "make_fair_net_prior_evaluator needs a CPU `net`, carc-orch `handles`, "
+            "or a `coreml_model` with net_backend='coreml'"
         )
 
     def evaluator(board: Board):
@@ -643,8 +697,11 @@ def make_fair_net_prior_evaluator(
     evaluator.sighted_game = sighted_game
     evaluator.rep = rep                 # resolved encode rep (provenance; manifest)
     evaluator.sighted = rep["sighted"]
+    evaluator.net_backend = backend     # "torch" | "coreml" (provenance; manifest)
     if net is not None:
         evaluator.net = net
+    if backend == "coreml":
+        evaluator.coreml = _base_pol    # exposes .counters / .compute_units / .model_path
     return evaluator
 
 
@@ -672,6 +729,8 @@ def make_fair_net_prior_batch_evaluator(
     *,
     net=None,
     handles=None,
+    coreml_model=None,
+    net_backend: str | None = None,
     sighted_game: Game | None = None,
     device=None,
     sighted: bool | None = None,
@@ -699,6 +758,29 @@ def make_fair_net_prior_batch_evaluator(
     """
     _leaf_value, leaf_cfg = _fair_net_prior_leaf_value_fn(cfg)
     sighted_game, rep = _resolve_fair_net_prior_rep(sighted_game, sighted)
+
+    from .coreml_evaluator import resolve_net_backend
+
+    if resolve_net_backend(net_backend) == "coreml" or coreml_model is not None:
+        # DELIBERATELY UNSUPPORTED, not "not yet implemented".
+        #
+        # The exported .mlpackage has a FIXED batch-1 input shape — that is the shape
+        # the 0.42 ms / 100%-on-NPU measurement was taken at, and a flexible or larger
+        # batch is a different artifact with a different (unmeasured) residency. So a
+        # "batch" CoreML evaluator could only loop predict() per board, which buys no
+        # transport win whatsoever while batch_size>1 still engages NeuralMCTS's
+        # VIRTUAL LOSS and therefore CHANGES THE SEARCH.
+        #
+        # Paying a search approximation for zero speedup, in the one cell whose entire
+        # purpose is an honest equal-wall-clock comparison, is strictly worse than
+        # running serial. Raise so the M5 cell cannot be launched with batch_size>1 by
+        # copy-paste from the CUDA gate's command line (which used --batch-size 6).
+        raise ValueError(
+            "net_backend='coreml' does not support a batch evaluator: the exported "
+            "model is fixed batch-1 (the shape the ANE residency was measured at), so "
+            "batching could only loop predict() — no transport win, but batch_size>1 "
+            "would still engage virtual loss and change the search. Run the CoreML "
+            "candidate at batch_size=1.")
 
     if handles is not None:
         # carc-orch SHM: ONE request carrying up to MAX_K boards (obs/scalars/mask

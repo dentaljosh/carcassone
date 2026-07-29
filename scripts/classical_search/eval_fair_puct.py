@@ -954,7 +954,8 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
                    sighted_game=None, rep=None, batch_size=1,
                    oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
-                   meeple_dedup=None, intra_reuse=None):
+                   meeple_dedup=None, intra_reuse=None,
+                   coreml_model=None, net_backend=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
 
     ``oracle_prior_mult`` (Track-F Gate A, CANDIDATE side only; None = OFF) engages the
@@ -1004,10 +1005,11 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
             game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed, exact_endgame=False,
             **_oracle_kw, **_dedup_kw, **_intra_kw)
     elif info == "fair-netprior":
-        if net is None and handles is None:
+        if net is None and handles is None and coreml_model is None:
             raise ValueError(
-                "info=fair-netprior requires a loaded net (--net) or orch handles "
-                "(--orch-shm-name)")
+                "info=fair-netprior requires a loaded net (--net), orch handles "
+                "(--orch-shm-name), or a CoreML model (--net-backend coreml "
+                "--coreml-model)")
         # Encode rep: the explicit sighted_game (built per-side in _worker_init / _smoke
         # WITH include_farm_scalars) is authoritative. If only `rep` reached us, build the
         # encoder from it here — a bare `sighted=` bool CANNOT express the non-sighted
@@ -1018,16 +1020,26 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                                 include_farm_scalars=bool(rep.get("include_farm_scalars", False)))
         _sighted_arg = (None if sighted_game is not None
                         else (bool(rep["sighted"]) if rep else None))
+        # NET-FORWARD BACKEND (None/"torch" = the pre-existing path, byte-identical).
+        # "coreml" routes the policy forward through an Apple .mlpackage on CPU_AND_NE —
+        # the ANE path the equal-wall-clock gate's reopen condition (r <= ~1.5) names.
+        # The torch `net` is NOT loaded in that mode; only the rep comes from --net.
         evaluator = make_fair_net_prior_evaluator(
-            cfg, net=net, handles=handles, sighted_game=sighted_game,
+            cfg, net=net, handles=handles, coreml_model=coreml_model,
+            net_backend=net_backend, sighted_game=sighted_game,
             sighted=_sighted_arg,
         )
         # LATENCY (2026-07-16): batch_size>1 collects that many leaves under virtual loss
         # -> ONE orch forward instead of a blocking IPC+GPU round-trip per expansion. Only
         # the net-prior CANDIDATE batches; the fair-champion opponent is net-free + serial.
+        # The CoreML backend REFUSES to build one (fixed batch-1 artifact: batching
+        # would buy no transport win while batch_size>1 still engages virtual loss and
+        # changes the search). That raise is the guard against copy-pasting the CUDA
+        # gate's `--batch-size 6` onto the ANE cell.
         batch_evaluator = (
             make_fair_net_prior_batch_evaluator(
-                cfg, net=net, handles=handles, sighted_game=sighted_game,
+                cfg, net=net, handles=handles, coreml_model=coreml_model,
+                net_backend=net_backend, sighted_game=sighted_game,
                 sighted=_sighted_arg)
             if batch_size > 1 else None)
         prefix = champion_factory.build_fair_champion(
@@ -1351,7 +1363,8 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  cand_leaf_cfg=None, rep=None, opponent="h800", opp_leaf_cfg=None,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
-                 opp_k_dets=None, meeple_dedup=None, intra_reuse=None):
+                 opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
+                 netprior_backend=None):
     _W["info"] = info
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
@@ -1396,11 +1409,35 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     # `workers` slots, so slot w on each is this worker's. Popping twice would exhaust
     # the queue and hand a second worker the same slot.
     _wid = id_q.get() if (id_q is not None and (orch_shm_name or opp_orch_shm_name)) else None
+    # NET-FORWARD BACKEND for the fair-netprior candidate. `netprior_backend` is
+    # (net_backend, coreml_model_path, compute_units) or None. None keeps every
+    # pre-existing call byte-identical; it is ONE packed positional rather than three so
+    # the two long `initargs=` tuples in main() grow by one entry, not three.
+    _W["net_backend"], _cml_path, _cml_units = (netprior_backend or (None, None, None))
+    _W["coreml_model"] = None
+
     if info == "fair-netprior":
         # The distilled-agent arm. The rep (sighted 81ch/42 vs non-sighted 78ch/10) was
         # resolved in main() from the CHECKPOINT and is passed down, so every worker
         # encodes exactly the rep the net was trained on.
-        if orch_shm_name:
+        if _W["net_backend"] == "coreml":
+            # Apple ANE. Each worker loads its OWN MLModel — a CoreML model is not
+            # fork-safe and each worker predicts independently. The ANE is a SHARED
+            # device that serialises requests, so W workers do NOT give W× the forward
+            # throughput; the runbook sizes W accordingly and the equal-time probe must
+            # be run at the SAME W as the cell (the gate's ops note 4: "W was
+            # load-bearing and must not be optimised").
+            #
+            # NOTE the torch net is deliberately NOT loaded here. --net is still
+            # required and is still the rep + provenance anchor, but in this mode it is
+            # read once in main(), never in a worker.
+            from carcassonne_ai.coreml_evaluator import load_coreml_model
+            if not _cml_path:
+                raise SystemExit(
+                    "FATAL: --net-backend coreml needs --coreml-model <.mlpackage>")
+            _W["coreml_model"] = load_coreml_model(_cml_path, compute_units=_cml_units)
+            _W["sighted_game"] = Game(sighted=bool(rep["sighted"]))
+        elif orch_shm_name:
             # carc-orch SHM: the GPU server owns the only net and returns masked-softmax
             # PRIORS; the value is the local frozen leaf. Size the SHM slots from the
             # RESOLVED rep — hardcoding 81/42 would corrupt a non-sighted server's I/O.
@@ -1518,6 +1555,8 @@ def _play_one(args) -> GameResult | None:
                            seed, Game(enable_legal_moves_cache=True),
                            net=_W.get("net"), net_mode=_W["net_mode"],
                            net_lambda=_W["net_lambda"], handles=_W.get("handles"),
+                           coreml_model=_W.get("coreml_model"),
+                           net_backend=_W.get("net_backend"),
                            sighted_game=_W.get("sighted_game"), rep=_W.get("rep"),
                            batch_size=_W.get("batch_size", 1),
                            oracle_prior_mult=_W.get("oracle_prior_mult"),
@@ -1779,6 +1818,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
     # net (pure plumbing proof — NO training). Other arms ignore the net.
     smoke_net = None
     smoke_sighted_game = None
+    smoke_coreml_model = None
     if args.info == "fair-net":
         smoke_net = (_load_net(args.net, device="cpu") if args.net
                      else _random_sighted_net(device="cpu",
@@ -1795,6 +1835,15 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
             smoke_net, rep = _random_net_rep(
                 sighted=True, device="cpu", value_global_pool=args.value_global_pool)
         smoke_sighted_game = Game(sighted=bool(rep["sighted"]))
+        if getattr(args, "net_backend", None) == "coreml":
+            # The smoke is the ONLY cheap place to find out that the .mlpackage does not
+            # load, or was exported at the wrong rep, before n=400 games commit to it.
+            from carcassonne_ai.coreml_evaluator import load_coreml_model
+            smoke_coreml_model = load_coreml_model(
+                args.coreml_model, compute_units=args.coreml_compute_units)
+            smoke_net = None      # the coreml branch must not fall back to torch
+            print(f"[smoke] fair-netprior forward = CoreML {args.coreml_model} "
+                  f"({args.coreml_compute_units})")
         print(f"[smoke] fair-netprior priors = {'ckpt ' + args.net if args.net else 'RANDOM'} "
               f"net | rep={'SIGHTED' if rep['sighted'] else 'NON-SIGHTED'} "
               f"{rep['n_input_channels']}ch/{rep['n_scalar_features']}sc "
@@ -1832,7 +1881,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                oracle_prior_mult=args.oracle_prior_mult,
                                oracle_prior_eps_coef=args.oracle_prior_eps_coef,
                                meeple_dedup=(True if args.meeple_dedup else None),
-                               intra_reuse=(True if args.intra_reuse else None))
+                               intra_reuse=(True if args.intra_reuse else None),
+                               coreml_model=smoke_coreml_model,
+                               net_backend=getattr(args, "net_backend", None))
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
@@ -2005,6 +2056,27 @@ def main(argv=None) -> int:
                          "Under --smoke this may be omitted (a random net is used). "
                          "With --orch-shm-name it is NOT loaded per-worker (the server owns the "
                          "net) but is still recorded in the manifest for provenance.")
+    ap.add_argument("--net-backend", choices=("torch", "coreml"), default=None,
+                    help="fair-netprior: which device computes the POLICY forward. "
+                         "Default (unset) = torch, byte-identical to every run on "
+                         "record. `coreml` routes it through --coreml-model on Apple's "
+                         "Neural Engine — the r<=~1.5 reopen condition of "
+                         "measurement/classical_search/NETPRIOR_EQTIME_GATE_20260728.md "
+                         "§6. In that mode --net is still REQUIRED (it anchors the rep "
+                         "and the manifest provenance) but is never loaded in a worker. "
+                         "⚠️ NOT behaviour-identical: fp16 accelerator arithmetic can "
+                         "reorder near-tied priors, so the ANE agent is its own player "
+                         "— run scripts/m5_bench/verify_coreml_evaluator.py first and "
+                         "cite it. Requires --batch-size 1.")
+    ap.add_argument("--coreml-model", type=str, default=None,
+                    help="path to the .mlpackage for --net-backend coreml (build it "
+                         "with scripts/m5_bench/export_cl067_coreml.py; its sidecar "
+                         "manifest carries the source-checkpoint sha256).")
+    ap.add_argument("--coreml-compute-units", type=str, default="CPU_AND_NE",
+                    help="CoreML compute units, bound at LOAD time. CPU_AND_NE "
+                         "(default) deliberately EXCLUDES the GPU — ALL lets CoreML "
+                         "place the graph on a different device than the one the "
+                         "0.42 ms / r~0.73 row was measured on.")
     ap.add_argument("--net-mode", choices=("replace", "residual"), default=None,
                     help="fair-net value combiner: residual (default, C-cheap v2) = "
                          "heur_value + net_lambda*net_value (clipped); replace (CL-049) = "
@@ -2506,6 +2578,34 @@ def main(argv=None) -> int:
               f"(inferred from the checkpoint) | priors=net_policy_head "
               f"value=frozen_v29_curve125_leaf", flush=True)
 
+    # NET-FORWARD BACKEND (fair-netprior only). Packed into ONE positional so the two
+    # long `initargs=` tuples grow by one entry. None == the pre-existing torch path.
+    _netprior_backend = None
+    if args.net_backend or args.coreml_model:
+        if args.info != "fair-netprior":
+            ap.error("--net-backend / --coreml-model apply to --info fair-netprior only")
+        if args.net_backend == "coreml":
+            if not args.coreml_model:
+                ap.error("--net-backend coreml requires --coreml-model <.mlpackage>")
+            if not Path(args.coreml_model).exists():
+                ap.error(f"--coreml-model: no such path {args.coreml_model}")
+            if args.batch_size > 1:
+                # Would raise in the worker anyway; failing in main() costs 0 games.
+                ap.error("--net-backend coreml requires --batch-size 1 (the exported "
+                         "model is fixed batch-1; batching would engage virtual loss "
+                         "for no transport win)")
+            if args.orch_shm_name:
+                ap.error("--net-backend coreml and --orch-shm-name are two different "
+                         "forward transports; pick one")
+        elif args.coreml_model:
+            ap.error("--coreml-model given without --net-backend coreml")
+        _netprior_backend = (args.net_backend, args.coreml_model,
+                             args.coreml_compute_units)
+        print(f"[fair-netprior] net_backend={args.net_backend} "
+              f"model={args.coreml_model} units={args.coreml_compute_units}\n"
+              f"[fair-netprior] ⚠️ NOT byte-identical to the torch backend (fp16 can "
+              f"reorder near-tied priors) — cite verify_coreml_evaluator.py", flush=True)
+
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
 
@@ -2616,6 +2716,14 @@ def main(argv=None) -> int:
                      # only fair-netprior swaps in the net policy head.
                      "priors_source": ("net_policy_head" if _NP
                                        else "heuristic_softmax_dleaf_tau"),
+                     # NET-FORWARD BACKEND: stamped ONLY when the caller actually bound
+                     # one, on the same no-drift terms as champion_factory's
+                     # exact_budget / parallel_workers blocks — a run that did not pass
+                     # the flag carries a manifest byte-identical to the pre-feature one.
+                     **({"net_backend": champion_factory.net_backend_manifest_block(
+                            args.net_backend, model_path=args.coreml_model,
+                            compute_units=args.coreml_compute_units, source="cli")}
+                        if _netprior_backend else {}),
                      "rep": (("sighted" if netprior_rep["sighted"] else "non-sighted")
                              if _NP else None),
                      "rep_dims": ({"n_input_channels": netprior_rep["n_input_channels"],
@@ -3031,7 +3139,8 @@ def main(argv=None) -> int:
                           args.opp_sims, args.oracle_prior_mult,
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
-                          (True if args.intra_reuse else None)))
+                          (True if args.intra_reuse else None),
+                          _netprior_backend))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -3043,7 +3152,8 @@ def main(argv=None) -> int:
                           args.batch_size, args.opp_sims, args.oracle_prior_mult,
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
-                          (True if args.intra_reuse else None)))
+                          (True if args.intra_reuse else None),
+                          _netprior_backend))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
