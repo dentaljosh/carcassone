@@ -226,6 +226,8 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## 2026-05-27 — Apple Neural Engine (ANE) inference on M5
 
+> **Status update 2026-07-28 (stage Eff Jensen): the latency half is now MEASURED, and it beat this entry's guess** — CL-067 (7.5M-param) batch-1 forward = **0.42 ms fp16 with all 52 ops on the ANE, zero CPU fallback, argmax-faithful** (vs 2.6 ms torch-CPU same box, 19.4 ms on the gate-loaded 5900XT GPU path). See [measurement/m5_bench_20260728/M5_BENCH_READOUT_20260728.md](measurement/m5_bench_20260728/M5_BENCH_READOUT_20260728.md) + `scripts/m5_bench/ane_coverage_probe.py`. The *integration* (wiring ANE into a play/eval path) remains not-built, and the original deferral logic is half-expired: the question is no longer cluster throughput (Air CPU throttles, fanless) but batch-1 deploy latency for net-prior search, where the first revisit bullet below ("ANE inference at <1ms would dominate") is now the measured reality. Whether net priors deserve deployment at all is what the 2026-07-28 equal-wall-clock gate decides.
+
 **Context:** M5 Mac Air joined the cluster 2026-05-27 with MPS (Apple GPU) for forward passes. ANE (Neural Engine) is a separate dedicated NN inference accelerator on Apple silicon — ~38 TOPS on M5, optimized specifically for inference, much more power-efficient than GPU.
 
 **Idea:** export the 7M-param ResNet to Core ML format via `coremltools`, run inference through Core ML Python API, wire into eval-server as a third backend alongside CUDA / MPS. Could be 2-5× faster than MPS for our small net.
