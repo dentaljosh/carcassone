@@ -223,9 +223,13 @@ champion:
       is 38/38 green. The factory proves the leaf on real boards at construction and writes a runtime manifest
       into every game log. ⇒ the harness DOES run the current champion (FairHeuristicPriorAgent, PUCT heuristic
       priors + curve125, c1.5/tau5/float/visits, and now k8x1376 — it reads the budget from this file, so the
-      2026-07-29 promotion propagated to it for free). ⚠️ ONE THING IT DOES NOT YET READ: `parallel_workers`, so
-      harness play is currently the SEQUENTIAL 13.76 s/move execution of the same player until the follow-up above
-      lands. The "E4 landmine" is defused.
+      2026-07-29 promotion propagated to it for free). ✅ AND SINCE 2026-07-29 (late) IT ALSO READS
+      `parallel_workers`: `play_harness.resolve_parallel_workers()` resolves `deploy_profiles.<--profile>` (default
+      `desktop` ⇒ 8) through `champion_factory.deploy_profile()`, so harness play now runs the k-parallel split
+      (~2.2 s/move) instead of the sequential 13.76 s/move execution OF THE SAME PLAYER. Resolution is FAIL-SAFE
+      (absent profile / `parallel_workers: null` / any read error ⇒ sequential) and `--no-parallel` forces sequential;
+      the resolved count is written into every game log as `config.parallel_workers`. LATENCY ONLY — no strength
+      claim moves (tests/test_kparallel.py). The "E4 landmine" is defused.
       HISTORICAL (what the flag used to say): the harness wired the PRE-FLIP FairHeuristicMCTSAgent because the
       2026-07-07 champion flip and the 2026-07-13 curve125 adopt were never propagated there. E4 (the human exam)
       itself remains PARKED — that is Joshua's call and is NOT what this flag tracked.

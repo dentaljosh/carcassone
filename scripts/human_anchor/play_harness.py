@@ -10,10 +10,17 @@ audited honest: it never peeks at the real deck).
 champion, ``FairHeuristicPriorAgent`` (PUCT heuristic priors + curve125 leaf,
 c_puct=1.5/tau_p=5/float/visits) at whatever budget PRODUCTION.yaml names — since the
 2026-07-29 promotion that is k8x1376 = 11008 sims/move, resolved automatically below.
-⚠️ FOLLOW-UP OWED: this harness does NOT yet read the deploy execution profile
-``fair_deploy.deploy_profiles.desktop.parallel_workers`` (=8), so it runs the champion's
-SEQUENTIAL k-loop at ~13.8 s/move instead of the split's ~2.2 s/move. Same player either
-way (the split is behavior-identical, tests/test_kparallel.py) — it is purely a clock cost.
+✅ FOLLOW-UP LANDED 2026-07-29: this harness now DOES read the deploy execution profile
+``fair_deploy.deploy_profiles.desktop.parallel_workers`` (=8) via
+``champion_factory.deploy_profile()``, so human-facing play runs the k-parallel split at
+~2.2 s/move instead of the sequential k-loop's ~13.8 s/move. **Same player either way** —
+the split is behavior-identical by construction (the k determinization worlds are
+independent until the pooled-Q argmax; tests/test_kparallel.py asserts identical action
+AND identical pooled root (N, W) at every move of full games), so this is a LATENCY change
+and NOT a strength change; no re-eval is owed. Resolution is FAIL-SAFE: an unreadable /
+absent / ``parallel_workers: null`` profile falls back to the sequential path, and
+``--no-parallel`` forces it. The resolved worker count is recorded in the game log's
+``config.parallel_workers`` (and, when non-None, in the factory's own agent manifest).
 It previously wired the PRE-FLIP
 ``FairHeuristicMCTSAgent`` (random-expansion UCT + the old curve100 leaf), which the
 2026-07-07 champion flip and the 2026-07-13 curve125 adopt never propagated here — so
@@ -82,7 +89,28 @@ def _snapshot(agent) -> dict:
     return {k: getattr(agent, k, 0) for k in _COUNTERS} | {"latch_k": agent.latch_k}
 
 
-def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True):
+def resolve_parallel_workers(no_parallel: bool = False,
+                             profile: str = "desktop") -> int | None:
+    """The deploy EXECUTION profile's ``parallel_workers``, or None for the sequential
+    k-loop. FAIL-SAFE by design (the champion_factory contract): an unknown/absent profile
+    or a ``parallel_workers: null`` (the mobile/Chaquopy case) resolves to None, and any
+    exception reading PRODUCTION.yaml also resolves to None rather than exploding a game.
+
+    None is never a WEAKER player — the k-parallel split is behavior-identical
+    (tests/test_kparallel.py) — it is only ~6.37x slower per move at the champion budget."""
+    if no_parallel:
+        return None
+    try:
+        from carcassonne_ai.champion_factory import deploy_profile
+        return deploy_profile(profile)["parallel_workers"]
+    except Exception as exc:                                    # noqa: BLE001
+        print(f"[warn] could not resolve deploy profile {profile!r} "
+              f"({type(exc).__name__}: {exc}); running the SEQUENTIAL k-loop")
+        return None
+
+
+def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
+                     parallel_workers=None):
     """The PRODUCTION fair champion, built + runtime-verified by the champion factory
     (F1, 2026-07-19). Rewired from the PRE-FLIP FairHeuristicMCTSAgent (random-expansion
     UCT + old leaf) to the current champion: FairHeuristicPriorAgent (PUCT heuristic
@@ -90,10 +118,15 @@ def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True):
     champion_factory.make_production_champion, which reads governance/PRODUCTION.yaml and
     PROVES the leaf on real boards at construction (raises on mismatch). The returned
     agent carries a runtime manifest (`agent.manifest`) recorded into every game log.
-    c_puct is no longer a knob here — the champion's c_puct=1.5 is factory-owned."""
+    c_puct is no longer a knob here — the champion's c_puct=1.5 is factory-owned.
+
+    ``parallel_workers`` (None = the sequential k-loop, byte-identical to before this
+    kwarg existed) splits the k determinization worlds across spawn processes. LATENCY
+    ONLY — same player, same chosen action; see resolve_parallel_workers()."""
     from carcassonne_ai.champion_factory import make_production_champion
     return make_production_champion("fair", game=game, seed=seed, sims=sims,
-                                    k_dets=k_dets, exact_endgame=exact_endgame)
+                                    k_dets=k_dets, exact_endgame=exact_endgame,
+                                    parallel_workers=parallel_workers)
 
 
 class HumanCLIAgent:
@@ -302,16 +335,28 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", type=int, default=None, help="deck seed (random if unset)")
     ap.add_argument("--sims", type=int, default=None,
                     help="sims per determinization. DEFAULT = the PRODUCTION.yaml budget "
-                         "(fair_deploy.sims_per_det, currently 688). Lower it (e.g. --sims 200) "
+                         "(fair_deploy.sims_per_det, 1376 since the 2026-07-29 promotion; "
+                         "was 688). Lower it (e.g. --sims 200) "
                          "ONLY to speed the AI up — that plays a WEAKER-than-champion agent and "
                          "the game log records a runtime_budget_override.")
     ap.add_argument("--k-dets", type=int, default=None,
                     help="determinizations per move. DEFAULT = the PRODUCTION.yaml budget "
-                         "(fair_deploy.k_dets, currently 4).")
+                         "(fair_deploy.k_dets, 8 since the 2026-07-29 promotion; was 4).")
     ap.add_argument("--c-puct", type=float, default=3.0,
                     help="DEPRECATED / IGNORED (F1): the champion's exploration constant "
                          "(c_puct=1.5) is owned by champion_factory/PRODUCTION.yaml, not this "
                          "flag. Kept only so old invocations do not error.")
+    ap.add_argument("--no-parallel", action="store_true",
+                    help="force the SEQUENTIAL k-loop, ignoring the deploy profile's "
+                         "parallel_workers. Same player (the split is behavior-identical, "
+                         "tests/test_kparallel.py) — just ~6.37x slower per move at the "
+                         "champion budget. Use it on a box with <8 usable cores, or to "
+                         "reproduce a pre-2026-07-29 single-process run.")
+    ap.add_argument("--profile", default="desktop",
+                    help="deploy EXECUTION profile in PRODUCTION.yaml whose "
+                         "parallel_workers is used (default: desktop = 8). NOTE this "
+                         "selects only the WORKER COUNT here; the BUDGET still comes from "
+                         "fair_deploy/--sims/--k-dets.")
     ap.add_argument("--paired", action="store_true", help="play a seat-swapped rematch too")
     ap.add_argument("--out", type=Path, default=C.REPO_ROOT / "measurement/human_anchor/games")
     args = ap.parse_args(argv)
@@ -323,29 +368,37 @@ def main(argv=None) -> int:
     from carcassonne_ai.game_wrapper import Game
     # Resolve the budget from governance/PRODUCTION.yaml unless the caller overrode it,
     # so a bare `--human 0` plays the CHAMPION budget (k8x1376=11008 since 2026-07-29,
-    # was k4x688) and not a weaker stand-in. NOTE: the champion budget got 4x more
-    # expensive on that date, and this path is still SEQUENTIAL (see the module docstring's
-    # parallel_workers follow-up) — expect ~13.8 s/move, not the deploy split's ~2.2 s.
+    # was k4x688) and not a weaker stand-in. The EXECUTION profile (parallel_workers) is
+    # resolved separately and is a LATENCY knob only — ~2.2 s/move split vs ~13.8 s/move
+    # sequential, same player either way.
     _spec = load_production_spec()
     if args.sims is None:
         args.sims = _spec.sims_per_det
     if args.k_dets is None:
         args.k_dets = _spec.k_dets
+    pw = resolve_parallel_workers(args.no_parallel, args.profile)
     game = Game(enable_legal_moves_cache=True)
     seed = args.seed if args.seed is not None else random.randint(1, 2_000_000_000)
     config = {"sims": args.sims, "k_dets": args.k_dets,
               "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
-              "exact_endgame": True, "ruleset": "2p_base_farmers"}
+              "exact_endgame": True, "ruleset": "2p_base_farmers",
+              # LATENCY provenance, not strength: which execution the log was produced by.
+              "parallel_workers": pw, "deploy_profile": args.profile}
+    print(f"[exec] budget k{args.k_dets}x{args.sims} = {args.k_dets * args.sims} sims/move | "
+          f"parallel_workers={pw if pw is not None else 'None (sequential k-loop)'}"
+          f"{'' if pw is None else f' (profile {args.profile!r})'}")
 
     if args.human is None:
         print("no --human seat and no --self-test: playing fair-vs-fair "
               f"(seed={seed}, sims={args.sims})")
 
         def ctor_a():
-            return _make_fair_agent(game, args.sims, args.k_dets, seed=101)
+            return _make_fair_agent(game, args.sims, args.k_dets, seed=101,
+                                    parallel_workers=pw)
 
         def ctor_b():
-            return _make_fair_agent(game, args.sims, args.k_dets, seed=202)
+            return _make_fair_agent(game, args.sims, args.k_dets, seed=202,
+                                    parallel_workers=pw)
 
         if args.paired:
             play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config, out_dir=args.out)
@@ -359,7 +412,7 @@ def main(argv=None) -> int:
     human_seat = args.human
     ai_seat = 1 - human_seat
     human = HumanCLIAgent(game)
-    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303)
+    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, parallel_workers=pw)
     agents = {human_seat: human, ai_seat: ai}
     labels = {human_seat: "human", ai_seat: f"fair@{args.sims}"}
     rec = play_game(game, seed, agents, labels, config)
