@@ -22,6 +22,20 @@ Command (run with `nice -n 19`, `PYTHONPATH` cleared):
 |---|---|---|---|---|---|---|
 | k1×32 | 32 | Cython | **0.0403** | 0.0372 | 0.0634 | 58 |
 
+Repeated four times over ~15 min on the same loaded box (all `exact_latches: 0`,
+all Cython):
+
+| run | mean | p50 | p90 |
+|---|---|---|---|
+| 224133 | 0.0403 | 0.0372 | 0.0634 |
+| 224904 | 0.0406 | 0.0363 | 0.0623 |
+| 225202 | 0.0359 | 0.0330 | 0.0514 |
+| 225439 | 0.0374 | 0.0391 | 0.0529 |
+
+Grand mean **0.0386 s/move**, run-to-run spread ±6% — which under a fluctuating
+16-worker load is about as tight as this measurement gets, and is the reproducibility
+the M5 numbers should be judged against.
+
 By phase (same run):
 
 | phase | mean s/move | p50 | p90 | n |
