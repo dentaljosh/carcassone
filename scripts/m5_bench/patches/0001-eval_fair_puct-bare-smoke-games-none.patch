@@ -1,0 +1,49 @@
+From: M5 measurement campaign (2026-07-28/29 evening, session c0b61ee1)
+Subject: [PATCH] eval_fair_puct: bare `--smoke` crashes on args.games=None
+
+STATUS: NOT APPLIED to the M5 campaign runs. Filed for the morning merge.
+        Both M5 cells were smoked by passing `--games N` explicitly, so the
+        harness ran BYTE-UNMODIFIED and neither cell carries a code divergence.
+
+FOUND: 2026-07-28, first results-bearing use of this harness on darwin-arm64.
+       The defect is PLATFORM-INDEPENDENT — it reproduces on Linux too.
+
+WHAT:  `_smoke()` reads `args.games`, which argparse defaults to None. The
+       `--games` -> `--n` alias is resolved in main() (`if args.games is not
+       None: args.n = args.games`) but that assignment goes the OTHER way and
+       leaves args.games itself None. So any invocation of `--smoke` WITHOUT an
+       explicit `--games` dies before playing a single game:
+
+           File ".../eval_fair_puct.py", line 1814, in _smoke
+             for i in range(max(1, args.games)):
+         TypeError: '>' not supported between instances of 'NoneType' and 'int'
+
+FIX:   fall back to ONE game. Deliberately not `args.n`: a smoke is a wiring
+       proof, and args.n defaults to 100 — inheriting that would turn a smoke
+       into a ~2-hour run at production knobs.
+
+APPLY: git apply scripts/m5_bench/patches/0001-eval_fair_puct-bare-smoke-games-none.patch
+
+Verified against eval_fair_puct.py at code_rev cc73b3cc25325a0754835be050afbe040e8c6197.
+---
+ scripts/classical_search/eval_fair_puct.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/classical_search/eval_fair_puct.py b/scripts/classical_search/eval_fair_puct.py
+--- a/scripts/classical_search/eval_fair_puct.py
++++ b/scripts/classical_search/eval_fair_puct.py
+@@ -1811,7 +1811,13 @@
+     import random
+     results = []
+     t0 = time.perf_counter()
+-    for i in range(max(1, args.games)):
++    # `--games` is the OPTIONAL alias for `--n` (resolved into args.n in main(), but
++    # left as None here when the caller did not pass it). Reading it raw made a bare
++    # `--smoke` crash with TypeError: '>' not supported between NoneType and int.
++    # Fall back to a SINGLE game -- a smoke is a wiring proof, not an eval, so it must
++    # NOT inherit args.n's default of 100.
++    _n_smoke = args.games if args.games is not None else 1
++    for i in range(max(1, _n_smoke)):
+         a_seat = i % 2
+         seed = args.seed_start + (i // 2)
+         random.seed(seed)
