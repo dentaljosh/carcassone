@@ -1,0 +1,75 @@
+{
+  "schema": "carcassonne-m5-bench/v1",
+  "kind": "net_forward_latency_batch1",
+  "claim": "CL-067",
+  "timestamp_utc": "2026-07-29T03:07:39Z",
+  "machine": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13",
+    "node": "Mac"
+  },
+  "checkpoint": {
+    "path": "/Users/joshuaishal/m5_bench_20260728/bundle/net/distill_iter_03.pt",
+    "arch": {
+      "n_filters": 96,
+      "n_blocks": 6,
+      "n_input_channels": 81,
+      "n_scalar_features": 42,
+      "value_global_pool": true
+    },
+    "n_params": 7509167
+  },
+  "torch_version": "2.13.0",
+  "iters": 100,
+  "torch_cpu": {
+    "n": 100,
+    "mean_ms": 2.614669090107782,
+    "min_ms": 2.53224999687518,
+    "p50_ms": 2.5952079995477106,
+    "p90_ms": 2.699207998375641,
+    "max_ms": 2.8073330031475052
+  },
+  "coreml": {
+    "precision": "fp32",
+    "window": 25,
+    "units": {
+      "CPU_ONLY": {
+        "convert_s": 0.3021573750011157,
+        "saved": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp32_CPU_ONLY.mlpackage",
+        "latency": {
+          "n": 100,
+          "mean_ms": 1.61925455002347,
+          "min_ms": 1.554250000481261,
+          "p50_ms": 1.607709000381874,
+          "p90_ms": 1.6806669991638046,
+          "max_ms": 1.7250829987460747
+        }
+      },
+      "CPU_AND_NE": {
+        "convert_s": 0.2901877500007686,
+        "saved": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp32_CPU_AND_NE.mlpackage",
+        "latency": {
+          "n": 100,
+          "mean_ms": 1.6223741498833988,
+          "min_ms": 1.5544169982604217,
+          "p50_ms": 1.613083000847837,
+          "p90_ms": 1.6708750008547213,
+          "max_ms": 1.7440000010537915
+        }
+      },
+      "ALL": {
+        "convert_s": 0.3197310830000788,
+        "saved": "/Users/joshuaishal/m5_bench_20260728/results/coreml/cl067_fp32_ALL.mlpackage",
+        "latency": {
+          "n": 100,
+          "mean_ms": 1.3827267198939808,
+          "min_ms": 0.8796669972070958,
+          "p50_ms": 1.1292089984635822,
+          "p90_ms": 2.0912499967380427,
+          "max_ms": 3.2574580000073183
+        }
+      }
+    }
+  }
+}

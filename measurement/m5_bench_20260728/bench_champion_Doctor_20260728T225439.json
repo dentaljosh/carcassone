@@ -1,0 +1,714 @@
+{
+  "schema": "carcassonne-m5-bench/v1",
+  "kind": "champion_single_stream_latency",
+  "tag": "FINAL shipped artifact, local 5900XT reference (box LOADED, loadavg ~13)",
+  "timestamp_utc": "2026-07-29T02:54:39Z",
+  "machine": {
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "system": "Linux",
+    "python": "3.13.12",
+    "python_impl": "CPython",
+    "node": "Doctor",
+    "cpu_count": 32,
+    "cpu_brand": "AMD Ryzen 9 5900XT 16-Core Processor",
+    "mem_bytes": 44168224768,
+    "loadavg": [
+      11.4990234375,
+      12.3564453125,
+      12.19775390625
+    ]
+  },
+  "cython": {
+    "use_flat_leaf": true,
+    "use_cy_leaf_flag": true,
+    "cy_module_bound": true,
+    "cy_supports_v29_curve": true,
+    "leaf_active": true,
+    "leaf_path": "cython",
+    "repr_cy_importable": true,
+    "v29_curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ]
+  },
+  "binding": {
+    "bundle": "/mnt/c/carc-shared/m5_bench_20260728/bundle",
+    "carcassonne_ai": "/mnt/c/carc-shared/m5_bench_20260728/bundle/carcassonne_ai/__init__.py",
+    "production_yaml": "/mnt/c/carc-shared/m5_bench_20260728/bundle/carcassonne_ai/data/PRODUCTION.yaml"
+  },
+  "resolved_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "positions_file": "/mnt/c/carc-shared/m5_bench_20260728/bundle/positions.jsonl",
+  "n_positions": 60,
+  "repeat": 1,
+  "seed": 101,
+  "verify": true,
+  "champion": {
+    "id": "puct_priors_v29_bmild_cap8",
+    "yaml_k_dets": 4,
+    "yaml_sims_per_det": 688,
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "curve": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "exact_max_k": 2
+  },
+  "budgets": [
+    {
+      "k_dets": 1,
+      "sims_per_det": 32,
+      "total_sims": 32,
+      "warmup_discarded": 2,
+      "exact_latches": 0,
+      "overall": {
+        "n": 58,
+        "mean_s": 0.03744274358478865,
+        "min_s": 0.009772781995707192,
+        "p50_s": 0.039098959998227656,
+        "p90_s": 0.05286473099840805,
+        "max_s": 0.071191386989085
+      },
+      "by_phase": {
+        "meeples": {
+          "n": 29,
+          "mean_s": 0.04294845165287402,
+          "min_s": 0.020150305004790425,
+          "p50_s": 0.04120259800401982,
+          "p90_s": 0.05648158899566624,
+          "max_s": 0.071191386989085
+        },
+        "tiles": {
+          "n": 29,
+          "mean_s": 0.03193703551670328,
+          "min_s": 0.009772781995707192,
+          "p50_s": 0.031065867995494045,
+          "p90_s": 0.045592563998070545,
+          "max_s": 0.05556499300291762
+        }
+      },
+      "samples": [
+        {
+          "pos_id": 2,
+          "rep": 0,
+          "s": 0.03393855699687265,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 15,
+          "action": 1546
+        },
+        {
+          "pos_id": 3,
+          "rep": 0,
+          "s": 0.06362308499228675,
+          "phase": "meeples",
+          "k_remaining": 51,
+          "n_legal": 2,
+          "action": 2508
+        },
+        {
+          "pos_id": 4,
+          "rep": 0,
+          "s": 0.031065867995494045,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 44,
+          "action": 1337
+        },
+        {
+          "pos_id": 5,
+          "rep": 0,
+          "s": 0.042513936990872025,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 6,
+          "rep": 0,
+          "s": 0.021209038008237258,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 35,
+          "action": 965
+        },
+        {
+          "pos_id": 7,
+          "rep": 0,
+          "s": 0.04017488399404101,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 8,
+          "rep": 0,
+          "s": 0.02419480100797955,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 36,
+          "action": 1272
+        },
+        {
+          "pos_id": 9,
+          "rep": 0,
+          "s": 0.025647125992691144,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2510
+        },
+        {
+          "pos_id": 10,
+          "rep": 0,
+          "s": 0.0304806380008813,
+          "phase": "tiles",
+          "k_remaining": 22,
+          "n_legal": 38,
+          "action": 761
+        },
+        {
+          "pos_id": 11,
+          "rep": 0,
+          "s": 0.036891595998895355,
+          "phase": "meeples",
+          "k_remaining": 16,
+          "n_legal": 4,
+          "action": 2502
+        },
+        {
+          "pos_id": 12,
+          "rep": 0,
+          "s": 0.01899749899166636,
+          "phase": "tiles",
+          "k_remaining": 46,
+          "n_legal": 24,
+          "action": 1240
+        },
+        {
+          "pos_id": 13,
+          "rep": 0,
+          "s": 0.049355698996805586,
+          "phase": "meeples",
+          "k_remaining": 40,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 14,
+          "rep": 0,
+          "s": 0.031762238999363035,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1033
+        },
+        {
+          "pos_id": 15,
+          "rep": 0,
+          "s": 0.039972726997802965,
+          "phase": "meeples",
+          "k_remaining": 41,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 16,
+          "rep": 0,
+          "s": 0.039098959998227656,
+          "phase": "tiles",
+          "k_remaining": 39,
+          "n_legal": 16,
+          "action": 1158
+        },
+        {
+          "pos_id": 17,
+          "rep": 0,
+          "s": 0.03589982399716973,
+          "phase": "meeples",
+          "k_remaining": 50,
+          "n_legal": 7,
+          "action": 2506
+        },
+        {
+          "pos_id": 18,
+          "rep": 0,
+          "s": 0.020561017998261377,
+          "phase": "tiles",
+          "k_remaining": 48,
+          "n_legal": 28,
+          "action": 849
+        },
+        {
+          "pos_id": 19,
+          "rep": 0,
+          "s": 0.04736756799684372,
+          "phase": "meeples",
+          "k_remaining": 42,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 20,
+          "rep": 0,
+          "s": 0.014891447994159535,
+          "phase": "tiles",
+          "k_remaining": 35,
+          "n_legal": 44,
+          "action": 1556
+        },
+        {
+          "pos_id": 21,
+          "rep": 0,
+          "s": 0.03500112199981231,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 6,
+          "action": 2502
+        },
+        {
+          "pos_id": 22,
+          "rep": 0,
+          "s": 0.026735527004348114,
+          "phase": "tiles",
+          "k_remaining": 19,
+          "n_legal": 41,
+          "action": 749
+        },
+        {
+          "pos_id": 23,
+          "rep": 0,
+          "s": 0.04120259800401982,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2502
+        },
+        {
+          "pos_id": 24,
+          "rep": 0,
+          "s": 0.037573472000076436,
+          "phase": "tiles",
+          "k_remaining": 26,
+          "n_legal": 23,
+          "action": 1760
+        },
+        {
+          "pos_id": 25,
+          "rep": 0,
+          "s": 0.04041230698931031,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 26,
+          "rep": 0,
+          "s": 0.04171689800568856,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 18,
+          "action": 1542
+        },
+        {
+          "pos_id": 27,
+          "rep": 0,
+          "s": 0.05295184699934907,
+          "phase": "meeples",
+          "k_remaining": 37,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 28,
+          "rep": 0,
+          "s": 0.04174261700245552,
+          "phase": "tiles",
+          "k_remaining": 31,
+          "n_legal": 24,
+          "action": 844
+        },
+        {
+          "pos_id": 29,
+          "rep": 0,
+          "s": 0.03787485299108084,
+          "phase": "meeples",
+          "k_remaining": 49,
+          "n_legal": 5,
+          "action": 2509
+        },
+        {
+          "pos_id": 30,
+          "rep": 0,
+          "s": 0.045592563998070545,
+          "phase": "tiles",
+          "k_remaining": 41,
+          "n_legal": 20,
+          "action": 1238
+        },
+        {
+          "pos_id": 31,
+          "rep": 0,
+          "s": 0.05997769000532571,
+          "phase": "meeples",
+          "k_remaining": 21,
+          "n_legal": 7,
+          "action": 2510
+        },
+        {
+          "pos_id": 32,
+          "rep": 0,
+          "s": 0.05286473099840805,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 26,
+          "action": 1158
+        },
+        {
+          "pos_id": 33,
+          "rep": 0,
+          "s": 0.043643370998324826,
+          "phase": "meeples",
+          "k_remaining": 43,
+          "n_legal": 2,
+          "action": 2510
+        },
+        {
+          "pos_id": 34,
+          "rep": 0,
+          "s": 0.013808520991005935,
+          "phase": "tiles",
+          "k_remaining": 17,
+          "n_legal": 36,
+          "action": 832
+        },
+        {
+          "pos_id": 35,
+          "rep": 0,
+          "s": 0.04064984399883542,
+          "phase": "meeples",
+          "k_remaining": 27,
+          "n_legal": 4,
+          "action": 2503
+        },
+        {
+          "pos_id": 36,
+          "rep": 0,
+          "s": 0.023976910990313627,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 17,
+          "action": 1059
+        },
+        {
+          "pos_id": 37,
+          "rep": 0,
+          "s": 0.029288292993442155,
+          "phase": "meeples",
+          "k_remaining": 44,
+          "n_legal": 3,
+          "action": 2507
+        },
+        {
+          "pos_id": 38,
+          "rep": 0,
+          "s": 0.04100832999392878,
+          "phase": "tiles",
+          "k_remaining": 43,
+          "n_legal": 24,
+          "action": 1230
+        },
+        {
+          "pos_id": 39,
+          "rep": 0,
+          "s": 0.04630960799113382,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 40,
+          "rep": 0,
+          "s": 0.036474307999014854,
+          "phase": "tiles",
+          "k_remaining": 32,
+          "n_legal": 23,
+          "action": 1271
+        },
+        {
+          "pos_id": 41,
+          "rep": 0,
+          "s": 0.05154468999535311,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 42,
+          "rep": 0,
+          "s": 0.044464291000622325,
+          "phase": "tiles",
+          "k_remaining": 42,
+          "n_legal": 30,
+          "action": 1237
+        },
+        {
+          "pos_id": 43,
+          "rep": 0,
+          "s": 0.05183155600389,
+          "phase": "meeples",
+          "k_remaining": 23,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 44,
+          "rep": 0,
+          "s": 0.019244716997491196,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 19,
+          "action": 857
+        },
+        {
+          "pos_id": 45,
+          "rep": 0,
+          "s": 0.028030401997966692,
+          "phase": "meeples",
+          "k_remaining": 47,
+          "n_legal": 3,
+          "action": 2510
+        },
+        {
+          "pos_id": 46,
+          "rep": 0,
+          "s": 0.019729414998437278,
+          "phase": "tiles",
+          "k_remaining": 44,
+          "n_legal": 48,
+          "action": 1260
+        },
+        {
+          "pos_id": 47,
+          "rep": 0,
+          "s": 0.028595876006875187,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2503
+        },
+        {
+          "pos_id": 48,
+          "rep": 0,
+          "s": 0.027931928998441435,
+          "phase": "tiles",
+          "k_remaining": 27,
+          "n_legal": 26,
+          "action": 960
+        },
+        {
+          "pos_id": 49,
+          "rep": 0,
+          "s": 0.045330077002290636,
+          "phase": "meeples",
+          "k_remaining": 20,
+          "n_legal": 5,
+          "action": 2506
+        },
+        {
+          "pos_id": 50,
+          "rep": 0,
+          "s": 0.04623137500311714,
+          "phase": "tiles",
+          "k_remaining": 37,
+          "n_legal": 32,
+          "action": 1652
+        },
+        {
+          "pos_id": 51,
+          "rep": 0,
+          "s": 0.05648158899566624,
+          "phase": "meeples",
+          "k_remaining": 31,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 52,
+          "rep": 0,
+          "s": 0.05556499300291762,
+          "phase": "tiles",
+          "k_remaining": 34,
+          "n_legal": 58,
+          "action": 1447
+        },
+        {
+          "pos_id": 53,
+          "rep": 0,
+          "s": 0.042075384000781924,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 3,
+          "action": 2505
+        },
+        {
+          "pos_id": 54,
+          "rep": 0,
+          "s": 0.03522572200745344,
+          "phase": "tiles",
+          "k_remaining": 21,
+          "n_legal": 33,
+          "action": 1253
+        },
+        {
+          "pos_id": 55,
+          "rep": 0,
+          "s": 0.04151585300860461,
+          "phase": "meeples",
+          "k_remaining": 24,
+          "n_legal": 4,
+          "action": 2510
+        },
+        {
+          "pos_id": 56,
+          "rep": 0,
+          "s": 0.009772781995707192,
+          "phase": "tiles",
+          "k_remaining": 29,
+          "n_legal": 48,
+          "action": 832
+        },
+        {
+          "pos_id": 57,
+          "rep": 0,
+          "s": 0.020150305004790425,
+          "phase": "meeples",
+          "k_remaining": 19,
+          "n_legal": 6,
+          "action": 2504
+        },
+        {
+          "pos_id": 58,
+          "rep": 0,
+          "s": 0.04031486100575421,
+          "phase": "tiles",
+          "k_remaining": 20,
+          "n_legal": 19,
+          "action": 757
+        },
+        {
+          "pos_id": 59,
+          "rep": 0,
+          "s": 0.071191386989085,
+          "phase": "meeples",
+          "k_remaining": 46,
+          "n_legal": 6,
+          "action": 2501
+        }
+      ],
+      "wallclock_s": 2.5721958249923773
+    }
+  ],
+  "agent_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "fair",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "FairHeuristicPriorAgent",
+    "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": false,
+      "config_hash": "82e11eedebe71db3"
+    },
+    "fair_deploy": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total_sims": 2752,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "unknown",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+    "runtime_budget_override": {
+      "sims_per_det": 32,
+      "k_dets": 1,
+      "total_sims": 32,
+      "note": "the budget the agent ACTUALLY runs; fair_deploy above is the PRODUCTION.yaml intent (k4x688=2752)."
+    }
+  }
+}
