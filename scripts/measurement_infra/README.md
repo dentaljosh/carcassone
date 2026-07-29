@@ -16,6 +16,7 @@ compute as a strength play on their basis.
 | `tagging.py` | **h200 top-2 Q-gap** (+ entropy / top-share / n_visited) on every root — the cheap "is this hard for shallow search?" triage signal. `tag_from_snaps`, `tag_root`. |
 | `labeling_queue.py` | **Adaptive 4-strata labeling queue** — `ordinary` / `low_top2gap` / `opening_heavy` / `close_score`. `AdaptiveLabelingQueue`. |
 | `verify_h12800.py` | certifies snapshot==standalone up to **h12800** on a random sample. |
+| `adaptive_k_census.py` | **PIMC world-ensemble census** — replays archived champion games and reports, per decision and by phase, the across-world value spread / per-world pick disagreement / whether worlds 3–4 change the **pooled** pick, plus the exact duplicate-world (and next-N-tile near-duplicate) rate. Built as the adaptive-k pre-gate (verdict: [ADAPTIVE_K_CENSUS_20260728](../../measurement/classical_search/ADAPTIVE_K_CENSUS_20260728.md) — FLAT, lever died free); reusable for any "is the determinization ensemble earning its width **here**?" question. `--noise-control` proves the per-world searches are deterministic (no noise floor to subtract). Tests: `tests/test_adaptive_k_census.py`. |
 | `demo_labeling_queue.py` | runnable example of the queue. |
 | `tests/test_measurement_infra.py` | contracts (A) replay lossless (B) snapshot==standalone (C) tagging (D) frozen cfg. |
 
