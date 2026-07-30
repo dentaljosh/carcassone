@@ -1,12 +1,14 @@
-# CL-067 EQTIME/ANE CELL — read-out skeleton
+# CL-067 EQTIME/ANE CELL — read-out
 
-**STATUS: RUNNING (launched 2026-07-29 14:31 UTC on the Apple M5 Air). PLACEHOLDERS
-BELOW ARE UNFILLED — no result exists yet.** Every `<<...>>` is a slot; fill from
-`summary.json` and delete this banner when the verdict lands.
+**STATUS: COMPLETE 2026-07-29. PRE-REGISTERED BRANCH C (WASH) FIRED.**
+400/400 games. elo **+19.13 ± 17.40** (z +1.10), deck-paired margin **−0.2675 pts/deck**
+(z −0.29). Cost guard PASSES at **0.9522**. The two statistics **disagree in sign** and
+neither clears 2σ, so this cell does NOT reopen the distilled line — but it also does not
+kill it, and it moves the point estimate ~+36 elo off the desktop gate. **Not promoted;
+`governance/PRODUCTION.yaml` untouched.**
 
-This file is the pre-registration + the close-out template in one, written BEFORE the
-result so the morning is mechanical. The pre-registration half (§1–§3) is fixed and must
-not be edited after the fact.
+The pre-registration (§1–§3) was written and committed (`f6a6ff9`) **before any result
+existed** and has not been edited.
 
 ---
 
@@ -35,15 +37,14 @@ Engine**, vs the deploy champion.
 | n | 400 deck-paired (200 decks × 2 seats) |
 | band | **92e9** (verified unburned vs ledger + 612 share manifests; claimed before launch) |
 | box / W | Apple M5 Air (darwin-arm64, 10-core), **W6** |
-| code rev | `347566e` (worktree `agent-ae16172e9e13c3dfa`) |
+| code rev | `f6a6ff9` (worktree `agent-ae16172e9e13c3dfa`; see `CODE_PROVENANCE.txt` in the out-dir — the manifest says `unknown` because the tree was rsynced without `.git`) |
 
 **Why k4×438, and why not the r-model.** Measured at W6 on the day: champion search
 **1.0036 ms/sim** (the gate's 0.5741 projection was single-stream and 1.75× optimistic),
 ANE forward **0.427 ms** single-stream. Naive r = 0.436 would license k4×479, but that
 divides an *uncontended* forward by a *contended* search while six workers serialise on
 the one shared ANE. The budget was therefore set from the **direct paired cost ratio**,
-which contains every contention effect: k4×395 → 0.9014, **k4×438 → 0.9893**. Per-sim cost
-multiple candidate/opponent **1.554×** (desktop CUDA batch-1 was 4.2–5.5×).
+which contains every contention effect: k4×395 → 0.9014, **k4×438 → 0.9893**.
 
 **Fidelity precondition (PASSED before launch).** `verify_coreml_evaluator.py`, 60 real
 champion-reached positions: policy max-abs **1.113e-03**, legal-argmax agreement
@@ -66,47 +67,159 @@ equal-clock number.
 
 ---
 
-## 4. RESULT — fill from `summary.json`
+## 4. RESULT — every number below read off disk
 
 ```
-records            <<n>>/400
-winrate            <<W>>W-<<D>>D-<<L>>L  = <<wr>>   z <<z>>
-elo                <<elo>> +/- <<sigma>>
-deck-paired margin <<margin>> pts/deck  se <<se>>  paired_z <<pz>>
-cost ratio         candidate <<c_ms>> vs opponent <<o_ms>> prefix ms/move = <<ratio>>
-                   -> [0.90,1.10]? <<PASS|FAIL>>
-measured r         <<r>>   (forward 0.427 ms / search <<o_ms>>/2752 ms per sim)
-integrity          deck_hash mismatches <<x>>/200, timeouts <<x>>/<<x>>,
-                   latches <<x>>/400 both sides, leaf a36d2e15a3b3d71d both sides
-BRANCH FIRED       <<A|B|C|D>>
+records            400/400
+winrate            208W-6D-186L  = 0.5275   z +1.100
+elo                +19.128 +/- 17.398        z +1.099
+deck-paired margin -0.2675 pts/deck   paired_z -0.2929   (200 decks)
+cost ratio         candidate 3185.8 vs opponent 3345.9 prefix ms/move = 0.9522
+                   -> [0.90,1.10]? PASS
+opponent search    1.2158 ms/sim      candidate 1.8184 ms/sim
+per-sim multiple   1.496x  (desktop CUDA batch-1 was 4.2-5.5x)
+measured r         0.3512  (0.427 ms forward / 1.2158 ms per sim)
+integrity          200 distinct decks, 0 deck_hash mismatches, 0 timeouts both sides,
+                   400/400 latches both sides, latch_k in {1,2} both sides,
+                   both sides leaf a36d2e15a3b3d71d, solver 18.08 s/game
+BRANCH FIRED       C  (WASH)
 ```
 
-## 5. results.csv row template (paste, fill, done)
+### 4.1 Which branch fired, and the drafting weakness I own
 
-```
-distill_strong_iter03_netprior_EQTIME_ANE_k4x438_vs_champ_deploy_b92e9_n400_paired,2026-07-30,base,347566e,400,distill_strong_20260723/ckpt/iter_03.pt,1.5,8,fair-netprior_k4x438_EQTIME_ANE,1752,fair_champion_curve125,1.5,8,heuristic-prior_k4x688_DEPLOY,2752,<<W>>,<<L>>,<<D>>,<<elo>>,<<sigma>>,<<avg_diff>>,/mnt/c/carc-shared/eqtime_ane_netprior_k4x438_b92e9,verdict,"CL-067 EQUAL-WALL-CLOCK REOPEN TEST ON THE APPLE NEURAL ENGINE. Same agent pair as the 82e9 gate arm A, ONE variable changed: the candidate's policy forward runs on the ANE via CoreML (cl067_iter03_policy_fp16.mlpackage sha256 5883aa7f44e59c09, CPU_AND_NE, batch-1) instead of desktop CUDA batch-1. This tests the gate's own pre-registered reopen condition (r <= ~1.5). Budget k4x438 set by a MEASURED direct paired cost probe at W6 (k4x395 -> 0.9014, k4x438 -> 0.9893), NOT by the r-model: r computed from a single-stream forward over a W6-contended search is optimistic because six workers serialise on the one shared ANE. Measured at W6: champion search 1.0036 ms/sim (the gate's 0.5741 was single-stream, 1.75x optimistic), ANE forward 0.427 ms, per-sim cost multiple 1.554x vs 4.2-5.5x on CUDA. Fidelity gate PASSED before launch (60 real positions: policy max-abs 1.113e-03, legal-argmax 60/60, top-5 1.0000) so this is a COST intervention, not a different agent. In-flight cost guard: candidate <<c_ms>> vs opponent <<o_ms>> prefix ms/move = <<ratio>>, <<INSIDE|OUTSIDE>> [0.90,1.10]. Band 92e9 (fresh), 200 decks, <<x>> deck_hash mismatches, <<x>> timeouts, <<x>>/400 latches both sides, both sides leaf a36d2e15. winrate <<wr>> z <<z>>; deck-paired margin <<margin>> pts/deck se <<se>> paired_z <<pz>>. PRE-REGISTERED BRANCH <<X>> FIRED. Readout measurement/classical_search/EQTIME_ANE_CELL_20260729_READOUT.md. PRODUCTION.yaml <<untouched|updated>>."
-```
+**C fires.** Its condition — *"both statistics inside 2σ"* — is unambiguously satisfied:
+winrate elo z **+1.099**, deck-paired z **−0.293**, both well inside 2σ. Its stated
+meaning: *"WASH — the ANE r ≈ 0.44 is not enough either"*.
 
-## 6. Six-touch close-out checklist
+**B does not fire.** Its condition is *"positive but < 2σ"*. The two statistics
+**disagree in sign** — the winrate is positive, the deck-paired margin is fractionally
+negative — so the antecedent "positive" is not satisfied for the pair.
 
-- [ ] `experiments/results.csv` row (§5)
-- [ ] `DECISIONS.md` index line
-- [ ] status banner on THIS doc (delete the RUNNING banner, stamp the verdict)
-- [ ] `governance/CLAIM_REGISTRY.csv` — CL-067 row flip
-- [ ] `STATUS.md` top block
-- [ ] `docs/PROGRAM_ROADMAP_2026-07-07.md` line + `docs/LEVER_INDEX.md` ANE row
-      (currently reads "BUILT 2026-07-29, NOT RUN")
-- [ ] `python3 scripts/doc_lint.py`
+I note plainly that my branch table did **not** anticipate a sign disagreement, and that
+B and C would have overlapped for a both-positive-but-weak result. That is a drafting
+weakness in my own pre-registration. It does not change the outcome (C's condition is met
+on its own terms and B's is not), but the next such table must make the branches mutually
+exclusive and name which statistic breaks a tie.
+
+**Why the two statistics can disagree.** They measure different things: the winrate counts
+games won, the paired margin averages *points per deck*. A candidate can take slightly
+more games while conceding slightly more points in the games it loses. Both are inside
+noise here, so the honest one-line summary is **"indistinguishable from zero on 400 paired
+games"** — not "positive", not "negative".
+
+### 4.2 The cost guard — a correction worth recording
+
+The guard convention is **candidate/opponent**, matching the gate's arm A
+(`3786.75/3859.62 = 0.9811`). Verified against the emitter
+(`eval_fair_puct.py:1645/1655` — `champ_ms` sums `champ_prefix_secs` = the CANDIDATE,
+`rung_ms` sums `opp_prefix_secs` = the OPPONENT) and recomputed independently from all
+400 records (identical, 0.9522).
+
+**Ratio = 0.9522, NOT its inverse 1.0502.** The direction matters: the candidate spent
+**4.8% LESS** wall clock than the champion, so this cell is mildly
+**candidate-DISfavoured** — conservative — *not* candidate-favoured. The +19 elo point
+estimate was earned on slightly *less* clock than the opponent got. (This is the same
+field-name inversion that once turned a "4× cheaper" read backwards; the legacy field
+names `champ_*` / `rung_*` do not mean what they say in a head-to-head.)
+
+The realised 0.9522 drifted down from the probe's 0.9893 because the full run is longer
+and thermally loaded — the fanless Air throttles, and the two sides throttle differently.
+Still comfortably in-band, so **equal-time stands**.
+
+### 4.3 Cross-cell contrast with the desktop gate — both halves
+
+| | forward path | elo vs deploy champion |
+|---|---|---|
+| gate arm A (band 82e9) | desktop CUDA batch-1, r ≈ 3.0 | **−17.4 ± 17.4** |
+| **this cell (band 92e9)** | **Apple ANE, r = 0.351** | **+19.13 ± 17.40** |
+
+**Δ = +36.53 ± 24.61, z = +1.485 → UNRESOLVED (< 2σ).**
+
+Both halves, stated plainly:
+
+* **The direction is what the r-model predicted.** Cutting the forward's cost from
+  r ≈ 3.0 to r ≈ 0.35 moved the point estimate ~+36 elo, from clearly-negative to
+  mildly-positive. That is the sign the gate's §6 projection (+11 to +15) implied, and it
+  was arrived at independently.
+* **It is NOT a confirmation and must not be cited as one.** z = 1.49 on the contrast. The
+  two arms sit on **independent bands and different boxes**, combined in quadrature rather
+  than deck-paired — exactly the weaker comparison the gate flagged for its own A-vs-B
+  contrast. Cross-band pooling has burned this project twice (L2-2, CL-069). A +36 swing
+  this size is fully consistent with a true effect anywhere from ~+10 to ~+60, and also
+  with the two cells differing for reasons other than the forward.
+
+So: the reopen condition's **mechanism** looks real; its **effect size** is unmeasured.
+
+### 4.4 What it would take to resolve +15 vs 0 — a JOSHUA DECISION, not queued
+
+At this effect size 400 paired games cannot do it. σ scales as 1/√n:
+
+| n paired | 1σ (elo) | z for a true +15 |
+|---|---|---|
+| 400 (this cell) | 17.4 | 0.86 |
+| 800 | 12.3 | 1.22 |
+| 1500 | 9.0 | 1.67 |
+| 2000 | 7.8 | 1.93 |
+
+**Even n = 2000 lands at z ≈ 1.9 — still short of a clean 2σ.** Separating +15 from 0 at 2σ
+needs σ ≤ 7.5, i.e. **n ≈ 2150 paired**. In Air time: this cell's 400 games took **9.10 h**
+wall (mean 492.1 s/game ÷ 6 workers), so the additional ~1750 games is **≈ 40 h of
+compute** — realistically **3–4 Air-days** on a fanless, shared, sleep-prone laptop.
+
+**This is explicitly a JOSHUA DECISION and is NOT being queued.** The trade: 3–4 days of
+the only Apple-silicon box, to move a ~+15 deploy question from "suggestive" to "decided",
+for a candidate that is *at best* mildly positive at equal clock and whose gain applies
+only to Apple hardware the project does not deploy on. Costed here so the option is
+visible, not so it happens.
+
+## 5. results.csv row
+
+Row `distill_strong_iter03_netprior_EQTIME_ANE_k4x438_vs_champ_deploy_b92e9_n400_paired`
+in [experiments/results.csv](../../experiments/results.csv) — the authoritative numbers.
+
+## 6. Six-touch close-out
+
+- [x] `experiments/results.csv` row
+- [x] `DECISIONS.md` index line
+- [x] status banner on THIS doc
+- [x] `governance/CLAIM_REGISTRY.csv` — CL-067 row
+- [x] `STATUS.md` top block
+- [x] `docs/PROGRAM_ROADMAP_2026-07-07.md` G3 + `docs/LEVER_INDEX.md` ANE/eqtime rows +
+      `docs/INDEX.md`
+- [x] `python3 scripts/doc_lint.py` → 0 errors
 
 ## 7. Operational record
 
 | | |
 |---|---|
-| launched | 2026-07-29 14:31 UTC |
-| verified | 6 workers busy, 485.6% aggregate CPU, `0 cached, 400 to play` |
-| watchdog | `~/carc-eqtime-ane/cell_watchdog.sh` PID 54741, bounded 12 relaunches, terminates on 400 records |
-| ETA | 7.37 h → ~21:53 UTC 2026-07-29 |
-| artifacts | `/mnt/c/carc-shared/m5_ane_prep_20260729/` (verify JSON, export sidecar, both cost probes) |
+| launched | 2026-07-29 14:31 UTC; first record 14:35:42; last record 23:41:52 |
+| wall clock | **9.10 h** (predicted 7.37 h — the gap is the mid-run sleep plus thermal drift) |
+| verified at launch | 6 workers busy, 485.6% → 534.5% aggregate CPU, `0 cached, 400 to play` |
+| watchdog | `cell_watchdog.sh` PID 54741 — bounded 12 relaunches, terminates on 400 records |
+| artifacts | `/mnt/c/carc-shared/eqtime_ane_netprior_k4x438_b92e9/` (400 records + summary + manifest + `CODE_PROVENANCE.txt`); prep evidence in `/mnt/c/carc-shared/m5_ane_prep_20260729/` |
 
-⚠️ **Success is RECORD COUNT, never an exit code** — the gate's ops note 7 found a sibling
-harness exiting `rc=1` on a fully successful run. Count `*.json` in the out-dir.
+### 7.1 Mid-run Air sleep at records 377→400 — resumed cleanly
+
+The Air slept near the end of the run **despite `caffeinate -dimsu`**. On wake the watchdog
+relaunched the cell and it **resumed from 377 records**, completing to 400.
+
+**Data integrity unaffected.** Each game writes its own record atomically (`.partial` →
+`replace`), and the harness skips games whose record already exists, so a relaunch
+re-plays nothing and cannot half-write a game. Verified after the fact: all 400 records
+present, 200 distinct decks, **0 deck_hash mismatches**, 0 timeouts either side, 400/400
+endgame latches both sides.
+
+Three standing lessons re-confirmed:
+
+* **The per-record, resume-by-existence design is what saved this run** — the same property
+  that made the watchdog safe to arm in the first place. This is the third time it has
+  paid out.
+* **Success is RECORD COUNT, never an exit code** (the gate's ops note 7). Had the watchdog
+  trusted an exit code it would have declared victory at 377/400.
+* **`caffeinate -dimsu` is not an absolute guarantee** on a fanless Mac under sustained
+  load — keep a watchdog armed alongside it, never instead of it. The wall-clock overrun
+  (9.10 h vs 7.37 h predicted) is partly this sleep and partly thermal throttling, so
+  **future Air ETAs should carry ~25% headroom.**
+
+⚠️ Anyone re-running this: **W6 is load-bearing.** The k4×438 budget was measured at W6;
+changing W changes the champion's ms/sim and invalidates the budget.
