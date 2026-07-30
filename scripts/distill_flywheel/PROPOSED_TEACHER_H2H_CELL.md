@@ -1,8 +1,19 @@
 # PROPOSED (not funded): the unmeasured pair — CL-067 net@2752 vs champion@11008
 
-> **Status: PROPOSED 2026-07-30 ~01:15, awaiting Joshua GO. No band claimed, nothing launched.**
-> Drafted during rodv3 turn-1 gen (which this does not touch). Becomes a prereg only
-> when funded — at that point fill the band, commit before the first game.
+> **STATUS: ✅ MEASURED 2026-07-30 — funded, pre-registered, run, and read out. This doc is the
+> historical proposal; the live record is elsewhere.**
+> Funded on Joshua's 01:25 direction and promoted to a prereg
+> ([TEACHER_H2H_PREREG.md](TEACHER_H2H_PREREG.md), `f2e11ca`, committed before the first game),
+> band **94e9**, n=400 deck-paired. **Result: −20.87 ± 17.40 elo (z −1.20), deck-paired margin
+> −2.0025 pts/deck (z −1.90), W–D–L 184–8–208** ⇒ the *second* outcome below ("net@2752 <
+> teacher@11008") is the direction the data leans, **but the pre-registered branch that fired is
+> BRACKET-NARROWING, NOT a verdict** — the n→800 extension fires and is **not launched** (Joshua's
+> spend call, pending). → read-out [READOUT.md](../../measurement/teacher_h2h_94e9/READOUT.md),
+> row `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`, claim **CL-072
+> (Provisional/Open)**, DECISIONS 2026-07-30 (morning).
+>
+> *(Superseded framing retained below for the record: "PROPOSED 2026-07-30 ~01:15, awaiting Joshua
+> GO. No band claimed, nothing launched." Drafted during rodv3 turn-1 gen, which it does not touch.)*
 
 ## Why this cell exists
 

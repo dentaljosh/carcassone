@@ -1,7 +1,17 @@
 # TEACHER H2H — PRE-REGISTRATION: CL-067 net@2752 vs the champion@11008 (band 94e9)
 
-> **STATUS: PRE-REGISTERED 2026-07-30 ~01:35, FUNDED, band 94e9 claimed. Committed BEFORE the
-> first game of the cell.** Promotes
+> **STATUS: ✅ RUN AND READ OUT 2026-07-30 09:56 — the BRACKET-NARROWING branch of §"Pre-registered
+> read-out" fired. NOT a verdict; the n→800 extension is pre-committed, FIRES, and is NOT LAUNCHED
+> (~7 h two-box, Joshua's spend call, pending).** Result, n=400 deck-paired on band 94e9: **W–D–L
+> 184–8–208, elo −20.871204666 ± 17.403133160 (z −1.20), deck-paired margin −2.0025 pts/deck
+> (paired_z −1.8956)**, both statistics agreeing in sign; cost 16100.05 vs 14047.32 ms/move = 1.15×.
+> → read-out [READOUT.md](../../measurement/teacher_h2h_94e9/READOUT.md) (`3467f73`), row
+> `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`, claim **CL-072
+> (Provisional/Open)**, DECISIONS 2026-07-30 (morning). Nothing promoted;
+> `governance/PRODUCTION.yaml` untouched, as pre-committed in every branch.
+>
+> **Original pre-registration banner (unedited): PRE-REGISTERED 2026-07-30 ~01:35, FUNDED, band 94e9
+> claimed. Committed BEFORE the first game of the cell.** Promotes
 > [PROPOSED_TEACHER_H2H_CELL.md](PROPOSED_TEACHER_H2H_CELL.md) (`eaf900f`) to a prereg on
 > Joshua's 01:25 direction — verbatim: *"maybe we should run the eval first."* This cell now runs
 > **BEFORE** the rest of the rodv3 flywheel turn; turn-1 gen is stopped at 33 banked games and
