@@ -10,6 +10,11 @@
 >
 > **NOT funded, needs an explicit human GO:** Arm B (value-unlock) and **the gate eval**
 > (candidate vs parent at depth). When the train iteration lands this run STOPS and reports.
+>
+> ⚠️ **Launch history:** the first launch window was lost — the Claude session died at ~23:55
+> before any cell fired (box did NOT reboot; share census showed prep intact, 0 claims, 0 npz).
+> Resumed and launched 2026-07-30 00:31 with W\* filled in. No games were affected, and the
+> prereg-before-results rule holds: `122e32e` predates the first gen game of the turn.
 
 ## The question (one variable)
 
@@ -102,7 +107,7 @@ first, so the memmap read does not stream off drvfs.
 
 | Box | Role | W\* | Status |
 |---|---|---|---|
-| LOCAL 5900XT (16C/32T, RTX GPU) | net-prior gen through carc-orch SHM (`rodv3t1`), `OMP_NUM_THREADS=1` on the SERVER, `--max-batch ≥ W*` | **pending-smoke** | launches first, the moment `measurement/fullbudget_gen_smoke_20260729/SMOKE_RESULTS.md` settles |
+| LOCAL 5900XT (16C/32T, RTX 5060 Ti) | net-prior gen through carc-orch SHM (`rodv3t1`), `OMP_NUM_THREADS=1` on the SERVER, `--max-batch 32 ≥ W*` | **W\* = 16** | **LAUNCHED 2026-07-30 00:31** |
 | LAPTOP (24T, 4070m) | joins the SAME shared-claim pool, own orch server | **pending** (its sweep is live; fall back to **W8** — the proven 2-box stage-2 laptop value — if the sweep yields no usable W\*) | joins after (a) its sweep finishes and the box is idle, (b) a **mandatory** git-bundle sync to local HEAD |
 | APPLE M5 Air (ANE) | joins ONLY IF a real gen-capable CoreML path is demonstrated | n/a | **expected SKIP** — see below |
 
@@ -113,10 +118,21 @@ demonstrated net path is the **eval** harness (`CL-067 EQTIME/ANE` cell, `.mlpac
 while cells run** — so the default is documented SKIP; if the Air does join, it needs
 `caffeinate -dimsu` and ~25% ETA headroom (fanless throttle).
 
-**ETA: pending-smoke.** Filled from the settled per-box s/game once the sweep lands. Prior
-from the in-flight smoke: effective ~4–5 min/game at W12 local ⇒ 300 games ≈ 10–15 h wall
-multi-box (the naive linear-in-sims 37 s/game figure is REFUTED, runbook §"Decision
-arithmetic"). No result is reported from a first-completions rate (order-statistic trap).
+**W\* = 16 and the ETA are SETTLED** from
+[measurement/fullbudget_gen_smoke_20260729/SMOKE_RESULTS.md](../../measurement/fullbudget_gen_smoke_20260729/SMOKE_RESULTS.md):
+W16 is the throughput peak (5,367 examples/s on a phase-matched 215 s window) *and* the smallest
+W inside the 5–10% tolerance band, so the settle-low rule picks it twice over; the knee is
+bracketed on both sides (W12 is 19.8% below peak, so this is an interior optimum, not a ladder
+endpoint). Independently re-derived from the raw `carc-orch` counters by this agent before the
+smoke doc landed — same ranking, same winner (W12 ~3,700 / W16 ~5,400 / W20 ~5,020 / W28 ~5,270
+examples/s; `batches/s` stable 213–239, i.e. **no queue collapse** anywhere on the ladder, which
+was the specific hazard the smoke was hunting).
+
+**ETA: ≈7.3 h local-only for 300 games** (87.6 s/game effective at W16, anchored on the ONE
+complete cohort — W12's 12/12 wave, 1309.5 s, 109.1 s/game measured — and carried across W by
+the measured throughput ratio; never a first-completions rate). Less when the laptop joins. Both
+legs of the runbook's naive 3–4.5 h prior are refuted in the smoke doc: the sims200 baseline it
+extrapolated from was itself an order-statistic artifact (real rate 23.0–23.7 s/game, not 10.7).
 
 ## Ops discipline for the unattended night
 
