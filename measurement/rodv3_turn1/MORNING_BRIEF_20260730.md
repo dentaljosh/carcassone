@@ -17,9 +17,9 @@ first" the boxes swapped: **the unmeasured pair is being measured directly, firs
 
 | what | where | state |
 |---|---|---|
-| **Teacher h2h**: CL-067 net k4×688 vs champion k8×1376=11008, n=400 paired, band 94e9 | local (W20, since 02:08) + laptop (joined mid-flight) | **ETA ~08:15** |
-| rodv3 gen (net-on-net self-play corpus) | PARKED losslessly at 33/300, claims clean | resumes per verdict |
-| Air gen W-sweep (real net-on-net numbers via CoreML port) | M5, throwaway seeds | W4 = 30.1 games/h; W6/W8 landing |
+| **Teacher h2h**: CL-067 net k4×688 vs champion k8×1376=11008, n=400 paired, band 94e9 | local W20 (02:08) + laptop W12 (02:27, memory-capped) | **ETA ~09:15–09:45** |
+| rodv3 gen (net-on-net self-play corpus) | PARKED losslessly at **65/300**, claims at parity | resumes per verdict |
+| Air gen W-sweep (real net-on-net numbers via CoreML port) | M5 | W4 = 30.1 games/h measured; **box fell asleep mid-W6 ~02:21 DESPITE untimed `caffeinate -dimsu` — 2nd occurrence** (also at 377/400 on 2026-07-29). Results safe on its disk. Hypothesis to check: lid-close sleep, which caffeinate cannot block — `pmset -g log` in the morning. No long Air run should be funded until understood. |
 
 ## The decision menu, keyed by the h2h
 
