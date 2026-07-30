@@ -57,6 +57,13 @@ distribution is itself the finding about this project (see the systemic read).
 
 **Rank: highest. Actionable before the gate is funded, and the fix is free.**
 
+> **STATUS: ✅ ADOPTED 2026-07-30 00:59 — `d9cce65`** ("rodv3 turn-1 prereg: PRE-GATE AMENDMENT
+> (audit F1) — DEAD branch re-scoped, before any gate game"). The corpus-teacher budget was
+> re-verified from the manifest by the launch agent, the DEAD branch was narrowed so a null cannot be
+> recorded as "lever 6 resolved NEGATIVE", and gen at the corpus-teacher budget k8×1376 = 11008 is
+> now priced (~4× tonight's cost ⇒ ~29 h) and named as the surviving discriminator, NOT funded.
+> One citation inside this section was corrected in the process — see the amendment box in (a).
+
 ### The buried clause, verbatim
 
 The recorded confound is **relative**, not absolute —
@@ -86,17 +93,40 @@ roadmap [G8](../PROGRAM_ROADMAP_2026-07-07.md#L115).
 > The recorded ¼-budget confound (HANDOFF ½-budget floor; recipe lever 6) is the thing under test;
 > CL-067's equal-sims +35.7 ± 12.3 supplies the missing premise **(operator > teacher at 2752)**.
 
-**(a) The premise contradicts CL-067's own counterevidence field.** CL-067 measured the distilled
-net's priors against the **deploy champion** at equal sims — never against the teacher.
-`governance/CLAIM_REGISTRY.csv` CL-067, counterevidence:
+**(a) The premise cites CL-067 one comparison wider than anything CL-067 measured.** CL-067's two
+cells both pit the distilled net's priors against the **deploy champion** at equal sims. **The
+student-versus-corpus-teacher pair is UNMEASURED: no `results.csv` row anywhere contains it.** So
+"operator > teacher at 2752" has no direct measurement in either direction — which is a stronger
+statement of the problem than a contrary number would be, because it means the prereg's load-bearing
+premise is an inference, not a result.
 
-> ASSUMPTION-FREE RESTATEMENT THAT DOES NOT USE THE EXCHANGE RATE AT ALL: per-move cost 11.7 s
-> (distilled net at 2752 sims) vs 11.2 s (the 4x TEACHER k8x1376 at 11008 sims …) — at the SAME
-> per-move cost the raw teacher scores +49.85 and the distillation +35.7, **so THE TEACHER IS
-> +14.1 ELO BETTER THAN ITS OWN DISTILLATION.**
-
-So "operator > teacher at 2752" is exactly backwards on the record: the operator is ~14 elo
-*below* the teacher, and CL-067 is being cited one comparison wider than it was measured.
+> **⚠️ AMENDED 2026-07-30 — and the amendment is itself an instance of this audit's thesis; read the
+> postscript in the systemic read.** This paragraph originally cited CL-067's counterevidence line
+> *"so THE TEACHER IS +14.1 ELO BETTER THAN ITS OWN DISTILLATION"* as a contradiction of the premise.
+> On source re-verification (prompted by the launch agent, which flagged it while writing F1 into the
+> prereg amendment `d9cce65`) the situation is three-sided and worth recording exactly:
+>
+> 1. **The quoted sentence is real and is in `counterevidence`, verbatim** — confirmed by field-level
+>    string search this pass. So is the ASSUMPTION-FREE RESTATEMENT framing around it.
+> 2. **But `+14.1` appears TWICE in CL-067, in two different fields, meaning two different things**
+>    — an arithmetic collision. `best_evidence`: *"The two are STATISTICALLY INDISTINGUISHABLE (elo
+>    diff +14.1 +/- 24.7, z=0.57)"* = the **cross-band difference between its own two cells**
+>    (52e9 +42.8 vs 56e9 +28.7), read by the row as winner's-curse shrinkage. `counterevidence`:
+>    `49.85 − 35.7 = 14.1` = **teacher-over-distillation at equal per-move cost**. Same numeral,
+>    unrelated quantities.
+> 3. **The counterevidence figure is DERIVED, not measured** — it compares two separate
+>    vs-deploy-champion results (+49.85 for the teacher, +35.7 for the student) obtained on
+>    *different bands*, made commensurable by a per-move-cost argument (11.7 s vs 11.2 s). It is a
+>    transitive estimate through a shared baseline, which is precisely the design CL-060 already
+>    got burned by (*"a delta-of-deltas THROUGH the fixed h800 clairvoyant rung … UNDERPOWERED"*)
+>    and which F2 shows can invert by ~70 elo. **It must never be cited as a measured head-to-head.**
+>
+> Net effect on the finding: **F1 stands and is strengthened.** The correct statement is the manifest
+> fact (below) plus "the gap is UNMEASURED", not a signed elo number. Note also that the collision
+> has now produced a second, opposite error downstream: `d9cce65` states that CL-067's
+> *"counterevidence field is entirely about deployability/cost"* — it is not; it contains the
+> teacher sentence quoted above. Both errors are the same hazard: **a bare numeral cited without its
+> field.**
 
 **(b) The gen budget is ¼ of the budget that produced the parent net's priors** — the HANDOFF's
 own criterion, at 4× scale. Verified from the corpus artifact, not from prose:
@@ -148,8 +178,11 @@ implying production depth, or the next reader will over-read a pass.
 
 1. **Free, before the gate is funded:** amend the DEAD branch so a null at gen 2752 is recorded as
    *still ambiguous under the confound's own criterion*, not as "lever 6 resolved NEGATIVE".
-2. **Free:** fix the premise sentence in the prereg **and** roadmap G8 to what CL-067 measured
-   (student > deploy champion at equal sims; teacher > student by +14.1 at equal cost).
+2. **Free:** fix the premise sentence in the prereg **and** roadmap G8 to what CL-067 actually
+   measured — *the student's priors beat the deploy champion at equal sims (pooled +35.7 ± 12.3 over
+   two bands)* — and state plainly that **the student-vs-corpus-teacher comparison is unmeasured**,
+   rather than asserting a direction for it. Roadmap G8 still carries the original
+   "operator > teacher at 2752" wording.
 3. **The decisive version of the experiment:** gen at **≥5504** (k4×1376 or k8×688) — the
    ½-budget floor re-derived against the current champion — or at 11008 for a true parity turn.
    Cost: the prereg's own ETA is ~10–15 h multi-box for 300 games at 2752, so ~20–30 h at 5504 and
@@ -785,6 +818,34 @@ Three cheap amendments would cover the residual, in order of leverage:
 3. **When `PRODUCTION.yaml` changes a number, grep the tree for the old number.** F1 and F9 are
    both consequences of "2752" and "91% of the clock" being hard-coded into prose that was true the
    day before.
+
+### Postscript — this audit committed the error it diagnoses, within hours, and got caught the same way
+
+F1 originally asserted a signed elo number ("the teacher is +14.1 better than its own distillation")
+on the strength of a verbatim registry quote. The quote was real and correctly attributed. The
+*number* was still the wrong thing to cite: it is a transitive estimate through a shared baseline
+across two bands, not a measured pair, and CL-067 happens to contain a **second, unrelated `+14.1`**
+in a different field. The launch agent, re-verifying at source before reusing my finding, flagged the
+citation; re-verification confirmed my attribution and simultaneously confirmed the substantive
+point behind the challenge — that the student-vs-teacher pair is **unmeasured** — which made F1
+stronger. The same collision then produced the mirror-image error in the amendment commit itself
+("counterevidence is entirely about deployability/cost" — it is not).
+
+Three lessons, and they are the audit's own findings turned on itself:
+
+- **The "quote verbatim in original units" amendment (1) is not sufficient — cite the *field* too.**
+  A verbatim quote of the wrong quantity is still a paraphrase error; provenance is
+  `CL-067.counterevidence`, not "CL-067".
+- **Derived-vs-measured is the distinction that matters more than verbatim-vs-paraphrase.** F2 exists
+  because a transitive read through a fixed reference inverted a +50 elo contrast; F1 nearly repeated
+  it in miniature. Any number assembled from two cells on different bands should carry the word
+  "derived" wherever it is cited.
+- **Re-verification at source works in both directions, and is cheap.** It cost one field-level
+  string search to establish that my attribution held, the challenge's premise did not, and the
+  finding improved anyway. That is the whole method this memo recommends, demonstrated on the memo.
+
+An audit that could not find an error in itself would be weaker evidence for its own thesis than one
+that did.
 
 ---
 
