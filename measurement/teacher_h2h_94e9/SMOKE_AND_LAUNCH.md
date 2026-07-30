@@ -70,6 +70,44 @@ OMP/MKL/OPENBLAS=1 to the server · nice -n 19 · setsid-detached
   path fails OPEN (a stranded claim yields a plausible summary at the wrong `n`).
 - **ETA ~11 h local-only ⇒ ~13:10 EDT.** With the laptop moved onto this cell: ~6 h ⇒ **~08:15**.
 
+## LAPTOP JOINED the same cell — 02:27 EDT (approved swap)
+
+Coordinator GO on the recommendation: gen is premise-gated by Joshua's own 01:25 logic, so a 13:10
+premise answer would have inverted the priority he set. The laptop moved off gen and onto this cell
+via `--shared-claim`.
+
+**Laptop gen stopped cleanly first:** its gen watchdog disarmed FIRST (pid 106774) so it could not
+relaunch behind the kill, then gen main 106724 + all 17 spawn children by exact pid, then its orch
++ SHM segment, then **16 stranded laptop claims cleared → 65 npz = 65 claims at parity.** The rodv3
+gen pool is parked losslessly at **65/300** (it had advanced 33 → 65 while the laptop ran, i.e. the
+laptop contributed 32 games in ~43 min ≈ 81 s/game effective — confirming its sweep's "peer of the
+local box" finding).
+
+**Laptop W = 12, and it is sized from a MEASUREMENT, not a guess.** The live local arm was sampled
+first: **537 MB RSS per eval worker** (20 workers + main + orch = 11.3 GB). Against the laptop's
+~10 GB available:
+
+| W | workers | + orch | total | verdict |
+|---|---|---|---|---|
+| 12 | 6.4 GB | ~1.5 GB | **~7.9 GB** | ~2 GB headroom — chosen |
+| 16 | 8.6 GB | ~1.5 GB | ~10.1 GB | the entire budget, zero headroom |
+
+The laptop has a documented **WSL-VM-teardown-under-memory-pressure** failure mode (a Windows-side
+OOM, invisible in `dmesg`), so the arm additionally runs inside
+`systemd-run --user --scope -p MemoryHigh=8G -p MemoryMax=9G`: a breach now fails **CLOSED** (the
+cell dies and `--shared-claim` resumes it) instead of taking the VM down with it.
+
+Verified after launch: 12 workers busy at 45–50% CPU, **549 MB RSS each** (matching local's 537 MB
+— the extrapolation held), orch 1.27 GB, 6 GB still available, own watchdog armed
+(`h2h_watchdog_laptop.sh`, host-scoped orphan-clearing so it can never touch local's live claims;
+summary-parking is deliberately left to the local watchdog alone — two boxes racing one file is
+worse than the problem).
+
+**Revised ETA: ~09:15–09:45 EDT** (32 workers nominal; the laptop's 8P+8E topology makes its 12
+workers ≈ 10 local-equivalents, and it joined 19 min after local). This is **later than the ~08:15**
+quoted when recommending the swap, and the reason is a deliberate trade: that figure assumed laptop
+W16, which the RSS measurement showed has no memory headroom on this box.
+
 ### ⚠️ Verify before reading any number
 
 `n` in the final `summary.json` **must equal 400**. A short cell is indistinguishable from a real
@@ -84,7 +122,17 @@ finds the scratch directory and mistakes it for a result.
 
 ## Cross-references
 
-- Turn-1 gen is **stopped at 33 banked games** and continues on the **laptop** (W\*=16, joined
-  01:38, `33 cached, 267 to play`); the turn-1 **gate remains NOT funded**.
+- Turn-1 gen is **parked losslessly at 65/300** (claims at parity on both hosts). It resumes on
+  whichever box frees first *after* this cell's verdict and Joshua's morning read. The turn-1
+  **gate remains NOT funded**.
+- **Air incident (non-critical):** its gen-side W sweep completed W4 — 4 games / 479 s wall =
+  **119.75 s/game effective, 30.1 games/h** (vs the runbook's ~35 games/h planning figure inferred
+  from eval-shaped data) — started W6 at 01:09, and the box became **unreachable from ~02:21**
+  (`ssh: connect … port 22: Connection timed out`), most likely asleep despite the fresh untimed
+  `caffeinate -dimsu` wrapping the sweep. Its results are on its own disk and lose nothing by
+  waiting. Not chased: the Air is held out of the corpus and contributes nothing to the critical
+  path. **Open question for the morning:** the Air slept mid-run *again* (it also slept at 377/400
+  during the 2026-07-29 ANE cell) — `caffeinate -dimsu` is evidently not sufficient on this box,
+  and that is worth understanding before any long Air run is funded.
 - The stale `PROD_KNOBS` banner defect (`eval_fair_puct.py` pinned at the pre-promotion k4×688) is
   documented in the prereg and is **not** fixed yet — main-tree source, live cell.
