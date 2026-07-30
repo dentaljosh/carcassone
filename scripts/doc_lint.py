@@ -7,6 +7,12 @@ Catches the mechanically-checkable signatures of doc rot that review found:
     E1  broken relative markdown link (target doesn't exist)
     E2  tracked doc links to an UNTRACKED file (link breaks on every clone /
         bundle-synced remote — the COMPACT_LEAF_REWRITE_PLAN bug)
+    E3  the sealed-band tier registry (governance/BAND_REGISTRY.csv) is missing,
+        untracked, or empty. Adopted 2026-07-19 (REVIEW_ADOPTION_20260719) and
+        FAILS CLOSED on purpose: for 11 days the policy existed with no registry
+        and the band-enumeration check it replaced was documented to "fail
+        silently open" (buried-caveats audit F15). A silent pass here is the
+        exact failure mode being fixed, so absence is an ERROR, not a warning.
 
   WARNINGS (judgment calls, surface but don't block):
     W1  dated plan/spec doc (docs/NAME_20YY-MM-DD.md) with no status banner in
@@ -100,10 +106,42 @@ def _resolve_link(srcfile: Path, target: str) -> Path | None:
     return None
 
 
+BAND_REGISTRY = "governance/BAND_REGISTRY.csv"
+
+
+def check_band_registry(tracked: set[str]) -> list[str]:
+    """E3 — the sealed-band tier registry must exist, be tracked, and be populated.
+
+    FAILS CLOSED by design. The policy this enforces ("three deck tiers; a band that
+    influenced a decision retires from confirmatory use") was adopted 2026-07-19 with
+    the note "governance/ to carry the tier registry", and the registry was never
+    created; meanwhile the enumeration instruction it was meant to replace
+    (`grep seed_start experiments/results.csv`) matches nothing and passes silently.
+    Band identity is worth 1.8-2.2x in sigma (CL-068), so an unenforced band policy is
+    a live measurement hazard, not a paperwork gap.
+    """
+    p = ROOT / BAND_REGISTRY
+    if not p.exists():
+        return [f"E3 {BAND_REGISTRY}: MISSING — the sealed-band tier registry is required "
+                f"(adopted docs/reviews/REVIEW_ADOPTION_20260719.md). This check fails CLOSED: "
+                f"create the file rather than skipping it."]
+    if not _is_tracked_path(BAND_REGISTRY, tracked):
+        return [f"E3 {BAND_REGISTRY}: UNTRACKED — git add it, or it vanishes on every clone "
+                f"and bundle-synced remote (the same defect as the untracked BAND_CLAIMS.txt "
+                f"it replaces)."]
+    rows = [ln for ln in p.read_text(errors="replace").splitlines()[1:]
+            if ln.strip() and not ln.lstrip().startswith("#")]
+    if not rows:
+        return [f"E3 {BAND_REGISTRY}: EMPTY — header/comments only. A registry with no bands "
+                f"enforces nothing."]
+    return []
+
+
 def lint(files: list[Path], stale_days: float) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     tracked = _tracked()
+    errors.extend(check_band_registry(tracked))
 
     for f in files:
         rel = str(f.relative_to(ROOT))

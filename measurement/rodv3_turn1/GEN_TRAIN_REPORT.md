@@ -33,6 +33,15 @@ local gen **16**, laptop gen **16**, Air gen **4**, local eval **20**, laptop ev
 
 - rodv3 gen: 0 → **33** (local alone) → **65** (with the laptop) → **parked at 65/300**, claims at
   parity on both hosts, losslessly resumable via `--shared-claim`.
+- ℹ️ **READ-THE-RESULT NOTE (added 2026-07-30, false-negative sweep `059c982` S3): this gen is the
+  first learned-track generation ever run at `c_puct` 1.5 self-play** (prereg line 43,
+  `--c-puct 1.5`) — the never-executed arm of the **2026-05-28 c_puct conflation**, in which the
+  self-play `c_sp` and the eval `c` were changed together and the "+47 elo" was later found to be a
+  noise spike. Two consequences for whoever reads these 65 (or 300) games' downstream verdict, and
+  they point in opposite directions: **a GROWTH signal is confounded with the budget change and must
+  NOT be attributed to budget alone**; **a NULL is NOT attributable to the old `c_sp` = 3.0**, because
+  this run does not use it. Zero incremental compute is owed — the arm is already covered by this
+  gen; only the interpretation needs to carry the caveat.
 - teacher h2h: 0 → 400/400 records, `n=400`, `n_paired=200`, verified before any number was read.
 
 ## Train outcome

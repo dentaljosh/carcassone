@@ -1127,6 +1127,30 @@ Clean inverted-U: cap=2 strangles the bonus signal; cap=8/15 reintroduces tanh s
 
 ## 2026-05-15 — v3 leaf: cap tuning is fitting n=20 noise; v2.7 cap=12 is at the local optimum (or indistinguishable from one)
 
+> **⚠️ MEASURED 1-OF-2 ERROR RATE — DO NOT CITE THIS ENTRY'S KILLS AS SETTLED EVIDENCE (stamped 2026-07-30, false-negative sweep `059c982` / buried-caveats audit F7).**
+> This entry contains **two** strength kills — `meeple_K` and the asymmetric `opp_cap` — and **one of
+> the two was worth +179.5 elo.** `meeple_K` ("null, all 3 magnitudes gave identical outcomes at n=20")
+> was **OVERTURNED five and a half weeks later** by a pure-leaf deck-paired cell:
+> `results.csv v28_meeple_flat_vs_v27_heur200_n200` (2026-06-22) = 145W/50L/5D, **+179.5 ± 27.9 elo**,
+> z_margin 9.92. That lever became **v2.8 → v2.9.1 `Bmild_cap8` → v2.9.2 `Bmild_cap8_curve125` — the
+> leaf the current champion runs.** The entire production leaf lineage descends from a term this entry
+> recorded as dead.
+>
+> **AND THE ENTRY DISQUALIFIES ITS OWN INSTRUMENT, three paragraphs below — the defect is the
+> instrument, not the sample size:** (1) **the reference was saturated** — *"Tier-1 is saturated as a
+> reference now — same ~80% wr regardless of leaf cap, so it doesn't discriminate iter_00 from anything
+> similar in strength"*; (2) **the knob reached only one side** — *"`RuleBasedPlayer` uses
+> `virtual_score_inplace` from `virtual_score` (v1, NOT v2) … the `CARCASSONNE_V25_*` env vars only
+> affect the NN's hybrid_v2 leaf, not the rule-player side"*. So these verdicts were graded by a
+> **saturated, leaf-asymmetric instrument at n=20**.
+>
+> **Scope note (corrects a natural misreading):** this is **NOT** a pre-bug-fix benchmark. `DECISIONS.md`
+> is newest-first within a day, and this entry opens *"Post-iter_00 retrain landed today"* — `iter_00` is
+> trained in the dedup-fix entry earlier the same day. The v3 sweep ran on **fixed** leaf code, so it
+> belongs to reservoir **2** (smoke size), not reservoir 4. **The cap axis and `opp_cap` have each since
+> been re-tested independently (C5/C7/F6) and stay dead** — the sweep found **no** live resurrect
+> candidate here. The banner exists so the *citation* carries the error rate, not to reopen anything.
+
 **Context.** Post-iter_00 retrain landed today, the next leaf-eval iteration was v3 — two additions from the 2026-05-14 failure-mode diagnostic that v2.7 didn't address:
 1. **Meeple economy** — `_MEEPLE_K × (meeples_self - meeples_opp)` added after caps (failure-mode 4: over-committed meeples).
 2. **Asymmetric opp cap** — `_OPP_BONUS_CAP` separate from `_BONUS_CAP`, raising it amplifies the negative contribution of opponent's near-closures to search value (failure-mode 3: denial invisible).
@@ -2681,7 +2705,7 @@ The target was ~90% of games in the non-saturated range with headroom. /20 puts 
 
 **Verdict (DONE): ONE survivor — the flat meeple-economy term.** Killed at root audit: farm (broad degradation, cap-masked), denial (no movement). Killed at search: completion/deck-aware-closure (exact-endgame-K2 top-1 0.763->0.826 but NULL full-game +3.5 elo z=1.09 — endgame-local washes out, hybrid-handoff lesson). **Survivor: meeple-economy = +179.5 elo z=9.9 @ heur@200, holds @ heur@800 (+94.9 z=3.8), and v28@200 BEATS v27@800 (+202.6 z=7.0) — quadrupling v2.7's search does NOT close the gap (real leaf-quality gain, not search-imitation).** results.csv `v28_meeple_*`.
 
-**Key correction:** the candidate is BIT-IDENTICAL to the existing legacy `meeple_k=2` knob (verified 560/560), already implemented in object/flat/Cython paths at full speed. **This OVERTURNS the 2026-05-14 "meeple_K null" verdict — that was an n=20 screen (one-sigma noise) and the additive-on-saturating-cap hypothesis was wrong (the term is post-cap).** The recovery-scaling refinement I added DETRACTS (-75 elo) and is excluded. Autopsy mechanism: fixes v2.7 failure-mode #4 (over-committed meeples).
+**Key correction:** the candidate is BIT-IDENTICAL to the existing legacy `meeple_k=2` knob (verified 560/560), already implemented in object/flat/Cython paths at full speed. **This OVERTURNS the 2026-05-15 "meeple_K null" verdict** *(date corrected 2026-07-30 from "2026-05-14" — the `meeple_K` table lives in the `## 2026-05-15 — v3 leaf` entry; there is no meeple_K verdict in any 2026-05-14 entry, so a grep by the cited date missed the kill)* **— that was an n=20 screen (one-sigma noise) graded by a saturated, leaf-asymmetric instrument (see that entry's banner) and the additive-on-saturating-cap hypothesis was wrong (the term is post-cap).** The recovery-scaling refinement I added DETRACTS (-75 elo) and is excluded. Autopsy mechanism: fixes v2.7 failure-mode #4 (over-committed meeples).
 
 **Decision:** candidate **v2.8 = v2.7 + meeple_k=2** is an EXPERIMENTAL reference (clears 4/5 promotion gates). **NOT promoted to production, NOT a v2.7 replacement, no PRODUCTION.yaml change, no training.** The open decisive gate: does it help the NEURAL policy (iter8 leaf-swap) — deferred to the SHM orchestrator (net-on-CPU infeasible; harness ready). Next: orchestrator neural leaf-swap, k-optimization, out-of-lineage anchor.
 

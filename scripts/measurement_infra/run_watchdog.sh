@@ -12,7 +12,10 @@
 #   run_watchdog.sh <records_glob> <expected_n> <worker_pattern> <log> -- <relaunch_cmd...>
 #
 #   records_glob    quoted glob matching COMPLETED record files, e.g.
-#                   '/mnt/c/carc-shared/mycell/seed*_a*.json'
+#                   '/mnt/c/carc-shared/mycell/seed*_a*.json'  (eval cells)
+#                   '/mnt/c/carc-shared/mycell/seed_*.npz'     (gen cells)
+#                   The record EXTENSION is taken from this glob (see REC_EXT below) —
+#                   the orphan-claim guard pairs <seed>.claim with <seed>.$REC_EXT.
 #   expected_n      record count at which the cell is DONE (watchdog exits 0)
 #   worker_pattern  pgrep -f pattern identifying live workers for this run
 #   log             watchdog's own log file
@@ -53,20 +56,36 @@ workers_alive() {
 
 count_records() { ls $GLOB 2>/dev/null | wc -l; }
 
+# --- BEGIN testable helpers (tests/test_run_watchdog.py extracts this block) ---
 CELL_DIR="$(dirname "$GLOB")"   # dirname is a string op — glob chars in the basename are fine
+
+# The record extension is DERIVED FROM THE GLOB, never hardcoded.
+#
+# BUG FIXED 2026-07-30 (audit F14): this used to hardcode ".json", which was correct for the
+# eval harness it was built against on 2026-07-28 but INVERTS the guard's contract on a *gen*
+# cell armed with 'seed_*.npz' — no .json ever exists beside a .npz, so EVERY claim reads
+# record-less and the guard deletes ALL of them, including the claims of games already banked.
+# (The share-side rodv3 copy, /mnt/c/carc-shared/rodv3_turn1/cells/rodv3_watchdog.sh, had
+# already been patched by hand for exactly this; this folds the fix back upstream.)
+REC_EXT="${GLOB##*.}"
+if [ "$REC_EXT" = "$GLOB" ] || [ -z "$REC_EXT" ] || case "$REC_EXT" in *[!A-Za-z0-9]*) true;; *) false;; esac; then
+  echo "records glob must end in a plain .<ext> (e.g. .json or .npz); got: $GLOB" >&2
+  exit 2
+fi
 
 clear_orphan_claims() {
   # a claim whose record exists is history; a claim with no record blocks resume forever
-  local c j
+  local c rec
   for c in "$CELL_DIR"/*.claim; do
     [ -e "$c" ] || break
-    j="${c%.claim}.json"
-    if [ ! -f "$j" ]; then rm -f "$c" && say "cleared orphan claim: $c"; fi
+    rec="${c%.claim}.$REC_EXT"
+    if [ ! -f "$rec" ]; then rm -f "$c" && say "cleared orphan claim: $c"; fi
   done
   return 0
 }
+# --- END testable helpers ---
 
-say "watchdog armed: glob=$GLOB n=$N pattern=$PAT relaunch=${RELAUNCH[*]}"
+say "watchdog armed: glob=$GLOB n=$N record_ext=.$REC_EXT pattern=$PAT relaunch=${RELAUNCH[*]}"
 while :; do
   sleep "$POLL"
   got="$(count_records)"

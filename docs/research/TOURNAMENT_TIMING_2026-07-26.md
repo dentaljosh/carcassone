@@ -1,5 +1,18 @@
 # Competitive Carcassonne time controls — and what our engine can legally spend
 
+> **⚠️ STATUS AMENDED 2026-07-30 (audit F9) — THE FORMAT RESEARCH STANDS; THE "WHAT WE CAN SPEND" HALF IS SUPERSEDED.**
+> **Every per-move cost and %-of-clock figure in this doc prices the search SINGLE-STREAM — an assumption
+> the doc never states.** The k determinizations are independent until the pooled-Q argmax, so
+> **CL-071 (2026-07-29)** runs them on `parallel_workers=8`: measured **6.370×**, **30/30 action-identical
+> roots**, transport 7.24 ms/move. The 4× teacher (11008) therefore costs **~20.6% of the 900 s clock**
+> — 2.1595 s/move × 70 decisions + the **34 s exact-K solve, which is NOT parallelized** (the commonly
+> quoted 14.3–17.4% band divides that solver term by the speedup; see CL-071 counterevidence (4) for the
+> reconciliation) — and **it was promoted to deploy champion**. So "compute is a knob for UNCLOCKED play
+> only" is **false as of 2026-07-29**. Still true: the **sequential fallback** (Android/Chaquopy, daemonic
+> eval-farm parents) is the same player 6.37× slower, so the mobile profile stays at k4×688.
+> **The time-control research itself — 15 min/player/game, sudden death, no increment, ~70 searched
+> decisions, the 34 s K=2 solve — is unchanged and remains the authority.**
+>
 > **STATUS: RESEARCH COMPLETE 2026-07-26 (delegated web research, sources below).**
 > **Bottom line: the competitive standard is 15 minutes per player per game, sudden death,
 > no increment. Only the DEPLOY CHAMPION (2.8 s/move, 26% of clock) is comfortably legal.

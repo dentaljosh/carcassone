@@ -179,6 +179,12 @@ extrapolated from was itself an order-statistic artifact (real rate 23.0–23.7 
   record-less claims, re-execs the resume-safe driver, 5-relaunch budget) —
   `scripts/measurement_infra/run_watchdog.sh '<out>/seed_*.npz' 300 '<worker pattern>' <log>
   -- <relaunch cmd>`. The 2026-07-28 lesson: the session heartbeat dies with the session.
+  ✅ **SAFE ON A `.npz` GEN CELL AS OF 2026-07-30 (audit F14) — it was NOT when this was written.**
+  The upstream guard hardcoded `.json`, so on a `seed_*.npz` cell every claim read record-less and
+  it deleted **all** of them, banked games included — the inverse of its contract. It now derives
+  the record extension from the glob you pass (`REC_EXT`), and rejects an extensionless glob with
+  exit 2 rather than guessing. Covered by `tests/test_run_watchdog.py`. (The share-side
+  `rodv3_turn1/cells/rodv3_watchdog.sh` was hand-patched for this; the fix is now folded upstream.)
 - Orphaned-claim hygiene: after ANY kill of a `--shared-claim` cell, immediately
   `for c in DIR/*.claim; do [ -f "${c%.claim}.npz" ] || rm -f "$c"; done`. Self-play fails
   CLOSED (loud partial-data refusal), but a stranded claim stalls the pool at `300 − n_killed`.
@@ -202,6 +208,13 @@ extrapolated from was itself an order-statistic artifact (real rate 23.0–23.7 
   - **AMBIGUOUS:** anything else → ONE extension of the same cell (n→800), then verdict.
 - Secondary (context, not gates): vs rod_v2 iter_02 anchor at k4×688; a low-sims cell ONLY as
   a diagnostic, never citable as growth (washout law).
+  ⚠️ **RULER CEILING — added 2026-07-30 (audit F2), read before quoting this read.** CL-070 measured
+  that **RoD-v2 cannot price budget above 2752**: on the k8×1376-vs-k4×688 pair it reads **−21.4
+  (wrong sign, n.s.)** where the direct n=400 deck-paired head-to-head reads **+49.85 ± 17.55** — a
+  ~71 elo swing including the sign. k4×688 **is** 2752, i.e. this secondary read sits exactly at the
+  boundary where the mis-pricing begins. **It therefore may NOT be used to rescue or to condemn the
+  turn in either direction** — it is context only, and any number it produces is DERIVED (a
+  delta-of-deltas through a fixed reference), not measured. The gates above are the verdict.
 - **The gate is NOT funded tonight.** No eval games run until Joshua says GO.
 
 ## PRE-GATE AMENDMENT (2026-07-30 ~01:00 — before any gate game, blind to all strength outcomes; prompted by [BURIED_CAVEATS_AUDIT_20260730.md](../../docs/reviews/BURIED_CAVEATS_AUDIT_20260730.md) F1)
