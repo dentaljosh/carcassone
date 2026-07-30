@@ -3,7 +3,7 @@
 > ## ✅ TRIAGE EXECUTED 2026-07-30 — this memo has been actioned
 >
 > Joshua approved the hygiene batch and the three adjudications (*"yes yes yes"*). Commits
-> **`efdacf0`** (Bucket A — hygiene + the false-negative sweep's S1–S3) and **`HEAD2`**
+> **`efdacf0`** (Bucket A — hygiene + the false-negative sweep's S1–S3) and **`0a0e0ee`**
 > (Bucket B — the adjudications). `governance/PRODUCTION.yaml` was **not** touched.
 >
 > **A = FIXED:** **F2** (RoD-v2 ruler ceiling → a new `LEVER_INDEX` §8 ruler-validity row + the
