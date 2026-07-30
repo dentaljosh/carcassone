@@ -1,7 +1,12 @@
 # Stage-3 value-unlock — OFFLINE chain read-out (2026-07-30)
 
-> **STATUS: IN PROGRESS — pre-registration section §3 was written and committed BEFORE
-> the ruler was run. Results sections are filled in below it.**
+> **STATUS: ✅ CLOSED 2026-07-30 — offline verdict = NO (learned value does not beat the
+> champion leaf on the non-circular solver ruler: regret 1.9946 vs 0.9508, paired
+> sign-z −17.43 on 1,119 roots). F13 CONFIRMED as a code fact, REFUTED as a mechanism.
+> Recommendation: DO NOT fund the blend test.**
+>
+> The pre-registration (§3) was written and committed in `9660f67`, **before** the ruler
+> was run; the results commit follows it.
 
 **Scope, stated up front and binding on every number here.** This is the three-step
 *offline* chain Joshua funded ("ok, have a subagent try it"): (1) verify audit finding
@@ -109,7 +114,51 @@ keep the tanh head, keep the targets unscaled, raise the value loss weight inste
 
 ## 2. Training
 
-*(filled in below — see §2 results)*
+Driver: [`train_value_unlock.sh`](train_value_unlock.sh). Log:
+`/mnt/c/carc-shared/value_unlock_20260730_train.log`. Metrics + provenance:
+`/mnt/c/carc-shared/value_unlock_20260730/ckpt/value_unlock_v1.metrics.json`.
+
+| | |
+|---|---|
+| warm-from | `distill_strong_20260723/ckpt/iter_03.pt` (CL-067), sha256 `6e2679908d79a76c…` (from the metrics `provenance.parent_ckpt`) |
+| corpus | `distill_strong_20260723/iter_00..03` — **2,400 files / 345,333 rows**, `--iter 3 --window 4`, dataset fingerprint `6b362781945b33f3` |
+| **excluded** | the 65 `rodv3_turn1/iter_04` games (2752-tier) — tier purity, per the brief |
+| split | **by GAME**: `split_files_train_val` (`train_iter.py:397`) splits the FILE list, and one `seed_*.npz` = one game → **2,280 train files (328,077 rows) / 120 val files (17,256 rows)**, seed 0 (the same split iter_03 used, so val losses are directly comparable) |
+| policy head | **jointly trained** — `train_iter.py` has no freeze/`requires_grad` flag; joint train with the value term up-weighted is the simplest thing the existing trainer supports |
+| deltas vs iter_03's own recipe | `--value-loss-weight` 1.5 → **5.0** (G-T2) · `--lr` 1e-3 flat → **3e-4 + cosine** (G-T1) · `--epochs` 3 → **4**. Everything else identical (batch 256, `--aux-weight 0`, `--val-fraction 0.05`, seed 0) |
+| target shape | **unchanged** — see §1.3 (F13's fix is a no-op on outcome targets; no shared default touched) |
+| code | `e7575f3` (dirty: the untracked measurement dirs) |
+| wall-clock | 4 epochs × ~186 s + staging ≈ **13 min** on the local 5900XT/RTX (GPU ~95 W, 86% util), `nice -n 19` |
+| **output** | `/mnt/c/carc-shared/value_unlock_20260730/ckpt/value_unlock_v1.pt` · **sha256 `15dd5d461342b1d756e407095d9db8ea4a27521d6a5cf6708afbbe88ebe9ed1f`** |
+
+**Loss curve (verbatim from the log):**
+
+```
+  epoch  1/4 (188.2s)  train pol/val/own=1.529/0.1000/0.1650   val pol/val/own=1.609/0.2862/0.1641
+  epoch  2/4 (186.5s)  train pol/val/own=1.520/0.0703/0.1662   val pol/val/own=1.609/0.2708/0.1642
+  epoch  3/4 (184.9s)  train pol/val/own=1.512/0.0557/0.1741   val pol/val/own=1.611/0.2813/0.1734
+  epoch  4/4 (183.3s)  train pol/val/own=1.505/0.0455/0.1791   val pol/val/own=1.611/0.2768/0.1806
+  value↔outcome corr = +0.6795
+  policy entropy 1.5349 nats — OK (floor 0.8002 = 0.50× baseline 1.6004)
+```
+
+**Read of the curve — the value refine WORKED on its own diagnostic, and is also visibly
+memorising.** Train value MSE fell **0.1000 → 0.0455** across the four epochs while the
+**held-out-by-game** value MSE moved only **0.2862 → 0.2708 → 0.2813 → 0.2768** — i.e. a
+2.2× train/val gap, best at epoch 2, flat-to-worse after. Held-out **value↔outcome
+Pearson r = +0.6795**, up from iter_03's **0.6564** (its own
+`metrics.json`) and above the project's ~0.61 heuristic-leaf reference
+(`train_iter.py:706`). Policy entropy 1.5349 vs the inherited 1.6004 — the joint train
+did not collapse the policy.
+
+⚠️ **Two caveats that must travel with the +0.6795.** (a) It is the *val slice of the
+same four gen iterations*, i.e. **within-window** — `measurement/az_zero_20260724/PROBE_OFFDIST_20260724.md`
+showed a head reading 0.891 in-window and **0.437** on foreign strong games. Held-out-by-
+game is better than held-out-by-row but is not off-distribution. (b) It is a
+*position-level* correlation. The ruler in §3–§4 asks the **between-sibling** question,
+which is the one every prior kill (CL-039/042/064/065) turned on, and the two are known
+to dissociate (`results.csv m2_solver_score_k2_it00_04_n1119`: "position LEVEL learned,
+between-sibling discrimination ZERO").
 
 ## 3. PRE-REGISTRATION — the offline verdict metric and bar
 
@@ -205,6 +254,107 @@ measure a *search agent*, which is exactly the online question this chain is bar
 
 ---
 
-## 4. Results
+## 4. Results — **the pre-registered verdict is NO**
 
-*(filled in below)*
+Driver [`run_ruler.sh`](run_ruler.sh) (W=16, `nice -n 19`, local, pure CPU) →
+[`solver_score_value_unlock.json`](solver_score_value_unlock.json);
+adjudicator [`analyze_ruler.py`](analyze_ruler.py) →
+[`VERDICT.json`](VERDICT.json). Log `/mnt/c/carc-shared/value_unlock_20260730_ruler.log`.
+**`scored=1119 skipped=0 errors=0 in 1210.5s`**, all K=2, all `marginalized`, one solve
+per root shared by all four rankers.
+
+**Provenance self-check (it passed):** the `v29_leaf` arm reproduces the 2026-07-03 M2
+read-out **to 4 decimals** — regret **0.9508**, top1 **0.6095**, tau **0.6153**, identical
+to `measurement/canonical_az/solver_score_derisk_it00_03.json` and to the
+`gatec_c0_learnability_probe` self-check. Same roots, same leaf, same instrument.
+
+### 4.1 Aggregate (all fields read off `VERDICT.json` / the report's `aggregate` block)
+
+| arm | `solver_regret_mean` ↓ | median | `top1_rate` ↑ | `tau_mean` ↑ | frac regret = 0 |
+|---|---|---|---|---|---|
+| `curve125` (**the champion's leaf — the pre-registered baseline**) | **0.9508** | 0.0 | **0.6095** | **0.6153** | 0.6988 |
+| `v29_leaf` (curve100, harness baseline) | 0.9508 | 0.0 | 0.6095 | 0.6153 | 0.6988 |
+| `iter_03` (CL-067 value head, **control**) | 2.0000 | 1.0 | 0.0688 | 0.0177 | 0.3342 |
+| **`value_unlock_v1`** (this run) | **1.9946** | 1.0 | **0.0670** | **0.0190** | 0.3360 |
+
+### 4.2 The pre-registered adjudication
+
+```
+candidate  value_unlock_v1   regret_mean 1.9946
+baseline   curve125          regret_mean 0.9508
+paired     91 better / 523 worse / 505 tie   ->  sign_z = -17.43
+mean dregret (candidate - baseline) = +1.0438 points lost per root
+VERDICT = NO
+```
+
+The bar was "strictly lower regret AND paired sign-z ≥ +2". The candidate is **2.10×
+worse** on the primary statistic and the paired sign-z is **−17.43**, i.e. it clears the
+**NO** branch (sign-z ≤ −2) by more than eight-fold. Secondary statistics agree and are
+not marginal: tau **0.0190 ± 0.0053** (bootstrap-over-roots, B = 10,000) against the
+leaf's **0.6153 ± 0.0120**, paired **Δτ = −0.598, dτ-z = −44.6**; top-1 **0.067 vs 0.610**.
+
+### 4.3 Two things worth more than the verdict itself
+
+**(a) The value refine moved the trainer's diagnostic and moved the ruler by nothing.**
+`value_unlock_v1` vs its own warm parent `iter_03`, paired on the same 1,119 roots:
+**161 better / 144 worse / 814 tie, sign-z +0.97**; **Δτ +0.0013, dτ-z +0.25**; Δregret
+**−0.0054 pts/root**. Both inside noise. So the recipe delivered exactly what it was
+designed to (held-out value↔outcome r **0.6564 → 0.6795**, train value MSE 0.100 →
+0.046) and **that improvement did not touch between-sibling discrimination at all**. This
+is the CL-039/CL-042/CL-064/CL-065 dissociation reproduced once more, this time with the
+*strongest corpus the project has* (the k8×1376 = 11008 net-free champion) and a value
+term at 5× weight: **the axis the value objective improves is not the axis search
+consumes.**
+
+Sharper still: `value_unlock_v1` and `iter_03` **agree on the picked child in only
+310/1119 = 27.7% of roots** while scoring identically badly (2.00 vs 1.99). Two heads
+that disagree about the move three times out of four and lose the same ~1.05 points per
+root are not two imperfect orderings — they are noise around a common
+position-level signal.
+
+**(b) The instrument cannot separate curve125 from curve100, so the baseline choice was
+free.** `curve125` and `v29_leaf` pick **the same child on 1119/1119 roots** (0 better /
+0 worse / 1119 tie, mean Δregret exactly 0.0; τ differs only at ~1e-5, below the report's
+4-decimal rounding). **This is a limitation of the ruler on this root set, not evidence
+that CL-051's curve125 win is unreal** — CL-051 was an *online, deck-paired, whole-game*
+result (+66.8 clairvoyant / +48.8 fair), and these 1,119 roots are K=2 endgames where the
+meeple-curve term is very nearly constant across siblings. Recorded so nobody later reads
+"curve125 == curve100" off this table.
+
+### 4.4 Honest scope
+
+1. **Offline regret ≠ online search value.** This measures how a bare evaluator orders
+   children of a root. Production uses the leaf inside a 2,752–11,008-sim PIMC search that
+   Q-converges away from any single evaluation. **A win here would have funded the blend
+   test and nothing more; a loss here does not by itself prove a blend cannot help** — it
+   removes the only cheap positive evidence that would have justified paying for one.
+2. **All 1,119 roots are K=2 endgames.** The mid-game is not measured. K≤4 would add
+   1,119 K=4 roots at ~21 min/solve — not fundable in this chain.
+3. **One training recipe, one seed.** No sweep over `--value-loss-weight`, LR, or epochs;
+   no listwise/ranking term (`--rank-weight`, already TRIED and negative three times —
+   `docs/LEVER_INDEX.md` §1).
+4. The **+0.6795** value↔outcome r is a **within-window, position-level** number (§2
+   caveats). It should not be quoted as evidence about the value head's usefulness.
+
+### 4.5 Recommendation
+
+**DO NOT fund the blend test.** The blend's whole premise is that the learned value knows
+something the leaf does not *about the choice between sibling moves*; on the strongest
+corpus available, with the value objective deliberately up-weighted, the learned head is
+**2.1× worse in raw points, 9× worse at top-1, and 32× worse at τ** than the leaf it would
+be blended against, and the refine that improved its outcome-prediction moved none of it.
+Blending a signal at τ ≈ 0.02 into one at τ ≈ 0.62 has no mechanism by which to help; the
+only honest expectation is dilution.
+
+**What this chain does buy, cheaply:**
+
+- **F13 is closed** and should stop being carried as a live "lever for attempt #2"
+  (§1) — it is a true statement about the code with an empty effect set. Its real
+  neighbour (target magnitude vs loss weight) is recorded in its place.
+- The **value-inertness ledger gains its strongest-corpus entry**. Every prior kill could
+  be answered with "but the teacher was weak". This one cannot: the corpus is the
+  11,008-sim net-free champion, the warm-start is CL-067, and the answer is unchanged.
+- If Joshua wants to spend on the learned track anyway, the evidence points at
+  **discovery, not evaluation** — the one learned component that has ever paid here is
+  the *policy prior* (CL-067), and it pays by proposing moves, not by scoring them.
+

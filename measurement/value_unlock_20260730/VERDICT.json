@@ -1,0 +1,193 @@
+{
+ "report": "/home/doctor/projects/carcassone/measurement/value_unlock_20260730/solver_score_value_unlock.json",
+ "n_roots": 1119,
+ "n_scored": 1119,
+ "n_skipped": 0,
+ "n_errors": 0,
+ "max_k": 2,
+ "checkpoints": [
+  {
+   "path": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+   "sha256": "6e2679908d79a76cd2d66789d992676a5bfa85946a1543968982b308873751a1"
+  },
+  {
+   "path": "/mnt/c/carc-shared/value_unlock_20260730/ckpt/value_unlock_v1.pt",
+   "sha256": "15dd5d461342b1d756e407095d9db8ea4a27521d6a5cf6708afbbe88ebe9ed1f"
+  }
+ ],
+ "aggregate": {
+  "v29_leaf": {
+   "n": 1119,
+   "solver_regret_mean": 0.9508,
+   "solver_regret_median": 0.0,
+   "solver_regret_max": 23.0,
+   "top1_rate": 0.6095,
+   "tau_mean": 0.6153,
+   "solve_secs_mean": 12.8,
+   "solve_secs_total": 14317.7
+  },
+  "iter_03": {
+   "n": 1119,
+   "solver_regret_mean": 2.0,
+   "solver_regret_median": 1.0,
+   "solver_regret_max": 26.0,
+   "top1_rate": 0.0688,
+   "tau_mean": 0.0177,
+   "solve_secs_mean": 12.8,
+   "solve_secs_total": 14317.7
+  },
+  "value_unlock_v1": {
+   "n": 1119,
+   "solver_regret_mean": 1.9946,
+   "solver_regret_median": 1.0,
+   "solver_regret_max": 25.0,
+   "top1_rate": 0.067,
+   "tau_mean": 0.019,
+   "solve_secs_mean": 12.8,
+   "solve_secs_total": 14317.7
+  },
+  "curve125": {
+   "n": 1119,
+   "solver_regret_mean": 0.9508,
+   "solver_regret_median": 0.0,
+   "solver_regret_max": 23.0,
+   "top1_rate": 0.6095,
+   "tau_mean": 0.6153,
+   "solve_secs_mean": 12.8,
+   "solve_secs_total": 14317.7
+  }
+ },
+ "arms": {
+  "v29_leaf": {
+   "aggregate": {
+    "n": 1119,
+    "solver_regret_mean": 0.9508,
+    "solver_regret_median": 0.0,
+    "solver_regret_max": 23.0,
+    "top1_rate": 0.6095,
+    "tau_mean": 0.6153,
+    "solve_secs_mean": 12.8,
+    "solve_secs_total": 14317.7
+   },
+   "paired_vs_curve125": {
+    "vs": "curve125",
+    "better": 0,
+    "worse": 0,
+    "tie": 1119,
+    "sign_z": 0.0,
+    "mean_dregret": 0.0
+   },
+   "tau_boot_vs_curve125": {
+    "tau_mean": 0.6153,
+    "tau_sigma_boot": 0.01201,
+    "n_tau_nan": 182,
+    "dtau_vs_curve125_mean": -0.0,
+    "dtau_sigma_boot": 3e-05,
+    "dtau_z": -0.989,
+    "n_paired": 937
+   }
+  },
+  "iter_03": {
+   "aggregate": {
+    "n": 1119,
+    "solver_regret_mean": 2.0,
+    "solver_regret_median": 1.0,
+    "solver_regret_max": 26.0,
+    "top1_rate": 0.0688,
+    "tau_mean": 0.0177,
+    "solve_secs_mean": 12.8,
+    "solve_secs_total": 14317.7
+   },
+   "paired_vs_curve125": {
+    "vs": "curve125",
+    "better": 83,
+    "worse": 531,
+    "tie": 505,
+    "sign_z": -18.08,
+    "mean_dregret": 1.0492
+   },
+   "paired_vs_v29_leaf": {
+    "vs": "v29_leaf",
+    "better": 83,
+    "worse": 531,
+    "tie": 505,
+    "sign_z": -18.08,
+    "mean_dregret": 1.0492
+   },
+   "tau_boot_vs_curve125": {
+    "tau_mean": 0.0177,
+    "tau_sigma_boot": 0.00522,
+    "n_tau_nan": 129,
+    "dtau_vs_curve125_mean": -0.5959,
+    "dtau_sigma_boot": 0.01304,
+    "dtau_z": -45.702,
+    "n_paired": 937
+   }
+  },
+  "value_unlock_v1": {
+   "aggregate": {
+    "n": 1119,
+    "solver_regret_mean": 1.9946,
+    "solver_regret_median": 1.0,
+    "solver_regret_max": 25.0,
+    "top1_rate": 0.067,
+    "tau_mean": 0.019,
+    "solve_secs_mean": 12.8,
+    "solve_secs_total": 14317.7
+   },
+   "paired_vs_curve125": {
+    "vs": "curve125",
+    "better": 91,
+    "worse": 523,
+    "tie": 505,
+    "sign_z": -17.434,
+    "mean_dregret": 1.0438
+   },
+   "paired_vs_v29_leaf": {
+    "vs": "v29_leaf",
+    "better": 91,
+    "worse": 523,
+    "tie": 505,
+    "sign_z": -17.434,
+    "mean_dregret": 1.0438
+   },
+   "tau_boot_vs_curve125": {
+    "tau_mean": 0.019,
+    "tau_sigma_boot": 0.00533,
+    "n_tau_nan": 129,
+    "dtau_vs_curve125_mean": -0.598,
+    "dtau_sigma_boot": 0.01341,
+    "dtau_z": -44.591,
+    "n_paired": 937
+   }
+  },
+  "curve125": {
+   "aggregate": {
+    "n": 1119,
+    "solver_regret_mean": 0.9508,
+    "solver_regret_median": 0.0,
+    "solver_regret_max": 23.0,
+    "top1_rate": 0.6095,
+    "tau_mean": 0.6153,
+    "solve_secs_mean": 12.8,
+    "solve_secs_total": 14317.7
+   },
+   "paired_vs_v29_leaf": {
+    "vs": "v29_leaf",
+    "better": 0,
+    "worse": 0,
+    "tie": 1119,
+    "sign_z": 0.0,
+    "mean_dregret": 0.0
+   }
+  }
+ },
+ "PREREGISTERED_VERDICT": {
+  "candidate": "value_unlock_v1",
+  "baseline": "curve125",
+  "candidate_regret_mean": 1.9946,
+  "baseline_regret_mean": 0.9508,
+  "paired_sign_z": -17.434,
+  "verdict": "NO"
+ }
+}
