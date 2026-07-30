@@ -121,6 +121,39 @@
 # Rebuild recipes for all four live in the git history of this commit's message
 # and in the scratchpad scripts `setup_win_venv.ps1` / `setup_wsl_venv.sh`.
 #
+# ---- SECOND BOX: the LAPTOP replication (2026-07-29) ------------------------
+#
+# Every path above is now an `EFFL_*` env override (defaults = the 5900XT box),
+# because the laptop differs in three ways that would each have silently broken
+# a hardcoded run:
+#
+#   1. it mounts the CIFS share at `/mnt/carc-shared`, NOT `/mnt/c/carc-shared`,
+#      and staging must be on its OWN local C: anyway (a bench must not time
+#      network I/O), so the M5 bundle + checkpoint are COPIED to C: first;
+#   2. its WSL does not append the Windows PATH, so a bare `cmd.exe` is
+#      "command not found" — handled by the WIN32DIR block below;
+#   3. it had no Windows Python and NO `winget` (App Installer absent), so the
+#      interpreter came from the python.org user-scope silent installer.
+#
+# Laptop invocation (24T i7-14650HX / RTX 4070 Laptop; provisioned 2026-07-29):
+#
+#   EFFL_REPO=/home/doctor/eff_linus_wt \
+#   EFFL_OUTROOT=/home/doctor/eff_linus_out \
+#   EFFL_STAGE_WSL=/mnt/c/carc-bench-eff_linus/stage \
+#   EFFL_STAGE_WIN='C:\carc-bench-eff_linus\stage' \
+#   EFFL_M5_WSL=/mnt/c/carc-bench-eff_linus/m5_bench_20260728 \
+#   EFFL_M5_WIN='C:\carc-bench-eff_linus\m5_bench_20260728' \
+#   EFFL_CKPT_WSL=/mnt/c/carc-bench-eff_linus/ckpt/iter_03.pt \
+#   EFFL_CKPT_WIN='C:\carc-bench-eff_linus\ckpt\iter_03.pt' \
+#     scripts/measurement_infra/wsl_vs_native_ab.sh
+#
+#   Laptop interpreters: BOTH arms CPython **3.13.14** — WSL from
+#   `uv python install 3.13.14` (python-build-standalone), Windows from
+#   python.org's `python-3.13.14-amd64.exe /quiet InstallAllUsers=0
+#   PrependPath=0 Include_launcher=0` (user scope, no elevation). numpy 2.5.1 +
+#   pyyaml 6.0.3 + torch 2.11.0+cu128 on both. Exact-patch match, which the
+#   5900XT run did not have (3.13.12 WSL vs 3.13.14 Windows).
+#
 # =============================================================================
 # ROUND 2 (documented, deliberately NOT done tonight)
 # =============================================================================
@@ -147,17 +180,35 @@
 set -euo pipefail
 
 PROJECT="eff_linus"
-REPO=/home/doctor/projects/carcassone
-STAGE_WSL=/mnt/c/carc-shared/eff_linus_20260728
-STAGE_WIN='C:\carc-shared\eff_linus_20260728'
-M5_WSL=/mnt/c/carc-shared/m5_bench_20260728
-M5_WIN='C:\carc-shared\m5_bench_20260728'
-CKPT_WSL=/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt
-CKPT_WIN='C:\carc-shared\distill_strong_20260723\ckpt\iter_03.pt'
-WSL_PY=/home/doctor/carc-wsl-bench/.venv/bin/python
-WIN_PY_WIN='C:\Users\Doctor\carc-win-bench\.venv\Scripts\python.exe'
-WIN_PY_WSL=/mnt/c/Users/Doctor/carc-win-bench/.venv/Scripts/python.exe
-LOADAVG_LIMIT=4.0
+# --- every path is env-overridable so the SAME driver runs on a second box ----
+# (added 2026-07-29 for the LAPTOP replication: the laptop mounts the CIFS share
+# at /mnt/carc-shared, not /mnt/c/carc-shared, and its Windows-visible staging
+# therefore has to live on its OWN C:. Defaults below are the 5900XT box's
+# values, so the original invocation is unchanged.)
+REPO="${EFFL_REPO:-/home/doctor/projects/carcassone}"
+STAGE_WSL="${EFFL_STAGE_WSL:-/mnt/c/carc-shared/eff_linus_20260728}"
+STAGE_WIN="${EFFL_STAGE_WIN:-C:\\carc-shared\\eff_linus_20260728}"
+M5_WSL="${EFFL_M5_WSL:-/mnt/c/carc-shared/m5_bench_20260728}"
+M5_WIN="${EFFL_M5_WIN:-C:\\carc-shared\\m5_bench_20260728}"
+CKPT_WSL="${EFFL_CKPT_WSL:-/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt}"
+CKPT_WIN="${EFFL_CKPT_WIN:-C:\\carc-shared\\distill_strong_20260723\\ckpt\\iter_03.pt}"
+WSL_PY="${EFFL_WSL_PY:-/home/doctor/carc-wsl-bench/.venv/bin/python}"
+WIN_PY_WIN="${EFFL_WIN_PY_WIN:-C:\\Users\\Doctor\\carc-win-bench\\.venv\\Scripts\\python.exe}"
+WIN_PY_WSL="${EFFL_WIN_PY_WSL:-/mnt/c/Users/Doctor/carc-win-bench/.venv/Scripts/python.exe}"
+OUTROOT="${EFFL_OUTROOT:-$REPO/measurement/eff_linus}"
+LOADAVG_LIMIT="${EFFL_LOADAVG_LIMIT:-4.0}"
+
+# ⚠️ Windows-interop PATH. On the 5900XT box WSL appends the Windows PATH, so
+# `cmd.exe` / `nvidia-smi.exe` resolve bare. On the LAPTOP's WSL they do NOT
+# (appendWindowsPath is off there), and a bare `cmd.exe` fails with
+# "command not found" — which would silently fail EVERY win-arm cell. Resolve it
+# once, here, rather than per call site.
+WIN32DIR="${EFFL_WIN32DIR:-/mnt/c/Windows/System32}"
+if ! command -v cmd.exe >/dev/null 2>&1; then
+  [ -x "$WIN32DIR/cmd.exe" ] || {
+    echo "FATAL: cmd.exe is neither on PATH nor at $WIN32DIR (set EFFL_WIN32DIR)" >&2; exit 2; }
+  export PATH="$PATH:$WIN32DIR"
+fi
 
 SMOKE=0
 FORCE=0
@@ -187,9 +238,9 @@ done
 STAMP="$(date +%Y%m%d_%H%M%S)"
 if [ -z "$OUTDIR" ]; then
   if [ "$SMOKE" -eq 1 ]; then
-    OUTDIR="$REPO/measurement/eff_linus/smoke_$STAMP"
+    OUTDIR="$OUTROOT/smoke_$STAMP"
   else
-    OUTDIR="$REPO/measurement/eff_linus/run_$STAMP"
+    OUTDIR="$OUTROOT/run_$STAMP"
   fi
 fi
 CELLDIR="$OUTDIR/cells"
@@ -246,7 +297,7 @@ rsync -a --delete --exclude '__pycache__/' --exclude '*.so' --exclude '*.pyd' \
       --exclude '*.c' --exclude '*.pyc' \
       "$REPO/engine/wingedsheep/" "$STAGE_WSL/pysrc/wingedsheep/"
 cp "$REPO/scripts/measurement_infra/net_transport_bench.py" "$STAGE_WSL/net_transport_bench.py"
-GIT_REV="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+GIT_REV="${EFFL_GIT_REV:-$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)}"
 echo "   git_rev : $GIT_REV"
 
 # --------------------------------------------------------------------------- #
@@ -333,7 +384,7 @@ run_cell() {  # run_cell <cell> <arm> <rep>
           "$M5_WIN\\bench_champion.py" --bundle "$M5_WIN\\bundle" \
           --budgets "$budget" --limit "$CHAMP_LIMIT" --warmup 1 \
           --tag "$PROJECT:$tag" --out "$STAGE_WIN\\out_$tag.json"
-      cmd.exe /c "$STAGE_WIN\\bat\\$tag.bat" > "$log" 2>&1
+      cmd.exe /c "$STAGE_WIN\\bat\\$tag.bat" < /dev/null > "$log" 2>&1
       rc=$?
       [ -f "$STAGE_WSL/out_$tag.json" ] && mv "$STAGE_WSL/out_$tag.json" "$cj"
       ;;
@@ -354,7 +405,7 @@ run_cell() {  # run_cell <cell> <arm> <rep>
           "$STAGE_WIN\\net_transport_bench.py" --ckpt "$CKPT_WIN" --rows "$row" \
           --calls "$NET_CALLS" --warmup "$NET_WARMUP" \
           --out "$STAGE_WIN\\out_$tag.json" $extra
-      cmd.exe /c "$STAGE_WIN\\bat\\$tag.bat" > "$log" 2>&1
+      cmd.exe /c "$STAGE_WIN\\bat\\$tag.bat" < /dev/null > "$log" 2>&1
       rc=$?
       [ -f "$STAGE_WSL/out_$tag.json" ] && mv "$STAGE_WSL/out_$tag.json" "$cj"
       ;;
@@ -378,7 +429,7 @@ echo "-- warm-up (Defender first-touch of the venv; discarded)"
 env "${COMMON_ENV[@]}" "$WSL_PY" -c "import numpy, yaml, torch; print('wsl warm', torch.__version__)" || true
 write_bat "$STAGE_WSL/bat/warm.bat" "$STAGE_WIN" -- \
     -c "import numpy, yaml, torch; print('win warm', torch.__version__)"
-cmd.exe /c "$STAGE_WIN\\bat\\warm.bat" 2>&1 | tr -d '\r' || true
+cmd.exe /c "$STAGE_WIN\\bat\\warm.bat" < /dev/null 2>&1 | tr -d '\r' || true
 
 # --------------------------------------------------------------------------- #
 # 5. the alternating loop                                                      #
