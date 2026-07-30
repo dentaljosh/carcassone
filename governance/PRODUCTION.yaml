@@ -47,9 +47,11 @@ budget_authorized_by: >
       CHEAPEST point on the plateau, not as "more is better" — 8× is strictly dominated (2× the clock for ~0 elo).
   (3) CLOCK LEGALITY — measurement/EFFJENSEN_BENCH_BATCH_20260729.md §2 (kparallel_latency_bench, 30 replayed real
       mid-game roots, quiet 5900XT): k8×1376 sequential 13.7552 s/move → **W=8 2.1595 s/move mean / 2.6167 p90 =
-      6.370× (80% parallel efficiency)**, transport 7.24 ms/move (0.3% of the move). That is ~14.3–17.4% of the 900 s
-      clock (the band is an unreconciled 3.5×/4.262× sequential-cost anchor in the roadmap; the conclusion is
-      insensitive) and is FASTER than yesterday's deploy single-stream (3.2276 s/move).
+      6.370× (80% parallel efficiency)**, transport 7.24 ms/move (0.3% of the move). That is **~20.6% of the 900 s
+      clock** (CORRECTED 2026-07-30, audit-F3 desk reconciliation in efdacf0: the previous "~14.3–17.4%" band divided
+      a sequential clock-share by 6.370×, silently parallelizing the ~34 s/game exact-K solve, which does NOT
+      parallelize; conclusion insensitive — still comfortably clock-legal) and is FASTER than yesterday's deploy
+      single-stream (3.2276 s/move).
   ⭐ THE KEY LOGICAL STEP — WHY (1) TRANSFERS TO THE PARALLEL EXECUTION. CL-060 measured k8×1376 run SEQUENTIALLY.
   We deploy it run on 8 workers. That is only legitimate because the split is BEHAVIOR-IDENTICAL, and that is PROVEN,
   not asserted: the k determinization worlds are independent until the pooled-Q argmax, so `parallel_workers` runs the
@@ -188,7 +190,7 @@ champion:
         sims_per_det: 1376
         total_sims: 11008
         parallel_workers: 8
-        measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~14.3–17.4% of the 900 s clock
+        measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~20.6% of the 900 s clock (corrected 2026-07-30, audit F3)
         note: >
           The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
           Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
@@ -263,7 +265,7 @@ validation:
                                                         # k8x1376 is the CHEAPEST plateau point, and 8x is strictly dominated.
     latency_evidence: measurement/EFFJENSEN_BENCH_BATCH_20260729.md   # sec 2: 13.7552 -> 2.1595 s/move at W=8 = 6.370x
                                                                      # (p90 2.6167), 80% efficiency, transport 7.24 ms/move,
-                                                                     # 30/30 action-identical roots; ~14.3-17.4% of the 900 s clock.
+                                                                     # 30/30 action-identical roots; ~20.6% of the 900 s clock (corrected 2026-07-30).
     behavior_identity: tests/test_kparallel.py         # full-game side-by-side: same action AND same pooled root (N,W) at
                                                        # EVERY move incl. the K<=2 latch => the CL-060 strength measurement
                                                        # (taken sequentially) TRANSFERS to the 8-worker execution unchanged.
