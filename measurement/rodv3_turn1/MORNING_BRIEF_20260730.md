@@ -19,7 +19,7 @@ first" the boxes swapped: **the unmeasured pair is being measured directly, firs
 |---|---|---|
 | **Teacher h2h**: CL-067 net k4×688 vs champion k8×1376=11008, n=400 paired, band 94e9 | local W20 (02:08) + laptop W12 (02:27, memory-capped) | **ETA ~10:00** (146/400 at 05:19; three windows 51–56.5 rec/h agree; the earlier 08:50 sat on one fast 60-min window — on a 32-worker run, windows under ~2 h sample wave phase, not throughput) |
 | rodv3 gen (net-on-net self-play corpus) | PARKED losslessly at **65/300**, claims at parity | resumes per verdict |
-| Air gen W-sweep (real net-on-net numbers via CoreML port) | M5 | W4 = 30.1 games/h measured; **box fell asleep mid-W6 ~02:21 DESPITE untimed `caffeinate -dimsu` — 2nd occurrence** (also at 377/400 on 2026-07-29). Results safe on its disk. Hypothesis to check: lid-close sleep, which caffeinate cannot block — `pmset -g log` in the morning. No long Air run should be funded until understood. |
+| Air gen W-sweep (real net-on-net numbers via CoreML port) | M5 | W4 = 30.1 games/h measured; W6 died 01:41 (see below). **SOLVED 09:10 via pmset log: caffeinate `ClientDied` 01:41:58 — ssh-tethered, SIGHUP'd with the sweep when the channel closed; box slept 40 min later. Incident 1 was the `-t 7200` timing out.** Not an OS mystery: a detachment-protocol bug, fixed in memory/runbooks (`nohup caffeinate … &` + fresh-session assertion verify). The Air is trustworthy for long runs once launched by that protocol. |
 
 ## The decision menu, keyed by the h2h
 
