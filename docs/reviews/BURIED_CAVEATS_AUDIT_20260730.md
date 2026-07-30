@@ -1,6 +1,81 @@
 # BURIED CAVEATS AUDIT — 2026-07-30
 
-**Status:** FINDINGS FOR TRIAGE · **Auditor:** Opus (read-only pass) · **Commission:** Joshua,
+> ## ✅ TRIAGE EXECUTED 2026-07-30 — this memo has been actioned
+>
+> Joshua approved the hygiene batch and the three adjudications (*"yes yes yes"*). Commits
+> **`efdacf0`** (Bucket A — hygiene + the false-negative sweep's S1–S3) and **`HEAD2`**
+> (Bucket B — the adjudications). `governance/PRODUCTION.yaml` was **not** touched.
+>
+> **A = FIXED:** **F2** (RoD-v2 ruler ceiling → a new `LEVER_INDEX` §8 ruler-validity row + the
+> auto-memory note & its index line + the rodv3 prereg's secondary read + CL-058's assumptions) ·
+> **F3** (**reconciled on desk, no measurement needed** — see the correction note below) ·
+> **F4** (`LEVER_INDEX` self-contradiction resolved from the record: the discriminator **ran**) ·
+> **F5** (CL-069's discharged debt recorded; fixing commit `30ca72f`) ·
+> **F9** (nine live surfaces stamped with the single-stream premise + G2→G6 cross-link + a
+> k-parallel carve-out on the two "don't fund throughput" rows + CL-068's row) ·
+> **F12** (cross-band σ-inflation rule into `CLAUDE.md`'s results-discipline block) ·
+> **F14** (watchdog record-extension parameterized + `tests/test_run_watchdog.py`, 5 tests — none
+> existed; the old behaviour is demonstrated to delete 3/3 banked claims) ·
+> **F15** (`governance/BAND_REGISTRY.csv` created + `doc_lint` **E3 that fails CLOSED**; verified
+> absent ⇒ exit 2) · **F16** (provenance note on CL-054; not a reopen).
+> **F7/F8** were discharged separately by the false-negative sweep (`059c982`) — **see the correction
+> block below, which this triage is obliged to carry.** **F1, F6, F10, F11 → Bucket B. F13 remains
+> open** (the `|Δ|>1` histogram before Arm B is funded) — not in this triage's scope.
+>
+> **B = THE THREE ADJUDICATIONS:**
+> 1. **CL-010 → `SUPERSEDED`** (from `Provisional`, untouched 52 days). Its falsifier **ran 2026-06-19
+>    and returned the claim's own "ceiling holds" branch**, then sat un-adjudicated for 41 days. The
+>    conclusion survives; the claim does not, because it is era-bound (a neural champion and a v2.7
+>    reference that no longer exist) and as written nothing could now falsify it. **`CLAUDE.md`
+>    structural blocker #2 restated on the modern kill set** (CL-039/042/064/065/066 + CL-073), keeping
+>    its conclusion and changing only its citation base. **`PROJECT_CHARTER.md` banner-stamped stale**
+>    (not deleted), with its three specific contradictions named, and `governance/README.md`'s two
+>    pointers to it marked.
+> 2. **CL-059 → `Reopened`, narrowed.** Re-open condition (a) fired **2026-07-26** via CL-067 and the row
+>    stayed `Closed` for four days. The **fair Gate-A null stands untouched**; the **channel-level kill
+>    is falsified**. Both index surfaces corrected. Nothing new to measure — the channel's live
+>    constraint is per-move cost, not strength.
+> 3. **F11's four:** (a) CL-064's "LAST formally-open strength cell" / "no open cell" **re-scoped to
+>    learned-VALUE** (falsified two days later by CL-067); (b) `LEVER_INDEX` LTR "always negative"
+>    **corrected** — CL-034 and CL-037 were positive offline, and CL-034 was missing from the row
+>    entirely; the true dead statement is *no LTR result has converted through search*; (c) §4A "inert
+>    under BOTH regimes / the fourth nail" **aligned with CL-039's actual DEPTH-SATURATED/AMBIGUOUS
+>    read**; (d) **CL-007 → `SUPERSEDED` by CL-038**, whose measurement fired its falsifier (τ ≈ 0.43 at
+>    every depth) — the true statement is *MSE can rank, it just cannot drive the leaf*.
+>
+> ### ⚠️ Corrections to THIS memo, found while executing it
+>
+> The memo predicted its own failure mode and then supplied two more instances. Both were caught the
+> way it recommends — re-verification at source before reuse.
+>
+> - **F6's ladder cites the WRONG h1600 rung.** The memo "corrected" the h1600 figure from **+24.4 to
+>   **+34.9** and thereby picked the **unmatched band**. `+34.9` is `l22_iter8_vs_heur1600_v27_s200_n400`
+>   on band **3.11e9**, and its own note flags the same-band control as *pending*. The matched control
+>   is `l22_ctrl_iter8_vs_heur1600_b310_n400` = **+24.4** on band **3.10e9**, the same decks as the h800
+>   and h3200 rungs — and the h3200 row's own note states the same-band trend as **+40.1 / +24.4 /
+>   −28.7**. **The ladder adopted into CL-010 is the matched one.** The finding is unaffected (monotone
+>   decay crossing zero by h3200 either way); the *number* was wrong, and it is exactly the memo's own
+>   "derived-vs-measured / cite the field" lesson recurring a third time.
+> - **F3 was not an unowned measurement — it is arithmetic, and the memo's framing hid a second error.**
+>   `3.5×` and `4.262×` were never the same quantity: `91/26` is a ratio of **clock shares**, both of
+>   which carry the constant 34 s exact-K solve, while `4.262×` is a pure **per-move search cost** ratio.
+>   The per-move ratio implied by the roadmap's own anchors is `11.2/2.8 = 4.00×`. **And the widely
+>   quoted 14.3–17.4% band is itself mis-derived** — it divides a sequential clock *share* by the 6.370×
+>   speedup, silently parallelizing the 34 s solver. Computed consistently: **~20.6% of the 900 s
+>   clock.** Conclusion-insensitive, as the memo said. `PRODUCTION.yaml` still quotes the old band in
+>   four places; that correction is flagged for Joshua rather than made here.
+> - **F7's framings were corrected by the false-negative sweep (`059c982`), which this memo must carry:**
+>   reservoir 3 *was* actioned within six days; the 2026-05-15 v3 entry is **post**-dedup-fix, so it
+>   belongs to reservoir **2** (smoke size), not reservoir 4; orchestrator on/off *was* measured neutral
+>   before the audit; and `opp_cap` *was* re-tested. The sweep's own verdict: **the paid queue is empty**
+>   — 31 candidates, 0 clearing the bar. **Do not re-fund a reservoir sweep on F7's text.** F7's *dedup*
+>   complaint was valid and is now discharged: `LEVER_INDEX` has a §0 "Meta — how reliable are the kills
+>   in this file?" section.
+>
+> **Net:** the memo's central thesis survives its own errors intact, and the errors were all the same
+> shape it diagnosed — **a number cited without the cell that produced it.**
+
+**Status:** ~~FINDINGS FOR TRIAGE~~ **TRIAGED AND ACTIONED 2026-07-30** · **Auditor:** Opus (read-only pass) · **Commission:** Joshua,
 2026-07-29 night — *"the failure mode we caught tonight. if missing the note about sims being
 underpowered. I wonder how much else is buried in this project. ask an opus auditor to look over
 the history of this project and see what else it funds."*

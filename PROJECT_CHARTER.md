@@ -1,5 +1,32 @@
 # PROJECT CHARTER — Carcassonne AI
 
+> # ⚠️ SUPERSEDED / STALE — DO NOT ADOPT THIS DOC'S PRIMARY TRACK OR ITS NUMBERS
+>
+> **Stamped 2026-07-30 (buried-caveats audit F6). Last substantive edit `7c5ca3d`, 2026-06-08 — 52 days
+> before this banner, and two evidence epochs plus one champion ago.** It is kept as the 2026-06-08
+> decision record; it is **not** current state. A fresh thread that follows
+> [`governance/README.md`](governance/README.md) into this file today adopts the wrong primary track and
+> a stale champion.
+>
+> **CURRENT AUTHORITY:** [`CLAUDE.md`](CLAUDE.md) (goal + the two structural blockers) ·
+> [`docs/PROGRAM_ROADMAP_2026-07-07.md`](docs/PROGRAM_ROADMAP_2026-07-07.md) (**the live work queue**) ·
+> [`STATUS.md`](STATUS.md) (state snapshot) · [`governance/PRODUCTION.yaml`](governance/PRODUCTION.yaml)
+> (the champion of record) · [`experiments/results.csv`](experiments/results.csv) (numbers).
+>
+> **Three specific contradictions, so nobody has to diff it:**
+> 1. **Primary track.** This doc says *"Track B (genuine self-improvement) is primary; superhuman vs
+>    humans is DEFERRED/aspirational"*. `CLAUDE.md` has said the **opposite since 2026-05-28** —
+>    superhuman is the **primary** goal and the analyzer/Phase 6 are downstream. CLAUDE.md governs.
+> 2. **The leaf-ceiling citation.** This doc asserts *"CL-010 stays **Supported**"*. CL-010 was
+>    **`Provisional` from 2026-06-08** and is **`SUPERSEDED` as of 2026-07-30**: its falsifier ran
+>    2026-06-19 and went un-adjudicated for 41 days. **The blocker's conclusion still holds** — it now
+>    rests on CL-039/CL-042/CL-064/CL-065/CL-066 + CL-073, not on CL-010. See CLAUDE.md blocker #2.
+> 3. **Champion / numbers.** The `iter_11 +89.7` and residual `+83.2` quoted below as *"where the current
+>    validated gains live"* are **neural-era and two epochs dead**. The champion has been **classical**
+>    since 2026-07-07 and its budget was promoted to k8×1376 on 2026-07-29 (CL-071).
+>
+> *Original 2026-06-08 banner follows.*
+
 > **Primary track DECIDED 2026-06-08 (Joshua): P-B — Track B (genuine self-improvement) is primary;
 > "superhuman vs humans" is DEFERRED/aspirational** (no measurement path exists yet, so it is not a
 > near-term success criterion). Numeric go/no-go thresholds below were **RATIFIED by Joshua on 2026-06-08**

@@ -25,7 +25,7 @@ links DOWN to raw evidence; a decision links DOWN to claims.
    - `governance/CHECKPOINT_LINEAGE.csv` (checkpoint provenance + lineage)
    - `governance/EVIDENCE_EPOCHS.md` (which raw eras are trustworthy)
 3. **DECISIONS** — what we chose to do, justified by claims.
-   - `PROJECT_CHARTER.md` (repo root — tracks, goals, success criteria, pivots)
+   - `PROJECT_CHARTER.md` (repo root — tracks, goals, success criteria, pivots) — ⚠️ **STALE since 2026-06-08, banner-stamped 2026-07-30: its primary track CONTRADICTS `CLAUDE.md` and its champion/claim citations are two epochs old. Read `CLAUDE.md` + `docs/PROGRAM_ROADMAP_2026-07-07.md` for current.**
    - `DECISIONS.md` (repo root — dated rationale)
 
 **The invariant:** raw is append-only; interpretations may change but history
@@ -47,7 +47,7 @@ the ledger.
 | `governance/TRAINING_OBSERVABILITY_SPEC.md` | Interpretation | Phase-B telemetry spec: the checkpoint-provenance stamp (DONE) + prioritized have/cheap/needs-engineering metrics; gates the next training run |
 | `governance/PROTOCOL_TEMPLATE.md` | (template) | blank pre-registration template for an experiment protocol |
 | `governance/protocols/` | Interpretation | pre-registered experiment protocols (e.g. `PROTOCOL_001_residual_marginal_topup.md`) |
-| `PROJECT_CHARTER.md` (repo root) | Decisions | the two tracks, goals, success criteria, pivot/abandonment conditions |
+| `PROJECT_CHARTER.md` (repo root) | Decisions | the two tracks, goals, success criteria, pivot/abandonment conditions — ⚠️ **STALE (2026-06-08), superseded banner added 2026-07-30; not current state** |
 
 Raw-layer files (`experiments/results.csv`, per-run `manifest.json`,
 `clean_eval/CLEAN_RESULTS.csv`) live outside this directory but are the evidence
