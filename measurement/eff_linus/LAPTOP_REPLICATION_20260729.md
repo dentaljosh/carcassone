@@ -242,3 +242,26 @@ negative on two boxes.
   affinity (or verify placement) before its ratio is quoted. This one would have shipped a
   2.16× "divergence" otherwise.
 * **Unchanged:** the round-2 Cython question, and every strength claim.
+
+---
+
+## 9. ⏭ Follow-up: ROUND 3 ran on this same box the next day — and it CLOSED the lever
+
+**2026-07-30, [POPOS_ROUND3_20260730.md](POPOS_ROUND3_20260730.md).** Joshua booted this
+laptop into **Pop!_OS** so the remaining arm — *bare-metal Linux* — could be measured against
+the WSL2 numbers in §2 above (which round 3 uses verbatim as its reference arm; dual boot
+forbids same-session alternation, so that cross-boot dependency is round 3's dominant
+caveat). Result: **0.973× / 0.978× on `champ_k1x32` / `champ_k4x172` — parity.** With native
+Windows already 1.06–1.26× slower on two boxes, **WSL2 now sits at the top of the range and
+`eff_linus` is closed.**
+
+Two corrections/extensions this memo's readers should carry:
+
+1. ⭐ **§4's E-core finding is a WINDOWS finding, not a hybrid-CPU finding.** On the *same
+   silicon*, Linux's scheduler put the same single-threaded niced unpinned job on P-cores in
+   every rep: **pinned vs unpinned differ by 0.5%** (vs the 1.81× seen here), while a
+   deliberate `taskset -c 16-23` E-core pin still costs **1.61×**. So the standing rule
+   §8 produced narrows to *pin affinity before quoting any native-**Windows** cell.*
+2. **The `nice` exoneration (§3a) holds a third time**, and round 3 adds a confound §3 did
+   not test: **the CPU governor is not load-bearing either** (`powersave` measured 0.3%
+   *faster* than `performance`).

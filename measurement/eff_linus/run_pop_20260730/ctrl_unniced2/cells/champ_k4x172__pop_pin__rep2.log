@@ -1,0 +1,12 @@
+bench_champion: Intel(R) Core(TM) i7-14650HX (x86_64, py3.13.14)
+  leaf path : PURE_PYTHON  <-- ~4.5x slower than the Cython path
+  champion  : puct_priors_v29_bmild_cap8  (YAML budget k4x688)
+  positions : 12 from positions.jsonl
+  budgets   : k4x172  repeat=1
+  out       : /home/pop/carc-pop-bench/out/ctrl_unniced2/cells/champ_k4x172__pop_pin__rep2.json
+  -> k4x172 (688 sims/move) ...
+     mean 2.774s  p50 2.188s  p90 4.774s  (n=11, 34s wall)
+
+bench_champion: wrote /home/pop/carc-pop-bench/out/ctrl_unniced2/cells/champ_k4x172__pop_pin__rep2.json
+  leaf_path=pure_python  machine=Intel(R) Core(TM) i7-14650HX
+  k4x172  (  688 sims/move): mean   2.774 s/move   p90   4.774 s/move

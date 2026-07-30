@@ -1,0 +1,19 @@
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/main_perf
+   cells : champ_k1x32,champ_k4x172  arms: pin,free  reps: 3  nice: 'nice -n 19'
+   gov   : performance  epp: performance
+   load  : 0.39 0.75 0.54 1/1058 5739
+pop warm 2.5.1
+   champ_k1x32__pop_pin__rep1             rc=0  1.3s
+   champ_k1x32__pop_free__rep1            rc=0  1.3s
+   champ_k1x32__pop_free__rep2            rc=0  1.3s
+   champ_k1x32__pop_pin__rep2             rc=0  1.3s
+   champ_k1x32__pop_pin__rep3             rc=0  1.3s
+   champ_k1x32__pop_free__rep3            rc=0  1.3s
+   champ_k4x172__pop_pin__rep1            rc=0  34.0s
+   champ_k4x172__pop_free__rep1           rc=0  34.0s
+   champ_k4x172__pop_free__rep2           rc=0  34.3s
+   champ_k4x172__pop_pin__rep2            rc=0  34.4s
+   champ_k4x172__pop_pin__rep3            rc=0  34.3s
+   champ_k4x172__pop_free__rep3           rc=0  34.3s
+DONE 2026-07-30T16:59:57Z

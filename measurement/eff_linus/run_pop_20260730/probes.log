@@ -1,0 +1,47 @@
+############ 1. UN-NICED control (performance governor, P-core pinned)
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/ctrl_unniced
+   cells : champ_k4x172  arms: pin  reps: 3  nice: 'nice -n 19'
+   gov   : performance  epp: performance
+   load  : 0.77 0.88 0.66 1/1056 6556
+pop warm 2.5.1
+   champ_k4x172__pop_pin__rep1            rc=0  34.3s
+   champ_k4x172__pop_pin__rep2            rc=0  34.0s
+   champ_k4x172__pop_pin__rep3            rc=0  34.0s
+DONE 2026-07-30T17:02:23Z
+############ 2. E-CORE probe (performance governor)
+30:PMASK="16-23"
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/probe_ecore
+   cells : champ_k4x172  arms: pin  reps: 3  nice: 'nice -n 19'
+   gov   : performance  epp: performance
+   load  : 1.06 0.95 0.71 1/1051 6765
+pop warm 2.5.1
+   champ_k4x172__pop_pin__rep1            rc=0  54.7s
+   champ_k4x172__pop_pin__rep2            rc=0  56.7s
+   champ_k4x172__pop_pin__rep3            rc=0  54.7s
+DONE 2026-07-30T17:05:10Z
+############ 3. GOVERNOR bracket -> powersave
+governor now: powersave  epp: balance_performance 
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/gov_powersave
+   cells : champ_k1x32,champ_k4x172  arms: pin,free  reps: 3  nice: 'nice -n 19'
+   gov   : powersave  epp: balance_performance
+   load  : 1.10 1.05 0.80 1/1058 7081
+pop warm 2.5.1
+   champ_k1x32__pop_pin__rep1             rc=0  1.3s
+   champ_k1x32__pop_free__rep1            rc=0  1.3s
+   champ_k1x32__pop_free__rep2            rc=0  1.3s
+   champ_k1x32__pop_pin__rep2             rc=0  1.3s
+   champ_k1x32__pop_pin__rep3             rc=0  1.3s
+   champ_k1x32__pop_free__rep3            rc=0  1.3s
+   champ_k4x172__pop_pin__rep1            rc=0  34.3s
+   champ_k4x172__pop_free__rep1           rc=0  34.3s
+   champ_k4x172__pop_free__rep2           rc=0  34.1s
+   champ_k4x172__pop_pin__rep2            rc=0  34.1s
+   champ_k4x172__pop_pin__rep3            rc=0  34.0s
+   champ_k4x172__pop_free__rep3           rc=0  34.1s
+DONE 2026-07-30T17:08:46Z
+############ restore performance for the net cell
+governor now: performance 
+PROBES_DONE 2026-07-30T17:08:47Z

@@ -312,6 +312,18 @@ i.e. the same band as the table above. **Consequence for anyone extending this b
 affinity (or verify core placement) before quoting a native-Windows cell** — the 5900XT is
 homogeneous so §4 was never exposed, but the driver is now used on a box that is not.
 
+✅ **ROUND 3 (2026-07-30) CLOSED THE LEVER: bare-metal Linux is PARITY with WSL2.** See
+[eff_linus/POPOS_ROUND3_20260730.md](eff_linus/POPOS_ROUND3_20260730.md). The laptop was
+booted into Pop!_OS and re-measured against the round-2 WSL arm on the same silicon:
+**0.973× / 0.978×** on the two champion cells, inside the pre-registered 0.95–1.05 parity
+band and the same size as the ~0.9% between-sitting floor. With native Windows already
+1.06–1.26× slower on two boxes, **WSL2 sits at the top of the range** and there is no
+OS-level speed lever left in this family. Round 3 also **narrows the affinity rule above**:
+it is a *native-Windows* rule, not a hybrid-CPU rule — Linux's scheduler placed the same
+unpinned niced single-threaded job on P-cores in 100% of reps (0.5% vs pinned), though a
+deliberate E-core pin still costs 1.61×. It further clears a confound §4 never tested: the
+**CPU governor is not load-bearing** (`powersave` 0.3% faster than `performance`).
+
 **Free cross-validation.** The A/B's WSL arm re-measures the same two net cells as §3
 through a *different* venv (`/home/doctor/carc-wsl-bench`, CPython 3.13) and a different
 harness path, and reproduces them: `cuda_b1` **2.104 ms** here vs **2.017 ms** in §3;

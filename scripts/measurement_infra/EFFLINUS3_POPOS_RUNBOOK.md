@@ -1,7 +1,16 @@
 # Eff Linus round 3 — native Linux (Pop!_OS) vs WSL2, same laptop silicon
 
-> **STATUS: DRAFT/READY 2026-07-30 — laptop booted to Pop!_OS by Joshua; awaiting ssh
-> key authorization. Nothing run yet.**
+> **STATUS: ✅ EXECUTED 2026-07-30 — VERDICT = PARITY, the `eff_linus` lever is CLOSED.**
+> Pop!_OS came in at **0.973× / 0.978×** the WSL2 time on the two champion cells (2–3%
+> faster, inside this runbook's pre-registered 0.95–1.05 parity band), so the second
+> decision hook below fired: *"Eff Linus closes for good: WSL2 is a free abstraction on
+> this workload, all three rounds agree."* Read-out:
+> [measurement/eff_linus/POPOS_ROUND3_20260730.md](../../measurement/eff_linus/POPOS_ROUND3_20260730.md).
+> Deviations from the plan below, all recorded in the memo: `net_cuda_b1` was **skipped**
+> on a disk guard (USB-stick root, 8.7 G free vs a 6.6 G CUDA venv), `net_cpu_1t` ran a
+> `+cpu` torch build for the same reason, Cython was deliberately **not** built (the WSL
+> arm's committed numbers are pure-Python, so building it would break like-for-like), and
+> the comparison is **cross-boot** rather than same-session — unavoidable with dual boot.
 
 ## The question
 

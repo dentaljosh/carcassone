@@ -1,0 +1,64 @@
+############ mechanism reads (for the memo)
+THP enabled : always [madvise] never
+THP defrag  : always defer defer+madvise [madvise] never
+khugepaged max_ptes_none: 511
+kernel: 6.17.9-76061709-generic
+  vuln gather_data_sampling: Not affected
+  vuln ghostwrite: Not affected
+  vuln indirect_target_selection: Not affected
+  vuln itlb_multihit: Not affected
+  vuln l1tf: Not affected
+  vuln mds: Not affected
+  vuln meltdown: Not affected
+  vuln mmio_stale_data: Not affected
+  vuln old_microcode: Not affected
+  vuln reg_file_data_sampling: Mitigation: Clear Register File
+  vuln retbleed: Not affected
+  vuln spec_rstack_overflow: Not affected
+  vuln spec_store_bypass: Mitigation: Speculative Store Bypass disabled via prctl
+  vuln spectre_v1: Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+  vuln spectre_v2: Mitigation: Enhanced / Automatic IBRS; IBPB: conditional; PBRSB-eIBRS: SW sequence; BHI: BHI_DIS_S
+  vuln srbds: Not affected
+  vuln tsa: Not affected
+  vuln tsx_async_abort: Not affected
+  vuln vmscape: Mitigation: IBPB before exit to userspace
+############ torch (CPU-only wheel; cu128 skipped on the disk guard)
+df before: /dev/sda4        57G   45G  8.7G  84% /
+ + jinja2==3.1.6
+ + markupsafe==3.0.3
+ + mpmath==1.3.0
+ + networkx==3.6.1
+ + setuptools==78.1.0
+ + sympy==1.14.0
+ + torch==2.11.0+cpu
+ + typing-extensions==4.15.0
+df after : /dev/sda4        57G   46G  8.0G  86% /
+811M	/home/pop/carc-pop-bench/.venv
+torch 2.11.0+cpu cuda False threads 16
+############ 4. TRUE un-niced control (perf gov, P-pinned)
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/ctrl_unniced2
+   cells : champ_k4x172  arms: pin  reps: 3  nice: ''
+   gov   : performance  epp: performance
+   load  : 0.86 0.74 0.77 1/1056 7901
+pop warm 2.5.1
+   champ_k4x172__pop_pin__rep1            rc=0  34.0s
+   champ_k4x172__pop_pin__rep2            rc=0  34.1s
+   champ_k4x172__pop_pin__rep3            rc=0  34.0s
+DONE 2026-07-30T17:14:24Z
+############ 5. net_cpu_1t (pin + free, 3 reps)
+== eff_linus round 3 :: Pop!_OS arm ==
+   out   : /home/pop/carc-pop-bench/out/net_perf
+   cells : net_cpu_1t  arms: pin,free  reps: 3  nice: 'nice -n 19'
+   gov   : performance  epp: performance
+   load  : 1.00 0.84 0.81 1/1057 8105
+pop warm 2.5.1
+   net_cpu_1t__pop_pin__rep1              rc=0  49.3s
+   net_cpu_1t__pop_free__rep1             rc=0  49.4s
+   net_cpu_1t__pop_free__rep2             rc=0  49.3s
+   net_cpu_1t__pop_pin__rep2              rc=0  49.2s
+   net_cpu_1t__pop_pin__rep3              rc=0  49.6s
+   net_cpu_1t__pop_free__rep3             rc=0  49.3s
+DONE 2026-07-30T17:19:21Z
+df final : /dev/sda4        57G   46G  8.0G  86% /
+PHASE3_DONE 2026-07-30T17:19:21Z
