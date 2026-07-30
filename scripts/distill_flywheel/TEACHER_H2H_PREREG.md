@@ -58,6 +58,35 @@ before any number exists:
 - **A cost-ratio guard is meaningless for this cell** and will not be used as a gate. The
   *deployability* question is CL-067's, already answered NEGATIVE, and is not reopened here.
 
+### ⚠️ The harness's "NOT the shipped production champion" warning is STALE — ignore it, and fix it later
+
+The launch log emits:
+
+> *"--opponent fair-champion: the search config deviates from governance/PRODUCTION.yaml
+> (k_dets=8 (production 4); sims=1376 (production 688)) … the opponent is **NOT** the shipped
+> production champion — do not report this cell as 'vs production'."*
+
+**That warning is wrong here, and it is wrong for a reason worth fixing.** Despite its text, the
+check does **not** read `governance/PRODUCTION.yaml`. It compares against a **hardcoded constant**
+in `scripts/classical_search/eval_fair_puct.py`:
+
+```python
+PROD_KNOBS = {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
+              "value_norm": 15.0, "k_dets": 4, "sims": 688}     # ← pre-promotion
+```
+
+`k_dets: 4, sims: 688` is the **pre-promotion** deploy budget. CL-071 promoted the champion to
+**k8×1376 = 11008** on 2026-07-29 and this constant was not updated, so the guard is now
+**inverted**: a cell run at the *actual* champion budget is flagged as deviating, while a cell at
+the superseded k4×688 is silently blessed as "production". The opponent arm of this cell **is** the
+champion of record.
+
+**No measurement is affected** — the budgets actually searched are exactly the ones passed on the
+command line, and the manifest records them. This is a provenance/warning-text defect only. It is
+**not fixed in this commit**: `eval_fair_puct.py` is main-tree source and a cell is live, so the
+edit waits for a quiet window (house rule). Filed here so the next reader does not trust the
+banner — and so nobody "corrects" this cell's opponent back to k4×688 on the strength of it.
+
 ## Pre-registered read-out (fixed before the first game)
 
 Let `elo` be the candidate's paired elo vs the champion@11008, with 1σ ≈ ±17.4 at n=400
