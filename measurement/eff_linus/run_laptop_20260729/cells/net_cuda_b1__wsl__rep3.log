@@ -1,0 +1,3 @@
+[cuda_b1         ] forward    1.325 ms (p50 1.044 / p90 2.225)   full    2.214 ms   451.7 pos/s
+
+wrote /home/doctor/eff_linus_out/run_20260729_223554/cells/net_cuda_b1__wsl__rep3.json

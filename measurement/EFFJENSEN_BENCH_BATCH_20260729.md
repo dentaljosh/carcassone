@@ -300,6 +300,18 @@ hot path to native Windows" is dead as a performance lever** — and the roadmap
 forward-tax route (after the Pixel NPU and the Apple ANE) closes negative. That is a real
 result: it removes an entire hypothesis class from G3 rather than deferring it.
 
+✅ **REPLICATED on the laptop the same night — and the replication corrected a trap that
+lives in THIS section's method.** See
+[eff_linus/LAPTOP_REPLICATION_20260729.md](eff_linus/LAPTOP_REPLICATION_20260729.md).
+Native Windows loses every cell on the second box too (so the verdict above stands on two
+architectures, with an exact CPython-patch match across arms that this run did not have).
+But the laptop's *as-run* ratios are 1.18–2.93×, and that is **not** a bigger hypervisor
+tax: on its hybrid P/E CPU a windowless WSL-launched native process is scheduled onto the
+**E-cores**, worth an extra 1.8–2.8×. Pinned to P-cores the laptop reads **1.06–1.19×**,
+i.e. the same band as the table above. **Consequence for anyone extending this bench: pin
+affinity (or verify core placement) before quoting a native-Windows cell** — the 5900XT is
+homogeneous so §4 was never exposed, but the driver is now used on a box that is not.
+
 **Free cross-validation.** The A/B's WSL arm re-measures the same two net cells as §3
 through a *different* venv (`/home/doctor/carc-wsl-bench`, CPython 3.13) and a different
 harness path, and reproduces them: `cuda_b1` **2.104 ms** here vs **2.017 ms** in §3;

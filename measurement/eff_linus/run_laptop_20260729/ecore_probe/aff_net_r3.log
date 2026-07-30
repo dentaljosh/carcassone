@@ -1,0 +1,4 @@
+WARNING: no loadavg on this OS — the contention guard is DISABLED. Only trust these numbers if you verified the box is quiet yourself (the eff_linus driver does this WSL-side before invoking).
+[cpu_1t          ] forward   11.356 ms (p50 11.304 / p90 11.693)   full   12.290 ms   81.4 pos/s
+
+wrote C:\carc-bench-eff_linus\aff_net_cpu1t_r3.json

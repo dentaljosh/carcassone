@@ -1,0 +1,7 @@
+'\\wsl.localhost\Ubuntu\home\doctor'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+WARNING: no loadavg on this OS — the contention guard is DISABLED. Only trust these numbers if you verified the box is quiet yourself (the eff_linus driver does this WSL-side before invoking).
+[cuda_b1         ] forward    2.809 ms (p50 2.779 / p90 3.039)   full    3.992 ms   250.5 pos/s
+
+wrote C:\carc-bench-eff_linus\stage\out_net_cuda_b1__win__rep1.json

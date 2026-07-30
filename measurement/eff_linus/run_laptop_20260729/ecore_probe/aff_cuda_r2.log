@@ -1,0 +1,4 @@
+WARNING: no loadavg on this OS — the contention guard is DISABLED. Only trust these numbers if you verified the box is quiet yourself (the eff_linus driver does this WSL-side before invoking).
+[cuda_b1         ] forward    1.550 ms (p50 1.216 / p90 2.665)   full    2.499 ms   400.2 pos/s
+
+wrote C:\carc-bench-eff_linus\aff_cuda_r2.json
