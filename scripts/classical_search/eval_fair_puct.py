@@ -1162,10 +1162,15 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
 
 
 # The PRODUCTION champion's search knobs (governance/PRODUCTION.yaml). These are ALSO
-# the argparse defaults, so a default head-to-head invocation IS "vs the shipped
-# champion"; `_prod_deviations` exists to catch the case where a sweep moved them.
+# governance/PRODUCTION.yaml (NOT the argparse defaults — those stay at the common
+# k4×688 eval config, which since CL-071 is a *deviation* and prints as one);
+# `_prod_deviations` exists to catch any gap between a cell's knobs and the champion.
+# k_dets/sims track the CL-071 promotion (2026-07-29): champion budget is k8×1376=11008.
+# The pre-promotion k4×688 stood here until 2026-07-30, inverting the banner for a day
+# (true-champion cells flagged as deviant, superseded-budget cells blessed) — see the
+# 2026-07-30 audit F9 class and the h2h prereg note (ceb49a9).
 PROD_KNOBS = {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
-              "value_norm": 15.0, "k_dets": 4, "sims": 688}
+              "value_norm": 15.0, "k_dets": 8, "sims": 1376}
 
 
 def _prod_deviations(args, sims_override=None, k_dets_override=None):

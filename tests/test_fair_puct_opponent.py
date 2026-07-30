@@ -395,21 +395,24 @@ def test_opp_k_dets_moves_only_the_opponent():
 
 
 def test_cl060_h2h_is_expressible_only_with_both_flags():
-    """CL-060's re-open trigger: candidate k8x1376 (11008) vs the k4x688 (2752) DEPLOY
-    champion. --opp-sims ALONE gives a k8x688=5504 opponent — NOT the deploy config."""
+    """CL-060's re-open trigger: candidate k8x1376 (11008) vs the k4x688 (2752) opponent.
+    --opp-sims ALONE gives a k8x688=5504 opponent — NOT the intended config.
+    (Updated 2026-07-30: k8x1376 IS production since the CL-071 promotion, so the
+    deviation polarity flipped — the candidate is now the shipped champion and the
+    k4x688 opponent is the deviant. The pre-promotion version of this test asserted
+    the inverse and stood stale for a day — the audit-F9 class, in test form.)"""
     sims_only = _fair_opp(sims=1376, k_dets=8, opp_sims=688)
     assert sims_only._k_dets * sims_only._sims == 8 * 688 == 5504   # the wrong opponent
     both = _fair_opp(sims=1376, k_dets=8, opp_sims=688, opp_k_dets=4)
     assert (both._k_dets, both._sims) == (4, 688)
-    assert both._k_dets * both._sims == 2752                       # the DEPLOY champion
-    # ...and the deploy config IS the production default, so the opponent is literally
-    # the shipped champion on both budget axes.
+    assert both._k_dets * both._sims == 2752                       # the OLD deploy config
     a = _Args(sims=1376, k_dets=8, opp_sims=688, opp_k_dets=4)
-    assert efp._prod_deviations(a, sims_override=efp._opp_eff_sims(a),
-                                k_dets_override=efp._opp_eff_k_dets(a)) == []
-    # the CANDIDATE, by contrast, deviates on BOTH axes
-    dev = efp._prod_deviations(a)
-    assert any("k_dets=8" in d for d in dev) and any("sims=1376" in d for d in dev)
+    # the k4x688 OPPONENT deviates on both axes post-CL-071
+    dev_opp = efp._prod_deviations(a, sims_override=efp._opp_eff_sims(a),
+                                   k_dets_override=efp._opp_eff_k_dets(a))
+    assert any("k_dets=4" in d for d in dev_opp) and any("sims=688" in d for d in dev_opp)
+    # the CANDIDATE is literally the shipped champion on both budget axes
+    assert efp._prod_deviations(a) == []
 
 
 def test_h800_rung_ignores_opp_k_dets():
@@ -440,10 +443,10 @@ def test_opp_label_reports_the_opponents_own_budget():
 
 
 def test_prod_deviations_k_dets_override_mirrors_sims_override():
-    a = _Args(sims=688, k_dets=8)
-    assert any("k_dets=8" in d for d in efp._prod_deviations(a))
+    a = _Args(sims=1376, k_dets=4)
+    assert any("k_dets=4" in d for d in efp._prod_deviations(a))
     # the OPPONENT block substitutes ITS own k_dets -> production, no deviation
-    assert efp._prod_deviations(a, k_dets_override=4) == []
+    assert efp._prod_deviations(a, k_dets_override=8) == []
 
 
 def test_summary_asymmetry_block_is_absent_when_symmetric():

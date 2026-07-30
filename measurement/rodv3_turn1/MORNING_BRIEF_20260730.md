@@ -62,6 +62,16 @@ packet / preprint (from the tournament memo) · CoreML worktree merges at a quie
   **peer** (45.6 vs 41.1 games/h). Caught by measuring instead of citing.
 - Air eval-shaped proxy ~25% optimistic vs real net-on-net gen. Caught by the re-sweep.
 
-## H2H VERDICT (filled at completion)
+## H2H VERDICT (filled 10:15) — and the day that followed
 
-**PENDING — cell running.**
+**−20.87 ± 17.40 elo (z −1.20), margin −2.0025 pts/deck (z −1.90), 184–8–208 ⇒ LEANING
+NEGATIVE, bracket-narrowing branch; n→800 extension fired, NOT launched (Joshua's call).**
+CL-072 (Provisional/Open), row `teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`,
+close-out `9c7dda3`. Tier-relative reading: the operator beats same-budget classical (+35.7)
+but not its 11008 corpus teacher at ¼ budget.
+
+Same-day follow-ons (see STATUS/DECISIONS for detail): **lever-1 value-unlock OFFLINE-KILLED**
+on the strongest corpus (outcome-r 0.68 beats heuristic 0.61, but sibling discrimination loses
+2.1× to curve125 on the solver ruler, sign-z −17.4; blend unfunded; `df784d0`) · **Eff Linus
+CLOSED, all routes, PARITY** (Pop!_OS 0.973–0.978×; `4b15a1a`) · **Air gen W\*=4 settled**
+(`7644ce7`; fleet 116.8 games/h with the Air in).
