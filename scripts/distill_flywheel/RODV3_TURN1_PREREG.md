@@ -234,6 +234,29 @@ promotion day (CL-071, 2026-07-29, k4×688 → k8×1376).
 > stands on the manifest fact alone, which is sufficient and is *stronger* stated honestly: the
 > teacher-over-distillation gap is **UNMEASURED**, not "+14.1".
 
+> #### Correction to the aside above (2026-07-30 ~01:20, still pre-gate, still blind to outcomes)
+>
+> **The field-attribution aside in `d9cce65` was itself wrong, and it is corrected here rather
+> than edited away.** The string *"so THE TEACHER IS +14.1 ELO BETTER THAN ITS OWN DISTILLATION"*
+> **is** in `CL-067.counterevidence`, verbatim (character offset ~1333). My claim that it "sits in
+> `best_evidence`, not `counterevidence`" came from a verification script that truncated the field
+> to 900 characters — I concluded from a partial read, which is precisely the failure mode I was
+> accusing the audit of. Named so it isn't repeated: **`+14.1` appears TWICE in CL-067 meaning two
+> unrelated things**, an arithmetic collision that makes the field easy to mis-attribute in either
+> direction —
+> - `best_evidence`: `+14.1 ± 24.7 (z 0.57)` = cross-band shrinkage between CL-067's *own* two
+>   candidate-vs-champion cells (`+42.8` band 52e9 vs `+28.7` band 56e9);
+> - `counterevidence`: `+14.1` = `49.85 − 35.7`, a **DERIVED** teacher-over-distillation figure
+>   assembled across *different* bands (the teacher's `+49.85` is CL-060/CL-071 on band 32e9; the
+>   distillation's `+35.7` is pooled 52e9/56e9) via an equal-per-move-cost argument (11.7 s vs
+>   11.2 s).
+>
+> **The load-bearing conclusions are unchanged.** The derived figure must not be cited as a
+> measured head-to-head — doubly so given this family's documented band-level over-dispersion
+> (house practice: inflate σ 1.5–2× on any cross-band z). **No `results.csv` row measures the
+> student against its 11008 corpus teacher; the pair is UNMEASURED in either direction**, and the
+> DEAD re-scope in (b) rests on the corpus manifest fact alone, which is untouched by any of this.
+
 **(b) DEAD branch — RE-SCOPED (narrowed).** If the gate reads DEAD (both statistics ≤ 0, or a
 sign split at |z| < 1), the claim it licenses is **only**:
 
