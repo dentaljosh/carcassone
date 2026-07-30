@@ -1,4 +1,10 @@
-# Full-budget flywheel gen — pre-flight smoke runbook
+# Full-budget flywheel gen ("RoD v3" — Revenge of Demis) — pre-flight smoke runbook
+
+> **Lineage name (Joshua, 2026-07-29 late night): the full-budget flywheel POC is `rodv3`**
+> — RoD = "Revenge of Demis"; rod_v2 stays frozen as the out-of-lineage anchor.
+> Start point: the CL-067 net (modern, fair-trained), NOT a rod_v2 revival (decided
+> same night: same cost, strictly worse start — clairvoyant-trained, −105.6 elo vs
+> our blind champion at half budget per CL-069, and iter_02 is the ruler).
 
 > **STATUS: DRAFTED 2026-07-29 (late night), NOT LAUNCHED.** Prep for the lever-6
 > resolution Joshua re-derived 2026-07-29 (LEVER_INDEX §7 "full-budget flywheel gen",
