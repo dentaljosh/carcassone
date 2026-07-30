@@ -36,6 +36,13 @@ wins). Record: games/h effective, fwd/s, orch batches/s (the collapse tell), per
 **Cell grid — M5 (optional, only if the Air is granted):** CoreML backend
 (`--net-backend coreml`, mlpackage sha 5883aa7f), **W ∈ {4, 6, 8}**, 6 games per point.
 
+**W-sweep protocol (Joshua, 2026-07-29 — the house convention, applies to every arm):**
+the 3-point grid is the CRUDE round only. Then a REFINEMENT round: 1–2 finer-spaced
+points bracketing the apparent knee; a third mini-round only if still ambiguous.
+**Settlement rule: the SMALLEST W within ~5–10% of peak throughput** (lower end of
+diminishing returns — less contention/power beats a marginal rate win; on the fanless
+Air, less contention is also less throttle).
+
 **Config traps (all from memory, all mandatory):**
 - `OMP_NUM_THREADS=1` **to the orch server** (unpinned it owns the box at ~2574% CPU).
 - orch `max_batch >= W` (k=1 blocking workers).
@@ -46,8 +53,16 @@ wins). Record: games/h effective, fwd/s, orch batches/s (the collapse tell), per
 ## Decision arithmetic the smoke feeds
 
 - s/game(W*) × 300–450 games → gen wall per iter; + ~1 h train → **iter wall**.
-- Naive linear prior: sims200 gen was ~10.7 s/game effective ⇒ ×3.44 ≈ 37 s/game
-  ⇒ 300–450 games ≈ 3–4.5 h local-only. The smoke replaces this, it does not confirm it.
+- ~~Naive linear prior: sims200 gen was ~10.7 s/game effective ⇒ ×3.44 ≈ 37 s/game
+  ⇒ 300–450 games ≈ 3–4.5 h local-only.~~ **REFUTED IN-FLIGHT (first W12 cohort,
+  2026-07-29 ~23:20): ~25 min/game wall at W12 ⇒ effective ~4–5 min/game — ~7× the
+  naive figure.** The right model was never linear-in-sims: a gen game is ~140 agent
+  moves × ~2,000 SEQUENTIAL forward round-trips each, and the measured clean floor is
+  net k4×688 = 5.6 s/move at W2 (2026-07-19 calibration) ⇒ ~13 min/game before
+  contention. W12 observed within 2× of that floor (workers 58% CPU + GPU 50% = the
+  latency-bound signature; ~40% of worker time is round-trip wait). Implications:
+  optimum W likely HIGHER (fills server batches); LEVER_INDEX item 12 (batch the k
+  dets into ONE request) now has a quantified GEN payoff, not just deploy.
 - If the turn is funded, the gate is pre-committed: new net vs anchor **AT DEPTH on a
   FRESH band** (CL-058 trigger b); a low-sims win alone is NOT a result (washout law).
 
