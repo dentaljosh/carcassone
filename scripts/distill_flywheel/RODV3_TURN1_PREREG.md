@@ -109,14 +109,51 @@ first, so the memmap read does not stream off drvfs.
 |---|---|---|---|
 | LOCAL 5900XT (16C/32T, RTX 5060 Ti) | net-prior gen through carc-orch SHM (`rodv3t1`), `OMP_NUM_THREADS=1` on the SERVER, `--max-batch 32 ≥ W*` | **W\* = 16** | **LAUNCHED 2026-07-30 00:31** |
 | LAPTOP (24T, 4070m) | joins the SAME shared-claim pool, own orch server | **pending** (its sweep is live; fall back to **W8** — the proven 2-box stage-2 laptop value — if the sweep yields no usable W\*) | joins after (a) its sweep finishes and the box is idle, (b) a **mandatory** git-bundle sync to local HEAD |
-| APPLE M5 Air (ANE) | joins ONLY IF a real gen-capable CoreML path is demonstrated | n/a | **expected SKIP** — see below |
+| APPLE M5 Air (ANE) | joins ONLY IF a real gen-capable CoreML path is demonstrated | n/a | **port now EXISTS and is validated — but HELD OUT of tonight's corpus by a pre-registered fleet decision, see below** |
 
-**M5 / Air gate:** the Air joins only if the M5 arm demonstrates a *gen* emitter with a CoreML
-forward (not the eval-shaped harness). As of 23:45 no `M5_ANE_ARM.md` exists and the M5's only
-demonstrated net path is the **eval** harness (`CL-067 EQTIME/ANE` cell, `.mlpackage`
-`5883aa7f`). Porting `gen_fair_distill.py` to a CoreML backend is a source change — **forbidden
-while cells run** — so the default is documented SKIP; if the Air does join, it needs
-`caffeinate -dimsu` and ~25% ETA headroom (fanless throttle).
+**M5 / Air gate — RESOLVED 2026-07-30 ~01:05: the port LANDED, and the Air is still HELD OUT of
+tonight's Arm-A corpus.** This is a *fleet* decision (an explicit TBD slot in the skeleton), taken
+blind to every strength outcome — no candidate exists yet — and it is recorded here rather than in
+a read-out so it cannot be mistaken for a post-hoc exclusion.
+
+The CoreML gen port is real and validated on the Air (branch `worktree-agent-ab5a1b2ebdfc6dd85`,
+commits `8090180`/`ebfbee9`, NOT merged — the main tree is live; runbook
+`AIR_JOIN_RUNBOOK.md`; production cell rc=0 at k4×688, 351.5 s/game at W1, npz schema identical
+to local shards, manifest tagged `net_backend=coreml` sha `5883aa7f`, leaf dialect `6dfffd57`).
+It is *executable tonight*. Two facts decide against using it on **this** corpus:
+
+1. **It would change the pre-registered game count.** The Air cannot claim (no share mount), so
+   it must take a static disjoint slice — `air_slice.py --pool-seed-start 50000450000
+   --pool-games 300 --air-games 40` returns pool UNCHANGED + Air `[50000475000..50000475039]`
+   and **"ITERATION TARGET = 340"**. 300 was chosen deliberately to match what the refuted
+   stage-2 run actually ran, so 340 is a second variable. Shrinking the pool to 260 to keep the
+   total at 300 would mean killing and relaunching the live local cell, discarding ~16 in-flight
+   games — and it does not fix point 2.
+2. **It would make the corpus mixed-teacher.** The runbook says so itself: fp16 accelerator
+   arithmetic "perturbs the priors and can reorder near-ties, so the Air's teacher is a slightly
+   different player." ~12% of the corpus from a different teacher is a second deviation from
+   *recipe-identical* — in the one run whose entire purpose is to remove a confound, and hours
+   after [the F1 amendment](#pre-gate-amendment-2026-07-30-0100--before-any-gate-game-blind-to-all-strength-outcomes-prompted-by-buried_caveats_audit_20260730md-f1)
+   narrowed the DEAD branch for a confound of exactly this shape. Whether a mixed-teacher corpus
+   is acceptable is a **Joshua-level call on the experiment's design**, not a throughput call an
+   orchestrator should make at 01:00.
+
+The gain being declined is small and the schedule does not need it: ~40 games ≈ **1.0 h** off a
+7.3 h local-only run that the laptop is about to shorten anyway.
+
+**What the Air is doing instead — the engineer's own named gap.** `AIR_JOIN_RUNBOOK.md` §7 flags
+that **the gen-side W has never been swept** (W6 is inferred from *eval*-shaped data, where half
+the moves are the cheap net-free champion, so real gen contends harder on the one shared ANE and
+the optimum could be lower). Launched 01:05 on throwaway seeds (`9902.4e9`, clear of every band),
+throwaway dir, **pushed nowhere**: W ∈ {4, 6, 8}, games-per-point = W so each point is one
+saturated wave, settled by the house rule. Cost ~30 min, contaminates nothing, and it makes the
+Air a *measured* box — which the F1 amendment's surviving discriminator (gen at k8×1376 = 11008,
+~29 h local-only) will actually want. Fresh untimed `caffeinate -dimsu` wraps the sweep (the
+pre-existing `caffeinate -t 7200` was ~20 min from expiry).
+
+**If Joshua wants the Air in a funded corpus**, the clean form is to fund it as part of the
+*next* turn's prereg — sized to finish with the pool, with the fp16 fraction stated up front and
+the game count set with the Air included from the start.
 
 **W\* = 16 and the ETA are SETTLED** from
 [measurement/fullbudget_gen_smoke_20260729/SMOKE_RESULTS.md](../../measurement/fullbudget_gen_smoke_20260729/SMOKE_RESULTS.md):
