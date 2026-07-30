@@ -83,6 +83,9 @@ ssh joshuaishal@100.64.175.108 'bash -s' < /tmp/setup_ane.sh
 
 ```bash
 #!/bin/bash
+# ⚠️ CORRECTION 2026-07-30: the venv this block describes was NEVER created at
+# ~/carc-eqtime-ane/.venv — the venv OF RECORD on the Air is ~/m5_bench_20260728/.venv
+# (cost an rc=127 false start when followed literally; see M5_GEN_ARM.md). Use that one.
 cd ~/carc-eqtime-ane/repo || exit 1
 set -e
 python3.12 -m venv ~/carc-eqtime-ane/.venv
