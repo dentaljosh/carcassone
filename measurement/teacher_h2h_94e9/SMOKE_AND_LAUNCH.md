@@ -125,14 +125,16 @@ finds the scratch directory and mistakes it for a result.
 - Turn-1 gen is **parked losslessly at 65/300** (claims at parity on both hosts). It resumes on
   whichever box frees first *after* this cell's verdict and Joshua's morning read. The turn-1
   **gate remains NOT funded**.
-- **Air incident (non-critical):** its gen-side W sweep completed W4 — 4 games / 479 s wall =
-  **119.75 s/game effective, 30.1 games/h** (vs the runbook's ~35 games/h planning figure inferred
-  from eval-shaped data) — started W6 at 01:09, and the box became **unreachable from ~02:21**
-  (`ssh: connect … port 22: Connection timed out`), most likely asleep despite the fresh untimed
-  `caffeinate -dimsu` wrapping the sweep. Its results are on its own disk and lose nothing by
-  waiting. Not chased: the Air is held out of the corpus and contributes nothing to the critical
-  path. **Open question for the morning:** the Air slept mid-run *again* (it also slept at 377/400
-  during the 2026-07-29 ANE cell) — `caffeinate -dimsu` is evidently not sufficient on this box,
-  and that is worth understanding before any long Air run is funded.
+- **Air: sweep COMPLETE, and the "incident" I recorded here at 02:29 was a false alarm — corrected
+  in full at [AIR_GEN_WSWEEP.md](../rodv3_air_wsweep/AIR_GEN_WSWEEP.md).** I wrote that the box had
+  gone *"unreachable ~02:21, most likely asleep mid-W6 despite a fresh untimed `caffeinate -dimsu`"*
+  and called it a second sleep-mid-run. The sweep log disproves both claims: it **finished cleanly
+  at 01:41:58**, ~40 min before the box became unreachable, all three points `rc=0` with full npz
+  counts. `caffeinate -dimsu` held the box for the whole run and released it when the sweep exited
+  — correct behaviour — and an idle laptop then slept at 2 am, also correct. **The
+  "caffeinate is insufficient" concern raised on that basis is withdrawn**; the 2026-07-29 ANE-cell
+  sleep at 377/400 stands as a separate, real incident. Result: **W\* = 4** (30.1 games/h), *not*
+  the W6 inferred from eval-shaped data — in all-CoreML gen the curve inverts and W6/W8 sit 14%
+  below peak. Still held out of the corpus.
 - The stale `PROD_KNOBS` banner defect (`eval_fair_puct.py` pinned at the pre-promotion k4×688) is
   documented in the prereg and is **not** fixed yet — main-tree source, live cell.
