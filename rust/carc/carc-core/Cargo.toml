@@ -1,0 +1,10 @@
+[package]
+name = "carc-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pure-Rust Carcassonne engine + search core (no pyo3; must stay WASM/iOS-buildable)"
+
+[dependencies]
+
+[dev-dependencies]

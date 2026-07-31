@@ -1,0 +1,14 @@
+[package]
+name = "carc-py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "PyO3 bindings for carc-core (Python module `carc_rs`)"
+
+[lib]
+name = "carc_rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+carc-core = { workspace = true }
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py312"] }

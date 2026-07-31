@@ -1,0 +1,17 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "carc-rs"
+requires-python = ">=3.12"
+description = "Rust core for the Carcassonne AI (carc_rs)"
+classifiers = ["Programming Language :: Rust"]
+dynamic = ["version"]
+
+[tool.maturin]
+# Top-level module (no python package dir) — matches the carc_cy Chaquopy
+# asset-split rationale so the Android wheel builder can treat it the same way.
+module-name = "carc_rs"
+manifest-path = "Cargo.toml"
+features = ["pyo3/extension-module"]
