@@ -1,13 +1,160 @@
 //! `carc_rs` — PyO3 bindings for `carc-core`.
 //!
-//! P0 exposes only the `compat` primitives, which is all the G0 reconcile
-//! scripts need. The FFI surface named in the spec (`FairAgentRs`,
-//! `start_game_from_seed`, `advance`, `choose_action`, `state_digest`, ...)
-//! lands with P1–P4.
+//! P0 exposed the `compat` primitives. P1 adds [`MirrorState`] — the engine
+//! mirror advanced by action ints, which is the wire format the reconcile
+//! scripts drive. `FairAgentRs` / `choose_action` land with P3–P4.
 
 use carc_core::compat;
+use carc_core::game::{deck_from_descriptions, deck_from_seed, Game};
+use carc_core::tiles;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+
+// --------------------------------------------------------------------------
+// P1: the engine mirror state
+// --------------------------------------------------------------------------
+
+/// A Rust-side Carcassonne game advanced by flat action indices.
+///
+/// The constructor mirrors the two replay entry points in the spec:
+/// `MirrorState.from_seed(deck_seed)` (CPython-MT-compatible deck shuffle) and
+/// `MirrorState.from_deck([...])` (explicit deck; no RNG dependence, the phone
+/// path).  `advance(action)` is called for **every** applied action, both seats.
+#[pyclass(name = "MirrorState")]
+struct PyMirrorState {
+    game: Game,
+}
+
+#[pymethods]
+impl PyMirrorState {
+    /// `random.seed(deck_seed); Game().get_init_board()`.
+    ///
+    /// `deck_seed` is a **decimal string** so arbitrary-precision CPython ints
+    /// round-trip (see the G0 mt19937 gate).
+    #[staticmethod]
+    #[pyo3(signature = (deck_seed, window_size=25))]
+    fn from_seed(deck_seed: &str, window_size: i32) -> PyResult<Self> {
+        Ok(PyMirrorState {
+            game: Game::from_deck_with_window(deck_from_seed(deck_seed), window_size),
+        })
+    }
+
+    /// Build from an explicit deck of tile descriptions, in draw order.
+    #[staticmethod]
+    #[pyo3(signature = (descriptions, window_size=25))]
+    fn from_deck(descriptions: Vec<String>, window_size: i32) -> PyResult<Self> {
+        let deck = deck_from_descriptions(&descriptions)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        Ok(PyMirrorState {
+            game: Game::from_deck_with_window(deck, window_size),
+        })
+    }
+
+    /// Apply one flat action index.
+    fn advance(&mut self, action: i32) -> PyResult<()> {
+        self.game
+            .advance(action)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    /// The exact `Game.string_representation` bytes.
+    fn string_repr(&self) -> String {
+        self.game.string_repr()
+    }
+
+    /// `hashlib.sha256(get_valid_moves(board).tobytes()).hexdigest()`.
+    fn legal_mask_sha256(&self) -> String {
+        self.game.legal_mask_sha256()
+    }
+
+    /// The legal mask as raw bytes (one `0`/`1` per action index).
+    fn legal_mask_bytes<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
+        PyBytes::new(py, &self.game.legal_mask().mask)
+    }
+
+    fn legal_actions(&self) -> Vec<i32> {
+        self.game.legal_actions()
+    }
+
+    /// `(n_total, n_overflow)` from the mask build — the two counters
+    /// `Game._compute_mask` uses for its `WindowOverflowError` conditions.
+    fn mask_counts(&self) -> (usize, usize) {
+        let m = self.game.legal_mask();
+        (m.n_total, m.n_overflow)
+    }
+
+    fn scores(&self) -> (i64, i64) {
+        let s = self.game.scores();
+        (s[0], s[1])
+    }
+
+    fn meeples(&self) -> (i32, i32) {
+        (self.game.state.meeples[0], self.game.state.meeples[1])
+    }
+
+    fn is_terminal(&self) -> bool {
+        self.game.is_terminal()
+    }
+
+    fn current_player(&self) -> usize {
+        self.game.state.current_player
+    }
+
+    fn phase(&self) -> &'static str {
+        self.game.state.phase.value()
+    }
+
+    fn deck_len(&self) -> usize {
+        self.game.state.deck_len()
+    }
+
+    /// `flat_leaf.flat_base_score(state, player)` — the exact terminal leaf.
+    #[pyo3(signature = (player=0))]
+    fn flat_base_score(&self, player: usize) -> i64 {
+        self.game.flat_base_score(player)
+    }
+
+    /// `(origin_row, origin_col, size)` of the centered window.
+    fn window_offset(&self) -> (i32, i32, i32) {
+        let o = self.game.offset;
+        (o.origin_row, o.origin_col, o.size)
+    }
+
+    /// A short content digest over repr + mask + scores + offset + terminal.
+    fn state_digest(&self) -> String {
+        self.game.state_digest()
+    }
+}
+
+/// The deck `random.seed(deck_seed)` produces, as tile descriptions in draw
+/// order (index 0 is the tile immediately drawn into `next_tile`).
+#[pyfunction]
+fn deck_descriptions_from_seed(deck_seed: &str) -> Vec<String> {
+    deck_from_seed(deck_seed)
+        .into_iter()
+        .map(|b| tiles::tile(tiles::tile_id(b, 0)).description.to_string())
+        .collect()
+}
+
+/// `(source_sha256, semantic_digest)` compiled into `tiles/generated.rs` — the
+/// drift guard against `engine/.../base_deck.py`.
+#[pyfunction]
+fn tile_data_digests() -> (String, String) {
+    (
+        tiles::generated::SOURCE_SHA256.to_string(),
+        tiles::generated::SEMANTIC_DIGEST.to_string(),
+    )
+}
+
+/// Every rotated tile as `(description, rot, edge_type_repr_signature)` — used
+/// by the tile-rotation reconcile against `Tile.turn` + `get_type`.
+#[pyfunction]
+fn rotated_tile_table() -> Vec<(String, u8, String)> {
+    tiles::registry()
+        .iter()
+        .map(|t| (t.description.to_string(), t.rot, t.rot_sig_repr.clone()))
+        .collect()
+}
 
 // --------------------------------------------------------------------------
 // mt19937
@@ -241,5 +388,10 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(expm1_64_buf, m)?)?;
     m.add_function(wrap_pyfunction!(exp64_buf, m)?)?;
     m.add_function(wrap_pyfunction!(tanh64_buf, m)?)?;
+    // P1
+    m.add_class::<PyMirrorState>()?;
+    m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
+    m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
+    m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;
     Ok(())
 }

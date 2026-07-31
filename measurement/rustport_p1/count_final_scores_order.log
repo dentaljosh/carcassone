@@ -1,0 +1,2 @@
+P1/count_final_scores_order: ORDER-IRRELEVANT  1407 positions x 20 orders = 28140 comparisons, 16629 meeples (max 14 on one position), 0 outcome mismatches, 0 residual-list-order differences
+P1/count_final_scores_order: result -> /home/doctor/projects/carcassone/measurement/rustport_p1/P1_p1_count_final_scores_order.json
