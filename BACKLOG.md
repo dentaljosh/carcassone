@@ -13,6 +13,17 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-07-31 — Shared-claim launcher hardening: no-progress abort on the retry loop
+The leaf-ablation launcher's `while count<N && iter<60` retry loop spun ~3.5 h relaunching
+16 games that a cross-workload contention overload kept pushing past the harness's 3600 s
+per-game abandon-wall — every iteration abandoned all in-flight games recordless and
+restarted them, and nothing anywhere noticed zero progress (DECISIONS 2026-07-31 Shabbat
+eve; the operator-side rule is memory `no-agent-compute-beside-eval`). Hardening: any
+shared-claim retry loop should track records-at-iteration-start and ABORT LOUDLY (STALLED
+row + nonzero rc) after N (say 2) consecutive zero-new-record iterations, instead of
+spinning; optionally print a load warning when loadavg >> W at iteration start. Applies to
+`leaf_ablation_launcher.sh` and any future launcher cloned from it (c7_s1 pattern).
+
 ## 2026-07-17 — Laptop GEN W-sweep (never done; the local W20/f4 result does NOT transfer)
 **Context:** This session settled the LOCAL distill-flywheel gen config via a full W + forwarder sweep — W20 knee, forwarders=4, gen is dispatch-latency-bound, ~5400 fwd/s ceiling (detail + VALIDITY SCOPE in `measurement/distill_flywheel_20260715/HANDOFF.md` "LEVERS EXPLORED"). Those numbers are valid ONLY for the sims200 net-prior gen on the LOCAL 5900XT box + its GPU.
 **Idea:** If the laptop ever runs GEN — a net-free champ-anchor side-stream, or joining the flywheel's net-prior gen — it needs its OWN gen W-sweep. It won't transfer from local because: (1) different/weaker GPU (mobile), (2) different profile (net-free champ-anchor is CPU-bound; net-prior gen is dispatch-latency-bound), (3) the laptop is RAM-capped (~11 GB). We only ever swept the laptop CONFIRM (one-net-side eval, ~W12-16 optimum) — NOT gen.

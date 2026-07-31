@@ -1,6 +1,7 @@
 # LEAF-COMPONENT KNOCKOUT ABLATION — PRE-REGISTRATION
 
-> **STATUS: PRE-REGISTERED 2026-07-30, LAUNCHING overnight (both boxes, work-stealing, W16).**
+> **STATUS: ✅ RAN + CLOSED OUT 2026-07-31 — all 6 cells resolved (5 at n=400; capoff ACCEPTED AT n=384 — its 16 missing games crash deterministically with action_space WindowOverflowError (25×25 centroid window vs the grid wall; candidate-correlated — a NEW invisible-border face, feeds F9); worst-case bound ±14 elo, the NULL survives; see DECISIONS 2026-07-31). Verdict table + findings: DECISIONS 2026-07-31, claim CL-074, `results.csv abl_*`. Headlines: meeple term ~300 elo (curve SHAPE ~177 of it) · anticipation = BALANCE not information (each half 89–153, both-off ≈null, interaction ≈+234) · F6 soft cap NULL. Band 96e9 RETIRED.**
+> *(original banner follows)* PRE-REGISTERED 2026-07-30, LAUNCHING overnight (both boxes, work-stealing, W16).
 > Committed BEFORE the first game of the run (house rule: prereg before results).
 > Authorization (Joshua, 2026-07-30, verbatim): *"run it overnight. both boxes, work stealing, w16."*
 > Launcher: [`scripts/classical_search/leaf_ablation_launcher.sh`](../../scripts/classical_search/leaf_ablation_launcher.sh).
