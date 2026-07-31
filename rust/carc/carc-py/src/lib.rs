@@ -25,7 +25,7 @@ fn shuffle_indices(seed: &str, n: usize, mode: &str) -> PyResult<Vec<u32>> {
         "random" => compat::SeedMode::RandomInstance,
         other => {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "mode must be 'global' or 'random', got {other!r}"
+                "mode must be 'global' or 'random', got {other:?}"
             )))
         }
     };
@@ -137,6 +137,40 @@ fn expm1_64(x: f64) -> f64 {
     compat::expm1_64(x)
 }
 
+fn parse_flavor(name: &str) -> PyResult<compat::LibmFlavor> {
+    Ok(match name {
+        "msun" => compat::LibmFlavor::Msun,
+        "msun_fma" => compat::LibmFlavor::MsunFma,
+        "glibc" => compat::LibmFlavor::Glibc,
+        "glibc_fma" => compat::LibmFlavor::GlibcFma,
+        other => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "flavor must be one of msun|msun_fma|glibc|glibc_fma, got {other:?}"
+            )))
+        }
+    })
+}
+
+/// `expm1(x)` under an explicit platform hypothesis.
+#[pyfunction]
+#[pyo3(signature = (x, flavor="msun"))]
+fn expm1_64_flavor(x: f64, flavor: &str) -> PyResult<f64> {
+    Ok(compat::expm1_64_flavor(x, parse_flavor(flavor)?))
+}
+
+/// `tanh(x)` under an explicit platform hypothesis.
+#[pyfunction]
+#[pyo3(signature = (x, flavor="msun"))]
+fn tanh64_flavor(x: f64, flavor: &str) -> PyResult<f64> {
+    Ok(compat::tanh64_flavor(x, parse_flavor(flavor)?))
+}
+
+/// The four platform hypotheses, in the order the harness reports them.
+#[pyfunction]
+fn libm_flavors() -> Vec<String> {
+    ["msun", "msun_fma", "glibc", "glibc_fma"].iter().map(|s| s.to_string()).collect()
+}
+
 /// Vectorised `exp64` over a little-endian f64 byte buffer; returns the results
 /// as a byte buffer. Buffer-in/buffer-out keeps the 10^8-sample harness from
 /// paying Python list-boxing costs.
@@ -145,10 +179,21 @@ fn exp64_buf<'py>(py: Python<'py>, xs: &[u8], fma: bool) -> PyResult<Bound<'py, 
     map_f64_buf(py, xs, |v| if fma { compat::exp64_fma(v) } else { compat::exp64(v) })
 }
 
-/// Vectorised `tanh64` over a little-endian f64 byte buffer.
+/// Vectorised `tanh64` over a little-endian f64 byte buffer, under an explicit
+/// platform hypothesis.
 #[pyfunction]
-fn tanh64_buf<'py>(py: Python<'py>, xs: &[u8]) -> PyResult<Bound<'py, PyBytes>> {
-    map_f64_buf(py, xs, compat::tanh64)
+#[pyo3(signature = (xs, flavor="msun"))]
+fn tanh64_buf<'py>(py: Python<'py>, xs: &[u8], flavor: &str) -> PyResult<Bound<'py, PyBytes>> {
+    let f = parse_flavor(flavor)?;
+    map_f64_buf(py, xs, |v| compat::tanh64_flavor(v, f))
+}
+
+/// Vectorised `expm1` over a little-endian f64 byte buffer.
+#[pyfunction]
+#[pyo3(signature = (xs, flavor="msun"))]
+fn expm1_64_buf<'py>(py: Python<'py>, xs: &[u8], flavor: &str) -> PyResult<Bound<'py, PyBytes>> {
+    let f = parse_flavor(flavor)?;
+    map_f64_buf(py, xs, |v| compat::expm1_64_flavor(v, f))
 }
 
 fn map_f64_buf<'py>(
@@ -190,6 +235,10 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(exp64_fma, m)?)?;
     m.add_function(wrap_pyfunction!(tanh64, m)?)?;
     m.add_function(wrap_pyfunction!(expm1_64, m)?)?;
+    m.add_function(wrap_pyfunction!(expm1_64_flavor, m)?)?;
+    m.add_function(wrap_pyfunction!(tanh64_flavor, m)?)?;
+    m.add_function(wrap_pyfunction!(libm_flavors, m)?)?;
+    m.add_function(wrap_pyfunction!(expm1_64_buf, m)?)?;
     m.add_function(wrap_pyfunction!(exp64_buf, m)?)?;
     m.add_function(wrap_pyfunction!(tanh64_buf, m)?)?;
     Ok(())

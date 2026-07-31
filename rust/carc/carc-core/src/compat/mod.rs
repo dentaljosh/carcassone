@@ -23,6 +23,10 @@ pub mod mt19937;
 pub mod npsum;
 
 pub use fsum::{fsum, FsumAccum};
-pub use libm_compat::{exp64, exp64_fma, expm1_64, tanh64};
+pub use libm_compat::{
+    exp64, exp64_fma, expm1_64, expm1_64_flavor, expm1_64_fma, expm1_64_glibc,
+    expm1_64_glibc_fma, tanh64, tanh64_flavor, tanh64_fma, tanh64_glibc, tanh64_glibc_fma,
+    LibmFlavor,
+};
 pub use mt19937::{shuffle_indices, SeedMode, MT19937};
 pub use npsum::{np_sum_f32, np_sum_f64, pairwise_sum_f32, pairwise_sum_f64};

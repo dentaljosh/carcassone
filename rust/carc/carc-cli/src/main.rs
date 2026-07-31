@@ -19,7 +19,8 @@ fn usage() -> ! {
          \x20 carc-cli npsum64                         f64s on stdin, np.sum order\n\
          \x20 carc-cli npsum32                         f32s on stdin, np.sum order\n\
          \x20 carc-cli exp [--fma]                     f64 hex bits per line -> hex bits\n\
-         \x20 carc-cli tanh                            f64 hex bits per line -> hex bits\n\
+         \x20 carc-cli tanh  [--flavor F]              F = msun|msun_fma|glibc|glibc_fma\n\
+         \x20 carc-cli expm1 [--flavor F]              F = msun|msun_fma|glibc|glibc_fma\n\
          \x20 carc-cli selftest                        quick internal consistency check\n",
         carc_core::VERSION
     );
@@ -66,8 +67,24 @@ fn main() {
             let v: Vec<f32> = read_f64_lines().into_iter().map(|x| x as f32).collect();
             writeln!(w, "{:08x}", compat::np_sum_f32(&v).to_bits()).unwrap();
         }
-        "exp" | "tanh" => {
+        "exp" | "tanh" | "expm1" => {
             let fma = args.iter().any(|a| a == "--fma");
+            let flavor = args
+                .iter()
+                .position(|a| a == "--flavor")
+                .and_then(|i| args.get(i + 1))
+                .map(|s| s.as_str())
+                .unwrap_or("msun");
+            let flavor = match flavor {
+                "msun" => compat::LibmFlavor::Msun,
+                "msun_fma" => compat::LibmFlavor::MsunFma,
+                "glibc" => compat::LibmFlavor::Glibc,
+                "glibc_fma" => compat::LibmFlavor::GlibcFma,
+                other => {
+                    eprintln!("unknown --flavor {other}");
+                    std::process::exit(2);
+                }
+            };
             let kind = args[0].clone();
             let stdin = io::stdin();
             for line in stdin.lock().lines().map_while(Result::ok) {
@@ -80,7 +97,8 @@ fn main() {
                 let y = match (kind.as_str(), fma) {
                     ("exp", false) => compat::exp64(x),
                     ("exp", true) => compat::exp64_fma(x),
-                    _ => compat::tanh64(x),
+                    ("expm1", _) => compat::expm1_64_flavor(x, flavor),
+                    _ => compat::tanh64_flavor(x, flavor),
                 };
                 writeln!(w, "{:016x}", y.to_bits()).unwrap();
             }

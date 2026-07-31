@@ -191,8 +191,94 @@ fn insert_words(hi: u32, lo: u32) -> f64 {
     as_f64(((hi as u64) << 32) | (lo as u64))
 }
 
-/// `expm1(x)` — fdlibm / FreeBSD msun `s_expm1.c`.
-pub fn expm1_64(mut x: f64) -> f64 {
+/// The four platform hypotheses for `expm1` / `tanh`.
+///
+/// Two independent axes, both discovered by reading the sources rather than
+/// guessing:
+///
+/// * **polynomial form** — FreeBSD msun evaluates the `expm1` kernel in plain
+///   Horner; **glibc uses a different (Estrin-like) grouping** carrying the
+///   1997 "Modified by Naohiko Shimizu ... for performance improvement on
+///   pipelined processors" note:
+///   ```text
+///   R1 = one + hxs*Q1;  h2 = hxs*hxs;
+///   R2 = Q2 + hxs*Q3;   h4 = h2*h2;
+///   R3 = Q4 + hxs*Q5;
+///   r1 = R1 + h2*R2 + h4*R3;
+///   ```
+///   That is a different rounding sequence, not a refactor. bionic is msun-derived,
+///   so ANDROID AND DESKTOP ARE EXPECTED TO DIFFER HERE.
+/// * **FMA contraction** — glibc x86-64 ships `s_expm1-fma.c`, the same source
+///   compiled with `-mfma`, so GCC's default `-ffp-contract=fast` fuses every
+///   `a*b +/- c`. aarch64 has FMA unconditionally.
+///
+/// `glibc` also differs from msun in `tanh`'s tiny-argument branch (`|x| < 2^-55`
+/// returning `x*(1+x)`, plus an explicit `+-0` early return, vs msun's
+/// `|x| < 2^-28` returning `x`). Outside the leaf's range, modelled anyway.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LibmFlavor {
+    /// FreeBSD msun / fdlibm, no contraction — the bionic (Android) hypothesis.
+    Msun,
+    /// FreeBSD msun / fdlibm with FMA contraction.
+    MsunFma,
+    /// glibc's Shimizu-grouped polynomial, no contraction.
+    Glibc,
+    /// glibc's Shimizu-grouped polynomial with FMA contraction — the
+    /// **x86-64 desktop hypothesis, confirmed at G0** (see the module docs).
+    GlibcFma,
+}
+
+/// `expm1(x)` under an explicit platform hypothesis.
+pub fn expm1_64_flavor(x: f64, flavor: LibmFlavor) -> f64 {
+    match flavor {
+        LibmFlavor::Msun => expm1_inline::<false, false>(x),
+        LibmFlavor::MsunFma => expm1_inline::<false, true>(x),
+        LibmFlavor::Glibc => expm1_inline::<true, false>(x),
+        LibmFlavor::GlibcFma => expm1_inline::<true, true>(x),
+    }
+}
+
+/// `tanh(x)` under an explicit platform hypothesis.
+pub fn tanh64_flavor(x: f64, flavor: LibmFlavor) -> f64 {
+    match flavor {
+        LibmFlavor::Msun => tanh_inline::<false, false>(x),
+        LibmFlavor::MsunFma => tanh_inline::<false, true>(x),
+        LibmFlavor::Glibc => tanh_inline::<true, false>(x),
+        LibmFlavor::GlibcFma => tanh_inline::<true, true>(x),
+    }
+}
+
+/// `expm1(x)` — FreeBSD msun / fdlibm `s_expm1.c`, **without** FMA contraction.
+pub fn expm1_64(x: f64) -> f64 {
+    expm1_inline::<false, false>(x)
+}
+
+/// `expm1(x)` — msun source with the multiply-adds contracted.
+pub fn expm1_64_fma(x: f64) -> f64 {
+    expm1_inline::<false, true>(x)
+}
+
+/// `expm1(x)` — glibc `sysdeps/ieee754/dbl-64/s_expm1.c`, no contraction.
+pub fn expm1_64_glibc(x: f64) -> f64 {
+    expm1_inline::<true, false>(x)
+}
+
+/// `expm1(x)` — glibc source with FMA contraction (the x86-64 multiarch build).
+pub fn expm1_64_glibc_fma(x: f64) -> f64 {
+    expm1_inline::<true, true>(x)
+}
+
+#[inline(always)]
+fn fma_or<const FMA: bool>(a: f64, b: f64, c: f64) -> f64 {
+    if FMA {
+        a.mul_add(b, c)
+    } else {
+        a * b + c
+    }
+}
+
+#[inline]
+fn expm1_inline<const GLIBC: bool, const FMA: bool>(mut x: f64) -> f64 {
     let mut hx = high_word(x);
     let xsb = hx & 0x8000_0000; // sign bit of x
     hx &= 0x7fff_ffff; // high word of |x|
@@ -239,9 +325,9 @@ pub fn expm1_64(mut x: f64) -> f64 {
                 k = -1;
             }
         } else {
-            k = (INVLN2 * x + if xsb == 0 { 0.5 } else { -0.5 }) as i32;
+            k = fma_or::<FMA>(INVLN2, x, if xsb == 0 { 0.5 } else { -0.5 }) as i32;
             let t = k as f64;
-            hi = x - t * LN2_HI; // t*ln2_hi is exact here
+            hi = fma_or::<FMA>(-t, LN2_HI, x); // t*ln2_hi is exact here
             lo = t * LN2_LO;
         }
         x = hi - lo;
@@ -257,14 +343,34 @@ pub fn expm1_64(mut x: f64) -> f64 {
     // x is now in primary range
     let hfx = 0.5 * x;
     let hxs = x * hfx;
-    let r1 = ONE + hxs * (Q1 + hxs * (Q2 + hxs * (Q3 + hxs * (Q4 + hxs * Q5))));
-    let t = 3.0 - r1 * hfx;
-    let mut e = hxs * ((r1 - t) / (6.0 - x * t));
+    let r1 = if GLIBC {
+        // glibc: R1 = 1 + hxs*Q1; h2 = hxs*hxs; R2 = Q2 + hxs*Q3; h4 = h2*h2;
+        //        R3 = Q4 + hxs*Q5; r1 = R1 + h2*R2 + h4*R3;
+        let rr1 = fma_or::<FMA>(hxs, Q1, ONE);
+        let h2 = hxs * hxs;
+        let rr2 = fma_or::<FMA>(hxs, Q3, Q2);
+        let h4 = h2 * h2;
+        let rr3 = fma_or::<FMA>(hxs, Q5, Q4);
+        fma_or::<FMA>(h4, rr3, fma_or::<FMA>(h2, rr2, rr1))
+    } else {
+        // msun/fdlibm: plain Horner
+        fma_or::<FMA>(
+            hxs,
+            fma_or::<FMA>(
+                hxs,
+                fma_or::<FMA>(hxs, fma_or::<FMA>(hxs, fma_or::<FMA>(hxs, Q5, Q4), Q3), Q2),
+                Q1,
+            ),
+            ONE,
+        )
+    };
+    let t = fma_or::<FMA>(-r1, hfx, 3.0);
+    let mut e = hxs * ((r1 - t) / fma_or::<FMA>(-x, t, 6.0));
     if k == 0 {
-        return x - (x * e - hxs); // c is 0
+        return x - fma_or::<FMA>(x, e, -hxs); // c is 0
     }
     let twopk = insert_words(((0x3ff + k) as u32) << 20, 0); // 2^k
-    e = x * (e - c) - c;
+    e = fma_or::<FMA>(x, e - c, -c);
     e -= hxs;
     if k == -1 {
         return 0.5 * (x - e) - 0.5;
@@ -299,8 +405,34 @@ pub fn expm1_64(mut x: f64) -> f64 {
     y
 }
 
-/// `tanh(x)` — fdlibm / FreeBSD msun `s_tanh.c`.
+/// `tanh(x)` — FreeBSD msun `s_tanh.c` over the non-contracted [`expm1_64`].
 pub fn tanh64(x: f64) -> f64 {
+    tanh_inline::<false, false>(x)
+}
+
+/// `tanh(x)` — msun `s_tanh.c` over the FMA-contracted [`expm1_64_fma`].
+pub fn tanh64_fma(x: f64) -> f64 {
+    tanh_inline::<false, true>(x)
+}
+
+/// `tanh(x)` — glibc `s_tanh.c` over [`expm1_64_glibc`].
+pub fn tanh64_glibc(x: f64) -> f64 {
+    tanh_inline::<true, false>(x)
+}
+
+/// `tanh(x)` — glibc `s_tanh.c` over [`expm1_64_glibc_fma`].
+///
+/// **G0 finding (2026-07-31):** this is the flavour that reproduces glibc 2.39
+/// on x86-64. The route to it: reconstructing `s_tanh` in Python over the
+/// *platform's own* `expm1` matched `math.tanh` 214333/214333 on the corpus,
+/// which localised the entire divergence to `expm1`; reading glibc's
+/// `s_expm1.c` then showed its polynomial grouping differs from msun's.
+pub fn tanh64_glibc_fma(x: f64) -> f64 {
+    tanh_inline::<true, true>(x)
+}
+
+#[inline]
+fn tanh_inline<const GLIBC: bool, const FMA: bool>(x: f64) -> f64 {
     let jx = high_word(x) as i32;
     let ix = jx & 0x7fff_ffff;
 
@@ -312,18 +444,26 @@ pub fn tanh64(x: f64) -> f64 {
     let z: f64;
     if ix < 0x4036_0000 {
         // |x| < 22
-        if ix < 0x3e30_0000 {
-            // |x| < 2**-28
+        if GLIBC {
+            // glibc has an explicit +-0 case and a 2^-55 (not 2^-28) tiny branch
+            if (ix as u32 | low_word(x)) == 0 {
+                return x;
+            }
+            if ix < 0x3c80_0000 {
+                return x * (ONE + x);
+            }
+        } else if ix < 0x3e30_0000 {
+            // msun: |x| < 2**-28
             if HUGE + x > ONE {
                 return x; // tanh(tiny) = tiny with inexact
             }
         }
         if ix >= 0x3ff0_0000 {
             // |x| >= 1
-            let t = expm1_64(2.0 * x.abs());
+            let t = expm1_inline::<GLIBC, FMA>(2.0 * x.abs());
             z = ONE - 2.0 / (t + 2.0);
         } else {
-            let t = expm1_64(-2.0 * x.abs());
+            let t = expm1_inline::<GLIBC, FMA>(-2.0 * x.abs());
             z = -t / (t + 2.0);
         }
     } else {
@@ -420,45 +560,83 @@ mod tests {
         }
     }
 
-    /// **Finding (2026-07-31, glibc 2.39 / x86-64):** the fdlibm `tanh` port is
-    /// NOT bit-identical to the platform `tanh` — worst observed disagreement is
-    /// 3 ulp over [-20, 20]. `expm1` agrees to <= 1 ulp, so the divergence is in
-    /// glibc's own `tanh` wrapper, not in the shared kernel. This is exactly the
-    /// hypothesis `harness_transcendental.py` exists to price; the band here is a
-    /// regression guard on the PORT, not a parity claim.
+    /// **G0 finding (2026-07-31, glibc 2.39 / x86-64).** `LibmFlavor::GlibcFma`
+    /// reproduces the platform `tanh` BIT-EXACTLY; the other three flavours do
+    /// not. Both axes matter and both were found by reading source, not guessing:
+    /// glibc's `expm1` polynomial grouping differs from msun's, and glibc's
+    /// x86-64 multiarch build contracts the multiply-adds into FMAs.
+    ///
+    /// This is a platform assertion, so it is skipped off glibc/x86-64 — the
+    /// point of `LibmFlavor` is that the right answer differs per platform
+    /// (bionic is msun-derived).
     #[test]
-    fn tanh_band_vs_platform_libm() {
-        let mut worst = 0u64;
-        let mut worst_x = 0.0f64;
-        let mut x = -20.0f64;
-        while x <= 20.0 {
-            let d = ulp_diff(tanh64(x), x.tanh());
-            if d > worst {
-                worst = d;
-                worst_x = x;
+    fn glibc_fma_flavor_is_bit_exact_vs_platform_tanh() {
+        if !cfg!(all(target_os = "linux", target_env = "gnu", target_arch = "x86_64")) {
+            return;
+        }
+        let mut mismatches = 0usize;
+        let mut worst_other = [0u64; 4];
+        let mut x = -22.0f64;
+        while x <= 22.0 {
+            let want = x.tanh();
+            if tanh64_flavor(x, LibmFlavor::GlibcFma).to_bits() != want.to_bits() {
+                mismatches += 1;
+            }
+            for (i, fl) in [LibmFlavor::Msun, LibmFlavor::MsunFma,
+                            LibmFlavor::Glibc, LibmFlavor::GlibcFma].iter().enumerate() {
+                worst_other[i] = worst_other[i].max(ulp_diff(tanh64_flavor(x, *fl), want));
             }
             x += 0.000431;
         }
-        assert!(
-            worst <= 4,
-            "tanh64 vs platform libm worst ulp = {worst} at x = {worst_x} \
-             (expected <= 3 on glibc 2.39; a jump means the port regressed)"
-        );
+        assert_eq!(mismatches, 0,
+                   "GlibcFma tanh should be bit-exact vs glibc; worst ulp per flavour \
+                    [msun, msun_fma, glibc, glibc_fma] = {worst_other:?}");
     }
 
-    /// glibc 2.39's `expm1` agrees with the fdlibm port to <= 1 ulp but is not
-    /// bit-identical either (x86-64 selects an FMA-contracted multiarch build).
+    /// Same, for the `expm1` kernel that carries the whole divergence.
     #[test]
-    fn expm1_agrees_with_std_within_1_ulp() {
-        let mut worst = 0u64;
-        let mut x = -40.0f64;
-        while x <= 40.0 {
-            let a = expm1_64(x);
-            let b = x.exp_m1();
-            worst = worst.max(ulp_diff(a, b));
+    fn glibc_fma_flavor_is_bit_exact_vs_platform_expm1() {
+        if !cfg!(all(target_os = "linux", target_env = "gnu", target_arch = "x86_64")) {
+            return;
+        }
+        let mut mismatches = 0usize;
+        let mut x = -45.0f64;
+        while x <= 45.0 {
+            if expm1_64_flavor(x, LibmFlavor::GlibcFma).to_bits() != x.exp_m1().to_bits() {
+                mismatches += 1;
+            }
             x += 0.000917;
         }
-        assert!(worst <= 1, "expm1_64 vs std worst ulp = {worst}");
+        assert_eq!(mismatches, 0, "GlibcFma expm1 should be bit-exact vs glibc");
+    }
+
+    /// The four flavours must actually be four different functions, otherwise
+    /// the enum is decorative and the G0 evidence means nothing. The
+    /// disagreements are rare (~1e-4 of arguments), so this needs a dense sweep.
+    #[test]
+    fn flavors_are_distinct_functions() {
+        let all = [LibmFlavor::Msun, LibmFlavor::MsunFma,
+                   LibmFlavor::Glibc, LibmFlavor::GlibcFma];
+        let mut diff = [[0usize; 4]; 4];
+        let mut x = -22.0f64;
+        while x <= 22.0 {
+            let v: Vec<u64> = all.iter().map(|f| tanh64_flavor(x, *f).to_bits()).collect();
+            for i in 0..4 {
+                for j in 0..4 {
+                    if v[i] != v[j] {
+                        diff[i][j] += 1;
+                    }
+                }
+            }
+            x += 5e-5;
+        }
+        for i in 0..4 {
+            for j in (i + 1)..4 {
+                assert!(diff[i][j] > 0,
+                        "{:?} and {:?} are the same function over the sweep",
+                        all[i], all[j]);
+            }
+        }
     }
 
     #[test]
