@@ -37,6 +37,14 @@ it reports the same condition through `mask_counts()` — so the fuzz asserts
 A game that ends that way is a **PASS-with-flag**: counted separately, with a
 `(deck_seed, policy_seed, ply)` reproducer written out for the F9 dossier.
 
+The same treatment covers the *other* refusal the fuzz found — the CPython
+engine's own `IndexError` out of `FarmUtil.farm_for_position` when a tile is
+placed on the last column, so the farm neighbour indexes `board[..][35]` (the
+positive-side twin of the negative-index wrap: negatives wrap silently, `>= 35`
+raises).  Rust reproduces CPython list indexing by panicking with the same
+`IndexError: ...` message, which pyo3 surfaces as `PanicException`; the fuzz
+requires the same error class on the same ply, and flags the game.
+
 Policies (both seeded, both sampling only from encodable legal actions — an
 action index is the only thing both engines can be driven by):
 
@@ -127,6 +135,7 @@ def fuzz_game(job: dict) -> dict:
         "plies": 0, "compared": 0, "status": "ok",
         "terminal_scores": None,
         "window_overflow": None,      # {"ply":..., "n_total":...} if it fired
+        "engine_error": None,         # matched engine-level refusal (e.g. IndexError)
         "mismatch": None,
         "actions": None,              # only filled on a flag/failure (reproducer)
         # wrap-site instrumentation
@@ -195,13 +204,53 @@ def fuzz_game(job: dict) -> dict:
 
             # 2/3. legal mask + the two overflow counters, with ERROR PARITY.
             py_raised = False
+            py_engine_exc = None
             mask = None
             try:
                 mask = np.asarray(game.get_valid_moves(board), dtype=bool)
             except WindowOverflowError as exc:
                 py_raised = True
                 py_woe_msg = str(exc)
+            except Exception as exc:                      # noqa: BLE001
+                # The ENGINE itself refused the position (measured: `IndexError`
+                # out of `FarmUtil.farm_for_position` when a tile sits on the last
+                # column, so the farm neighbour indexes board[..][35]).  This is
+                # the positive-side twin of the negative-index wrap, and it is a
+                # lockstep observable like any other: the Rust port must refuse
+                # the SAME position with the SAME error class on the SAME ply.
+                py_engine_exc = exc
             audit = gw.drain_window_audit()
+
+            if py_engine_exc is not None:
+                py_cls = type(py_engine_exc).__name__
+                rs_exc = None
+                try:
+                    ms.mask_counts()
+                except BaseException as exc:              # noqa: BLE001 — PanicException
+                    rs_exc = exc
+                rs_msg = None if rs_exc is None else str(rs_exc)
+                # Rust reproduces CPython's list indexing by panicking with the
+                # message "IndexError: ..." (carc-core `py_index`), which pyo3
+                # surfaces as PanicException.
+                if rs_msg is None or not rs_msg.startswith(py_cls + ":"):
+                    fail("engine_error_parity", ply,
+                         f"{py_cls}: {py_engine_exc}",
+                         rs_msg if rs_msg is not None else "<rust did not raise>")
+                    return res
+                res["status"] = "engine_error"
+                res["engine_error"] = {
+                    "ply": ply, "phase": st.phase.value, "error_class": py_cls,
+                    "python_error": f"{py_cls}: {py_engine_exc}",
+                    "rust_error": f"{type(rs_exc).__name__}: {rs_msg}",
+                    "last_tile": ([board.state.last_tile_action.coordinate.row,
+                                   board.state.last_tile_action.coordinate.column]
+                                  if board.state.last_tile_action is not None else None),
+                    "extent_rows": [res["min_row"], res["max_row"]],
+                    "extent_cols": [res["min_col"], res["max_col"]],
+                }
+                res["actions"] = list(actions)
+                break
+
             rs_total, rs_over = ms.mask_counts()
             rs_all_overflow = rs_total > 0 and rs_over == rs_total
 
@@ -277,7 +326,9 @@ def fuzz_game(job: dict) -> dict:
                 fail("max_plies_exceeded", res["plies"], max_plies, max_plies)
                 return res
 
-    except Exception as exc:                       # noqa: BLE001 — never kill the pool
+    except BaseException as exc:                   # noqa: BLE001 — never kill the pool
+        # BaseException, not Exception: a Rust panic arrives as pyo3's
+        # PanicException, which does not derive from Exception.
         res["status"] = "EXCEPTION"
         res["mismatch"] = {
             "kind": "exception", "ply": res["plies"],
@@ -353,11 +404,12 @@ def main(argv=None) -> int:
     elapsed = time.perf_counter() - t0
 
     by_mode: dict[str, dict] = {}
-    mismatches, overflows = [], []
+    mismatches, overflows, engine_errors = [], [], []
     for r in results:
         m = by_mode.setdefault(r["mode"], {
             "games": 0, "plies": 0, "positions_compared": 0, "mismatches": 0,
-            "window_overflow_games": 0, "games_touching_row0": 0,
+            "window_overflow_games": 0, "engine_error_games": 0,
+            "games_touching_row0": 0,
             "games_touching_col0": 0, "games_touching_row34": 0,
             "games_touching_col34": 0, "placements_row0": 0, "placements_col0": 0,
             "plies_with_dropped_legal": 0, "dropped_legal_total": 0,
@@ -389,18 +441,25 @@ def main(argv=None) -> int:
             overflows.append({"deck_seed": r["deck_seed"],
                               "policy_seed": r["policy_seed"],
                               "mode": r["mode"], **r["window_overflow"]})
+        if r["status"] == "engine_error":
+            m["engine_error_games"] += 1
+            engine_errors.append({"deck_seed": r["deck_seed"],
+                                  "policy_seed": r["policy_seed"],
+                                  "mode": r["mode"], **r["engine_error"]})
 
     for i, mm in enumerate(mismatches):
         (repro / f"mismatch_{mm['deck_seed']}_{mm.get('policy_seed')}_{i}.json"
          ).write_text(json.dumps(mm, indent=2, default=str))
     for r in results:
-        if r["status"] == "window_overflow":
-            (repro / f"window_overflow_{r['deck_seed']}_{r['policy_seed']}.json"
-             ).write_text(json.dumps(
-                 {"deck_seed": r["deck_seed"], "policy_seed": r["policy_seed"],
-                  "mode": r["mode"], "ply": r["window_overflow"]["ply"],
-                  "detail": r["window_overflow"], "actions": r["actions"]},
-                 indent=2, default=str))
+        for kind, key in (("window_overflow", "window_overflow"),
+                          ("engine_error", "engine_error")):
+            if r["status"] == kind:
+                (repro / f"{kind}_{r['deck_seed']}_{r['policy_seed']}.json"
+                 ).write_text(json.dumps(
+                     {"deck_seed": r["deck_seed"], "policy_seed": r["policy_seed"],
+                      "mode": r["mode"], "ply": r[key]["ply"],
+                      "detail": r[key], "actions": r["actions"]},
+                     indent=2, default=str))
 
     total_plies = sum(m["plies"] for m in by_mode.values())
     total_pos = sum(m["positions_compared"] for m in by_mode.values())
@@ -427,6 +486,9 @@ def main(argv=None) -> int:
         "mismatches": mismatches[:20],
         "window_overflow_games": len(overflows),
         "window_overflow_reproducers": overflows[:200],
+        "engine_error_games": len(engine_errors),
+        "engine_error_reproducers": engine_errors[:200],
+        "matched_error_games": len(overflows) + len(engine_errors),
         "exception_games": sum(1 for r in results if r["status"] == "EXCEPTION"),
         "wallclock_s": elapsed,
         "games_per_s": len(results) / elapsed if elapsed else None,
@@ -440,6 +502,7 @@ def main(argv=None) -> int:
         print(f"G1/fuzz[{name}]: {m['games']} games, {m['plies']} plies, "
               f"{m['positions_compared']} positions, {m['mismatches']} mismatches, "
               f"{m['window_overflow_games']} window-overflow games, "
+              f"{m['engine_error_games']} matched engine-error games, "
               f"row0-touching games {m['games_touching_row0']}, "
               f"col0-touching {m['games_touching_col0']}, "
               f"rows [{m['min_row_seen']}, {m['max_row_seen']}], "
@@ -447,8 +510,8 @@ def main(argv=None) -> int:
               f"dropped-legal plies {m['plies_with_dropped_legal']}")
     print(f"G1/fuzz: {'PASS' if ok else 'FAIL'}  {len(results)} games, "
           f"{total_pos} positions x {len(payload['per_ply_checks'])} checks, "
-          f"{len(mismatches)} mismatches, {len(overflows)} window-overflow "
-          f"(PASS-with-flag), {elapsed:.1f}s "
+          f"{len(mismatches)} mismatches, {len(overflows)} window-overflow + "
+          f"{len(engine_errors)} engine-error (matched, PASS-with-flag), {elapsed:.1f}s "
           f"({payload['plies_per_s_wall'] or 0:.0f} plies/s wall)")
     print(f"G1/fuzz: result -> {out}")
     for mm in mismatches[:5]:

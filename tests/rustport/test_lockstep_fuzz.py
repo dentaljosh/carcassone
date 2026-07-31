@@ -68,6 +68,35 @@ def test_wall_policy_reaches_the_negative_index_wrap_sites():
     assert dropped > 0, "wall policy never pushed a legal action out of the window"
 
 
+def test_matched_error_games_are_pass_with_flag():
+    """The two refusal classes the 10^4 fuzz found, pinned as regressions.
+
+    97000006104 — every legal action falls outside the 25x25 window at ply 84
+    (Python raises WindowOverflowError; Rust reports n_overflow == n_total).
+    97000001314 — a tile on the LAST COLUMN makes `FarmUtil.farm_for_position`
+    index `board[..][35]`, so the CPython engine itself raises IndexError at
+    ply 79; Rust must refuse with the same class (its `py_index` panic).
+    Both are PASS-with-flag: no state mismatch, error parity on the same ply.
+    """
+    r = lf.fuzz_game({"deck_seed": 97000006104, "policy_seed": 5006104,
+                      "mode": "wall", "max_plies": 400})
+    assert r["mismatch"] is None
+    assert r["status"] == "window_overflow"
+    assert r["window_overflow"]["ply"] == 84
+    assert r["window_overflow"]["n_total"] == r["window_overflow"]["n_overflow"] > 0
+    assert r["window_overflow"]["rust_mask_counts"] == [
+        r["window_overflow"]["n_total"], r["window_overflow"]["n_overflow"]]
+
+    r = lf.fuzz_game({"deck_seed": 97000001314, "policy_seed": 5001314,
+                      "mode": "wall", "max_plies": 400})
+    assert r["mismatch"] is None
+    assert r["status"] == "engine_error"
+    assert r["engine_error"]["ply"] == 79
+    assert r["engine_error"]["error_class"] == "IndexError"
+    assert "IndexError:" in r["engine_error"]["rust_error"]
+    assert r["engine_error"]["last_tile"][1] == 34   # the last column
+
+
 def test_seeding_matches_root_replay_contract():
     """A fuzz game's (deck_seed, actions) must replay through `root_replay`, the
     normal reproducer path — i.e. the driver's own seeding is the same one."""
