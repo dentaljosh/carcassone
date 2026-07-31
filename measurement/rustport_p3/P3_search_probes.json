@@ -1,0 +1,74 @@
+{
+  "probe_set": "P3/search-sensitivity",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "90037f8-dirty",
+    "utc": "2026-07-31T21:44:28Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "libm_flavour_sensitivity": {
+    "question": "does the single-world PUCT search DISCRIMINATE the G0 libm choice?",
+    "method": "Rust-vs-Rust: production config (exp_fma + glibc_fma tanh) vs each alternative flavour, same positions, compare chosen action and every root child's (N, W) raw bits",
+    "corpus": "champ_games.jsonl games[:60], every 12th ply",
+    "positions": 720,
+    "sims_per_search": 344,
+    "total_sims": 247680,
+    "results": {
+      "exp_no_fma": {
+        "action_diff": 0,
+        "root_children_diff": 0
+      },
+      "tanh_msun": {
+        "action_diff": 0,
+        "root_children_diff": 2
+      },
+      "tanh_msun_fma": {
+        "action_diff": 0,
+        "root_children_diff": 0
+      },
+      "tanh_glibc_nofma": {
+        "action_diff": 0,
+        "root_children_diff": 2
+      }
+    },
+    "finding": "The search is NEARLY BLIND to the libm flavour at this scale: the np.exp site shows 0/720 and math.tanh only 2/720, with the chosen action never changing. G3-green therefore does NOT re-prove the G0 libm finding -- G0's 10^8 fuzz remains the only thing pinning it. Load-bearing for P7: an Android/bionic build with the WRONG flavour could pass a search-identity gate of this size and still be wrong (the same trap G0 flagged as 'msun_fma passes the corpus while failing the fuzz'). Note msun_fma is again the flavour that hides."
+  },
+  "legal_move_cache": {
+    "question": "is the repr-keyed legal-mask cache ever serving a DIFFERENT board (the Phase-0.3 rotation-collision hazard) inside a single-world search?",
+    "python_leg": {
+      "env": "CARCASSONNE_CACHE_COLLIDE_CHECK=1",
+      "positions": 54,
+      "sims_per_search": 344,
+      "cache_hits": 17024,
+      "cache_misses": 17024,
+      "collision_records_logged": 0
+    },
+    "rust_leg": {
+      "flag": "SearchConfigRs(legal_cache_collide_check=True)",
+      "searches": 640,
+      "total_sims": 220160,
+      "cache_hits": 0,
+      "disagreeing_hits": 0
+    },
+    "finding": "Within ONE fresh-tree search the cache is pure SAME-BOARD memoization: Python hits exactly once per expansion (the second get_valid_moves on the identical Board object -- hits == misses == expansions), and 0 cross-board collisions were logged. The Rust side computes each node's mask once and reuses it, so it takes 0 hits by construction. The Phase-0.3 collision hazard is therefore NOT REACHABLE in the single-world PUCT path; the Rust cache is faithful but semantically inert here. It may become reachable in P4/tree-reuse paths, which is why it is kept."
+  },
+  "transposition_alias_path": {
+    "question": "is the child_canon / child_aliases / prior_bonus machinery (rotationally symmetric tiles collapsing to ONE child object) actually exercised by the gate corpus?",
+    "method": "walk every node of the Python tree after each search",
+    "searches": 36,
+    "sims_per_search": 200,
+    "nodes": 6946,
+    "nodes_with_at_least_one_alias": 159,
+    "alias_actions": 290,
+    "prior_bonus_entries": 211,
+    "pct_nodes_with_alias": 2.29,
+    "finding": "Exercised, not vacuous: 2.3% of nodes carry at least one alias even at only 200 sims, and 211 prior-bonus folds fired. Both affect PUCT directly, so the gate's bit-equality covers them."
+  }
+}

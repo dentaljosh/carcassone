@@ -1,0 +1,183 @@
+{
+  "gate": "G3/search",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "90037f8-dirty",
+    "utc": "2026-07-31T21:39:47Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "knobs": {
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "reuse_tree_yaml": true,
+    "reuse_tree": false,
+    "score_norm_scale": 15.0,
+    "sims_per_det": 1376,
+    "k_dets": 8,
+    "leaf": {
+      "leaf": "v2_9_2_Bmild_cap8_curve125",
+      "leaf_hash": "a36d2e15a3b3d71d",
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "source": "governance/PRODUCTION.yaml champion.leaf_config"
+    },
+    "use_cy_leaf": true
+  },
+  "args": {
+    "corpus": [
+      "golden",
+      "midgame",
+      "champ",
+      "distill",
+      "e4",
+      "det"
+    ],
+    "sims": [
+      1376
+    ],
+    "stride": 32,
+    "per_game": 2,
+    "limit": 120,
+    "n_games": 20,
+    "det_games": 8,
+    "workers": 12,
+    "tag": "verdict1376",
+    "max_mismatch_report": 200,
+    "collide_check": false
+  },
+  "wall_secs": 144.04787729200325,
+  "totals": {
+    "positions": 644,
+    "sims_run": 886144,
+    "checks": 5152,
+    "plies": 0,
+    "games": 0,
+    "py_secs": 1563.6783141650085,
+    "rs_secs": 133.08777513244422,
+    "py_sims": 886144,
+    "rs_sims": 886144,
+    "cache_hits": 0,
+    "cache_collisions": 0
+  },
+  "n_mismatches": 0,
+  "mismatches": [],
+  "per_corpus": {
+    "champ": {
+      "positions": 240,
+      "sims_run": 330240,
+      "checks": 1920,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 573.1392677471449,
+      "rs_secs": 48.92238106424338,
+      "py_sims": 330240,
+      "rs_sims": 330240,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    },
+    "det": {
+      "positions": 16,
+      "sims_run": 22016,
+      "checks": 128,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 34.33980347204488,
+      "rs_secs": 2.652598496992141,
+      "py_sims": 22016,
+      "rs_sims": 22016,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    },
+    "distill": {
+      "positions": 240,
+      "sims_run": 330240,
+      "checks": 1920,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 599.640427551989,
+      "rs_secs": 51.13133676111465,
+      "py_sims": 330240,
+      "rs_sims": 330240,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    },
+    "e4": {
+      "positions": 4,
+      "sims_run": 5504,
+      "checks": 32,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 9.143049206963042,
+      "rs_secs": 0.7287605610326864,
+      "py_sims": 5504,
+      "rs_sims": 5504,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    },
+    "golden": {
+      "positions": 24,
+      "sims_run": 33024,
+      "checks": 192,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 48.1487375680008,
+      "rs_secs": 4.19261924791499,
+      "py_sims": 33024,
+      "rs_sims": 33024,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    },
+    "midgame": {
+      "positions": 120,
+      "sims_run": 165120,
+      "checks": 960,
+      "plies": 0,
+      "games": 0,
+      "py_secs": 299.2670286188659,
+      "rs_secs": 25.46007900114637,
+      "py_sims": 165120,
+      "rs_sims": 165120,
+      "cache_hits": 0,
+      "cache_collisions": 0,
+      "n_mismatches": 0
+    }
+  },
+  "throughput": {
+    "python_sims_per_sec": 566.7047959753753,
+    "rust_sims_per_sec": 6658.342579685783,
+    "speedup": 11.749225746759171,
+    "note": "in-process, single worker each; sum over all searched positions"
+  }
+}
