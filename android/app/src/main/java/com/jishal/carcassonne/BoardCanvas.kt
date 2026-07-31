@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -473,8 +474,9 @@ private fun DrawScope.drawSlotMark(
  * ### Weight
  *
  * Rules in the order they resolve:
- *  * **contested** (a tie — the engine pays BOTH seats) → purple, so a shared
- *    feature never reads as either player's;
+ *  * **contested** (a tie — the engine pays BOTH seats) → alternating stripes in the
+ *    two PLAYER colours (was a purple blend; Joshua 2026-07-31: "the purple is too
+ *    subtle"), so a shared feature reads as explicitly both-players';
  *  * **farms** → drawn FIRST and lightest, with hatching for texture. A field is by
  *    far the largest thing on the board and at city weight it would swamp everything
  *    drawn over it;
@@ -490,16 +492,16 @@ private fun DrawScope.drawOwnership(features: List<OwnershipFeature>, humanPlaye
     // has to stay the thing your eye lands on.
     for (f in features.sortedBy { if (it.isFarm) 0 else 1 }) {
         if (f.owners.isEmpty()) continue
-        val colour = when {
-            f.isContested -> CarcColors.Contested
-            else -> CarcColors.player(f.owners.first(), humanPlayer)
-        }
-        if (f.regions.isNotEmpty()) {
-            for (r in f.regions) shadeRegion(r.cell, r.side, colour, f.isFarm)
+        // A bridge that does not report regions: fall back to the whole tile
+        // rather than showing nothing.
+        val regions =
+            if (f.regions.isNotEmpty()) f.regions.map { it.cell to it.side }
+            else f.cells.map { it to WHOLE_CELL }
+        if (f.isContested) {
+            for ((cell, side) in regions) shadeRegionContested(cell, side, f.isFarm)
         } else {
-            // A bridge that does not report regions: fall back to the whole tile
-            // rather than showing nothing.
-            for (cell in f.cells) shadeRegion(cell, WHOLE_CELL, colour, f.isFarm)
+            val colour = CarcColors.player(f.owners.first(), humanPlayer)
+            for ((cell, side) in regions) shadeRegion(cell, side, colour, f.isFarm)
         }
     }
 }
@@ -578,6 +580,52 @@ private fun DrawScope.shadeRegion(cell: Cell, side: String, colour: Color, isFar
         drawPath(
             path, colour, alpha = OWNER_EDGE_ALPHA,
             style = Stroke(width = TILE / 45f),
+        )
+    }
+}
+
+/**
+ * A contested (both-seats) region: alternating diagonal stripes in the two PLAYER
+ * colours instead of a blended third colour. The stripes are the fill; on non-farm
+ * features the outline alternates the same two colours as opposite-phase dashes, so
+ * the border still says "both players" where tile art occludes the fill. Farms skip
+ * the outline (like single-owner farms) and stripe a little stronger than
+ * [OWNER_FARM_FILL_ALPHA] because stripes cover only ~half the area a wash does.
+ */
+private fun DrawScope.shadeRegionContested(cell: Cell, side: String, isFarm: Boolean) {
+    val path = regionPath(cell, side)
+    val fillAlpha = if (isFarm) 0.22f else OWNER_FILL_ALPHA
+    val step = TILE / 5f
+    clipPath(path) {
+        var i = -TILE
+        var band = 0
+        while (i <= TILE) {
+            drawLine(
+                color = if (band % 2 == 0) CarcColors.Human else CarcColors.Ai,
+                start = Offset(cell.col * TILE + i, cell.row * TILE),
+                end = Offset(cell.col * TILE + i + TILE, cell.row * TILE + TILE),
+                strokeWidth = step * 0.72f,
+                alpha = fillAlpha,
+            )
+            i += step
+            band++
+        }
+    }
+    if (!isFarm) {
+        val dash = TILE / 8f
+        drawPath(
+            path, CarcColors.Human, alpha = OWNER_EDGE_ALPHA,
+            style = Stroke(
+                width = TILE / 45f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash), 0f),
+            ),
+        )
+        drawPath(
+            path, CarcColors.Ai, alpha = OWNER_EDGE_ALPHA,
+            style = Stroke(
+                width = TILE / 45f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash), dash),
+            ),
         )
     }
 }

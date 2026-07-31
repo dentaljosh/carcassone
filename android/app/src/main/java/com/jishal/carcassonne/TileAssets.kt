@@ -111,9 +111,10 @@ object CarcColors {
     val FarmerRing = Color(0xFF5A3E1B)
 
     /**
-     * A feature the engine scores for BOTH seats (a meeple tie). Deliberately not a
-     * blend of the two player colours — a purple that is neither reads as "shared",
-     * where a mix reads as a rendering artefact of whichever colour won the pixel.
+     * A feature the engine scores for BOTH seats (a meeple tie). SUPERSEDED as the
+     * board rendering 2026-07-31 — contested regions now draw alternating stripes in
+     * the two player colours (`BoardCanvas.shadeRegionContested`; Joshua: "the purple
+     * is too subtle"). Kept for any legend/HUD use that wants a single swatch.
      */
     val Contested = Color(0xFF8E44AD)
 
