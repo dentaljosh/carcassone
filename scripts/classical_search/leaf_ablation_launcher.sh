@@ -92,6 +92,36 @@ cd $REPO || exit 1
 HOST=$(hostname)
 ts() { date +%F_%T; }
 
+# ---- CLOCK-SKEW GUARD (added 2026-07-30 after this bit us live) --------------------------
+# carcassonne_ai/claim.py:is_stale() compares the claim file's CIFS mtime (the SERVER's clock —
+# here the Windows host that exports /mnt/c) against the CLIENT's time.time(). A client whose
+# clock runs FAST by more than --claim-stale-secs therefore sees EVERY claim on the share as
+# stale — including claims a sibling box is actively working — and steals them all instead of
+# picking up unclaimed work. Failure shape observed 2026-07-30 23:26: the laptop's WSL2 clock
+# had drifted +11697 s (3h15m) after a host sleep; within 3 minutes ALL 16 of the local box's
+# fresh claims had been re-owned by the laptop, so both boxes were computing the SAME seeds and
+# two-box work-stealing was silently worth ~1 box. Nothing crashes and nothing warns — the
+# duplicate work is "harmless" by claim.py's own contract, so it only shows up as missing
+# throughput. Refuse to start rather than run at half speed for a night.
+probe="$OUT_ROOT/.clock_probe_$$"
+mkdir -p "$OUT_ROOT" && : > "$probe" 2>/dev/null
+if [ -f "$probe" ]; then
+  skew=$(( $(date +%s) - $(stat -c %Y "$probe") ))
+  rm -f "$probe"
+  askew=${skew#-}
+  if [ "$askew" -gt 60 ]; then
+    echo "[abl $ROLE $HOST $(ts)] FATAL: clock skew vs the share's mtime clock = ${skew}s (>60s)."
+    echo "  This box would treat sibling boxes' live claims as stale and steal them (claim.py:is_stale"
+    echo "  compares SERVER mtime to CLIENT time.time()). Fix the clock, then relaunch, e.g.:"
+    echo "    sudo -n date -s @\$(ssh <box-with-the-share> date +%s)"
+    exit 3
+  fi
+  echo "[abl $ROLE $HOST $(ts)] clock-skew guard OK (${skew}s vs the share)"
+else
+  echo "[abl $ROLE $HOST $(ts)] WARNING: could not write a clock probe to $OUT_ROOT — skew unchecked"
+fi
+# -----------------------------------------------------------------------------------------
+
 count_results() { ls "$1"/seed*_a*.json 2>/dev/null | grep -vc summary; }
 clean_stale_claims() {   # drop .claim files with no result; arg2=min-age-minutes (empty=all)
   local d="$1" age="${2:-}"; local args=(-name "seed*.claim")
