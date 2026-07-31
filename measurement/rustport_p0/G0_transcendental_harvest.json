@@ -1,0 +1,38 @@
+{
+  "gate": "G0/transcendental_harvest",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "4908e94-dirty",
+    "utc": "2026-07-31T19:41:43Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "harvest": {
+    "corpus": "measurement/champ_action_logs/champ_games.jsonl",
+    "games_used": 89,
+    "plies": 12808,
+    "n_z": 201525,
+    "n_tanh_arg": 214333,
+    "tau_p": 5.0,
+    "value_norm": 15.0,
+    "leaf_quantize": "float",
+    "z_range": [
+      -7.08,
+      0.0
+    ],
+    "z_distinct": 1666,
+    "tanh_range": [
+      -3.1166666666666667,
+      2.82
+    ],
+    "tanh_distinct": 2673,
+    "wall_s": 23.8,
+    "path": "measurement/rustport_p0/transcendental_inputs.npz"
+  }
+}

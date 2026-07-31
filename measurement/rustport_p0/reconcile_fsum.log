@@ -1,0 +1,7 @@
+  ... 200000/1000000 (8s, 0 mismatches)
+  ... 400000/1000000 (16s, 0 mismatches)
+  ... 600000/1000000 (24s, 0 mismatches)
+  ... 800000/1000000 (33s, 0 mismatches)
+  ... 1000000/1000000 (40s, 0 mismatches)
+G0/fsum: PASS  1000000 multisets / 63883944 terms, 0 bit-mismatches
+G0/fsum: result -> /home/doctor/projects/carcassone/measurement/rustport_p0/G0_fsum.json
