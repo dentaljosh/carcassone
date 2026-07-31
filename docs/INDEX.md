@@ -59,6 +59,7 @@
 ## Research & audits (reference)
 | Doc | Role | Status |
 |---|---|---|
+| [reviews/FABLE_ADVISOR_20260731.md](reviews/FABLE_ADVISOR_20260731.md) | **Senior-advisor memo (publication portfolio + calibration)** — commissioned at the "stop chasing strength" reflection point: 2 papers publishable now (P1 outcome-prediction≠move-discrimination kill set; P2 measurement methodology incl. over-dispersion + false-negative audit), P3 game-science conditional on walled-variant remediation; level assessment vs Masters/PhD/commercial lab; reviewer threat list (border bug, engine provenance, self-anchored elo); 90-day sequence; open questions for Joshua | ADVISORY 2026-07-31 — nothing in it is a decision |
 | [research/foundational_audit_2026-06-02.md](research/foundational_audit_2026-06-02.md) · [round2](research/foundational_audit_round2_2026-06-02.md) | Why the learned value can't beat v2.7 (6 root causes) | reference evidence |
 | [research/leaf_eval_research_2026-06-01.md](research/leaf_eval_research_2026-06-01.md) | Perfect-info stochastic-game AI literature scan | reference |
 | [../clean_eval/CLEAN_EVAL_AUDIT.md](../clean_eval/CLEAN_EVAL_AUDIT.md) | Trustworthy-ruler audit — old claims re-judged | current ruler |
