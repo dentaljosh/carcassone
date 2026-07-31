@@ -8,6 +8,7 @@
 ## Current program & live reference
 | Doc | Role | Status |
 |---|---|---|
+| [RUSTPORT_BUILD_SPEC_2026-07-31.md](RUSTPORT_BUILD_SPEC_2026-07-31.md) | **The Rust engine+search core build spec ("carc-core")** — v1 phone champion parity via PyO3 + world-threads; bit-exactness bars, P0–P7 gates, pre-registered acceptance, risk register | **BUILDING (2026-07-31, 36 h window)** |
 | [LEVER_INDEX.md](LEVER_INDEX.md) | **The intervention index** — every strength lever ever tried / declined / named-but-never-tried, keyed by the name you'd grep (colloquial · CLI flag · code symbol · codename), one line each, pointers only | **current — check before proposing a lever; add the row if it's missing** |
 | [PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md) | **The single work queue** — everything live, gated, or promised; Track F is the live (adopted external-review) queue | living doc — update on every close-out (6th touch) |
 | [DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md](DISTILL_STRONG_TEACHER_SPEC_2026-07-23.md) | Distill the ~+40-over-deploy k8×1376 teacher into a cheap net (one-shot, NOT a flywheel; value stays severed) | GEN RUNNING (launched 2026-07-23) |
