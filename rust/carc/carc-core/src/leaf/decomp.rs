@@ -282,7 +282,6 @@ pub fn decompose(state: &GameState) -> Decomp {
     let mut farm_ev: Vec<u32> = Vec::new();
     for nid in 0..farm_node_rc.len() {
         let (r, c) = farm_node_rc[nid];
-        let o = ord_of(r, c).expect("farm node on an unplaced cell");
         let tid = state.get_tile(r, c).unwrap();
         let conns = &tiles::tile(tid).farms[farm_node_slot[nid] as usize].tile_connections;
         for &fs in conns {
@@ -294,7 +293,6 @@ pub fn decompose(state: &GameState) -> Decomp {
                 Side::Left => (0, -1),
                 other => panic!("farmer side on a non-cardinal edge {other:?}"),
             };
-            let _ = o;
             if let Some(no) = ord_of(r + dr, c + dc) {
                 let neighbor = farm_side_to_node[no * 8 + fs.opposite() as usize];
                 if neighbor >= 0 {

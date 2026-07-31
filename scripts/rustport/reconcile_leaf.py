@@ -134,6 +134,30 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
     return core
 
 
+def leaf_provenance() -> dict:
+    """Prove the config we grade against IS the champion leaf of record.
+
+    `governance/PRODUCTION.yaml` says to assert the curve VALUES first (robust to
+    LeafConfig shape drift) and the fingerprint second; both are done here, and
+    the run is refused if either fails — a green gate against the wrong leaf is
+    worse than a red one.
+    """
+    from carcassonne_ai.alphabeta_agent import _leaf_hash
+
+    cfg = _cfgs("core")["prod-curve125"]
+    curve = tuple(float(x) for x in cfg.v29_meeple_curve)
+    got = _leaf_hash(cfg)
+    if curve != _CURVE125:
+        raise SystemExit(f"prod-curve125 curve is {curve!r}, expected {_CURVE125!r}")
+    if got != "a36d2e15a3b3d71d":
+        raise SystemExit(f"prod-curve125 _leaf_hash is {got!r}, expected a36d2e15a3b3d71d")
+    return {"leaf": "v2_9_2_Bmild_cap8_curve125", "leaf_hash": got,
+            "curve125": list(curve), "bonus_cap": cfg.bonus_cap,
+            "opp_bonus_cap": cfg.opp_bonus_cap,
+            "closure_p": {str(k): v for k, v in sorted(cfg.closure_p.items())},
+            "source": "governance/PRODUCTION.yaml champion.leaf_config"}
+
+
 def _to_rs(cfg: LeafConfig):
     curve = cfg.v29_meeple_curve
     return carc_rs.LeafConfigRs(
@@ -395,12 +419,11 @@ def build_jobs(corpora: list[str], configs: str, limit: int | None, stride: int)
         recs = [json.loads(l) for l in K3.open() if l.strip()]
         if limit:
             recs = recs[:limit]
-        for i, r in enumerate(recs):
+        for r in recs:
             jobs.append({"fn": "greedy", "corpus": "k3",
                          "label": f"k3/{r['source_agent']}/{r['seed']}@{r['ply']}",
                          "deck_seed": int(r["seed"]), "ply": int(r["ply"]),
                          "configs": configs})
-            del i
 
     if "distill" in corpora:
         recs = [json.loads(l) for l in DISTILL.open() if l.strip()]
@@ -485,9 +508,15 @@ def bench(n_positions: int, repeats: int) -> dict:
                 fn(s)
         return time.perf_counter() - t0
 
+    # ONE leaf computation per (state, pov) on every leg — the float variant, which
+    # is what `leaf_quantize: float` makes the champion actually call.  (`_py`/`_cy`
+    # above do int AND float, i.e. two leaf computations; using them here would
+    # double-charge the Python legs.)
     n_leaf = repeats * len(states) * 2
-    t_py = timeit(lambda s: (_py(s, 0, cfg), _py(s, 1, cfg)))
-    t_cy = timeit(lambda s: (_cy(s, 0, cfg), _cy(s, 1, cfg)))
+    t_py = timeit(lambda s: [flat_leaf.flat_virtual_score_v2_float(s, p, cfg)
+                             for p in (0, 1)])
+    t_cy = timeit(lambda s: [cyleaf.flat_virtual_score_v2_cy_float(s, p, cfg, False)
+                             for p in (0, 1)])
     t_rs = 0.0
     for m in mirrors:
         t, _ = m.bench_leaf(rcfg, repeats)
@@ -547,8 +576,7 @@ def main(argv=None) -> int:
         "verdict": "PASS" if ok else "FAIL",
         "env": environment(),
         "args": vars(args),
-        "leaf_of_record": "v2_9_2_Bmild_cap8_curve125 (governance/PRODUCTION.yaml, "
-                          "leaf_hash a36d2e15a3b3d71d)",
+        "leaf_of_record": leaf_provenance(),
         "configs": sorted(_cfgs(args.configs)),
         "legs": ["carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
                  "carcassonne_ai.flat_leaf_cy (direct)",

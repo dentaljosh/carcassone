@@ -140,6 +140,14 @@ def test_unsupported_configs_raise_like_python():
         ms.leaf_value(0, rec._to_rs(no_curve))
 
 
+def test_the_graded_config_is_the_champion_leaf_of_record():
+    """A green gate against the WRONG leaf is worse than a red one."""
+    prov = rec.leaf_provenance()
+    assert prov["leaf_hash"] == "a36d2e15a3b3d71d"
+    assert prov["curve125"] == [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]
+    assert prov["bonus_cap"] == prov["opp_bonus_cap"] == 8.0
+
+
 def test_curve125_values_are_the_governance_values():
     """PRODUCTION.yaml says assert curve VALUES, not fingerprints."""
     assert rec._CURVE125 == (-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25)
