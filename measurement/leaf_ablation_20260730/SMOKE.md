@@ -59,6 +59,24 @@ replay.
 The laptop ratio is the soft number here. If the laptop is faster than 1.39×, a 5th cell lands.
 The real combined rate will be visible from the first cell's record count within ~30 min.
 
+## CONFIRMED live rate (measured on the real run, cell 1, 2026-07-30 23:44)
+
+The prediction held. Measured on `abl_meepleoff` after a full two-box wave:
+
+```
+32 records in 703 s  =  163.9 games/h   (predicted 173.8 — 6% optimistic)
+projected per cell   =  400 / 163.9     =  2.44 h/cell   (predicted 2.30)
+window from launch 23:32 to ~10:00      =  10.47 h
+cells landing        =  10.47 / 2.44    =  4.3
+```
+
+Both boxes are genuinely contributing — live claim census **32 local / 24 laptop** (the laptop
+runs slightly behind, so the CL-067 1.39× ratio was pessimistic but directionally right).
+
+**Morning expectation, unchanged from the prereg: cells 1–4 complete (`meepleoff`,
+`oppanticoff`, `anticoff`, `selfanticoff`), cell 5 (`meepleflat`) partial, cell 6 (`capoff`)
+not started.** Cells 5–6 resume from the `--shared-claim` queue with zero replay.
+
 ## Note on W16
 
 W16 is the authorized setting (Joshua: *"both boxes, work stealing, w16"*) and is what was
