@@ -185,6 +185,52 @@ run is descriptive. A "harmful component" result opens a proposal, not a flip.
   status banner on this file → `BAND_REGISTRY` row `claimed → retired` → STATUS top block →
   roadmap line, then `python3 scripts/doc_lint.py`.
 
+### ⚠️ Launch incident 1 — cell order (caught in 1 min, 0 games lost)
+
+The launcher's `CELLS_ALL` had `capoff` 5th and `meepleflat` 6th, contradicting the priority
+order in this file and in the watchdog. Caught from the driver's own startup banner. Run killed
+(0 records), order fixed (`76a2a77`), relaunched. `capoff` is the expected-null cell, so it must
+be the one that falls off the end of the window — not `meepleflat`.
+
+### ⚠️ Launch incident 2 — CLOCK SKEW silently broke two-box work stealing (the real one)
+
+Three minutes into the first real launch, **all 16 of the local box's fresh claims had been
+re-owned by the laptop** and both boxes were computing the same seeds.
+
+**Mechanism.** `src/carcassonne_ai/claim.py:is_stale()` judges a claim by comparing the claim
+file's **CIFS mtime — the SERVER's clock** (the Windows host exporting `/mnt/c`) — against the
+**CLIENT's `time.time()`**. The laptop's WSL2 clock had drifted **+11697 s (3 h 15 m)** after a
+host sleep, so every claim on the share read as ~3 h old ⇒ **stale** ⇒ the laptop took the
+stale-recovery path on claim after claim instead of picking up unclaimed work.
+
+**Why it is dangerous rather than merely wrong.** Nothing crashes and nothing warns.
+`claim.py`'s contract explicitly says duplicate work is harmless — the atomic temp-then-rename
+final write means a replay overwrites identically — and that is true for *correctness*. The only
+symptom is **missing throughput**. An unattended night would have delivered roughly one box's
+worth of games from two boxes, and the morning read would have been "cells are slower than the
+smoke predicted" with no visible cause.
+
+**Measured, not assumed.** A probe file written to the share read back with mtime delta **0 s on
+local** and **+11697 s on the laptop** — so the mtime domain is the local box's clock and the
+laptop was the skewed party. `hwclock` is not installed under WSL2; setting the clock directly
+from the local box's epoch gave **residual skew 0 s**, verified in both directions.
+
+**Fixed + guarded.** Commit `fcf8f1c` adds a pre-flight clock-skew guard to the launcher: write a
+probe to the share, compare its mtime to this box's clock, **refuse to start above 60 s**. Both
+boxes logged `clock-skew guard OK (0s vs the share)` on the final launch. Verification that the
+fix took: the claim census went from **16 claims, 100 % laptop-owned** to **32 claims, 16 local /
+16 laptop**.
+
+**Teardown discipline both times:** killed by exact pid and by process *group* — a killed launcher
+shell does not reap its harness children, and the launcher's own retry loop respawns the harness
+within 5 s. Orphan claims cleared, **0 records banked, band 9.60e10 unconsumed** across both
+incidents.
+
+> This is a general cluster hazard, not an ablation-specific one: any `--shared-claim` run on a
+> box whose clock is fast by more than `--claim-stale-secs` degrades to single-box throughput
+> silently. Worth a memory entry and worth hoisting the guard into
+> `scripts/measurement_infra/` for the other launchers.
+
 ## Deviations from the C5/C7 precedent (flagged, not silent)
 
 1. **W16 per box**, vs C7's net-free W30 local / W22 laptop. Joshua-specified. Consequence: cells
