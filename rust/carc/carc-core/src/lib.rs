@@ -17,6 +17,7 @@ pub mod engine;
 pub mod game;
 pub mod leaf;
 pub mod repr_key;
+pub mod search;
 pub mod sha256;
 pub mod tiles;
 

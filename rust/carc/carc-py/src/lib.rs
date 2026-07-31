@@ -7,9 +7,10 @@
 use carc_core::compat;
 use carc_core::game::{deck_from_descriptions, deck_from_seed, Game};
 use carc_core::leaf;
+use carc_core::search;
 use carc_core::tiles;
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::{PyBytes, PyDict};
 
 // --------------------------------------------------------------------------
 // P2: the leaf config
@@ -219,6 +220,75 @@ impl PyMirrorState {
     /// A short content digest over repr + mask + scores + offset + terminal.
     fn state_digest(&self) -> String {
         self.game.state_digest()
+    }
+
+    // --- P3: the deck the search descends (determinization hook) ---------
+
+    /// `state.deck` as Python sees it — the UNDRAWN tiles, in draw order
+    /// (`next_tile` is already out of the list).
+    fn unseen_deck(&self) -> Vec<String> {
+        self.game.unseen_deck().into_iter().map(String::from).collect()
+    }
+
+    /// `board.state.deck[:] = [...]` — swap in one determinization world's deck.
+    /// Length must match; `next_tile` and the placed board are untouched.
+    fn set_unseen_deck(&mut self, descriptions: Vec<String>) -> PyResult<()> {
+        self.game
+            .set_unseen_deck(&descriptions)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    // --- P3: single-world PUCT -------------------------------------------
+
+    /// Run ONE determinization world's PUCT search from this state.
+    ///
+    /// Equivalent to `HeuristicPriorAgent(game, cfg, sims).move(board)` with
+    /// `reuse_tree=False` (a fresh tree + fresh legal-move cache per move) on a
+    /// board whose deck is whatever `set_unseen_deck` last installed.
+    ///
+    /// Returns a dict; every float is a raw `f64` **bit pattern** (`int`) so the
+    /// reconcile gate compares values, not decimal renderings.
+    #[pyo3(signature = (cfg, trace_path=None, trace_expansions=true))]
+    fn search_single<'py>(
+        &self,
+        py: Python<'py>,
+        cfg: &PySearchConfig,
+        trace_path: Option<&str>,
+        trace_expansions: bool,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let r = match trace_path {
+            None => py
+                .allow_threads(|| search::search_single(&self.game, &cfg.inner))
+                .map_err(search_err)?,
+            Some(p) => {
+                let f = std::fs::File::create(p)?;
+                let w = std::io::BufWriter::new(f);
+                let mut sink = search::JsonlTrace::new(w);
+                sink.expansions = trace_expansions;
+                let mut s = search::Searcher::with_trace(&cfg.inner, &mut sink);
+                let r = s.search(&self.game).map_err(search_err)?;
+                use std::io::Write;
+                sink.into_inner().flush()?;
+                r
+            }
+        };
+        result_to_dict(py, &r)
+    }
+
+    /// `search_single` followed by `advance(chosen_action)` — the full-game
+    /// driver's inner loop, one FFI hop per ply.
+    fn search_and_advance<'py>(
+        &mut self,
+        py: Python<'py>,
+        cfg: &PySearchConfig,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let r = py
+            .allow_threads(|| search::search_single(&self.game, &cfg.inner))
+            .map_err(search_err)?;
+        self.game
+            .advance(r.chosen_action)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        result_to_dict(py, &r)
     }
 
     // --- P2: the leaf ----------------------------------------------------
@@ -568,6 +638,153 @@ fn map_f64_buf<'py>(
     Ok(PyBytes::new(py, &out))
 }
 
+// --------------------------------------------------------------------------
+// P3: single-world PUCT search
+// --------------------------------------------------------------------------
+
+/// Every knob `mcts.NeuralMCTS` + `HeuristicPriorConfig` read, driven in from
+/// Python (`governance/PRODUCTION.yaml champion.agent_knobs`).  Nothing about
+/// the champion search is defaulted on the Rust side beyond what a test needs.
+#[pyclass(name = "SearchConfigRs")]
+#[derive(Clone)]
+struct PySearchConfig {
+    inner: search::SearchConfig,
+}
+
+#[pymethods]
+impl PySearchConfig {
+    #[new]
+    #[pyo3(signature = (
+        leaf_cfg,
+        simulations,
+        c_puct,
+        tau_p,
+        value_norm,
+        score_norm_scale=15.0,
+        leaf_quantize="float",
+        final_select="visits",
+        fpu_reduction=None,
+        c_lcb=1.0,
+        exp_fma=true,
+        tanh_flavor="glibc_fma",
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        leaf_cfg: &PyLeafConfig,
+        simulations: usize,
+        c_puct: f64,
+        tau_p: f64,
+        value_norm: f64,
+        score_norm_scale: f64,
+        leaf_quantize: &str,
+        final_select: &str,
+        fpu_reduction: Option<f64>,
+        c_lcb: f64,
+        exp_fma: bool,
+        tanh_flavor: &str,
+    ) -> PyResult<Self> {
+        let lq = match leaf_quantize {
+            "float" => search::LeafQuantize::Float,
+            "int" => search::LeafQuantize::Int,
+            other => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "leaf_quantize must be 'float'|'int'; got {other:?}"
+                )))
+            }
+        };
+        let fs = match final_select {
+            "visits" => search::FinalSelect::Visits,
+            "Q" | "q" => search::FinalSelect::Q,
+            "lcb" => search::FinalSelect::Lcb,
+            other => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "final_select must be 'visits'|'Q'|'lcb'; got {other:?}"
+                )))
+            }
+        };
+        Ok(PySearchConfig {
+            inner: search::SearchConfig {
+                c_puct,
+                tau_p,
+                value_norm,
+                score_norm_scale,
+                leaf_quantize: lq,
+                simulations,
+                fpu_reduction,
+                final_select: fs,
+                c_lcb,
+                exp_fma,
+                tanh_flavor: parse_flavor(tanh_flavor)?,
+                leaf: leaf_cfg.inner.clone(),
+            },
+        })
+    }
+
+    #[getter]
+    fn simulations(&self) -> usize {
+        self.inner.simulations
+    }
+
+    /// A copy with a different sim budget (the breadth/verdict ladder).
+    fn with_simulations(&self, simulations: usize) -> Self {
+        let mut c = self.clone();
+        c.inner.simulations = simulations;
+        c
+    }
+
+    fn __repr__(&self) -> String {
+        let i = &self.inner;
+        format!(
+            "SearchConfigRs(sims={}, c_puct={}, tau_p={}, value_norm={}, \
+             leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?})",
+            i.simulations,
+            i.c_puct,
+            i.tau_p,
+            i.value_norm,
+            i.leaf_quantize,
+            i.final_select,
+            i.fpu_reduction,
+            i.exp_fma,
+            i.tanh_flavor
+        )
+    }
+}
+
+fn search_err(e: search::SearchError) -> PyErr {
+    match e {
+        search::SearchError::Leaf(le) => leaf_err(le),
+        other => pyo3::exceptions::PyRuntimeError::new_err(other.to_string()),
+    }
+}
+
+fn result_to_dict<'py>(
+    py: Python<'py>,
+    r: &search::SearchResult,
+) -> PyResult<Bound<'py, PyDict>> {
+    let d = PyDict::new(py);
+    d.set_item("chosen_action", r.chosen_action)?;
+    let pack = |v: &Vec<(i32, i64, f64)>| -> Vec<(i32, i64, u64)> {
+        v.iter().map(|&(a, n, w)| (a, n, w.to_bits())).collect()
+    };
+    d.set_item("root_children", pack(&r.root_children))?;
+    d.set_item("deduped", pack(&r.deduped))?;
+    d.set_item("root_n", r.root_n)?;
+    d.set_item("root_w_bits", r.root_w.to_bits())?;
+    d.set_item("root_leaf_value_bits", r.root_leaf_value.to_bits())?;
+    d.set_item(
+        "root_priors",
+        r.root_priors
+            .iter()
+            .map(|&(a, p)| (a, p.to_bits()))
+            .collect::<Vec<_>>(),
+    )?;
+    d.set_item("node_count", r.node_count)?;
+    d.set_item("leaf_evals", r.leaf_evals)?;
+    d.set_item("legal_cache_hits", r.legal_cache_hits)?;
+    d.set_item("legal_cache_misses", r.legal_cache_misses)?;
+    Ok(d)
+}
+
 #[pymodule]
 fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", carc_core::VERSION)?;
@@ -596,6 +813,8 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyMirrorState>()?;
     // P2
     m.add_class::<PyLeafConfig>()?;
+    // P3
+    m.add_class::<PySearchConfig>()?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;

@@ -233,6 +233,22 @@ impl GameState {
         &self.deck[self.deck_head..]
     }
 
+    /// Overwrite the **undrawn** tiles in place (`state.deck[:] = [...]` on the
+    /// Python side) — the determinization hook. Length must match; `next_tile`
+    /// and everything already placed are untouched.
+    pub fn set_remaining_deck(&mut self, ids: &[u16]) -> Result<(), String> {
+        if ids.len() != self.deck_len() {
+            return Err(format!(
+                "unseen deck length mismatch: got {}, state holds {}",
+                ids.len(),
+                self.deck_len()
+            ));
+        }
+        self.deck.truncate(self.deck_head);
+        self.deck.extend_from_slice(ids);
+        Ok(())
+    }
+
     #[inline]
     pub fn is_terminated(&self) -> bool {
         self.next_tile.is_none()

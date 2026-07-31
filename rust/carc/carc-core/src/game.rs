@@ -200,6 +200,26 @@ impl Game {
     pub fn starting_position(&self) -> Coord {
         self.state.starting_position
     }
+
+    /// The **unseen** deck (`CarcassonneGameState.deck` on the Python side — the
+    /// already-drawn `next_tile` is NOT part of it), in draw order.
+    pub fn unseen_deck(&self) -> Vec<&'static str> {
+        self.state
+            .remaining_deck()
+            .iter()
+            .map(|&t| tiles::generated::BASE_TILES[t as usize].description)
+            .collect()
+    }
+
+    /// Replace the unseen deck in place — the determinization hook
+    /// (`FairHeuristicMCTSAgent.reshuffled_determinization` shuffles exactly
+    /// this list and leaves `next_tile` untouched).  The multiset is NOT
+    /// checked; the caller owns that (P4's determinizer preserves it by
+    /// construction, and the P3 reconcile drives both sides from ONE list).
+    pub fn set_unseen_deck(&mut self, names: &[String]) -> Result<(), String> {
+        let ids = deck_from_descriptions(names)?;
+        self.state.set_remaining_deck(&ids)
+    }
 }
 
 #[cfg(test)]
