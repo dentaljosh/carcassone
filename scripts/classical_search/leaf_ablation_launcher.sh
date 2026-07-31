@@ -57,7 +57,7 @@ CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750   # champion-sibling A/B
 
 # PRIORITY ORDER (PREREG.md "Priority"). Cells run left-to-right; n=400 completes per-cell
 # rather than spreading thin, so a partial night yields whole verdicts, not partial ones.
-CELLS_ALL="meepleoff oppanticoff anticoff selfanticoff capoff meepleflat"
+CELLS_ALL="meepleoff oppanticoff anticoff selfanticoff meepleflat capoff"
 
 case "$BOX_TAG" in
   local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared ;;
