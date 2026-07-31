@@ -40,7 +40,7 @@ use std::collections::HashSet;
 
 use crate::compat::{self, LibmFlavor};
 use crate::game::Game;
-use crate::leaf::{self, LeafConfig, LeafError};
+use crate::leaf::{LeafConfig, LeafError, LeafScratch};
 use crate::sha256::sha256_hex;
 
 mod fxhash;
@@ -91,6 +91,14 @@ pub struct SearchConfig {
     pub exp_fma: bool,
     /// `math.tanh` → [`LibmFlavor::GlibcFma`] on x86-64 (G0 §2).
     pub tanh_flavor: LibmFlavor,
+    /// DIAGNOSTIC (mirrors `CARCASSONNE_CACHE_COLLIDE_CHECK=1`): on every
+    /// legal-move-cache HIT, recompute the mask and count disagreements — i.e.
+    /// measure whether two distinct boards really do share one
+    /// `string_representation` key during a search. Counting only; the CACHED
+    /// mask is still returned, so behaviour is unchanged (that is the Python
+    /// DEFAULT, and it is the semantics under gate). Costs a full enumeration
+    /// per hit, so it is off for the gate legs.
+    pub legal_cache_collide_check: bool,
     pub leaf: LeafConfig,
 }
 
@@ -108,6 +116,7 @@ impl Default for SearchConfig {
             c_lcb: 1.0,
             exp_fma: true,
             tanh_flavor: LibmFlavor::GlibcFma,
+            legal_cache_collide_check: false,
             leaf: LeafConfig::curve125(),
         }
     }
@@ -225,6 +234,9 @@ pub struct Tree {
     legal_cache: HashMap<Box<str>, Vec<i32>, FxBuildHasher>,
     pub legal_cache_hits: u64,
     pub legal_cache_misses: u64,
+    /// Cache HITS whose recomputed mask disagreed (only counted under
+    /// `SearchConfig::legal_cache_collide_check`).
+    pub legal_cache_collisions: u64,
 }
 
 impl Tree {
@@ -271,12 +283,17 @@ pub struct SearchResult {
     pub leaf_evals: u64,
     pub legal_cache_hits: u64,
     pub legal_cache_misses: u64,
+    pub legal_cache_collisions: u64,
 }
 
 pub struct Searcher<'a> {
     pub cfg: &'a SearchConfig,
     pub tree: Tree,
     pub leaf_evals: u64,
+    /// One reusable decomposition buffer for the whole search — the P2 perf
+    /// lever (~27 KB of buffer churn per leaf call, at tens of leaf calls per
+    /// node expansion).
+    scratch: LeafScratch,
     trace: Option<&'a mut dyn TraceSink>,
 }
 
@@ -286,6 +303,7 @@ impl<'a> Searcher<'a> {
             cfg,
             tree: Tree::default(),
             leaf_evals: 0,
+            scratch: LeafScratch::new(),
             trace: None,
         }
     }
@@ -295,6 +313,7 @@ impl<'a> Searcher<'a> {
             cfg,
             tree: Tree::default(),
             leaf_evals: 0,
+            scratch: LeafScratch::new(),
             trace: Some(trace),
         }
     }
@@ -305,9 +324,9 @@ impl<'a> Searcher<'a> {
     fn leaf_at(&mut self, g: &Game, player: usize) -> Result<f64, SearchError> {
         self.leaf_evals += 1;
         Ok(match self.cfg.leaf_quantize {
-            LeafQuantize::Float => leaf::leaf_value_float(&g.state, player, &self.cfg.leaf)?,
+            LeafQuantize::Float => self.scratch.leaf_value_float(&g.state, player, &self.cfg.leaf)?,
             // `float(flat_virtual_score_v2(...))`
-            LeafQuantize::Int => leaf::leaf_value(&g.state, player, &self.cfg.leaf)? as f64,
+            LeafQuantize::Int => self.scratch.leaf_value(&g.state, player, &self.cfg.leaf)? as f64,
         })
     }
 
@@ -348,7 +367,11 @@ impl<'a> Searcher<'a> {
     fn legal_actions(&mut self, g: &Game, key: &str) -> Vec<i32> {
         if let Some(v) = self.tree.legal_cache.get(key) {
             self.tree.legal_cache_hits += 1;
-            return v.clone();
+            let hit = v.clone();
+            if self.cfg.legal_cache_collide_check && hit != g.legal_actions() {
+                self.tree.legal_cache_collisions += 1;
+            }
+            return hit;
         }
         self.tree.legal_cache_misses += 1;
         let legal = g.legal_actions();
@@ -684,6 +707,7 @@ impl<'a> Searcher<'a> {
             leaf_evals: self.leaf_evals,
             legal_cache_hits: self.tree.legal_cache_hits,
             legal_cache_misses: self.tree.legal_cache_misses,
+            legal_cache_collisions: self.tree.legal_cache_collisions,
         })
     }
 

@@ -667,6 +667,7 @@ impl PySearchConfig {
         c_lcb=1.0,
         exp_fma=true,
         tanh_flavor="glibc_fma",
+        legal_cache_collide_check=false,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -682,6 +683,7 @@ impl PySearchConfig {
         c_lcb: f64,
         exp_fma: bool,
         tanh_flavor: &str,
+        legal_cache_collide_check: bool,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -715,6 +717,7 @@ impl PySearchConfig {
                 c_lcb,
                 exp_fma,
                 tanh_flavor: parse_flavor(tanh_flavor)?,
+                legal_cache_collide_check,
                 leaf: leaf_cfg.inner.clone(),
             },
         })
@@ -782,6 +785,7 @@ fn result_to_dict<'py>(
     d.set_item("leaf_evals", r.leaf_evals)?;
     d.set_item("legal_cache_hits", r.legal_cache_hits)?;
     d.set_item("legal_cache_misses", r.legal_cache_misses)?;
+    d.set_item("legal_cache_collisions", r.legal_cache_collisions)?;
     Ok(d)
 }
 

@@ -29,6 +29,7 @@ The emitted JSONL is byte-comparable with the Rust
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -50,13 +51,46 @@ import carc_rs  # noqa: E402
 
 from carcassonne_ai import flat_leaf  # noqa: E402
 
-# `reconcile_leaf` flips `flat_leaf.USE_CY_LEAF = False` at import so its
-# three-leg comparison really exercises pure Python.  P3 wants the PRODUCTION
-# leaf path (Cython — 62x faster, and G2 proved the two are bit-identical over
-# 3.34M values), so capture the native setting and restore it after the import.
-_USE_CY_LEAF_NATIVE = flat_leaf.USE_CY_LEAF
-import reconcile_leaf as _rec  # noqa: E402  (reused: leaf configs + provenance)
-flat_leaf.USE_CY_LEAF = _USE_CY_LEAF_NATIVE
+# The PRODUCTION leaf dispatch, re-derived from the environment exactly as
+# `flat_leaf` derives it at ITS import.  Not captured from the live module
+# attribute, because `reconcile_leaf` (whose leaf configs + provenance assertions
+# P3 reuses) sets `flat_leaf.USE_CY_LEAF = False` at ITS import so its three-leg
+# comparison really exercises pure Python — and whether that has already
+# happened depends on module import order.
+_PROD_USE_CY_LEAF = os.environ.get("CARCASSONNE_USE_CY_LEAF", "1") != "0"
+
+_REC = None
+
+
+def _rec_mod():
+    """`reconcile_leaf`, imported WITHOUT leaking its `USE_CY_LEAF = False`.
+
+    P3 wants the production (Cython) leaf — 62x faster, and G2 proved the two
+    paths bit-identical over 3.34M values — but flipping a process-global on
+    someone else's behalf is exactly how `tests/rustport/test_p2_leaf.py`
+    (which asserts the flag is False) would break depending on collection
+    order. So: restore whatever was there, and set the production value only
+    for the duration of a search (see `production_leaf_dispatch`).
+    """
+    global _REC
+    if _REC is None:
+        prev = flat_leaf.USE_CY_LEAF
+        import reconcile_leaf as m
+        flat_leaf.USE_CY_LEAF = prev
+        _REC = m
+    return _REC
+
+
+@contextlib.contextmanager
+def production_leaf_dispatch():
+    """Run the block with `flat_leaf` dispatching to the PRODUCTION leaf."""
+    prev = flat_leaf.USE_CY_LEAF
+    flat_leaf.USE_CY_LEAF = _PROD_USE_CY_LEAF
+    try:
+        yield
+    finally:
+        flat_leaf.USE_CY_LEAF = prev
+
 
 from carcassonne_ai.game_wrapper import SCORE_NORM_SCALE, Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
@@ -100,8 +134,8 @@ def production_knobs() -> dict:
     from carcassonne_ai.champion_factory import load_production_spec
 
     spec = load_production_spec()
-    leaf_prov = _rec.leaf_provenance()
-    leaf_cfg = _rec._cfgs("core")["prod-curve125"]
+    leaf_prov = _rec_mod().leaf_provenance()
+    leaf_cfg = _rec_mod()._cfgs("core")["prod-curve125"]
     if tuple(spec.curve) != tuple(float(x) for x in leaf_cfg.v29_meeple_curve):
         raise SystemExit(
             f"PRODUCTION.yaml curve {tuple(spec.curve)!r} != prod-curve125 "
@@ -116,45 +150,61 @@ def production_knobs() -> dict:
         "final_select": str(spec.final_select),
         "leaf_quantize": str(spec.leaf_quantize),
         "value_norm": float(spec.value_norm),
-        "reuse_tree": bool(spec.reuse_tree),
+        # PRODUCTION.yaml carries reuse_tree: true, but it is explicitly a NO-OP
+        # in FAIR DEPLOY — `FairHeuristicPriorAgent` has no reuse knob and builds
+        # a FRESH tree per determinization (YAML §agent_knobs.reuse_tree, the
+        # 2026-07-09 "resolved by mechanism" note; champion_factory calls the
+        # same thing `reuse_tree_effective`). P3 ports the SINGLE-WORLD search
+        # that P4's k-parallel PIMC drives, so the fresh-tree semantics are the
+        # ones under gate. Both values are recorded; only the effective one is
+        # used to build the config.
+        "reuse_tree_yaml": bool(spec.reuse_tree),
+        "reuse_tree": False,
         "score_norm_scale": float(SCORE_NORM_SCALE),
         "sims_per_det": int(spec.sims_per_det),
         "k_dets": int(spec.k_dets),
         "leaf": leaf_prov,
         "leaf_cfg": leaf_cfg,
-        "use_cy_leaf": bool(flat_leaf.USE_CY_LEAF),
+        "use_cy_leaf": bool(_PROD_USE_CY_LEAF),
     }
 
 
-def py_config(knobs: dict | None = None) -> HeuristicPriorConfig:
+def py_config(knobs: dict | None = None, *, final_select: str | None = None,
+              leaf_quantize: str | None = None) -> HeuristicPriorConfig:
+    """The champion config. The two overrides exist ONLY so the tests can gate
+    the non-production `final_select` / `leaf_quantize` branches of the port —
+    every gate leg runs with both at their PRODUCTION.yaml values."""
     k = knobs or production_knobs()
     return HeuristicPriorConfig(
         c_puct=k["c_puct"],
         tau_p=k["tau_p"],
-        leaf_quantize=k["leaf_quantize"],
-        final_select=k["final_select"],
+        leaf_quantize=leaf_quantize or k["leaf_quantize"],
+        final_select=final_select or k["final_select"],
         value_norm=k["value_norm"],
         leaf_cfg=k["leaf_cfg"],
         reuse_tree=k["reuse_tree"],
     )
 
 
-def rs_config(sims: int, knobs: dict | None = None):
+def rs_config(sims: int, knobs: dict | None = None, *,
+              final_select: str | None = None, leaf_quantize: str | None = None,
+              collide_check: bool = False):
     """The SAME knobs driven into `carc_rs.SearchConfigRs`."""
     k = knobs or production_knobs()
     return carc_rs.SearchConfigRs(
-        _rec._to_rs(k["leaf_cfg"]),
+        _rec_mod()._to_rs(k["leaf_cfg"]),
         int(sims),
         k["c_puct"],
         k["tau_p"],
         k["value_norm"],
         k["score_norm_scale"],
-        k["leaf_quantize"],
-        k["final_select"],
+        leaf_quantize or k["leaf_quantize"],
+        final_select or k["final_select"],
         None,                       # fpu_reduction: NeuralMCTS default (legacy q=0)
         1.0,                        # c_lcb (inert unless final_select == "lcb")
         True,                       # np.exp float64 == glibc __exp_fma  (G0 §3)
         "glibc_fma",                # math.tanh flavour on x86-64        (G0 §2)
+        bool(collide_check),        # diagnostic only; never on for a gate leg
     )
 
 
@@ -274,7 +324,8 @@ def py_search_single(game: Game, board, cfg: HeuristicPriorConfig, sims: int,
         c_puct=cfg.c_puct, seed=None, trace_sink=sink,
     )
     try:
-        chosen = int(agent.move(board))
+        with production_leaf_dispatch():
+            chosen = int(agent.move(board))
         root = agent.mcts._nodes[game.string_representation(board)]
         children = sorted(root.children.items())
         deduped = agent.mcts._deduped_children(root)

@@ -40,7 +40,54 @@
 
 pub mod decomp;
 
-pub use decomp::{decompose, Decomp};
+pub use decomp::{decompose, decompose_into, Decomp, Scratch};
+
+/// Reusable working set for a hot leaf loop (P3/P4 search rates).
+///
+/// One per search thread: `leaf_value_float_with` decomposes into the retained
+/// [`Decomp`] using the retained [`Scratch`], so the whole leaf evaluation is
+/// allocation-free after the first call.  Results are bit-identical to the
+/// allocating path (the buffers are overwritten, never read stale) — asserted
+/// by `scripts/rustport/reconcile_leaf.py` and by a unit test here.
+#[derive(Default)]
+pub struct LeafScratch {
+    pub decomp: Decomp,
+    pub scratch: Scratch,
+}
+
+impl LeafScratch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// `flat_leaf.flat_virtual_score_v2_float`, reusing this scratch.
+    pub fn leaf_value_float(
+        &mut self,
+        state: &GameState,
+        player: usize,
+        cfg: &LeafConfig,
+    ) -> Result<f64, LeafError> {
+        if state.players != 2 {
+            return Err(LeafError::NotTwoPlayer);
+        }
+        decompose_into(state, &mut self.decomp, &mut self.scratch);
+        Ok(leaf_terms_with(state, player, cfg, &self.decomp)?.score)
+    }
+
+    /// `flat_leaf.flat_virtual_score_v2`, reusing this scratch.
+    pub fn leaf_value(
+        &mut self,
+        state: &GameState,
+        player: usize,
+        cfg: &LeafConfig,
+    ) -> Result<i64, LeafError> {
+        if state.players != 2 {
+            return Err(LeafError::NotTwoPlayer);
+        }
+        decompose_into(state, &mut self.decomp, &mut self.scratch);
+        Ok(leaf_terms_with(state, player, cfg, &self.decomp)?.value)
+    }
+}
 
 use crate::compat::fsum;
 use crate::engine::{GameState, MeepleType, BOARD_COLS, BOARD_ROWS};
@@ -843,6 +890,58 @@ mod tests {
     use super::*;
     use crate::game::Game;
 
+    /// The scratch path must be BIT-identical to the allocating path, and it
+    /// must stay so when the SAME buffers are reused across many different
+    /// positions (stale-data is the only way a buffer-reuse refactor can go
+    /// wrong, so the scratch is deliberately reused across every ply here).
+    #[test]
+    fn leaf_scratch_reuse_is_bit_identical_across_a_whole_game() {
+        let cfg = LeafConfig::curve125();
+        let mut sc = LeafScratch::new();
+        let mut checked = 0usize;
+        for seed in ["1", "7", "12345678901234567890"] {
+            let mut g = Game::from_seed(seed);
+            let mut plies = 0;
+            while !g.is_terminal() && plies < 260 {
+                for player in 0..2 {
+                    let want_f = leaf_value_float(&g.state, player, &cfg).unwrap();
+                    let want_i = leaf_value(&g.state, player, &cfg).unwrap();
+                    let got_f = sc.leaf_value_float(&g.state, player, &cfg).unwrap();
+                    let got_i = sc.leaf_value(&g.state, player, &cfg).unwrap();
+                    assert_eq!(got_f.to_bits(), want_f.to_bits(),
+                               "seed {seed} ply {plies} p{player} float leaf");
+                    assert_eq!(got_i, want_i, "seed {seed} ply {plies} p{player} int leaf");
+                    checked += 2;
+                }
+                let legal = g.legal_actions();
+                g.advance(legal[legal.len() / 2]).unwrap();
+                plies += 1;
+            }
+        }
+        assert!(checked > 1000, "only {checked} comparisons");
+    }
+
+    #[test]
+    fn decompose_into_reuse_matches_a_fresh_decompose() {
+        let mut d = Decomp::default();
+        let mut sc = Scratch::default();
+        let mut g = Game::from_seed("99");
+        for _ in 0..90 {
+            let legal = g.legal_actions();
+            g.advance(legal[0]).unwrap();
+            decompose_into(&g.state, &mut d, &mut sc);
+            let fresh = decompose(&g.state);
+            assert_eq!(d.placed, fresh.placed);
+            assert_eq!(d.city_labels, fresh.city_labels);
+            assert_eq!(d.road_labels, fresh.road_labels);
+            assert_eq!(d.farm_labels, fresh.farm_labels);
+            assert_eq!(d.city_root_open_n, fresh.city_root_open_n);
+            assert_eq!(d.road_root_open_n, fresh.road_root_open_n);
+            assert_eq!(d.city_root_delta, fresh.city_root_delta);
+            assert_eq!(d.farm_root_finished_cities, fresh.farm_root_finished_cities);
+        }
+    }
+
     #[test]
     fn round_ties_even_matches_cpython() {
         assert_eq!(round_ties_even_i64(2.5), 2);
@@ -902,5 +1001,39 @@ mod tests {
         assert_eq!(leaf_value(&g.state, 0, &cfg).unwrap(), -16);
         g.state.meeples = [5, 5];
         assert_eq!(leaf_value_float(&g.state, 0, &cfg).unwrap(), 0.0);
+    }
+}
+
+#[cfg(test)]
+mod scratch_bench {
+    use super::*;
+    use crate::game::Game;
+    use std::time::Instant;
+
+    /// `cargo test --release -p carc-core -- --ignored --nocapture scratch_bench`
+    #[test]
+    #[ignore]
+    fn bench_alloc_vs_scratch() {
+        let cfg = LeafConfig::curve125();
+        let mut g = Game::from_seed("28000000000");
+        for _ in 0..60 {
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        let n = 20000;
+        let t = Instant::now();
+        let mut acc = 0.0f64;
+        for _ in 0..n {
+            acc += leaf_value_float(&g.state, 0, &cfg).unwrap();
+        }
+        let alloc = t.elapsed().as_secs_f64() / n as f64 * 1e6;
+        let mut sc = LeafScratch::new();
+        let t = Instant::now();
+        for _ in 0..n {
+            acc += sc.leaf_value_float(&g.state, 0, &cfg).unwrap();
+        }
+        let scratch = t.elapsed().as_secs_f64() / n as f64 * 1e6;
+        println!("leaf us/call: alloc={alloc:.3} scratch={scratch:.3} \
+                  speedup={:.2}x (acc={acc:.1})", alloc / scratch);
     }
 }
