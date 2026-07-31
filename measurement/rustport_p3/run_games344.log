@@ -1,1 +1,5 @@
 G3: 20 jobs over ['games'] at sims=[344], workers=12
+  20/20 jobs | 2877 searches | 0 mismatches | 271s
+G3/search: PASS  2877 searches / 989688 sims / 23016 field checks / 20 full games (2877 plies) | 0 mismatches
+G3/search: throughput py=403 sims/s  rs=3503 sims/s  (8.68x)
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_games344.json

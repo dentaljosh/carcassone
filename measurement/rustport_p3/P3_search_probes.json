@@ -70,5 +70,13 @@
     "prior_bonus_entries": 211,
     "pct_nodes_with_alias": 2.29,
     "finding": "Exercised, not vacuous: 2.3% of nodes carry at least one alias even at only 200 sims, and 211 prior-bonus folds fired. Both affect PUCT directly, so the gate's bit-equality covers them."
+  },
+  "g2_leaf_rerun_after_scratch_refactor": {
+    "why": "the leaf-scratch lever (decompose_into + Scratch) edits the P2-gated leaf, so G2 was re-run on the final build",
+    "command": ".venv/bin/python scripts/rustport/reconcile_leaf.py --corpus all --workers 12",
+    "values_compared": 3341772,
+    "mismatches": 0,
+    "secs": 270.9,
+    "verdict": "PASS \u2014 identical to the P2 figure; the buffer reuse is bit-exact"
   }
 }

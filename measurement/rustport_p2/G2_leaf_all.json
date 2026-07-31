@@ -7,8 +7,8 @@
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "7bd6cb1-dirty",
-    "utc": "2026-07-31T20:54:39Z",
+    "git_rev": "09e6372-dirty",
+    "utc": "2026-07-31T22:16:33Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
     "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
@@ -22,8 +22,8 @@
     "limit": null,
     "stride": 8,
     "workers": 12,
-    "bench": 24,
-    "bench_repeats": 400,
+    "bench": 0,
+    "bench_repeats": 200,
     "out": null
   },
   "leaf_of_record": {
@@ -215,16 +215,5 @@
   "total_values_compared": 3341772,
   "mismatch_count": 0,
   "mismatches": [],
-  "wallclock_s": 267.72445612101,
-  "throughput": {
-    "positions": 24,
-    "repeats": 400,
-    "leaf_evals_per_leg": 19200,
-    "python_us_per_leaf": 437.62697869775974,
-    "cython_us_per_leaf": 30.537478020657243,
-    "rust_us_per_leaf": 7.052739479166666,
-    "rust_vs_python": 62.05063720139973,
-    "rust_vs_cython": 4.329874669390946,
-    "note": "python leg includes the pre-round float call, i.e. 2 leaf computations per (state,pov); all three legs are charged identically"
-  }
+  "wallclock_s": 270.9071605759964
 }

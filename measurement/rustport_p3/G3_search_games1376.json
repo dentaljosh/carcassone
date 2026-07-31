@@ -1,14 +1,14 @@
 {
   "gate": "G3/search",
-  "verdict": "FAIL",
+  "verdict": "PASS",
   "env": {
     "host": "Doctor",
     "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "eb7b1e5-dirty",
-    "utc": "2026-07-31T21:31:33Z",
+    "git_rev": "09e6372-dirty",
+    "utc": "2026-07-31T22:04:51Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
     "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
@@ -67,163 +67,42 @@
     "max_mismatch_report": 200,
     "collide_check": false
   },
-  "wall_secs": 3.266436744015664,
+  "wall_secs": 1108.838363702991,
   "totals": {
-    "positions": 0,
-    "sims_run": 0,
-    "checks": 0,
-    "plies": 0,
-    "games": 0,
-    "py_secs": 0.0,
-    "rs_secs": 0.0,
-    "py_sims": 0,
-    "rs_sims": 0,
+    "positions": 2878,
+    "sims_run": 3960128,
+    "checks": 23024,
+    "plies": 2878,
+    "games": 20,
+    "py_secs": 9886.073093548213,
+    "rs_secs": 1056.0390060759964,
+    "py_sims": 3960128,
+    "rs_sims": 3960128,
     "cache_hits": 0,
     "cache_collisions": 0
   },
-  "n_mismatches": 20,
-  "mismatches": [
-    {
-      "tag": "game/28000000001",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000011",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000002",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000010",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000000",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000003",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000007",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000009",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000004",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000008",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000005",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000006",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000014",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000016",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000012",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000015",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000019",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000017",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000013",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    },
-    {
-      "tag": "game/28000000018",
-      "field": "EXCEPTION",
-      "python": "TypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given",
-      "rust": "Traceback (most recent call last):\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 267, in run_job\n    out = _DISPATCH[job[\"fn\"]](job)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 232, in _game_job\n    rs = ms.search_single(_rscfg(sims))\n                          ^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/reconcile_search.py\", line 88, in _rscfg\n    _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/doctor/projects/carcassone/scripts/rustport/trace_search.py\", line 160, in rs_config\n    return carc_rs.SearchConfigRs(\n           ^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SearchConfigRs.__new__() takes from 5 to 12 positional arguments but 13 were given\n"
-    }
-  ],
+  "n_mismatches": 0,
+  "mismatches": [],
   "per_corpus": {
     "games/s1376": {
-      "positions": 0,
-      "sims_run": 0,
-      "checks": 0,
-      "plies": 0,
-      "games": 0,
-      "py_secs": 0.0,
-      "rs_secs": 0.0,
-      "py_sims": 0,
-      "rs_sims": 0,
+      "positions": 2878,
+      "sims_run": 3960128,
+      "checks": 23024,
+      "plies": 2878,
+      "games": 20,
+      "py_secs": 9886.073093548213,
+      "rs_secs": 1056.0390060759964,
+      "py_sims": 3960128,
+      "rs_sims": 3960128,
       "cache_hits": 0,
       "cache_collisions": 0,
-      "n_mismatches": 20
+      "n_mismatches": 0
     }
   },
   "throughput": {
-    "python_sims_per_sec": null,
-    "rust_sims_per_sec": null,
-    "speedup": null,
+    "python_sims_per_sec": 400.5764435005476,
+    "rust_sims_per_sec": 3749.9826968654743,
+    "speedup": 9.361465851799014,
     "note": "in-process, single worker each; sum over all searched positions"
   }
 }

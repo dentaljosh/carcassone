@@ -7,8 +7,8 @@
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "eb7b1e5-dirty",
-    "utc": "2026-07-31T21:31:29Z",
+    "git_rev": "a6faeaf-dirty",
+    "utc": "2026-07-31T21:46:22Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
     "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
@@ -64,19 +64,22 @@
     "det_games": 12,
     "workers": 12,
     "tag": "games344",
-    "max_mismatch_report": 200
+    "max_mismatch_report": 200,
+    "collide_check": false
   },
-  "wall_secs": 278.4654058300075,
+  "wall_secs": 271.5152495520015,
   "totals": {
     "positions": 2877,
     "sims_run": 989688,
     "checks": 23016,
     "plies": 2877,
     "games": 20,
-    "py_secs": 2490.7549102308985,
-    "rs_secs": 307.28149035724346,
+    "py_secs": 2453.366169023706,
+    "rs_secs": 282.5309168191743,
     "py_sims": 989688,
-    "rs_sims": 989688
+    "rs_sims": 989688,
+    "cache_hits": 0,
+    "cache_collisions": 0
   },
   "n_mismatches": 0,
   "mismatches": [],
@@ -87,17 +90,19 @@
       "checks": 23016,
       "plies": 2877,
       "games": 20,
-      "py_secs": 2490.7549102308985,
-      "rs_secs": 307.28149035724346,
+      "py_secs": 2453.366169023706,
+      "rs_secs": 282.5309168191743,
       "py_sims": 989688,
       "rs_sims": 989688,
+      "cache_hits": 0,
+      "cache_collisions": 0,
       "n_mismatches": 0
     }
   },
   "throughput": {
-    "python_sims_per_sec": 397.34459457845804,
-    "rust_sims_per_sec": 3220.7862531823675,
-    "speedup": 8.10577593637405,
+    "python_sims_per_sec": 403.40003563097844,
+    "rust_sims_per_sec": 3502.9369923201043,
+    "speedup": 8.683531687945894,
     "note": "in-process, single worker each; sum over all searched positions"
   }
 }

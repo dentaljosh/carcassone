@@ -1,0 +1,10 @@
+G2/leaf[champ]: 65059 positions, 64610 plies, 1561416 live values, 0 on-disk values, 0 mismatches
+G2/leaf[distill]: 28403 positions, 215887 plies, 1590568 live values, 0 on-disk values, 0 mismatches
+G2/leaf[e4]: 290 positions, 288 plies, 16240 live values, 0 on-disk values, 0 mismatches
+G2/leaf[golden]: 1737 positions, 1725 plies, 97272 live values, 0 on-disk values, 0 mismatches
+G2/leaf[golden_disk]: 56 positions, 1725 plies, 0 live values, 448 on-disk values, 0 mismatches
+G2/leaf[k3]: 354 positions, 48815 plies, 19824 live values, 0 on-disk values, 0 mismatches
+G2/leaf[midgame]: 1000 positions, 85528 plies, 56000 live values, 0 on-disk values, 0 mismatches
+G2/leaf[panel]: 4 positions, 0 plies, 0 live values, 4 on-disk values, 0 mismatches
+G2/leaf: PASS  3341772 values compared, 0 mismatches, 270.9s
+G2/leaf: result -> /home/doctor/projects/carcassone/measurement/rustport_p2/G2_leaf_all.json
