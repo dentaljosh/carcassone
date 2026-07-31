@@ -38,6 +38,23 @@ The mutations, each a one-line regression of a documented P4 quirk:
                    so, not because it is reachable.
   solver_max_only  the solver always maximizes (ignores `to_move`)
 
+MEASURED (2026-07-31, `measurement/rustport_p4/P4_mutation_probe_*.json`):
+
+  sims=8,  k=4, 2 FULL games  -> control 0/288, **7/8 discriminated**
+  sims=128,k=4, 1 90-ply game -> control 0/90,  5/8 discriminated
+
+The three that go quiet at the higher setting are each explained, and only ONE
+of them is decay:
+
+  * `no_min_visits` — 1/261 at sims=8, **0/90 at sims=128**.  Genuine budget
+    decay: pooled over k worlds at 128 sims every visited root action clears
+    N>=2, so the floor never binds.  This is the P3 lesson reproduced inside P4:
+    a champion-budget probe would have called this quirk untested.
+  * `latch_any_phase` — 0 at BOTH; provably dead (see above).
+  * `solver_max_only` — 0 at sims=128 only because `--max-moves 90` truncates
+    the game before the K<=2 latch band.  A COVERAGE artifact of the probe's own
+    truncation, not decay; it fires (1/287) on full games at sims=8.
+
 Usage:
     .venv/bin/python scripts/rustport/probe_fair_mutations.py --sims 8 --k-dets 4
 """

@@ -8,8 +8,9 @@ PY=.venv/bin/python
 W=${W:-10}
 
 echo "=== [1/3] game leg: FULL-GAME lockstep at k8x1376 (12 golden + 2 E4) ==="
+# 14 jobs -> 14 workers so it is ONE wave (wall = the slowest game, not 2x it).
 nice -n 19 $PY -u scripts/rustport/reconcile_fair.py --leg game \
-  --sims 1376 --k-dets 8 --n-games 12 --threads 1 --workers "$W" --tag game_k8x1376
+  --sims 1376 --k-dets 8 --n-games 12 --threads 1 --workers "${WG:-14}" --tag game_k8x1376
 echo "rc=$?"
 
 echo "=== [2/3] pos leg: ALL 449 champ + 2 E4 + 12 golden, stride 30, k8x1376 ==="
