@@ -718,6 +718,7 @@ impl PySearchConfig {
                 exp_fma,
                 tanh_flavor: parse_flavor(tanh_flavor)?,
                 legal_cache_collide_check,
+                use_leaf_scratch: true,
                 leaf: leaf_cfg.inner.clone(),
             },
         })

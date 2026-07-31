@@ -40,7 +40,7 @@ use std::collections::HashSet;
 
 use crate::compat::{self, LibmFlavor};
 use crate::game::Game;
-use crate::leaf::{LeafConfig, LeafError, LeafScratch};
+use crate::leaf::{self, LeafConfig, LeafError, LeafScratch};
 use crate::sha256::sha256_hex;
 
 mod fxhash;
@@ -99,6 +99,12 @@ pub struct SearchConfig {
     /// DEFAULT, and it is the semantics under gate). Costs a full enumeration
     /// per hit, so it is off for the gate legs.
     pub legal_cache_collide_check: bool,
+    /// Reuse ONE [`LeafScratch`] for every leaf evaluation of the search (the P2
+    /// perf lever). `false` calls the allocating `leaf::leaf_value_float`, which
+    /// is what the P2 gate measured — kept so the lever can be A/B'd in one
+    /// process (`bench_search_scratch_ab`) rather than across builds. Results
+    /// are bit-identical either way.
+    pub use_leaf_scratch: bool,
     pub leaf: LeafConfig,
 }
 
@@ -117,6 +123,7 @@ impl Default for SearchConfig {
             exp_fma: true,
             tanh_flavor: LibmFlavor::GlibcFma,
             legal_cache_collide_check: false,
+            use_leaf_scratch: true,
             leaf: LeafConfig::curve125(),
         }
     }
@@ -323,10 +330,20 @@ impl<'a> Searcher<'a> {
     #[inline]
     fn leaf_at(&mut self, g: &Game, player: usize) -> Result<f64, SearchError> {
         self.leaf_evals += 1;
-        Ok(match self.cfg.leaf_quantize {
-            LeafQuantize::Float => self.scratch.leaf_value_float(&g.state, player, &self.cfg.leaf)?,
+        Ok(match (self.cfg.leaf_quantize, self.cfg.use_leaf_scratch) {
+            (LeafQuantize::Float, true) => {
+                self.scratch.leaf_value_float(&g.state, player, &self.cfg.leaf)?
+            }
+            (LeafQuantize::Float, false) => {
+                leaf::leaf_value_float(&g.state, player, &self.cfg.leaf)?
+            }
             // `float(flat_virtual_score_v2(...))`
-            LeafQuantize::Int => self.scratch.leaf_value(&g.state, player, &self.cfg.leaf)? as f64,
+            (LeafQuantize::Int, true) => {
+                self.scratch.leaf_value(&g.state, player, &self.cfg.leaf)? as f64
+            }
+            (LeafQuantize::Int, false) => {
+                leaf::leaf_value(&g.state, player, &self.cfg.leaf)? as f64
+            }
         })
     }
 
@@ -898,6 +915,53 @@ mod tests {
         let r = search_single(&g, &cfg).unwrap();
         assert_eq!(r.root_priors.len(), 1);
         assert_eq!(r.root_children.len(), 1);
+    }
+
+    /// The scratch lever must be a PURE perf change: identical trees.
+    #[test]
+    fn leaf_scratch_does_not_change_the_search() {
+        let mut g = Game::from_seed("28000000000");
+        for _ in 0..55 {
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        let a = search_single(&g, &small_cfg(256)).unwrap();
+        let b = search_single(&g, &SearchConfig {
+            use_leaf_scratch: false,
+            ..small_cfg(256)
+        }).unwrap();
+        assert_eq!(a.chosen_action, b.chosen_action);
+        assert_eq!(a.node_count, b.node_count);
+        assert_eq!(a.root_w.to_bits(), b.root_w.to_bits());
+        for (x, y) in a.root_children.iter().zip(b.root_children.iter()) {
+            assert_eq!((x.0, x.1, x.2.to_bits()), (y.0, y.1, y.2.to_bits()));
+        }
+    }
+
+    /// `cargo test --release -p carc-core -- --ignored --nocapture bench_search_scratch_ab`
+    #[test]
+    #[ignore]
+    fn bench_search_scratch_ab() {
+        use std::time::Instant;
+        let mut g = Game::from_seed("28000000000");
+        for _ in 0..55 {
+            let legal = g.legal_actions();
+            g.advance(legal[legal.len() / 2]).unwrap();
+        }
+        let sims = 1376;
+        let on = small_cfg(sims);
+        let off = SearchConfig { use_leaf_scratch: false, ..small_cfg(sims) };
+        // warm both paths
+        let _ = search_single(&g, &small_cfg(64)).unwrap();
+        let reps = 6;
+        let t = Instant::now();
+        for _ in 0..reps { search_single(&g, &off).unwrap(); }
+        let t_off = t.elapsed().as_secs_f64() / reps as f64;
+        let t2 = Instant::now();
+        for _ in 0..reps { search_single(&g, &on).unwrap(); }
+        let t_on = t2.elapsed().as_secs_f64() / reps as f64;
+        println!("search {sims} sims: alloc-leaf {:.0} sims/s, scratch-leaf {:.0} sims/s, \
+                  speedup {:.3}x", sims as f64 / t_off, sims as f64 / t_on, t_off / t_on);
     }
 
     #[test]
