@@ -269,6 +269,66 @@ class Board:
         )
 
 
+# Retail/tournament rules pre-place a fixed start tile — the "D" pattern: a city
+# on one edge with a road running straight through. In the vendored deck that is
+# `city_top_straight_road` at rotation 0 (TOP=city, LEFT/RIGHT=road, BOTTOM=grass),
+# of which the base game has 4 copies; retail places one and shuffles the other 71.
+RETAIL_START_TILE = "city_top_straight_road"
+
+
+def preplace_retail_start_tile(state: CarcassonneGameState) -> None:
+    """Pre-place the fixed "D" start tile, retail/tournament style (in place).
+
+    The engine's native convention is that the first player DRAWS a random tile
+    which is then auto-placed at ``starting_position`` — costing that player a
+    turn and handing them a free meeple opportunity on it. Retail pre-places a
+    fixed D tile before anyone draws: nobody spends a turn on it and no meeple
+    may go on it, so player 0's first real decision is the second tile.
+
+    Tile TOTALS are unchanged (1 pre-placed + 71 drawn = 72 placed either way);
+    what changes is which tile starts the board, that it is no longer a player's
+    move, and therefore the turn parity of everything after it.
+
+    Leaves ``last_tile_action`` as None on purpose — nobody played this tile, so
+    no meeple phase follows it and no feature-completion scoring is triggered.
+    """
+    from wingedsheep.carcassonne.objects.coordinate import Coordinate
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+
+    if state.placed_coords:
+        raise ValueError("preplace_retail_start_tile requires a virgin state")
+    start_tile = base_tiles[RETAIL_START_TILE]
+
+    # Draw the D tile OUT of the shuffled pool (next_tile + deck) so the deck is
+    # the retail 71, not 72 with a duplicate.
+    pool = [state.next_tile] + list(state.deck)
+    for i, tile in enumerate(pool):
+        if tile is not None and tile.description == start_tile.description:
+            pool.pop(i)
+            break
+    else:
+        raise ValueError(
+            f"no {RETAIL_START_TILE!r} tile in the deck — the retail start tile "
+            "is a base-game tile; is TileSet.BASE enabled?"
+        )
+
+    coord = state.starting_position
+    state.board[coord.row][coord.column] = start_tile
+    state.placed_coords.add(coord)
+    n_rows, n_cols = len(state.board), len(state.board[0])
+    for nr, nc in ((coord.row - 1, coord.column), (coord.row + 1, coord.column),
+                   (coord.row, coord.column - 1), (coord.row, coord.column + 1)):
+        if 0 <= nr < n_rows and 0 <= nc < n_cols and state.board[nr][nc] is None:
+            state.open_positions.add(Coordinate(row=nr, column=nc))
+
+    state.deck = pool
+    state.next_tile = state.deck.pop(0) if state.deck else None
+    state.phase = GamePhase.TILES
+    state.current_player = 0
+    state.last_tile_action = None
+
+
 class Game:
     """AlphaZero-style Carcassonne game interface."""
 
@@ -281,6 +341,7 @@ class Game:
         enable_legal_moves_cache: bool = False,
         include_farm_scalars: bool = False,
         sighted: bool = False,
+        fixed_start_tile: bool = False,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -317,6 +378,16 @@ class Game:
         # False the branch is never taken and the featurizer is byte-identical to
         # the production path. See measurement/canonical_az/M2_PLAN.md.
         self.sighted = bool(sighted)
+        # Retail/tournament fixed start tile (2026-07-30). OPT-IN, DEFAULT OFF —
+        # the Android app enables it; training/eval/solver measurement all stay on
+        # the engine's native random-start convention that every existing baseline
+        # was measured under. Flipping this default is a rules change that
+        # re-baselines everything (BACKLOG "Fixed start tile", bundle with G1).
+        # It touches game SETUP only: the board tensor, the scalar features and
+        # the action space are all window-relative and completely unaffected, so a
+        # checkpoint trained on random-start plays a fixed-start game with no
+        # shape or semantic change (only a hair of distribution shift).
+        self.fixed_start_tile = bool(fixed_start_tile)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -363,8 +434,11 @@ class Game:
         assert not any(state.abbots), (
             f"scope violation: abbots enabled ({state.abbots}); locked scope is "
             "2p Base+Farmers, no Abbots")
-        # +1 for the first tile already drawn into next_tile.
-        total_tiles = len(state.deck) + 1
+        if self.fixed_start_tile:
+            preplace_retail_start_tile(state)
+        # +1 for the first tile already drawn into next_tile, + any tile already on
+        # the board (the retail start tile, which is placed but was never drawn).
+        total_tiles = len(state.deck) + 1 + len(state.placed_coords)
         return Board.from_state(state, total_tiles, self.window_size)
 
     def get_input_channels(self) -> int:
