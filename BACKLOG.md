@@ -525,6 +525,24 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 
 **Why deferred:** the app worktree already carries the unmerged border/start-tile work and the boxes are owned by the leaf ablation overnight; this slots in as the next app work item after the merge window. Needs no new measurement to start — CL-070's data already exists for threshold calibration.
 
+## 2026-07-30 — "Eff Hans": rule-variant exploration to find a better game
+
+**Context:** Joshua, same-night brainstorm: use the apparatus to experiment with RULE changes — road scoring weights, tile-bag composition — and measure whether the variant is a *better game*. Precedent: DeepMind + Kramnik, "Assessing Game Balance with AlphaZero" (2020, chess variants). Our version is far cheaper: the classical champion's search adapts to new rules instantly; only the leaf needs a re-sweep per variant (C5/C7 machinery), no training runs.
+
+**⚠️ The methodological rule (non-negotiable):** never judge a variant with an agent tuned for the old rules — "bug fix shifts optima" applies to rule changes with full force. Pipeline per variant: change rule (scoring table + bag are engine/leaf parameters) → re-sweep affected leaf weights → generate self-play corpus under the retuned champion → judge on the metric suite.
+
+**Game-quality metric suite (instruments already exist for all of these):**
+- Luck floor (champ-vs-greedy paired-deck wr; base game measured 6.25% pooled) — the skill/luck dial.
+- Decision density (CL-070 self-disagreement machinery; base ~30% near-tie rate).
+- Blowout rate + comeback dynamics (margin distributions, lead changes — replay stats / E4 catalog engine).
+- Strategy monoculture (farm share of total points, feature-mix diversity — cf. the 2026-07-30 farm autopsy).
+- Seat balance (first-player advantage; relates to the parked WC tie-rule entry above).
+- Endgame triviality (how early the exact solver latches).
+
+**Note:** we already run an *accidental* variant — walled Carcassonne (the row-6 start-tile grid bound, 68% of games affected; see the 2026-07-30 border diagnosis). Eff Hans makes deviation deliberate and instrumented. Also a charming preprint sibling: "built a champion to beat the game, then used it to redesign the game."
+
+**Why deferred:** each variant costs ~a night of leaf re-sweep + corpus + metrics — a "pick 3–5 candidates" program, queued behind the live Tier-1 items (ANE cell, external anchor). Needs Joshua's go per variant set.
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
