@@ -226,6 +226,13 @@ impl GameState {
         self.deck.len() - self.deck_head
     }
 
+    /// `state.deck` as Python sees it: the **undrawn** tiles only (the Python
+    /// engine `pop(0)`s, so its list shrinks; ours keeps a head index).
+    #[inline]
+    pub fn remaining_deck(&self) -> &[u16] {
+        &self.deck[self.deck_head..]
+    }
+
     #[inline]
     pub fn is_terminated(&self) -> bool {
         self.next_tile.is_none()

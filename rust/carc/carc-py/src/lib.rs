@@ -6,9 +6,105 @@
 
 use carc_core::compat;
 use carc_core::game::{deck_from_descriptions, deck_from_seed, Game};
+use carc_core::leaf;
 use carc_core::tiles;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+
+// --------------------------------------------------------------------------
+// P2: the leaf config
+// --------------------------------------------------------------------------
+
+/// A mirror of the flat-leaf-relevant fields of
+/// `carcassonne_ai.virtual_score_v2.LeafConfig`.
+///
+/// Built explicitly from Python so the reconcile gate drives the *same* config
+/// into both implementations; nothing about the champion leaf is hard-coded on
+/// the Rust side (`LeafConfigRs.curve125()` is a convenience for tests only).
+#[pyclass(name = "LeafConfigRs")]
+#[derive(Clone)]
+struct PyLeafConfig {
+    inner: leaf::LeafConfig,
+}
+
+#[pymethods]
+impl PyLeafConfig {
+    #[new]
+    #[pyo3(signature = (
+        closure_p,
+        bonus_cap,
+        opp_bonus_cap,
+        meeple_k = 0.0,
+        v29_meeple_curve = None,
+        soft_cap_slope = 0.0,
+        opp_soft_cap_slope = 0.0,
+        v29_meeple_return_k = 0.0,
+        v29_farm_flip_k = 0.0,
+        bag_close = false,
+        tile_counting_closure = false,
+        closure_continuous_slack = 0.0,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        closure_p: Vec<(i32, f64)>,
+        bonus_cap: f64,
+        opp_bonus_cap: f64,
+        meeple_k: f64,
+        v29_meeple_curve: Option<Vec<f64>>,
+        soft_cap_slope: f64,
+        opp_soft_cap_slope: f64,
+        v29_meeple_return_k: f64,
+        v29_farm_flip_k: f64,
+        bag_close: bool,
+        tile_counting_closure: bool,
+        closure_continuous_slack: f64,
+    ) -> Self {
+        PyLeafConfig {
+            inner: leaf::LeafConfig {
+                closure_p,
+                bonus_cap,
+                opp_bonus_cap,
+                meeple_k,
+                v29_meeple_curve,
+                soft_cap_slope,
+                opp_soft_cap_slope,
+                v29_meeple_return_k,
+                v29_farm_flip_k,
+                bag_close,
+                tile_counting_closure,
+                closure_continuous_slack,
+            },
+        }
+    }
+
+    /// The champion leaf of record, `v2_9_2_Bmild_cap8_curve125`.
+    #[staticmethod]
+    fn curve125() -> Self {
+        PyLeafConfig {
+            inner: leaf::LeafConfig::curve125(),
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        format!("{:?}", self.inner)
+    }
+}
+
+fn leaf_err(e: leaf::LeafError) -> PyErr {
+    match e {
+        leaf::LeafError::UnsupportedConfig => pyo3::exceptions::PyNotImplementedError::new_err(
+            "flat_closure_bonus implements only the v2.7 schedule path \
+             (no tile_counting_closure / closure_continuous_slack)",
+        ),
+        leaf::LeafError::ReturnTermNeedsCurve => pyo3::exceptions::PyValueError::new_err(
+            "v29_meeple_return_k requires v29_meeple_curve (Term R prices the \
+             marginal step of the liquidity curve)",
+        ),
+        leaf::LeafError::NotTwoPlayer => {
+            pyo3::exceptions::PyValueError::new_err("flat_virtual_score_v2 is 2-player only")
+        }
+    }
+}
 
 // --------------------------------------------------------------------------
 // P1: the engine mirror state
@@ -123,6 +219,100 @@ impl PyMirrorState {
     /// A short content digest over repr + mask + scores + offset + terminal.
     fn state_digest(&self) -> String {
         self.game.state_digest()
+    }
+
+    // --- P2: the leaf ----------------------------------------------------
+
+    /// `flat_leaf.flat_virtual_score_v2(state, player, cfg)`.
+    fn leaf_value(&self, player: usize, cfg: &PyLeafConfig) -> PyResult<i64> {
+        leaf::leaf_value(&self.game.state, player, &cfg.inner).map_err(leaf_err)
+    }
+
+    /// `flat_leaf.flat_virtual_score_v2_float(state, player, cfg)` — the
+    /// pre-round float leaf (`leaf_quantize: float`, the champion's setting).
+    fn leaf_value_float(&self, player: usize, cfg: &PyLeafConfig) -> PyResult<f64> {
+        leaf::leaf_value_float(&self.game.state, player, &cfg.inner).map_err(leaf_err)
+    }
+
+    /// Both POVs at once off ONE decomposition: `(int_p0, int_p1, f64_p0, f64_p1)`.
+    fn leaf_both(&self, cfg: &PyLeafConfig) -> PyResult<(i64, i64, f64, f64)> {
+        let d = leaf::decompose(&self.game.state);
+        let a = leaf::leaf_terms_with(&self.game.state, 0, &cfg.inner, &d).map_err(leaf_err)?;
+        let b = leaf::leaf_terms_with(&self.game.state, 1, &cfg.inner, &d).map_err(leaf_err)?;
+        Ok((a.value, b.value, a.score, b.score))
+    }
+
+    /// The per-term breakdown — the divergence-hunting view.  Keys mirror the
+    /// intermediate names in `flat_virtual_score_v2`.
+    fn leaf_terms<'py>(
+        &self,
+        py: Python<'py>,
+        player: usize,
+        cfg: &PyLeafConfig,
+    ) -> PyResult<Bound<'py, pyo3::types::PyDict>> {
+        let t = leaf::leaf_terms(&self.game.state, player, &cfg.inner).map_err(leaf_err)?;
+        let d = pyo3::types::PyDict::new(py);
+        d.set_item("base", t.base)?;
+        d.set_item("bonus_self_raw", t.bonus_self_raw)?;
+        d.set_item("bonus_opp_raw", t.bonus_opp_raw)?;
+        d.set_item("bonus_self", t.bonus_self)?;
+        d.set_item("bonus_opp", t.bonus_opp)?;
+        d.set_item("meeple_term", t.meeple_term)?;
+        d.set_item("return_term", t.return_term)?;
+        d.set_item("flip_term", t.flip_term)?;
+        d.set_item("score", t.score)?;
+        d.set_item("value", t.value)?;
+        Ok(d)
+    }
+
+    /// `flat_leaf.flat_base_score` via the **flat decomposition** (the P2 route),
+    /// as opposed to `flat_base_score`, which is the engine's own
+    /// `count_final_scores` route (P1).  They must agree everywhere.
+    #[pyo3(signature = (player=0))]
+    fn flat_base_score_decomp(&self, player: usize) -> i64 {
+        let d = leaf::decompose(&self.game.state);
+        leaf::flat_base_score(&self.game.state, player, &d)
+    }
+
+    /// `flat_leaf._bag_stats` — `(n, ge1, ge2, ge3, ge4)`.
+    fn bag_stats(&self) -> (i32, i32, i32, i32, i32) {
+        let b = leaf::bag_stats(&self.game.state);
+        (b[0], b[1], b[2], b[3], b[4])
+    }
+
+    /// Force the state into the `champion_factory._empty(meeples)` shape used by
+    /// the `_LEAF_VALUE_PANEL` semantic guard: empty board, no meeples placed,
+    /// zero scores, `next_tile = None`, explicit free-meeple counts.
+    fn make_empty_panel_state(&mut self, meeple_p0: i32, meeple_p1: i32) {
+        let st = &mut self.game.state;
+        for cell in st.board.iter_mut() {
+            *cell = carc_core::engine::EMPTY;
+        }
+        st.placed_coords.clear();
+        st.open_positions.clear();
+        st.placed_meeples = [Vec::new(), Vec::new()];
+        st.scores = [0, 0];
+        st.next_tile = None;
+        st.meeples = [meeple_p0, meeple_p1];
+    }
+
+    /// Time `repeats` leaf evaluations of the current position, both POVs, off a
+    /// fresh decomposition each time — the same work the Python/Cython leaf does
+    /// per call.  Returns `(seconds, checksum)`; the checksum keeps the loop from
+    /// being optimised away and cross-checks the values.
+    fn bench_leaf(&self, cfg: &PyLeafConfig, repeats: usize, py: Python<'_>) -> PyResult<(f64, i64)> {
+        let state = &self.game.state;
+        let c = &cfg.inner;
+        py.allow_threads(|| {
+            let t0 = std::time::Instant::now();
+            let mut checksum = 0i64;
+            for _ in 0..repeats {
+                for p in 0..2 {
+                    checksum = checksum.wrapping_add(leaf::leaf_value(state, p, c).unwrap_or(0));
+                }
+            }
+            Ok((t0.elapsed().as_secs_f64(), checksum))
+        })
     }
 }
 
@@ -390,6 +580,8 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tanh64_buf, m)?)?;
     // P1
     m.add_class::<PyMirrorState>()?;
+    // P2
+    m.add_class::<PyLeafConfig>()?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;
