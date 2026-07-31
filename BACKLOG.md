@@ -498,6 +498,18 @@ These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-
 **Context:** the official World Championship rules resolve a tied final score by ruling the STARTING player the loser (source: TOURNAMENT_LANDSCAPE_MEMO_20260728.md, verbatim quote from WC rules). Our `game_wrapper.get_game_ended` returns a symmetric draw. Draws are ~1–2.5% of our games, so under WC rules the second seat is strictly preferable and correct endgame play differs by seat (the leader-by-seat should steer differently near ties). Never modeled, not in LEVER_INDEX.
 **Why deferred:** same shape as the fixed-start-tile gap above — a rules-fidelity change that shifts training/eval baselines and needs explicit approval; near-null in most games but strictly nonzero. Fix if we register for official contest (bundle with G1's re-baselining): tie handling becomes a game-wrapper option + the agent's value function needs the seat-asymmetric terminal value.
 
+## 2026-07-30 — Phase 5/6 descriptive-stats catalog: champion-corpus distributions diffable against E4 human games
+
+**Context:** Joshua, brainstorming the Phase 5 analyzer / Phase 6 mining pass after the strength program converged. The design insight: compute distributional play statistics from the champion self-play corpus (the 11008-teacher corpus, 2,400 games / 345K rows, full champion budget) and **diff them against any E4 record** (human-vs-champion games archived by the Android app). Joshua's seed list:
+- **Phase-dependent play** — how play changes early → mid → late (e.g. by tiles-remaining terciles: meeple deploy rate, feature-type mix city/road/cloister/farm, completion-vs-extension moves).
+- **City and road size distributions** — completed-feature size histograms; extendable to points-per-meeple-turn (efficiency of meeple capital).
+- **Meeple stranding** — how often early-laid meeples never get reclaimed (this is exactly what the leaf's meeple curve prices; the meeple_K term is worth +179.5 ± 27.9 elo, so the champion's stranding discipline should be *visibly* different from human play).
+- **Farm timing** — how early farmers go down; first-farmer turn distribution, farm points per farmer (also directly tests the folk claim "first farmer in a field usually wins it" — Phase 6 Track A).
+
+All are **replay-only**: computable from (deck_seed, action_sequence) via `root_replay` with zero search compute. The E4 diff is naturally **paired** — each E4 game contains a human side and a champion side on the *same* board and deck, killing tile-luck variance the same way deck-pairing does in evals. Known confound: E4 human stats are conditioned on facing a champion opponent, while the reference corpus is champ-vs-champ — so the primary diff should be within-E4-game (human side vs champ side), with the self-play corpus as the champ-vs-champ reference to detect opponent-conditioning.
+
+**Why deferred:** Phase 5/6 work; awaiting Joshua's go on the analyzer/mining MVP (step 1 of the 3-step shape proposed 2026-07-30: descriptive mining memo → analyzer pipeline on phone archives → paired-constraint validation of the top candidates). Mining is ~an afternoon of CPU when greenlit; the binding constraint is E4 sample size (needs actual human games on the phone).
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
