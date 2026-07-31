@@ -201,5 +201,10 @@ run is descriptive. A "harmful component" result opens a proposal, not a flip.
 Smoke at production knobs (identical cell config, only the game count and seed band differ):
 `meepleoff`, n=16, W16, local box only, band `9.69e10` (throwaway).
 
-**See `SMOKE.md` in this directory for the measured numbers and the ETA arithmetic** (written
-from disk after the smoke completed, before the real launch).
+**Measured 2026-07-30, mean over all 16 completed records (not the first completions — that
+order statistic would have been ~17% optimistic): 570 s/game at W16 local**, wave 683 s,
+candidate/champion cost ratio 0.99 (compute-neutral). Local = 101.1 games/h; laptop assumed at
+the CL-067-measured 1.39× clock ratio = 72.7 games/h; **combined ≈ 173.8 games/h ⇒ 2.30 h/cell**
+at n=400. Six cells = 13.8 h, which **overflows the ~10.5 h window** ⇒ expect **4 cells complete
++ a 5th partial** by morning. Full arithmetic, the W16-vs-C7-W30 note, and the smoke-hygiene
+record in **[SMOKE.md](SMOKE.md)**.
