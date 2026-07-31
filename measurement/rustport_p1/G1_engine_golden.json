@@ -1,0 +1,48 @@
+{
+  "gate": "G1/engine",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "1c44f05-dirty",
+    "utc": "2026-07-31T20:14:03Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": "golden",
+    "limit": null,
+    "workers": 6,
+    "bench": 0,
+    "out": null
+  },
+  "per_corpus": {
+    "golden": {
+      "games": 12,
+      "plies": 1725,
+      "positions_compared": 1737,
+      "frozen_positions_checked": 56,
+      "mismatches": 0
+    }
+  },
+  "total_games": 12,
+  "total_plies": 1725,
+  "total_positions_compared": 1737,
+  "total_frozen_positions_checked": 56,
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask_sha256",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "state_scalars"
+  ],
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 0.4064685420016758
+}
