@@ -3,8 +3,11 @@
 > **STATUS: PASS (local leg, 2026-07-31).** All four primitives are bit-exact
 > against the Python/numpy/libc they must reproduce, on the 5900XT box
 > (Ubuntu glibc 2.39, x86-64, CPython 3.12.3, numpy 2.4.4, rustc 1.96.0).
-> The **fleet legs (laptop, M5) are PENDING** — see [Pending](#pending). The
-> Android leg is deferred to P7 per the spec.
+> The **fleet legs ran 2026-07-31**: the laptop reproduces the local leg
+> count-for-count; **the M5 (arm64 macOS) has NO flavour at 0 mismatches** and is
+> the first platform to trip the pre-registered fallback — see
+> [Fleet legs](#5-fleet-legs-laptop--m5). The Android leg is deferred to P7 per
+> the spec.
 >
 > Spec of record: [docs/RUSTPORT_BUILD_SPEC_2026-07-31.md](../../docs/RUSTPORT_BUILD_SPEC_2026-07-31.md).
 > Raw numbers: the `G0_*.json` files in this directory — **quote those, not this
@@ -185,6 +188,82 @@ asserts the inequality so nobody "fixes" it into a false equivalence.
 
 ---
 
+## 5. Fleet legs (laptop + M5)
+
+Run 2026-07-31 via `harness_transcendental.py compare --via-cli …` (neither box
+has maturin). The CLI path was first validated on the local box: `--via-cli`
+reproduces the wheel-path corpus counts of §4 exactly, so the transport is not a
+variable. Corpus = the same checked-in `transcendental_inputs.npz` (201,525 `z` /
+214,333 tanh args / 428,666 expm1 args); fuzz = **10⁷** per implementation
+(not 10⁸ — both boxes were carrying live eval load; nice -19).
+
+Raw: `G0_fleet_laptop.json`, `G0_fleet_m5.json`, `G0_fleet_summary.json`
+(+ the two `.log` files).
+
+| box | platform | libc | python / numpy |
+|---|---|---|---|
+| local (§1–4) | WSL2 Ubuntu, x86-64, 5900XT | glibc 2.39 | 3.12.3 / 2.4.4 |
+| laptop (`laptop-wsl`) | WSL2 Ubuntu 26.04, x86-64, i7-14650HX | glibc **2.43** | **3.14.4** / 2.4.6 |
+| M5 (`Mac`) | macOS 26.5.2, **arm64**, Apple M5 | Apple libSystem 1356.0.0 | 3.12.13 / 2.5.1 |
+
+### Laptop — identical to the local leg, count for count
+
+| leg | exp64 | exp64_fma | msun | msun_fma | glibc | **glibc_fma** |
+|---|---|---|---|---|---|---|
+| corpus `np.exp` (201,525) | 7,205 | **0** | — | — | — | — |
+| corpus `math.tanh` (214,333) | — | — | 3 | **0** | 3 | **0** |
+| corpus `math.expm1` (428,666) | — | — | 384 | 85 | 299 | **0** |
+| fuzz 10⁷ exp | 3,469 | **0** | — | — | — | — |
+| fuzz 10⁷ tanh | — | — | 13,044 | 12,795 | 273 | **0** |
+
+Every corpus number matches §4 **exactly** (7,205 / 3 / 384 / 85 / 299 /
+76,644 `np.tanh`≠`math.tanh`) across a glibc bump (2.39→2.43), a CPython bump
+(3.12→3.14) and a different Intel CPU. `np.exp`'s 4,096-point digest is also
+byte-identical to the local box. Winner: **`exp64_fma` + `glibc_fma`**, i.e. the
+same selection the local leg made.
+
+### M5 — no flavour reaches 0; fallback trigger
+
+| leg | exp64 | exp64_fma | msun | msun_fma | glibc | glibc_fma |
+|---|---|---|---|---|---|---|
+| corpus `np.exp` (201,525) | 7,206 | **1** | — | — | — | — |
+| corpus `math.tanh` (214,333) | — | — | **68,377** | 68,380 | **68,377** | 68,380 |
+| corpus `math.expm1` (428,666) | — | — | 37,833 | **37,540** | 37,918 | 37,625 |
+| fuzz 10⁷ exp | 10,029 | 9,200 | — | — | — | — |
+| fuzz 10⁷ tanh | — | — | 163,339 | **163,292** | 176,085 | 176,025 |
+
+Max ulp is 1 (exp, expm1) / 2 (tanh) everywhere — no flavour is *wrong*, none is
+*identical*. Three things the table says:
+
+1. **The FMA axis is nearly a no-op here.** `msun` vs `msun_fma` differ by 3 of
+   214,333 on the tanh corpus. Apple's libm is a **third implementation**, not
+   either ported upstream at either contraction setting — so the existing
+   `LibmFlavor` enum cannot be widened to cover macOS by picking a member.
+2. **The divergence is not only in `expm1`.** `expm1` misses 8.8% of the corpus
+   but `tanh` misses 31.9% — so Apple's `tanh` differs beyond the kernel the
+   x86 story lives on (where reconstructing fdlibm `s_tanh` over the platform's
+   own `expm1` reproduced `math.tanh` 214,333/214,333).
+3. **`np.exp` (float64) differs across the ISA but `np.tanh` does not.** The
+   4,096-point `np.exp` digest is `1da2cea9…` on the M5 vs `0c8d0bfa…` on both
+   x86 boxes (consistent with the 1-value corpus miss: numpy falls through to
+   the platform libm for float64 `exp`). The `np.tanh` digest is
+   `dac49bd5…` on **all three** boxes — numpy's own SIMD tanh kernel is
+   cross-ISA identical, while scalar `math.tanh` is not. The `np.tanh` ≠
+   `math.tanh` corpus gap is therefore 34,978/214,333 (16%) on the M5 vs
+   76,644 (36%) on x86 — same numpy kernel, different libm to compare against.
+   The dispatch probe is ISA-invariant on the M5 (the `NPY_DISABLE_CPU_FEATURES`
+   variants name x86 groups, so the three variant runs are all the default; no
+   aarch64 dispatch axis was probed).
+
+**Status of this leg:** the M5 is a bench/exhibition box, not a v1 deployment
+target, and this report records the measurement only — the routing decision
+(pre-registered ≥99.9% fallback vs an Apple `LibmFlavor` port vs declaring macOS
+out of parity scope) is not taken here. What *is* settled: **the x86-64/glibc
+deployment path is unaffected**, and the flavour enum's premise (that platforms
+select different members) now has a platform where **no member is selectable**.
+
+---
+
 ## Reproducing
 
 ```bash
@@ -205,13 +284,16 @@ The `exp` data table is checked in and drift-guarded:
 
 ## Pending
 
-- **Fleet legs (laptop, M5).** Not run — the local leg is the only measured one.
-  `harness_transcendental.py` is self-contained for this: copy the repo (or just
-  the script plus `transcendental_inputs.npz`) and run
-  `compare --inputs transcendental_inputs.npz`. On a box with no maturin, use
-  `--via-cli <path>/carc-cli`; `carc-cli exp|tanh|expm1 [--flavor F]` speaks hex
-  float bits on stdin/stdout for exactly that purpose. The M5 leg is the
-  interesting one — aarch64 has FMA unconditionally and a different libm build.
+- ~~**Fleet legs (laptop, M5).**~~ **RUN 2026-07-31** — see
+  [§5 Fleet legs](#5-fleet-legs-laptop--m5). Laptop = local, count for count;
+  the M5 has no bit-exact flavour and is the open item below.
+- **M5 / macOS parity routing (open).** No `LibmFlavor` reaches 0 mismatches on
+  arm64 macOS (best: 1/201,525 exp via `exp64_fma`; 68,377/214,333 tanh via
+  `msun`≡`glibc`, max 2 ulp). This is the first platform to trip the spec's
+  pre-registered fallback condition. **No decision taken** — the options as they
+  stand are (a) the pre-registered ≥99.9% per-move fallback, (b) an Apple-libm
+  `LibmFlavor` member, (c) macOS declared out of parity scope (bench box only).
+  Nothing in the x86-64/glibc path depends on the answer.
 - **Android/device leg** — deferred to P7 by the spec; E4's ARM↔x86 losslessness
   is the interim evidence.
 - **`fsum` non-finite semantics.** The Rust port panics on non-finite input /

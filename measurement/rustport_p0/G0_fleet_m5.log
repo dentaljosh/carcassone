@@ -1,0 +1,13 @@
++ PY=/Users/joshuaishal/carc-m5/.venv/bin/python
++ H=scripts/rustport/harness_transcendental.py
++ N=measurement/rustport_p0/transcendental_inputs.npz
++ C=/Users/joshuaishal/rustport_fleet/rust/carc/target/release/carc-cli
++ nice -n 19 /Users/joshuaishal/carc-m5/.venv/bin/python scripts/rustport/harness_transcendental.py dispatch --inputs measurement/rustport_p0/transcendental_inputs.npz --via-cli /Users/joshuaishal/rustport_fleet/rust/carc/target/release/carc-cli
+G0/transcendental: PASS  dispatch probe only
+G0/transcendental: result -> /Users/joshuaishal/rustport_fleet/measurement/rustport_p0/G0_transcendental.json
++ mv measurement/rustport_p0/G0_transcendental.json measurement/rustport_p0/G0_dispatch_tmp.json
++ nice -n 19 /Users/joshuaishal/carc-m5/.venv/bin/python scripts/rustport/harness_transcendental.py compare --inputs measurement/rustport_p0/transcendental_inputs.npz --fuzz 10000000 --chunk 1000000 --via-cli /Users/joshuaishal/rustport_fleet/rust/carc/target/release/carc-cli
+G0/transcendental: FAIL  corpus exp: bit-exact via NONE (exp64 7206/201525 max 1 ulp; exp64_fma 1/201525); corpus tanh: bit-exact via NONE; fuzz exp NONE, fuzz tanh NONE
+G0/transcendental: result -> /Users/joshuaishal/rustport_fleet/measurement/rustport_p0/G0_transcendental.json
++ echo 'RUN_DONE rc=1'
+RUN_DONE rc=1
