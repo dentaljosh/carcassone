@@ -512,6 +512,19 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 
 **Why deferred:** Phase 5/6 work; awaiting Joshua's go on the analyzer/mining MVP (step 1 of the 3-step shape proposed 2026-07-30: descriptive mining memo → analyzer pipeline on phone archives → paired-constraint validation of the top candidates). Mining is ~an afternoon of CPU when greenlit; the binding constraint is E4 sample size (needs actual human games on the phone).
 
+## 2026-07-30 — Real-time move grading in the app ("coach mode" / the analyzer's first live increment)
+
+**Context:** Joshua, same Phase 5 brainstorm as the stats catalog above: after each human move in the Android app, tell the player whether the champion agrees and, if not, the EV delta ("how much of a moronic move it was"). This is the original prompt's Phase 5 expected-value-loss + the "coach mode" stretch goal, made real-time on-device.
+
+**Design sketch (agreed in discussion 2026-07-30):**
+- The champion searches the HUMAN's position (same agent/budget it already runs) — either pondering on the human's thinking time (instant feedback, costs battery/thermal) or after commit (~2–4 s delay). Q values are natively in expected-margin points (virtual-score scale), so Δ = Q(best) − Q(played) is the EV loss in points.
+- Bridge function `grade_last_move()` → {played, best, delta_points, rank, bucket}; UI badge; settings toggle.
+- **⚠️ Noise-floor bucketing is mandatory, and CL-070 is the calibration table:** the champion self-disagrees ~26–30% at fixed budget (44.9% narrow-gap), so "not its top move" is NOT a blunder signal. Buckets by Δ magnitude only: agree / within-noise (say nothing) / inaccuracy / blunder, thresholds derived from the move-agreement probe's self-churn distribution.
+- **⚠️ E4 integrity: `coached: true` flag in the archive schema from day one** — coached games are excluded (or separated) in E4 strength stats; they measure the learning curve, uncoached games measure the rating.
+- Bonus: every graded move is a labeled (position, played, best, Δ) record — the postgame "top-3 worst moves" report becomes a sort over coach output; the grading tree also contains the champion's next root (future tree-reuse/pondering synergy).
+
+**Why deferred:** the app worktree already carries the unmerged border/start-tile work and the boxes are owned by the leaf ablation overnight; this slots in as the next app work item after the merge window. Needs no new measurement to start — CL-070's data already exists for threshold calibration.
+
 ## Killed
 
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
