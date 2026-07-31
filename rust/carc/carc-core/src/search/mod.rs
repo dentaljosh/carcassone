@@ -282,6 +282,11 @@ pub struct SearchResult {
     pub root_children: Vec<(i32, i64, f64)>,
     /// `_deduped_children(root)` — `(action, N, W)`.
     pub deduped: Vec<(i32, i64, f64)>,
+    /// P4: `fair_agent.root_stats_list(root)` — deduped, `N>0`-filtered, and
+    /// **root-POV-signed** `W`.  This is what the PIMC pool accumulates.
+    pub pooled_stats: Vec<(i32, i64, f64)>,
+    /// `root.player_to_move` — the POV `pooled_stats` is signed into.
+    pub root_player: usize,
     pub root_n: i64,
     pub root_w: f64,
     pub root_leaf_value: f64,
@@ -689,6 +694,7 @@ impl<'a> Searcher<'a> {
 
     fn finish(&mut self, root: NodeId) -> Result<SearchResult, SearchError> {
         let chosen = self.final_action(root)?;
+        let pooled_stats = self.root_stats(root);
         let r = self.tree.get(root);
         let mut acts: Vec<i32> = r.children.keys().copied().collect();
         acts.sort_unstable();
@@ -711,6 +717,8 @@ impl<'a> Searcher<'a> {
             chosen_action: chosen,
             root_children,
             deduped,
+            pooled_stats,
+            root_player: r.player_to_move,
             root_n: r.n,
             root_w: r.w,
             root_leaf_value: r.leaf_value,
@@ -726,6 +734,50 @@ impl<'a> Searcher<'a> {
             legal_cache_misses: self.tree.legal_cache_misses,
             legal_cache_collisions: self.tree.legal_cache_collisions,
         })
+    }
+
+    /// `fair_agent.root_stats_list(root)` — **the P4 pooling surface**.
+    ///
+    /// P3 left this as the one named gap: [`SearchResult::root_children`] carries
+    /// `W` in the CHILD's own POV, and a root child is *not* always the
+    /// opponent's turn (the tile→meeple phase keeps the mover), so the PIMC
+    /// pooled merge needs the ROOT-POV-signed value.  Ported verbatim:
+    ///
+    /// ```python
+    /// for a in sorted(root.children):
+    ///     ch = root.children[a]
+    ///     if ch.N <= 0 or id(ch) in seen: continue
+    ///     seen.add(id(ch))
+    ///     sw = ch.W if ch.player_to_move == root.player_to_move else -ch.W
+    ///     out.append((a, ch.N, sw))
+    /// ```
+    ///
+    /// Note the short-circuit ORDER: an `N <= 0` child is skipped *before* it is
+    /// marked seen (immaterial in practice — aliases share one node, hence one
+    /// `N` — but ported as written).
+    pub fn root_stats(&self, root: NodeId) -> Vec<(i32, i64, f64)> {
+        let r = self.tree.get(root);
+        let mut acts: Vec<i32> = r.children.keys().copied().collect();
+        acts.sort_unstable();
+        let mut seen: HashSet<NodeId> = HashSet::new();
+        let mut out = Vec::with_capacity(acts.len());
+        for a in acts {
+            let cid = r.children[&a];
+            let c = self.tree.get(cid);
+            if c.n <= 0 {
+                continue;
+            }
+            if !seen.insert(cid) {
+                continue;
+            }
+            let sw = if c.player_to_move == r.player_to_move {
+                c.w
+            } else {
+                -c.w
+            };
+            out.push((a, c.n, sw));
+        }
+        out
     }
 
     /// `_deduped_children` — sorted by action, first action to reach a given

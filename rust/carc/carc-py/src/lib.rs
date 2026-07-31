@@ -5,6 +5,7 @@
 //! scripts drive. `FairAgentRs` / `choose_action` land with P3–P4.
 
 use carc_core::compat;
+use carc_core::fair;
 use carc_core::game::{deck_from_descriptions, deck_from_seed, Game};
 use carc_core::leaf;
 use carc_core::search;
@@ -772,6 +773,9 @@ fn result_to_dict<'py>(
     };
     d.set_item("root_children", pack(&r.root_children))?;
     d.set_item("deduped", pack(&r.deduped))?;
+    // P4: `fair_agent.root_stats_list` — deduped, N>0, ROOT-POV-signed W.
+    d.set_item("pooled_stats", pack(&r.pooled_stats))?;
+    d.set_item("root_player", r.root_player)?;
     d.set_item("root_n", r.root_n)?;
     d.set_item("root_w_bits", r.root_w.to_bits())?;
     d.set_item("root_leaf_value_bits", r.root_leaf_value.to_bits())?;
@@ -788,6 +792,389 @@ fn result_to_dict<'py>(
     d.set_item("legal_cache_misses", r.legal_cache_misses)?;
     d.set_item("legal_cache_collisions", r.legal_cache_collisions)?;
     Ok(d)
+}
+
+// --------------------------------------------------------------------------
+// P4: the fair agent (k-parallel PIMC + the one-way exact latch)
+// --------------------------------------------------------------------------
+
+fn fair_err(e: fair::FairError) -> PyErr {
+    match e {
+        fair::FairError::Search(se) => search_err(se),
+        fair::FairError::NoLegalActions => pyo3::exceptions::PyValueError::new_err(
+            "fair agent asked to move with no legal actions",
+        ),
+        other => pyo3::exceptions::PyRuntimeError::new_err(other.to_string()),
+    }
+}
+
+fn parse_chance_drop(s: &str) -> PyResult<fair::ChanceDrop> {
+    match s {
+        "type" => Ok(fair::ChanceDrop::Type),
+        "one" => Ok(fair::ChanceDrop::One),
+        other => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "chance_drop must be 'type' (the Python semantics) | 'one'; got {other:?}"
+        ))),
+    }
+}
+
+/// `carcassonne_ai.fair_agent.FairHeuristicPriorAgent`, in Rust.
+///
+/// The champion of record (`governance/PRODUCTION.yaml champion.fair_deploy`)
+/// is `k_dets=8, sims_per_det=1376`; **nothing is defaulted from that here** —
+/// every knob is driven in from Python.
+///
+/// The whole of [`Self::choose_action`] (latch → solver → PIMC → k world
+/// threads → pooled merge) runs under `allow_threads`, which is the entire
+/// point on Chaquopy: the GIL forbids Python world-threads, so the k-parallel
+/// win has to happen below the FFI boundary.
+#[pyclass(name = "FairAgentRs")]
+struct PyFairAgent {
+    agent: fair::FairAgent,
+    game: Option<Game>,
+    window_size: i32,
+}
+
+#[pymethods]
+impl PyFairAgent {
+    #[new]
+    #[pyo3(signature = (
+        search_cfg,
+        k_dets,
+        seed,
+        min_pooled_visits = 2.0,
+        exact_endgame = true,
+        exact_max_k = 2,
+        exact_budget = 2_000_000,
+        tt_cap = 0,
+        chance_drop = "type",
+        threads = 1,
+        window_size = 25,
+    ))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        search_cfg: &PySearchConfig,
+        k_dets: usize,
+        seed: i64,
+        min_pooled_visits: f64,
+        exact_endgame: bool,
+        exact_max_k: i64,
+        exact_budget: u64,
+        tt_cap: usize,
+        chance_drop: &str,
+        threads: usize,
+        window_size: i32,
+    ) -> PyResult<Self> {
+        if k_dets < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "k_dets must be >= 1, got {k_dets}"
+            )));
+        }
+        if exact_max_k < 0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "exact_max_k must be >= 0, got {exact_max_k}"
+            )));
+        }
+        if threads < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "threads must be >= 1, got {threads}"
+            )));
+        }
+        let cfg = fair::FairConfig {
+            search: search_cfg.inner.clone(),
+            k_dets,
+            seed,
+            min_pooled_visits,
+            exact_endgame,
+            exact_max_k,
+            solver: fair::SolverConfig {
+                budget: exact_budget,
+                tt_cap,
+                chance_drop: parse_chance_drop(chance_drop)?,
+            },
+            threads,
+        };
+        Ok(PyFairAgent {
+            agent: fair::FairAgent::new(cfg),
+            game: None,
+            window_size,
+        })
+    }
+
+    /// `random.seed(deck_seed); Game().get_init_board()` — the farms/tests path.
+    fn start_game_from_seed(&mut self, deck_seed: &str) {
+        self.game = Some(Game::from_deck_with_window(
+            deck_from_seed(deck_seed),
+            self.window_size,
+        ));
+        self.reset();
+    }
+
+    /// An explicit deck of tile descriptions in draw order — the phone path
+    /// (no RNG dependence at all).
+    fn start_game_from_deck(&mut self, descriptions: Vec<String>) -> PyResult<()> {
+        let deck = deck_from_descriptions(&descriptions)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        self.game = Some(Game::from_deck_with_window(deck, self.window_size));
+        self.reset();
+        Ok(())
+    }
+
+    /// Apply one action — **every** applied action, BOTH seats.
+    fn advance(&mut self, action: i32) -> PyResult<()> {
+        self.game_mut()?
+            .advance(action)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    /// Pick the fair move for the current state.
+    ///
+    /// `move_idx` defaults to the agent's own counter (which always advances);
+    /// pass it explicitly when a harness owns the move timeline.
+    #[pyo3(signature = (move_idx=None))]
+    fn choose_action(&mut self, py: Python<'_>, move_idx: Option<i64>) -> PyResult<i32> {
+        let game = match self.game.as_ref() {
+            None => return Err(no_game()),
+            Some(g) => g,
+        };
+        let agent = &mut self.agent;
+        py.allow_threads(|| agent.choose_action(game, move_idx))
+            .map_err(fair_err)
+    }
+
+    /// `choose_action` followed by `advance(action)` — the driver's inner loop,
+    /// one FFI hop per ply.
+    #[pyo3(signature = (move_idx=None))]
+    fn choose_and_advance(&mut self, py: Python<'_>, move_idx: Option<i64>) -> PyResult<i32> {
+        let a = self.choose_action(py, move_idx)?;
+        self.advance(a)?;
+        Ok(a)
+    }
+
+    /// Solve the CURRENT position with the marginalized expectiminimax, ignoring
+    /// the latch — the solver-parity leg drives this directly against
+    /// `scripts/level2/endgame_solver.solve(mode="marginalized")`.
+    ///
+    /// Returns `None` on `BudgetExceeded` (what the agent sees), else a dict
+    /// with `value_bits` / `optimal_actions` / `child_values` (raw bits) /
+    /// `nodes` / `to_move`.
+    #[pyo3(signature = (budget=None))]
+    fn solve_marginalized<'py>(
+        &self,
+        py: Python<'py>,
+        budget: Option<u64>,
+    ) -> PyResult<Option<Bound<'py, PyDict>>> {
+        let game = match self.game.as_ref() {
+            None => return Err(no_game()),
+            Some(g) => g,
+        };
+        let mut cfg = self.agent.cfg.solver.clone();
+        if let Some(b) = budget {
+            cfg.budget = b;
+        }
+        let res = py.allow_threads(|| fair::solver::solve_marginalized(game, &cfg));
+        let res = match res {
+            Err(fair::SolveError::BudgetExceeded) => return Ok(None),
+            Err(e) => {
+                return Err(pyo3::exceptions::PyRuntimeError::new_err(e.to_string()));
+            }
+            Ok(r) => r,
+        };
+        let d = PyDict::new(py);
+        d.set_item("value_bits", res.value.to_bits())?;
+        d.set_item("value", res.value)?;
+        d.set_item("to_move", res.to_move)?;
+        d.set_item("optimal_actions", res.optimal_actions)?;
+        d.set_item(
+            "child_values",
+            res.child_values
+                .iter()
+                .map(|&(a, v)| (a, v.to_bits()))
+                .collect::<Vec<_>>(),
+        )?;
+        d.set_item("nodes", res.nodes)?;
+        Ok(Some(d))
+    }
+
+    /// The `k_dets` determinized decks this move would draw, as description
+    /// lists in world order — the determinizer's own parity surface.
+    fn determinizations(&self, move_idx: i64) -> PyResult<Vec<Vec<String>>> {
+        let game = match self.game.as_ref() {
+            None => return Err(no_game()),
+            Some(g) => g,
+        };
+        let base = fair::det_seed_base(self.agent.cfg.seed, move_idx);
+        let mut rng = carc_core::compat::mt19937::MT19937::from_py_int_seed_i64(base + 1);
+        let mut out = Vec::with_capacity(self.agent.cfg.k_dets);
+        for _ in 0..self.agent.cfg.k_dets {
+            let w = fair::reshuffled_determinization(game, &mut rng)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?;
+            out.push(w.unseen_deck().into_iter().map(String::from).collect());
+        }
+        Ok(out)
+    }
+
+    fn det_seed_base(&self, move_idx: i64) -> i64 {
+        fair::det_seed_base(self.agent.cfg.seed, move_idx)
+    }
+
+    fn det_search_seed(&self, move_idx: i64, det_idx: usize) -> i64 {
+        fair::det_search_seed(self.agent.cfg.seed, move_idx, det_idx)
+    }
+
+    /// Everything a manifest needs: the harness counters, the latch state, the
+    /// solver totals and the LAST move's full record (pooled floats as raw bits).
+    fn stats<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let a = &self.agent;
+        let d = PyDict::new(py);
+        d.set_item("move_idx", a.move_idx)?;
+        d.set_item("latched", a.latched)?;
+        d.set_item("latch_k", a.latch_k)?;
+        d.set_item("neural_moves", 0)?; // harness symmetry only
+        d.set_item("heur_moves", a.heur_moves)?;
+        d.set_item("forced_moves", a.forced_moves)?;
+        d.set_item("exact_moves", a.exact_moves)?;
+        d.set_item("n_timeouts", a.n_timeouts)?;
+        d.set_item("solver_nodes", a.solver_nodes)?;
+        d.set_item("solver_secs", a.solver_secs)?;
+        d.set_item("max_solve_secs", a.max_solve_secs)?;
+        d.set_item(
+            "last_pooled_visits",
+            a.last_pooled_visits.clone(),
+        )?;
+        d.set_item("k_dets", a.cfg.k_dets)?;
+        d.set_item("sims_per_det", a.cfg.search.simulations)?;
+        d.set_item("threads", a.cfg.threads)?;
+        d.set_item("seed", a.cfg.seed)?;
+        d.set_item("exact_max_k", a.cfg.exact_max_k)?;
+        d.set_item("exact_budget", a.cfg.solver.budget)?;
+        d.set_item("min_pooled_visits", a.cfg.min_pooled_visits)?;
+        d.set_item("last_move", self.last_move(py)?)?;
+        Ok(d)
+    }
+
+    /// The last decision's record.  `pooled` is `[(action, N_bits, W_bits)]` in
+    /// pool INSERTION order — the raw floats the gate compares.
+    fn last_move<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let m = &self.agent.last_move;
+        let d = PyDict::new(py);
+        d.set_item("move_idx", m.move_idx)?;
+        d.set_item("action", m.action)?;
+        d.set_item("exact", m.exact)?;
+        d.set_item("latched", m.latched)?;
+        d.set_item("forced", m.forced)?;
+        d.set_item("timeout", m.timeout)?;
+        d.set_item("solver_nodes", m.solver_nodes)?;
+        d.set_item("solver_value_bits", m.solver_value.map(|v| v.to_bits()))?;
+        d.set_item("solver_optimal", m.solver_optimal.clone())?;
+        d.set_item("secs", m.secs)?;
+        d.set_item("k_remaining", m.k_remaining)?;
+        d.set_item(
+            "pooled",
+            m.pooled
+                .iter()
+                .map(|&(a, n, w)| (a, n.to_bits(), w.to_bits()))
+                .collect::<Vec<_>>(),
+        )?;
+        Ok(d)
+    }
+
+    // --- mirror-state read-off (reconcile mode compares these) -------------
+
+    fn string_repr(&self) -> PyResult<String> {
+        Ok(self.game()?.string_repr())
+    }
+
+    fn state_digest(&self) -> PyResult<String> {
+        Ok(self.game()?.state_digest())
+    }
+
+    fn legal_actions(&self) -> PyResult<Vec<i32>> {
+        Ok(self.game()?.legal_actions())
+    }
+
+    fn unseen_deck(&self) -> PyResult<Vec<String>> {
+        Ok(self.game()?.unseen_deck().into_iter().map(String::from).collect())
+    }
+
+    fn set_unseen_deck(&mut self, descriptions: Vec<String>) -> PyResult<()> {
+        self.game_mut()?
+            .set_unseen_deck(&descriptions)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    fn is_terminal(&self) -> PyResult<bool> {
+        Ok(self.game()?.is_terminal())
+    }
+
+    fn scores(&self) -> PyResult<(i64, i64)> {
+        let s = self.game()?.scores();
+        Ok((s[0], s[1]))
+    }
+
+    fn current_player(&self) -> PyResult<usize> {
+        Ok(self.game()?.state.current_player)
+    }
+
+    fn phase(&self) -> PyResult<&'static str> {
+        Ok(self.game()?.state.phase.value())
+    }
+
+    fn k_remaining(&self) -> PyResult<i64> {
+        Ok(fair::k_remaining(self.game()?))
+    }
+
+    /// Seat the one-way latch explicitly.
+    ///
+    /// The latch is a function of the game's HISTORY (the first TILES decision
+    /// with `k_remaining <= exact_max_k`), so a harness that jumps the agent
+    /// onto a mid-game position via `advance()` alone — which never runs
+    /// `choose_action`, hence never evaluates the trigger — must seat it.  The
+    /// trigger itself is gated organically by the full-game legs, and its
+    /// trajectory over the whole record by the `latch` leg of
+    /// `scripts/rustport/reconcile_fair.py`.
+    #[pyo3(signature = (latched, latch_k=None))]
+    fn set_latched(&mut self, latched: bool, latch_k: Option<i64>) {
+        self.agent.latched = latched;
+        self.agent.latch_k = latch_k;
+    }
+
+    /// Seat the move counter (`FairHeuristicPriorAgent._move_idx`).
+    fn set_move_idx(&mut self, move_idx: i64) {
+        self.agent.move_idx = move_idx;
+    }
+
+    fn set_threads(&mut self, threads: usize) -> PyResult<()> {
+        if threads < 1 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "threads must be >= 1",
+            ));
+        }
+        self.agent.cfg.threads = threads;
+        Ok(())
+    }
+
+    /// Reset the move counter, the latch and every counter (a fresh game on the
+    /// same agent).  Called by both `start_game_*`.
+    fn reset(&mut self) {
+        let cfg = self.agent.cfg.clone();
+        self.agent = fair::FairAgent::new(cfg);
+    }
+}
+
+impl PyFairAgent {
+    fn game(&self) -> PyResult<&Game> {
+        self.game.as_ref().ok_or_else(no_game)
+    }
+    fn game_mut(&mut self) -> PyResult<&mut Game> {
+        self.game.as_mut().ok_or_else(no_game)
+    }
+}
+
+fn no_game() -> PyErr {
+    pyo3::exceptions::PyRuntimeError::new_err(
+        "no game started — call start_game_from_seed() or start_game_from_deck() first",
+    )
 }
 
 #[pymodule]
@@ -820,6 +1207,8 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyLeafConfig>()?;
     // P3
     m.add_class::<PySearchConfig>()?;
+    // P4
+    m.add_class::<PyFairAgent>()?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;

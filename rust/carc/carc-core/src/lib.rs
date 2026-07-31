@@ -14,6 +14,7 @@
 pub mod action_space;
 pub mod compat;
 pub mod engine;
+pub mod fair;
 pub mod game;
 pub mod leaf;
 pub mod repr_key;

@@ -249,6 +249,20 @@ impl GameState {
         Ok(())
     }
 
+    /// `endgame_solver._clone_with_tile` — install an arbitrary hidden state
+    /// (`st.next_tile = tile; st.deck = list(remaining)`).  Unlike
+    /// [`Self::set_remaining_deck`] the length is FREE: the solver's chance node
+    /// hands out a bag with one *type* removed, which shortens the deck.
+    ///
+    /// Everything already placed (board, meeples, scores, phase,
+    /// `last_tile_action`) is untouched, exactly as the Python does by mutating
+    /// two fields of a `deepcopy`d state.
+    pub fn replace_hidden(&mut self, next_tile: Option<u16>, remaining: &[u16]) {
+        self.next_tile = next_tile;
+        self.deck.truncate(self.deck_head);
+        self.deck.extend_from_slice(remaining);
+    }
+
     #[inline]
     pub fn is_terminated(&self) -> bool {
         self.next_tile.is_none()

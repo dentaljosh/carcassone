@@ -130,6 +130,13 @@ impl Sha256 {
     }
 }
 
+/// Raw 32-byte digest (the endgame solver's TT key truncates this to 128 bits).
+pub fn sha256_bytes(data: &[u8]) -> [u8; 32] {
+    let mut h = Sha256::new();
+    h.update(data);
+    h.finalize()
+}
+
 pub fn sha256_hex(data: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(data);
