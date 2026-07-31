@@ -72,15 +72,9 @@ K3 = REPO / "measurement" / "f3_public_state_oracle" / "roots_k3_suite.jsonl"
 
 LEGS = ["latch", "solver", "game", "pos", "threads", "bench"]
 
-# Per-worker singletons (forked once, reused for every job in that worker).
-_KNOBS = None
-
-
-def knobs():
-    global _KNOBS
-    if _KNOBS is None:
-        _KNOBS = T.production_knobs()
-    return _KNOBS
+# Per-worker singleton (forked once, reused for every job in that worker) —
+# `production_knobs()` re-reads PRODUCTION.yaml and re-hashes the leaf per call.
+knobs = F.knobs
 
 
 # --------------------------------------------------------------------------- #
@@ -374,6 +368,70 @@ def _pos_job(job: dict) -> dict:
     return out
 
 
+def _posgame_job(job: dict) -> dict:
+    """Move-by-move `choose_action` identity over ONE recorded game.
+
+    Replays the recorded action sequence ONCE and evaluates a decision at every
+    requested ply, instead of re-seating a fresh pair of agents per ply — at
+    stride 1 that is ~150 redundant full-game replays per game.  It is also the
+    MORE faithful shape: one Python agent per game means its shared `Game` keeps
+    its repr-keyed legal-move cache across plies exactly as the deployed agent
+    does, so a stale-cache effect would show up here rather than being replayed
+    away.
+
+    The agents are re-seated per evaluated ply (`_move_idx` + the derived latch
+    state) because the recorded action, not the chosen one, is what advances the
+    timeline — the record was made by a possibly different budget/seed."""
+    from wingedsheep.carcassonne.objects.game_phase import GamePhase
+
+    out = _blank()
+    sims, k, seed = int(job["sims"]), int(job["k_dets"]), int(job["agent_seed"])
+    actions = job["actions"]
+    want = set(int(p) for p in job["plies"])
+
+    random.seed(int(job["deck_seed"]))
+    game = Game(enable_legal_moves_cache=True)
+    board = game.get_init_board()
+    pa = F.py_agent(game, sims=sims, k_dets=k, seed=seed)
+    ra = F.rs_agent(sims=sims, k_dets=k, seed=seed, threads=int(job["threads"]),
+                    knobs=knobs())
+    ra.start_game_from_seed(str(int(job["deck_seed"])))
+
+    latched, latch_k = False, None
+    with F.PoolSpy() as spy:
+        for ply, a in enumerate(actions):
+            kr = F.k_remaining_py(board)
+            if not latched and board.state.phase == GamePhase.TILES \
+                    and kr <= F.EXACT_MAX_K:
+                latched, latch_k = True, kr
+            if ply in want:
+                if game.string_representation(board) != ra.string_repr():
+                    out["mismatches"].append({"tag": f"{job['label']}@{ply}",
+                                              "field": "replay_desync"})
+                    break
+                pa._move_idx, pa._latched, pa.latch_k = ply, latched, latch_k
+                ra.set_latched(latched, latch_k)
+                ra.set_move_idx(ply)
+                t0 = time.perf_counter()
+                p = F.py_decision(pa, board, spy)
+                out["py_secs"] += time.perf_counter() - t0
+                t1 = time.perf_counter()
+                r = F.rs_decision(ra)
+                out["rs_secs"] += time.perf_counter() - t1
+                out["py_moves"] += 1
+                out["rs_moves"] += 1
+                out["decisions"] += 1
+                out["checks"] += len(F.DECISION_FIELDS)
+                out["mismatches"].extend(
+                    F.compare_decision(p, r, f"{job['label']}@{ply}"))
+            board, _ = game.get_next_state(board, int(a))
+            ra.advance(int(a))
+            out["plies"] += 1
+    out["games"] = 1
+    game.clear_caches()
+    return out
+
+
 def _threads_job(job: dict) -> dict:
     """Thread-count invariance: bit-identical Rust results at 1 / 4 / 8 threads.
 
@@ -405,7 +463,8 @@ def _threads_job(job: dict) -> dict:
 
 
 _DISPATCH = {"latch": _latch_job, "solver": _solver_job, "k3": _k3_job,
-             "game": _game_job, "pos": _pos_job, "threads": _threads_job}
+             "game": _game_job, "pos": _pos_job, "posgame": _posgame_job,
+             "threads": _threads_job}
 
 
 def run_job(job: dict) -> dict:
@@ -487,13 +546,15 @@ def build_jobs(args) -> list[dict]:
         srcs = [("champ", champ), ("e4", e4), ("golden", golden)]
         for src, recs in srcs:
             for i, g in enumerate(recs):
-                for ply in _plies_for(len(g["actions"]), args.stride, args.per_game):
-                    jobs.append({
-                        "fn": "pos", "leg": "pos",
-                        "label": f"pos/{src}/{g['game_id']}@{ply}",
-                        "deck_seed": g["deck_seed"], "actions": g["actions"],
-                        "ply": ply, "agent_seed": 303 + i, "sims": args.sims,
-                        "k_dets": args.k_dets, "threads": 1})
+                plies = _plies_for(len(g["actions"]), args.stride, args.per_game)
+                if not plies:
+                    continue
+                jobs.append({
+                    "fn": "posgame", "leg": "pos",
+                    "label": f"pos/{src}/{g['game_id']}",
+                    "deck_seed": g["deck_seed"], "actions": g["actions"],
+                    "plies": plies, "agent_seed": 303 + i, "sims": args.sims,
+                    "k_dets": args.k_dets, "threads": args.threads})
 
     if "threads" in legs:
         tl = [int(x) for x in args.threads_list.split(",")]

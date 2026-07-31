@@ -1,0 +1,5 @@
+G3: 24 jobs over ['golden', 'det'] at sims=[344], workers=6
+  24/24 jobs | 156 searches | 0 mismatches | 21s
+G3/search: PASS  156 searches / 53664 sims / 1248 field checks / 0 full games (0 plies) | 0 mismatches
+G3/search: throughput py=492 sims/s  rs=4355 sims/s  (8.85x)
+G3/search: result -> /home/doctor/projects/carcassone/measurement/rustport_p3/G3_search_p4_regate.json

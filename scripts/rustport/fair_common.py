@@ -86,6 +86,18 @@ def py_agent(game: Game, *, sims: int, k_dets: int, seed: int,
     return agent
 
 
+_KNOBS = None
+
+
+def knobs() -> dict:
+    """`trace_search.production_knobs()`, memoized per process (it re-reads
+    PRODUCTION.yaml and re-hashes the leaf on every call)."""
+    global _KNOBS
+    if _KNOBS is None:
+        _KNOBS = T.production_knobs()
+    return _KNOBS
+
+
 def assert_same_leaf(agent, knobs: dict | None = None) -> None:
     """Prove the ORACLE's resolved leaf IS the one driven into Rust.
 
@@ -93,7 +105,7 @@ def assert_same_leaf(agent, knobs: dict | None = None) -> None:
     is driven from `trace_search.production_knobs()`'s `prod-curve125`.  Those are
     two independent paths to the same object, so equality is a real check — and a
     green gate against two different leaves would be worse than a red one."""
-    k = knobs or T.production_knobs()
+    k = knobs or globals()["knobs"]()
     got = agent._cfg.resolved_leaf_cfg()
     want = k["leaf_cfg"]
     fields = ("closure_p", "bonus_cap", "opp_bonus_cap", "meeple_k",
@@ -122,11 +134,11 @@ def _norm(v):
 
 def rs_agent(*, sims: int, k_dets: int, seed: int, threads: int = 1,
              exact_endgame: bool = True, exact_max_k: int = EXACT_MAX_K,
-             knobs: dict | None = None):
+             knobs=None):
     """The Rust leg, driven from the SAME `governance/PRODUCTION.yaml` knobs
     `trace_search.production_knobs()` resolves (which asserts the leaf of
     record's curve values and `a36d2e15a3b3d71d` fingerprint before returning)."""
-    k = knobs or T.production_knobs()
+    k = knobs or globals()["knobs"]()
     return carc_rs.FairAgentRs(
         T.rs_config(int(sims), k),
         k_dets=int(k_dets),

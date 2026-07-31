@@ -1,0 +1,4 @@
+[G4] 0 jobs over legs=['bench'] k8x1376=11008 workers=8 rust_threads=1
+
+[G4] PASS: 0 mismatches over 0 checks / 0 decisions / 0 solves / 0 plies in 87s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_bench_k8x1376.json
+    bench: py 18.238 s/move | rust t1 2.255s (8.1x) | t4 0.739s (24.7x) | t8 0.457s (39.9x)

@@ -1,0 +1,13 @@
+[G4] 1950 jobs over legs=['solver', 'threads'] k8x1376=11008 workers=10 rust_threads=1
+  25/1950 jobs, 0 mismatches (2s)
+  50/1950 jobs, 0 mismatches (14s)
+  75/1950 jobs, 0 mismatches (48s)
+  100/1950 jobs, 0 mismatches (68s)
+  125/1950 jobs, 0 mismatches (114s)
+  150/1950 jobs, 0 mismatches (139s)
+  175/1950 jobs, 0 mismatches (174s)
+  200/1950 jobs, 0 mismatches (194s)
+  225/1950 jobs, 0 mismatches (228s)
+  250/1950 jobs, 0 mismatches (243s)
+  275/1950 jobs, 0 mismatches (279s)
+  300/1950 jobs, 0 mismatches (296s)

@@ -1,0 +1,156 @@
+{
+  "gate": "G4/fair",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "398b7d1-dirty",
+    "utc": "2026-07-31T22:58:00Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "knobs": {
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "reuse_tree_yaml": true,
+    "reuse_tree": false,
+    "score_norm_scale": 15.0,
+    "sims_per_det": 1376,
+    "k_dets": 8,
+    "leaf": {
+      "leaf": "v2_9_2_Bmild_cap8_curve125",
+      "leaf_hash": "a36d2e15a3b3d71d",
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "source": "governance/PRODUCTION.yaml champion.leaf_config"
+    },
+    "use_cy_leaf": true
+  },
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": null,
+    "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "args": {
+    "leg": [
+      "bench"
+    ],
+    "sims": 1376,
+    "k_dets": 8,
+    "threads": 1,
+    "threads_list": "1,4,8",
+    "workers": 8,
+    "stride": 12,
+    "per_game": null,
+    "limit": null,
+    "n_games": 4,
+    "max_moves": null,
+    "n_thread_games": 2,
+    "thread_stride": 25,
+    "endgame_limit": null,
+    "k3": 0,
+    "k3_budget": 2000000,
+    "bench_positions": 4,
+    "tag": "bench_k8x1376",
+    "max_mismatch_report": 200
+  },
+  "wall_secs": 87.07544779777527,
+  "n_jobs": 0,
+  "totals": {
+    "checks": 0,
+    "decisions": 0,
+    "plies": 0,
+    "games": 0,
+    "solves": 0,
+    "solver_nodes": 0,
+    "exact_moves": 0,
+    "py_secs": 0.0,
+    "rs_secs": 0.0,
+    "py_moves": 0,
+    "rs_moves": 0
+  },
+  "n_mismatches": 0,
+  "mismatches": [],
+  "per_leg": {},
+  "bench": {
+    "positions": [
+      {
+        "ply": 30,
+        "py_secs": 12.270667640987085,
+        "rs": {
+          "1": 0.9311915840080474,
+          "4": 0.3414119240187574,
+          "8": 0.19895232398994267
+        }
+      },
+      {
+        "ply": 60,
+        "py_secs": 15.236357251997106,
+        "rs": {
+          "1": 1.4759506679838523,
+          "4": 0.49639189400477335,
+          "8": 0.3392279050021898
+        }
+      },
+      {
+        "ply": 90,
+        "py_secs": 15.31439109297935,
+        "rs": {
+          "1": 1.926628723012982,
+          "4": 0.6877620459999889,
+          "8": 0.4281075699836947
+        }
+      },
+      {
+        "ply": 120,
+        "py_secs": 30.128995319013484,
+        "rs": {
+          "1": 4.686949103983352,
+          "4": 1.42900664897752,
+          "8": 0.8605032729974482
+        }
+      }
+    ],
+    "sims_per_move": 11008,
+    "py_mean_s_per_move": 18.237602826244256,
+    "rs_mean_s_per_move": {
+      "1": 2.2551800197470584,
+      "4": 0.7386431282502599,
+      "8": 0.45669776799331885
+    },
+    "speedup_vs_py": {
+      "1": 8.086983152808259,
+      "4": 24.690682318329465,
+      "8": 39.93363686969247
+    }
+  }
+}
