@@ -20,9 +20,24 @@ Measured 2026-07-30 over 400 random base+farmers games:
     denied share of legal placements    2.6%
     denials on a side other than row<0     0
     plies forced to PASS by the wall       0
+
+The second mode replays a phone archive (`measurement/e4_games/*.json`) and
+separates the layers, which is what identified this bug:
+
+    .venv/bin/python scripts/diagnose_grid_wall.py --archive PATH.json
+
+At every tile ply it compares three sets of placeable cells — rules-legal (from an
+oversized board), the engine/wrapper mask, and the bridge's `all_legal_tile_cells`
+(what the GUI draws). Cells in the first but not the second are engine bugs; in
+the second but not the third would be bridge/GUI bugs. On the reported game
+(1785466497_161583) the board first touched row 0 at ply 88 (44 tiles down) and 25
+later tile plies — 12 of them the human's — had rules-legal placements missing from
+the engine mask, every one at row -1, with ZERO bridge/GUI disagreements. The
+2026-07-27 control game never touched row 0 and had zero denials.
 """
 from __future__ import annotations
 
+import json
 import random
 import sys
 from pathlib import Path
@@ -100,7 +115,81 @@ def run(n_games: int, seed: int = 0) -> dict:
     return st
 
 
+def replay_archive(path: str) -> None:
+    """Layer separation on a real phone game (see the module docstring)."""
+    import numpy as np
+
+    sys.path.insert(0, str(REPO / "android" / "app" / "src" / "main" / "python"))
+    import android_bridge as AB
+
+    from carcassonne_ai.action_space import tile_action_count
+    from carcassonne_ai.game_wrapper import Board, Game
+
+    with open(path) as fh:
+        arc = json.load(fh)
+    actions, human = arc["actions"], int(arc["human_player"])
+    print(f"{Path(path).name}  seed={arc['deck_seed']}  actions={len(actions)}  "
+          f"human=P{human}")
+
+    def cells_of(mask, off) -> set[tuple[int, int]]:
+        out = set()
+        for idx in np.flatnonzero(mask[:tile_action_count(off.size)]):
+            wr, wc = divmod(int(idx) // 4, off.size)
+            c = off.to_engine(wr, wc)
+            out.add((c.row, c.column))
+        return out
+
+    g = Game()
+    random.seed(arc["deck_seed"])
+    b = g.get_init_board()
+    # An oversized twin on which the grid never binds. PAD is EVEN on both axes, so
+    # the centred window translates exactly and the SAME action index means the same
+    # relative cell on both boards.
+    oversized = CarcassonneGameState(
+        tile_sets=[TileSet.BASE], supplementary_rules=[SupplementaryRule.FARMERS],
+        players=2, board_size=(BIG, BIG), starting_position=START)
+    oversized.deck = list(b.state.deck)
+    oversized.next_tile = b.state.next_tile
+    bb = Board.from_state(oversized, total_tiles=72, window_size=g.window_size)
+
+    first_touch, denied_plies, bridge_mismatch = None, [], []
+    for ply, idx in enumerate(actions):
+        if b.state.is_terminated():
+            break
+        if b.state.phase.value == "tiles" and b.state.placed_coords:
+            rows = [c.row for c in b.state.placed_coords]
+            cols = [c.column for c in b.state.placed_coords]
+            bbox = (min(rows), max(rows), min(cols), max(cols))
+            if first_touch is None and min(rows) == 0:
+                first_touch = (ply, len(b.state.placed_coords), bbox)
+            prod = cells_of(g.get_valid_moves(b), b.offset)
+            unconstrained = {(r - PAD, c - PAD)
+                             for (r, c) in cells_of(g.get_valid_moves(bb), bb.offset)}
+            if unconstrained - prod:
+                denied_plies.append(
+                    (ply, sorted(unconstrained - prod), bbox, int(b.state.current_player)))
+            if AB.all_legal_tile_cells(g, b) != prod:
+                bridge_mismatch.append(ply)
+        b = g.get_next_state(b, int(idx))[0]
+        bb = g.get_next_state(bb, int(idx))[0]
+
+    print(f"\n  first ply the board touched row 0: {first_touch}")
+    print(f"  tile plies with rules-legal moves MISSING from the engine mask: "
+          f"{len(denied_plies)}")
+    for ply, d, bbox, cp in denied_plies[:10]:
+        print(f"    ply {ply:3d} player {cp} bbox(rows {bbox[0]}..{bbox[1]}, "
+              f"cols {bbox[2]}..{bbox[3]})  denied: {d}")
+    if len(denied_plies) > 10:
+        print(f"    ... and {len(denied_plies) - 10} more")
+    print(f"  ... of which on the HUMAN's turn: "
+          f"{sum(1 for p in denied_plies if p[3] == human)}")
+    print(f"  bridge/GUI disagreements with the engine mask: {len(bridge_mismatch)}")
+
+
 def main() -> None:
+    if len(sys.argv) > 2 and sys.argv[1] == "--archive":
+        replay_archive(sys.argv[2])
+        return
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
     s = run(n)
     for k, v in s.items():
