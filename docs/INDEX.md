@@ -33,6 +33,7 @@
 ## Measurement verdicts (solver/ruler-grounded strength findings)
 | Doc | Role | Status |
 |---|---|---|
+| [../measurement/leaf_ablation_20260730/PREREG.md](../measurement/leaf_ablation_20260730/PREREG.md) | **LEAF-COMPONENT KNOCKOUT ABLATION** — the first *subtractive* ablation of the champion leaf `a36d2e15`: knock out one modular component, measure the hole in elo under the CURRENT champion search (PUCT+priors@2750). 6 cells, n=400 deck-paired each, all on band 9.60e10 (CRN). Fills the LEVER_INDEX §6 gap (adoption-time marginals only, mostly under dead search regimes). Intended flagship table for Phase 6. Farm cells deferred (not config-severable; pure-python-both-sides = 12.5× cy, measured). | RUNNING (2026-07-30) |
 | [../measurement/level2/LEVEL2_LADDER_VERDICT.md](../measurement/level2/LEVEL2_LADDER_VERDICT.md) | L2-1 saturated-ruler ladder (CL-023) | VERDICT |
 | [../measurement/level2/LEVEL2_L22_VERDICT.md](../measurement/level2/LEVEL2_L22_VERDICT.md) | L2-2 iter8 on the validated ladder (CL-024) | VERDICT |
 | [../measurement/level2/LEVEL2_L23_VERDICT.md](../measurement/level2/LEVEL2_L23_VERDICT.md) | L2-3 endgame regret (CL-025) | VERDICT |
