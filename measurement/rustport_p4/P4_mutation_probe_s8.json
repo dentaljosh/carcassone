@@ -1,0 +1,230 @@
+{
+  "probe": "P4/fair-quirk-mutation",
+  "args": {
+    "sims": 8,
+    "k_dets": 4,
+    "max_moves": null,
+    "n_games": 2,
+    "tag": "s8",
+    "games": [
+      [
+        7,
+        101
+      ],
+      [
+        23,
+        202
+      ]
+    ]
+  },
+  "n_mutations": 8,
+  "n_discriminated": 7,
+  "rows": [
+    {
+      "mutation": "CONTROL(none)",
+      "decisions": 288,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 90.7,
+      "first": null
+    },
+    {
+      "mutation": "merge_reversed",
+      "decisions": 288,
+      "mismatches": 217,
+      "discriminated": true,
+      "secs": 91.5,
+      "first": {
+        "tag": "merge_reversed/7@ply1",
+        "field": "pooled",
+        "n_actions": [
+          5,
+          5
+        ],
+        "order_py": [
+          2510,
+          2507,
+          2506,
+          2503,
+          2501
+        ],
+        "order_rs": [
+          2501,
+          2503,
+          2506,
+          2507,
+          2510
+        ],
+        "diffs": [],
+        "n_diffs": 0
+      }
+    },
+    {
+      "mutation": "no_deck_sort",
+      "decisions": 16,
+      "mismatches": 6,
+      "discriminated": true,
+      "secs": 0.5,
+      "first": {
+        "tag": "no_deck_sort/7@ply7",
+        "field": "pooled",
+        "n_actions": [
+          3,
+          3
+        ],
+        "order_py": [
+          2506,
+          2508,
+          2510
+        ],
+        "order_rs": [
+          2506,
+          2508,
+          2510
+        ],
+        "diffs": [
+          [
+            2506,
+            [
+              4622945017495814144,
+              13818201664978187992
+            ],
+            [
+              4622945017495814144,
+              13826908217590435236
+            ]
+          ],
+          [
+            2508,
+            [
+              4620693217682128896,
+              13828595961267678129
+            ],
+            [
+              4620693217682128896,
+              13831651833617280396
+            ]
+          ],
+          [
+            2510,
+            [
+              4622945017495814144,
+              13821145700940148438
+            ],
+            [
+              4622945017495814144,
+              13831384252539124780
+            ]
+          ]
+        ],
+        "n_diffs": 3
+      }
+    },
+    {
+      "mutation": "tiebreak_plus_a",
+      "decisions": 6,
+      "mismatches": 2,
+      "discriminated": true,
+      "secs": 0.2,
+      "first": {
+        "tag": "tiebreak_plus_a/7@ply2",
+        "field": "action",
+        "py": 1351,
+        "rs": 1148
+      }
+    },
+    {
+      "mutation": "no_min_visits",
+      "decisions": 261,
+      "mismatches": 1,
+      "discriminated": true,
+      "secs": 30.1,
+      "first": {
+        "tag": "no_min_visits/7@ply116",
+        "field": "action",
+        "py": 872,
+        "rs": 812
+      }
+    },
+    {
+      "mutation": "no_pov_sign",
+      "decisions": 4,
+      "mismatches": 4,
+      "discriminated": true,
+      "secs": 0.2,
+      "first": {
+        "tag": "no_pov_sign/7@ply1",
+        "field": "action",
+        "py": 2506,
+        "rs": 2510
+      }
+    },
+    {
+      "mutation": "no_dedup",
+      "decisions": 288,
+      "mismatches": 26,
+      "discriminated": true,
+      "secs": 90.4,
+      "first": {
+        "tag": "no_dedup/7@ply14",
+        "field": "pooled",
+        "n_actions": [
+          5,
+          3
+        ],
+        "order_py": [
+          948,
+          1260,
+          1262,
+          1356,
+          1358
+        ],
+        "order_rs": [
+          948,
+          1260,
+          1356
+        ],
+        "diffs": [
+          [
+            1262,
+            [
+              4626322717216342016,
+              4607452927626707020
+            ],
+            null
+          ],
+          [
+            1358,
+            [
+              4620693217682128896,
+              13822805191804749581
+            ],
+            null
+          ]
+        ],
+        "n_diffs": 2
+      }
+    },
+    {
+      "mutation": "latch_any_phase",
+      "decisions": 288,
+      "mismatches": 0,
+      "discriminated": false,
+      "secs": 87.6,
+      "first": null
+    },
+    {
+      "mutation": "solver_max_only",
+      "decisions": 287,
+      "mismatches": 1,
+      "discriminated": true,
+      "secs": 90.3,
+      "first": {
+        "tag": "solver_max_only/7@ply142",
+        "field": "action",
+        "py": 1234,
+        "rs": 1239
+      }
+    }
+  ]
+}
