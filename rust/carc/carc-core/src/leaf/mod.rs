@@ -149,21 +149,14 @@ fn winners(counts: [i64; 2]) -> [bool; 2] {
     [counts[0] == m, counts[1] == m]
 }
 
-/// `flat_leaf._city_points`.
-fn city_points(state: &GameState, coords: &[(i32, i32)], finished: bool) -> i64 {
-    let mut shields = 0i64;
-    let mut cathedral = false;
-    let mut total = 0i64;
-    for &(r, c) in coords {
-        let tile = tiles::tile(state.get_tile(r, c).unwrap());
-        if !tile.inn.is_empty() {
-            cathedral = true;
-        }
-        if tile.shield {
-            shields += 1;
-        }
-        total += 1;
-    }
+/// `flat_leaf._city_points`, evaluated from the component's precomputed
+/// distinct-tile aggregates (`total`, `shields`, `has cathedral`).
+#[inline]
+fn city_points(d: &Decomp, root: u32) -> i64 {
+    let r = root as usize;
+    let (shields, total) = (d.city_root_shields[r], d.city_root_tiles[r]);
+    let cathedral = d.city_root_cathedral[r];
+    let finished = d.city_root_finished[r];
     if !finished && cathedral {
         return 0;
     }
@@ -177,19 +170,14 @@ fn city_points(state: &GameState, coords: &[(i32, i32)], finished: bool) -> i64 
 }
 
 /// `flat_leaf._road_points`.
-fn road_points(state: &GameState, coords: &[(i32, i32)], finished: bool) -> i64 {
-    let mut inn = false;
-    let mut total = 0i64;
-    for &(r, c) in coords {
-        if !tiles::tile(state.get_tile(r, c).unwrap()).inn.is_empty() {
-            inn = true;
-        }
-        total += 1;
-    }
-    if !finished && inn {
+#[inline]
+fn road_points(d: &Decomp, root: u32) -> i64 {
+    let r = root as usize;
+    let inn = d.road_root_inn[r];
+    if !d.road_root_finished[r] && inn {
         return 0;
     }
-    (if inn { 2 } else { 1 }) * total
+    (if inn { 2 } else { 1 }) * d.road_root_tiles[r]
 }
 
 /// `flat_leaf._cloister_points` — bounds-checked 3x3 including the centre.
@@ -265,11 +253,7 @@ fn final_scores(state: &GameState, d: &Decomp) -> [i64; 2] {
         if !w[0] && !w[1] {
             continue;
         }
-        let pts = city_points(
-            state,
-            &d.city_root_coords[root as usize],
-            d.city_root_finished[root as usize],
-        );
+        let pts = city_points(d, root);
         for p in 0..2 {
             if w[p] {
                 final_pts[p] += pts;
@@ -281,11 +265,7 @@ fn final_scores(state: &GameState, d: &Decomp) -> [i64; 2] {
         if !w[0] && !w[1] {
             continue;
         }
-        let pts = road_points(
-            state,
-            &d.road_root_coords[root as usize],
-            d.road_root_finished[root as usize],
-        );
+        let pts = road_points(d, root);
         for p in 0..2 {
             if w[p] {
                 final_pts[p] += pts;
@@ -515,7 +495,7 @@ pub fn closure_bonus(
     // Farm growth: incomplete cities adjacent to the player's fields.
     let mut growth_roots: Vec<u32> = Vec::new();
     for &froot in &farm_roots {
-        for &croot in &d.farm_root_adj_city_roots[froot as usize] {
+        for croot in d.farm_adj_city_roots(froot) {
             if !growth_roots.contains(&croot) {
                 growth_roots.push(croot);
             }

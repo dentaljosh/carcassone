@@ -296,6 +296,20 @@ impl PyMirrorState {
         st.meeples = [meeple_p0, meeple_p1];
     }
 
+    /// Time `repeats` bare `decompose(state)` calls — the share of the leaf that
+    /// is board decomposition rather than scoring.
+    fn bench_decompose(&self, repeats: usize, py: Python<'_>) -> (f64, usize) {
+        let state = &self.game.state;
+        py.allow_threads(|| {
+            let t0 = std::time::Instant::now();
+            let mut n = 0usize;
+            for _ in 0..repeats {
+                n += leaf::decompose(state).city_nodes.len();
+            }
+            (t0.elapsed().as_secs_f64(), n)
+        })
+    }
+
     /// Time `repeats` leaf evaluations of the current position, both POVs, off a
     /// fresh decomposition each time — the same work the Python/Cython leaf does
     /// per call.  Returns `(seconds, checksum)`; the checksum keeps the loop from

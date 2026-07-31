@@ -1,7 +1,7 @@
 //! `flat_leaf.decompose` — the whole-board int union-find decomposition.
 //!
-//! A line-for-line port of `src/carcassonne_ai/flat_leaf.py::decompose`, with
-//! two representation changes that are provably behaviour-neutral:
+//! A port of `src/carcassonne_ai/flat_leaf.py::decompose`, with representation
+//! changes that are provably behaviour-neutral:
 //!
 //! * Python keys its node dicts by `(row, col, side_ix)` tuples; we key by
 //!   `(tile_ordinal * 9 + side_ix)` where `tile_ordinal` is the index of the
@@ -12,16 +12,23 @@
 //!   the partition.
 //! * Python keys farm nodes by `id(FarmerConnection)`; we key by
 //!   `(coord, farm_slot)`, the P1 substitution (see `engine`'s module docs).
+//! * Python's per-root **sets** (`city_root_coords`, the empty-adjacency sets,
+//!   `farm_root_adj_city_roots`) become flat aggregates or one sorted-deduped
+//!   pair array each, because every consumer of them is either an integer sum
+//!   or a `math.fsum` — both functions of the multiset, not of the order. This
+//!   is a ~2x throughput difference (per-root `Vec<Vec<_>>` costs an allocation
+//!   per component); the G2 gate re-runs bit-exact across all corpora.
 //!
-//! Everything that is load-bearing for the leaf value is ported verbatim,
-//! including the **grid-bounded open-cell counting**: a feature edge pointing
-//! off the 35x35 board contributes to `finished == false` but *not* to
+//! The **grid-bounded open counting** is ported verbatim: a feature edge
+//! pointing off the 35x35 board contributes to `finished == false` but *not* to
 //! `open_n`, so a board-edge feature can be unfinished with `open_n == 0` (the
 //! "D16 unclosable city" case). That is the walled-variant distortion; it is
 //! part of the measured champion and is reproduced exactly.
 
 use crate::engine::{GameState, BOARD_COLS, BOARD_ROWS};
 use crate::tiles::{self, Side, TileId};
+
+const N_CELLS: usize = (BOARD_ROWS * BOARD_COLS) as usize;
 
 /// `(d_row, d_col, neighbour_side)` for a cardinal side — `flat_leaf._OPP`,
 /// mirroring `CityUtil/RoadUtil.opposite_edge`.
@@ -59,21 +66,36 @@ fn label_components(n: usize, eu: &[u32], ev: &[u32]) -> Vec<u32> {
     (0..n as u32).map(|x| find(&mut parent, x)).collect()
 }
 
+/// Count distinct `(group, item)` pairs per group.  `keys` is `group * stride +
+/// item`; the caller guarantees `item < stride`.
+fn count_distinct_per_group(keys: &mut Vec<u32>, stride: u32, out: &mut [usize]) {
+    keys.sort_unstable();
+    keys.dedup();
+    for &k in keys.iter() {
+        out[(k / stride) as usize] += 1;
+    }
+}
+
 /// The whole-board structural decomposition (`flat_leaf.Decomp`).
 ///
-/// Root-keyed facts are stored as vectors indexed by the root node id; entries
-/// for non-root ids are present but unused, exactly as a Python dict keyed by
-/// the canonical root would be.
+/// Root-keyed facts are vectors indexed by the root node id; entries for
+/// non-root ids are present but unused, exactly as a Python dict keyed by the
+/// canonical root would be.
 pub struct Decomp {
     /// Placed cells in row-major order — the Python `for r: for c:` scan order.
     pub placed: Vec<(i32, i32)>,
+    /// `row * 35 + col -> index into `placed``, `-1` for an empty cell.
+    cell_ord: Vec<i32>,
 
     // --- CITY ---------------------------------------------------------------
     pub city_nodes: Vec<(i32, i32, u8)>,
     pub city_labels: Vec<u32>,
     /// `ord * 9 + side_ix -> node id`, `-1` for absent.
     city_node_id: Vec<i32>,
-    pub city_root_coords: Vec<Vec<(i32, i32)>>,
+    /// Per-root aggregates over the component's **distinct tiles**.
+    pub city_root_tiles: Vec<i64>,
+    pub city_root_shields: Vec<i64>,
+    pub city_root_cathedral: Vec<bool>,
     pub city_root_finished: Vec<bool>,
     pub city_root_open_n: Vec<usize>,
     pub city_root_delta: Vec<i64>,
@@ -82,7 +104,8 @@ pub struct Decomp {
     pub road_nodes: Vec<(i32, i32, u8)>,
     pub road_labels: Vec<u32>,
     road_node_id: Vec<i32>,
-    pub road_root_coords: Vec<Vec<(i32, i32)>>,
+    pub road_root_tiles: Vec<i64>,
+    pub road_root_inn: Vec<bool>,
     pub road_root_finished: Vec<bool>,
     pub road_root_open_n: Vec<usize>,
 
@@ -96,14 +119,23 @@ pub struct Decomp {
     /// Same keyspace, but every `farmer_position` maps (bonus match, ==
     /// `find_farm_by_coordinate`).
     farm_anypos_root: Vec<i32>,
-    pub farm_root_adj_city_roots: Vec<Vec<u32>>,
+    /// Sorted, deduped `(farm_root << 32) | city_root` adjacency pairs.
+    farm_adj: Vec<u64>,
     pub farm_root_finished_cities: Vec<usize>,
 }
 
 impl Decomp {
     #[inline]
     pub fn ordinal(&self, row: i32, col: i32) -> Option<usize> {
-        self.placed.binary_search(&(row, col)).ok()
+        if row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS {
+            return None;
+        }
+        let v = self.cell_ord[(row * BOARD_COLS + col) as usize];
+        if v < 0 {
+            None
+        } else {
+            Some(v as usize)
+        }
     }
 
     /// `decomp.city_side_root.get((r, c, side))`.
@@ -154,6 +186,18 @@ impl Decomp {
         }
     }
 
+    /// `decomp.farm_root_adj_city_roots[root]` — the distinct city components
+    /// this field touches, ascending.
+    pub fn farm_adj_city_roots(&self, farm_root: u32) -> impl Iterator<Item = u32> + '_ {
+        let lo = (farm_root as u64) << 32;
+        let hi = lo | 0xffff_ffff;
+        let start = self.farm_adj.partition_point(|&k| k < lo);
+        self.farm_adj[start..]
+            .iter()
+            .take_while(move |&&k| k <= hi)
+            .map(|&k| k as u32)
+    }
+
     /// The component's city positions — rebuilt on demand (Python keeps them in
     /// `city_root_positions`; only the bag-close gate reads them, which is OFF
     /// in the champion, so we do not pay for the frozensets on the hot path).
@@ -171,21 +215,35 @@ impl Decomp {
 pub fn decompose(state: &GameState) -> Decomp {
     let placed: Vec<(i32, i32)> = state.placed_coords.iter().copied().collect();
     let n_cells = placed.len();
-    let ord_of = |row: i32, col: i32| -> Option<usize> { placed.binary_search(&(row, col)).ok() };
+    let mut cell_ord: Vec<i32> = vec![-1; N_CELLS];
+    for (o, &(r, c)) in placed.iter().enumerate() {
+        cell_ord[(r * BOARD_COLS + c) as usize] = o as i32;
+    }
+    let ord_of = |row: i32, col: i32| -> Option<usize> {
+        if row < 0 || row >= BOARD_ROWS || col < 0 || col >= BOARD_COLS {
+            return None;
+        }
+        let v = cell_ord[(row * BOARD_COLS + col) as usize];
+        if v < 0 {
+            None
+        } else {
+            Some(v as usize)
+        }
+    };
 
     // ---- enumerate nodes + intra-tile edges -------------------------------- //
     let mut city_node_id: Vec<i32> = vec![-1; n_cells * 9];
-    let mut city_nodes: Vec<(i32, i32, u8)> = Vec::new();
-    let mut city_eu: Vec<u32> = Vec::new();
-    let mut city_ev: Vec<u32> = Vec::new();
+    let mut city_nodes: Vec<(i32, i32, u8)> = Vec::with_capacity(n_cells * 2);
+    let mut city_eu: Vec<u32> = Vec::with_capacity(n_cells * 2);
+    let mut city_ev: Vec<u32> = Vec::with_capacity(n_cells * 2);
 
     let mut road_node_id: Vec<i32> = vec![-1; n_cells * 9];
-    let mut road_nodes: Vec<(i32, i32, u8)> = Vec::new();
-    let mut road_eu: Vec<u32> = Vec::new();
-    let mut road_ev: Vec<u32> = Vec::new();
+    let mut road_nodes: Vec<(i32, i32, u8)> = Vec::with_capacity(n_cells * 2);
+    let mut road_eu: Vec<u32> = Vec::with_capacity(n_cells * 2);
+    let mut road_ev: Vec<u32> = Vec::with_capacity(n_cells * 2);
 
-    let mut farm_node_rc: Vec<(i32, i32)> = Vec::new();
-    let mut farm_node_slot: Vec<u8> = Vec::new();
+    let mut farm_node_rc: Vec<(i32, i32)> = Vec::with_capacity(n_cells * 2);
+    let mut farm_node_slot: Vec<u8> = Vec::with_capacity(n_cells * 2);
     let mut farm_side_to_node: Vec<i32> = vec![-1; n_cells * 8];
 
     for (o, &(r, c)) in placed.iter().enumerate() {
@@ -278,15 +336,14 @@ pub fn decompose(state: &GameState) -> Decomp {
         }
     }
 
-    let mut farm_eu: Vec<u32> = Vec::new();
-    let mut farm_ev: Vec<u32> = Vec::new();
+    let mut farm_eu: Vec<u32> = Vec::with_capacity(farm_node_rc.len() * 2);
+    let mut farm_ev: Vec<u32> = Vec::with_capacity(farm_node_rc.len() * 2);
     for nid in 0..farm_node_rc.len() {
         let (r, c) = farm_node_rc[nid];
         let tid = state.get_tile(r, c).unwrap();
         let conns = &tiles::tile(tid).farms[farm_node_slot[nid] as usize].tile_connections;
         for &fs in conns {
-            let step = fs.get_side();
-            let (dr, dc) = match step {
+            let (dr, dc) = match fs.get_side() {
                 Side::Top => (-1, 0),
                 Side::Right => (0, 1),
                 Side::Bottom => (1, 0),
@@ -309,162 +366,139 @@ pub fn decompose(state: &GameState) -> Decomp {
     let farm_labels = label_components(farm_node_rc.len(), &farm_eu, &farm_ev);
 
     // ---- city facts -------------------------------------------------------- //
+    //
+    // Per-root aggregates over DISTINCT tiles.  A component's nodes are grouped
+    // by cell in ascending cell order (nodes are created cell block by cell
+    // block), so a `last cell seen for this root` stamp is an exact dedup.
     let nc = city_nodes.len();
-    let mut city_root_coords: Vec<Vec<(i32, i32)>> = vec![Vec::new(); nc];
-    let mut city_root_is_open = vec![false; nc];
-    let mut city_root_emptyadj: Vec<Vec<(i32, i32)>> = vec![Vec::new(); nc];
-    let mut city_root_seen = vec![false; nc];
+    let mut city_root_tiles = vec![0i64; nc];
+    let mut city_root_shields = vec![0i64; nc];
+    let mut city_root_cathedral = vec![false; nc];
+    let mut city_root_finished = vec![true; nc];
+    let mut city_last_cell = vec![-1i32; nc];
+    let mut city_empty_keys: Vec<u32> = Vec::with_capacity(nc);
     for nid in 0..nc {
         let (r, c, ix) = city_nodes[nid];
         let root = city_labels[nid] as usize;
-        city_root_seen[root] = true;
-        if !city_root_coords[root].contains(&(r, c)) {
-            city_root_coords[root].push((r, c));
+        let cell = r * BOARD_COLS + c;
+        if city_last_cell[root] != cell {
+            city_last_cell[root] = cell;
+            let tile = tiles::tile(state.get_tile(r, c).unwrap());
+            city_root_tiles[root] += 1;
+            if tile.shield {
+                city_root_shields[root] += 1;
+            }
+            if !tile.inn.is_empty() {
+                city_root_cathedral[root] = true;
+            }
         }
         if city_open[nid] {
-            city_root_is_open[root] = true;
+            city_root_finished[root] = false;
         }
         let (dr, dc, _o) = opp(ix);
         let (nr, ncol) = (r + dr, c + dc);
-        if nr >= 0
-            && nr < BOARD_ROWS
-            && ncol >= 0
-            && ncol < BOARD_COLS
-            && state.get_tile(nr, ncol).is_none()
-            && !city_root_emptyadj[root].contains(&(nr, ncol))
+        if nr >= 0 && nr < BOARD_ROWS && ncol >= 0 && ncol < BOARD_COLS
+            && cell_ord[(nr * BOARD_COLS + ncol) as usize] < 0
         {
-            city_root_emptyadj[root].push((nr, ncol));
+            city_empty_keys.push(root as u32 * N_CELLS as u32 + (nr * BOARD_COLS + ncol) as u32);
         }
     }
-    let mut city_root_finished = vec![false; nc];
     let mut city_root_open_n = vec![0usize; nc];
+    count_distinct_per_group(&mut city_empty_keys, N_CELLS as u32, &mut city_root_open_n);
+
+    // closure delta == count_city_points if the component closed (full credit)
     let mut city_root_delta = vec![0i64; nc];
     for root in 0..nc {
-        if !city_root_seen[root] {
-            continue;
-        }
-        city_root_finished[root] = !city_root_is_open[root];
-        city_root_open_n[root] = city_root_emptyadj[root].len();
-        let mut shields = 0i64;
-        let mut cathedral = false;
-        let mut total = 0i64;
-        for &(r, c) in &city_root_coords[root] {
-            let tile = tiles::tile(state.get_tile(r, c).unwrap());
-            if !tile.inn.is_empty() {
-                cathedral = true;
-            }
-            if tile.shield {
-                shields += 1;
-            }
-            total += 1;
-        }
-        city_root_delta[root] = if cathedral {
-            3 * total + 3 * shields
+        let (t, s) = (city_root_tiles[root], city_root_shields[root]);
+        city_root_delta[root] = if city_root_cathedral[root] {
+            3 * t + 3 * s
         } else {
-            total + shields
+            t + s
         };
     }
 
     // ---- road facts -------------------------------------------------------- //
-    let nr_nodes = road_nodes.len();
-    let mut road_root_coords: Vec<Vec<(i32, i32)>> = vec![Vec::new(); nr_nodes];
-    let mut road_root_is_open = vec![false; nr_nodes];
-    let mut road_root_emptyadj: Vec<Vec<(i32, i32)>> = vec![Vec::new(); nr_nodes];
-    let mut road_root_seen = vec![false; nr_nodes];
-    for nid in 0..nr_nodes {
+    let nrn = road_nodes.len();
+    let mut road_root_tiles = vec![0i64; nrn];
+    let mut road_root_inn = vec![false; nrn];
+    let mut road_root_finished = vec![true; nrn];
+    let mut road_last_cell = vec![-1i32; nrn];
+    let mut road_empty_keys: Vec<u32> = Vec::with_capacity(nrn);
+    for nid in 0..nrn {
         let (r, c, ix) = road_nodes[nid];
         let root = road_labels[nid] as usize;
-        road_root_seen[root] = true;
-        if !road_root_coords[root].contains(&(r, c)) {
-            road_root_coords[root].push((r, c));
+        let cell = r * BOARD_COLS + c;
+        if road_last_cell[root] != cell {
+            road_last_cell[root] = cell;
+            road_root_tiles[root] += 1;
+            if !tiles::tile(state.get_tile(r, c).unwrap()).inn.is_empty() {
+                road_root_inn[root] = true;
+            }
         }
         if road_open[nid] {
-            road_root_is_open[root] = true;
+            road_root_finished[root] = false;
         }
         let (dr, dc, _o) = opp(ix);
-        let (nrr, ncol) = (r + dr, c + dc);
-        if nrr >= 0
-            && nrr < BOARD_ROWS
-            && ncol >= 0
-            && ncol < BOARD_COLS
-            && state.get_tile(nrr, ncol).is_none()
-            && !road_root_emptyadj[root].contains(&(nrr, ncol))
+        let (nr, ncol) = (r + dr, c + dc);
+        if nr >= 0 && nr < BOARD_ROWS && ncol >= 0 && ncol < BOARD_COLS
+            && cell_ord[(nr * BOARD_COLS + ncol) as usize] < 0
         {
-            road_root_emptyadj[root].push((nrr, ncol));
+            road_empty_keys.push(root as u32 * N_CELLS as u32 + (nr * BOARD_COLS + ncol) as u32);
         }
     }
-    let mut road_root_finished = vec![false; nr_nodes];
-    let mut road_root_open_n = vec![0usize; nr_nodes];
-    for root in 0..nr_nodes {
-        if !road_root_seen[root] {
-            continue;
-        }
-        road_root_finished[root] = !road_root_is_open[root];
-        road_root_open_n[root] = road_root_emptyadj[root].len();
-    }
+    let mut road_root_open_n = vec![0usize; nrn];
+    count_distinct_per_group(&mut road_empty_keys, N_CELLS as u32, &mut road_root_open_n);
 
     // ---- farm facts -------------------------------------------------------- //
     let nf = farm_node_rc.len();
     let mut farm_pos0_root: Vec<i32> = vec![-1; n_cells * 9];
     let mut farm_anypos_root: Vec<i32> = vec![-1; n_cells * 9];
-    let mut farm_root_members: Vec<Vec<u32>> = vec![Vec::new(); nf];
+    let mut farm_adj: Vec<u64> = Vec::with_capacity(nf * 2);
     for nid in 0..nf {
         let root = farm_labels[nid] as usize;
         let (r, c) = farm_node_rc[nid];
         let o = ord_of(r, c).unwrap();
-        farm_root_members[root].push(nid as u32);
         let tid = state.get_tile(r, c).unwrap();
-        let fp = &tiles::tile(tid).farms[farm_node_slot[nid] as usize].farmer_positions;
-        if !fp.is_empty() {
-            farm_pos0_root[o * 9 + fp[0] as usize] = root as i32;
-            for &pos in fp {
+        let fc = &tiles::tile(tid).farms[farm_node_slot[nid] as usize];
+        if !fc.farmer_positions.is_empty() {
+            farm_pos0_root[o * 9 + fc.farmer_positions[0] as usize] = root as i32;
+            for &pos in &fc.farmer_positions {
                 farm_anypos_root[o * 9 + pos as usize] = root as i32;
             }
         }
-    }
-
-    let mut farm_root_adj_city_roots: Vec<Vec<u32>> = vec![Vec::new(); nf];
-    let mut farm_root_finished_cities: Vec<usize> = vec![0; nf];
-    for root in 0..nf {
-        if farm_root_members[root].is_empty() {
-            continue;
-        }
-        let mut adj: Vec<u32> = Vec::new();
-        for &nid in &farm_root_members[root] {
-            let (r, c) = farm_node_rc[nid as usize];
-            let o = ord_of(r, c).unwrap();
-            let tid = state.get_tile(r, c).unwrap();
-            let sides = &tiles::tile(tid).farms[farm_node_slot[nid as usize] as usize].city_sides;
-            for &cs in sides {
-                let cnid = city_node_id[o * 9 + cs as usize];
-                if cnid >= 0 {
-                    let croot = city_labels[cnid as usize];
-                    if !adj.contains(&croot) {
-                        adj.push(croot);
-                    }
-                }
+        for &cs in &fc.city_sides {
+            let cnid = city_node_id[o * 9 + cs as usize];
+            if cnid >= 0 {
+                farm_adj.push(((root as u64) << 32) | city_labels[cnid as usize] as u64);
             }
         }
-        farm_root_finished_cities[root] = adj
-            .iter()
-            .filter(|&&croot| city_root_finished[croot as usize])
-            .count();
-        farm_root_adj_city_roots[root] = adj;
+    }
+    farm_adj.sort_unstable();
+    farm_adj.dedup();
+    let mut farm_root_finished_cities = vec![0usize; nf];
+    for &k in &farm_adj {
+        if city_root_finished[(k as u32) as usize] {
+            farm_root_finished_cities[(k >> 32) as usize] += 1;
+        }
     }
 
     Decomp {
         placed,
+        cell_ord,
         city_nodes,
         city_labels,
         city_node_id,
-        city_root_coords,
+        city_root_tiles,
+        city_root_shields,
+        city_root_cathedral,
         city_root_finished,
         city_root_open_n,
         city_root_delta,
         road_nodes,
         road_labels,
         road_node_id,
-        road_root_coords,
+        road_root_tiles,
+        road_root_inn,
         road_root_finished,
         road_root_open_n,
         farm_node_rc,
@@ -472,7 +506,7 @@ pub fn decompose(state: &GameState) -> Decomp {
         farm_labels,
         farm_pos0_root,
         farm_anypos_root,
-        farm_root_adj_city_roots,
+        farm_adj,
         farm_root_finished_cities,
     }
 }

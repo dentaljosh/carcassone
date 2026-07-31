@@ -1,0 +1,102 @@
+{
+  "gate": "G2/leaf",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "2419559-dirty",
+    "utc": "2026-07-31T20:35:21Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": [
+      "panel",
+      "golden"
+    ],
+    "configs": "all",
+    "limit": null,
+    "stride": 8,
+    "workers": 8,
+    "bench": 0,
+    "bench_repeats": 200,
+    "out": null
+  },
+  "leaf_of_record": "v2_9_2_Bmild_cap8_curve125 (governance/PRODUCTION.yaml, leaf_hash a36d2e15a3b3d71d)",
+  "configs": [
+    "bag-close",
+    "c7-F0.5",
+    "c7-R1.0",
+    "c7-both",
+    "f6-soft0.5/0.25",
+    "f6-soft1.0",
+    "pre-v2.7",
+    "prod-curve125",
+    "v27",
+    "v28",
+    "v29",
+    "weird"
+  ],
+  "legs": [
+    "carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
+    "carcassonne_ai.flat_leaf_cy (direct)",
+    "carc_rs.MirrorState.leaf_value{,_float}"
+  ],
+  "checks_per_position": [
+    "flat_base_score x4 routes",
+    "leaf int (py|cy|rust)",
+    "leaf float bit-exact (py|cy|rust)"
+  ],
+  "per_corpus": {
+    "golden": {
+      "positions": 1737,
+      "plies": 1725,
+      "values_compared": 97272,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 6948,
+        "v27": 6948,
+        "v28": 6948,
+        "v29": 6948,
+        "pre-v2.7": 6948,
+        "weird": 6948,
+        "c7-R1.0": 6948,
+        "c7-F0.5": 6948,
+        "c7-both": 6948,
+        "f6-soft0.5/0.25": 6948,
+        "f6-soft1.0": 6948,
+        "bag-close": 6948
+      },
+      "mismatches": 0
+    },
+    "golden_disk": {
+      "positions": 56,
+      "plies": 1725,
+      "values_compared": 0,
+      "disk_values_compared": 448,
+      "by_config": {
+        "v27": 112,
+        "v28": 112,
+        "v29": 112
+      },
+      "mismatches": 0
+    },
+    "panel": {
+      "positions": 4,
+      "plies": 0,
+      "values_compared": 0,
+      "disk_values_compared": 4,
+      "by_config": {},
+      "mismatches": 0
+    }
+  },
+  "total_values_compared": 97724,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 9.14902450502268
+}
