@@ -1,2 +1,8 @@
 === [1/3] game leg: FULL-GAME lockstep at k8x1376 (12 golden + 2 E4) ===
 [G4] 14 jobs over legs=['game'] k8x1376=11008 workers=14 rust_threads=1
+
+[G4] PASS: 0 mismatches over 14140 checks / 2012 decisions / 0 solves / 2012 plies in 2462s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_game_k8x1376.json
+    game     checks=14140     decisions=2012    solves=0      mismatches=0
+rc=0
+=== [2/3] pos leg: ALL 449 champ + 2 E4 + 12 golden, stride 30, k8x1376 ===
+[G4] 463 jobs over legs=['pos'] k8x1376=11008 workers=10 rust_threads=1
