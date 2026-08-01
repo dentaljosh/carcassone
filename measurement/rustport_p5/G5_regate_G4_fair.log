@@ -21,3 +21,6 @@
 [G4] PASS: 0 mismatches over 199869 checks / 0 decisions / 0 solves / 66623 plies in 1s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_p5_regate_latch.json
     latch    checks=199869    decisions=0       solves=0      mismatches=0
 [G4] 14 jobs over legs=['game'] k8x1376=11008 workers=14 rust_threads=1
+
+[G4] PASS: 0 mismatches over 14140 checks / 2012 decisions / 0 solves / 2012 plies in 2457s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_p5_regate_game.json
+    game     checks=14140     decisions=2012    solves=0      mismatches=0
