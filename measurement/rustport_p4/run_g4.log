@@ -30,3 +30,10 @@ rc=0
 rc=0
 === [3/3] MOBILE profile k4x688: 50 champ + 2 E4 + 12 golden, EVERY ply ===
 [G4] 64 jobs over legs=['pos'] k4x688=2752 workers=10 rust_threads=1
+  25/64 jobs, 0 mismatches (1615s)
+  50/64 jobs, 0 mismatches (2881s)
+
+[G4] PASS: 0 mismatches over 64449 checks / 9207 decisions / 0 solves / 9207 plies in 3196s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_pos_k4x688_full.json
+    pos      checks=64449     decisions=9207    solves=0      mismatches=0
+rc=0
+=== done ===
