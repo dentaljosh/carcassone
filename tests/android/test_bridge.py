@@ -115,11 +115,16 @@ def play_out(st: dict, *, human_pick=None, max_plies: int = 400) -> dict:
     return st
 
 
-def _replay(actions, human_player: int, Game, deck_seed: int = 0):
+def _replay(actions, human_player: int, Game, deck_seed: int = 0,
+            start_rule: str = B.START_RULE):
     """Replay an action log the ``root_replay.py`` way and count the AI seat's decisions
-    (== the agent's ``_move_idx`` at that ply). Mirrors ``restore_game``'s loop."""
+    (== the agent's ``_move_idx`` at that ply). Mirrors ``restore_game``'s loop.
+
+    ``start_rule`` must match the rule the log was played under — (deck_seed,
+    actions) is only lossless with respect to its own start-tile convention."""
     random.seed(int(deck_seed))
-    game = Game(enable_legal_moves_cache=True)
+    game = Game(enable_legal_moves_cache=True,
+                fixed_start_tile=start_rule == B.START_RULE_RETAIL)
     board = game.get_init_board()
     n_ai = 0
     for a in actions:
@@ -437,7 +442,9 @@ def test_restore_mid_endgame_latches():
     for cut in range(len(actions) - 1, max(0, len(actions) - 20), -1):
         save = {"schema": B.SAVE_SCHEMA, "deck_seed": 29, "human_player": 1,
                 "opponent": "champion", "sims": 8, "k_dets": 1, "verify": False,
-                "actions": actions[:cut]}
+                # Must match the rule the log above was played under, or the
+                # replay decodes a different game.
+                "start_rule": B.START_RULE, "actions": actions[:cut]}
         restored = ok(B.restore_game(json.dumps(save)))
         if restored["restored"]["latched"]:
             latched_at = cut
@@ -1438,24 +1445,31 @@ def test_ownership_regions_are_engine_topology_not_guesswork():
     corners = {"top_left", "top_right", "bottom_left", "bottom_right"}
     allowed = {"city": edges, "road": edges, "chapel": {"center"}, "farm": corners}
     seen = set()
-    st = new(seed=5, opponent="tier1", human_player=0)
-    for _ in range(80):
-        if st["is_terminated"]:
+    # Which feature kinds a scripted walk happens to produce is an accident of the
+    # deck, so sweep a few seeds rather than pinning the coverage to one game (a
+    # single seed made this brittle to the retail start-tile rule, which shifts
+    # every game from a given seed).
+    for seed in (5, 11, 23, 29):
+        if {"city", "road", "farm"} <= seen:
             break
-        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
-              else ok(B.ai_move(st["generation"])))
-        for f in ok(B.get_ownership())["features"]:
-            assert f["regions"], f"{f['kind']} reported no regions to draw"
-            cells = {tuple(c) for c in f["cells"]}
-            for row, col, side in f["regions"]:
-                assert isinstance(row, int) and isinstance(col, int)
-                # A region may never appear on a tile the feature does not occupy —
-                # over-coverage inside a tile is an approximation, a region on the
-                # wrong tile would be a lie.
-                assert (row, col) in cells, (f["kind"], row, col)
-                assert side in allowed[f["kind"]], (f["kind"], side)
-                assert side in B.MEEPLE_OFFSET_RATIO, side
-            seen.add(f["kind"])
+        st = new(seed=seed, opponent="tier1", human_player=0)
+        for _ in range(80):
+            if st["is_terminated"]:
+                break
+            st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+                  else ok(B.ai_move(st["generation"])))
+            for f in ok(B.get_ownership())["features"]:
+                assert f["regions"], f"{f['kind']} reported no regions to draw"
+                cells = {tuple(c) for c in f["cells"]}
+                for row, col, side in f["regions"]:
+                    assert isinstance(row, int) and isinstance(col, int)
+                    # A region may never appear on a tile the feature does not occupy —
+                    # over-coverage inside a tile is an approximation, a region on the
+                    # wrong tile would be a lie.
+                    assert (row, col) in cells, (f["kind"], row, col)
+                    assert side in allowed[f["kind"]], (f["kind"], side)
+                    assert side in B.MEEPLE_OFFSET_RATIO, side
+                seen.add(f["kind"])
     assert {"city", "road", "farm"} <= seen, f"only exercised {sorted(seen)}"
 
 
@@ -1596,3 +1610,79 @@ def test_debug_fast_forward_is_guarded():
     out = j(B.debug_fast_forward())
     assert out["ok"] is False and out["error"]["code"] == "not_confirmed"
     assert j(B.debug_fast_forward("please"))["ok"] is False
+
+
+# --------------------------------------------------------------------------- #
+# Retail fixed start tile (2026-07-30) — app-only rules fidelity                #
+# --------------------------------------------------------------------------- #
+def test_app_default_start_rule_is_retail():
+    """The app plays the retail convention: the fixed D tile is already on the
+    board before the human's first move, and it is nobody's move."""
+    st = new(seed=11)
+    assert st["deck_remaining"] + 1 == 71, "retail leaves 71 tiles to draw"
+    assert len(st["board"]) == 1, f"expected only the pre-placed start tile: {st['board']}"
+    assert st["board"][0]["description"] == B.RETAIL_START_TILE
+    assert st["board"][0]["turns"] == 0
+    assert st["current_player"] == 0 and st["is_human_turn"]
+    assert st["phase"] == "tiles"
+    assert st["meeples_free"] == [7, 7]
+    # A real choice, not the engine rule's single forced placement.
+    assert len(st["legal"]["tile_cells"]) > 1
+
+
+def test_start_rule_travels_in_the_save():
+    new(seed=11)
+    save = ok(B.save_game())
+    assert save["start_rule"] == B.START_RULE_RETAIL
+
+
+def test_unknown_start_rule_is_rejected_not_guessed():
+    """Silently picking a rule would decode a different game from the same log."""
+    d = j(B.new_game(json.dumps({"seed": 5, "start_rule": "nonsense"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+    d = j(B.restore_game(json.dumps(
+        {"schema": B.SAVE_SCHEMA, "deck_seed": 5, "actions": [],
+         "human_player": 0, "start_rule": "nonsense"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+
+
+def test_engine_start_rule_still_available():
+    """An explicit "engine" game reproduces the historical setup: empty board, a
+    single forced first placement, 72 tiles to place."""
+    st = new(seed=11, start_rule=B.START_RULE_ENGINE)
+    assert st["board"] == []
+    assert st["deck_remaining"] + 1 == 72
+    assert len(st["legal"]["tile_cells"]) == 1
+
+
+def test_a_save_without_start_rule_restores_under_the_engine_rule():
+    """Backward compatibility: games archived before the retail start shipped
+    carry no `start_rule`, and MUST replay under the convention they were played
+    under — otherwise (deck_seed, actions) silently decodes a different game."""
+    st = new(seed=23, start_rule=B.START_RULE_ENGINE, **TINY)
+    for _ in range(6):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    before = ok(B.get_state())
+    save = ok(B.save_game())
+    legacy = {k: v for k, v in save.items() if k != "start_rule"}
+    assert "start_rule" not in legacy
+
+    restored = ok(B.restore_game(json.dumps(legacy)))
+    assert _normalise_for_compare(restored) == _normalise_for_compare(before)
+
+
+def test_retail_save_round_trips():
+    st = new(seed=29, **TINY)
+    for _ in range(6):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    before = ok(B.get_state())
+    save = ok(B.save_game())
+    assert save["start_rule"] == B.START_RULE_RETAIL
+    restored = ok(B.restore_game(json.dumps(save)))
+    assert _normalise_for_compare(restored) == _normalise_for_compare(before)

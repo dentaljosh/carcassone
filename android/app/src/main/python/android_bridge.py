@@ -186,7 +186,7 @@ from carcassonne_ai.action_space import (  # noqa: E402
     tile_action_count,
     tile_pass_index,
 )
-from carcassonne_ai.game_wrapper import Board, Game  # noqa: E402
+from carcassonne_ai.game_wrapper import RETAIL_START_TILE, Board, Game  # noqa: E402
 # The intra-tile meeple grouping of record. It USED to be defined in this file; it moved
 # into the package (2026-07-27) when the search grew a MEEPLE-DEDUP mode that needs the
 # same definition, and a second copy would drift. Re-exported here so `feature_groups`
@@ -204,6 +204,22 @@ STATE_SCHEMA = "carcassonne-android-state/v1"
 # (deck_seed, actions) core plus the read-only result summary, so `filesDir/games/`
 # is both a scoreboard and a replay archive. See `archive_record`.
 ARCHIVE_SCHEMA = "carcassonne-android-archive/v1"
+
+# Start-tile convention (2026-07-30, Joshua-approved for the APP ONLY).
+#   "engine" — the vendored engine's native rule: the first player draws a RANDOM
+#              tile which is auto-placed at starting_position, costing them a turn
+#              and giving them a free meeple on it. Every training run, eval and
+#              solver measurement to date used this; it stays the library default.
+#   "retail" — retail/tournament: a fixed "D" tile (city + straight road) is
+#              pre-placed before anyone draws. Nobody spends a turn on it, no
+#              meeple goes on it, and the deck is the remaining 71.
+# The app plays "retail". This travels in the SAVE PAYLOAD, so a game archived
+# under "engine" replays under "engine" forever — the (deck_seed, actions) core is
+# only lossless with respect to the rules it was played under.
+START_RULE_ENGINE = "engine"
+START_RULE_RETAIL = "retail"
+START_RULE = START_RULE_RETAIL          # what a NEW app game uses
+START_RULE_LEGACY = START_RULE_ENGINE   # what a save with no `start_rule` means
 
 # Meeple-dot placement, as RATIOS of the tile size, lifted from
 # CarcassonneVisualiser.meeple_position_offsets (tile_size=60, meeple_size=~21). The
@@ -575,8 +591,18 @@ class _Session:
 
     def __init__(self, *, seed: int, human_player: int, opponent: str,
                  sims: int | None, k_dets: int | None, verify: bool,
-                 generation: int):
+                 generation: int, start_rule: str = START_RULE):
         self.seed = int(seed)
+        # Which start-tile convention this session plays under. New games use the
+        # app default (retail); a RESTORE passes whatever the save recorded, so a
+        # game archived before the retail start shipped still replays exactly.
+        # Reject anything else rather than defaulting: silently picking a rule
+        # would decode a DIFFERENT game from the same (deck_seed, actions).
+        if start_rule not in (START_RULE_ENGINE, START_RULE_RETAIL):
+            raise ValueError(
+                f"unknown start_rule {start_rule!r}; expected "
+                f"{START_RULE_ENGINE!r} or {START_RULE_RETAIL!r}")
+        self.start_rule = str(start_rule)
         self.human_player = int(human_player)
         self.opponent_kind = str(opponent)
         self.req_sims = None if sims is None else int(sims)
@@ -584,11 +610,14 @@ class _Session:
         self.verify = bool(verify)
         self.generation = int(generation)
 
-        self.game = Game(enable_legal_moves_cache=True)
+        fixed_start = self.start_rule == START_RULE_RETAIL
+        self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
         # The agent gets its OWN Game (mirrors play_vs_tier1_gui.build_opponent): the
         # UI-side Game carries a legal-moves cache and the agent may run on another
         # thread, so private Games remove any chance of a cross-thread cache race.
-        self.ai_game = Game(enable_legal_moves_cache=True)
+        # `fixed_start_tile` only affects get_init_board, which the agent's Game never
+        # calls — it is passed for consistency, not because the search needs it.
+        self.ai_game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
 
         self.agent = None
         self.pick = None
@@ -1085,6 +1114,9 @@ def new_game(config_json: str = "{}") -> str:
         sims          int|null           — per-determinization sims (null = YAML budget)
         k_dets        int|null           — determinizations   (null = YAML budget)
         verify        bool, default true — champion_factory's runtime leaf proof
+        start_rule    "retail"|"engine", default "retail" — start-tile convention
+                      (see START_RULE; the app plays retail, the library default
+                      stays "engine" so evals are unaffected)
 
     Returns the full state object (see ``get_state``)."""
     global _S, _GENERATION, _prog_leaf_calls, _prog_expected, _prog_t0
@@ -1105,6 +1137,7 @@ def new_game(config_json: str = "{}") -> str:
             k_dets=cfg.get("k_dets"),
             verify=bool(cfg.get("verify", True)),
             generation=_GENERATION,
+            start_rule=str(cfg.get("start_rule", START_RULE)),
         )
         _S = s
         _agent_ref = s.agent
@@ -1270,6 +1303,10 @@ def _save_payload(s: _Session) -> dict:
         "sims": s.req_sims,
         "k_dets": s.req_k_dets,
         "verify": s.verify,
+        # Load-bearing for replay: (deck_seed, actions) only reproduces the game
+        # under the SAME start-tile rule. Saves written before this field existed
+        # are read as START_RULE_LEGACY.
+        "start_rule": s.start_rule,
     }
     out.update(_spec_fingerprint())
     return out
@@ -1446,6 +1483,8 @@ def restore_game(json_str: str) -> str:
             k_dets=blob.get("k_dets"),
             verify=bool(blob.get("verify", True)),
             generation=_GENERATION,
+            # Absent field == written before the retail start shipped.
+            start_rule=str(blob.get("start_rule", START_RULE_LEGACY)),
         )
 
         # Replay. Whose decision each logged action was is decided by the board it was
