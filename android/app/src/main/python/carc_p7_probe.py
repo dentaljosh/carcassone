@@ -34,6 +34,18 @@ from pathlib import Path
 
 FLAVORS = ("msun", "msun_fma", "glibc", "glibc_fma")
 
+# G7 leg 1's answer, per ABI. `tanh`/`expm1` are msun everywhere Android was
+# measured; `np.exp` is numpy's own SIMD kernel and is ABI-DEPENDENT — arm64
+# needs FMA contraction, x86_64 does not (same numpy 1.26.2 on both). Kept here
+# so the instrumented test cannot hardcode the wrong ABI's answer.
+_EXP_FMA_BY_MACHINE = {"aarch64": True, "arm64": True, "x86_64": False}
+
+
+def resolved_libm() -> dict:
+    return {"tanh_flavor": "msun",
+            "exp_fma": _EXP_FMA_BY_MACHINE.get(platform.machine(), True),
+            "machine": platform.machine()}
+
 
 def _import_carc_rs():
     import carc_rs
@@ -233,6 +245,10 @@ def _search_cfg(knobs, sims, exp_fma, tanh_flavor):
 
 def _agent(knobs, sims, k_dets, seed, threads, exp_fma, tanh_flavor,
            exact_budget=100_000):
+    # None means "use this ABI's measured answer" — see resolved_libm().
+    r = resolved_libm()
+    exp_fma = r["exp_fma"] if exp_fma is None else exp_fma
+    tanh_flavor = r["tanh_flavor"] if tanh_flavor is None else tanh_flavor
     carc_rs = _import_carc_rs()
     return carc_rs.FairAgentRs(
         _search_cfg(knobs, sims, exp_fma, tanh_flavor),
@@ -315,7 +331,8 @@ def _thermal() -> dict:
 
 
 def bench_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
-                 threads: int, exp_fma: bool, tanh_flavor: str,
+                 threads: int, exp_fma: bool | None = None,
+                 tanh_flavor: str | None = None,
                  n: int = 0, seed: int = 12345) -> str:
     """Median s/move over the midgame battery at one budget.
 
@@ -328,6 +345,11 @@ def bench_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
     positions = json.loads(Path(battery_path).read_text())
     if n:
         positions = positions[:n]
+    # Record what actually ran, not what was passed: a manifest that says
+    # `exp_fma: null` cannot be read back as a description of the run.
+    _r = resolved_libm()
+    exp_fma = _r["exp_fma"] if exp_fma is None else exp_fma
+    tanh_flavor = _r["tanh_flavor"] if tanh_flavor is None else tanh_flavor
     rows = []
     for i, p in enumerate(positions):
         ag = _agent(knobs, sims, k_dets, seed + i, threads, exp_fma, tanh_flavor)
@@ -364,7 +386,8 @@ def bench_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
 
 
 def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
-                threads: int, exp_fma: bool, tanh_flavor: str,
+                threads: int, exp_fma: bool | None = None,
+                tanh_flavor: str | None = None,
                 moves: int = 50, seed: int = 777) -> str:
     """50 consecutive moves from ONE game — the throttle curve.
 
@@ -375,6 +398,9 @@ def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
     knobs = json.loads(Path(knobs_path).read_text())
     positions = json.loads(Path(battery_path).read_text())
     p = positions[0]
+    _r = resolved_libm()
+    exp_fma = _r["exp_fma"] if exp_fma is None else exp_fma
+    tanh_flavor = _r["tanh_flavor"] if tanh_flavor is None else tanh_flavor
     ag = _agent(knobs, sims, k_dets, seed, threads, exp_fma, tanh_flavor)
     ag.start_game_from_seed(str(p["deck_seed"]))
     rows = []
@@ -405,6 +431,7 @@ def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
     return json.dumps({
         "config": {"sims": sims, "k_dets": k_dets, "total_sims": sims * k_dets,
                    "threads": threads, "moves_requested": moves,
+                   "exp_fma": exp_fma, "tanh_flavor": tanh_flavor,
                    "moves_done": len(good)},
         "total_wall_s": round(time.perf_counter() - t_start, 1),
         # The throttle number: how much slower the tail is than the head.
@@ -418,7 +445,8 @@ def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
 
 
 def soak_fixed_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
-                      threads: int, exp_fma: bool, tanh_flavor: str,
+                      threads: int, exp_fma: bool | None = None,
+                      tanh_flavor: str | None = None,
                       repeats: int = 50, seed: int = 777) -> str:
     """The DECONFOUNDED thermal leg: the SAME position, searched `repeats` times.
 
@@ -433,6 +461,9 @@ def soak_fixed_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: 
     """
     knobs = json.loads(Path(knobs_path).read_text())
     p = json.loads(Path(battery_path).read_text())[0]
+    _r = resolved_libm()
+    exp_fma = _r["exp_fma"] if exp_fma is None else exp_fma
+    tanh_flavor = _r["tanh_flavor"] if tanh_flavor is None else tanh_flavor
     ag = _agent(knobs, sims, k_dets, seed, threads, exp_fma, tanh_flavor)
     ag.start_game_from_seed(str(p["deck_seed"]))
     for a in p["prefix"]:
@@ -453,6 +484,7 @@ def soak_fixed_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: 
     return json.dumps({
         "config": {"sims": sims, "k_dets": k_dets, "total_sims": sims * k_dets,
                    "threads": threads, "repeats": repeats,
+                   "exp_fma": exp_fma, "tanh_flavor": tanh_flavor,
                    "position": p["name"]},
         "total_wall_s": round(time.perf_counter() - t_start, 1),
         # Every repeat must pick the SAME action; more than one means the work

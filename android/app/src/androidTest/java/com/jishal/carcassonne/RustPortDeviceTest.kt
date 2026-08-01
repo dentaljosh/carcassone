@@ -140,7 +140,6 @@ class RustPortDeviceTest {
                     "knobs_path" to asset("p7/knobs.json").absolutePath,
                     "battery_path" to asset("p7/battery.json").absolutePath,
                     "sims" to 1376, "k_dets" to 8, "threads" to THREADS,
-                    "exp_fma" to true, "tanh_flavor" to TANH_FLAVOR,
                     "moves" to 50,
                 ),
             ),
@@ -166,7 +165,6 @@ class RustPortDeviceTest {
                     "knobs_path" to asset("p7/knobs.json").absolutePath,
                     "battery_path" to asset("p7/battery.json").absolutePath,
                     "sims" to 1376, "k_dets" to 8, "threads" to THREADS,
-                    "exp_fma" to true, "tanh_flavor" to TANH_FLAVOR,
                     "repeats" to 50,
                 ),
             ),
@@ -192,7 +190,6 @@ class RustPortDeviceTest {
                     "knobs_path" to asset("p7/knobs.json").absolutePath,
                     "battery_path" to asset("p7/battery.json").absolutePath,
                     "sims" to sims, "k_dets" to kDets, "threads" to THREADS,
-                    "exp_fma" to true, "tanh_flavor" to TANH_FLAVOR,
                 ),
             ),
         ).toString()
@@ -210,20 +207,6 @@ class RustPortDeviceTest {
          * count; the soak is what says whether it is the right number under heat.
          */
         private const val THREADS = 4
-
-        /**
-         * ⚠️ Set from G7 leg 1's ANSWER, not from the desktop's. The desktop is
-         * `glibc_fma` (G0 §2); bionic is a different libm, and the whole point of
-         * leg 1 was to find out which.
-         *
-         * MEASURED 2026-08-01 on this Pixel 9 Pro (measurement/rustport_p7/
-         * G7_libm_device.json): bionic `tanh` and `expm1` are **`msun`**, exact on
-         * the 214,333-arg production corpus AND on 10^7 fuzz args. `glibc` also
-         * passed the tanh CORPUS (0/214,333) and then failed the fuzz
-         * (12,867/10^7) — G0's cautionary tale reproduced on a second platform, so
-         * do not re-derive this flavour from a corpus-only run.
-         */
-        private const val TANH_FLAVOR = "msun"
 
         /** Fuzz samples per implementation on-device. Desktop G0 used 1e8. */
         private const val FUZZ_N = 2_000_000

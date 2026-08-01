@@ -237,15 +237,36 @@ BACKEND_PYTHON = "python"
 BACKEND_RUST = "rust"
 BACKEND_DEFAULT = os.environ.get("CARC_ANDROID_BACKEND", BACKEND_PYTHON)
 
-# The libm flavour bionic actually implements, MEASURED on a Pixel 9 Pro at G7
-# leg 1 (measurement/rustport_p7/G7_libm_device.json): `tanh`/`expm1` are msun,
-# exact on the production corpus AND 10^7 fuzz args. It differs from the desktop
-# (glibc_fma, G0 §2) — which is exactly why the flavour is a config knob and not
-# a compile-time constant. `glibc` passes the tanh CORPUS here and fails the
-# fuzz, so do not re-derive this from a corpus-only run.
+# The libm configuration Android actually needs, MEASURED at G7 leg 1
+# (measurement/rustport_p7/G7_REPORT.md; raw in device/p7/libm_chaquopy.json).
+#
+# `tanh`/`expm1`: **msun** on every Android ABI measured — exact on the 214,333-arg
+# production corpus AND on fuzz. It differs from the desktop (glibc_fma, G0 §2),
+# which is exactly why the flavour is a config knob and not a compile-time
+# constant. ⚠️ `glibc` is bit-exact on the whole tanh CORPUS and fails the fuzz,
+# so never re-derive this flavour from a corpus-only run.
 ANDROID_TANH_FLAVOR = "msun"
-# Scalar `exp` matched exp64_fma (0/201,525 corpus, 0/10^7 fuzz) on the same run.
-ANDROID_EXP_FMA = True
+
+# ⚠️ `np.exp` (the softmax-prior site) is numpy's own SIMD kernel, not libm, and
+# it is **ABI-DEPENDENT WITHIN ANDROID** — found by the x86_64 emulator leg,
+# same numpy build (1.26.2) on both:
+#     arm64-v8a  -> exp64_fma   (0/201,525 corpus, 0/2e6 fuzz; exp64 fails)
+#     x86_64     -> exp64       (0/201,525 corpus, 0/2e6 fuzz; exp64_fma fails)
+# So a single constant would be wrong on one of the two ABIs the APK ships.
+# Consistent with G0 §3 ("np.exp float64 bits differ across ISA").
+_EXP_FMA_BY_MACHINE = {"aarch64": True, "arm64": True, "x86_64": False}
+
+
+def android_exp_fma() -> bool:
+    """Whether `compat::exp64` needs FMA contraction on THIS device's ABI.
+
+    Unknown machine -> True (the arm64 answer), because arm64 is what ships to
+    phones; the emulator is the only x86_64 target and it is named here.
+    """
+    return _EXP_FMA_BY_MACHINE.get(platform.machine(), True)
+
+
+ANDROID_EXP_FMA = android_exp_fma()
 
 # Per-ply mirror assertion. Off by default (it renders the board twice per
 # action); the game-start check runs unconditionally either way.

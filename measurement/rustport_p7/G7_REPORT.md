@@ -16,7 +16,19 @@ Device of record for every on-device number below:
 | reached via | adb over tailscale, `100.64.4.100:38025` |
 
 Raw artifacts: `G7_libm_device.json` (native leg), `device/p7/*.json` (Chaquopy
-legs, pulled off the phone). Those files are authoritative over this prose.
+legs, pulled off the phone), `device_emu/p7/*.json` (emulator). Those files are
+authoritative over this prose.
+
+## Verdicts at a glance
+
+| leg | bar | result |
+|---|---|---|
+| 1 libm flavour | *decide it* | **`tanh`/`expm1` = msun; `np.exp` = exp64_fma (arm64) / exp64 (x86_64). Fallback NOT invoked.** |
+| 2 replay identity | 0 mismatches | **PASS — 0 / 3,165 plies, 22 records, both ABIs** |
+| 3 s/move k8×1376 | ≤ 2 s median | **PASS — 1.551 s** |
+| 3 s/move k4×688 | (reference) | 0.499 s vs 1.7 s Python = **3.4×** |
+| 4 thermal soak | report curve | **PASS — throttle 1.007× over 68.7 s** |
+| 5 emulator smoke | run it | **PASS — 7/7, and it caught the ABI-dependent FMA bug** |
 
 ---
 
@@ -85,16 +97,19 @@ equivalence.
 
 ### The answer
 
-> **Android's production config is `tanh_flavor = "msun"`, `exp_fma = true`.**
-> Both are existing `compat::LibmFlavor` members — **no second port, no widening
-> of the enum, and the spec's pre-registered fallback is NOT invoked.**
+> **Android's production config is `tanh_flavor = "msun"` on every ABI, and
+> `exp_fma = true` on arm64-v8a / `false` on x86_64** (see leg 5 — the FMA axis
+> is ABI-dependent and the emulator is what found it). Every value is an existing
+> `compat::LibmFlavor` member or knob — **no second port, no widening of the
+> enum, and the spec's pre-registered fallback is NOT invoked.**
 
-It **differs from the desktop** (`glibc_fma` / `exp_fma=true`, G0 §2), which is
+The tanh flavour **differs from the desktop** (`glibc_fma`, G0 §2), which is
 precisely what G0 predicted when it said "bionic is msun-derived, so Android is
-expected to select a different flavour — the enum is the mechanism". The flavour
-is a `SearchConfigRs` knob, so this costs a config value, not code. It is written
-down in exactly two places: `android_bridge.ANDROID_TANH_FLAVOR` and
-`RustPortDeviceTest.TANH_FLAVOR`.
+expected to select a different flavour — the enum is the mechanism". These are
+`SearchConfigRs` knobs, so it costs config values, not code. They are resolved in
+exactly one place per process — `android_bridge.ANDROID_TANH_FLAVOR` /
+`android_exp_fma()` for the app, `carc_p7_probe.resolved_libm()` for the gate —
+and the instrumented test inherits the probe's answer rather than hardcoding one.
 
 ---
 
@@ -198,12 +213,52 @@ would be the better instrument if this ever needs a real thermal answer.
 
 ---
 
-## Leg 5 — x86_64 emulator smoke
+## Leg 5 — x86_64 emulator smoke. **PASS — and it caught a real bug.**
 
-See `G7_emulator.log` / `device_emu/`. The AVD (`carc35`, android-35 google_apis
-x86_64, KVM available) exists on this box, so the x86_64 wheel is exercised
-rather than merely built. The Pixel legs are the ones that matter; this leg only
-answers "does the x86_64 artefact load and replay".
+AVD `carc35` (android-35 google_apis x86_64, KVM), same APKs, all 7 legs run.
+Raw: `device_emu/p7/*.json`.
+
+| leg | x86_64 emulator |
+|---|---|
+| carc_rs / numpy load | ok (numpy 1.26.2 — same build as the phone) |
+| replay identity | **22 records / 3,165 plies, all_identical = true** |
+| `math.tanh` / `math.expm1` | **msun** (same as arm64) |
+| **`np.exp`** | **`exp64` — NO FMA** ⚠️ |
+| bench k8×1376 | median 1.2157 s |
+| bench k4×688 | median 0.2986 s |
+| fixed-position soak | throttle 1.036× (50 repeats, same action `1467`) |
+| all legs | **OK (7 tests), 0 failed** |
+
+The fixed-position soak picked action `1467` on x86_64 — the same action the
+phone picked from the same position. One position is not an identity claim (leg 2
+is), but it is a consistent data point across two ISAs and two `exp_fma`
+settings, and it is what P3 §3 predicts: the search is nearly libm-blind.
+
+> ### ⚠️ `exp_fma` is ABI-dependent WITHIN Android
+>
+> | ABI | `np.exp` matches | corpus | fuzz |
+> |---|---|---|---|
+> | arm64-v8a | `exp64_fma` | 0 / 201,525 | 0 / 2×10⁶ |
+> | x86_64 | **`exp64`** | 0 / 201,525 | 0 / 2×10⁶ |
+>
+> Same numpy build (1.26.2) on both, so this is the ISA kernel, not a version
+> difference — consistent with G0 §3's "np.exp float64 bits differ across ISA".
+> `tanh`/`expm1` are `msun` on both, so only the FMA axis moves.
+>
+> **A single `ANDROID_EXP_FMA = True` constant would therefore have been wrong on
+> one of the two ABIs the APK ships**, and nothing on the phone could have caught
+> it. This is the entire value of the emulator leg. Both `android_bridge` and
+> `carc_p7_probe` now resolve the knob from `platform.machine()`
+> (`_EXP_FMA_BY_MACHINE`), and the instrumented test no longer hardcodes it — it
+> inherits the probe's resolution, so a test can't assert one ABI's answer on the
+> other.
+>
+> Unknown machine falls back to the arm64 answer, since arm64 is what ships to
+> phones and x86_64 is only the emulator.
+
+The emulator being *faster* than the phone (1.17 s vs 1.55 s at k8×1376) is
+expected — it is KVM on the 5900XT, not an ARM simulation — and is not a
+comparison worth drawing.
 
 ---
 
@@ -249,6 +304,16 @@ answers "does the x86_64 artefact load and replay".
    whether the whole `tests/` tree should run under the production leaf env.
 
 ---
+
+## Provenance caveat on the phone artifacts
+
+`device/p7/*.json` were produced **before** the `exp_fma` ABI-resolution refactor
+(leg 5's finding), so their manifests record the knobs as the literal
+`exp_fma=true, tanh_flavor="msun"` the test passed at the time. That is the
+**correct arm64 answer** — the refactor changed where the value comes from, not
+what it is on this device — so the phone numbers stand unaltered. The emulator
+artifacts were regenerated after the refactor and record `exp_fma=false`
+resolved from `platform.machine()`.
 
 ## What did NOT change
 
