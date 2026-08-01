@@ -1,0 +1,4 @@
+G1/fuzz[uniform]: 800 games, 113589 plies, 114389 positions, 0 mismatches, 0 window-overflow games, 0 matched engine-error games, row0-touching games 521, col0-touching 0, rows [0, 19], cols [2, 27], dropped-legal plies 2
+G1/fuzz[wall]: 200 games, 28396 plies, 28596 positions, 0 mismatches, 0 window-overflow games, 0 matched engine-error games, row0-touching games 200, col0-touching 20, rows [0, 7], cols [0, 32], dropped-legal plies 6886
+G1/fuzz: PASS  1000 games, 142985 positions x 9 checks, 0 mismatches, 0 window-overflow + 0 engine-error (matched, PASS-with-flag), 6.1s (23096 plies/s wall)
+G1/fuzz: result -> measurement/rustport_p5/G5_lockstep_fuzz_retail.json

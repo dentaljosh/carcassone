@@ -1,0 +1,32 @@
+{
+  "deck_seed": 97000000073,
+  "policy_seed": 5000073,
+  "mode": "uniform",
+  "ply": 17,
+  "detail": {
+    "ply": 17,
+    "error_class": "IndexError",
+    "python_error": "IndexError: list index out of range",
+    "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+    "route": "count_final_scores"
+  },
+  "actions": [
+    1248,
+    2503,
+    1350,
+    2507,
+    1450,
+    2509,
+    1154,
+    2501,
+    1146,
+    2503,
+    1450,
+    2505,
+    1156,
+    2501,
+    1452,
+    2501,
+    1555
+  ]
+}

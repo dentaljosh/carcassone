@@ -1,0 +1,70 @@
+{
+  "deck_seed": 97000000018,
+  "policy_seed": 5000018,
+  "mode": "uniform",
+  "ply": 43,
+  "detail": {
+    "ply": 43,
+    "phase": "meeples",
+    "error_class": "IndexError",
+    "python_error": "IndexError: list index out of range",
+    "rust_error": "PanicException: IndexError: board row index 35 out of range (len 35)",
+    "last_tile": [
+      34,
+      15
+    ],
+    "extent_rows": [
+      24,
+      34
+    ],
+    "extent_cols": [
+      13,
+      18
+    ]
+  },
+  "actions": [
+    1248,
+    2501,
+    1247,
+    2508,
+    1257,
+    2510,
+    1347,
+    2505,
+    1146,
+    2503,
+    1355,
+    2501,
+    1151,
+    2509,
+    1357,
+    2503,
+    1051,
+    2504,
+    950,
+    2506,
+    1053,
+    2510,
+    1552,
+    2506,
+    1448,
+    2510,
+    1343,
+    2504,
+    1549,
+    2502,
+    848,
+    2510,
+    750,
+    2510,
+    1457,
+    2510,
+    648,
+    2501,
+    1358,
+    2510,
+    1562,
+    2510,
+    1650
+  ]
+}

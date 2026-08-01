@@ -1,0 +1,23 @@
+[G4] 463 jobs over legs=['latch'] k8x1376=11008 workers=12 rust_threads=1
+  25/463 jobs, 0 mismatches (0s)
+  50/463 jobs, 0 mismatches (0s)
+  75/463 jobs, 0 mismatches (0s)
+  100/463 jobs, 0 mismatches (0s)
+  125/463 jobs, 0 mismatches (0s)
+  150/463 jobs, 0 mismatches (0s)
+  175/463 jobs, 0 mismatches (0s)
+  200/463 jobs, 0 mismatches (0s)
+  225/463 jobs, 0 mismatches (0s)
+  250/463 jobs, 0 mismatches (0s)
+  275/463 jobs, 0 mismatches (0s)
+  300/463 jobs, 0 mismatches (0s)
+  325/463 jobs, 0 mismatches (0s)
+  350/463 jobs, 0 mismatches (0s)
+  375/463 jobs, 0 mismatches (0s)
+  400/463 jobs, 0 mismatches (0s)
+  425/463 jobs, 0 mismatches (0s)
+  450/463 jobs, 0 mismatches (0s)
+
+[G4] PASS: 0 mismatches over 199869 checks / 0 decisions / 0 solves / 66623 plies in 1s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_p5_regate_latch.json
+    latch    checks=199869    decisions=0       solves=0      mismatches=0
+[G4] 14 jobs over legs=['game'] k8x1376=11008 workers=14 rust_threads=1
