@@ -15,6 +15,14 @@ byte-compatible walled engine (`start_rule` missing ⇒ "engine", start (6, 15),
 no pre-placed tile), and `test_default_is_bit_identical_to_the_pre_p5_port`
 pins that.
 
+**Comparison core.**  The per-ply comparison is `lockstep_fuzz.fuzz_game`, not a
+new one — and not `reconcile_engine.check_game`, which is bound to the record
+corpus (a `(deck_seed, actions, frozen_positions)` job) and has no flag hook.
+The fuzz core is a strict SUPERSET of it: byte-equal mask instead of the
+sha256, plus `(n_total, n_overflow)`, the window offset, BOTH Rust leaf routes,
+and error parity.  `lockstep_fuzz` was extended with the flags rather than
+forked, so the 1,000-game leg and these tests cannot drift apart.
+
 The heavy legs are scripts, not tests:
   * `scripts/rustport/lockstep_fuzz.py --start-rule retail --games 1000`
   * `scripts/rustport/even_shift_property.py --games N --d-row 12`
