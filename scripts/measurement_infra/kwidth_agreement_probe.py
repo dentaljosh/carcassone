@@ -86,6 +86,19 @@ sims-per-determinization, since the two arms differ in k and not in sims. Score 
         --level-a 11008 --level-b 22016 --alloc-a k8x1376 --alloc-b k16x1376
 
 Sign convention downstream: positive = the 22016 (wider) pick scores better.
+
+2026-08-01 ADDITIVE FLAGS (`--k-a` / `--k-b` / `--sims-per-det`) — DEFAULT-IDENTICAL
+------------------------------------------------------------------------------------
+The two arms and the sims-per-determinization were module constants (8 / 16 / 1376). They
+are now CLI-settable so the SAME harness can run the 10x rung (k8x1376 = 11008 vs
+k80x1376 = 110080, measurement/classical_search/KWIDTH_110K_PREREG_20260801.md) without a
+fork. **Defaults are unchanged (8 / 16 / 1376), so an unflagged invocation reproduces the
+2026-07-29 run byte-for-byte** — the only manifest strings that vary are the two `role`
+texts and the `question`, which switch to a generic wording ONLY when the flags are set
+off-default. The cost trick's three facts (one det stream, per-world seed `base+100+i`,
+world-order pooling with a constant `min_pooled_visits`) are k_dets-independent, so the
+prefix argument holds for ANY k_a < k_b at a FIXED sims_per_det — and fixing sims_per_det
+is exactly what makes it work, which is a second reason the 10x arm is width-scaled.
 """
 from __future__ import annotations
 
@@ -148,8 +161,11 @@ DEFAULT_RUN_DIR = "/mnt/c/carc-shared/classical_search/move_agreement_k4_b28e9"
 
 # The two arms. sims_per_det is HELD FIXED at the champion's 1376; only the PIMC width
 # moves, which is what makes 22016 the measured-best allocation and not a naive doubling.
+# Overridable by --sims-per-det / --k-a / --k-b (main() rebinds these before the fork);
+# the DEFAULTS are the 2026-07-29 run's arms and must not be changed.
 SIMS_PER_DET = 1376
 K_A, K_B = 8, 16               # champion (11008) vs 2x (22016)
+DEFAULT_ARMS = (8, 16, 1376)   # (k_a, k_b, sims_per_det) — the byte-identity baseline
 
 _G: dict = {}
 
@@ -340,24 +356,40 @@ def _git_rev(path) -> str:
 
 
 def build_manifest(args, n_pool: int, chosen: list) -> dict:
+    default_arms = (K_A, K_B, SIMS_PER_DET) == DEFAULT_ARMS
+    if default_arms:
+        status = ("PRE-REGISTERED — pick phase of the 11008-vs-22016 plateau discriminator "
+                  "(measurement/classical_search/KWIDTH_22016_PREREG_20260729.md).")
+        question = ("Where the champion (k8x1376 = 11008) and 2x at the measured-best "
+                    "allocation (k16x1376 = 22016) DISAGREE, is the deeper pick better? "
+                    "This harness produces the disagreements; oracle_score_pilot.py judges "
+                    "them.")
+        role_b = ("2x budget at the MEASURED-BEST allocation "
+                  "(results.csv curve_k16x1376_22016_vs_deploy_k4x688), NOT the "
+                  "naive k8x2752")
+    else:
+        mult = (K_B * SIMS_PER_DET) / float(K_A * SIMS_PER_DET)
+        status = ("PRE-REGISTERED — pick phase of an oracle-scored budget-disagreement "
+                  "probe at off-default arms (see the run's own pre-registration).")
+        question = (f"Where arm A (k{K_A}x{SIMS_PER_DET} = {K_A * SIMS_PER_DET}) and arm B "
+                    f"(k{K_B}x{SIMS_PER_DET} = {K_B * SIMS_PER_DET}) DISAGREE, is the "
+                    f"deeper pick better? This harness produces the disagreements; "
+                    f"oracle_score_pilot.py judges them.")
+        role_b = (f"{mult:g}x arm A's budget, WIDTH-SCALED at fixed sims_per_det="
+                  f"{SIMS_PER_DET} — the allocation the world-prefix cost trick requires "
+                  f"and the direction the 2026-07-29 22016 arm measured")
     return {
         "schema": SCHEMA,
         "harness": "kwidth_agreement_probe",
-        "status": "PRE-REGISTERED — pick phase of the 11008-vs-22016 plateau discriminator "
-                  "(measurement/classical_search/KWIDTH_22016_PREREG_20260729.md).",
-        "question": "Where the champion (k8x1376 = 11008) and 2x at the measured-best "
-                    "allocation (k16x1376 = 22016) DISAGREE, is the deeper pick better? "
-                    "This harness produces the disagreements; oracle_score_pilot.py judges "
-                    "them.",
+        "status": status,
+        "question": question,
         "arms": {
             "a": {"k_dets": K_A, "sims_per_det": SIMS_PER_DET,
                   "total": K_A * SIMS_PER_DET,
                   "role": "THE CHAMPION OF RECORD (promoted 2026-07-29)"},
             "b": {"k_dets": K_B, "sims_per_det": SIMS_PER_DET,
                   "total": K_B * SIMS_PER_DET,
-                  "role": "2x budget at the MEASURED-BEST allocation "
-                          "(results.csv curve_k16x1376_22016_vs_deploy_k4x688), NOT the "
-                          "naive k8x2752"},
+                  "role": role_b},
         },
         "cost_trick": {
             "claim": "one k16x1376 run yields BOTH picks; the k8 pick is the world-0..7 "
@@ -402,14 +434,37 @@ def main(argv=None) -> int:
     ap.add_argument("--wall-cap", type=int, default=3600, help="per-cell seconds")
     ap.add_argument("--include-solver-region", action="store_true")
     ap.add_argument("--verify-agent-parity", dest="verify_parity", type=int, default=0,
-                    help="run the DEPLOYED _pimc_move at k8 and k16 on the first N cells "
+                    help="run the DEPLOYED _pimc_move at k_a and k_b on the first N cells "
                          "and assert it agrees with the prefix pools. PROVES the cost "
                          "trick. Costs ~1.5x on the verified cells.")
+    ap.add_argument("--k-a", dest="k_a", type=int, default=DEFAULT_ARMS[0],
+                    help="PIMC width of arm A (the prefix arm). DEFAULT 8 = the champion.")
+    ap.add_argument("--k-b", dest="k_b", type=int, default=DEFAULT_ARMS[1],
+                    help="PIMC width of arm B (the wider arm). DEFAULT 16. Must exceed "
+                         "--k-a; arm A is arm B's world-0..k_a-1 PREFIX.")
+    ap.add_argument("--sims-per-det", dest="sims_per_det", type=int,
+                    default=DEFAULT_ARMS[2],
+                    help="simulations per determinization, HELD FIXED across both arms "
+                         "(the prefix identity requires it). DEFAULT 1376.")
     ap.add_argument("--out-root", default="/mnt/c/carc-shared/oracle_22016_20260729")
     ap.add_argument("--out-subdir", default="picks")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
+
+    # Arms are module-level because `_process` runs in FORKED workers, which inherit
+    # module globals at fork time. Rebinding here (before the Pool is created) is
+    # therefore the whole mechanism. Defaults leave them exactly as declared.
+    global K_A, K_B, SIMS_PER_DET
+    if args.k_a < 1 or args.k_b <= args.k_a:
+        print(f"[fatal] need 1 <= --k-a < --k-b, got {args.k_a} / {args.k_b}",
+              file=sys.stderr)
+        return 2
+    if args.sims_per_det < 1:
+        print(f"[fatal] --sims-per-det must be >= 1, got {args.sims_per_det}",
+              file=sys.stderr)
+        return 2
+    K_A, K_B, SIMS_PER_DET = int(args.k_a), int(args.k_b), int(args.sims_per_det)
 
     run_dir = Path(args.run_dir)
     args.records_dir = Path(args.records_dir) if args.records_dir else run_dir / "records"
