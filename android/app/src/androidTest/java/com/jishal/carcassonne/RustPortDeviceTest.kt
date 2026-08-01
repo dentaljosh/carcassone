@@ -151,6 +151,37 @@ class RustPortDeviceTest {
             "first10=${o.opt("first10_mean_s")} last10=${o.opt("last10_mean_s")}")
     }
 
+    /**
+     * Leg 4b: the DECONFOUNDED thermal number — 50 searches of ONE fixed
+     * position. `t40`'s walk-forward curve mixes heat with board fill (per-leaf
+     * cost grows with placed meeples), so it can only bound the throttle from
+     * above; this isolates it.
+     */
+    @Test
+    fun t41_thermalSoakFixedPosition() {
+        val json = probe().callAttr(
+            "soak_fixed_report",
+            *kwargs(
+                mapOf(
+                    "knobs_path" to asset("p7/knobs.json").absolutePath,
+                    "battery_path" to asset("p7/battery.json").absolutePath,
+                    "sims" to 1376, "k_dets" to 8, "threads" to THREADS,
+                    "exp_fma" to true, "tanh_flavor" to TANH_FLAVOR,
+                    "repeats" to 50,
+                ),
+            ),
+        ).toString()
+        emit("soak_fixed_k8x1376", json)
+        val o = JSONObject(json)
+        assertTrue(
+            "the repeats were not identical work (actions ${o.opt("distinct_actions")}), " +
+                "so the timing curve is not a thermal measurement",
+            o.getBoolean("deterministic"),
+        )
+        Log.w(TAG, "SOAK-FIXED throttle_ratio=${o.opt("throttle_ratio")} " +
+            "first10=${o.opt("first10_mean_s")} last10=${o.opt("last10_mean_s")}")
+    }
+
     // ------------------------------------------------------------- plumbing --
 
     private fun bench(name: String, sims: Int, kDets: Int) {

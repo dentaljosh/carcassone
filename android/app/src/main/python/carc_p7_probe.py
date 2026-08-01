@@ -392,6 +392,11 @@ def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
             "i": i,
             "s": round(time.perf_counter() - t0, 4),
             "t_elapsed": round(time.perf_counter() - t_start, 2),
+            # Recorded because the walk-forward curve CONFOUNDS heat with
+            # position: the board fills as it advances and per-leaf cost grows
+            # with placed meeples. `soak_fixed_report` is the deconfounded leg.
+            "phase": ag.phase(),
+            "k_remaining": ag.k_remaining(),
             "temp": _thermal(),
         })
     good = [r["s"] for r in rows if "s" in r]
@@ -408,6 +413,56 @@ def soak_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
         "throttle_ratio": (round((sum(last10) / len(last10)) /
                                  (sum(first10) / len(first10)), 3)
                            if first10 and last10 else None),
+        "curve": rows,
+    })
+
+
+def soak_fixed_report(knobs_path: str, battery_path: str, *, sims: int, k_dets: int,
+                      threads: int, exp_fma: bool, tanh_flavor: str,
+                      repeats: int = 50, seed: int = 777) -> str:
+    """The DECONFOUNDED thermal leg: the SAME position, searched `repeats` times.
+
+    `soak_report` walks a game forward, so its rising curve mixes two causes —
+    the SoC heating up, and the board filling (per-leaf cost grows with placed
+    meeples; the search also sees different branching). Holding the position
+    fixed removes the second, so whatever slope survives here IS thermal.
+
+    The search is deterministic given (position, seed, move_idx), so `move_idx`
+    is pinned too: every repeat is bit-identical work, and the only thing that
+    can vary is how fast the phone does it.
+    """
+    knobs = json.loads(Path(knobs_path).read_text())
+    p = json.loads(Path(battery_path).read_text())[0]
+    ag = _agent(knobs, sims, k_dets, seed, threads, exp_fma, tanh_flavor)
+    ag.start_game_from_seed(str(p["deck_seed"]))
+    for a in p["prefix"]:
+        ag.advance(int(a))
+
+    rows = []
+    actions = set()
+    t_start = time.perf_counter()
+    for i in range(repeats):
+        ag.set_move_idx(0)          # identical work every repeat
+        t0 = time.perf_counter()
+        actions.add(int(ag.choose_action(0)))
+        rows.append({"i": i, "s": round(time.perf_counter() - t0, 4),
+                     "t_elapsed": round(time.perf_counter() - t_start, 2),
+                     "temp": _thermal()})
+    secs = [r["s"] for r in rows]
+    f10, l10 = secs[:10], secs[-10:]
+    return json.dumps({
+        "config": {"sims": sims, "k_dets": k_dets, "total_sims": sims * k_dets,
+                   "threads": threads, "repeats": repeats,
+                   "position": p["name"]},
+        "total_wall_s": round(time.perf_counter() - t_start, 1),
+        # Every repeat must pick the SAME action; more than one means the work
+        # was not actually identical and the timing curve means nothing.
+        "distinct_actions": sorted(actions),
+        "deterministic": len(actions) == 1,
+        "first10_mean_s": round(sum(f10) / len(f10), 4),
+        "last10_mean_s": round(sum(l10) / len(l10), 4),
+        "throttle_ratio": round((sum(l10) / len(l10)) / (sum(f10) / len(f10)), 3),
+        "min_s": round(min(secs), 4), "max_s": round(max(secs), 4),
         "curve": rows,
     })
 

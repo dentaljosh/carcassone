@@ -794,15 +794,24 @@ class _Session:
         """
         from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
 
-        random.seed(self.seed)
-        probe = CarcassonneGameState(
-            players=self.game.players,
-            tile_sets=list(self.game.tile_sets),
-            supplementary_rules=list(self.game.supplementary_rules),
-        )
-        # __init__ pops next_tile off the front, so the pool is next_tile + deck.
-        pool = [probe.next_tile] + list(probe.deck)
-        return [t.description for t in pool if t is not None]
+        # Hermetic: the probe re-seeds and consumes the same draws the real board
+        # already made, so the global stream is put back exactly as found. The
+        # board is built by the time this runs, so nothing downstream is known to
+        # depend on it — but "known" is doing too much work in a bridge that
+        # opted into an extra RNG consumer, and restoring costs one tuple.
+        saved = random.getstate()
+        try:
+            random.seed(self.seed)
+            probe = CarcassonneGameState(
+                players=self.game.players,
+                tile_sets=list(self.game.tile_sets),
+                supplementary_rules=list(self.game.supplementary_rules),
+            )
+            # __init__ pops next_tile off the front, so the pool is next_tile + deck.
+            pool = [probe.next_tile] + list(probe.deck)
+            return [t.description for t in pool if t is not None]
+        finally:
+            random.setstate(saved)
 
     def _assert_mirror(self, where: str) -> None:
         """The mirror must render the SAME board bytes as the Python engine.
