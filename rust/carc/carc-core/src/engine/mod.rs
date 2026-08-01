@@ -189,6 +189,16 @@ impl GameState {
     /// tile is immediately drawn into `next_tile`, exactly as
     /// `CarcassonneGameState.__init__` does (`self.deck.pop(0)`).
     pub fn from_deck(deck: Vec<u16>) -> Self {
+        Self::from_deck_with_start(deck, Coord::new(6, 15))
+    }
+
+    /// As [`Self::from_deck`] but with an explicit `starting_position` — the
+    /// engine's `CarcassonneGameState(starting_position=Coordinate(r, c))`
+    /// constructor argument.  P5's opt-in recentring flag rides on this; the
+    /// EVEN-shift constraint is enforced one level up, in
+    /// [`crate::game::GameConfig`], because it is a property of the *window*
+    /// (banker's rounding in `offset_from_centroid_sums`), not of the engine.
+    pub fn from_deck_with_start(deck: Vec<u16>, starting_position: Coord) -> Self {
         let mut st = GameState {
             board: vec![EMPTY; (BOARD_ROWS * BOARD_COLS) as usize],
             deck,
@@ -205,10 +215,76 @@ impl GameState {
             last_tile_action: None,
             open_positions: BTreeSet::new(),
             placed_coords: BTreeSet::new(),
-            starting_position: Coord::new(6, 15),
+            starting_position,
         };
         st.next_tile = st.pop_deck();
         st
+    }
+
+    /// `game_wrapper.preplace_retail_start_tile` — the retail/tournament fixed
+    /// start tile, pre-placed **in place** on a virgin state.
+    ///
+    /// Byte-for-byte the Python body (merge `5c35106`, worktree `b7d61ab`):
+    ///
+    /// 1. refuse a non-virgin state;
+    /// 2. `pool = [next_tile] + list(deck)`, then remove the **first** entry
+    ///    whose description matches — i.e. the earliest D in draw order, so
+    ///    *which* copy leaves the bag is fixed by the shuffle, not by us;
+    /// 3. place it UNROTATED (`base_tiles[name]`, rotation 0) at
+    ///    `starting_position`, register `placed_coords` and the four in-bounds
+    ///    empty neighbours in `open_positions`;
+    /// 4. `deck = pool; next_tile = deck.pop(0)` — so the pre-placed tile is
+    ///    gone from the bag and 71 remain to be drawn;
+    /// 5. phase TILES, current_player 0, **`last_tile_action = None`** — nobody
+    ///    played it, so no meeple phase and no completion scoring follows.
+    ///
+    /// (Python's `pool` would hold a literal `None` when `next_tile` is `None`;
+    /// the `tile is not None` guard skips it, so dropping it here is
+    /// behaviourally identical — and unreachable anyway on a fresh 72-tile deck.)
+    pub fn preplace_start_tile(&mut self, base: u16, tile_name: &str) -> Result<(), String> {
+        if !self.placed_coords.is_empty() {
+            return Err("preplace_retail_start_tile requires a virgin state".to_string());
+        }
+        let mut pool: Vec<u16> = Vec::with_capacity(self.deck_len() + 1);
+        if let Some(nt) = self.next_tile {
+            pool.push(nt);
+        }
+        pool.extend_from_slice(self.remaining_deck());
+
+        match pool.iter().position(|&t| t == base) {
+            Some(i) => {
+                pool.remove(i);
+            }
+            None => {
+                return Err(format!(
+                    "no {tile_name:?} tile in the deck — the retail start tile is a \
+                     base-game tile; is TileSet.BASE enabled?"
+                ))
+            }
+        }
+
+        let coord = self.starting_position;
+        self.set_tile(coord, tiles::tile_id(base, 0));
+        self.placed_coords.insert((coord.row, coord.col));
+        let (r, c) = (coord.row, coord.col);
+        for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
+            if nr >= 0
+                && nr < BOARD_ROWS
+                && nc >= 0
+                && nc < BOARD_COLS
+                && self.get_tile(nr, nc).is_none()
+            {
+                self.open_positions.insert((nr, nc));
+            }
+        }
+
+        self.deck = pool;
+        self.deck_head = 0;
+        self.next_tile = self.pop_deck();
+        self.phase = Phase::Tiles;
+        self.current_player = 0;
+        self.last_tile_action = None;
+        Ok(())
     }
 
     fn pop_deck(&mut self) -> Option<u16> {

@@ -6,12 +6,52 @@
 
 use carc_core::compat;
 use carc_core::fair;
-use carc_core::game::{deck_from_descriptions, deck_from_seed, Game};
+use carc_core::game::{deck_from_descriptions, deck_from_seed, Game, GameConfig};
 use carc_core::leaf;
 use carc_core::search;
 use carc_core::tiles;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
+
+// --------------------------------------------------------------------------
+// P5: the rules-fix flags.  Every knob is OPT-IN; omitting all of them gives
+// the byte-compatible walled engine of record (`start_rule` missing ⇒ engine,
+// start (6, 15), no pre-placed tile).
+// --------------------------------------------------------------------------
+
+/// Resolve + validate the P5 setup flags, surfacing every refusal as a
+/// `ValueError` (unknown `start_rule`, odd shift, off-board start).
+fn game_cfg(
+    start_rule: Option<&str>,
+    start_row: Option<i32>,
+    start_col: Option<i32>,
+    window_size: i32,
+) -> PyResult<GameConfig> {
+    GameConfig::resolve(start_rule, start_row, start_col, window_size)
+        .map_err(pyo3::exceptions::PyValueError::new_err)
+}
+
+/// The validated flags as a dict — the unit under test for the bridge's
+/// `start_rule` semantics ("retail"/"engine"/missing ⇒ engine/unknown ⇒ raise)
+/// and for the EVEN-shift assertion, without building a deck.
+#[pyfunction]
+#[pyo3(signature = (start_rule=None, start_row=None, start_col=None, window_size=25))]
+fn resolve_game_config<'py>(
+    py: Python<'py>,
+    start_rule: Option<&str>,
+    start_row: Option<i32>,
+    start_col: Option<i32>,
+    window_size: i32,
+) -> PyResult<Bound<'py, PyDict>> {
+    let cfg = game_cfg(start_rule, start_row, start_col, window_size)?;
+    let d = PyDict::new(py);
+    d.set_item("start_rule", cfg.start_rule.value())?;
+    d.set_item("fixed_start_tile", cfg.start_rule.fixed_start_tile())?;
+    d.set_item("start_row", cfg.start_row)?;
+    d.set_item("start_col", cfg.start_col)?;
+    d.set_item("window_size", cfg.window_size)?;
+    Ok(d)
+}
 
 // --------------------------------------------------------------------------
 // P2: the leaf config
@@ -130,22 +170,85 @@ impl PyMirrorState {
     /// `deck_seed` is a **decimal string** so arbitrary-precision CPython ints
     /// round-trip (see the G0 mt19937 gate).
     #[staticmethod]
-    #[pyo3(signature = (deck_seed, window_size=25))]
-    fn from_seed(deck_seed: &str, window_size: i32) -> PyResult<Self> {
+    #[pyo3(signature = (deck_seed, window_size=25, start_rule=None, start_row=None, start_col=None))]
+    fn from_seed(
+        deck_seed: &str,
+        window_size: i32,
+        start_rule: Option<&str>,
+        start_row: Option<i32>,
+        start_col: Option<i32>,
+    ) -> PyResult<Self> {
+        let cfg = game_cfg(start_rule, start_row, start_col, window_size)?;
         Ok(PyMirrorState {
-            game: Game::from_deck_with_window(deck_from_seed(deck_seed), window_size),
+            game: Game::from_deck_with_config(deck_from_seed(deck_seed), cfg)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?,
         })
     }
 
     /// Build from an explicit deck of tile descriptions, in draw order.
     #[staticmethod]
-    #[pyo3(signature = (descriptions, window_size=25))]
-    fn from_deck(descriptions: Vec<String>, window_size: i32) -> PyResult<Self> {
+    #[pyo3(signature = (descriptions, window_size=25, start_rule=None, start_row=None, start_col=None))]
+    fn from_deck(
+        descriptions: Vec<String>,
+        window_size: i32,
+        start_rule: Option<&str>,
+        start_row: Option<i32>,
+        start_col: Option<i32>,
+    ) -> PyResult<Self> {
         let deck = deck_from_descriptions(&descriptions)
             .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        let cfg = game_cfg(start_rule, start_row, start_col, window_size)?;
         Ok(PyMirrorState {
-            game: Game::from_deck_with_window(deck, window_size),
+            game: Game::from_deck_with_config(deck, cfg)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?,
         })
+    }
+
+    // --- P5: what setup flags is this mirror running under? ---------------
+
+    /// `"engine"` | `"retail"` — the resolved start-tile convention.
+    fn start_rule(&self) -> &'static str {
+        self.game.cfg.start_rule.value()
+    }
+
+    /// `(row, col)` of `CarcassonneGameState.starting_position`.
+    fn starting_position(&self) -> (i32, i32) {
+        let sp = self.game.starting_position();
+        (sp.row, sp.col)
+    }
+
+    /// `state.next_tile.description` — the drawn-but-unplayed tile.
+    fn next_tile(&self) -> Option<&'static str> {
+        self.game
+            .state
+            .next_tile
+            .map(|b| tiles::tile(tiles::tile_id(b, 0)).description)
+    }
+
+    /// `Board.total_tiles` — `len(deck) + 1 + len(placed_coords)`.
+    fn total_tiles(&self) -> i64 {
+        self.game.total_tiles
+    }
+
+    /// `Board.tile_count` — the incremental centroid tile counter.
+    fn tile_count(&self) -> i64 {
+        self.game.tile_count
+    }
+
+    /// `sorted(state.placed_coords)` with each tile's `(description, rotation)`.
+    /// The even-shift property leg compares these under the row transform.
+    fn placed_tiles(&self) -> Vec<(i32, i32, String, u8)> {
+        self.game
+            .state
+            .placed_coords
+            .iter()
+            .filter_map(|&(r, c)| {
+                self.game.state.get_tile(r, c).map(|tid| {
+                    let t = tiles::tile(tid);
+                    (r, c, t.description.to_string(), t.rot)
+                })
+            })
+            .collect()
     }
 
     /// Apply one flat action index.
@@ -832,7 +935,10 @@ fn parse_chance_drop(s: &str) -> PyResult<fair::ChanceDrop> {
 struct PyFairAgent {
     agent: fair::FairAgent,
     game: Option<Game>,
-    window_size: i32,
+    /// P5 setup flags for the games this agent starts.  Default = the walled
+    /// engine of record; `start_rule=None` means "engine", exactly as a save
+    /// payload with no `start_rule` field does on the bridge.
+    game_cfg: GameConfig,
 }
 
 #[pymethods]
@@ -850,6 +956,9 @@ impl PyFairAgent {
         chance_drop = "type",
         threads = 1,
         window_size = 25,
+        start_rule = None,
+        start_row = None,
+        start_col = None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -864,7 +973,11 @@ impl PyFairAgent {
         chance_drop: &str,
         threads: usize,
         window_size: i32,
+        start_rule: Option<&str>,
+        start_row: Option<i32>,
+        start_col: Option<i32>,
     ) -> PyResult<Self> {
+        let gcfg = game_cfg(start_rule, start_row, start_col, window_size)?;
         if k_dets < 1 {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(
                 "k_dets must be >= 1, got {k_dets}"
@@ -897,17 +1010,18 @@ impl PyFairAgent {
         Ok(PyFairAgent {
             agent: fair::FairAgent::new(cfg),
             game: None,
-            window_size,
+            game_cfg: gcfg,
         })
     }
 
     /// `random.seed(deck_seed); Game().get_init_board()` — the farms/tests path.
-    fn start_game_from_seed(&mut self, deck_seed: &str) {
-        self.game = Some(Game::from_deck_with_window(
-            deck_from_seed(deck_seed),
-            self.window_size,
-        ));
+    fn start_game_from_seed(&mut self, deck_seed: &str) -> PyResult<()> {
+        self.game = Some(
+            Game::from_deck_with_config(deck_from_seed(deck_seed), self.game_cfg)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?,
+        );
         self.reset();
+        Ok(())
     }
 
     /// An explicit deck of tile descriptions in draw order — the phone path
@@ -915,9 +1029,17 @@ impl PyFairAgent {
     fn start_game_from_deck(&mut self, descriptions: Vec<String>) -> PyResult<()> {
         let deck = deck_from_descriptions(&descriptions)
             .map_err(pyo3::exceptions::PyValueError::new_err)?;
-        self.game = Some(Game::from_deck_with_window(deck, self.window_size));
+        self.game = Some(
+            Game::from_deck_with_config(deck, self.game_cfg)
+                .map_err(pyo3::exceptions::PyValueError::new_err)?,
+        );
         self.reset();
         Ok(())
+    }
+
+    /// `"engine"` | `"retail"` — the resolved start-tile convention.
+    fn start_rule(&self) -> &'static str {
+        self.game_cfg.start_rule.value()
     }
 
     /// Apply one action — **every** applied action, BOTH seats.
@@ -1209,6 +1331,10 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySearchConfig>()?;
     // P4
     m.add_class::<PyFairAgent>()?;
+    m.add_function(wrap_pyfunction!(resolve_game_config, m)?)?;
+    m.add("RETAIL_START_TILE", carc_core::game::RETAIL_START_TILE)?;
+    m.add("DEFAULT_START_ROW", carc_core::game::DEFAULT_START_ROW)?;
+    m.add("DEFAULT_START_COL", carc_core::game::DEFAULT_START_COL)?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;

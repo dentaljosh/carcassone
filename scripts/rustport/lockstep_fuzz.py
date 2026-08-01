@@ -58,9 +58,33 @@ Deck seeds come from the throwaway range **97_000_000_000 + i**, which is NOT a
 registered claim band (`governance/BAND_REGISTRY.csv`) — these games are a
 correctness fuzz, never an estimate.
 
+**P5 flags (2026-08-01).**  `--start-rule` / `--start-row` / `--start-col` drive
+the SAME lockstep through the opt-in rules flags, so the fuzz is reusable as the
+G5 flags-on leg instead of being forked:
+
+    --start-rule engine   the vendored default: player 0 draws a random tile
+                          which is auto-placed (`Game(fixed_start_tile=False)`).
+    --start-rule retail   the retail/tournament fixed "D" start tile, pre-placed
+                          before anyone draws (`Game(fixed_start_tile=True)` /
+                          `MirrorState.from_seed(..., start_rule="retail")`).
+    --start-row / --start-col   move `starting_position` off the engine's
+                          (6, 15).  The shift must be EVEN on both axes (see
+                          `tests/test_start_tile_grid_bound.py`); the Rust config
+                          refuses an odd one and this driver refuses it too.
+                          `Game.get_init_board()` hard-codes the engine start, so
+                          a shifted Python board is built the way the worktree
+                          test does: construct the state with an explicit
+                          `starting_position`, optionally pre-place, then
+                          `Board.from_state`.
+
+Defaults are unchanged (engine rule, start (6, 15)) — the G1 invocation and its
+recorded verdict reproduce byte-for-byte.
+
 Usage:
     .venv/bin/python scripts/rustport/lockstep_fuzz.py --games 10000 \
         --workers 16 --wall-frac 0.2 --tag laptop
+    .venv/bin/python scripts/rustport/lockstep_fuzz.py --games 1000 \
+        --workers 16 --start-rule retail --tag p5_retail
 """
 
 from __future__ import annotations
@@ -101,6 +125,84 @@ OUTDIR = REPO / "measurement" / "rustport_p1"
 FUZZ_SEED_BASE = 97_000_000_000   # throwaway range; NOT a registered band
 BOARD_ROWS = BOARD_COLS = 35      # engine grid (walled)
 
+# The engine's `CarcassonneGameState.starting_position` — the P5 flags are
+# expressed as (even) shifts away from it.
+DEFAULT_START_ROW, DEFAULT_START_COL = 6, 15
+START_RULES = ("engine", "retail")
+
+
+def check_flags(start_rule: str, start_row: int, start_col: int) -> None:
+    """Refuse an unknown rule or an ODD shift — the same two refusals the Rust
+    `GameConfig::resolve` makes, applied before any game is launched."""
+    if start_rule not in START_RULES:
+        raise ValueError(
+            f"unknown start_rule {start_rule!r}; expected one of {START_RULES}")
+    for axis, v, base in (("start_row", start_row, DEFAULT_START_ROW),
+                          ("start_col", start_col, DEFAULT_START_COL)):
+        if (v - base) % 2 != 0:
+            raise ValueError(
+                f"{axis} shift must be EVEN: {v} is {v - base} from the engine "
+                f"default {base}; banker's rounding in "
+                "board_repr.offset_from_centroid_sums is equivariant under even "
+                "translations only")
+        if not 0 <= v < (BOARD_ROWS if axis == "start_row" else BOARD_COLS):
+            raise ValueError(f"{axis} {v} is off the 35x35 board")
+
+
+def object_engine_refusal(state) -> str | None:
+    """Does the Python OBJECT engine refuse to final-score this position?
+
+    `PointsCollector.count_final_scores` is the route the Rust
+    `engine::GameState::flat_base_score` mirrors (clone + count).  It indexes
+    `board[r + 1]` with no bounds check, so a tile in the LAST ROW raises
+    `IndexError` — while `flat_leaf.flat_base_score`, the flat-decomposition
+    route, scores the same position without complaint.  Returns the refusal as
+    `"Class: message"`, or `None` if it scored.
+    """
+    import copy
+
+    from wingedsheep.carcassonne.utils.points_collector import PointsCollector
+    try:
+        PointsCollector.count_final_scores(copy.deepcopy(state))
+        return None
+    except BaseException as exc:                       # noqa: BLE001
+        return f"{type(exc).__name__}: {exc}"
+
+
+def init_pair(seed: int, start_rule: str, start_row: int, start_col: int):
+    """`(Game, Board, MirrorState)` for one deck seed under the P5 flags.
+
+    The deck comes from `random.seed(deck_seed)` in BOTH branches — the
+    `root_replay` contract — so a reproducer replays through the normal tooling
+    whatever the flags were.
+    """
+    fixed = start_rule == "retail"
+    game = Game(enable_legal_moves_cache=False, fixed_start_tile=fixed)
+    random.seed(int(seed))
+    if (start_row, start_col) == (DEFAULT_START_ROW, DEFAULT_START_COL):
+        board = game.get_init_board()
+    else:
+        # `Game.get_init_board` hard-codes the engine's starting_position, so the
+        # shifted board is built exactly as tests/test_start_tile_grid_bound.py
+        # does: explicit starting_position, optional pre-place, Board.from_state.
+        from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
+        from wingedsheep.carcassonne.objects.coordinate import Coordinate
+
+        state = CarcassonneGameState(
+            players=game.players,
+            tile_sets=list(game.tile_sets),
+            supplementary_rules=list(game.supplementary_rules),
+            board_size=(BOARD_ROWS, BOARD_COLS),
+            starting_position=Coordinate(start_row, start_col),
+        )
+        if fixed:
+            gw.preplace_retail_start_tile(state)
+        total_tiles = len(state.deck) + 1 + len(state.placed_coords)
+        board = gw.Board.from_state(state, total_tiles, game.window_size)
+    ms = carc_rs.MirrorState.from_seed(
+        str(seed), start_rule=start_rule, start_row=start_row, start_col=start_col)
+    return game, board, ms
+
 
 # ---------------------------------------------------------------------------
 def _tile_coord(idx: int, off) -> tuple[int, int]:
@@ -129,9 +231,13 @@ def fuzz_game(job: dict) -> dict:
     comes back as a result record so the pool cannot die on a divergence."""
     seed, pseed, mode = job["deck_seed"], job["policy_seed"], job["mode"]
     max_plies = job["max_plies"]
+    start_rule = job.get("start_rule", "engine")
+    start_row = job.get("start_row", DEFAULT_START_ROW)
+    start_col = job.get("start_col", DEFAULT_START_COL)
 
     res = {
         "deck_seed": seed, "policy_seed": pseed, "mode": mode,
+        "start_rule": start_rule, "start_row": start_row, "start_col": start_col,
         "plies": 0, "compared": 0, "status": "ok",
         "terminal_scores": None,
         "window_overflow": None,      # {"ply":..., "n_total":...} if it fired
@@ -151,6 +257,8 @@ def fuzz_game(job: dict) -> dict:
         res["status"] = "MISMATCH"
         rec = {"kind": kind, "ply": ply, "python": py, "rust": rs,
                "deck_seed": seed, "policy_seed": pseed, "mode": mode,
+               "start_rule": start_rule, "start_row": start_row,
+               "start_col": start_col,
                "actions": list(actions)}
         if extra:
             rec.update(extra)
@@ -158,12 +266,22 @@ def fuzz_game(job: dict) -> dict:
         res["actions"] = list(actions)
 
     try:
-        random.seed(int(seed))                       # deck shuffle, per root_replay
-        game = Game(enable_legal_moves_cache=False)  # cache OFF: every ply audits
-        board = game.get_init_board()
-        ms = carc_rs.MirrorState.from_seed(str(seed))
+        # cache OFF: every ply audits.  Deck via random.seed(deck_seed).
+        game, board, ms = init_pair(seed, start_rule, start_row, start_col)
         gw.drain_window_audit()
         rng = random.Random(pseed)
+
+        # Setup identity, once — the flags land here and nowhere else.
+        py_setup = [int(board.total_tiles), int(board.tile_count),
+                    [board.state.starting_position.row,
+                     board.state.starting_position.column]]
+        rs_setup = [ms.total_tiles(), ms.tile_count(), list(ms.starting_position())]
+        if py_setup != rs_setup:
+            fail("setup", 0, py_setup, rs_setup)
+            return res
+        if ms.start_rule() != start_rule:
+            fail("start_rule", 0, start_rule, ms.start_rule())
+            return res
 
         while True:
             st = board.state
@@ -183,18 +301,68 @@ def fuzz_game(job: dict) -> dict:
                 fail("scores", ply, py_scores, rs_scores)
                 return res
 
-            # 5. flat_base_score, both POVs
+            # 5. flat_base_score, both POVs, on BOTH Rust routes:
+            #    `flat_base_score_decomp` is the flat decomposition (what the
+            #    Python `flat_leaf.flat_base_score` on the left-hand side is),
+            #    `flat_base_score` is the engine's own clone +
+            #    `count_final_scores`.  The two Rust routes agreeing with the one
+            #    Python number is a free cross-check of the decomposition.
+            #
+            #    ERROR PARITY on the engine route (found 2026-08-01 by the P5
+            #    start-row probe): `PointsCollector.count_final_scores` walks
+            #    `board[r + 1]` unguarded, so a tile in the LAST ROW makes the
+            #    OBJECT engine raise `IndexError` — the row twin of the known
+            #    col-34 fatal, and a face the flat leaf does NOT have (it scores
+            #    the position fine).  Unreachable from start row 6 (it needs a
+            #    28-row span); reachable once `--start-row` moves the board down.
+            #    Rust reproduces the refusal; a matched pair is PASS-with-flag.
+            engine_route_refusal = None
             for p in (0, 1):
-                pb, rb = int(flat_base_score(st, p)), int(ms.flat_base_score(p))
+                pb = int(flat_base_score(st, p))
+                rd = int(ms.flat_base_score_decomp(p))
+                if pb != rd:
+                    fail(f"flat_base_score_decomp[p{p}]", ply, pb, rd)
+                    return res
+                try:
+                    rb = int(ms.flat_base_score(p))
+                except BaseException as exc:              # noqa: BLE001 — PanicException
+                    py_err = object_engine_refusal(st)
+                    py_cls = None if py_err is None else py_err.split(":", 1)[0]
+                    if py_cls is None or not str(exc).startswith(py_cls + ":"):
+                        fail("engine_route_error_parity", ply,
+                             py_err or "<python object engine did not raise>",
+                             f"{type(exc).__name__}: {exc}")
+                        return res
+                    engine_route_refusal = {
+                        "ply": ply, "error_class": py_cls, "python_error": py_err,
+                        "rust_error": f"{type(exc).__name__}: {exc}",
+                        "route": "count_final_scores",
+                    }
+                    break
                 if pb != rb:
                     fail(f"flat_base_score[p{p}]", ply, pb, rb)
                     return res
+            if engine_route_refusal is not None:
+                res["status"] = "engine_error"
+                res["engine_error"] = engine_route_refusal
+                res["actions"] = list(actions)
+                break
 
             # 6. scalars
             py_sc = [st.current_player, st.phase.value, len(st.deck), bool(terminal)]
             rs_sc = [ms.current_player(), ms.phase(), ms.deck_len(), ms.is_terminal()]
             if py_sc != rs_sc:
                 fail("state_scalars", ply, py_sc, rs_sc)
+                return res
+
+            # 7. the centred window itself.  Implied by the mask on the engine
+            # rule (placements are window-relative), but the retail flag seeds
+            # the centroid from a PRE-PLACED tile, so the offset is a first-class
+            # observable under P5 and is compared directly.
+            py_off = [board.offset.origin_row, board.offset.origin_col, board.offset.size]
+            rs_off = list(ms.window_offset())
+            if py_off != rs_off:
+                fail("window_offset", ply, py_off, rs_off)
                 return res
 
             res["compared"] += 1
@@ -354,6 +522,9 @@ def build_jobs(args) -> list[dict]:
             "policy_seed": args.policy_base + i,
             "mode": mode,
             "max_plies": args.max_plies,
+            "start_rule": args.start_rule,
+            "start_row": args.start_row,
+            "start_col": args.start_col,
         })
     return jobs
 
@@ -371,7 +542,15 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--jsonl", default=None)
     ap.add_argument("--repro-dir", default=None)
+    # --- P5 flags (all default to the byte-compatible walled engine) ---
+    ap.add_argument("--start-rule", choices=START_RULES, default="engine",
+                    help="start-tile convention (default: the vendored engine rule)")
+    ap.add_argument("--start-row", type=int, default=DEFAULT_START_ROW,
+                    help="starting_position row; the shift from 6 must be EVEN")
+    ap.add_argument("--start-col", type=int, default=DEFAULT_START_COL,
+                    help="starting_position column; the shift from 15 must be EVEN")
     args = ap.parse_args(argv)
+    check_flags(args.start_rule, args.start_row, args.start_col)
 
     jobs = build_jobs(args)
     OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -474,10 +653,20 @@ def main(argv=None) -> int:
         "deck_seed_band_note": ("throwaway fuzz-only range 97e9+i — NOT a registered "
                                 "claim band (governance/BAND_REGISTRY.csv); these games "
                                 "are a correctness fuzz, never an estimate"),
+        "flags": {"start_rule": args.start_rule, "start_row": args.start_row,
+                  "start_col": args.start_col,
+                  "default_semantics": (args.start_rule == "engine"
+                                        and args.start_row == DEFAULT_START_ROW
+                                        and args.start_col == DEFAULT_START_COL)},
         "per_ply_checks": ["string_representation(bytes)", "legal_mask(bytes)",
                            "mask_counts(n_total,n_overflow)", "scores",
                            "flat_base_score[p0]", "flat_base_score[p1]",
-                           "state_scalars", "window_overflow_error_parity"],
+                           "flat_base_score_decomp[p0]", "flat_base_score_decomp[p1]",
+                           "state_scalars", "window_offset",
+                           "window_overflow_error_parity",
+                           "count_final_scores_error_parity"],
+        "setup_checks": ["total_tiles", "tile_count", "starting_position",
+                         "start_rule"],
         "per_mode": by_mode,
         "total_games": len(results),
         "total_plies": total_plies,

@@ -55,6 +55,147 @@ pub fn deck_from_descriptions(names: &[String]) -> Result<Vec<u16>, String> {
         .collect()
 }
 
+// ---------------------------------------------------------------------------
+// P5: the rules-fix FLAGS.  Nothing here is enabled by default anywhere.
+// ---------------------------------------------------------------------------
+
+/// The retail/tournament "D" start tile: a city on one edge with a road running
+/// straight through.  `game_wrapper.RETAIL_START_TILE`.
+pub const RETAIL_START_TILE: &str = "city_top_straight_road";
+
+/// The vendored engine's `CarcassonneGameState.starting_position` — row 6 of a
+/// 35-row grid (6 rows of headroom above, 28 below: the "invisible border").
+pub const DEFAULT_START_ROW: i32 = 6;
+pub const DEFAULT_START_COL: i32 = 15;
+
+/// The start-tile convention, mirroring the Android bridge's `start_rule`.
+///
+/// * `"engine"` — the vendored engine's native rule: player 0 DRAWS a random
+///   tile which is auto-placed at `starting_position`, costing them a turn.
+///   Every training run, eval and solver measurement to date used this; it is
+///   what a **missing** `start_rule` means and it stays the default everywhere.
+/// * `"retail"` — a fixed D tile is pre-placed before anyone draws.
+///
+/// Anything else is an error, never a silent default: picking a rule for the
+/// caller would decode a DIFFERENT game from the same `(deck_seed, actions)`.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum StartRule {
+    Engine,
+    Retail,
+}
+
+impl StartRule {
+    /// `None` ⇒ `Engine` (the legacy meaning of an absent field in a save
+    /// payload); `"engine"`/`"retail"` ⇒ themselves; anything else ⇒ `Err`.
+    pub fn parse(s: Option<&str>) -> Result<Self, String> {
+        match s {
+            None | Some("engine") => Ok(StartRule::Engine),
+            Some("retail") => Ok(StartRule::Retail),
+            Some(other) => Err(format!(
+                "unknown start_rule {other:?}; expected 'engine' or 'retail'"
+            )),
+        }
+    }
+
+    pub const fn value(self) -> &'static str {
+        match self {
+            StartRule::Engine => "engine",
+            StartRule::Retail => "retail",
+        }
+    }
+
+    pub const fn fixed_start_tile(self) -> bool {
+        matches!(self, StartRule::Retail)
+    }
+}
+
+/// Game-setup configuration.  `GameConfig::default()` is byte-compatible with
+/// the walled engine of record: engine start rule, start (6, 15), window 25.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct GameConfig {
+    pub window_size: i32,
+    pub start_rule: StartRule,
+    pub start_row: i32,
+    pub start_col: i32,
+}
+
+impl Default for GameConfig {
+    fn default() -> Self {
+        GameConfig {
+            window_size: DEFAULT_WINDOW_SIZE,
+            start_rule: StartRule::Engine,
+            start_row: DEFAULT_START_ROW,
+            start_col: DEFAULT_START_COL,
+        }
+    }
+}
+
+impl GameConfig {
+    /// Validate and resolve the three opt-in knobs.  `None` everywhere ⇒
+    /// [`GameConfig::default`].
+    ///
+    /// **The shift must be EVEN on both axes.**
+    /// `board_repr.offset_from_centroid_sums` centres the window with
+    /// `round(sum / count)`, and CPython's banker's rounding is equivariant
+    /// under even translations only (`round(6.5) == 6` but `round(17.5) == 18`).
+    /// An ODD shift silently slips the window by one cell on ~half of all
+    /// positions, which would invalidate every trained checkpoint's input
+    /// distribution — so it is refused at construction rather than measured
+    /// later.  (`tests/test_start_tile_grid_bound.py`,
+    /// `test_odd_shift_breaks_the_window_offset`.)
+    pub fn resolve(
+        start_rule: Option<&str>,
+        start_row: Option<i32>,
+        start_col: Option<i32>,
+        window_size: i32,
+    ) -> Result<Self, String> {
+        let rule = StartRule::parse(start_rule)?;
+        let row = start_row.unwrap_or(DEFAULT_START_ROW);
+        let col = start_col.unwrap_or(DEFAULT_START_COL);
+
+        for (axis, v, base, extent) in [
+            ("start_row", row, DEFAULT_START_ROW, crate::engine::BOARD_ROWS),
+            ("start_col", col, DEFAULT_START_COL, crate::engine::BOARD_COLS),
+        ] {
+            let shift = v - base;
+            if shift % 2 != 0 {
+                return Err(format!(
+                    "{axis} shift must be EVEN: {v} is {shift} from the engine default \
+                     {base}. board_repr.offset_from_centroid_sums centres the window with \
+                     banker's-rounded round(sum/count), which is equivariant under even \
+                     translations only; an odd shift silently moves the window by one cell \
+                     on ~half of all positions."
+                ));
+            }
+            if v < 0 || v >= extent {
+                return Err(format!("{axis} {v} is outside the 0..{extent} board"));
+            }
+        }
+        if window_size < 1 {
+            return Err(format!("window_size must be >= 1, got {window_size}"));
+        }
+        Ok(GameConfig {
+            window_size,
+            start_rule: rule,
+            start_row: row,
+            start_col: col,
+        })
+    }
+
+    pub fn starting_position(&self) -> Coord {
+        Coord::new(self.start_row, self.start_col)
+    }
+}
+
+/// Base index of [`RETAIL_START_TILE`] in the generated registry.
+pub fn retail_start_base() -> Result<u16, String> {
+    tiles::generated::BASE_TILES
+        .iter()
+        .position(|t| t.description == RETAIL_START_TILE)
+        .map(|i| i as u16)
+        .ok_or_else(|| format!("the base deck has no {RETAIL_START_TILE:?} tile"))
+}
+
 #[derive(Clone)]
 pub struct Game {
     pub state: GameState,
@@ -64,6 +205,10 @@ pub struct Game {
     pub sum_col: i64,
     pub tile_count: i64,
     pub offset: WindowOffset,
+    /// The setup flags this game was built under.  Carried so the mirror can
+    /// report them back and so a clone (search / determinization) can never
+    /// silently change convention mid-game.
+    pub cfg: GameConfig,
 }
 
 #[derive(Debug)]
@@ -81,23 +226,67 @@ impl Game {
     }
 
     pub fn from_deck_with_window(deck: Vec<u16>, window_size: i32) -> Self {
-        let state = GameState::from_deck(deck);
-        let total_tiles = state.deck_len() as i64 + 1;
-        let offset =
-            offset_from_centroid_sums(state.starting_position, 0, 0, 0, window_size);
-        Game {
-            state,
-            window_size,
-            total_tiles,
-            sum_row: 0,
-            sum_col: 0,
-            tile_count: 0,
-            offset,
+        Self::from_deck_with_config(
+            deck,
+            GameConfig {
+                window_size,
+                ..GameConfig::default()
+            },
+        )
+        .expect("the default (engine) start rule cannot fail")
+    }
+
+    /// `Game(fixed_start_tile=..., window_size=...).get_init_board()`.
+    ///
+    /// Mirrors `game_wrapper.Game.get_init_board` in order: build the virgin
+    /// state, optionally pre-place the retail start tile, then
+    /// `total_tiles = len(deck) + 1 + len(placed_coords)` and
+    /// `Board.from_state`, whose centroid seed is a one-time scan of
+    /// `placed_coords` (`board_repr.centroid_sums`).
+    pub fn from_deck_with_config(deck: Vec<u16>, cfg: GameConfig) -> Result<Self, String> {
+        let mut state = GameState::from_deck_with_start(deck, cfg.starting_position());
+        if cfg.start_rule.fixed_start_tile() {
+            let base = retail_start_base()?;
+            state.preplace_start_tile(base, RETAIL_START_TILE)?;
         }
+        // `centroid_sums(state)` — a full scan of placed_coords (empty under the
+        // engine rule, exactly the pre-placed start tile under retail).
+        let mut sum_row = 0i64;
+        let mut sum_col = 0i64;
+        for &(r, c) in &state.placed_coords {
+            sum_row += r as i64;
+            sum_col += c as i64;
+        }
+        let tile_count = state.placed_coords.len() as i64;
+        let total_tiles = state.deck_len() as i64 + 1 + tile_count;
+        let offset = offset_from_centroid_sums(
+            state.starting_position,
+            sum_row,
+            sum_col,
+            tile_count,
+            cfg.window_size,
+        );
+        Ok(Game {
+            state,
+            window_size: cfg.window_size,
+            total_tiles,
+            sum_row,
+            sum_col,
+            tile_count,
+            offset,
+            cfg,
+        })
     }
 
     pub fn from_seed(deck_seed_decimal: &str) -> Self {
         Self::from_deck(deck_from_seed(deck_seed_decimal))
+    }
+
+    pub fn from_seed_with_config(
+        deck_seed_decimal: &str,
+        cfg: GameConfig,
+    ) -> Result<Self, String> {
+        Self::from_deck_with_config(deck_from_seed(deck_seed_decimal), cfg)
     }
 
     /// `Game.get_next_state` — decode against the *current* offset and phase,
@@ -239,6 +428,142 @@ mod tests {
         let g = Game::from_seed("1");
         let legal = g.legal_actions();
         assert_eq!(legal.len(), 1, "the empty board offers exactly one placement");
+    }
+
+    // --- P5 flags ---------------------------------------------------------
+
+    fn retail_cfg() -> GameConfig {
+        GameConfig {
+            start_rule: StartRule::Retail,
+            ..GameConfig::default()
+        }
+    }
+
+    #[test]
+    fn default_config_is_the_walled_engine_of_record() {
+        let d = GameConfig::default();
+        assert_eq!(d.start_rule, StartRule::Engine);
+        assert_eq!((d.start_row, d.start_col), (6, 15));
+        assert_eq!(d.window_size, 25);
+        assert_eq!(GameConfig::resolve(None, None, None, 25).unwrap(), d);
+        // and it is byte-identical to the pre-P5 constructor
+        let a = Game::from_seed("20260730");
+        let b = Game::from_seed_with_config("20260730", d).unwrap();
+        assert_eq!(a.string_repr(), b.string_repr());
+        assert_eq!(a.total_tiles, b.total_tiles);
+        assert_eq!(a.legal_mask_sha256(), b.legal_mask_sha256());
+    }
+
+    #[test]
+    fn start_rule_parsing_mirrors_the_bridge() {
+        assert_eq!(StartRule::parse(None).unwrap(), StartRule::Engine);
+        assert_eq!(StartRule::parse(Some("engine")).unwrap(), StartRule::Engine);
+        assert_eq!(StartRule::parse(Some("retail")).unwrap(), StartRule::Retail);
+        for bad in ["RETAIL", "Engine", "", "tournament"] {
+            assert!(StartRule::parse(Some(bad)).is_err(), "{bad:?} must raise");
+        }
+    }
+
+    #[test]
+    fn odd_shifts_are_refused_even_shifts_are_not() {
+        assert!(GameConfig::resolve(None, Some(18), None, 25).is_ok());
+        assert!(GameConfig::resolve(None, Some(6), None, 25).is_ok());
+        assert!(GameConfig::resolve(None, Some(17), None, 25).is_err());
+        assert!(GameConfig::resolve(None, Some(5), None, 25).is_err());
+        assert!(GameConfig::resolve(None, None, Some(16), 25).is_err());
+        assert!(GameConfig::resolve(None, None, Some(17), 25).is_ok());
+        assert!(GameConfig::resolve(None, Some(-2), None, 25).is_err()); // off-board
+        assert!(GameConfig::resolve(None, Some(36), None, 25).is_err());
+    }
+
+    #[test]
+    fn retail_start_places_the_unrotated_d_tile() {
+        let g = Game::from_seed_with_config("20260730", retail_cfg()).unwrap();
+        let sp = g.state.starting_position;
+        let tid = g.state.get_tile(sp.row, sp.col).expect("start tile on board");
+        let t = tiles::tile(tid);
+        assert_eq!(t.description, RETAIL_START_TILE);
+        assert_eq!(t.rot, 0, "the retail D tile is placed UNROTATED");
+        // nobody played it
+        assert_eq!(g.state.current_player, 0);
+        assert!(g.state.last_tile_action.is_none());
+        assert_eq!(g.state.meeples, [7, 7]);
+        assert!(g.state.placed_meeples[0].is_empty() && g.state.placed_meeples[1].is_empty());
+        // bookkeeping
+        assert_eq!(g.state.placed_coords.len(), 1);
+        assert!(!g.state.open_positions.contains(&(sp.row, sp.col)));
+        assert_eq!(g.state.open_positions.len(), 4);
+        assert_eq!(g.tile_count, 1);
+        assert_eq!(g.total_tiles, 72);
+        assert_eq!(g.state.deck_len(), 70, "70 undrawn + 1 in hand = 71");
+    }
+
+    #[test]
+    fn retail_removes_exactly_one_d_from_the_bag() {
+        let g = Game::from_seed_with_config("20260730", retail_cfg()).unwrap();
+        let base = retail_start_base().unwrap();
+        let mut pool: Vec<u16> = vec![g.state.next_tile.unwrap()];
+        pool.extend_from_slice(g.state.remaining_deck());
+        assert_eq!(pool.len(), 71);
+        assert_eq!(pool.iter().filter(|&&t| t == base).count(), 3);
+        // full multiset: the 71 in the bag + the one on the board == the deck
+        let mut all = pool.clone();
+        all.push(base);
+        all.sort_unstable();
+        let mut want = base_deck_unshuffled();
+        want.sort_unstable();
+        assert_eq!(all, want);
+    }
+
+    #[test]
+    fn retail_first_move_is_a_real_choice() {
+        assert_eq!(Game::from_seed("20260730").legal_actions().len(), 1);
+        assert!(
+            Game::from_seed_with_config("20260730", retail_cfg())
+                .unwrap()
+                .legal_actions()
+                .len()
+                > 1
+        );
+    }
+
+    #[test]
+    fn window_offset_starts_on_the_start_tile_under_either_rule() {
+        for cfg in [GameConfig::default(), retail_cfg()] {
+            let g = Game::from_seed_with_config("20260730", cfg).unwrap();
+            let sp = g.state.starting_position;
+            let half = g.offset.size / 2;
+            assert_eq!(g.offset.origin_row, sp.row - half);
+            assert_eq!(g.offset.origin_col, sp.col - half);
+        }
+    }
+
+    #[test]
+    fn retail_game_plays_to_a_scored_terminal() {
+        let mut g = Game::from_seed_with_config("77", retail_cfg()).unwrap();
+        let mut plies = 0;
+        while !g.is_terminal() && plies < 400 {
+            let legal = g.legal_actions();
+            assert!(!legal.is_empty());
+            g.advance(legal[0]).unwrap();
+            plies += 1;
+        }
+        assert!(g.is_terminal());
+        assert_eq!(g.state.placed_coords.len(), 72);
+        assert!(g.scores()[0] + g.scores()[1] > 0);
+    }
+
+    #[test]
+    fn an_even_row_shift_translates_the_window_exactly() {
+        let cfg = GameConfig {
+            start_row: 18,
+            ..GameConfig::default()
+        };
+        let a = Game::from_seed("20260730");
+        let b = Game::from_seed_with_config("20260730", cfg).unwrap();
+        assert_eq!(b.offset.origin_row, a.offset.origin_row + 12);
+        assert_eq!(b.offset.origin_col, a.offset.origin_col);
+        assert_eq!(b.legal_mask().mask, a.legal_mask().mask);
     }
 
     #[test]
