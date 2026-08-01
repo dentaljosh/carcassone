@@ -1,0 +1,71 @@
+{
+ "champion_id": "puct_priors_v29_bmild_cap8",
+ "c_puct": 1.5,
+ "tau_p": 5.0,
+ "value_norm": 15.0,
+ "score_norm_scale": 15.0,
+ "leaf_quantize": "float",
+ "final_select": "visits",
+ "sims_per_det": 1376,
+ "k_dets": 8,
+ "leaf_fingerprint": {
+  "leaf": "v2_9_2_Bmild_cap8_curve125",
+  "leaf_hash": "a36d2e15a3b3d71d",
+  "curve125": [
+   -10.0,
+   -5.0,
+   -1.25,
+   0.0,
+   2.5,
+   3.75,
+   5.0,
+   6.25
+  ],
+  "bonus_cap": 8.0,
+  "opp_bonus_cap": 8.0,
+  "closure_p": {
+   "1": 0.5,
+   "2": 0.2,
+   "3": 0.05
+  },
+  "source": "governance/PRODUCTION.yaml champion.leaf_config"
+ },
+ "leaf_cfg": {
+  "closure_p": [
+   [
+    1,
+    0.5
+   ],
+   [
+    2,
+    0.2
+   ],
+   [
+    3,
+    0.05
+   ]
+  ],
+  "bonus_cap": 8.0,
+  "opp_bonus_cap": 8.0,
+  "meeple_k": 2.0,
+  "v29_meeple_curve": [
+   -10.0,
+   -5.0,
+   -1.25,
+   0.0,
+   2.5,
+   3.75,
+   5.0,
+   6.25
+  ],
+  "soft_cap_slope": 0.0,
+  "opp_soft_cap_slope": 0.0,
+  "v29_meeple_return_k": 0.0,
+  "v29_farm_flip_k": 0.0,
+  "bag_close": false,
+  "tile_counting_closure": false,
+  "closure_continuous_slack": 0.0
+ },
+ "desktop_exp_fma": true,
+ "desktop_tanh_flavor": "glibc_fma"
+}

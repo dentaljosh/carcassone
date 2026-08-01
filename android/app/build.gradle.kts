@@ -173,6 +173,95 @@ if (!cyEnabled) {
 }
 
 // ---------------------------------------------------------------------------
+// Rust engine+search core (carc-rs) -> prebuilt Android wheels                [P7]
+//
+// Same Chaquopy constraint as buildCyWheels above (v17 cannot compile native code),
+// so `tools/build_rust_wheels.py` cross-compiles rust/carc's PyO3 module `carc_rs`
+// with the NDK linker and drops one wheel per ABI into a --find-links directory.
+//
+// This wheel is OPT-IN AT RUNTIME. `android_bridge` defaults to the Python engine
+// and only touches carc_rs when the backend flag selects it, so shipping the wheel
+// changes nothing about what the app plays. If no NDK (or no cargo) is installed the
+// requirement is simply omitted and the flag's rust path reports unavailable.
+// ---------------------------------------------------------------------------
+val rustBuildScript: File = rootProject.file("tools/build_rust_wheels.py")
+val rustWheelDir: Provider<Directory> = layout.buildDirectory.dir("generated/rustWheels")
+val rustCrateDir: File = repoRoot.resolve("rust/carc")
+
+// cargo must be on PATH at CONFIGURATION time for the version probe to work; a
+// checkout without a Rust toolchain degrades exactly like a checkout without an NDK.
+val cargoPresent: Boolean = runCatching {
+    providers.exec { commandLine("cargo", "--version") }.result.get().exitValue == 0
+}.getOrDefault(false)
+
+val rustEnabled: Boolean =
+    rustBuildScript.isFile && cyNdkDir != null && rustCrateDir.isDirectory && cargoPresent
+
+// Content-addressed over the whole Rust tree, asked of the build script so the
+// hashing rule lives in exactly ONE place (same contract as cyVersion).
+val rustVersion: String? = if (!rustEnabled) null else providers.exec {
+    commandLine(buildPythonPath, rustBuildScript.absolutePath, "--print-version")
+}.standardOutput.asText.get().trim()
+
+abstract class BuildRustWheels @Inject constructor(
+    private val execOps: ExecOperations,
+) : DefaultTask() {
+
+    @get:InputFile abstract val script: RegularFileProperty
+    @get:InputFiles abstract val sources: ConfigurableFileCollection
+    @get:Input abstract val interpreter: Property<String>
+    @get:Input abstract val version: Property<String>
+    @get:Input abstract val sdkDir: Property<String>
+    @get:Input abstract val jobs: Property<Int>
+    @get:OutputDirectory abstract val outDir: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        logger.lifecycle("[buildRustWheels] carc-rs==${version.get()} -> ${outDir.get().asFile}")
+        execOps.exec {
+            commandLine(
+                interpreter.get(), script.get().asFile.absolutePath,
+                "--out", outDir.get().asFile.absolutePath,
+                "--version", version.get(),
+                "--sdk-dir", sdkDir.get(),
+                "--jobs", jobs.get().toString(),
+            )
+        }
+    }
+}
+
+val buildRustWheels by tasks.registering(BuildRustWheels::class) {
+    group = "build"
+    description = "Cross-compile the Rust engine+search core (carc_rs) into Android wheels."
+    onlyIf { rustEnabled }
+    script.set(rustBuildScript)
+    // Only the files whose bytes can change the compiled module (matches the
+    // build script's own VERSION_SUFFIXES).
+    sources.setFrom(
+        project.fileTree(rustCrateDir) {
+            include("**/*.rs", "**/*.toml", "**/*.lock")
+            exclude("target/**", ".chaquopy-cache/**")
+        }
+    )
+    interpreter.set(buildPythonPath)
+    version.set(rustVersion ?: "0")
+    sdkDir.set(androidSdkDir.absolutePath)
+    jobs.set(4)
+    outDir.set(rustWheelDir)
+}
+
+if (!rustEnabled) {
+    logger.warn(
+        "[buildRustWheels] SKIPPED: " +
+            (if (!cargoPresent) "no `cargo` on PATH. " else "") +
+            (if (cyNdkDir == null) "no Android NDK under ${androidSdkDir.resolve("ndk")}. " else "") +
+            "The APK ships WITHOUT carc_rs; android_bridge's rust backend flag will " +
+            "report the backend unavailable and the app keeps playing the Python path " +
+            "(which is the default regardless)."
+    )
+}
+
+// ---------------------------------------------------------------------------
 // Tile-art gate
 //
 // `app/src/main/assets/tiles/` is gitignored (generated art, not source), so a
@@ -218,7 +307,9 @@ val checkTileAssets by tasks.registering(CheckTileAssets::class) {
     outputs.upToDateWhen { false }
 }
 
-tasks.named("preBuild") { dependsOn(syncPythonFromRepo, checkTileAssets, buildCyWheels) }
+tasks.named("preBuild") {
+    dependsOn(syncPythonFromRepo, checkTileAssets, buildCyWheels, buildRustWheels)
+}
 
 // preBuild ordering alone does not guarantee Chaquopy's source-merge tasks see a
 // populated dir, so wire them explicitly too.
@@ -231,10 +322,10 @@ tasks.matching { t ->
 // The wheels must exist before Chaquopy's pip runs against --find-links. That is the
 // `...PythonRequirements` task; the generate/merge ones are wired for good measure.
 tasks.matching { t ->
-    t.name != "buildCyWheels" &&
+    t.name != "buildCyWheels" && t.name != "buildRustWheels" &&
         t.name.contains("Python") &&
         (t.name.contains("Requirements") || t.name.startsWith("generate") || t.name.startsWith("merge"))
-}.configureEach { dependsOn(buildCyWheels) }
+}.configureEach { dependsOn(buildCyWheels, buildRustWheels) }
 
 android {
     namespace = "com.jishal.carcassonne"
@@ -247,6 +338,12 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1-m0"
+
+        // Instrumented tests are the ONLY surface that can run code inside the
+        // app's Chaquopy environment (numpy + the carc_rs wheel as pip resolved
+        // it) without adding a debug hook to the shipping app. G7's device legs
+        // live in app/src/androidTest — see RustPortDeviceTest.kt.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             // Chaquopy's Python 3.12+ runtime ships 64-bit ABIs only.
@@ -314,6 +411,12 @@ chaquopy {
                 options("--find-links", cyWheelDir.get().asFile.absolutePath)
                 install("carc-cy==$cyVersion")
             }
+            // The Rust core (P7). Shipped but INERT unless android_bridge's backend
+            // flag selects it — see buildRustWheels above.
+            if (rustEnabled) {
+                options("--find-links", rustWheelDir.get().asFile.absolutePath)
+                install("carc-rs==$rustVersion")
+            }
             install("numpy")
             install("pyyaml")
         }
@@ -357,6 +460,10 @@ dependencies {
     // JVM unit tests cover BoardGeometry only — the board <-> screen transform,
     // hit-testing and fit math. Everything else on the game path needs a device.
     testImplementation("junit:junit:4.13.2")
+    // Instrumented (on-device) tests — the G7 device legs.
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
     // The platform's org.json is a stub in JVM unit tests ("not mocked"); the real
     // implementation on the test classpath lets DifficultyTest assert the actual
     // new_game config JSON rather than just the enum fields.

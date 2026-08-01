@@ -221,6 +221,36 @@ START_RULE_RETAIL = "retail"
 START_RULE = START_RULE_RETAIL          # what a NEW app game uses
 START_RULE_LEGACY = START_RULE_ENGINE   # what a save with no `start_rule` means
 
+# --------------------------------------------------------------------------- #
+# Agent backend (P7). DEFAULT IS UNCHANGED: the Python champion.                #
+#                                                                              #
+# "rust" swaps ONLY the opponent's move choice for `carc_rs.FairAgentRs`, the   #
+# bit-exact port gated at G1-G5. The Python engine stays authoritative for      #
+# everything else — legality, UI, scoring, the save/archive record — so the     #
+# switch cannot change what a game IS, only who picks the champion's move.      #
+#                                                                              #
+# It is OPT-IN and stays opt-in until Joshua flips it: the phone keeps playing  #
+# the Python k4x688 path. Selectable per game via new_game's `backend` key, or  #
+# process-wide via CARC_ANDROID_BACKEND for a test harness.                     #
+# --------------------------------------------------------------------------- #
+BACKEND_PYTHON = "python"
+BACKEND_RUST = "rust"
+BACKEND_DEFAULT = os.environ.get("CARC_ANDROID_BACKEND", BACKEND_PYTHON)
+
+# The libm flavour bionic actually implements, MEASURED on a Pixel 9 Pro at G7
+# leg 1 (measurement/rustport_p7/G7_libm_device.json): `tanh`/`expm1` are msun,
+# exact on the production corpus AND 10^7 fuzz args. It differs from the desktop
+# (glibc_fma, G0 §2) — which is exactly why the flavour is a config knob and not
+# a compile-time constant. `glibc` passes the tanh CORPUS here and fails the
+# fuzz, so do not re-derive this from a corpus-only run.
+ANDROID_TANH_FLAVOR = "msun"
+# Scalar `exp` matched exp64_fma (0/201,525 corpus, 0/10^7 fuzz) on the same run.
+ANDROID_EXP_FMA = True
+
+# Per-ply mirror assertion. Off by default (it renders the board twice per
+# action); the game-start check runs unconditionally either way.
+_RS_RECONCILE = os.environ.get("CARC_RS_RECONCILE", "") == "1"
+
 # Meeple-dot placement, as RATIOS of the tile size, lifted from
 # CarcassonneVisualiser.meeple_position_offsets (tile_size=60, meeple_size=~21). The
 # visualiser itself is excluded from the bundle (tkinter/PIL), so the numbers travel
@@ -591,7 +621,8 @@ class _Session:
 
     def __init__(self, *, seed: int, human_player: int, opponent: str,
                  sims: int | None, k_dets: int | None, verify: bool,
-                 generation: int, start_rule: str = START_RULE):
+                 generation: int, start_rule: str = START_RULE,
+                 backend: str = BACKEND_DEFAULT):
         self.seed = int(seed)
         # Which start-tile convention this session plays under. New games use the
         # app default (retail); a RESTORE passes whatever the save recorded, so a
@@ -609,6 +640,13 @@ class _Session:
         self.req_k_dets = None if k_dets is None else int(k_dets)
         self.verify = bool(verify)
         self.generation = int(generation)
+        if backend not in (BACKEND_PYTHON, BACKEND_RUST):
+            raise ValueError(f"unknown backend {backend!r}; expected "
+                             f"{BACKEND_PYTHON!r} or {BACKEND_RUST!r}")
+        self.backend = str(backend)
+        # The Rust mirror, or None. `apply()` is the ONE place it is advanced.
+        self.rs = None
+        self.rs_note: str | None = None
 
         fixed_start = self.start_rule == START_RULE_RETAIL
         self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
@@ -633,6 +671,11 @@ class _Session:
         # what makes (deck_seed, action_log) a lossless save (root_replay contract).
         random.seed(self.seed)
         self.board: Board = self.game.get_init_board()
+
+        # Opt-in only; a failure here degrades to the Python path with a note
+        # rather than killing the game (the wheel may simply be absent).
+        if self.backend == BACKEND_RUST:
+            self._start_rust_mirror()
 
         self.action_log: list[int] = []
         self.turn = 0
@@ -734,6 +777,106 @@ class _Session:
                 f"sequentially here would be ~25 s/move. Same agent, same leaf, smaller "
                 f"search — grade results against this budget, not the champion's.")
 
+    # -- the Rust mirror (P7, opt-in) ---------------------------------------
+    def _full_deck_descriptions(self) -> list[str]:
+        """The shuffled deck in DRAW order, as descriptions.
+
+        ``FairAgentRs.start_game_from_deck`` is the phone path precisely because
+        it carries no RNG dependence: the deck crosses the FFI as data, so the
+        mirror cannot drift by reproducing a shuffle slightly differently.
+
+        Reconstructing that order from the LIVE state is not possible — the state
+        has already popped ``next_tile``, and the retail rule additionally removes
+        the D tile from an unrecorded position in the pool. So a throwaway state
+        is built under the same seed and read BEFORE either of those happens.
+        ``random.seed`` is re-primed afterwards so the real board draws exactly
+        the same deck; ``_assert_mirror`` then proves it did.
+        """
+        from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
+
+        random.seed(self.seed)
+        probe = CarcassonneGameState(
+            players=self.game.players,
+            tile_sets=list(self.game.tile_sets),
+            supplementary_rules=list(self.game.supplementary_rules),
+        )
+        # __init__ pops next_tile off the front, so the pool is next_tile + deck.
+        pool = [probe.next_tile] + list(probe.deck)
+        return [t.description for t in pool if t is not None]
+
+    def _assert_mirror(self, where: str) -> None:
+        """The mirror must render the SAME board bytes as the Python engine.
+
+        `string_representation` is the node key the whole port is gated on (G1),
+        so equality here is the same claim the desktop gates make — checked at
+        game start always, and after every action when CARC_RS_RECONCILE=1.
+        """
+        want = self.game.string_representation(self.board)
+        got = self.rs.string_repr()
+        if want != got:
+            raise RuntimeError(
+                f"rust mirror diverged at {where}: repr differs "
+                f"(python {len(want)}B, rust {len(got)}B)")
+
+    def _start_rust_mirror(self) -> None:
+        try:
+            import carc_rs
+        except ImportError as exc:
+            self.rs_note = f"carc_rs unavailable ({exc}); using the Python backend"
+            self.backend = BACKEND_PYTHON
+            return
+        # The mirror is a state mirror FIRST and a move chooser second. Against
+        # tier1 the session has no search budget at all (eff_sims/eff_k_dets are
+        # 0), but the mirror is still worth building — it is what proves the
+        # bridge's deck harvest and choke point are right — so fall back to this
+        # device's champion profile for a config that is valid and never searched.
+        mob = mobile_budget()
+        sims = int(self.eff_sims) or int(mob["sims_per_det"])
+        k_dets = int(self.eff_k_dets) or int(mob["k_dets"])
+        try:
+            leaf = carc_rs.LeafConfigRs.curve125()
+            search = carc_rs.SearchConfigRs(
+                leaf, sims,
+                float(self.spec_knob("c_puct")), float(self.spec_knob("tau_p")),
+                float(self.spec_knob("value_norm")), 15.0,
+                str(self.spec_knob("leaf_quantize")), str(self.spec_knob("final_select")),
+                None, 1.0,
+                ANDROID_EXP_FMA, ANDROID_TANH_FLAVOR, False,
+            )
+            self.rs = carc_rs.FairAgentRs(
+                search, k_dets=k_dets, seed=int(self.seed),
+                min_pooled_visits=2.0, exact_endgame=True, exact_max_k=2,
+                exact_budget=ANDROID_EXACT_BUDGET, tt_cap=0, chance_drop="type",
+                threads=1,
+                # Start-rule semantics are preserved EXACTLY: the mirror is told
+                # the session's own rule, and "engine" is spelled None on the FFI
+                # (the P5 flag default), matching what a save with no `start_rule`
+                # means on this side.
+                start_rule=(None if self.start_rule == START_RULE_ENGINE
+                            else self.start_rule),
+            )
+            self.rs.start_game_from_deck(self._full_deck_descriptions())
+            self._assert_mirror("game start")
+        except Exception as exc:                  # noqa: BLE001
+            self.rs = None
+            self.rs_note = f"rust backend failed to start ({type(exc).__name__}: {exc})"
+            self.backend = BACKEND_PYTHON
+            return
+        # Only the CHAMPION's move choice moves to Rust. Tier-1 is a different
+        # agent entirely (RuleBasedPlayer, no search) and has no Rust port; its
+        # session keeps the mirror for state, not for picking.
+        if self.opponent_kind == "champion":
+            self.pick = lambda board: int(self.rs.choose_action())
+        else:
+            self.rs_note = ("mirror only: the rust backend replaces the CHAMPION's "
+                            f"move choice, and this game's opponent is "
+                            f"{self.opponent_kind!r}")
+
+    def spec_knob(self, name: str):
+        """One champion knob from PRODUCTION.yaml (no strength number is ever
+        hardcoded here — DESIGN CONTRACT 3)."""
+        return getattr(champion_factory.load_production_spec(), name)
+
     # -- board mechanics ----------------------------------------------------
     @property
     def ai_player(self) -> int:
@@ -756,6 +899,14 @@ class _Session:
         self.board, _ = self.game.get_next_state(self.board, int(action_id))
         self.action_log.append(int(action_id))
         self.turn += 1
+        # THE single step choke point: every applied action, both seats, exactly
+        # once. The mirror is advanced here and nowhere else — that is what keeps
+        # it from drifting, and it is why `undo_last_tile` / `restore_game` (which
+        # rebuild the session by replaying the log) need no mirror-specific code.
+        if self.rs is not None:
+            self.rs.advance(int(action_id))
+            if _RS_RECONCILE:
+                self._assert_mirror(f"ply {self.turn}")
 
     def _claim_of(self, action_id: int) -> tuple | None:
         """``(player, MeeplePosition)`` if ``action_id`` puts a meeple down here.
@@ -1055,6 +1206,11 @@ def _state_dict(s: _Session) -> dict:
         "opponent": s.opponent_kind,
         "opponent_name": s.opponent_name,
         "budget_note": s.budget_note,
+        # Which implementation is picking the champion's move (P7). Always
+        # present, always "python" unless a caller opted in; `backend_note`
+        # carries the reason when a requested "rust" fell back.
+        "backend": s.backend,
+        "backend_note": s.rs_note,
         "ai_last_tile": ({"row": s.ai_last_tile[0], "col": s.ai_last_tile[1]}
                          if s.ai_last_tile is not None else None),
         "ai_last_move": s.ai_last_move,
@@ -1117,6 +1273,10 @@ def new_game(config_json: str = "{}") -> str:
         start_rule    "retail"|"engine", default "retail" — start-tile convention
                       (see START_RULE; the app plays retail, the library default
                       stays "engine" so evals are unaffected)
+        backend       "python"|"rust", default "python" — who picks the CHAMPION's
+                      move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
+                      the Python engine stays authoritative for legality, UI,
+                      scoring and the save record either way. Opt-in (P7).
 
     Returns the full state object (see ``get_state``)."""
     global _S, _GENERATION, _prog_leaf_calls, _prog_expected, _prog_t0
@@ -1138,6 +1298,7 @@ def new_game(config_json: str = "{}") -> str:
             verify=bool(cfg.get("verify", True)),
             generation=_GENERATION,
             start_rule=str(cfg.get("start_rule", START_RULE)),
+            backend=str(cfg.get("backend", BACKEND_DEFAULT)),
         )
         _S = s
         _agent_ref = s.agent
@@ -1485,6 +1646,11 @@ def restore_game(json_str: str) -> str:
             generation=_GENERATION,
             # Absent field == written before the retail start shipped.
             start_rule=str(blob.get("start_rule", START_RULE_LEGACY)),
+            # The backend is a RUNTIME choice, not a property of the saved game —
+            # it changes who computes a move, never what the game is — so it is
+            # carried from the live session (undo_last_tile rebuilds through here)
+            # and falls back to the process default, NOT to anything in the blob.
+            backend=(_S.backend if _S is not None else BACKEND_DEFAULT),
         )
 
         # Replay. Whose decision each logged action was is decided by the board it was
@@ -1936,12 +2102,27 @@ def runtime_info() -> str:
                 "bound": _state(board_repr._CY_ENCODE),
             },
         }
+        # The Rust core (P7). Shipped in the APK but INERT unless a game opts in,
+        # so `available` and `active` are deliberately two different facts.
+        try:
+            import carc_rs
+
+            rust = {"available": True,
+                    "version": getattr(carc_rs, "__version__", None),
+                    "tanh_flavor": ANDROID_TANH_FLAVOR,
+                    "exp_fma": ANDROID_EXP_FMA}
+        except ImportError as exc:
+            rust = {"available": False, "error": str(exc)}
+        rust["default_backend"] = BACKEND_DEFAULT
+        rust["active"] = bool(_S is not None and _S.rs is not None)
+
         return _ok({
             "ok": True,
             "python": platform.python_version(),
             "python_implementation": platform.python_implementation(),
             "numpy": np.__version__,
             "cython": cython,
+            "rust": rust,
             "flat_leaf": bool(flat_leaf.USE_FLAT_LEAF),
             "spec": _spec_fingerprint(),
             "env": RESOLVED_ENV,
