@@ -54,6 +54,11 @@ for _p in (REPO / "src", REPO / "engine", REPO / "scripts" / "measurement_infra"
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
+# ⚠️ BEFORE any carcassonne_ai import (see scripts/rustport/prod_leaf_env.py):
+# `root_replay` below pulls in carcassonne_ai, so this module can win the
+# DEFAULT_CONFIG freeze race in a full-tree pytest.
+import prod_leaf_env  # noqa: E402,F401
+
 from wingedsheep.carcassonne.objects.city import City  # noqa: E402
 from wingedsheep.carcassonne.objects.farm import Farm  # noqa: E402
 from wingedsheep.carcassonne.objects.meeple_type import MeepleType  # noqa: E402

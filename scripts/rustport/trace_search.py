@@ -47,6 +47,11 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
+# ⚠️ BEFORE any carcassonne_ai import (see scripts/rustport/prod_leaf_env.py):
+# this module resolves the PRODUCTION champion knobs, so a bare DEFAULT_CONFIG
+# here would be wrong as well as order-poisoning.
+import prod_leaf_env  # noqa: E402,F401
+
 import carc_rs  # noqa: E402
 
 from carcassonne_ai import flat_leaf  # noqa: E402

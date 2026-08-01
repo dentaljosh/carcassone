@@ -72,6 +72,13 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
+# ⚠️ BEFORE any carcassonne_ai import. This script builds every LeafConfig
+# explicitly and never reads DEFAULT_CONFIG — but it is imported by
+# tests/rustport/test_p2_leaf.py, so if it wins the DEFAULT_CONFIG freeze race in
+# a full-tree pytest it would leave the session-global default at the bare cap-5
+# shape and every later verify=True champion build would raise ProvenanceError.
+import prod_leaf_env  # noqa: E402,F401
+
 import carc_rs  # noqa: E402
 from _g0_common import environment  # noqa: E402
 from carcassonne_ai import flat_leaf  # noqa: E402

@@ -51,6 +51,12 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
+# ⚠️ BEFORE any carcassonne_ai import — freezes DEFAULT_CONFIG at the production
+# leaf SHAPE so a full-tree pytest that collects this module first cannot leave
+# the session default bare (see scripts/rustport/prod_leaf_env.py). Inert here:
+# this leg compares base scores and repr keys, which take no leaf config.
+import prod_leaf_env  # noqa: E402,F401
+
 import numpy as np  # noqa: E402
 
 import carc_rs  # noqa: E402

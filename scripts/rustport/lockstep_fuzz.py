@@ -112,6 +112,12 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 # time and is what makes the per-decision (n_total, n_overflow) audit available.
 os.environ["CARCASSONNE_WINDOW_AUDIT"] = "1"
 
+# ⚠️ BEFORE any carcassonne_ai import — freezes DEFAULT_CONFIG at the production
+# leaf SHAPE so a full-tree pytest that collects this module first cannot leave
+# the session default bare (see scripts/rustport/prod_leaf_env.py). Inert here:
+# the fuzz compares repr/mask/scores/base-score, none of which take a leaf config.
+import prod_leaf_env  # noqa: E402,F401
+
 import numpy as np  # noqa: E402
 
 import carc_rs  # noqa: E402

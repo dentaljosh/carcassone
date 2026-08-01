@@ -280,10 +280,18 @@ def _leaf_value_panel(leaf_cfg) -> dict:
     return out
 
 
-def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None) -> dict:
+def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None, *,
+                backend: str = "python") -> dict:
     """RAISE ``ProvenanceError`` unless ``leaf_cfg`` is the frozen production curve125
     champion leaf, by BOTH the semantic panel and the three fingerprints. Returns the
-    provenance dict (hashes + panel) for the manifest."""
+    provenance dict (hashes + panel) for the manifest.
+
+    ``backend="rust"`` re-runs the VALUE PANEL through ``carc_rs`` as well. The panel is
+    the deepest guard precisely because it evaluates leaf OUTPUTS on real boards rather
+    than reading a label — so when the agent that will actually play computes its leaf in
+    Rust, the panel has to be evaluated THERE too or it proves nothing about that agent.
+    Both panels must equal the golden (rustport G2 gated them bit-equal over 3,341,772
+    values; this is the runtime re-proof at construction)."""
     spec = spec or load_production_spec()
 
     # --- 1. semantic guard (authoritative; robust to LeafConfig dataclass drift) ---
@@ -316,6 +324,24 @@ def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None) -> dict:
                 f"{golden!r}. The curve values matched but the leaf OUTPUT changed — a "
                 "non-curve leaf change (cap/term). Re-baseline only after review.")
 
+    # --- 1b. the SAME semantic panel, computed by the backend that will PLAY ---
+    panel_rs = None
+    if backend == "rust":
+        from .rust_agent import leaf_value_panel_rs
+
+        panel_rs = leaf_value_panel_rs(leaf_cfg)
+        for label, (_m, _k, golden) in _LEAF_VALUE_PANEL.items():
+            if panel_rs[label] != golden:
+                raise ep.ProvenanceError(
+                    f"champion leaf VALUE drift on {label} in the RUST backend: got "
+                    f"{panel_rs[label]!r}, golden {golden!r} (the Python panel agreed). "
+                    "carc_rs is computing a different leaf than governance/PRODUCTION.yaml "
+                    "names — do not play this agent.")
+            if panel_rs[label] != panel[label]:
+                raise ep.ProvenanceError(
+                    f"champion leaf panel disagreement on {label}: python "
+                    f"{panel[label]!r} != rust {panel_rs[label]!r}.")
+
     # --- 2. fingerprint guard (fragile-by-design: forces re-review on config-shape drift)
     _leaf_hash, _frozen_config_hash = _hashers()
     lh_harness = _leaf_hash(leaf_cfg)
@@ -340,14 +366,23 @@ def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None) -> dict:
             "field reshaping the hash (the 158f17ff precedent). Re-baseline the "
             "champion_factory hash constants AFTER review — this is a release gate, not a "
             "warning.")
-    return {"hashes": hashes, "leaf_value_panel": panel}
+    prov = {"hashes": hashes, "leaf_value_panel": panel}
+    if panel_rs is not None:
+        prov["leaf_value_panel_rust"] = panel_rs
+    return prov
 
 
 def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
-                      leaf_cfg=None, cfg=None, *, verify: bool = True) -> dict:
+                      leaf_cfg=None, cfg=None, *, verify: bool = True,
+                      backend: str = "python") -> dict:
     """The resolved runtime manifest for a production champion. Deterministic (no
     timestamps) so it is byte-stable across constructions. verify=True runs verify_leaf
-    (raises on any mismatch); pass verify=False only to INSPECT an off-spec config."""
+    (raises on any mismatch); pass verify=False only to INSPECT an off-spec config.
+
+    ``backend`` (``"python"`` default) selects which engine computes the champion. It is
+    stamped ONLY when it is not the default, on the same no-hash-drift terms as
+    ``parallel_workers`` — a python-backend manifest is byte-identical to the
+    pre-feature one."""
     if mode not in ("fair", "clairvoyant"):
         raise ValueError(f"mode must be 'fair'|'clairvoyant'; got {mode!r}")
     spec = spec or load_production_spec()
@@ -360,11 +395,11 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
             f"fair endgame exact_max_k={spec.exact_max_k} > 2 — the fair marginalized "
             "solve is only honest/tractable at K<=2 (a K>=3 solve would read the true deck).")
 
-    leaf_prov = verify_leaf(leaf_cfg, spec) if verify else {
+    leaf_prov = verify_leaf(leaf_cfg, spec, backend=backend) if verify else {
         "hashes": None, "leaf_value_panel": _leaf_value_panel(leaf_cfg)}
     commit, dirty = ep.git_commit_and_dirty()
     total_sims = spec.k_dets * spec.sims_per_det
-    return {
+    man = {
         "schema": MANIFEST_SCHEMA,
         "mode": mode,
         "source": "governance/PRODUCTION.yaml",
@@ -405,6 +440,29 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
         "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); "
                            "R1/R7-class guard for the classical champion (champion_factory).",
     }
+    # BACKEND: stamped ONLY when it is not the python default (no key, no hash drift,
+    # no re-review for every existing caller). The Rust backend is BEHAVIOR-IDENTICAL by
+    # gate, not by construction — rustport G4 reproduced the deployed champion bit-exactly
+    # (0/305,515 checks) and G6 re-proves it as 100% action agreement over full games —
+    # so a log records which engine played, exactly as `parallel_workers` records which
+    # execution mode did.
+    if backend != "python":
+        from .rust_agent import backend_provenance
+
+        man["backend"] = {
+            "name": str(backend),
+            "default": "python",
+            "scope": "engine only — the same PRODUCTION.yaml knobs, the same leaf "
+                     "(panel re-verified through carc_rs), the same k_dets worlds "
+                     "merged in the same order",
+            "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction. "
+                    "governance/PRODUCTION.yaml still names the python champion; this "
+                    "is a capability, not a promotion.",
+            **backend_provenance(),
+        }
+    if leaf_prov.get("leaf_value_panel_rust") is not None:
+        man["leaf_value_panel_rust"] = leaf_prov["leaf_value_panel_rust"]
+    return man
 
 
 # --------------------------------------------------------------------------- #
@@ -585,7 +643,9 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
                              meeple_dedup: bool | None = None,
                              intra_reuse: bool | None = None,
                              exact_budget: int | None = None,
-                             parallel_workers: int | None = None):
+                             parallel_workers: int | None = None,
+                             backend: str = "python",
+                             rust_threads: int | None = None):
     """Instantiate the production champion named by governance/PRODUCTION.yaml and attach
     its resolved runtime manifest (``agent.manifest``). ``verify=True`` PROVES the leaf on
     real boards at construction and RAISES on any mismatch.
@@ -631,7 +691,21 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     It is BEHAVIOR-IDENTICAL by construction (the worlds are independent until the
     pooled-Q argmax; same decks, same seeds, same merge order — proven in
     tests/test_kparallel.py), so it is a single-GAME LATENCY lever and needs no
-    strength re-eval. FAIR MODE ONLY; passing it with mode="clairvoyant" raises."""
+    strength re-eval. FAIR MODE ONLY; passing it with mode="clairvoyant" raises.
+
+    ``backend`` selects which ENGINE computes the champion: ``"python"`` (default, the
+    agent of record) or ``"rust"`` (``rust_agent.RustFairAgent`` over ``carc_rs``, the
+    rustport P4 core). The Rust backend is BEHAVIOR-IDENTICAL BY GATE — G4 reproduced
+    the deployed champion bit-exactly (0/305,515 checks) and G6 re-proves it as 100%
+    action agreement over deck-paired full games — and the leaf VALUE PANEL is
+    re-verified through ``carc_rs`` at construction, so a wrong Rust leaf cannot reach
+    the board. FAIR MODE ONLY (there is no clairvoyant Rust agent). ``rust_threads``
+    splits the ``k_dets`` worlds across that many OS threads INSIDE one GIL-released
+    call (None = 1, the sequential fold); G4 proved the merge bit-identical at threads
+    {1, 4, 8}, so it is a latency lever exactly like ``parallel_workers``.
+
+    ⚠️ ``backend="rust"`` is a CAPABILITY, not a promotion: governance/PRODUCTION.yaml
+    still names the python champion and this function still defaults to it."""
     from . import intra_reuse as intra_carry
     from . import meeple_equiv
     from .game_wrapper import Game
@@ -641,7 +715,10 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
         game = Game(enable_legal_moves_cache=True)
     leaf_cfg = production_leaf_cfg(spec)
     cfg = production_prior_cfg(spec, leaf_cfg)
-    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify)
+    if backend not in ("python", "rust"):
+        raise ValueError(f"backend must be 'python'|'rust'; got {backend!r}")
+    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
+                                 backend=backend)
 
     # Left at _UNSET when the caller said nothing, so the agent constructor is called
     # with EXACTLY the argument list it had before this feature existed.
@@ -663,7 +740,32 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             "exact_budget is a FAIR-mode feature (only the PIMC agent runs the endgame "
             f"solver); got mode={mode!r}")
 
-    if mode == "fair":
+    if backend == "rust" and mode != "fair":
+        raise ValueError(
+            "backend='rust' is a FAIR-mode capability (carc_rs ports the PIMC agent, "
+            f"not the clairvoyant ruler); got mode={mode!r}")
+    if backend == "rust" and (meeple_dedup or intra_reuse or parallel_workers):
+        raise ValueError(
+            "backend='rust' does not carry the python-only search variants "
+            "(meeple_dedup / intra_reuse) or the SPAWN-process split "
+            "(parallel_workers — use rust_threads, which splits the same worlds "
+            "across OS threads inside one GIL-released call)")
+    if rust_threads is not None and backend != "rust":
+        raise ValueError(
+            f"rust_threads is a backend='rust' knob; got backend={backend!r}")
+
+    if backend == "rust":
+        from .rust_agent import RustFairAgent
+
+        agent = RustFairAgent(
+            game, cfg,
+            sims=(spec.sims_per_det if sims is None else int(sims)),
+            k_dets=(spec.k_dets if k_dets is None else int(k_dets)),
+            seed=int(seed), exact_endgame=bool(exact_endgame),
+            exact_max_k=spec.exact_max_k,
+            threads=(1 if rust_threads is None else int(rust_threads)),
+            **budget_kw)
+    elif mode == "fair":
         agent = build_fair_champion(
             game, cfg=cfg,
             sims=(spec.sims_per_det if sims is None else int(sims)),
@@ -772,6 +874,21 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             "note": "BEHAVIOR-IDENTICAL (same decks, same per-world seeds, same "
                     "merge order — tests/test_kparallel.py). A single-GAME latency "
                     "lever; it does NOT change play and needs no strength re-eval.",
+        }
+
+    # rust-THREADS: the backend='rust' twin of parallel_workers, stamped on the same
+    # no-hash-drift terms (only when the caller actually asked for a split).
+    if rust_threads is not None:
+        manifest = dict(manifest)
+        manifest["rust_threads"] = {
+            "threads": int(rust_threads),
+            "source": "kwarg",
+            "scope": "execution only — the k_dets determinization worlds run on "
+                     "min(threads, k_dets) OS threads inside ONE GIL-released "
+                     "choose_action call and are merged by the same pooled-Q fold, "
+                     "in the same world order",
+            "note": "BEHAVIOR-IDENTICAL (rustport G4 proved threads {1,4,8} "
+                    "bit-identical). A single-GAME latency lever.",
         }
 
     agent.manifest = manifest

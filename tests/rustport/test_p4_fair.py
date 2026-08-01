@@ -39,12 +39,15 @@ for _p in (REPO / "src", REPO / "engine", REPO / "scripts" / "measurement_infra"
 
 carc_rs = pytest.importorskip("carc_rs", reason="build with `maturin develop --release`")
 
-if "carcassonne_ai" in sys.modules:                       # pragma: no cover
-    pytest.skip("carcassonne_ai was imported before the production leaf env "
-                "could be applied; run this module in its own process",
+try:                                    # noqa: E402
+    import fair_common as F             # applies the leaf env preamble
+except RuntimeError as _e:              # pragma: no cover - import-order guard
+    # fair_common checks the REAL invariant (were the import-frozen knobs already
+    # at their production values when carcassonne_ai was frozen?), so this only
+    # fires when the oracle really would be the wrong champion. Run this module
+    # in its own process (`pytest tests/rustport`) to gate it.
+    pytest.skip(f"production leaf env was not frozen into carcassonne_ai: {_e}",
                 allow_module_level=True)
-
-import fair_common as F  # noqa: E402  (applies the leaf env preamble)
 
 import reconcile_fair as R  # noqa: E402
 import trace_search as T  # noqa: E402

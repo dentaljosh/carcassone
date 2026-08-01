@@ -24,6 +24,7 @@ the `_PoolSpy` pattern `tests/test_kparallel.py` already uses.
 from __future__ import annotations
 
 import contextlib
+import os
 import struct
 import sys
 from pathlib import Path
@@ -43,11 +44,37 @@ for _p in (REPO / "src", REPO / "engine", REPO / "scripts" / "measurement_infra"
 # not hypothetical: it is exactly how this file's first draft mis-built the
 # champion, and it survived because `verify=False` disarmed the guard.  Both the
 # preamble and `verify=True` are load-bearing; so is `assert_same_leaf` below.)
-if "carcassonne_ai" in sys.modules:  # pragma: no cover - import-order guard
+#
+# The guard checks the REAL invariant, not the proxy "was carcassonne_ai imported
+# first" (P6, 2026-08-01).  What actually matters is that the import-frozen knobs
+# ALREADY held their production values when the freeze happened — if some other
+# module (an android bridge test, a sibling harness) applied the same preamble
+# first, importing after it is perfectly safe, and refusing there only made this
+# module unusable inside a full-tree pytest.  When the freeze happened against a
+# DIFFERENT environment it is still a hard RuntimeError, because that is the
+# silent-wrong-champion case.
+_ENV_BEFORE = dict(os.environ)
+
+import env_preamble  # noqa: E402,F401  (applies PROD_ENV on import)
+
+# The subset of PROD_ENV that `carcassonne_ai` freezes AT ITS IMPORT: the leaf
+# SHAPE (virtual_score_v2.DEFAULT_CONFIG) and the two dispatch flags read at
+# module scope (flat_leaf.USE_FLAT_LEAF, board_repr.USE_CY_REPR). The threading /
+# CUDA knobs are not frozen and are deliberately not checked.
+IMPORT_FROZEN_KNOBS = (
+    "CARCASSONNE_V25_CAP", "CARCASSONNE_V25_OPP_CAP",
+    "CARCASSONNE_V25_DROP_THREE_OPEN", "CARCASSONNE_V29_MEEPLE_CURVE",
+    "CARCASSONNE_V25_MEEPLE_K", "CARCASSONNE_V25_VALUE_BLEND",
+    "CARCASSONNE_USE_FLAT_LEAF", "CARCASSONNE_USE_CY_REPR",
+)
+_LATE = [k for k in IMPORT_FROZEN_KNOBS
+         if _ENV_BEFORE.get(k) != env_preamble.PROD_ENV[k]]
+if "carcassonne_ai" in sys.modules and _LATE:  # pragma: no cover - import-order guard
     raise RuntimeError(
         "fair_common must be imported BEFORE carcassonne_ai — the production leaf "
-        "env is frozen into virtual_score_v2.DEFAULT_CONFIG at ITS import.")
-import env_preamble  # noqa: E402,F401  (applies PROD_ENV on import)
+        "env is frozen into virtual_score_v2.DEFAULT_CONFIG (and the flat-leaf / "
+        "cython-repr dispatch flags) at ITS import. Knobs that were not already at "
+        f"their production values when the freeze happened: {_LATE}")
 
 import carc_rs  # noqa: E402
 

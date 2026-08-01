@@ -67,6 +67,9 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ["CARCASSONNE_WINDOW_AUDIT"] = "1"   # before game_wrapper is imported
 
+# ⚠️ BEFORE any carcassonne_ai import (see scripts/rustport/prod_leaf_env.py).
+import prod_leaf_env  # noqa: E402,F401
+
 import numpy as np  # noqa: E402
 
 import carc_rs  # noqa: E402
