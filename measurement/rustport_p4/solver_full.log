@@ -66,3 +66,18 @@
   1625/1950 jobs, 0 mismatches (2041s)
   1650/1950 jobs, 0 mismatches (2089s)
   1675/1950 jobs, 0 mismatches (2124s)
+  1700/1950 jobs, 0 mismatches (2180s)
+  1725/1950 jobs, 0 mismatches (2220s)
+  1750/1950 jobs, 0 mismatches (2278s)
+  1775/1950 jobs, 0 mismatches (2336s)
+  1800/1950 jobs, 0 mismatches (2390s)
+  1825/1950 jobs, 0 mismatches (2412s)
+  1850/1950 jobs, 0 mismatches (2425s)
+  1875/1950 jobs, 0 mismatches (2851s)
+  1900/1950 jobs, 0 mismatches (2897s)
+  1925/1950 jobs, 0 mismatches (2942s)
+  1950/1950 jobs, 0 mismatches (4578s)
+
+[G4] PASS: 0 mismatches over 10440 checks / 72 decisions / 1878 solves / 1655 plies in 4581s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_solver_full.json
+    solver   checks=9432      decisions=0       solves=1878   mismatches=0
+    threads  checks=1008      decisions=72      solves=0      mismatches=0
