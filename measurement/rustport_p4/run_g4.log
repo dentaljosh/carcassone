@@ -6,3 +6,27 @@
 rc=0
 === [2/3] pos leg: ALL 449 champ + 2 E4 + 12 golden, stride 30, k8x1376 ===
 [G4] 463 jobs over legs=['pos'] k8x1376=11008 workers=10 rust_threads=1
+  25/463 jobs, 0 mismatches (179s)
+  50/463 jobs, 0 mismatches (344s)
+  75/463 jobs, 0 mismatches (476s)
+  100/463 jobs, 0 mismatches (638s)
+  125/463 jobs, 0 mismatches (780s)
+  150/463 jobs, 0 mismatches (951s)
+  175/463 jobs, 0 mismatches (1089s)
+  200/463 jobs, 0 mismatches (1233s)
+  225/463 jobs, 0 mismatches (1396s)
+  250/463 jobs, 0 mismatches (1545s)
+  275/463 jobs, 0 mismatches (1700s)
+  300/463 jobs, 0 mismatches (1851s)
+  325/463 jobs, 0 mismatches (2007s)
+  350/463 jobs, 0 mismatches (2161s)
+  375/463 jobs, 0 mismatches (2314s)
+  400/463 jobs, 0 mismatches (2461s)
+  425/463 jobs, 0 mismatches (2613s)
+  450/463 jobs, 0 mismatches (2761s)
+
+[G4] PASS: 0 mismatches over 16205 checks / 2315 decisions / 0 solves / 66623 plies in 2835s -> /home/doctor/projects/carcassone/measurement/rustport_p4/G4_fair_pos_k8x1376_s30.json
+    pos      checks=16205     decisions=2315    solves=0      mismatches=0
+rc=0
+=== [3/3] MOBILE profile k4x688: 50 champ + 2 E4 + 12 golden, EVERY ply ===
+[G4] 64 jobs over legs=['pos'] k4x688=2752 workers=10 rust_threads=1
