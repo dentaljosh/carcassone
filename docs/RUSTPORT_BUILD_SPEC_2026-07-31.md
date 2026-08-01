@@ -70,8 +70,7 @@ measured strength (the CL-071 precedent).
   order), k world-jobs on `std::thread::scope` over `min(k, threads)` workers, merge =
   sequential fold in world order. Phone default threads ≈ big+mid cores (G7 soak tunes).
 - **Android wheels**: `android/tools/build_rust_wheels.py` cloning build_cy_wheels
-  (shared helpers → `_chaquopy_common.py`): NDK linker env + `PYO3_CROSS_LIB_DIR` from
-  the `com.chaquo.python:target` artifact, explicit `-lpython3.12`,
+  (shared helpers → `_chaquopy_common.py`): NDK linker env (NOT `PYO3_CROSS_LIB_DIR` — see the P7 gate-row correction), explicit `-lpython3.12`,
   `-Wl,-z,max-page-size=16384`, readelf assertions, wheel `cp312-cp312-android_21_<abi>`,
   content-addressed version; gradle `buildRustWheels` cloned from `BuildCyWheels`.
   maturin = desktop dev wheels (cp312 + cp314).
@@ -87,7 +86,7 @@ measured strength (the CL-071 precedent).
 | **P4** | fair agent: k-parallel PIMC + latch + marginalized solver (ported in v1; Python solver = oracle) | **G4**: test_kparallel template vs RustFairAgent; solver value/optimal-set equality; move-by-move identity on all corpora at k8×1376. ✅ **PASSED 2026-08-01 early, 0/305,515; every-ply-k8 full-corpus leg queued (~280 CPU-h), covered via stride-30-all-games + every-ply@k4×688** (DECISIONS same date). |
 | **P5** | flags (fixed_start_tile / start_rule / centered 6→18) vs worktree diffs | **G5**: worktree tests reproduced; even-shift property; G1–G4 re-run flags-off. ✅ **PASSED 2026-08-01 pre-dawn, 0 mismatches all legs** (DECISIONS same date). |
 | **P6** | desktop integration (adapter, factory selector, reconcile mode) | **G6**: deck-paired Rust-vs-Python champion **100% action agreement ≥100 games** (⇒ no elo owed); throughput ≥ Cython path. |
-| **P7** | Android wheel + on-device | **G7**: on-device replay identity vs desktop; k8×1376 median ≤2 s/move (20-position battery); 50-move thermal soak; emulator smoke. |
+| **P7** | Android wheel + on-device | **G7**: on-device replay identity vs desktop; k8×1376 median ≤2 s/move (20-position battery); 50-move thermal soak; emulator smoke. ✅ **PASSED 2026-08-01 morning on the Pixel 9 Pro: 1.551 s/move median @k8×1376, thermal 1.007×, replay 0/3,165, bionic = msun/exp64_fma per-ABI via the enum — fallback NOT invoked** (DECISIONS same date; `measurement/rustport_p7/G7_REPORT.md`). ⚠️ Spec correction: `PYO3_CROSS_LIB_DIR` is UNUSABLE vs Chaquopy's target artifact (no stdlib ⇒ pyo3 hard-fails); explicit `-L/-lpython3.12` + readelf DT_NEEDED asserts carry its purpose. |
 
 Perf expectation: Pixel does 2,752 sims/1.7 s through Python today; Rust central estimate
 0.2–0.35 s/move at 11,008 (pessimistic 0.5–0.8) ⇒ 3–8× thermal headroom. Budget stays
