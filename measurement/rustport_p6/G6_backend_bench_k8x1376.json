@@ -1,0 +1,537 @@
+{
+  "gate": "G6/backend",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "e8ebfa4-dirty",
+    "utc": "2026-08-01T04:30:33Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "carc_rs": {
+    "carc_rs_version": "0.1.0",
+    "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+    "tile_data_source_sha256": "1a05c6c0ad071e4e55e5302e10fd551a7dd32fea85fd7ddeb7c3c18d417e3cce",
+    "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+  },
+  "knobs": {
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "final_select": "visits",
+    "leaf_quantize": "float",
+    "value_norm": 15.0,
+    "reuse_tree_yaml": true,
+    "reuse_tree": false,
+    "score_norm_scale": 15.0,
+    "sims_per_det": 1376,
+    "k_dets": 8,
+    "leaf": {
+      "leaf": "v2_9_2_Bmild_cap8_curve125",
+      "leaf_hash": "a36d2e15a3b3d71d",
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "closure_p": {
+        "1": 0.5,
+        "2": 0.2,
+        "3": 0.05
+      },
+      "source": "governance/PRODUCTION.yaml champion.leaf_config"
+    },
+    "use_cy_leaf": true
+  },
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": null,
+    "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "deck_range": {
+    "base": 98000000000,
+    "n": 100,
+    "note": "THROWAWAY FUZZ SEEDS \u2014 not a registered claim band (governance/BAND_REGISTRY.csv). G6 is an identity gate and produces no strength number."
+  },
+  "args": {
+    "leg": [
+      "bench"
+    ],
+    "sims": 1376,
+    "k_dets": 8,
+    "threads": 1,
+    "threads_list": "1,8",
+    "games": 100,
+    "reconcile_games": 10,
+    "deck_base": 98000000000,
+    "agent_seed_base": 101,
+    "max_moves": null,
+    "workers": 14,
+    "bench_roots": 2,
+    "bench_plies": "0,40,80",
+    "bench_moves": 3,
+    "bench_workers": 8,
+    "bench_par_moves": 3,
+    "tag": "bench_k8x1376",
+    "max_mismatch_report": 200
+  },
+  "wall_secs": 146.08664059638977,
+  "n_games": 0,
+  "totals": {
+    "games": 0,
+    "plies": 0,
+    "decisions": 0,
+    "checks": 0,
+    "action_checks": 0,
+    "action_agree": 0,
+    "py_secs": 0.0,
+    "rs_secs": 0.0,
+    "py_moves": 0,
+    "rs_moves": 0,
+    "exact_moves": 0,
+    "solver_nodes": 0,
+    "reconcile_asserts": 0
+  },
+  "action_agreement": null,
+  "reconcile_games": 0,
+  "reconcile_asserts": 0,
+  "n_mismatches": 0,
+  "mismatches": [],
+  "games": [],
+  "bench": {
+    "config": {
+      "sims_per_det": 1376,
+      "k_dets": 8,
+      "total_sims": 11008,
+      "roots": [
+        {
+          "deck_seed": 98000900000,
+          "ply": 0
+        },
+        {
+          "deck_seed": 98000900000,
+          "ply": 40
+        },
+        {
+          "deck_seed": 98000900000,
+          "ply": 80
+        },
+        {
+          "deck_seed": 98000900001,
+          "ply": 0
+        },
+        {
+          "deck_seed": 98000900001,
+          "ply": 40
+        },
+        {
+          "deck_seed": 98000900001,
+          "ply": 80
+        }
+      ],
+      "moves_per_root": 3,
+      "python_leg": "make_production_champion(parallel_workers=None) under the production leaf env = the DEPLOYED Cython-leaf path",
+      "leaf_dispatch": {
+        "flat_leaf.USE_CY_LEAF (inside production_leaf_dispatch)": true,
+        "flat_leaf.USE_FLAT_LEAF": true,
+        "board_repr.USE_CY_REPR": true,
+        "flat_leaf_cy importable": true,
+        "CARCASSONNE_USE_CY_LEAF": "(unset -> default ON)",
+        "CARCASSONNE_USE_FLAT_LEAF": "1",
+        "CARCASSONNE_USE_CY_REPR": "1"
+      }
+    },
+    "single_stream": {
+      "rows": [
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900000,
+          "ply": 0,
+          "moves": 3,
+          "secs": 10.863636047986802,
+          "setup_s": 0.029544713004725054,
+          "s_per_move": 3.6212120159956007
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900000,
+          "ply": 0,
+          "moves": 3,
+          "secs": 0.45274572700145654,
+          "setup_s": 0.028131908999057487,
+          "s_per_move": 0.15091524233381884
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900000,
+          "ply": 0,
+          "moves": 3,
+          "secs": 0.08884840499376878,
+          "setup_s": 0.028050193010130897,
+          "s_per_move": 0.029616134997922927
+        },
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900000,
+          "ply": 40,
+          "moves": 3,
+          "secs": 22.308762529981323,
+          "setup_s": 0.027301149995764717,
+          "s_per_move": 7.436254176660441
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900000,
+          "ply": 40,
+          "moves": 3,
+          "secs": 1.925937588996021,
+          "setup_s": 0.028284956992138177,
+          "s_per_move": 0.6419791963320071
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900000,
+          "ply": 40,
+          "moves": 3,
+          "secs": 0.3950019459880423,
+          "setup_s": 0.02978612799779512,
+          "s_per_move": 0.13166731532934742
+        },
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900000,
+          "ply": 80,
+          "moves": 3,
+          "secs": 18.841132225003093,
+          "setup_s": 0.026860662997933105,
+          "s_per_move": 6.280377408334364
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900000,
+          "ply": 80,
+          "moves": 3,
+          "secs": 2.2184190830157604,
+          "setup_s": 0.030423852003877982,
+          "s_per_move": 0.7394730276719201
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900000,
+          "ply": 80,
+          "moves": 3,
+          "secs": 0.49284883702057414,
+          "setup_s": 0.02834045101189986,
+          "s_per_move": 0.16428294567352472
+        },
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900001,
+          "ply": 0,
+          "moves": 3,
+          "secs": 11.277880053996341,
+          "setup_s": 0.028335998998954892,
+          "s_per_move": 3.7592933513321136
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900001,
+          "ply": 0,
+          "moves": 3,
+          "secs": 0.48101498899632134,
+          "setup_s": 0.027988073008600622,
+          "s_per_move": 0.16033832966544045
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900001,
+          "ply": 0,
+          "moves": 3,
+          "secs": 0.09237138001481071,
+          "setup_s": 0.028380778996506706,
+          "s_per_move": 0.030790460004936904
+        },
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900001,
+          "ply": 40,
+          "moves": 3,
+          "secs": 18.351223947975086,
+          "setup_s": 0.02797801501583308,
+          "s_per_move": 6.117074649325029
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900001,
+          "ply": 40,
+          "moves": 3,
+          "secs": 1.5462359200173523,
+          "setup_s": 0.02721997699700296,
+          "s_per_move": 0.5154119733391175
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900001,
+          "ply": 40,
+          "moves": 3,
+          "secs": 0.302141260006465,
+          "setup_s": 0.02859511601855047,
+          "s_per_move": 0.10071375333548833
+        },
+        {
+          "leg": "py",
+          "threads": 0,
+          "deck_seed": 98000900001,
+          "ply": 80,
+          "moves": 3,
+          "secs": 23.134949315019185,
+          "setup_s": 0.028862003004178405,
+          "s_per_move": 7.711649771673062
+        },
+        {
+          "leg": "rs",
+          "threads": 1,
+          "deck_seed": 98000900001,
+          "ply": 80,
+          "moves": 3,
+          "secs": 2.7509910210210364,
+          "setup_s": 0.027485491998959333,
+          "s_per_move": 0.9169970070070121
+        },
+        {
+          "leg": "rs",
+          "threads": 8,
+          "deck_seed": 98000900001,
+          "ply": 80,
+          "moves": 3,
+          "secs": 0.5749098269734532,
+          "setup_s": 0.028608525986783206,
+          "s_per_move": 0.19163660899115106
+        }
+      ],
+      "py_s_per_move": 5.820976895553435,
+      "rs_s_per_move": {
+        "1": 0.5208524627248861,
+        "8": 0.10811786972206189
+      },
+      "speedup_rs_over_py": {
+        "1": 11.175865167461195,
+        "8": 53.83917487939222
+      }
+    },
+    "game_parallel": {
+      "py": {
+        "workers": 8,
+        "wall_secs": 26.146442753000883,
+        "decisions": 24,
+        "decisions_per_s": 0.9179068918369582,
+        "wall_s_per_decision": 1.08943511470837,
+        "rows": [
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900001,
+            "ply": 0,
+            "moves": 3,
+            "secs": 12.584492321999278,
+            "setup_s": 0.03040689299814403,
+            "s_per_move": 4.194830773999759
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900002,
+            "ply": 40,
+            "moves": 3,
+            "secs": 24.033389482996427,
+            "setup_s": 0.03445923200342804,
+            "s_per_move": 8.011129827665476
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900003,
+            "ply": 80,
+            "moves": 3,
+            "secs": 25.687708919023862,
+            "setup_s": 0.03113285399740562,
+            "s_per_move": 8.56256963967462
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900004,
+            "ply": 0,
+            "moves": 3,
+            "secs": 13.132466191978892,
+            "setup_s": 0.02999215800082311,
+            "s_per_move": 4.377488730659631
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900005,
+            "ply": 40,
+            "moves": 3,
+            "secs": 18.35587966599269,
+            "setup_s": 0.02930102200480178,
+            "s_per_move": 6.118626555330896
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900006,
+            "ply": 80,
+            "moves": 3,
+            "secs": 26.05312433600193,
+            "setup_s": 0.03153001400642097,
+            "s_per_move": 8.68437477866731
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900007,
+            "ply": 0,
+            "moves": 3,
+            "secs": 12.878948703000788,
+            "setup_s": 0.03309337899554521,
+            "s_per_move": 4.292982901000262
+          },
+          {
+            "leg": "py",
+            "threads": 0,
+            "deck_seed": 98000900008,
+            "ply": 40,
+            "moves": 3,
+            "secs": 23.98447061999468,
+            "setup_s": 0.028775044018402696,
+            "s_per_move": 7.994823539998227
+          }
+        ]
+      },
+      "rs": {
+        "workers": 8,
+        "wall_secs": 3.0783924080024008,
+        "decisions": 24,
+        "decisions_per_s": 7.796277023556538,
+        "wall_s_per_decision": 0.12826635033343337,
+        "rows": [
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900001,
+            "ply": 0,
+            "moves": 3,
+            "secs": 0.5261685459990986,
+            "setup_s": 0.03198547300416976,
+            "s_per_move": 0.17538951533303285
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900002,
+            "ply": 40,
+            "moves": 3,
+            "secs": 1.8961738790094387,
+            "setup_s": 0.03019463599775918,
+            "s_per_move": 0.6320579596698129
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900003,
+            "ply": 80,
+            "moves": 3,
+            "secs": 2.991473058005795,
+            "setup_s": 0.03315445498446934,
+            "s_per_move": 0.9971576860019317
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900004,
+            "ply": 0,
+            "moves": 3,
+            "secs": 0.49791573800030164,
+            "setup_s": 0.03442603998701088,
+            "s_per_move": 0.16597191266676722
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900005,
+            "ply": 40,
+            "moves": 3,
+            "secs": 1.5178843839967158,
+            "setup_s": 0.029738853976596147,
+            "s_per_move": 0.5059614613322386
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900006,
+            "ply": 80,
+            "moves": 3,
+            "secs": 2.93731641798513,
+            "setup_s": 0.03278751400648616,
+            "s_per_move": 0.97910547266171
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900007,
+            "ply": 0,
+            "moves": 3,
+            "secs": 0.6721544610045385,
+            "setup_s": 0.0319310630147811,
+            "s_per_move": 0.2240514870015128
+          },
+          {
+            "leg": "rs",
+            "threads": 1,
+            "deck_seed": 98000900008,
+            "ply": 40,
+            "moves": 3,
+            "secs": 1.8649952079867944,
+            "setup_s": 0.0292206059966702,
+            "s_per_move": 0.6216650693289315
+          }
+        ]
+      },
+      "speedup_rs_over_py": 8.493537953456547
+    }
+  }
+}
