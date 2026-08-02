@@ -23,6 +23,11 @@ shared-claim retry loop should track records-at-iteration-start and ABORT LOUDLY
 row + nonzero rc) after N (say 2) consecutive zero-new-record iterations, instead of
 spinning; optionally print a load warning when loadavg >> W at iteration start. Applies to
 `leaf_ablation_launcher.sh` and any future launcher cloned from it (c7_s1 pattern).
+**Addendum 2026-08-01:** `run_watchdog.sh`'s worker-detection pgrep ALSO false-positives —
+a laptop instance reported "healthy: workers alive" for 33+ h against a dead cell (its
+`pgrep -f 'seed-start …'` matched something the `$$`/`$PPID` exclusion misses — a variant
+of the bug 4e67f2b claimed fixed). Same fix window: make the health check require actual
+worker pids (match the harness script path AND exclude self/ancestors by walking ppid).
 
 ## 2026-07-17 — Laptop GEN W-sweep (never done; the local W20/f4 result does NOT transfer)
 **Context:** This session settled the LOCAL distill-flywheel gen config via a full W + forwarder sweep — W20 knee, forwarders=4, gen is dispatch-latency-bound, ~5400 fwd/s ceiling (detail + VALIDITY SCOPE in `measurement/distill_flywheel_20260715/HANDOFF.md` "LEVERS EXPLORED"). Those numbers are valid ONLY for the sims200 net-prior gen on the LOCAL 5900XT box + its GPU.
