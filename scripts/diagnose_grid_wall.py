@@ -12,14 +12,29 @@ trajectory distribution matches production). At every tile ply, count the legal
 placements falling outside that region — those are the moves production cannot
 offer.
 
-    .venv/bin/python scripts/diagnose_grid_wall.py [n_games]
+    .venv/bin/python scripts/diagnose_grid_wall.py [n_games] [start_row]
 
-Measured 2026-07-30 over 400 random base+farmers games:
+Measured 2026-07-30 over 400 random base+farmers games (start_row 6, the
+engine's walled default):
     games with >=1 denied placement   67.8%
     tile plies with >=1 denied         21.7%
     denied share of legal placements    2.6%
     denials on a side other than row<0     0
     plies forced to PASS by the wall       0
+
+``start_row`` prices a DIFFERENT grid, which is what the 2026-08-02 app-only
+recentring needed. Re-measured 2026-08-02, 400 games per row, same policy,
+seeds 1000..1399 (a fresh draw, hence 64.8% rather than 67.8% at row 6):
+
+    start_row   games denied   plies denied   denied share   above row 0
+        6          64.8%          19.8%          2.33%         21,566
+       18           0.0%           0.0%          0.00%              0
+
+So under natural play the recentred grid denies NOTHING — 0 denials on any
+side in 400 games. (The "it is a recentring, not a wall removal" caveat is
+about an ADVERSARIAL policy: `tests/test_start_tile_grid_bound.py`'s
+wall-seeking drive, which always takes the lowest-row placement, still
+reaches row 0 at row 18 after ~60 tile plies. Random play never gets there.)
 
 The second mode replays a phone archive (`measurement/e4_games/*.json`) and
 separates the layers, which is what identified this bug:
@@ -65,7 +80,7 @@ def _in_production_grid(c: Coordinate) -> bool:
     return R0 <= c.row <= R1 and C0 <= c.column <= C1
 
 
-def run(n_games: int, seed: int = 0) -> dict:
+def run(n_games: int, seed: int = 0, start_row: int = 6) -> dict:
     rng = random.Random(seed)
     st = {
         "games": 0, "games_any_denied": 0,
@@ -74,13 +89,18 @@ def run(n_games: int, seed: int = 0) -> dict:
         "denied_above_row0": 0, "denied_other_sides": 0,
         "forced_pass_by_wall": 0,
     }
+    # The production grid this run is pricing. `start_row` is the grid's own
+    # start row (6 = the engine's walled default; 18 = the app's `centered18`),
+    # and the oversized twin is anchored PAD rows below it so `_in_production_grid`
+    # keeps meaning "inside a 35x35 board whose start tile is at (start_row, 15)".
+    start = Coordinate(PAD + start_row, PAD + 15)
     for _ in range(n_games):
         state = CarcassonneGameState(
             tile_sets=[TileSet.BASE],
             supplementary_rules=[SupplementaryRule.FARMERS],
             players=2,
             board_size=(BIG, BIG),
-            starting_position=START,
+            starting_position=start,
         )
         st["games"] += 1
         denied_here = False
@@ -191,7 +211,10 @@ def main() -> None:
         replay_archive(sys.argv[2])
         return
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-    s = run(n)
+    start_row = int(sys.argv[2]) if len(sys.argv) > 2 else 6
+    print(f"start_row={start_row} ({'engine6, the walled default' if start_row == 6 else 'shifted'}) "
+          f"n_games={n}")
+    s = run(n, start_row=start_row)
     for k, v in s.items():
         print(f"{k:22s} {v}")
     print()

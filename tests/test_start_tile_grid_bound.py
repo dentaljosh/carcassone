@@ -393,6 +393,12 @@ def test_the_recentred_grid_denies_nothing_the_walled_one_denies():
     This is a RECENTRING, not a wall removal: driven far enough (~60 plies) the
     18-row grid hits row 0 too. The claim is that the headroom now matches the
     board's real usage, not that the grid became infinite.
+
+    ⚠️ That caveat is about THIS ADVERSARIAL POLICY and nothing else. Under
+    natural play the recentred grid denies nothing at all —
+    ``scripts/diagnose_grid_wall.py 400 18`` (2026-08-02, same method and seeds
+    as the row-6 control) measured **0 denied placements in 400 games, on any
+    side**, against 64.8% of games / 2.33% of placements at row 6.
     """
     walled_denied, walled_min, walled_plies = _wall_seeking_drive(ENGINE_START_ROW)
     assert walled_denied > 0, "control: the walled grid must still bite"
