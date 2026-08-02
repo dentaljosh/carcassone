@@ -1,0 +1,81 @@
+{
+  "gate": "eval_puct_priors --backend rust wiring identity (BOTH SIDES)",
+  "question": "does routing BOTH clairvoyant PUCT prefixes through --backend rust change what the ablation harness PLAYS? (the searches are already gated bit-exact; this gates the harness wiring and the TWO-mirror protocol)",
+  "search_gates": [
+    "measurement/rustport_p6/GATE_CLAIRVOYANT.json",
+    "measurement/rustport_p6/GATE_CLAIRVOYANT_OPPONENT.json"
+  ],
+  "config": {
+    "games": 4,
+    "paired": true,
+    "candidate": "puct",
+    "opponent": "puct",
+    "cand_sims": 2750,
+    "opp_sims": 2750,
+    "exact_k": 2,
+    "seed_start": 96950000000,
+    "workers": 4
+  },
+  "identity_fields": [
+    "seed",
+    "a_seat",
+    "cand_sims",
+    "champ_sims",
+    "score_p0",
+    "score_p1",
+    "diff",
+    "won_by_cand",
+    "drew",
+    "moves",
+    "deck_hash",
+    "cand_prefix_moves",
+    "cand_exact_moves",
+    "cand_timeouts",
+    "champ_prefix_moves",
+    "champ_exact_moves",
+    "champ_timeouts",
+    "latch_k",
+    "game_timeout"
+  ],
+  "excluded": "every timing field (elapsed_s, *_secs) \u2014 those are meant to differ",
+  "manifest_provenance_ok": true,
+  "games_compared": 4,
+  "field_checks": 76,
+  "mismatches": [],
+  "verdict": "PASS",
+  "timing": {
+    "python_leg_wall_s": 1947.6,
+    "rust_leg_wall_s": 69.5,
+    "wall_speedup": 28.02,
+    "cand_prefix_ms_per_move_python": 11724.485611510792,
+    "cand_prefix_ms_per_move_rust": 237.51079136690652,
+    "cand_side_speedup": 49.36,
+    "opp_prefix_ms_per_move_python": 11508.021582733812,
+    "opp_prefix_ms_per_move_rust": 235.68345323741005,
+    "opp_side_speedup": 48.83,
+    "solver_secs_per_game_python": 9.91425,
+    "solver_secs_per_game_rust": 9.640500000000001,
+    "note": "wall_speedup is the FARM-REALISED number for this cell and is smaller than the per-side search speedups because the exact-K clairvoyant tail stays Python on BOTH sides (carc_rs exposes only the FAIR marginalized solve). Both legs ran at the same --workers."
+  },
+  "python_summary": {
+    "n": 4,
+    "W": 2,
+    "D": 0,
+    "L": 2,
+    "winrate": 0.5,
+    "elo": 0.0,
+    "avg_diff": 9.75,
+    "paired_mean_margin": 9.75
+  },
+  "rust_summary": {
+    "n": 4,
+    "W": 2,
+    "D": 0,
+    "L": 2,
+    "winrate": 0.5,
+    "elo": 0.0,
+    "avg_diff": 9.75,
+    "paired_mean_margin": 9.75
+  },
+  "band_note": "THROWAWAY seed band, --no-results-csv: a wiring gate, not a strength measurement. No results.csv row, no claim id, no band consumed."
+}

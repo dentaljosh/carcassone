@@ -1,0 +1,50 @@
+{
+  "gate": "rustport Class-B \u2014 eval_puct_priors OPPONENT (_PuctPrefix champion sibling) vs RustClairvoyantAgent",
+  "why": "gate_clairvoyant.py licenses the CANDIDATE knobs on the PRODUCTION leaf. The opponent runs final_select=visits (a different argmax rule) on this harness's OWN v2.9 Bmild_cap8 leaf, so it needs its own gate.",
+  "leaf_env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "leaf_hash": "42af12fce22e1a0f",
+  "config_legs": {
+    "shared-axes": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "c_lcb": 1.0,
+      "reuse_tree": false,
+      "root_select": "puct"
+    },
+    "shared-axes-swept": {
+      "c_puct": 1.1,
+      "tau_p": 3.0,
+      "leaf_quantize": "int",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "c_lcb": 1.0,
+      "reuse_tree": false,
+      "root_select": "puct"
+    }
+  },
+  "pin_champion_reduces_to_shared_axes": true,
+  "pin_champion_note": "--opp-pin-champion swaps only c_puct/tau_p/leaf_quantize for the CHAMP_PUCT_* constants, all three carried by SearchConfigRs; at those constants it is byte-identical to the shared-axes leg gated here.",
+  "simulations": 2750,
+  "search_seed": 101,
+  "seed_note": "inert \u2014 measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+  "surface": "chosen_action + root N + root W bits + EVERY root child (action, N, W-bits), compared as raw f64 bit patterns",
+  "roots": 15,
+  "config_legs_count": 2,
+  "field_checks": 120,
+  "mismatches": [],
+  "verdict": "PASS",
+  "scope": "single-world clairvoyant search, fresh-tree, net-free, at these knobs and this leaf. Says NOTHING about reuse_tree (Gap 2) or evaluator injection (Gap 3) \u2014 --opp-reuse-tree and every net arm fail CLOSED at the eval_puct_priors CLI."
+}

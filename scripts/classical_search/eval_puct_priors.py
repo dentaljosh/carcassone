@@ -46,6 +46,17 @@ adds two OPTIONAL flags (legacy invocations are byte-identical without them):
                                workers to a running carc-orch SHM orchestrator.
   New-flag cells get rr_* out-subdirs (e.g. rr_puct2750_vs_net-iter02_k2); seat pairing,
   deck seeds, claims, aggregation and summary.json ride the existing machinery.
+
+ENGINE (rustport P6). ``--backend rust`` runs BOTH clairvoyant PUCT prefixes -- the
+candidate AND the ``--opponent puct`` champion sibling -- on ``carc_rs`` via
+``rust_agent.RustClairvoyantAgent`` (mirror protocol: ``start_game`` once, ``advance``
+on EVERY applied action of BOTH seats, hard sync check per decision). Identity gates:
+``scripts/rustport/gate_clairvoyant.py`` (candidate knobs) and
+``scripts/rustport/gate_clairvoyant_opponent.py`` (champion flag-OFF knobs). The
+``h<sims>`` HeuristicMCTS opponent, the net arms, and the exact-K clairvoyant tail have
+no Rust surface and stay Python; the tail is shared identically by both sides, so it
+caps the speedup without biasing the A/B. Every config the Rust surface cannot express
+fails CLOSED at argparse -- there is no silent Python fallback.
 """
 from __future__ import annotations
 
@@ -294,6 +305,27 @@ class _PuctPrefix:
 
     def move(self, board) -> int:
         return int(self._a.move(board))
+
+
+def _rust_clairvoyant(cfg, sims, seed):
+    """The Rust route for a CLAIRVOYANT PUCT-heuristic-priors prefix — used by BOTH
+    sides of this harness (candidate since 2026-08-02, opponent since the port below).
+
+    ⚠️ `RustClairvoyantAgent` is a MIRROR agent: it owns its own `MirrorState` seated
+    on the true deck, so every prefix built here MUST be `start_game()`d on the real
+    initial board and `advance()`d with EVERY applied action of BOTH seats. `_play_one`
+    / `_smoke` do that by discovering `.advance` on the prefix — which is why this
+    returns the agent itself rather than a `_PuctPrefix`-style wrapper (a wrapper would
+    hide the mirror protocol and the agent would answer from a frozen mirror).
+
+    Refuses nothing here: the config-level refusals (reuse_tree, evaluator injection,
+    gumbel root) live in `rust_agent`/`search_config_rs` and RAISE rather than
+    silently running a different search; the CLI fails closed ahead of them so an
+    operator sees an argparse error, not a worker traceback."""
+    from carcassonne_ai.rust_agent import RustClairvoyantAgent
+
+    return RustClairvoyantAgent(Game(enable_legal_moves_cache=True), cfg,
+                                simulations=int(sims), seed=seed)
 
 
 class _AbPrefix:
@@ -895,11 +927,7 @@ def _play_one(args) -> GameResult | None:
         # RustClairvoyantAgent over MirrorState.search_single, gated bit-exact by
         # scripts/rustport/gate_clairvoyant.py, not the fair backend.
         if _W.get("backend", "python") == "rust":
-            from carcassonne_ai.rust_agent import RustClairvoyantAgent
-
-            cand_prefix = RustClairvoyantAgent(
-                Game(enable_legal_moves_cache=True), cfg,
-                simulations=_W["cand_sims"], seed=seed)
+            cand_prefix = _rust_clairvoyant(cfg, _W["cand_sims"], seed)
         else:
             cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                               simulations=_W["cand_sims"], seed=seed)
@@ -910,11 +938,20 @@ def _play_one(args) -> GameResult | None:
         champ_prefix = _make_net_prefix(seed + 1)
         opp_K = 0   # BARE net (pinned anchor config): K=0 never latches the exact tail
     elif opp_kind == "puct":
-        champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
-                                   _champ_puct_cfg(_W["cand_cfg_dict"],
-                                                   reuse=_W.get("opp_reuse", False),
-                                                   pin_champion=_W.get("opp_pin_champion", False)),
-                                   _W["opp_sims"], seed + 1)
+        # ENGINE (rustport P6, opponent side wired 2026-08-02). The --opponent puct
+        # sibling is the SAME clairvoyant single-tree search as the candidate, only at
+        # the champion's flag-OFF knobs -- so it takes the SAME Rust route, gated by
+        # scripts/rustport/gate_clairvoyant_opponent.py (the champion-knob twin of the
+        # candidate's gate_clairvoyant.py). The CLI has already refused every opponent
+        # config the Rust surface cannot express (--opp-reuse-tree, net arms).
+        opp_cfg = _champ_puct_cfg(_W["cand_cfg_dict"],
+                                  reuse=_W.get("opp_reuse", False),
+                                  pin_champion=_W.get("opp_pin_champion", False))
+        if _W.get("backend", "python") == "rust":
+            champ_prefix = _rust_clairvoyant(opp_cfg, _W["opp_sims"], seed + 1)
+        else:
+            champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True), opp_cfg,
+                                       _W["opp_sims"], seed + 1)
         opp_K = K
     else:
         champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["opp_sims"],
@@ -922,13 +959,16 @@ def _play_one(args) -> GameResult | None:
         opp_K = K
     cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), K)
     champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
-    # Seat any Rust mirror on the real initial board. The EXACT tail stays Python for
+    # Seat EVERY Rust mirror (candidate and/or opponent) on the real initial board.
+    # Both mirrors see EVERY applied action of BOTH seats -- a mirror that only saw its
+    # own moves would answer from a frozen board, which `check_sync` turns into a hard
+    # MirrorDesync rather than a silently wrong move. The EXACT tail stays Python for
     # both sides: FairAgentRs.solve_marginalized is the FAIR marginalized solve, not
     # this harness's clairvoyant exact-K solve, and both sides share the tail
     # identically -- so leaving it Python cannot bias the A/B.
-    _mirror = cand_prefix if hasattr(cand_prefix, "advance") else None
-    if _mirror is not None:
-        _mirror.start_game(board)
+    _mirrors = [p for p in (cand_prefix, champ_prefix) if hasattr(p, "advance")]
+    for _m in _mirrors:
+        _m.start_game(board)
 
     t0 = time.perf_counter()
     moves = 0
@@ -944,8 +984,8 @@ def _play_one(args) -> GameResult | None:
         agent = cand if cur == a_seat else champ
         action = agent.move(board)
         board, _ = game.get_next_state(board, action)
-        if _mirror is not None:
-            _mirror.advance(int(action))     # EVERY applied action, BOTH seats
+        for _m in _mirrors:
+            _m.advance(int(action))          # EVERY applied action, BOTH seats
         moves += 1
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
@@ -1127,10 +1167,14 @@ def _append_results_csv(csv_path: Path, row: dict):
 
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None,
-           new_mode=False) -> int:
+           new_mode=False, backend="python") -> int:
     """Single-process plumbing + handoff-fires proof: play 2 paired games, print
     move/handoff counts, assert both sides latched to the exact endgame, exit.
-    Honors --candidate/--opponent; a net: opponent is loaded on CPU (no orch)."""
+    Honors --candidate/--opponent/--backend; a net: opponent is loaded on CPU (no
+    orch). ⚠️ `backend` is honored HERE too (2026-08-02): a smoke that silently ran
+    the Python route while `--backend rust` was on deck would preflight the wrong
+    plumbing -- and the mirror protocol (start_game/advance on both sides) is exactly
+    the plumbing a smoke exists to prove."""
     if opp_sims is None:
         opp_sims = args.champ_sims
     cand_leaf_cfg = _load_cand_leaf_cfg(getattr(args, "cand_leaf_json", None))
@@ -1184,7 +1228,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                         f"reuse={'ON' if args.opp_reuse_tree else 'off'}){_pin} sims={opp_sims}")
         else:
             opp_desc = f"net:{net_ckpt}@{NET_SIMS} c{NET_CPUCT} rs{NET_RESIDUAL_SCALE} (CPU, bare)"
-        print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k}")
+        print(f"[smoke] cand: {cand_desc} | opp: {opp_desc} | exact-K={args.exact_k} "
+              f"| backend={backend}")
     t0 = time.perf_counter()
     for a_seat in (0, 1):
         seed = args.seed_start
@@ -1201,6 +1246,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
                 Game(enable_legal_moves_cache=True), Game(enable_legal_moves_cache=True),
                 cfg, sims=args.cand_sims, mult=args.oracle_prior_mult,
                 eps_coef=args.oracle_prior_eps_coef, seed=seed)
+        elif backend == "rust":
+            cand_prefix = _rust_clairvoyant(cfg, args.cand_sims, seed)
         else:
             cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                               simulations=args.cand_sims, seed=seed)
@@ -1214,15 +1261,22 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         elif opp_kind == "puct":
             shared = {"c_puct": args.c_puct, "tau_p": args.tau_p,
                       "leaf_quantize": args.leaf_quantize}
-            champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True),
-                                       _champ_puct_cfg(shared, reuse=args.opp_reuse_tree,
-                                                       pin_champion=args.opp_pin_champion),
-                                       opp_sims, seed + 1)
+            opp_cfg = _champ_puct_cfg(shared, reuse=args.opp_reuse_tree,
+                                      pin_champion=args.opp_pin_champion)
+            if backend == "rust":
+                champ_prefix = _rust_clairvoyant(opp_cfg, opp_sims, seed + 1)
+            else:
+                champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True), opp_cfg,
+                                           opp_sims, seed + 1)
         else:
             champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
                                         seed + 1, DEFAULT_CONFIG)
         cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), args.exact_k)
         champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
+        # Same mirror protocol as _play_one (see the comment there).
+        mirrors = [p for p in (cand_prefix, champ_prefix) if hasattr(p, "advance")]
+        for m in mirrors:
+            m.start_game(board)
         moves = 0
         while game.get_game_ended(board, 0) == 0.0:
             cur = board.state.current_player
@@ -1231,6 +1285,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
             act = agent.move(board)
             assert mask[act], f"illegal action {act}"
             board, _ = game.get_next_state(board, act)
+            for m in mirrors:
+                m.advance(int(act))
             moves += 1
         s0, s1 = board.state.scores
         diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
@@ -1388,21 +1444,25 @@ def main(argv=None) -> int:
     ap.add_argument("--exact-k", type=int, default=4, help="exact clairvoyant endgame handoff at k_remaining<=K")
     # --- ENGINE (rustport P6, wired 2026-08-02) ---
     ap.add_argument("--backend", choices=("python", "rust", "auto"), default="python",
-                    help="which ENGINE runs the CANDIDATE prefix. `python` (default) "
-                         "is byte-identical to every row already on record. `rust` "
-                         "runs rust_agent.RustClairvoyantAgent over "
+                    help="which ENGINE runs the CLAIRVOYANT PUCT prefixes -- BOTH "
+                         "sides since 2026-08-02 (the candidate, and the --opponent "
+                         "puct champion sibling). `python` (default) is "
+                         "byte-identical to every row already on record. `rust` runs "
+                         "rust_agent.RustClairvoyantAgent over "
                          "MirrorState.search_single -- gated bit-exact against "
                          "HeuristicPriorAgent (chosen action + root N/W + every root "
                          "child edge, raw f64 bits) by "
-                         "scripts/rustport/gate_clairvoyant.py. ⚠️ THIS IS AN "
-                         "INSTRUMENT: converting a ruler changes the ruler, so cite "
-                         "that gate before comparing a rust-leg row to a python-leg "
-                         "one. ⚠️ EXPECT A MODEST SPEEDUP, not the ~8x fair-champion "
-                         "figure: the OPPONENT here is a frozen h6400 HeuristicMCTS "
-                         "that cannot convert and carries most of the cell CPU, and "
-                         "the exact-K tail stays Python on both sides. Only the plain "
-                         "PUCT candidate converts (--candidate h<sims>, the ab and "
-                         "oracle-prior candidates and every net arm stay Python).")
+                         "scripts/rustport/gate_clairvoyant.py (candidate knobs) and "
+                         "scripts/rustport/gate_clairvoyant_opponent.py (champion "
+                         "flag-OFF knobs). ⚠️ THIS IS AN INSTRUMENT: converting a "
+                         "ruler changes the ruler, so cite those gates before "
+                         "comparing a rust-leg row to a python-leg one. What does NOT "
+                         "convert: the h<sims> HeuristicMCTS opponent (frozen ruler, "
+                         "no Rust port), the ab and oracle-prior candidates, every "
+                         "net arm, --opp-reuse-tree (all of which FAIL CLOSED with an "
+                         "argparse error rather than silently staying Python), and "
+                         "the exact-K clairvoyant tail, which stays Python on BOTH "
+                         "sides and therefore caps the realised cell speedup.")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -1455,6 +1515,24 @@ def main(argv=None) -> int:
         if args.oracle_prior_mult:
             ap.error("--oracle-prior-mult is a python-only search overlay; "
                      "run it with --backend python")
+        # --- OPPONENT side (wired 2026-08-02) ------------------------------------
+        # The --opponent puct sibling converts (it is the same clairvoyant single-tree
+        # search at the champion's flag-OFF knobs). Everything the Rust surface cannot
+        # express fails CLOSED here rather than silently staying Python under a
+        # manifest that says "rust".
+        if opp_kind == "net":
+            ap.error("--backend rust cannot run a net opponent: the Rust core carries "
+                     "no evaluator (Gap 3 of BACKEND_BYPASS_AUDIT_20260801 §3), so the "
+                     "opponent would silently stay Python. Run the net arms with "
+                     "--backend python.")
+        if args.opp_reuse_tree:
+            ap.error("--opp-reuse-tree has no carc_rs implementation "
+                     "(MirrorState.search_single is FRESH-TREE only -- Gap 2 of "
+                     "BACKEND_BYPASS_AUDIT_20260801 §3). The Stage-2 confirm vs the "
+                     "champion OF RECORD must run with --backend python.")
+        # --opp-pin-champion is EXPRESSIBLE and therefore allowed: it only swaps the
+        # shared c_puct/tau_p/leaf_quantize axes for the champion constants, all three
+        # of which SearchConfigRs carries. No refusal needed.
     if args.shm_eval_server and opp_kind != "net":
         ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
     if cand_kind == "ab" and (args.cand_ab_steps is None or args.cand_ab_steps <= 0):
@@ -1486,7 +1564,8 @@ def main(argv=None) -> int:
         ap.error(f"--cand-leaf-json: {e}")
 
     if args.smoke:
-        return _smoke(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode)
+        return _smoke(args, cand_kind, opp_kind, opp_sims, net_ckpt, new_mode,
+                      backend=_backend)
 
     if not args.summary_only and not args.allow_selfplay_seeds:
         ep.assert_clean_eval_seed_range(args.seed_start, args.n)
@@ -1603,6 +1682,45 @@ def main(argv=None) -> int:
             "applies_to": "candidate",
         }
         man_cfg["oracle_prior"] = oracle_block
+    # ENGINE provenance (rustport P6). Recorded for EVERY cell, legacy or round-robin
+    # (it moved out of the new_mode branch 2026-08-02 — a legacy `--backend rust` cell
+    # used to record nothing at all). PER SIDE, because the two sides convert
+    # independently: the clairvoyant PUCT search converts on either side, the h<sims>
+    # HeuristicMCTS opponent and every net arm do not.
+    _cand_engine = _backend if cand_kind == "puct" and not args.oracle_prior_mult \
+        else "python"
+    _opp_engine = _backend if opp_kind == "puct" else "python"
+    man_cfg["backend"] = {
+        "name": _backend,
+        "default": "python",
+        "candidate_engine": _cand_engine,
+        "opponent_engine": _opp_engine,
+        "applies_to": "the CLAIRVOYANT PUCT search on either side "
+                      "(RustClairvoyantAgent over MirrorState.search_single)",
+        "unconverted": "the h<sims> HeuristicMCTS opponent (frozen ruler, no Rust "
+                       "port), every net arm (Gap 3: the Rust core carries no "
+                       "evaluator), and the exact-K clairvoyant tail on BOTH sides "
+                       "(carc_rs exposes only FairAgentRs.solve_marginalized, the "
+                       "FAIR marginalized solve, not this harness's true-deck "
+                       "clairvoyant solve) stay Python. The tail is shared "
+                       "identically by both sides, so leaving it Python cannot bias "
+                       "the A/B -- it only caps the realised speedup.",
+        "candidate_agent_class": ("RustClairvoyantAgent" if _cand_engine == "rust"
+                                  else "HeuristicPriorAgent"),
+        "opponent_agent_class": ("RustClairvoyantAgent" if _opp_engine == "rust"
+                                 else "HeuristicPriorAgent" if opp_kind == "puct"
+                                 else "HeuristicMCTS" if opp_kind == "heur"
+                                 else "NeuralMCTS"),
+        "identity_gate": "measurement/rustport_p6/GATE_CLAIRVOYANT.json",
+        "opponent_identity_gate":
+            "measurement/rustport_p6/GATE_CLAIRVOYANT_OPPONENT.json",
+        "wiring_gate": "measurement/rustport_p6/G6_eval_puct_priors_wiring.json",
+        "seed_gate": "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+        "instrument_warning": "this harness is a RULER (both sides clairvoyant by "
+                              "design); converting an instrument changes the "
+                              "instrument -- cite the identity gate before "
+                              "comparing a rust-leg row to a python-leg one",
+    }
     if new_mode:
         # Round-robin cell: resolved candidate + opponent specs (ROUND_ROBIN_PLAN.md).
         if cand_kind == "puct":
@@ -1666,24 +1784,6 @@ def main(argv=None) -> int:
                                         "ITER8_CPUCT/ITER8_RESIDUAL_SCALE (rod_v2 anchor "
                                         "harness; results.csv rodv2_iter02_vs_heur*_v29_n200)",
                          **net_meta}
-        man_cfg["backend"] = {
-            "name": _backend,
-            "default": "python",
-            "applies_to": "candidate prefix only",
-            "unconverted": "the h<sims> HeuristicMCTS opponent (frozen ruler, no Rust "
-                           "port) and the exact-K clairvoyant tail on BOTH sides "
-                           "(FairAgentRs.solve_marginalized is the FAIR marginalized "
-                           "solve, not this one) stay Python -- so the realised "
-                           "speedup on a cell is modest, not the ~8x fair figure",
-            "agent_class": ("RustClairvoyantAgent" if _backend == "rust"
-                            else "HeuristicPriorAgent"),
-            "identity_gate": "measurement/rustport_p6/GATE_CLAIRVOYANT.json",
-            "seed_gate": "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
-            "instrument_warning": "this harness is a RULER (both sides clairvoyant by "
-                                  "design); converting an instrument changes the "
-                                  "instrument -- cite the identity gate before "
-                                  "comparing a rust-leg row to a python-leg one",
-        }
         man_cfg.update({"rr_cell": tag,
                         "candidate_spec": args.candidate,
                         "opponent_spec": args.opponent or f"h{args.champ_sims}",
