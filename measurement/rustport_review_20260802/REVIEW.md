@@ -651,3 +651,15 @@ so `-5` and `5` must agree, and they do), and `search_config_rs` dropping `reuse
 **documented and defensible** (`trace_search.production_knobs:158-167` explains it is a no-op in
 fair deploy) — only `c_lcb` and `root_select` carry no such justification, which is why C-g is
 scoped to those two.
+
+---
+
+## OUTCOMES (2026-08-02 perf pass — merged to android-app at 55f7eea; gates: G3 432 checks 0-mismatch @ 10.09×, G6 1435/1435 actions + 2,880 digest asserts)
+
+- **#2 FIXED** (`363c213`): node key once behind `Rc<str>` (a 4th uncounted copy also died) — peak RSS **−48/−57/−58%** ply 40/55/80; wall neutral.
+- **#3 FIXED** (`8cdd9c7`): trace SHA-256 paid only when a sink exists (algorithm is a recorded artifact contract, untouched) — wall **−8/−12/−5%**.
+- **#4 FIXED** (`e24bff8`): single-pass byte-identical `string_representation` — wall **−18/−17/−14%** (stacks on #3).
+- **C-e FIXED** (`00387bd`): vacuous legal-move cache + collide-check knob deleted (collision semantics preserved at `Tree::index`).
+- **C-f REFUTED-BY-MEASUREMENT**: hoisting IS 4.6–12% faster in isolation (ROUND2's LICM mechanism was wrong) but end-to-end +0.2–0.6% wrong-sign — below the 1% bar, not adopted. ROUND2's ceiling was right, its mechanism was not.
+- **Cumulative: wall −27/−30/−20%, peak RSS −50/−58/−60%** (ply 40/55/80; quiet-box, 9 rounds × median-of-7). Instrument committed: `carc-core/examples/perfprobe.rs` + `PERF_PASS_20260802.json`.
+- (#1, #5–#10 landed earlier via the wiring/android agents — see the audit close-out banner and wiring final report.)

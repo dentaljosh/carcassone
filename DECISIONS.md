@@ -3656,3 +3656,20 @@ Same headline as F7d this morning, stronger: neither the DRAM-wall W14–16 lore
 gen RAM caps transfer across the backend era. The code-era re-bench rule is now 2-for-2
 today. Bench only: throwaway seeds 9.69e10, no results.csv row, no claim id. Data:
 measurement/classical_search/WSWEEP_GEN_RUST_{local,laptop}.tsv.
+
+## 2026-08-02 (evening) — Perf pass MERGED (55f7eea): champion wall −20–30%, peak RSS −50–60%, all bit-exact; C-f refuted by measurement
+
+The staged perf pass (review #2/#3/#4 + ROUND2 C-e/C-f riders) landed via a worktree'd
+Opus agent, each change its own commit, each gated: cargo 72 · pytest 419 (worktree wheel)
+· G3 raw-float 54 searches/432 checks 0-mismatch (throughput 884→8922 sims/s = 10.09×, up
+from 9.55× at P3 close — the pass measured in the gate itself) · G6 1435/1435 actions +
+2,880 mirror-digest asserts, 0 raised. Outcome lines + measured deltas per finding →
+REVIEW.md OUTCOMES section; full ladder + protocol in
+measurement/rustport_review_20260802/PERF_PASS_20260802.json; perfprobe.rs committed as
+the standing cost instrument (the review's meta-complaint was that no gate measures cost).
+C-f is the methodological keeper: the LICM refutation was WRONG at source level (isolated
+fn is 4.6–12% faster hoisted) yet the adoption bar held (end-to-end +0.2–0.6% wrong-sign)
+— measure-first riders earn their keep. Fleet updated atomically: wheel e08081bb (was
+c27cc1a8) installed local + laptop with repo at 55f7eea both boxes; Android wheels ride
+the NEXT app release (phone already meets its bar; bridge/wheel skew impossible — APK
+bundles both). No strength claim: bit-exactness transfers (CL-071 pattern).
