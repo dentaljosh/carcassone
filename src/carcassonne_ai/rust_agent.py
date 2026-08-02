@@ -791,3 +791,268 @@ class RustClairvoyantAgent:
     def __repr__(self) -> str:
         return (f"RustClairvoyantAgent(sims={self._sims}, seed={self._seed}, "
                 f"reconcile={self._reconcile})")
+
+
+# --------------------------------------------------------------------------- #
+# CLASS B, Gap 2 — the PERSISTING-TREE ruler                                    #
+# --------------------------------------------------------------------------- #
+class RustCarryClairvoyantAgent:
+    """`HeuristicPriorAgent` with **both** of its tree policies, on carc_rs.
+
+    ⚠️ READ THIS BEFORE PICKING BETWEEN THIS CLASS AND ``RustClairvoyantAgent``.
+    The Python ruler has TWO search semantics and the difference is not cosmetic:
+
+        agent.best_action(board)   ->  mcts.search(board)          # NO clear(), EVER
+        agent.move(board)          ->  clear() or _reroot_or_clear # THEN best_action
+
+    ``best_action`` does not clear at any ``reuse_tree`` — the guard is on
+    ``move``, and it cannot be keyed off ``cfg.reuse_tree`` because ``best_action``
+    never reads it.  So a caller that drives an advancing game through
+    ``best_action`` (``oracle_score_pilot._playout_value`` does, every ply to
+    terminal) runs ONE transposition table across the whole playout, and each
+    ply's root arrives carrying the visits it accumulated as a DESCENDANT of the
+    previous ply's tree.  Measured, not inferred:
+    ``measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json`` — the root
+    pre-exists with ``N > sims`` on 102/103 plies, and a fresh-tree replay of the
+    identical world diverges in 4/4 positions (terminal margins up to 12 pts
+    apart).  ``RustClairvoyantAgent`` aliases ``best_action`` to a FRESH search,
+    so it is the right class for a ``.move()``-driven harness and the WRONG one
+    for a ``.best_action()``-driven one.  This class implements the distinction.
+
+    It is backed by ``carc_rs.PersistentSearcher``, whose tree outlives the call:
+
+        best_action  -> PersistentSearcher.search()          (carry)
+        move         -> .search_fresh()   if not reuse_tree  (clear, then search)
+                     -> .search_reroot()  if reuse_tree      (_reroot_or_clear)
+
+    ⚠️ STILL A RULER.  Converting an instrument changes the instrument; this
+    class prices nothing until its gates are green
+    (``scripts/rustport/gate_gap2_persistent.py``, ``gate_oracle_pilot_backend.py``,
+    ``gate_clair_backend.py``).
+
+    MIRROR CONTRACT (the same one ``RustFairAgent`` / ``RustClairvoyantAgent``
+    document): seat once, then ``advance()`` EVERY applied action of BOTH seats.
+    ``auto_advance=True`` is the exception for ``best_action``-driven playout
+    loops, which own no mirror and apply exactly the action they were handed —
+    there the agent steps its own mirror.  Either way every decision hard-checks
+    sync against the caller's board, so a protocol mistake raises instead of
+    silently answering for a stale position.
+    """
+
+    neural_moves = 0
+
+    def __init__(self, game, cfg, *, simulations: int, seed: int | None = None,
+                 reuse_tree: bool = False, evaluator=None, window_size: int = 25,
+                 reconcile: bool | None = None, auto_advance: bool = False):
+        import carc_rs
+
+        if evaluator is not None:
+            raise ValueError(
+                "evaluator injection has no carc_rs implementation (the Rust core "
+                "carries no net — Gap 3 of BACKEND_BYPASS_AUDIT_20260801 §3). "
+                "Build this ruler with backend='python'.")
+        self._game = game
+        self._cfg = cfg
+        self._sims = int(simulations)
+        # Gap 1: recorded, and PROVEN inert at these knobs
+        # (measurement/rustport_p6/GAP1_SEED_INVARIANCE.json). The seed feeds
+        # NeuralMCTS._np_rng, which only temperature sampling and Dirichlet root
+        # noise consume — neither is engaged on this path.
+        self._seed = seed
+        self._reuse_tree = bool(reuse_tree)
+        self._auto_advance = bool(auto_advance)
+        self._reconcile = reconcile_enabled(reconcile)
+        self._scfg = search_config_rs(cfg, self._sims)
+        self._carc_rs = carc_rs
+        self._window_size = int(window_size)
+        self._ps = None
+        self._started = False
+        self._plies = 0
+        self._moves = 0
+        self._last = None
+        self.total_secs = 0.0
+        self.prefix_moves = 0
+        self.prefix_secs = 0.0
+        # HeuristicPriorAgent's own re-root bookkeeping, same names.
+        self.reuse_hits = 0
+        self.reuse_fresh = 0
+        self.reuse_collide = 0
+        self.heur_moves = 0
+        self.latch_k = None
+
+    # --- lifecycle ---------------------------------------------------------- #
+    def _open(self, mirror) -> None:
+        self._ps = self._carc_rs.PersistentSearcher(mirror, self._scfg)
+        self._started = True
+        self._plies = self._moves = 0
+        self.total_secs = self.prefix_secs = 0.0
+        self.prefix_moves = 0
+
+    def start_game(self, board) -> None:
+        """Seat on an INITIAL board, using the deck it was dealt (draw order)."""
+        st = board.state
+        if st.next_tile is None:
+            raise ValueError("start_game needs an INITIAL board (next_tile is None)")
+        descs = [st.next_tile.description] + [t.description for t in st.deck]
+        self._open(self._carc_rs.MirrorState.from_deck(descs))
+        self._check_sync(board, "start_game")
+
+    def start_game_from_seed(self, deck_seed: int | str) -> None:
+        self._open(self._carc_rs.MirrorState.from_seed(str(deck_seed)))
+
+    def seat(self, deck_seed: int | str, prefix, board=None) -> None:
+        """Seat MID-GAME: ``from_seed(deck_seed)`` + ``advance`` over ``prefix``.
+
+        The byte-equal counterpart of ``root_replay.replay_actions`` (which is
+        ``random.seed(deck_seed); Game().get_init_board()`` + the same actions),
+        and the same construction ``rust_world_search.RustWorldSearcher`` uses.
+        Pass ``board`` to have the seating PROVED rather than assumed.
+        """
+        ms = self._carc_rs.MirrorState.from_seed(str(int(deck_seed)))
+        n = 0
+        for a in prefix:
+            ms.advance(int(a))
+            n += 1
+        self._open(ms)
+        self._plies = n
+        if board is not None:
+            self.check_sync(board, f"seat(ply {n})")
+
+    def set_unseen_deck(self, descriptions) -> None:
+        """Install one determinization world's deck (``set_unseen_deck``).
+
+        Does NOT touch the retained tree — matching Python, where the world is a
+        property of the BOARD the agent is handed and the agent's ``_nodes`` is
+        untouched by it. In the pilot's playout the world is installed once,
+        before the first search, so the retained tree is always a tree of THIS
+        world.
+        """
+        self._ps.set_unseen_deck([str(d) for d in descriptions])
+
+    def set_world(self, world_board) -> None:
+        """``set_unseen_deck`` from an already-determinized Python board."""
+        self.set_unseen_deck([t.description for t in world_board.state.deck])
+
+    def close(self) -> None:
+        """No-op — the Rust ruler owns no processes. Present for drop-in parity."""
+
+    # --- the mirror choke point --------------------------------------------- #
+    def advance(self, action: int, board_after=None) -> None:
+        if not self._started:
+            raise RuntimeError("advance before start_game()/seat()")
+        self._ps.advance(int(action))
+        self._plies += 1
+        if board_after is not None:
+            self._check_sync(board_after, f"advance({action})")
+
+    def clear(self) -> None:
+        """``NeuralMCTS.clear()`` — drop the retained tree, keep the mirror."""
+        if self._ps is not None:
+            self._ps.clear()
+
+    # --- the two decisions --------------------------------------------------- #
+    def best_action(self, board) -> int:
+        """``HeuristicPriorAgent.best_action`` — search on the CARRIED tree."""
+        return self._decide(board, "carry")
+
+    def move(self, board) -> int:
+        """``HeuristicPriorAgent.move`` — clear (or re-root), then ``best_action``."""
+        self.neural_moves += 1
+        return self._decide(board, "reroot" if self._reuse_tree else "fresh")
+
+    def _decide(self, board, how: str) -> int:
+        if not self._started:
+            self.start_game(board)
+        # Unconditional, for the same reason RustFairAgent's is: a caller that
+        # forgets to advance would otherwise be answered from a frozen mirror.
+        self.check_sync(board, f"{how}_search")
+        t0 = time.perf_counter()
+        if how == "carry":
+            res = self._ps.search()
+        elif how == "fresh":
+            res = self._ps.search_fresh()
+        else:
+            res = self._ps.search_reroot()
+            tag = res.get("reroot")
+            if tag == "hit":
+                self.reuse_hits += 1
+            elif tag == "collide":
+                self.reuse_collide += 1
+            else:
+                self.reuse_fresh += 1
+        dt = time.perf_counter() - t0
+        self.total_secs += dt
+        self.prefix_secs += dt
+        self.prefix_moves += 1
+        self._moves += 1
+        self._last = res
+        action = int(res["chosen_action"])
+        if self._auto_advance:
+            self._ps.advance(action)
+            self._plies += 1
+        return action
+
+    # --- reconcile ----------------------------------------------------------- #
+    def _check_sync(self, board, where: str) -> None:
+        if not self._reconcile:
+            return
+        self.check_sync(board, where)
+
+    def check_sync(self, board, where: str = "check_sync") -> None:
+        want = self._game.string_representation(board)
+        got = self._ps.string_repr()
+        if want == got:
+            return
+        raise MirrorDesync(
+            f"rust carry-clairvoyant mirror desync at {where} (ply {self._plies}): "
+            f"python digest {_short(want)} != rust digest {_short(got)}\n"
+            f"  python: {want[:400]}\n  rust  : {got[:400]}")
+
+    # --- read-off ------------------------------------------------------------ #
+    def last_search(self) -> dict:
+        """The last search's raw surface (floats as raw f64 BITS) — the G3 shape,
+        plus the carry diagnostics (``root_n_before`` / ``carried`` / ``tree_len``
+        / ``reroot``)."""
+        return dict(self._last)
+
+    def tree_len(self) -> int:
+        return int(self._ps.tree_len())
+
+    def root_n(self) -> int:
+        """The CURRENT position's retained visit count (0 = not in the tree) —
+        the GAP2 measurement's ``pre.N``."""
+        return int(self._ps.root_n())
+
+    def string_repr(self) -> str:
+        return self._ps.string_repr()
+
+    def stats(self) -> dict:
+        return {
+            "backend": "rust",
+            "agent_class": "RustCarryClairvoyantAgent",
+            "neural_moves": int(self.neural_moves),
+            "moves": int(self._moves),
+            "prefix_moves": int(self.prefix_moves),
+            "prefix_secs": float(self.prefix_secs),
+            "total_secs": float(self.total_secs),
+            "ms_per_move": (1e3 * self.total_secs / self._moves
+                            if self._moves else 0.0),
+            "simulations": int(self._sims),
+            "seed": self._seed,
+            "seed_note": "inert at these knobs — proven by "
+                         "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+            "reuse_tree": bool(self._reuse_tree),
+            "auto_advance": bool(self._auto_advance),
+            "tree_policy": "persistent (carc_rs.PersistentSearcher) — best_action "
+                           "carries, move() clears or re-roots",
+            "reuse_hits": int(self.reuse_hits),
+            "reuse_fresh": int(self.reuse_fresh),
+            "reuse_collide": int(self.reuse_collide),
+            "tree_nodes": (int(self._ps.tree_len()) if self._ps is not None else 0),
+            "reconcile": bool(self._reconcile),
+            "plies_advanced": int(self._plies),
+        }
+
+    def __repr__(self) -> str:
+        return (f"RustCarryClairvoyantAgent(sims={self._sims}, seed={self._seed}, "
+                f"reuse_tree={self._reuse_tree}, auto_advance={self._auto_advance})")

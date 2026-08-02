@@ -56,9 +56,14 @@ fn node_digest(key: &str) -> String {
 }
 
 mod fxhash;
+/// P6 (Gap 2): the persistent / re-rootable tree.  ADDITIVE — nothing in this
+/// module calls into it, so the fresh-tree path above is byte-identical with the
+/// session unused.
+pub mod session;
 pub mod trace;
 
 pub use fxhash::FxBuildHasher;
+pub use session::{Reroot, SearchSession};
 pub use trace::{JsonlTrace, TraceSink};
 
 pub type NodeId = u32;
