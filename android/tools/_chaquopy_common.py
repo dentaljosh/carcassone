@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import os
 import platform
 import shutil
@@ -198,28 +199,56 @@ def elf_info(so: Path, ndk: Path) -> dict:
         if line.strip().startswith("Machine:"):
             machine = line.split(":", 1)[1].strip()
 
-    # LOAD alignment: llvm-readelf -l prints the align as the last column of the
-    # (wrapped) program-header row; take the max over LOAD segments.
-    aligns: list[int] = []
-    lines = seg.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip().startswith("LOAD"):
-            tail = (line + " " + (lines[i + 1] if i + 1 < len(lines) else "")).split()
-            for tok in reversed(tail):
-                if tok.startswith("0x"):
-                    try:
-                        aligns.append(int(tok, 16))
-                    except ValueError:
-                        continue
-                    break
+    aligns = _load_aligns(seg)
     return {
         "path": so.name,
         "machine": machine,
         "soname": soname,
         "needed": needed,
+        # BOTH, and the GATE reads the min (see assert_links_libpython): one
+        # under-aligned LOAD is enough to break dlopen on a 16 KiB-page device.
+        "load_align_min": min(aligns) if aligns else 0,
         "load_align_max": max(aligns) if aligns else 0,
+        "load_aligns": aligns,
         "size": so.stat().st_size,
     }
+
+
+def _load_aligns(seg: str) -> list[int]:
+    """Align of every LOAD program header in ``llvm-readelf -l`` output.
+
+    ⚠️ FIXED 2026-08-02 (ROUND2 F-9). The previous parse joined each LOAD row with
+    ``lines[i+1]`` and scanned the JOINED text backwards for the first ``0x`` token —
+    which, in llvm-readelf's ONE-ROW-PER-HEADER format, is the align of the *next*
+    program header. Measured against the shipped ``carc_cy/flat_leaf_cy.so``: four
+    LOADs all at 0x4000 followed by ``DYNAMIC … RW 0x8`` parsed as
+    ``[0x4000, 0x4000, 0x4000, 0x8]`` — LOAD#1's align was never sampled and
+    DYNAMIC's leaked in. It only looked right because the caller took ``max()``.
+
+    Both layouts are handled: llvm-readelf prints one row
+    (``Type Offset VirtAddr PhysAddr FileSiz MemSiz Flg Align``, >= 8 tokens, Align
+    last), GNU readelf wraps it and the align is the last hex token of the
+    continuation line — which is recognisable because it starts with a hex offset
+    rather than a header Type name.
+    """
+    out: list[int] = []
+    lines = seg.splitlines()
+    for i, line in enumerate(lines):
+        if not line.strip().startswith("LOAD"):
+            continue
+        toks = line.split()
+        if len(toks) < 8 and i + 1 < len(lines):
+            nxt = lines[i + 1].split()
+            if nxt and nxt[0].startswith("0x"):
+                toks = nxt
+        for tok in reversed(toks):
+            if tok.startswith("0x"):
+                try:
+                    out.append(int(tok, 16))
+                except ValueError:
+                    continue
+                break
+    return out
 
 
 EXPECTED_MACHINE = {
@@ -237,9 +266,13 @@ def assert_links_libpython(so: Path, ndk: Path, abi: str, log=print,
     2. ``libc.so`` absent -> a host-libc link leaked in;
     3. wrong ELF machine -> the ABI loop built the same object twice;
     4. LOAD alignment < 16 KiB -> will not load on a 16 KiB-page device
-       (Android 15+). ``require_page_align=False`` downgrades this one to a
-       warning, which is what the pre-existing cy wheel needs: it is 4 KiB-aligned
-       today and adding the flag would change its bytes (see MAX_PAGE_SIZE).
+       (Android 15+). Judged on the MINIMUM over LOAD segments, not the max: one
+       under-aligned LOAD breaks ``dlopen``, and a max hides it behind its
+       best-aligned sibling (ROUND2 F-9). ``require_page_align=False`` downgrades
+       this one to a warning — NO CALLER PASSES IT since 2026-08-01; both wheels
+       now carry ``PAGE_ALIGN_LDFLAG`` and gate hard on it (see MAX_PAGE_SIZE).
+       The parameter survives only so a future third artefact can be onboarded
+       loudly rather than by relaxing the shared gate.
     """
     info = elf_info(so, ndk)
     want_machine = EXPECTED_MACHINE.get(abi)
@@ -256,15 +289,17 @@ def assert_links_libpython(so: Path, ndk: Path, abi: str, log=print,
     if "libc.so" not in info["needed"]:
         raise SystemExit(f"{so.name}: libc.so missing from DT_NEEDED "
                          f"{info['needed']} — this is not a bionic link")
-    if info["load_align_max"] < MAX_PAGE_SIZE:
-        msg = (f"{so.name}: max LOAD alignment 0x{info['load_align_max']:x} < "
+    if info["load_align_min"] < MAX_PAGE_SIZE:
+        msg = (f"{so.name}: LOAD alignments "
+               f"{[hex(a) for a in info['load_aligns']]} include one below "
                f"0x{MAX_PAGE_SIZE:x}; it will not load on a 16 KiB-page device. "
                f"Add {PAGE_ALIGN_LDFLAG} to the link.")
         if require_page_align:
             raise SystemExit(msg)
         log(f"WARNING: {msg}")
     log(f"readelf {abi}/{so.name}: machine={info['machine']} "
-        f"needed={info['needed']} load_align=0x{info['load_align_max']:x}")
+        f"needed={info['needed']} load_align=0x{info['load_align_min']:x}"
+        f" (over {len(info['load_aligns'])} LOAD segments)")
     return info
 
 
@@ -295,24 +330,49 @@ def content_version(paths: list[Path], extra: bytes = b"") -> str:
     return f"1.{int(d[:4], 16)}.{int(d[4:8], 16)}"
 
 
-def content_version_tree(roots: list[Path], suffixes: tuple[str, ...]) -> str:
+# Directory names that are BUILD OUTPUT, never source, and must not reach a
+# content-addressed version. ⚠️ THE GRADLE fileTree EXCLUSIONS MUST MATCH THIS LIST
+# EXACTLY (`android/app/build.gradle.kts`, buildRustWheels `sources`), because that
+# task claims parity with this rule — the claim was FALSE until 2026-08-02
+# (REVIEW.md #8): `rust/carc/target/` holds .rs/.toml/.lock files, including
+# per-compilation RANDOMISED names like
+# `target/debug/incremental/carc_core-*/s-*-*.lock`, so `carc-rs==X.Y.Z` was not
+# reproducible from a clean checkout and moved on every local `cargo build`.
+VERSION_EXCLUDE_DIRS: tuple[str, ...] = ("target", ".chaquopy-cache")
+
+
+def content_version_tree(roots: list[Path], suffixes: tuple[str, ...],
+                         exclude_dirs: tuple[str, ...] = VERSION_EXCLUDE_DIRS,
+                         extra: bytes = b"") -> str:
     """Content-addressed version over a whole source TREE (the Rust crate case).
 
     Paths are hashed relative to their root and sorted, so the digest is stable
     across machines and checkout locations. A file's PATH is hashed too, so a pure
-    rename still busts the cache."""
+    rename still busts the cache.
+
+    ``exclude_dirs`` drops any file with one of those names as a path COMPONENT
+    (see VERSION_EXCLUDE_DIRS) — build artefacts are not source, and hashing them
+    makes the version unreproducible from a git checkout.
+
+    ``extra`` is the same escape hatch ``content_version`` has: bytes that change the
+    emitted object without being source (link flags, the build script itself)."""
+    excluded = set(exclude_dirs)
     h = hashlib.sha256()
     for root in roots:
         root = root.resolve()
         files = sorted(
             (p for p in root.rglob("*")
-             if p.is_file() and p.suffix in suffixes),
+             if p.is_file() and p.suffix in suffixes
+             and not (excluded & set(p.relative_to(root).parts[:-1]))),
             key=lambda p: p.relative_to(root).as_posix(),
         )
         for p in files:
             h.update(p.relative_to(root).as_posix().encode())
             h.update(b"\0")
             h.update(p.read_bytes())
+    if extra:
+        h.update(b"\0extra\0")
+        h.update(extra)
     d = h.hexdigest()
     return f"1.{int(d[:4], 16)}.{int(d[4:8], 16)}"
 
@@ -348,12 +408,20 @@ def write_wheel(
     top_level: list[str],
     generator: str,
     plat: str,
+    provenance: dict | None = None,
     log=print,
 ) -> Path:
     """Hand-roll a wheel. ``payload`` is [(arcname, bytes)] for the code files.
 
     Deterministic: fixed 1980-01-01 timestamps and fixed mode bits, so two builds
-    of identical inputs are byte-identical zips.
+    of identical inputs are byte-identical zips — ``provenance`` included, since it
+    is a function of the build inputs and is serialised with sorted keys.
+
+    ``provenance`` (REVIEW.md #9) is written to ``<dist-info>/PROVENANCE.json``:
+    WHICH compiler, target triple and profile produced the bytes in this wheel. It
+    exists because two ``carc_rs`` builds from different rustc versions were
+    otherwise indistinguishable in every record the repo writes, which is what made
+    an unpinned cross-compile undetectable after the fact.
     """
     # pip normalises ``a_b`` <-> ``a-b``; Chaquopy's pip_install.py rebuilds the
     # requirement for the 2nd..Nth ABI as ``dist_info_name.replace("_", "-")``,
@@ -383,6 +451,11 @@ def write_wheel(
         (f"{dist_info}/WHEEL", wheel_meta),
         (f"{dist_info}/top_level.txt", ("\n".join(top_level) + "\n").encode()),
     ]
+    if provenance:
+        blob = json.dumps(provenance, indent=2, sort_keys=True).encode()
+        files.append((f"{dist_info}/PROVENANCE.json", blob))
+        log(f"provenance {dist_name}-{version}: "
+            + " ".join(f"{k}={provenance[k]}" for k in sorted(provenance)))
     record_lines = [f"{name},{_record_hash(data)},{len(data)}" for name, data in files]
     # The RECORD row itself carries no hash/size, per the wheel spec.
     record_lines.append(f"{dist_info}/RECORD,,")

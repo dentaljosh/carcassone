@@ -100,6 +100,20 @@ val cyWheelDir: Provider<Directory> = layout.buildDirectory.dir("generated/cyWhe
 val cyPyxSources: List<File> =
     listOf("flat_leaf_cy", "flat_repr_cy").map { repoRoot.resolve("src/carcassonne_ai/$it.pyx") }
 
+// ⚠️ SHARED BUILD SCRIPTS — an input to BOTH wheel tasks (ROUND2 F-4, 2026-08-02).
+// The P7 refactor moved MAX_PAGE_SIZE, PAGE_ALIGN_LDFLAG, TARGET_ARTIFACT_VERSION,
+// ANDROID_API, ensure_target, the ELF gate and write_wheel into
+// `android/tools/_chaquopy_common.py`, and `build_config.py` owns the cy module list —
+// but neither task declared them, so a change to either left Gradle marking the other
+// task UP-TO-DATE. Concrete path that shipped mismatched wheels: bump MAX_PAGE_SIZE,
+// cy's version moves and buildCyWheels reruns, buildRustWheels does NOT, and the APK
+// carries a cy wheel at the new alignment beside a rust wheel at the old one. Declared
+// on BOTH tasks so shared codegen changes rebuild them TOGETHER.
+val sharedWheelScripts: List<File> = listOf(
+    rootProject.file("tools/_chaquopy_common.py"),
+    repoRoot.resolve("android/native/carc-cy/build_config.py"),
+)
+
 val androidSdkDir: File = run {
     val props = Properties()
     val f = rootProject.file("local.properties")
@@ -132,6 +146,9 @@ abstract class BuildCyWheels @Inject constructor(
 
     @get:InputFile abstract val script: RegularFileProperty
     @get:InputFiles abstract val pyx: ConfigurableFileCollection
+    // The shared build machinery (see sharedWheelScripts) — half the codegen lives
+    // there, so it is as much an input as the .pyx.
+    @get:InputFiles abstract val shared: ConfigurableFileCollection
     @get:Input abstract val interpreter: Property<String>
     @get:Input abstract val version: Property<String>
     @get:Input abstract val sdkDir: Property<String>
@@ -157,6 +174,7 @@ val buildCyWheels by tasks.registering(BuildCyWheels::class) {
     onlyIf { cyEnabled }
     script.set(cyBuildScript)
     pyx.setFrom(cyPyxSources)
+    shared.setFrom(sharedWheelScripts)
     interpreter.set(buildPythonPath)
     version.set(cyVersion ?: "0")
     sdkDir.set(androidSdkDir.absolutePath)
@@ -209,6 +227,8 @@ abstract class BuildRustWheels @Inject constructor(
 
     @get:InputFile abstract val script: RegularFileProperty
     @get:InputFiles abstract val sources: ConfigurableFileCollection
+    // Same reason as BuildCyWheels.shared — see sharedWheelScripts (ROUND2 F-4).
+    @get:InputFiles abstract val shared: ConfigurableFileCollection
     @get:Input abstract val interpreter: Property<String>
     @get:Input abstract val version: Property<String>
     @get:Input abstract val sdkDir: Property<String>
@@ -235,14 +255,19 @@ val buildRustWheels by tasks.registering(BuildRustWheels::class) {
     description = "Cross-compile the Rust engine+search core (carc_rs) into Android wheels."
     onlyIf { rustEnabled }
     script.set(rustBuildScript)
-    // Only the files whose bytes can change the compiled module (matches the
-    // build script's own VERSION_SUFFIXES).
+    // Only the files whose bytes can change the compiled module. The include list is
+    // the build script's own VERSION_SUFFIXES and the excludes are its
+    // `_chaquopy_common.VERSION_EXCLUDE_DIRS` — a parity claim that was FALSE until
+    // 2026-08-02 (REVIEW.md #8: the script hashed `target/**` and
+    // `.chaquopy-cache/**` that this fileTree already excluded). Keep the two lists
+    // equal; VERSION_EXCLUDE_DIRS is the one to edit first.
     sources.setFrom(
         project.fileTree(rustCrateDir) {
             include("**/*.rs", "**/*.toml", "**/*.lock")
             exclude("target/**", ".chaquopy-cache/**")
         }
     )
+    shared.setFrom(sharedWheelScripts)
     interpreter.set(buildPythonPath)
     version.set(rustVersion ?: "0")
     sdkDir.set(androidSdkDir.absolutePath)

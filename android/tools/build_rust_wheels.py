@@ -52,6 +52,7 @@ STANDALONE USE
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
@@ -91,34 +92,141 @@ VERSION_ROOTS = [CRATE_DIR]
 VERSION_SUFFIXES = (".rs", ".toml", ".lock")
 
 CACHE_DIR = CRATE_DIR / ".chaquopy-cache"
+TOOLCHAIN_TOML = CRATE_DIR / "rust-toolchain.toml"
+CARGO_PROFILE = "release"                          # `cargo build --release`
 
 log = C.make_logger("build_rust_wheels")
 
 
+# Link + codegen inputs that change the OUTPUT BYTES without changing any file under
+# `rust/carc`. Mixed into the content-addressed version so a flag change can never be
+# served stale out of pip's cache — the sibling `build_cy_wheels.LINK_SIGNATURE`
+# exists for exactly the same reason, after the 2026-08-01 page-alignment fix proved a
+# flag can ship silently. ⚠️ ADDED 2026-08-02 (REVIEW.md #10): before this, the version
+# hashed `rust/carc` ONLY, so `PAGE_ALIGN_LDFLAG`, the -L/-l link args, the soname, the
+# Android API level, the target artifact and this script's whole body were all outside
+# it. Add to this list whenever you add anything that affects the emitted object.
+def link_signature() -> bytes:
+    parts = [
+        C.PAGE_ALIGN_LDFLAG,
+        f"soname={MODULE}.so",
+        f"lpython={C.PYTHON_VERSION}",
+        f"android_api={C.ANDROID_API}",
+        f"target_artifact={C.TARGET_ARTIFACT_VERSION}",
+        f"py_tag={PY_TAG}",
+        f"abi_tag={ABI_TAG}",
+        f"cargo_profile={CARGO_PROFILE}",
+        f"toolchain={pinned_toolchain()}",
+        "pyo3_cross=1",
+        # ⚠️ AMBIENT RUSTFLAGS ARE SCRUBBED, NOT HASHED (ROUND2 F-10) — see cargo_env.
+        "ambient_rustflags=scrubbed",
+    ]
+    h = hashlib.sha256("\0".join(parts).encode())
+    # The two scripts that decide how the object is emitted. F-4's stale-wheel path
+    # (bump MAX_PAGE_SIZE in the shared module, cy rebuilds, rust does not) closes
+    # here as well as in the Gradle input set.
+    for p in (Path(__file__).resolve(), Path(C.__file__).resolve()):
+        h.update(b"\0script\0")
+        h.update(p.name.encode())
+        h.update(p.read_bytes())
+    return h.digest()
+
+
 def source_version() -> str:
-    """Content-addressed version over the Rust tree (fallback when --version absent).
+    """Content-addressed version over the Rust tree PLUS ``link_signature()``.
 
     Gradle normally asks for this at CONFIGURATION time so the pip requirement string
     itself changes whenever a ``.rs`` does — which invalidates Chaquopy's task inputs
-    AND makes a stale wheel in pip's cache unreachable."""
-    return C.content_version_tree(VERSION_ROOTS, VERSION_SUFFIXES)
+    AND makes a stale wheel in pip's cache unreachable. Must stay cheap and
+    toolchain-free: it runs at Gradle CONFIGURATION time, before any build."""
+    return C.content_version_tree(VERSION_ROOTS, VERSION_SUFFIXES,
+                                  extra=link_signature())
 
 
 # --------------------------------------------------------------------------- #
 # Toolchain                                                                    #
 # --------------------------------------------------------------------------- #
+def pinned_toolchain() -> str:
+    """The ``channel`` declared in ``rust/carc/rust-toolchain.toml``.
+
+    ⚠️ THE PIN WAS DECLARED AND NEVER APPLIED (REVIEW.md #1). rustup resolves an
+    override file from the CURRENT WORKING DIRECTORY upward, and ``--manifest-path``
+    has no bearing on it — but Gradle runs this script from ``android/`` and the
+    documented standalone usage runs it from the repo root, neither of which has
+    ``rust/carc/`` as an ancestor. So the device wheel was cross-compiled with
+    whatever ``rustup default`` happened to be, while every gate ran against a host
+    build where the override DID apply. Latent only because ``stable`` is 1.96.0
+    today; live on the first ``rustup update``. Everything below therefore passes
+    ``RUSTUP_TOOLCHAIN``/``--toolchain`` EXPLICITLY rather than relying on cwd."""
+    if not TOOLCHAIN_TOML.is_file():
+        raise SystemExit(f"toolchain pin missing: {TOOLCHAIN_TOML}")
+    for raw in TOOLCHAIN_TOML.read_text().splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line.startswith("channel"):
+            _, _, val = line.partition("=")
+            chan = val.strip().strip('"').strip("'")
+            if chan:
+                return chan
+    raise SystemExit(f"no `channel` in {TOOLCHAIN_TOML}")
+
+
+def toolchain_env(base: dict | None = None) -> dict:
+    env = dict(os.environ if base is None else base)
+    env["RUSTUP_TOOLCHAIN"] = pinned_toolchain()
+    return env
+
+
+def assert_pinned_toolchain() -> dict:
+    """Resolve rustc UNDER THE PIN and FAIL LOUDLY if it is not the pinned one.
+
+    This is the half of #1 that makes a mismatch detectable at all: `source_version`
+    hashes the DECLARED pin bytes, which do not change when `stable` moves underneath
+    them, so nothing else in the build can notice. Returns the provenance dict that
+    then travels into the wheel (#9)."""
+    want = pinned_toolchain()
+    env = toolchain_env()
+    try:
+        out = subprocess.run(["rustc", "-vV"], capture_output=True, text=True,
+                             check=True, env=env).stdout.strip()
+    except (subprocess.CalledProcessError, OSError) as exc:
+        raise SystemExit(
+            f"cannot resolve rustc for the pinned toolchain {want!r}: {exc}\n"
+            f"    rustup toolchain install {want}") from None
+    first = out.splitlines()[0].split()          # "rustc 1.96.0 (hash date)"
+    got = first[1] if len(first) > 1 else "?"
+    # A version-number channel ("1.96.0") is an exact claim; a named channel
+    # ("stable"/"nightly") only claims which stream, so it is recorded, not compared.
+    if want[:1].isdigit() and got != want:
+        raise SystemExit(
+            f"TOOLCHAIN MISMATCH: rustc {got} != the pin {want} declared in "
+            f"{TOOLCHAIN_TOML}.\nThe Android wheel must be built with the toolchain "
+            f"the G0 bit-exactness evidence was gated on. Install it "
+            f"(`rustup toolchain install {want}`) or move the pin deliberately "
+            f"(and re-run scripts/rustport/reconcile_*.py).")
+    log(f"toolchain {got} (pin {want}) — {out.splitlines()[0]}")
+    return {"toolchain_channel": want, "rustc": got, "rustc_verbose": out}
+
+
 def _env_triple(triple: str) -> str:
     """``aarch64-linux-android`` -> ``AARCH64_LINUX_ANDROID`` (cargo's env spelling)."""
     return triple.upper().replace("-", "_")
 
 
 def ensure_rust_target(triple: str) -> None:
-    installed = subprocess.run(["rustup", "target", "list", "--installed"],
-                               capture_output=True, text=True, check=True).stdout
+    """Install the target INTO THE PINNED TOOLCHAIN.
+
+    The old cwd-dependent form installed it into whatever `rustup default` was, i.e.
+    a different toolchain than the one that would then be asked to use it."""
+    chan = pinned_toolchain()
+    env = toolchain_env()
+    installed = subprocess.run(
+        ["rustup", "target", "list", "--installed", "--toolchain", chan],
+        capture_output=True, text=True, check=True, env=env).stdout
     if triple in installed.split():
         return
-    log(f"rustup target add {triple}")
-    subprocess.run(["rustup", "target", "add", triple], check=True)
+    log(f"rustup target add {triple} --toolchain {chan}")
+    subprocess.run(["rustup", "target", "add", triple, "--toolchain", chan],
+                   check=True, env=env)
 
 
 def cargo_env(abi: str, triple: str, ndk: Path, libdir: Path, jobs: int) -> dict:
@@ -129,7 +237,7 @@ def cargo_env(abi: str, triple: str, ndk: Path, libdir: Path, jobs: int) -> dict
     ar = bindir / "llvm-ar"
     et = _env_triple(triple)
 
-    env = dict(os.environ)
+    env = toolchain_env()
     env.update({
         # cargo's linker for the TARGET (build scripts still build for the host).
         f"CARGO_TARGET_{et}_LINKER": str(clang),
@@ -168,8 +276,21 @@ def cargo_env(abi: str, triple: str, ndk: Path, libdir: Path, jobs: int) -> dict
         C.PAGE_ALIGN_LDFLAG,
     ]
     rustflags = " ".join(f"-C link-arg={a}" for a in link_args)
-    prev = env.get("RUSTFLAGS", "").strip()
-    env["RUSTFLAGS"] = f"{prev} {rustflags}".strip()
+    # ⚠️ AMBIENT RUSTFLAGS ARE SCRUBBED, NOT INHERITED (ROUND2 F-10, 2026-08-02).
+    # This used to prepend `os.environ["RUSTFLAGS"]` verbatim, so a dev profile export
+    # or a CI wrapper silently fed `-C target-feature=` / `-C opt-level=` /
+    # `-C codegen-units=` into the cross-compile of the PHONE binary — a codegen input
+    # invisible to the version hash, to every Gradle input and to every provenance
+    # record, and one that overrides the `[profile.release]` block Cargo.toml pins
+    # precisely so the two Rust crates share codegen settings. CARGO_ENCODED_RUSTFLAGS
+    # is dropped for the sharper reason that cargo PREFERS it, so an ambient one would
+    # discard the -L/-l/soname/page-align link args entirely.
+    for var in ("RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS"):
+        stale = env.pop(var, None)
+        if stale:
+            log(f"WARNING: ignoring ambient {var}={stale!r} — device builds are "
+                f"hermetic (ROUND2 F-10)")
+    env["RUSTFLAGS"] = rustflags
     return env
 
 
@@ -196,17 +317,63 @@ def build_abi(abi: str, ndk: Path, jobs: int) -> Path:
     return staged
 
 
-def build_wheel(abi: str, so: Path, version: str, out_dir: Path) -> Path:
+def wheel_provenance(abi: str, triple: str, tc: dict, version: str) -> dict:
+    """WHICH compiler / target / profile produced the bytes in this wheel (#9).
+
+    Nothing in the repo recorded rustc, the target triple or the cargo profile, so two
+    ``carc_rs`` builds from different toolchains were indistinguishable in every
+    provenance record written — which is what made an unpinned cross-compile
+    undetectable after the fact. Deliberately free of timestamps and absolute paths so
+    the wheel stays byte-deterministic for identical inputs."""
+    return {
+        "dist": DIST_NAME,
+        "wheel_version": version,
+        "abi": abi,
+        "target_triple": triple,
+        "cargo_profile": CARGO_PROFILE,
+        "toolchain_channel": tc["toolchain_channel"],
+        "rustc": tc["rustc"],
+        "rustc_verbose": tc["rustc_verbose"],
+        "android_api": C.ANDROID_API,
+        "python_version": C.PYTHON_VERSION,
+        "target_artifact": C.TARGET_ARTIFACT_VERSION,
+        "max_page_size": C.MAX_PAGE_SIZE,
+        "page_align_ldflag": C.PAGE_ALIGN_LDFLAG,
+        "wheel_tag": C.wheel_tag(abi, PY_TAG, ABI_TAG),
+    }
+
+
+def _provenance_module(prov: dict) -> bytes:
+    """A tiny importable sidecar so the provenance is readable ON THE DEVICE.
+
+    ``carc_rs.__version__`` is ``carc_core::VERSION`` = the workspace ``0.1.0`` that
+    has never been bumped, so it distinguishes nothing (#9/#10). Emitting the real,
+    content-addressed wheel version plus the compiler that built it as an importable
+    module is the part of that fix reachable without touching the Rust crate;
+    ``android_bridge.runtime_info()`` reads it back."""
+    body = "\n".join(f"    {k!r}: {prov[k]!r}," for k in sorted(prov))
+    return (
+        f'"""Build provenance for the {DIST_NAME} Android wheel — GENERATED, do not '
+        f'edit.\n\nWritten by android/tools/build_rust_wheels.py; the same dict is '
+        f'archived at\n<dist-info>/PROVENANCE.json.\n"""\n'
+        f"PROVENANCE = {{\n{body}\n}}\n\n"
+        f"__version__ = {prov['wheel_version']!r}\n"
+    ).encode()
+
+
+def build_wheel(abi: str, so: Path, version: str, out_dir: Path, prov: dict) -> Path:
     return C.write_wheel(
         out_dir=out_dir,
         dist_name=DIST_NAME,
         version=version,
         tag=C.wheel_tag(abi, PY_TAG, ABI_TAG),
-        payload=[(f"{MODULE}.so", so.read_bytes())],
+        payload=[(f"{MODULE}.so", so.read_bytes()),
+                 (f"{MODULE}_build.py", _provenance_module(prov))],
         summary="Rust engine + PUCT search core (carc-core) for Carcassonne AI",
-        top_level=[MODULE],
+        top_level=[MODULE, f"{MODULE}_build"],
         generator="carc-rs build_rust_wheels.py",
         plat=C.platform_tag(abi),
+        provenance=prov,
         log=log,
     )
 
@@ -233,12 +400,16 @@ def main() -> int:
 
     version = args.version or source_version()
     ndk = C.find_ndk(args.sdk_dir, args.ndk_dir)
+    # BEFORE any cargo invocation: a wrong toolchain must stop the build, not be
+    # discovered in a wheel later (#1).
+    tc = assert_pinned_toolchain()
     log(f"NDK {ndk.name}  version {version}  abis {' '.join(args.abis)}")
 
     C.clear_stale_wheels(args.out, MODULE)
     for abi in args.abis:
         so = build_abi(abi, ndk, args.jobs)
-        build_wheel(abi, so, version, args.out)
+        prov = wheel_provenance(abi, C.ABI_TRIPLES[abi], tc, version)
+        build_wheel(abi, so, version, args.out, prov)
     log("done")
     return 0
 

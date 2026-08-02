@@ -49,9 +49,14 @@ every build, so the alignment can never silently regress.
 
 VERSION / CACHE BUSTING
 -----------------------
-``--version`` is content-addressed from the .pyx bytes by the Gradle task, so any edit
-to a .pyx yields a new version, which changes the pip requirement string, which
-invalidates Chaquopy's task inputs AND cannot hit a stale wheel in pip's cache.
+``--version`` is content-addressed by the Gradle task from the .pyx bytes **plus
+``link_signature()``** — the flags, the Android API/target artifact, the Cython
+version that emits the ``.c``, and the build scripts' own bytes. Any of those moving
+yields a new version, which changes the pip requirement string, which invalidates
+Chaquopy's task inputs AND cannot hit a stale wheel in pip's cache. ⚠️ The
+``.pyx``-bytes-only rule was the pre-2026-08-01 one; it shipped a stale 4 KiB-aligned
+wheel once (see the link-flag note above) and hid the Cython version entirely
+(ROUND2 F-3). See ``link_signature`` for what is in the salt and how to extend it.
 
 STANDALONE USE
 --------------
@@ -61,6 +66,7 @@ STANDALONE USE
 from __future__ import annotations
 
 import argparse
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -118,21 +124,71 @@ def sync_sources() -> list[Path]:
     return out
 
 
-# Link inputs that change the OUTPUT BYTES without changing any .pyx. Mixed into the
-# content-addressed version so a flag change can never be served stale out of pip's
-# cache — the 2026-08-01 page-alignment fix is exactly the case that proved it can.
-# Add to this string whenever you add a flag that affects the emitted object.
-LINK_SIGNATURE: bytes = C.PAGE_ALIGN_LDFLAG.encode()
+# Build inputs that change the OUTPUT BYTES without changing any .pyx. Mixed into the
+# content-addressed version so a change can never be served stale out of pip's cache —
+# the 2026-08-01 page-alignment fix is exactly the case that proved it can.
+#
+# ⚠️ WIDENED 2026-08-02 (ROUND2 F-3). It used to be `PAGE_ALIGN_LDFLAG` and nothing
+# else, which left the CODE GENERATOR ITSELF outside the hash: the `.so` bytes are
+# decided by the Cython version that emits the `.c`, by the compile line
+# (`-O3 -DNDEBUG --target=<triple><ANDROID_API>`) and by
+# `TARGET_ARTIFACT_VERSION`/`ANDROID_API` (which pick the Android Python.h +
+# libpython3.12.so). Measured then: `pip install -U Cython` changed the shipped `.so`
+# with a byte-identical requirement string, and because `find_cython()` prefers
+# `sys.executable`, installing Cython into buildPython switched generators with no
+# version movement at all. The declared rule (`_chaquopy_common.content_version`,
+# "a build input that changes the artefact must change the version") now holds.
+def cython_signature() -> str:
+    """``cython=<version>`` for the interpreter that will actually run Cython.
+
+    Deliberately the VERSION, not the interpreter path: the path is machine-local and
+    would churn the wheel version across boxes that emit identical `.c`. A missing
+    Cython is recorded as `UNAVAILABLE` rather than raised, because `--print-version`
+    runs at Gradle CONFIGURATION time — the build must still fail at `cythonize()`,
+    with its own actionable message, not while Gradle is merely configuring."""
+    try:
+        cy = find_cython()
+        out = subprocess.run(cy + ["--version"], capture_output=True, text=True,
+                             check=True)
+        ver = (out.stdout + out.stderr).strip().splitlines()[0].strip()
+    except (SystemExit, subprocess.CalledProcessError, OSError, IndexError):
+        return "cython=UNAVAILABLE"
+    return f"cython={ver}"
+
+
+def link_signature() -> bytes:
+    parts = [
+        C.PAGE_ALIGN_LDFLAG,
+        "cflags=-shared -fPIC -O3 -DNDEBUG",
+        f"android_api={C.ANDROID_API}",
+        f"target_artifact={C.TARGET_ARTIFACT_VERSION}",
+        f"python_version={PYTHON_VERSION}",
+        f"py_tag={PY_TAG}",
+        f"modules={','.join(MODULES)}",
+        cython_signature(),
+    ]
+    h = hashlib.sha256("\0".join(parts).encode())
+    # The scripts that decide how the object is emitted. Closes F-4's stale-wheel
+    # path (bump MAX_PAGE_SIZE in the shared module and only ONE wheel rebuilds) on
+    # the version side, as the Gradle input sets do on the task side.
+    for p in (Path(__file__).resolve(), Path(C.__file__).resolve(),
+              PKG_DIR / "build_config.py"):
+        h.update(b"\0script\0")
+        h.update(p.name.encode())
+        h.update(p.read_bytes())
+    return h.digest()
 
 
 def source_version() -> str:
-    """Content-addressed version from the .pyx bytes PLUS ``LINK_SIGNATURE``.
+    """Content-addressed version from the .pyx bytes PLUS ``link_signature()``.
 
     Gradle normally computes this itself so it is known at CONFIGURATION time; this
-    keeps standalone runs consistent with it."""
+    keeps standalone runs consistent with it. (``link_signature`` is a function, not
+    the old module constant, because it probes the Cython version — a subprocess that
+    must not run on a bare ``import``.)"""
     return C.content_version(
         [REPO / PYX_SOURCE_DIR / f"{mod}.pyx" for mod in MODULES],
-        extra=LINK_SIGNATURE)
+        extra=link_signature())
 
 
 # --------------------------------------------------------------------------- #
