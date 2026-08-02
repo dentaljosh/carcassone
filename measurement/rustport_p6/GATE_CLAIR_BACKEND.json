@@ -1,0 +1,113 @@
+{
+  "gate": "rustport P6 \u2014 eval_fair_puct --info clair, python vs rust",
+  "why": "--info clair is the CLAIRVOYANCE-TAX arm (elo(clair) - elo(fair), ~156 elo at champion config). It is a REFERENCE INSTRUMENT: G4/G6 gated the champion as a PLAYER and does not transfer.",
+  "seam": "_make_champion(info='clair', backend=...) -> champion_factory.build_clairvoyant_champion(backend='rust') -> rust_agent.RustCarryClairvoyantAgent, inside eval_fair_puct._MirrorMarginalizedHandoff. The marginalized endgame solver is the SAME python code on both legs.",
+  "surface": "per ply: chosen action, which arm answered (search vs solver), and the full root table (root_n, root_w and every child's (action, N, W)) as RAW f64 BIT PATTERNS; per game: the handoff counters (prefix_moves / exact_moves / latch_k / solver_nodes / n_timeouts)",
+  "knobs": {
+    "sims_total_per_move": 100,
+    "exact_k": 2,
+    "agent_seed": 0
+  },
+  "games": 3,
+  "plies": 432,
+  "root_tables_compared": 420,
+  "solver_plies": 12,
+  "mismatches": [],
+  "python_secs": 113.8,
+  "rust_secs": 59.1,
+  "speedup": 1.93,
+  "verdict": "PASS",
+  "scope": "the clairvoyant ruler at these knobs on this revision, net-free. Gap 3 (evaluator injection) stays OPEN: --info fair-net / fair-netprior still refuse the rust backend.",
+  "rows": [
+    {
+      "deck_seed": 96900000001,
+      "plies": 144,
+      "root_tables_compared": 140,
+      "solver_plies": 4,
+      "terminal": true,
+      "scores": [
+        82,
+        95
+      ],
+      "python_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 972,
+        "n_timeouts": 0
+      },
+      "rust_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 972,
+        "n_timeouts": 0
+      },
+      "counters_match": true,
+      "diffs": [],
+      "python_secs": 22.3,
+      "rust_secs": 5.0,
+      "speedup": 4.48
+    },
+    {
+      "deck_seed": 96900000002,
+      "plies": 144,
+      "root_tables_compared": 140,
+      "solver_plies": 4,
+      "terminal": true,
+      "scores": [
+        88,
+        89
+      ],
+      "python_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 1397,
+        "n_timeouts": 0
+      },
+      "rust_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 1397,
+        "n_timeouts": 0
+      },
+      "counters_match": true,
+      "diffs": [],
+      "python_secs": 35.2,
+      "rust_secs": 17.9,
+      "speedup": 1.97
+    },
+    {
+      "deck_seed": 96900000000,
+      "plies": 144,
+      "root_tables_compared": 140,
+      "solver_plies": 4,
+      "terminal": true,
+      "scores": [
+        114,
+        111
+      ],
+      "python_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 3409,
+        "n_timeouts": 0
+      },
+      "rust_counters": {
+        "prefix_moves": 140,
+        "exact_moves": 4,
+        "latch_k": 2,
+        "solver_nodes": 3409,
+        "n_timeouts": 0
+      },
+      "counters_match": true,
+      "diffs": [],
+      "python_secs": 56.3,
+      "rust_secs": 36.2,
+      "speedup": 1.56
+    }
+  ]
+}

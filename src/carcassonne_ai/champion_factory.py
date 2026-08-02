@@ -735,20 +735,36 @@ def build_fair_netprior_candidate(game, *, cfg=None, net=None, handles=None,
 
 def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
                                reuse_tree=_UNSET, meeple_dedup=_UNSET,
-                               backend: str = "python"):
+                               backend: str = "python", auto_advance: bool = False):
     """Construct the clairvoyant PUCT champion (HeuristicPriorAgent) — the dev/ruler
     agent (reads the true deck). Byte-identical to a direct construction; ``cfg=None``
     defaults to the production curve125 config.
 
-    ``backend`` exists here only so a harness can pass the SAME resolved value to both
-    builders without special-casing, and so an ``"auto"`` that resolves to ``"rust"``
-    fails LOUDLY instead of silently handing back a Python ruler that a manifest then
-    stamps as Rust. There is no Rust clairvoyant AGENT: ``MirrorState.search_single`` +
-    ``set_unseen_deck`` is the right primitive but three gaps are open (no search-seed
-    plumbing, no ``reuse_tree``, no evaluator injection —
-    measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §3). ⚠️ Converting this
-    builder would also CHANGE A REFERENCE INSTRUMENT, so it needs its own identity gate
-    on the G6 pattern before a converted ruler grades anything."""
+    ``backend="python"`` (the default) is unchanged, byte-for-byte, and is what every
+    existing caller gets.
+
+    ``backend="rust"`` (2026-08-02) returns ``rust_agent.RustCarryClairvoyantAgent`` —
+    the SAME player on carc_rs, with BOTH of the Python agent's tree policies:
+    ``best_action`` carries the tree (never clears, at any ``reuse_tree``) and ``move``
+    clears or re-roots.  That distinction is the whole of **Gap 2** of
+    BACKEND_BYPASS_AUDIT_20260801 §3, and it is why this builder used to refuse:
+    ``MirrorState.search_single`` is fresh-tree only, so a ``best_action``-driven ruler
+    (``oracle_score_pilot``'s continuation) would have been a DIFFERENT PLAYER —
+    measured in measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json.  Gap 2 is
+    closed by ``carc_rs.PersistentSearcher``; Gap 1 (search seed) was closed by
+    GAP1_SEED_INVARIANCE.json; **Gap 3 (evaluator injection) is still OPEN and still
+    refuses** — see ``RustCarryClairvoyantAgent``.
+
+    ⚠️ THIS IS A REFERENCE INSTRUMENT.  A converted ruler grades nothing until its own
+    identity gates are green: ``scripts/rustport/gate_gap2_persistent.py`` (the carried
+    continuation) and ``scripts/rustport/gate_clair_backend.py`` (the full-game
+    ``--info clair`` leg, per-ply action + root stats).
+
+    ⚠️ MIRROR CONTRACT.  A Rust ruler owns a game mirror: ``start_game(board)`` (or
+    ``seat(deck_seed, prefix)``) once, then ``advance()`` for every applied action of
+    BOTH seats.  ``auto_advance=True`` is for ``best_action``-driven playout loops that
+    own no mirror and apply exactly the action they were handed; it is ignored on the
+    python backend, whose agent has no mirror to advance."""
     from .heuristic_prior_mcts import HeuristicPriorAgent
 
     if backend == "auto":
@@ -757,18 +773,28 @@ def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
         raise ValueError(
             f"backend must be one of {sorted(KNOWN_BACKENDS)} (or 'auto'); "
             f"got {backend!r}")
-    if backend != "python":
-        raise ValueError(
-            f"backend={backend!r} is a FAIR-mode capability; there is no clairvoyant "
-            "Rust agent (carc_rs ports the PIMC agent, not the true-deck ruler). "
-            "Build this ruler with backend='python' explicitly — do not pass 'auto' "
-            "here while PRODUCTION.yaml names a non-python engine.")
 
     if cfg is None:
         cfg = production_prior_cfg()
     kw = {k: v for k, v in dict(seed=seed, reuse_tree=reuse_tree,
                                 meeple_dedup=meeple_dedup).items()
           if v is not _UNSET}
+
+    if backend != "python":
+        # MEEPLE-DEDUP is a python-only search variant; the Rust core narrows no
+        # action set. Refuse rather than silently drop it (the C-g failure mode).
+        from . import meeple_equiv
+
+        if meeple_equiv.resolve(None if meeple_dedup is _UNSET else meeple_dedup):
+            raise ValueError(
+                "meeple_dedup has no carc_rs implementation (the Rust search runs the "
+                "raw legal mask); build this ruler with backend='python'.")
+        from .rust_agent import RustCarryClairvoyantAgent
+
+        kw.pop("meeple_dedup", None)
+        return RustCarryClairvoyantAgent(game, cfg, simulations=int(simulations),
+                                         auto_advance=bool(auto_advance), **kw)
+
     return HeuristicPriorAgent(game, cfg, simulations=int(simulations), **kw)
 
 

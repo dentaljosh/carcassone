@@ -667,6 +667,30 @@ class _MarginalizedHandoff:
             return mv
 
 
+class _MirrorMarginalizedHandoff(_MarginalizedHandoff):
+    """`_MarginalizedHandoff` around a prefix that OWNS A RUST MIRROR (--info clair
+    --backend rust).
+
+    `_drives_mirror` is duck-typed on `start_game`/`advance`, and the base wrapper has
+    neither — so a mirror-owning prefix inside it would never be seated or advanced and
+    would raise `MirrorDesync` on the second ply. Rather than give the base class those
+    methods (which would make `_drives_mirror` true for the PYTHON fair arm too, and
+    change a path that is byte-identical to every banked row), this subclass forwards
+    them and is used ONLY on the rust clair arm.
+
+    The endgame stays exactly where it was: the marginalized solver in the base class,
+    shared with the python arm, so the clairvoyance tax still isolates the search PREFIX.
+    The solver's moves are applied to the mirror by the harness's `_advance_mirrors`
+    like any other action — that is the whole point of advancing on BOTH seats.
+    """
+
+    def start_game(self, board) -> None:
+        self._prefix.start_game(board)
+
+    def advance(self, action: int, board_after=None) -> None:
+        self._prefix.advance(int(action), board_after)
+
+
 class _RungPrefix:
     """Fixed rung: HeuristicMCTS @ rung_sims, c=3.0, v2.9 Bmild_cap8 leaf. NO
     endgame handoff (the CL-022 yardstick convention)."""
@@ -1048,12 +1072,27 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                         MUST already carry the curve125 candidate leaf.
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
     backend = _resolve_backend(backend)
+    if backend == "rust" and info == "clair":
+        # THE CLAIRVOYANT RULER ON carc_rs (rustport P6). `_MarginalizedHandoff` drives
+        # its prefix with `.move()`, which on `HeuristicPriorAgent` re-roots or clears
+        # according to the CONFIG's `reuse_tree` — and ⚠️ `production_prior_cfg()`
+        # carries `reuse_tree=True`, so this ruler RE-ROOTS between moves rather than
+        # starting fresh. `RustCarryClairvoyantAgent` resolves the flag from `cfg` the
+        # same way the Python agent does; it is also the class whose `best_action` /
+        # `move` split matches Python's, so a future caller that reaches for
+        # `best_action` gets the CARRIED search Python would have given it rather than
+        # a silent fresh one. (`RustClairvoyantAgent` does neither — see its docstring.)
+        # ⚠️ A RULER: gated by scripts/rustport/gate_clair_backend.py (full-game,
+        # per-ply action + root stats, bit-exact) before it grades anything.
+        prefix = champion_factory.build_clairvoyant_champion(
+            game, cfg=cfg, simulations=(sims * k_dets), seed=seed, backend="rust")
+        return _MirrorMarginalizedHandoff(prefix, Game(enable_legal_moves_cache=True), K)
     if backend == "rust":
         if info != "fair":
             raise SystemExit(
-                f"--backend rust is a --info fair capability; got --info {info}. "
-                "carc_rs carries no net evaluator (fair-netprior / fair-net) and no "
-                "clairvoyant ruler (clair) — run those with --backend python.")
+                f"--backend rust is a --info fair|clair capability; got --info {info}. "
+                "carc_rs carries no net evaluator (fair-netprior / fair-net) — run "
+                "those with --backend python.")
         if oracle_prior_mult is not None:
             raise SystemExit(
                 "--oracle-prior-mult is a python-only search overlay (it presearches "
@@ -2213,9 +2252,12 @@ def main(argv=None) -> int:
                          "champion bit-exactly (0/305,515 checks) and G6 read "
                          "14,384/14,384 identical actions over 100 full games. `auto` "
                          "resolves governance/PRODUCTION.yaml "
-                         "champion.fair_deploy.backend. ⚠️ Reaches --info fair ONLY "
-                         "(carc_rs has no net evaluator and no clairvoyant ruler) and, "
-                         "on the opponent side, --opponent fair-champion ONLY — the "
+                         "champion.fair_deploy.backend. ⚠️ Reaches --info fair and "
+                         "--info clair only (carc_rs has no net evaluator, so fair-net "
+                         "/ fair-netprior stay python). --info clair became reachable "
+                         "on 2026-08-02 when the persistent tree closed Gap 2; it is a "
+                         "RULER, gated by scripts/rustport/gate_clair_backend.py. On "
+                         "the opponent side --opponent fair-champion ONLY — the "
                          "h800 / greedy / bare-net rungs are FROZEN RULERS and stay "
                          "Python whatever this says. `--backend python` is the "
                          "permanent escape hatch and needs no Rust wheel installed.")
@@ -2715,11 +2757,19 @@ def main(argv=None) -> int:
     # disagree — a worker that re-read the YAML could resolve "auto" differently from the
     # manifest that describes the run.
     _backend = _resolve_backend(args.backend)
-    if _backend == "rust" and args.info != "fair":
-        ap.error(f"--backend rust reaches --info fair only; got --info {args.info} "
-                 "(carc_rs has no net evaluator and no clairvoyant ruler)")
+    if _backend == "rust" and args.info not in ("fair", "clair"):
+        ap.error(f"--backend rust reaches --info fair|clair only; got --info {args.info} "
+                 "(carc_rs has no net evaluator)")
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
+    if args.rust_threads is not None and args.info == "clair":
+        # rust_threads splits the k_dets WORLDS of the PIMC agent across OS threads.
+        # The clairvoyant ruler has no determinizations — one tree, one world — so
+        # there is nothing to split and the knob would be silently dropped (and then
+        # stamped into the manifest as if it had applied).
+        ap.error("--rust-threads is a --info fair knob (it splits the PIMC agent's "
+                 "k_dets worlds); the clairvoyant ruler runs ONE search and has no "
+                 "worlds to split")
     # ⚠️ THE FARM RULE, enforced not merely documented. In a game-parallel pool the
     # game parallelism owns the cores; W16 x t8 = 128 hot threads is the failure mode
     # that motivates this. Explicit parameter, farm default 1, resolved value asserted

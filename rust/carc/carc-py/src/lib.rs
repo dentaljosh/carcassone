@@ -892,6 +892,214 @@ fn result_to_dict<'py>(
 }
 
 // --------------------------------------------------------------------------
+// P6: the PERSISTENT / RE-ROOTABLE tree (Gap 2)
+// --------------------------------------------------------------------------
+
+/// A search whose tree **outlives the call** — `HeuristicPriorAgent`'s other
+/// search semantics, and the one feature the whole oracle / clairvoyant
+/// instrument tier was blocked on.
+///
+/// [`MirrorState::search_single`] is fresh-tree only (`.move()` with
+/// `reuse_tree=False`).  The Python rulers reach the search through
+/// `best_action()`, which **never clears** `NeuralMCTS._nodes`, so a caller that
+/// drives an advancing game with it (`oracle_score_pilot._playout_value`, every
+/// ply to terminal) runs ONE tree across the whole playout.  Measured, not read
+/// off the source: `measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json`
+/// finds the per-ply root pre-existing with `N > sims` on 102/103 plies, and a
+/// fresh-tree replay of the identical world diverging in 4/4 positions.
+///
+/// ⚠️ **OPT-IN, AND NOTHING ELSE CHANGES.**  This is a NEW class; `MirrorState`,
+/// `FairAgentRs` and `SearchConfigRs` are untouched, and the champion path
+/// (`FairAgentRs.choose_action`, k-parallel PIMC, fresh tree per world) does not
+/// reach a line of this code.  A `PersistentSearcher` that is never constructed
+/// costs the process nothing.
+///
+/// USAGE — the mirror contract is the same one `RustFairAgent` /
+/// `RustClairvoyantAgent` document: seat it, then `advance()` EVERY applied
+/// action of BOTH seats.
+///
+/// ```python
+/// ms = carc_rs.MirrorState.from_seed(str(deck_seed))     # seat via the gated path
+/// for a in prefix: ms.advance(a)
+/// ps = carc_rs.PersistentSearcher(ms, scfg)              # clones the mirror's game
+/// ps.set_unseen_deck([t.description for t in world.state.deck])
+/// ps.advance(pick)
+/// while not ps.is_terminal():
+///     res = ps.search_and_advance()                      # carry + step, one FFI hop
+/// ```
+///
+/// THREADS: unlike `search_single`, this does **not** release the GIL.  The tree
+/// it holds across calls is `Rc`-interned (a deliberate per-thread choice — see
+/// `search::Node::key`), so `&mut SearchSession` is not `Send`.  Every caller of
+/// this class is a game-parallel `mp.Pool` farm (separate processes, separate
+/// GILs), where releasing it would buy nothing.
+/// `unsendable`: the retained tree interns its node keys with `Rc` (the
+/// per-thread choice the search made deliberately), so the object is pinned to
+/// the thread that built it and PyO3 raises if another one touches it.  That is
+/// the honest contract — a silently shared tree would be a data race — and it
+/// costs nothing: every caller is a game-parallel `mp.Pool` farm.
+#[pyclass(name = "PersistentSearcher", unsendable)]
+struct PyPersistentSearcher {
+    game: Game,
+    session: search::SearchSession,
+}
+
+#[pymethods]
+impl PyPersistentSearcher {
+    /// Clone `mirror`'s position into a private game and open an EMPTY tree.
+    ///
+    /// Seating goes through `MirrorState` on purpose: `from_seed` + `advance`
+    /// over the recorded prefix is the byte-equal counterpart of
+    /// `root_replay.replay_actions`, already gated by G1/G4, and duplicating it
+    /// here would be a second thing to keep true.
+    #[new]
+    fn new(mirror: &PyMirrorState, cfg: &PySearchConfig) -> Self {
+        PyPersistentSearcher {
+            game: mirror.game.clone(),
+            session: search::SearchSession::new(cfg.inner.clone()),
+        }
+    }
+
+    // --- the mirror surface (this object owns its own game) ----------------
+
+    fn advance(&mut self, action: i32) -> PyResult<()> {
+        self.game
+            .advance(action)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    fn string_repr(&self) -> String {
+        self.game.string_repr()
+    }
+
+    fn state_digest(&self) -> String {
+        self.game.state_digest()
+    }
+
+    fn legal_actions(&self) -> Vec<i32> {
+        self.game.legal_actions()
+    }
+
+    fn is_terminal(&self) -> bool {
+        self.game.is_terminal()
+    }
+
+    fn current_player(&self) -> usize {
+        self.game.state.current_player
+    }
+
+    fn scores(&self) -> (i64, i64) {
+        let s = self.game.scores();
+        (s[0], s[1])
+    }
+
+    fn unseen_deck(&self) -> Vec<String> {
+        self.game.unseen_deck().into_iter().map(String::from).collect()
+    }
+
+    /// Install one determinization world's deck (`MirrorState.set_unseen_deck`).
+    /// Does NOT touch the tree — the caller decides whether the retained
+    /// statistics are still meaningful (they are, for a clairvoyant playout
+    /// whose deck is installed once, before the first search).
+    fn set_unseen_deck(&mut self, descriptions: Vec<String>) -> PyResult<()> {
+        self.game
+            .set_unseen_deck(&descriptions)
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    // --- the three Python transitions --------------------------------------
+
+    /// `HeuristicPriorAgent.best_action(board)` — search on the CARRIED tree.
+    fn search<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let r = self.session.search_carry(&self.game).map_err(search_err)?;
+        self.carry_dict(py, &r)
+    }
+
+    /// `HeuristicPriorAgent.move(board)` with `reuse_tree=False` — `clear()`,
+    /// then search.  Bit-for-bit `MirrorState.search_single`.
+    fn search_fresh<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let r = self.session.search_fresh(&self.game).map_err(search_err)?;
+        self.carry_dict(py, &r)
+    }
+
+    /// `HeuristicPriorAgent.move(board)` with `reuse_tree=True` —
+    /// `_reroot_or_clear`, then search.
+    fn search_reroot<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let r = self.session.search_reroot(&self.game).map_err(search_err)?;
+        self.carry_dict(py, &r)
+    }
+
+    /// Carried search + `advance(chosen_action)` — the playout loop's inner
+    /// step, one FFI hop per ply.
+    fn search_and_advance<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let r = self.session.search_carry(&self.game).map_err(search_err)?;
+        self.game
+            .advance(r.chosen_action)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
+        self.carry_dict(py, &r)
+    }
+
+    /// `NeuralMCTS.clear()`.
+    fn clear(&mut self) {
+        self.session.clear();
+    }
+
+    /// `HeuristicPriorAgent._reroot_or_clear(board)` on the CURRENT position.
+    /// Returns `("hit"|"fresh"|"collide", visits_carried_in)` — the three
+    /// `reuse_hits` / `reuse_fresh` / `reuse_collide` outcomes.
+    fn reroot(&mut self) -> (&'static str, i64) {
+        let rr = self.session.reroot_to(&self.game);
+        (rr.label(), rr.carried())
+    }
+
+    // --- introspection (the gap-2 diagnostics) -----------------------------
+
+    /// `len(mcts._nodes)`.
+    fn tree_len(&self) -> usize {
+        self.session.tree_len()
+    }
+
+    /// `mcts._nodes[key].N` for the current position, 0 if absent — the
+    /// pre-search root visit count the GAP2 measurement counts.
+    fn root_n(&self) -> i64 {
+        self.session.root_n_at(&self.game)
+    }
+
+    fn searches(&self) -> u64 {
+        self.session.searches
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "PersistentSearcher(sims={}, nodes={}, searches={})",
+            self.session.cfg.simulations,
+            self.session.tree_len(),
+            self.session.searches
+        )
+    }
+}
+
+impl PyPersistentSearcher {
+    /// `result_to_dict` plus the carry diagnostics.  The shared keys are
+    /// byte-identical to `search_single`'s, so one comparator serves both.
+    fn carry_dict<'py>(
+        &self,
+        py: Python<'py>,
+        r: &search::SearchResult,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let d = result_to_dict(py, r)?;
+        d.set_item("root_n_before", self.session.last_root_n_before)?;
+        d.set_item("carried", self.session.last_root_n_before > 0)?;
+        d.set_item("tree_len", self.session.tree_len())?;
+        d.set_item(
+            "reroot",
+            self.session.last_reroot.map(|rr| rr.label()),
+        )?;
+        Ok(d)
+    }
+}
+
+// --------------------------------------------------------------------------
 // P4: the fair agent (k-parallel PIMC + the one-way exact latch)
 // --------------------------------------------------------------------------
 
@@ -1325,6 +1533,9 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySearchConfig>()?;
     // P4
     m.add_class::<PyFairAgent>()?;
+    // P6 (Gap 2) — the persistent / re-rootable tree. Opt-in: constructing it is
+    // the only way to reach a carried search; nothing above changes.
+    m.add_class::<PyPersistentSearcher>()?;
     m.add_function(wrap_pyfunction!(resolve_game_config, m)?)?;
     m.add("RETAIL_START_TILE", carc_core::game::RETAIL_START_TILE)?;
     m.add("DEFAULT_START_ROW", carc_core::game::DEFAULT_START_ROW)?;

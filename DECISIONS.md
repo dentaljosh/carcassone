@@ -3698,3 +3698,66 @@ no cython dependency + the env var in the launcher. Evidence:
 stopped, repo at 1a6cdf7 with prior work stashed. Any future AVX-512 box (cloud rentals
 included) must run G0 before results-bearing work — the flavor enum does not cover
 AVX-512 np.exp unmasked.
+
+## 2026-08-02 (evening) — **Gap 2 CLOSED: the persistent / re-rootable search tree lands in carc_core, and the whole oracle/clairvoyant instrument tier stops failing closed on `--backend rust`**
+
+`carc_core::search` had ONE search semantics — a fresh tree per call
+(`MirrorState.search_single` == `HeuristicPriorAgent(...).move()` at `reuse_tree=False`).
+The Python ruler has two, and **the instrument tier runs on the other one**:
+`best_action()` never clears `NeuralMCTS._nodes` **at any `reuse_tree`** (the guard lives
+in `move()`, which it does not call), so a `best_action`-driven playout —
+`oracle_score_pilot._playout_value`, every ply to terminal — runs ONE transposition table
+across the whole continuation. `GAP2_ORACLE_CONTINUATION_TREE.json` measured it: the
+per-ply root pre-exists with `N > sims` on 102/103 plies, and a fresh-tree replay of the
+identical world diverges in 4/4 positions. **So the audit's "Gap 2 = no `reuse_tree`" was
+named too narrowly** — no config flag controlled the blocking case, which is why "inert
+because the champion doesn't set `reuse_tree`" never applied to it.
+
+**WHAT LANDED (opt-in, default-off).** `search::session::SearchSession` — a tree that
+outlives the call — plus `carc_rs.PersistentSearcher` and
+`rust_agent.RustCarryClairvoyantAgent`. All three Python transitions are ported:
+`best_action` (carry), `move(reuse_tree=False)` (clear), `move(reuse_tree=True)`
+(`_reroot_or_clear` incl. its hit/fresh/collide outcomes and `prune_to_subtree`, which in
+an index-addressed arena must also REMAP the identity-keyed structures Python keeps for
+free by retaining node objects). Additive throughout: no existing FFI signature, no
+existing search path, no existing class changed; the champion path (`FairAgentRs`,
+k-parallel PIMC, fresh tree per world) reaches none of it, and a session whose tree is
+empty is bit-for-bit `search_single`.
+
+**CONVERTED (each `--backend python` still the default and byte-for-byte unchanged):**
+`champion_factory.build_clairvoyant_champion(backend="rust")` · `oracle_score_pilot
+--backend rust` (clair-puct only) · `eval_fair_puct --info clair --backend rust`.
+
+**GATES — 0 mismatches each.** `tests/rustport/test_p6_persistent.py` (11 tests: the
+carried root table node-for-node at every ply, as raw f64 bits) · `GATE_GAP2_PERSISTENT`
+(the three-way reproduced with a fourth leg: rust-carry == python-as-shipped AND
+rust-fresh == python-cleared, identity on the whole ACTION STREAM, 4 positions, 3
+discriminating) · `GATE_ORACLE_PILOT_BACKEND` (20 positions, 940 field checks, the whole
+`_process` record) · `GATE_CLAIR_BACKEND` (full games, per-ply action + root table +
+handoff counters). Feature-OFF regate: `cargo test --workspace` and the G3 raw-float
+`reconcile_search` at sims=1376.
+
+**⚠️ THE BUG THE FULL-GAME GATE CAUGHT, and the read-across.** `production_prior_cfg()`
+carries **`reuse_tree=True`** — the clairvoyant ruler RE-ROOTS between moves. A Rust class
+that defaults the flag to `False` therefore CLEARS where Python re-roots (caught at ply 1:
+python `root_n` 48 = 24 carried + 24 new vs rust 24). A **single-move gate is structurally
+blind to this** — a fresh agent has nothing to re-root into — so `GATE_CLAIRVOYANT.json`
+is green on the pre-existing `RustClairvoyantAgent` while a full game is not.
+**`RustClairvoyantAgent` (untouched here, additive-only scope) still defaults
+`reuse_tree=False` and aliases `best_action` to a FRESH search; its live caller
+`eval_puct_priors.py --backend rust` should be re-gated over a FULL GAME before its
+numbers are quoted.** Any multi-move Rust ruler must resolve the flag from `cfg` exactly
+as `HeuristicPriorAgent.__init__` does.
+
+**STILL FAIL-CLOSED (unchanged, deliberate):** Gap 3 (evaluator injection) — `--info
+fair-net` / `fair-netprior`; `meeple_dedup` / `intra_reuse` (python-only search variants);
+`--oracle-policy tier1-greedy` (no Rust `RuleBasedPlayer`, and porting one would destroy
+the point of an OUT-OF-FAMILY judge); `snapshot.py` and the UCT/snapshot family (different
+gap: no Rust UCT, no per-sim hook — `snapshot.RUST_BACKEND_GAP`);
+`make_production_champion(mode="clairvoyant", backend="rust")` (out of scope for this
+change — note its refusal string is now stale prose).
+
+**SPEED (a consequence, not the point):** the converted oracle continuation runs
+**~49× faster** end-to-end (41–61× per position, 20 positions). That is what makes the
+full ~652-position oracle probe affordable, but nothing here licenses re-grading anything:
+the conversion is quotable across the change precisely BECAUSE the records are bit-identical.
