@@ -39,6 +39,14 @@ LEGS (`--leg`, repeatable, or `all`):
               decisions/s, because that is the quantity a 400-game eval divides
               its wall clock by.
 
+GATE MODE vs BENCH MODE.  A run that requests at least one GATE leg (`agree`)
+is a gate: it emits `verdict: PASS`/`FAIL` to `G6_backend_{tag}.json`, and PASS
+now requires POSITIVE EVIDENCE (`action_checks > 0` AND 100% agreement) — "no
+mismatches" over zero comparisons is absence of evidence, not identity.  A run
+that requests ONLY `bench` is NOT a gate: it emits `verdict: "BENCH"` (never
+PASS) to a timestamped `BENCH_backend_{tag}_{stamp}.json`, so a timing run can
+never overwrite — or be mistaken for — an agreement artifact governance cites.
+
 DECK SEEDS.  `--deck-base 98000000000` + i.  This is a THROWAWAY FUZZ RANGE, not
 a registered claim band (`governance/BAND_REGISTRY.csv`): G6 is an identity gate,
 it produces no strength number, and nothing here may ever be quoted as an elo.
@@ -484,6 +492,10 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     args.leg = args.leg or ["all"]
     legs = LEGS if "all" in args.leg else args.leg
+    # `bench` is a TIMING leg, not evidence. A run that asks for nothing else is
+    # not a gate run: it may not emit a gate verdict, and it may not write to a
+    # gate filename (REVIEW 2026-08-02 item 6).
+    bench_only = not [lg for lg in legs if lg != "bench"]
 
     t_start = time.time()
     k = F.knobs()
@@ -545,11 +557,13 @@ def main(argv=None) -> int:
     n_bad = len(totals["mismatches"])
     agree_rate = (totals["action_agree"] / totals["action_checks"]
                   if totals["action_checks"] else None)
-    ok = (n_bad == 0
-          and (agree_rate == 1.0 if totals["action_checks"] else True))
+    # POSITIVE EVIDENCE REQUIRED: zero mismatches over zero comparisons is the
+    # sha-of-empty shape. No agreement decisions => no PASS, ever.
+    ok = (n_bad == 0 and totals["action_checks"] > 0 and agree_rate == 1.0)
     payload = {
-        "gate": "G6/backend",
-        "verdict": "PASS" if ok else "FAIL",
+        "gate": None if bench_only else "G6/backend",
+        "mode": "bench" if bench_only else "gate",
+        "verdict": "BENCH" if bench_only else ("PASS" if ok else "FAIL"),
         "env": environment(),
         "carc_rs": rust_agent.backend_provenance(),
         "knobs": {kk: vv for kk, vv in k.items() if kk != "leaf_cfg"},
@@ -576,7 +590,13 @@ def main(argv=None) -> int:
         "games": games,
         "bench": bench_out,
     }
-    path = OUTDIR / f"G6_backend_{args.tag}.json"
+    if bench_only:
+        # Timestamped AND differently prefixed: cannot collide with a gate
+        # artifact, and cannot clobber a previous bench either.
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(t_start))
+        path = OUTDIR / f"BENCH_backend_{args.tag}_{stamp}.json"
+    else:
+        path = OUTDIR / f"G6_backend_{args.tag}.json"
     path.write_text(json.dumps(payload, indent=2, default=str))
 
     print(f"\n[G6] {payload['verdict']}: {n_bad} mismatches over {totals['checks']} "
@@ -602,7 +622,7 @@ def main(argv=None) -> int:
                   f"({gp.get('speedup_rs_over_py', 0):.2f}x)  "
                   f"[per-worker s/move py {gp['py']['s_per_decision_per_worker']:.3f} "
                   f"rust {gp['rs']['s_per_decision_per_worker']:.3f}]")
-    return 0 if ok else 1
+    return 0 if (bench_only or ok) else 1
 
 
 if __name__ == "__main__":

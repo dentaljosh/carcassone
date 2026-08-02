@@ -40,6 +40,14 @@ LEGS (`--leg`, repeatable, or `all`):
            BIT-identical (deterministic-by-construction merge)
   bench    s/move on both legs
 
+GATE MODE vs BENCH MODE.  A run that requests at least one GATE leg (anything
+but `bench`) is a gate: it emits `verdict: PASS`/`FAIL` to `G4_fair_{tag}.json`,
+and PASS now requires POSITIVE EVIDENCE (`checks > 0`) — "no mismatches" over
+zero comparisons is absence of evidence, not identity.  A run that requests ONLY
+`bench` is NOT a gate: it emits `verdict: "BENCH"` (never PASS) to a timestamped
+`BENCH_fair_{tag}_{stamp}.json`, so a timing run can never overwrite — or be
+mistaken for — a gate artifact governance cites.
+
 Artifacts land in `measurement/rustport_p4/`.
 """
 from __future__ import annotations
@@ -646,6 +654,10 @@ def main(argv=None) -> int:
     k = knobs()
     jobs = build_jobs(args)
     legs = LEGS if "all" in args.leg else args.leg
+    # `bench` is a TIMING leg, not evidence. A run that asks for nothing else is
+    # not a gate run: it may not emit a gate verdict, and it may not write to a
+    # gate filename (REVIEW 2026-08-02 item 6).
+    bench_only = not [lg for lg in legs if lg != "bench"]
     print(f"[G4] {len(jobs)} jobs over legs={legs} "
           f"k{args.k_dets}x{args.sims}={args.k_dets * args.sims} "
           f"workers={args.workers} rust_threads={args.threads}", flush=True)
@@ -683,10 +695,13 @@ def main(argv=None) -> int:
     bench_out = bench(args) if "bench" in legs else None
 
     n_bad = len(totals["mismatches"])
-    ok = n_bad == 0
+    # POSITIVE EVIDENCE REQUIRED: zero mismatches over zero checks is the
+    # sha-of-empty shape. No comparisons => no PASS, ever.
+    ok = n_bad == 0 and totals["checks"] > 0
     payload = {
-        "gate": "G4/fair",
-        "verdict": "PASS" if ok else "FAIL",
+        "gate": None if bench_only else "G4/fair",
+        "mode": "bench" if bench_only else "gate",
+        "verdict": "BENCH" if bench_only else ("PASS" if ok else "FAIL"),
         "env": environment(),
         "knobs": {kk: vv for kk, vv in k.items() if kk != "leaf_cfg"},
         "leaf_env": {kk: os.environ.get(kk) for kk in (
@@ -706,7 +721,13 @@ def main(argv=None) -> int:
         "bench": bench_out,
     }
     OUTDIR.mkdir(parents=True, exist_ok=True)
-    path = OUTDIR / f"G4_fair_{args.tag}.json"
+    if bench_only:
+        # Timestamped AND differently prefixed: cannot collide with a gate
+        # artifact, and cannot clobber a previous bench either.
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(t_start))
+        path = OUTDIR / f"BENCH_fair_{args.tag}_{stamp}.json"
+    else:
+        path = OUTDIR / f"G4_fair_{args.tag}.json"
     path.write_text(json.dumps(payload, indent=2, default=str))
 
     print(f"\n[G4] {payload['verdict']}: {n_bad} mismatches over "
@@ -722,7 +743,7 @@ def main(argv=None) -> int:
         print(f"    bench: py {bench_out['py_mean_s_per_move']:.3f} s/move | rust "
               + " | ".join(f"t{t} {v:.3f}s ({bench_out['speedup_vs_py'][t]:.1f}x)"
                            for t, v in bench_out["rs_mean_s_per_move"].items()))
-    return 0 if ok else 1
+    return 0 if (bench_only or ok) else 1
 
 
 if __name__ == "__main__":
