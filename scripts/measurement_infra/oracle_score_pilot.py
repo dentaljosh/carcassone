@@ -807,6 +807,24 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
                     "rust backend this is carc_rs.PersistentSearcher via "
                     "rust_agent.RustCarryClairvoyantAgent, NOT MirrorState.search_single "
                     "(which is fresh-tree only and would be a different player).",
+                # ⚠️ OVERRIDES the generic block `rust_world_search.backend_manifest`
+                # stamps (it is written for the COMPONENT-LIBRARY probes, whose
+                # per-world searches really are fresh-tree on both backends, and it
+                # says gap2 is "inert" — which was never true HERE and would be a
+                # lie in this harness's manifest). `extra` is applied last, so this
+                # replaces it rather than sitting beside it.
+                "gap_status": {
+                    "gap1_search_seed": "CLOSED — measurement/rustport_p6/"
+                                        "GAP1_SEED_INVARIANCE.json; the continuation's "
+                                        "playout_seed is inert on this path",
+                    "gap2_reuse_tree": "CLOSED 2026-08-02 (rustport P6) — and NOT inert "
+                                       "here: this harness's continuation is a "
+                                       "PERSISTING-TREE search. carc_rs.PersistentSearcher "
+                                       "supplies it; measurement/rustport_p6/"
+                                       "GATE_GAP2_PERSISTENT.json",
+                    "gap3_evaluator_injection": "OPEN, enforced — search_config_rs and "
+                                                "RustCarryClairvoyantAgent both raise",
+                },
                 "gap2_status": "CLOSED 2026-08-02 (rustport P6) — "
                                "measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
                 "identity_gate":
