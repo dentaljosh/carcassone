@@ -214,6 +214,77 @@ def backend_provenance() -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# Net-arm seam (probe only — no net arm runs on the Rust backend yet)           #
+# --------------------------------------------------------------------------- #
+
+# The CL-067 equal-wall-clock gate's reopen bar, restated device-independently:
+# REOPEN the distilled-net line for deploy when the target device's measured
+# `r = forward_ms / search_ms_per_sim` is <= ~1.5.
+# Canonical statement: measurement/classical_search/NETPRIOR_EQTIME_GATE_20260728.md §6.
+NET_ARM_REOPEN_R_BAR = 1.5
+
+
+def net_arm_backend_status() -> dict:
+    """Can a NET arm (`fair-net`, `fair-netprior`) run on the Rust backend? — probe.
+
+    Today the answer is **no**, and this function exists so callers ask instead of
+    assuming. `champion_factory` / `eval_fair_puct.py` route the net arms to Python
+    unconditionally; that routing is correct but it is currently implicit, so a
+    reader cannot tell "net arms are Python" from "net arms happen to be Python
+    here". A probe that returns `supported=False` with a reason is the difference
+    between a documented constraint and an accident.
+
+    It also carries the two numbers a caller needs to reason about the trade,
+    because they are counter-intuitive in the Rust era:
+
+    * `reopen_r_bar` — the gate's bar, unchanged.
+    * `r_is_an_upper_bound` — **the port inverts how `r` should be read.** `r`
+      models the forward as purely ADDITIVE on top of an unchanged search. For
+      `fair-netprior` that is wrong: net priors REPLACE the classical evaluator's
+      child-leaf sweep (`1 + |legal|` leaf calls per expansion, measured ~9.6 leaf
+      evals per simulation by `carc-core`'s `examples/evalprobe.rs`), so the arm
+      deletes work as well as adding it. In Python the distinction did not matter —
+      a 4.2 ms forward dwarfed everything it displaced. In Rust the displaced sweep
+      is a large fraction of per-simulation cost, so `r` OVERSTATES the true cost
+      ratio and the decision-bearing quantity is the measured per-move cost ratio.
+
+    See `docs/RUST_NET_EVAL_DESIGN_20260802.md` for the backend comparison, the
+    measured `r` ladder, and the acceptance tiers a backend must clear.
+
+    Returns a dict; never raises, so it is safe in a manifest-stamping path.
+    """
+    try:
+        import carc_rs
+        have_module = True
+        version = str(carc_rs.__version__)
+        # The PyO3 surface a wired net arm would need. Absent by design today: the
+        # prototype evaluator lives in the `carc-net` crate, which is an excluded
+        # workspace and is not linked into `carc_rs`.
+        has_evaluator = hasattr(carc_rs, "PolicyEvaluatorRs")
+    except Exception as exc:  # pragma: no cover - carc_rs absent is a valid state
+        have_module = False
+        version = None
+        has_evaluator = False
+        reason = f"carc_rs not importable: {exc}"
+    else:
+        reason = (
+            "carc_rs exposes no PolicyEvaluatorRs; the net-arm seam "
+            "(carc_core::eval::PolicyEvaluator) has a prototype backend in the "
+            "carc-net crate but is not wired into the PyO3 module or into search"
+        )
+
+    return {
+        "supported": bool(have_module and has_evaluator),
+        "reason": None if (have_module and has_evaluator) else reason,
+        "carc_rs_present": have_module,
+        "carc_rs_version": version,
+        "reopen_r_bar": NET_ARM_REOPEN_R_BAR,
+        "r_is_an_upper_bound": True,
+        "design_doc": "docs/RUST_NET_EVAL_DESIGN_20260802.md",
+    }
+
+
+# --------------------------------------------------------------------------- #
 # The adapter                                                                  #
 # --------------------------------------------------------------------------- #
 class RustFairAgent:
