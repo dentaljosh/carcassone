@@ -11,7 +11,8 @@
 > | **F-4** `gen_fair_distill` (A5) | **DONE.** Routed through the factory; 431/431 actions identical python-vs-rust over 3 games. The k4x688 argparse staleness was deliberately **left alone** (it must not move as a side effect of a backend flip — the audit's own instruction). |
 > | **A6** `eval_puct_priors` | **DONE, but reclassified — see below.** |
 > | **Gap 1** (no search seed) | **CLOSED.** `GAP1_SEED_INVARIANCE.json`: 75 cross-seed comparisons, 15 recorded-champion roots, production per-world budget, bit-identical action + root N/W at every seed including `None`. The missing field is genuinely inert. |
-> | **Gap 2** (`reuse_tree`) / **Gap 3** (evaluator injection) | **STILL OPEN, now ENFORCED** — `RustClairvoyantAgent` and the fair builder RAISE on both rather than approximating them. |
+> | **Gap 2** (`reuse_tree`) / **Gap 3** (evaluator injection) | ~~**STILL OPEN, now ENFORCED**~~ — **Gap 2 CLOSED 2026-08-02, see the row below. Gap 3 remains OPEN and ENFORCED** (`RustClairvoyantAgent` / `RustCarryClairvoyantAgent` / the fair builder all RAISE on an injected evaluator). |
+> | **Gap 2 — CLOSED 2026-08-02 (rustport P6)** | `carc_core::search::SearchSession` + `carc_rs.PersistentSearcher` give the Rust search a tree that OUTLIVES THE CALL, and `rust_agent.RustCarryClairvoyantAgent` reproduces **both** Python transitions (`best_action` carries the tree — it clears at NO `reuse_tree`; `move` clears or `_reroot_or_clear`s). Opt-in and default-off: additive module, new pyclass, new adapter class; no existing FFI signature and no existing search path touched. ⚠️ The gap was **wider than `reuse_tree`**: the blocking case was `best_action`'s unconditional carry, which no config flag controls. Gates: `GATE_GAP2_PERSISTENT.json` (the three-way, plus the fourth leg), `GATE_ORACLE_PILOT_BACKEND.json`, `GATE_CLAIR_BACKEND.json`, `tests/rustport/test_p6_persistent.py`. Unlocks **A3** (`oracle_score_pilot --backend rust`) and **F-6's** caller (`eval_fair_puct --info clair --backend rust`). |
 > | **F-6** clair-wiring | **PRIMITIVE BUILT AND GATED**, callers not yet converted. `rust_agent.RustClairvoyantAgent` over `MirrorState.search_single`; `GATE_CLAIRVOYANT.json` = 15 roots / 60 field checks bit-exact (chosen action + root N/W + every child edge, raw f64 bits). |
 > | **A2 / A3 / A4 / A7 / A8** (`kwidth_agreement_probe`, `oracle_score_pilot`, `move_agreement_probe`, `gate_b_*`, `adaptive_k_census`) | **NOT CONVERTED — deliberate.** See "what is still Python" below. |
 > | **F-3** the four `make_production_champion` desktop callers | **NOT DONE** — not routed to this agent. §1 stands unchanged: do not flip the factory default until they learn the mirror protocol. |
@@ -213,6 +214,25 @@ proven inert for this path.** Prove it before trusting any B6 conversion.
 **Gap 2 — no `reuse_tree`.** `search_single` is fresh-tree only. Inert for the champion
 (`reuse_tree: true` in the YAML is a documented no-op in fair deploy), but a clairvoyant ruler that
 sets it is not reproducible.
+
+> **CLOSED 2026-08-02 (rustport P6) — and the gap was named too narrowly.** `reuse_tree` is the
+> *re-rooting* transition, and it is only half of what was missing. `HeuristicPriorAgent.best_action`
+> **never clears the tree at any `reuse_tree`** — the guard lives in `move()`, which `best_action`
+> does not call — so a `best_action`-driven ruler (the oracle pilot's continuation, every ply to
+> terminal) carries ONE transposition table across the whole playout. No config flag controls that,
+> so "inert because the champion doesn't set `reuse_tree`" never applied to it.
+> `GAP2_ORACLE_CONTINUATION_TREE.json` measured the consequence (root pre-exists with `N > sims` on
+> 102/103 plies; fresh-tree replay diverges 4/4).
+> **The fix:** `carc_core::search::session::SearchSession` (tree outlives the call) →
+> `carc_rs.PersistentSearcher` → `rust_agent.RustCarryClairvoyantAgent`, which implements all three
+> transitions: `search_carry` = `best_action`, `search_fresh` = `move(reuse_tree=False)`,
+> `search_reroot` = `move(reuse_tree=True)`, the last one including `_reroot_or_clear`'s
+> hit/fresh/collide outcomes and `prune_to_subtree`.
+> ⚠️ **`reuse_tree` is NOT inert for the clairvoyant ruler:** `production_prior_cfg()` carries
+> `reuse_tree=True`, so the clair champion RE-ROOTS between moves. A single-move gate cannot see
+> this (a fresh agent has nothing to re-root into) — `GATE_CLAIRVOYANT.json` is green while the
+> full-game leg caught it at ply 1. Any Rust ruler must resolve the flag from `cfg` the way
+> `HeuristicPriorAgent.__init__` does.
 
 **Gap 3 — no evaluator injection, no `meeple_dedup` / `intra_reuse`.** The Rust core carries no net
 evaluator, so `--info fair-netprior` / `fair-net` and all of `build_fair_netprior_candidate` are
