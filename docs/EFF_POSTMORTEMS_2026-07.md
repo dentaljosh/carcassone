@@ -78,3 +78,4 @@ it turns out, is one thing we never actually tested.
 | Eff Linus | WSL2 (and by extension Microsoft) | **exonerated** — parity on three configurations; Windows scheduler convicted instead |
 | (the Anand thread) | DRAM | **undefeated** — every verdict above is a footnote to memory latency |
 | Eff Hans | Hans im Glück | **pending** — charges filed, trial not scheduled |
+| Eff Dario | Anthropic | **structurally uneffable** — the one branch where the named party is paid win-or-lose. Opened 2026-08-02 (Joshua, surplus-budget hour): six parallel agent deliverables (port review · rules-fidelity audit · Phase-5 analyzer · P1 paper skeleton · backend flip · 10× funding memo). Verdict standard, same as every branch: did the pre-registered deliverables land, graded at the reset. |
