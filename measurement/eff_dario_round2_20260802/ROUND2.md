@@ -9,6 +9,21 @@
 >
 > §1 verdicts are **FINAL** — they are the tie-break, not a third opinion. Do not re-litigate a
 > CONFIRM/REFUTE below from the REVIEW.md "For/Against" text; that text is now history.
+>
+> **AMENDMENT 2026-08-02 (midday): the AUTHORITATIVE judge is the independent Fable pass, per
+> Joshua ("maybe tiebreak judge should be fable").** The Fable judge re-adjudicated the same ten
+> items blind to §1's verdicts and agreed on 9/10 — the one split is **C-f**, which Fable scores
+> **CONFIRM (LOW)**: the LICM argument below is an *expectation about the optimizer*, not a
+> measurement, and the port's own no-engine-edits-without-a-measured-win rule cuts both ways — the
+> claim stays alive at LOW as a **measure-first rider on the perf pass** (a 5-minute A/B settles
+> it; adopt only if it survives `--release`). C-d stays REFUTE under both judges. Standing total:
+> **19 findings (18 + C-f at LOW)**. Fable's act-this-week tier within the confirms: **C-i**
+> (bridge chooser desync guard — the human-facing surface), **C-a** (BaseException at the JNI
+> boundary), **C-g** (c_lcb label-not-function) — all three landed in the wiring agent's
+> `c9d1777`/`39dfe3d`/related commits. Fable's sharpest addition: the C-e cache's collide-check is
+> **structurally vacuous** (colliding boards merge at `Tree::index` before the cache is consulted)
+> — recorded in the C-e text's spirit below. Opus-judging-near-parity datum (9/10) noted in
+> [EFF_POSTMORTEMS_2026-07.md](../../docs/EFF_POSTMORTEMS_2026-07.md).
 
 ---
 
@@ -134,7 +149,9 @@ game playing a different champion than the live one.
 ### Standing total after the tie-break
 
 REVIEW.md's §CONFIRMED items **#1–#10** plus the eight upheld here = **18 standing findings**
-against the Rust port, with **C-d and C-f closed**. Bit-exactness remains undisputed: every item
+against the Rust port, with **C-d and C-f closed**. *(AMENDED same day: the authoritative Fable
+judge re-opens C-f at LOW as a measure-first perf-pass rider — see the amendment banner at top;
+standing total 19.)* Bit-exactness remains undisputed: every item
 in both sets is provenance, safety-net, label-vs-function or performance — none of them changes a
 bit of gate output, which is precisely why seven green gates are silent about them.
 
