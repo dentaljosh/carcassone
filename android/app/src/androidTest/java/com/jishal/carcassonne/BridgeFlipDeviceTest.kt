@@ -98,14 +98,33 @@ class BridgeFlipDeviceTest {
             st.isNull("budget_note"))
     }
 
-    /** Leg 2 — the retail start tile is pre-placed before anyone draws. */
+    /**
+     * Leg 2 — the retail start tile is pre-placed before anyone draws, AND it
+     * sits on the RECENTRED grid (2026-08-02, app-only).
+     *
+     * Row 18 of 35, not row 6: the walled grid left 6 rows of headroom above and
+     * 28 below, which is what produced the "invisible border" Joshua hit on this
+     * very device — a rule-legal placement above row 0 is silently never offered.
+     * The shift is 12, i.e. EVEN, which is what makes it representation-neutral
+     * (tests/test_start_tile_grid_bound.py). Asserted, not reported: a miss here
+     * means the shipped app is back on the walled grid.
+     */
     @Test
-    fun t02_new_game_starts_from_the_retail_tile() {
+    fun t02_new_game_starts_from_the_retail_tile_on_the_centred_grid() {
         call("reset")
         val st = call("new_game", "{}")
         val board = st.getJSONArray("board")
         assertEquals("retail: exactly one tile is pre-placed", 1, board.length())
         val tile = board.getJSONObject(0)
+        assertEquals("the app default grid is centered18", 18, tile.getInt("row"))
+        assertEquals(15, tile.getInt("col"))
+        // Every legal first placement is clear of the top wall by a mile.
+        val cells = st.getJSONObject("legal").getJSONArray("tile_cells")
+        var minRow = Int.MAX_VALUE
+        for (i in 0 until cells.length()) {
+            minRow = minOf(minRow, cells.getJSONObject(i).getInt("row"))
+        }
+        assertTrue("lowest legal row was $minRow; the top wall is at 0", minRow >= 17)
         // Nobody spends a turn on it and no meeple goes on it.
         assertEquals("retail: the start tile carries no meeple",
             0, st.getJSONArray("meeples").length())
@@ -172,6 +191,8 @@ class BridgeFlipDeviceTest {
         }
         val save = call("save_game")
         assertEquals("retail", save.getString("start_rule"))
+        assertEquals("the save must record WHICH GRID the game was played on",
+            "centered18", save.getString("grid_rule"))
         assertTrue("the save must stamp the champion identity",
             save.getString("leaf_hash").isNotEmpty())
 
@@ -186,12 +207,59 @@ class BridgeFlipDeviceTest {
             "rust", after.getString("backend"))
         emit("flip_save_round_trip", JSONObject(mapOf(
             "start_rule" to save.getString("start_rule"),
+            "grid_rule" to save.getString("grid_rule"),
             "leaf_hash" to save.getString("leaf_hash"),
             "champion_id" to save.getString("champion_id"),
             "n_actions" to after.getInt("n_actions"),
             "ai_decisions" to restored.getJSONObject("restored").getInt("ai_decisions"),
             "scores" to after.getJSONArray("scores").toString(),
         ).toMap()).toString())
+    }
+
+    /**
+     * Leg 5 — THE BACKWARD-COMPAT LEG for the 2026-08-02 recentring.
+     *
+     * The two real E4 archives are the only human-vs-champion games that exist.
+     * They were written by an app that had neither `grid_rule` nor the recentred
+     * grid, so the ABSENT field must mean "engine6" forever — and it has to mean
+     * that on the DEVICE, through the same `restore_game` the Past-games list
+     * calls, not just in a desktop test. If it silently resolved to the new
+     * default instead, the identical action log would decode different board
+     * cells (an action index is a WINDOW cell) and the replay would either
+     * diverge on score or be outright illegal. Unrecoverable data, so asserted.
+     */
+    @Test
+    fun t05_old_archives_still_replay_on_the_walled_grid() {
+        val names = listOf("1785205383_867966", "1785466497_161583")
+        val report = mutableMapOf<String, Any>()
+        for (name in names) {
+            call("reset")
+            val blob = JSONObject(asset("e4/$name.json").readText())
+            assertTrue("fixture is not a pre-recentring archive",
+                !blob.has("grid_rule") && !blob.has("start_rule"))
+            val restored = call("restore_game", blob.toString())
+            val st = call("get_state")
+            assertEquals("$name: replay diverged",
+                blob.getJSONArray("scores").toString(),
+                st.getJSONArray("scores").toString())
+            assertEquals("$name: not every action replayed",
+                blob.getJSONArray("actions").length(),
+                restored.getJSONObject("restored").getInt("actions"))
+            // The grid the archive replayed on, read back the way the payload
+            // records it: a fresh save of the restored session.
+            val save = call("save_game")
+            assertEquals("$name: an archive with no grid_rule must be engine6",
+                "engine6", save.getString("grid_rule"))
+            assertEquals("$name: an archive with no start_rule must be engine",
+                "engine", save.getString("start_rule"))
+            report[name] = JSONObject(mapOf(
+                "scores" to st.getJSONArray("scores").toString(),
+                "actions" to restored.getJSONObject("restored").getInt("actions"),
+                "grid_rule" to save.getString("grid_rule"),
+                "start_rule" to save.getString("start_rule"),
+            ).toMap())
+        }
+        emit("grid_legacy_archives", JSONObject(report.toMap()).toString())
     }
 
     companion object {
@@ -201,6 +269,16 @@ class BridgeFlipDeviceTest {
 
         private fun appCtx() =
             InstrumentationRegistry.getInstrumentation().targetContext
+
+        /** Copy an androidTest asset out to a readable file (same trick as P7). */
+        private fun asset(path: String): File {
+            val out = File(appCtx().cacheDir, "flipassets/$path")
+            if (out.isFile && out.length() > 0) return out
+            out.parentFile?.mkdirs()
+            InstrumentationRegistry.getInstrumentation().context.assets.open(path)
+                .use { input -> out.outputStream().use { input.copyTo(it) } }
+            return out
+        }
 
         @BeforeClass
         @JvmStatic
