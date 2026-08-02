@@ -21,3 +21,14 @@ cross-platform (ARM/Pixel → x86/WSL) deterministic.
 
 Joshua's overall E4 record: 0–3 (game 1 predates the archiving feature — unrecorded by
 design, not an archive bug).
+
+## ⚠️ Grading-epoch boundary at 2026-08-01 (the rust-port flips)
+
+Games archived BEFORE the 2026-08-01 app build grade against the **k4×688 mobile
+carve-out** on the **walled engine grid** with the **random start tile** (the two games
+above). Games from the 2026-08-01 build onward carry three simultaneous changes, each
+recorded in the archive payload: **budget = the champion of record k8×1376** (rust
+backend; the carve-out is closed — see DECISIONS 2026-08-01), **start_rule = retail**,
+and — from the recentring build — **grid_rule = centered18**. Cross-epoch E4 comparisons
+must condition on these fields; per-game self-consistency is unaffected (both seats play
+the same rules in any one game).
