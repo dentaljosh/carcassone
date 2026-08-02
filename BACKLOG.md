@@ -13,6 +13,17 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-08-02 — Differential rules oracle (JCloisterZone as external referee) — the strong instrument for the rules-fidelity bug class
+**Context:** the border + cloister-rebinding bugs are RULES-FIDELITY divergences — invisible to every
+self-consistency gate by construction (both sides of every comparison play the same wrong rule; the Rust
+port certifies them bit-exactly). The rulebook audit (docs/RULES_FIDELITY_AUDIT_20260802.md, launched
+2026-08-02) is the cheap sweep; THIS is the machine-checkable form: an adapter replaying our
+`(deck_seed, actions)` archives through an independent mature implementation (JCloisterZone — Java,
+rules-complete, no shared code) and diffing legality + scores mechanically. Shared-wrongness impossible.
+**Cost:** ~an agent-day (save-format adapter + tile-id mapping + scoring extraction). **When:** bundle
+with the F9 re-baselining program — the oracle certifies the FIXED rules before re-measurement, and
+doubles as a permanent CI referee. Joshua raised the class 2026-08-02 ("bad taste in my mouth").
+
 ## 2026-07-31 — Shared-claim launcher hardening: no-progress abort on the retry loop
 The leaf-ablation launcher's `while count<N && iter<60` retry loop spun ~3.5 h relaunching
 16 games that a cross-workload contention overload kept pushing past the harness's 3600 s
