@@ -782,8 +782,14 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  net_ckpt="", net_ns=10, shm_name="", id_q=None,
                  cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False,
                  opp_pin_champion=False, oracle_prior_mult=None,
-                 oracle_prior_eps_coef=1e-3):
+                 oracle_prior_eps_coef=1e-3,
+                 backend="python"):
     _W["cand_cfg_dict"] = cand_cfg_dict
+    # ENGINE (rustport P6). ⚠️ FARM RULE: this is a GAME-PARALLEL pool, and the
+    # clairvoyant Rust ruler is single-threaded by construction (search_single takes
+    # no thread count) -- so a worker here can never oversubscribe the box. The rule
+    # is satisfied structurally rather than by a knob; there is no rust_threads to set.
+    _W["backend"] = backend
     _W["oracle_prior_mult"] = oracle_prior_mult  # Track-F Gate A (None = OFF)
     _W["oracle_prior_eps_coef"] = oracle_prior_eps_coef
     # candidate-side leaf override (None -> DEFAULT_CONFIG); champion stays DEFAULT.
@@ -881,8 +887,22 @@ def _play_one(args) -> GameResult | None:
             eps_coef=_W["oracle_prior_eps_coef"], seed=seed)
     else:
         cfg = _make_cand_cfg()
-        cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
-                                          simulations=_W["cand_sims"], seed=seed)
+        # ENGINE (rustport P6, wired 2026-08-02). This file never imported
+        # champion_factory at all (Class A6 of BACKEND_BYPASS_AUDIT_20260801), so it
+        # was structurally unable to see any governance change. ⚠️ BOTH SIDES OF THIS
+        # HARNESS ARE CLAIRVOYANT by design (module docstring), so the candidate is
+        # the true-deck ruler, NOT the fair PIMC champion -- its Rust route is
+        # RustClairvoyantAgent over MirrorState.search_single, gated bit-exact by
+        # scripts/rustport/gate_clairvoyant.py, not the fair backend.
+        if _W.get("backend", "python") == "rust":
+            from carcassonne_ai.rust_agent import RustClairvoyantAgent
+
+            cand_prefix = RustClairvoyantAgent(
+                Game(enable_legal_moves_cache=True), cfg,
+                simulations=_W["cand_sims"], seed=seed)
+        else:
+            cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
+                                              simulations=_W["cand_sims"], seed=seed)
     # opponent side (prefix = HeuristicMCTS, the flag-OFF champion PUCT sibling, or
     # the pinned rod_v2-anchor NeuralMCTS)
     opp_kind = _W.get("opp_kind", "heur")
@@ -902,6 +922,13 @@ def _play_one(args) -> GameResult | None:
         opp_K = K
     cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), K)
     champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
+    # Seat any Rust mirror on the real initial board. The EXACT tail stays Python for
+    # both sides: FairAgentRs.solve_marginalized is the FAIR marginalized solve, not
+    # this harness's clairvoyant exact-K solve, and both sides share the tail
+    # identically -- so leaving it Python cannot bias the A/B.
+    _mirror = cand_prefix if hasattr(cand_prefix, "advance") else None
+    if _mirror is not None:
+        _mirror.start_game(board)
 
     t0 = time.perf_counter()
     moves = 0
@@ -917,6 +944,8 @@ def _play_one(args) -> GameResult | None:
         agent = cand if cur == a_seat else champ
         action = agent.move(board)
         board, _ = game.get_next_state(board, action)
+        if _mirror is not None:
+            _mirror.advance(int(action))     # EVERY applied action, BOTH seats
         moves += 1
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
@@ -1357,6 +1386,23 @@ def main(argv=None) -> int:
                          "champion OF RECORD; C6 Stage-2 confirm). Default OFF = the "
                          "flag-OFF sibling used by the Stage-1 screen (byte-for-byte today).")
     ap.add_argument("--exact-k", type=int, default=4, help="exact clairvoyant endgame handoff at k_remaining<=K")
+    # --- ENGINE (rustport P6, wired 2026-08-02) ---
+    ap.add_argument("--backend", choices=("python", "rust", "auto"), default="python",
+                    help="which ENGINE runs the CANDIDATE prefix. `python` (default) "
+                         "is byte-identical to every row already on record. `rust` "
+                         "runs rust_agent.RustClairvoyantAgent over "
+                         "MirrorState.search_single -- gated bit-exact against "
+                         "HeuristicPriorAgent (chosen action + root N/W + every root "
+                         "child edge, raw f64 bits) by "
+                         "scripts/rustport/gate_clairvoyant.py. ⚠️ THIS IS AN "
+                         "INSTRUMENT: converting a ruler changes the ruler, so cite "
+                         "that gate before comparing a rust-leg row to a python-leg "
+                         "one. ⚠️ EXPECT A MODEST SPEEDUP, not the ~8x fair-champion "
+                         "figure: the OPPONENT here is a frozen h6400 HeuristicMCTS "
+                         "that cannot convert and carries most of the cell CPU, and "
+                         "the exact-K tail stays Python on both sides. Only the plain "
+                         "PUCT candidate converts (--candidate h<sims>, the ab and "
+                         "oracle-prior candidates and every net arm stay Python).")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--games", type=int, default=None, help="alias for --n (convenience)")
     ap.add_argument("--paired", action="store_true")
@@ -1388,6 +1434,27 @@ def main(argv=None) -> int:
         cand_kind, opp_kind, opp_sims, net_ckpt, new_mode = _resolve_specs(args)
     except ValueError as e:
         ap.error(str(e))
+    # ENGINE (rustport P6). Resolved ONCE so workers and manifest cannot disagree.
+    from carcassonne_ai import champion_factory as _CF
+
+    _backend = str(args.backend)
+    if _backend == "auto":
+        _backend = str(_CF.load_production_spec().backend)
+    if _backend not in _CF.KNOWN_BACKENDS:
+        ap.error(f"--backend must be one of {sorted(_CF.KNOWN_BACKENDS)} or 'auto'; "
+                 f"got {args.backend!r}")
+    if _backend == "rust":
+        # Only the plain PUCT candidate has a Rust route. The ab candidate is a dead
+        # C6 lever with no port, the oracle-prior candidate is a python-only overlay
+        # (it presearches with the true deck), and every net arm needs an evaluator
+        # carc_rs does not have. Fail closed rather than silently staying Python on a
+        # run whose manifest would then say "rust".
+        if cand_kind != "puct":
+            ap.error(f"--backend rust supports the puct candidate only; got "
+                     f"--candidate {args.candidate} (kind={cand_kind})")
+        if args.oracle_prior_mult:
+            ap.error("--oracle-prior-mult is a python-only search overlay; "
+                     "run it with --backend python")
     if args.shm_eval_server and opp_kind != "net":
         ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
     if cand_kind == "ab" and (args.cand_ab_steps is None or args.cand_ab_steps <= 0):
@@ -1599,6 +1666,24 @@ def main(argv=None) -> int:
                                         "ITER8_CPUCT/ITER8_RESIDUAL_SCALE (rod_v2 anchor "
                                         "harness; results.csv rodv2_iter02_vs_heur*_v29_n200)",
                          **net_meta}
+        man_cfg["backend"] = {
+            "name": _backend,
+            "default": "python",
+            "applies_to": "candidate prefix only",
+            "unconverted": "the h<sims> HeuristicMCTS opponent (frozen ruler, no Rust "
+                           "port) and the exact-K clairvoyant tail on BOTH sides "
+                           "(FairAgentRs.solve_marginalized is the FAIR marginalized "
+                           "solve, not this one) stay Python -- so the realised "
+                           "speedup on a cell is modest, not the ~8x fair figure",
+            "agent_class": ("RustClairvoyantAgent" if _backend == "rust"
+                            else "HeuristicPriorAgent"),
+            "identity_gate": "measurement/rustport_p6/GATE_CLAIRVOYANT.json",
+            "seed_gate": "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+            "instrument_warning": "this harness is a RULER (both sides clairvoyant by "
+                                  "design); converting an instrument changes the "
+                                  "instrument -- cite the identity gate before "
+                                  "comparing a rust-leg row to a python-leg one",
+        }
         man_cfg.update({"rr_cell": tag,
                         "candidate_spec": args.candidate,
                         "opponent_spec": args.opponent or f"h{args.champ_sims}",
@@ -1635,7 +1720,7 @@ def main(argv=None) -> int:
                             args.shm_eval_server or "", id_q, cand_leaf_cfg,
                             ab_cfg_dict, args.opp_reuse_tree,
                             args.opp_pin_champion, args.oracle_prior_mult,
-                            args.oracle_prior_eps_coef)) as pool:
+                            args.oracle_prior_eps_coef, _backend)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:

@@ -1,0 +1,14 @@
+{
+  "gate": "rustport Class-B \u2014 RustClairvoyantAgent vs HeuristicPriorAgent",
+  "why": "Class B is the INSTRUMENT tier; G4/G6 gated the FAIR PIMC champion, a different agent. A converted ruler must prove itself before it prices anything.",
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "simulations": 1376,
+  "search_seed": 101,
+  "seed_note": "inert \u2014 measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+  "surface": "chosen_action + root N + root W bits + EVERY root child (action, N, W-bits), compared as raw f64 bit patterns",
+  "roots": 15,
+  "field_checks": 60,
+  "mismatches": [],
+  "verdict": "PASS",
+  "scope": "single-world clairvoyant search, fresh-tree, net-free, at these knobs. Says NOTHING about reuse_tree (Gap 2) or evaluator injection (Gap 3) \u2014 RustClairvoyantAgent refuses both."
+}
