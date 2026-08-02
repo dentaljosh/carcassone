@@ -118,11 +118,41 @@ def search_config_rs(cfg, sims: int):
     `exp_fma=True` / `tanh_flavor="glibc_fma"` are the G0 findings for x86-64
     desktop (`np.exp` float64 == glibc `__exp_fma`; `math.tanh` likewise); they
     are what makes the Rust priors bit-identical here. `fpu_reduction=None` is
-    the NeuralMCTS legacy `q=0` for unvisited children, and `c_lcb` is inert
-    unless `final_select == "lcb"`."""
+    the NeuralMCTS legacy `q=0` for unvisited children.
+
+    ⚠️ `c_lcb` is now FORWARDED from `cfg`, not hard-coded (ROUND2 C-g). It is
+    inert while `final_select` is "Q"/"visits", which is why the hard-coded 1.0
+    survived every gate — but a caller that sets `final_select="lcb"` with a
+    tuned `c_lcb` got the Rust leg silently scoring at 1.0, i.e. a DIFFERENT
+    selection rule than the Python leg it was being compared against.
+
+    `root_select` / `gumbel_*` have NO Rust implementation at all. Rather than
+    drop them (the same silent-divergence failure), anything other than the
+    "puct" default RAISES here — the caller keeps `backend="python"`."""
     import carc_rs
 
     from .game_wrapper import SCORE_NORM_SCALE
+
+    root_select = str(getattr(cfg, "root_select", "puct"))
+    if root_select != "puct":
+        raise ValueError(
+            f"root_select={root_select!r} has no carc_rs implementation (the Rust "
+            "core runs PUCT root selection only); Gumbel-root / sequential-halving "
+            "is a python-only search variant. Build this agent with "
+            "backend='python'.")
+    # Gumbel knobs are only READ when root_select == "gumbel", so a non-default
+    # value here is inert — but it signals a caller that believes it configured
+    # something, and silence is what C-g is about. Checked against the dataclass
+    # defaults so a config that merely carries them is not rejected.
+    _gumbel_defaults = {"gumbel_m": 16, "gumbel_c_visit": 50.0,
+                        "gumbel_c_scale": 1.0, "gumbel_retain_g": True}
+    _off_default = [k for k, v in _gumbel_defaults.items()
+                    if getattr(cfg, k, v) != v]
+    if _off_default:
+        raise ValueError(
+            f"gumbel knobs {sorted(_off_default)} are set on a config bound for the "
+            "Rust backend, which implements no Gumbel root. They would be silently "
+            "dropped; build this agent with backend='python'.")
 
     return carc_rs.SearchConfigRs(
         leaf_config_rs(cfg.leaf_cfg),
@@ -134,7 +164,7 @@ def search_config_rs(cfg, sims: int):
         str(cfg.leaf_quantize),
         str(cfg.final_select),
         None,
-        1.0,
+        float(getattr(cfg, "c_lcb", 1.0)),
         True,
         "glibc_fma",
         False,

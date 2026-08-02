@@ -81,6 +81,13 @@ _LEAF_VALUE_PANEL = {
 
 MANIFEST_SCHEMA = "carcassonne-champion-factory/v1"
 
+# The ENGINES a champion may execute on. "auto" is not a member: it is a resolution
+# REQUEST that must land on one of these before anything is built or stamped. Every
+# entry point that accepts a backend validates against this one set (ROUND2 F-5) —
+# `load_production_spec` deliberately does not, so that an unknown YAML value fails at
+# the point of USE with a message naming the file, rather than at import.
+KNOWN_BACKENDS = frozenset({"python", "rust"})
+
 
 # --------------------------------------------------------------------------- #
 # PRODUCTION.yaml -> a resolved spec                                            #
@@ -408,6 +415,18 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
     # would name an engine that does not exist, which is worse than either answer.
     if backend == "auto":
         backend = str(spec.backend)
+    # WHITELIST (ROUND2 F-5). make_production_champion validated the resolved value but
+    # this PUBLIC entry point did not, and load_production_spec accepts any string — so a
+    # mistyped `fair_deploy.backend: rustt` resolved to "rustt", SKIPPED the rust panel
+    # re-verification below (it branches on == "rust"), then took the `!= "python"` stamp
+    # branch and wrote a manifest naming a fictional engine while quoting the G4/G6
+    # behaviour-identity boilerplate. A manifest naming a backend that does not exist is
+    # worse than either real answer, so this fails closed.
+    if backend not in KNOWN_BACKENDS:
+        raise ValueError(
+            f"backend must be one of {sorted(KNOWN_BACKENDS)} (or 'auto'); got "
+            f"{backend!r} — check champion.fair_deploy.backend in "
+            "governance/PRODUCTION.yaml")
     if leaf_cfg is None:
         leaf_cfg = production_leaf_cfg(spec)
     if cfg is None:
@@ -514,16 +533,86 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                         virtual_loss=_UNSET,
                         oracle_prior_mult=_UNSET, oracle_prior_eps_coef=_UNSET,
                         meeple_dedup=_UNSET, intra_reuse=_UNSET,
-                        parallel_workers=_UNSET):
+                        parallel_workers=_UNSET,
+                        backend: str = "python", rust_threads: int | None = None):
     """Construct the fair-play PIMC champion (FairHeuristicPriorAgent). Only kwargs the
     caller actually sets are forwarded, so any left at ``_UNSET`` fall through to the
     agent's OWN defaults — i.e. constructing via this factory is byte-for-byte identical
     to constructing FairHeuristicPriorAgent directly (the parity contract for the
-    eval_fair_puct migration). ``cfg=None`` defaults to the production curve125 config."""
+    eval_fair_puct migration). ``cfg=None`` defaults to the production curve125 config.
+
+    ``backend`` selects the ENGINE (2026-08-02, closing the audit's F-1). Added here
+    because THIS is the seam the elo-bearing harnesses actually ride: the 2026-08-01
+    flip put the selector on ``make_production_champion``, but ``eval_fair_puct``,
+    ``kwidth_agreement_probe`` and ``oracle_score_pilot`` all reach the agent through
+    these thin builders, which had no ``backend`` parameter and therefore could not be
+    moved off Python by any YAML edit (measurement/rustport_p6/
+    BACKEND_BYPASS_AUDIT_20260801.md §0). Values: ``"python"`` (default, byte-identical
+    to before this parameter existed), ``"rust"``, or ``"auto"`` (resolve from
+    ``governance/PRODUCTION.yaml``).
+
+    ⚠️ SAME SAFETY POSTURE AS THE FLIP, deliberately: the default stays ``"python"`` and
+    ``"auto"`` is a caller ASSERTION that it drives the Rust mirror — ``start_game()``
+    once, then ``advance()`` for EVERY applied action of BOTH seats. ``RustFairAgent`` is
+    not a drop-in at the call-protocol level; a caller that does not advance gets a
+    frozen mirror, which since 2026-08-01 raises ``MirrorDesync`` rather than silently
+    answering for a stale position.
+
+    ``rust_threads`` folds the ``k_dets`` worlds across OS threads (None ⇒ 1). ⚠️ In a
+    GAME-PARALLEL FARM this must stay 1: game parallelism owns the cores, and W16 x t8 =
+    128 hot threads is the documented failure mode. 1 is the default here for exactly
+    that reason; only an interactive/single-game caller should raise it."""
     from .fair_agent import FairHeuristicPriorAgent
 
     if cfg is None:
         cfg = production_prior_cfg()
+
+    if backend == "auto":
+        backend = str(load_production_spec().backend)
+    if backend not in KNOWN_BACKENDS:
+        raise ValueError(
+            f"backend must be one of {sorted(KNOWN_BACKENDS)} (or 'auto'); "
+            f"got {backend!r}")
+    if rust_threads is not None and backend != "rust":
+        raise ValueError(
+            f"rust_threads is a backend='rust' knob; got backend={backend!r}")
+
+    if backend == "rust":
+        # Gap 3 of the audit: the Rust core carries NO net evaluator and none of the
+        # python-only search variants, so anything in this list is not "slower on rust",
+        # it is ABSENT. Fail closed rather than silently dropping a knob that changes
+        # play (the same failure REVIEW #5 found in the make_production_champion guard).
+        _py_only = {
+            "net": net, "evaluator": evaluator, "sighted_game": sighted_game,
+            "batch_size": batch_size, "batch_evaluator": batch_evaluator,
+            "virtual_loss": virtual_loss,
+            "oracle_prior_mult": oracle_prior_mult,
+            "oracle_prior_eps_coef": oracle_prior_eps_coef,
+            "meeple_dedup": meeple_dedup, "intra_reuse": intra_reuse,
+            "parallel_workers": parallel_workers,
+        }
+        _set = sorted(k for k, v in _py_only.items()
+                      if v is not _UNSET and v is not None and v is not False)
+        if _set:
+            raise ValueError(
+                f"backend='rust' does not implement {_set}: carc_rs carries no net "
+                "evaluator (so --info fair-netprior / fair-net stay python) and none "
+                "of the python-only search variants. Use rust_threads for the k_dets "
+                "split; parallel_workers is the SPAWN-process one.")
+        from .rust_agent import RustFairAgent
+
+        rs_kw = {k: v for k, v in dict(
+            sims=sims, k_dets=k_dets, seed=seed, exact_endgame=exact_endgame,
+            exact_max_k=exact_max_k, min_pooled_visits=min_pooled_visits,
+            exact_budget=exact_budget,
+        ).items() if v is not _UNSET}
+        if "sims" not in rs_kw or "k_dets" not in rs_kw:
+            raise ValueError(
+                "backend='rust' needs an explicit sims= and k_dets=: RustFairAgent has "
+                "no implicit budget to fall through to (the Python agent's own defaults "
+                "are what _UNSET relies on). Pass the harness's resolved budget.")
+        return RustFairAgent(game, cfg, threads=int(rust_threads or 1), **rs_kw)
+
     kw = {k: v for k, v in dict(
         sims=sims, k_dets=k_dets, seed=seed, exact_endgame=exact_endgame,
         exact_max_k=exact_max_k, min_pooled_visits=min_pooled_visits,
@@ -645,11 +734,35 @@ def build_fair_netprior_candidate(game, *, cfg=None, net=None, handles=None,
 
 
 def build_clairvoyant_champion(game, *, cfg=None, simulations, seed=_UNSET,
-                               reuse_tree=_UNSET, meeple_dedup=_UNSET):
+                               reuse_tree=_UNSET, meeple_dedup=_UNSET,
+                               backend: str = "python"):
     """Construct the clairvoyant PUCT champion (HeuristicPriorAgent) — the dev/ruler
     agent (reads the true deck). Byte-identical to a direct construction; ``cfg=None``
-    defaults to the production curve125 config."""
+    defaults to the production curve125 config.
+
+    ``backend`` exists here only so a harness can pass the SAME resolved value to both
+    builders without special-casing, and so an ``"auto"`` that resolves to ``"rust"``
+    fails LOUDLY instead of silently handing back a Python ruler that a manifest then
+    stamps as Rust. There is no Rust clairvoyant AGENT: ``MirrorState.search_single`` +
+    ``set_unseen_deck`` is the right primitive but three gaps are open (no search-seed
+    plumbing, no ``reuse_tree``, no evaluator injection —
+    measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §3). ⚠️ Converting this
+    builder would also CHANGE A REFERENCE INSTRUMENT, so it needs its own identity gate
+    on the G6 pattern before a converted ruler grades anything."""
     from .heuristic_prior_mcts import HeuristicPriorAgent
+
+    if backend == "auto":
+        backend = str(load_production_spec().backend)
+    if backend not in KNOWN_BACKENDS:
+        raise ValueError(
+            f"backend must be one of {sorted(KNOWN_BACKENDS)} (or 'auto'); "
+            f"got {backend!r}")
+    if backend != "python":
+        raise ValueError(
+            f"backend={backend!r} is a FAIR-mode capability; there is no clairvoyant "
+            "Rust agent (carc_rs ports the PIMC agent, not the true-deck ruler). "
+            "Build this ruler with backend='python' explicitly — do not pass 'auto' "
+            "here while PRODUCTION.yaml names a non-python engine.")
 
     if cfg is None:
         cfg = production_prior_cfg()
@@ -762,9 +875,10 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     # `RustFairAgent.choose_action` hard-raises `MirrorDesync` on drift.
     if backend == "auto":
         backend = str(spec.backend)
-    if backend not in ("python", "rust"):
+    if backend not in KNOWN_BACKENDS:
         raise ValueError(
-            f"backend must be 'python'|'rust'|'auto'; got {backend!r}")
+            f"backend must be one of {sorted(KNOWN_BACKENDS)} (or 'auto'); "
+            f"got {backend!r}")
     manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
                                  backend=backend)
 
@@ -792,12 +906,24 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
         raise ValueError(
             "backend='rust' is a FAIR-mode capability (carc_rs ports the PIMC agent, "
             f"not the clairvoyant ruler); got mode={mode!r}")
-    if backend == "rust" and (meeple_dedup or intra_reuse or parallel_workers):
+    # ⚠️ RESOLVED values, not the raw kwargs (REVIEW 2026-08-02 #5 / ROUND2 F-1).
+    # `None` is the INHERIT-FROM-PROCESS sentinel for meeple_dedup and intra_reuse, so
+    # the raw-kwarg form of this guard was blind to a variant enabled by
+    # CARCASSONNE_MEEPLE_DEDUP / CARCASSONNE_INTRA_TURN_REUSE (or by a runtime
+    # `meeple_equiv.set_enabled(True)`). In that state a Rust champion was built with
+    # the variant SILENTLY DROPPED — carc_rs implements neither — and then stamped with
+    # `manifest["meeple_dedup"] = {"enabled": True}` further down, because THAT branch
+    # already consults the env. The manifest claimed a search variant the agent had not
+    # run. Resolving here makes the guard and the stamp read the same source.
+    _dedup_on = meeple_equiv.resolve(meeple_dedup)
+    _intra_on = mode == "fair" and intra_carry.resolve(intra_reuse)
+    if backend == "rust" and (_dedup_on or _intra_on or parallel_workers):
         raise ValueError(
             "backend='rust' does not carry the python-only search variants "
-            "(meeple_dedup / intra_reuse) or the SPAWN-process split "
-            "(parallel_workers — use rust_threads, which splits the same worlds "
-            "across OS threads inside one GIL-released call)")
+            f"(meeple_dedup={_dedup_on} / intra_reuse={_intra_on} — note these "
+            "resolve from the environment when the kwarg is None) or the "
+            "SPAWN-process split (parallel_workers — use rust_threads, which splits "
+            "the same worlds across OS threads inside one GIL-released call)")
     if rust_threads is not None and backend != "rust":
         raise ValueError(
             f"rust_threads is a backend='rust' knob; got backend={backend!r}")
