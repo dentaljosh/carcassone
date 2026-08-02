@@ -1,6 +1,6 @@
 # Rust engine+search core ("carc-core") — build spec
 
-> **STATUS: BUILDING (approved by Joshua 2026-07-31 ~15:00, "this is all good to me... lets
+> **STATUS: ✅ COMPLETE — ALL SEVEN GATES PASSED (G0 2026-07-31 → G6 2026-08-01 05:26, ~38 h; G7 on the real Pixel). Backend + app flips approved by Joshua 2026-08-01 evening.** *(original banner:)* BUILDING (approved by Joshua 2026-07-31 ~15:00, "this is all good to me... lets
 > see how far this gets in 36 hours").** Committed BEFORE the first line of Rust (house
 > prereg style). Orchestration: main session (Fable) orchestrates; engineer subagents run
 > Opus ("make sure you're the only fable dude"). Local box has ~16 spare SMT threads
@@ -85,7 +85,7 @@ measured strength (the CL-071 precedent).
 | **P3** | single-world PUCT search + **per-sim trace harness** (bisect first divergent sim — built before k-parallel) | **G3**: action + per-action (N,W) raw-float equality at sims=1376; desktop sims/s bench. ✅ **PASSED 2026-07-31 late night, 0/9,425 searches (6.91M sims); 9.55× Python** (DECISIONS same date). |
 | **P4** | fair agent: k-parallel PIMC + latch + marginalized solver (ported in v1; Python solver = oracle) | **G4**: test_kparallel template vs RustFairAgent; solver value/optimal-set equality; move-by-move identity on all corpora at k8×1376. ✅ **PASSED 2026-08-01 early, 0/305,515; every-ply-k8 full-corpus leg queued (~280 CPU-h), covered via stride-30-all-games + every-ply@k4×688** (DECISIONS same date). |
 | **P5** | flags (fixed_start_tile / start_rule / centered 6→18) vs worktree diffs | **G5**: worktree tests reproduced; even-shift property; G1–G4 re-run flags-off. ✅ **PASSED 2026-08-01 pre-dawn, 0 mismatches all legs** (DECISIONS same date). |
-| **P6** | desktop integration (adapter, factory selector, reconcile mode) | **G6**: deck-paired Rust-vs-Python champion **100% action agreement ≥100 games** (⇒ no elo owed); throughput ≥ Cython path. |
+| **P6** | desktop integration (adapter, factory selector, reconcile mode) | **G6**: deck-paired Rust-vs-Python champion **100% action agreement ≥100 games** (⇒ no elo owed); throughput ≥ Cython path. ✅ **PASSED 2026-08-01: 14,384/14,384 actions over 100 games, 0/101,088 checks; deploy multiplier 7.98× single / 7.31× W8 / 41.6× t8** (DECISIONS same date). |
 | **P7** | Android wheel + on-device | **G7**: on-device replay identity vs desktop; k8×1376 median ≤2 s/move (20-position battery); 50-move thermal soak; emulator smoke. ✅ **PASSED 2026-08-01 morning on the Pixel 9 Pro: 1.551 s/move median @k8×1376, thermal 1.007×, replay 0/3,165, bionic = msun/exp64_fma per-ABI via the enum — fallback NOT invoked** (DECISIONS same date; `measurement/rustport_p7/G7_REPORT.md`). ⚠️ Spec correction: `PYO3_CROSS_LIB_DIR` is UNUSABLE vs Chaquopy's target artifact (no stdlib ⇒ pyo3 hard-fails); explicit `-L/-lpython3.12` + readelf DT_NEEDED asserts carry its purpose. |
 
 Perf expectation: Pixel does 2,752 sims/1.7 s through Python today; Rust central estimate
