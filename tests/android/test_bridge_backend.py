@@ -309,6 +309,142 @@ def test_the_mirror_plays_the_same_grid_as_the_engine(grid_rule):
         monkey.undo()
 
 
+# --------------------------------------------------------------------------- #
+# 4. the two safety nets (REVIEW.md C-a / C-i, CONFIRMED 2026-08-02)            #
+# --------------------------------------------------------------------------- #
+def _panic_type() -> type:
+    """The real ``pyo3_runtime.PanicException`` class, obtained by causing one.
+
+    Imported by provocation rather than by name: `pyo3_runtime` is created by the
+    extension, so it is not importable until a panic has been raised through it."""
+    try:
+        carc_rs.MirrorState.from_seed("abc")
+    except BaseException as exc:                  # noqa: BLE001 — that IS the point
+        return type(exc)
+    raise AssertionError("carc_rs no longer panics on a non-decimal seed")
+
+
+def test_a_rust_panic_is_not_an_exception():
+    """The premise of C-a, asserted rather than assumed: `except Exception` cannot
+    see a Rust panic, so every JNI entry point had to move to `BaseException`."""
+    panic = _panic_type()
+    assert issubclass(panic, BaseException)
+    assert not issubclass(panic, Exception)
+
+
+def test_a_panic_at_a_jni_entry_point_returns_json_not_a_crash(monkeypatch):
+    """A panic must come back as the ordinary error envelope. Before the fix it
+    crossed into Kotlin as an unhandled Python exception."""
+    panic = _panic_type()
+    _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1", "backend": "python"})))
+
+    def boom(_s):
+        raise panic("simulated rust panic")
+
+    monkeypatch.setattr(B, "_state_dict", boom)
+    d = json.loads(B.get_state())
+    assert d["ok"] is False
+    assert d["error"]["code"] == panic.__name__
+    assert "simulated rust panic" in d["error"]["message"]
+
+
+def test_interpreter_control_flow_is_still_allowed_through():
+    """`BaseException` must not mean "swallow everything": a KeyboardInterrupt is not
+    a bridge result, and eating it would make a test run uninterruptible."""
+    for exc in (KeyboardInterrupt(), SystemExit(1)):
+        with pytest.raises(type(exc)):
+            B._jni_err(exc)
+
+
+def test_the_chooser_hard_asserts_the_mirror_every_decision():
+    """C-i, half one. The phone's chooser used to be
+    `lambda board: int(self.rs.choose_action())` — it discarded its board argument,
+    so a stale mirror went on answering with moves computed for a position the game
+    had left. Desyncing the mirror by one ply must now be REFUSED, not played."""
+    cfg = {"seed": 31, "opponent": "champion", "human_player": 1,
+           "backend": "rust", "sims": 8, "k_dets": 1, "verify": False}
+    st = _j(B.new_game(json.dumps(cfg)))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    assert not st["is_human_turn"], "seat 0 must be the AI for this probe"
+    # Control: the guard does not fire on a healthy mirror.
+    st = _j(B.ai_move())
+
+    # Push the mirror one ply ahead of the engine, exactly as a missed `advance`
+    # (or a failed one) would leave it.
+    B._S.rs.advance(int(st["legal"]["action_ids"][0]))
+    d = json.loads(B.ai_move() if not st["is_human_turn"]
+                   else B.apply_action(st["legal"]["action_ids"][0]))
+    if d.get("ok"):
+        # It was the human's turn, so the desync is caught on the next AI decision.
+        d = json.loads(B.ai_move())
+    assert d["ok"] is False, "a desynced mirror was allowed to pick a move"
+    assert "diverged" in d["error"]["message"]
+
+
+class _BoomMirror:
+    """A mirror whose `advance` fails the way a Rust panic would."""
+
+    def __init__(self, real, exc_type):
+        self._real, self._exc = real, exc_type
+
+    def advance(self, _a):
+        raise self._exc("simulated mirror failure")
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+def test_apply_is_failure_atomic_and_degrades_rather_than_going_stale():
+    """C-i, half two. `apply()` used to mutate board/action_log/turn and THEN call
+    `rs.advance`, so an FFI failure left Python one ply ahead of a mirror that stayed
+    seated as the chooser — permanently stale, and undetected because the per-ply
+    reconcile is off on the phone."""
+    st = _j(B.new_game(json.dumps({"seed": 9, "opponent": "champion",
+                                   "human_player": 0, "backend": "rust",
+                                   "sims": 8, "k_dets": 1, "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    s = B._S
+    before_actions = list(s.action_log)
+    before_turn = s.turn
+    s.rs = _BoomMirror(s.rs, _panic_type())
+
+    action = int(st["legal"]["action_ids"][0])
+    out = _j(B.apply_action(action))
+
+    # The action landed EXACTLY ONCE on the Python side...
+    assert s.action_log == before_actions + [action]
+    assert s.turn == before_turn + 1
+    assert out["n_actions"] == len(s.action_log)
+    # ...the mirror is gone rather than stale, and says why...
+    assert s.rs is None
+    assert s.backend == B.BACKEND_PYTHON
+    assert "rust mirror failed" in (s.rs_note or "")
+    # ...and the budget came down with the engine, or the phone inherits a
+    # ~25 s/move champion on the slow path.
+    assert (s.eff_k_dets, s.eff_sims) == (1, 8), "an explicit request stays honoured"
+    assert B._agent_ref is s.agent, "get_progress would read a dead agent"
+    # The game is still playable.
+    assert _j(B.get_state())["n_actions"] == len(s.action_log)
+
+
+def test_a_mid_game_degrade_drops_to_the_floor_budget():
+    """Same path, with no explicit sims request: the budget must land on the floor
+    rather than keep a rust-priced 11008 on the Python engine."""
+    st = _j(B.new_game(json.dumps({"seed": 9, "opponent": "champion",
+                                   "human_player": 0, "backend": "rust",
+                                   "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    s = B._S
+    s.rs = _BoomMirror(s.rs, RuntimeError)
+    _j(B.apply_action(int(st["legal"]["action_ids"][0])))
+    assert s.rs is None and s.backend == B.BACKEND_PYTHON
+    assert (s.eff_k_dets, s.eff_sims) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"], B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+
+
 def test_an_odd_grid_row_cannot_reach_the_mirror():
     """The EVEN-shift refusal is enforced on BOTH sides, and the bridge never
     gets to construct a half-configured mirror: `_Session` rejects the unknown

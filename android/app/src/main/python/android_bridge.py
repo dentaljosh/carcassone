@@ -1017,19 +1017,39 @@ class _Session:
         finally:
             random.setstate(saved)
 
-    def _assert_mirror(self, where: str) -> None:
+    def _assert_mirror(self, where: str, board: Board | None = None) -> None:
         """The mirror must render the SAME board bytes as the Python engine.
 
         `string_representation` is the node key the whole port is gated on (G1),
         so equality here is the same claim the desktop gates make — checked at
-        game start always, and after every action when CARC_RS_RECONCILE=1.
+        game start always, before EVERY decision (see `_rust_pick`), and after
+        every action when CARC_RS_RECONCILE=1.
         """
-        want = self.game.string_representation(self.board)
+        board = self.board if board is None else board
+        want = self.game.string_representation(board)
         got = self.rs.string_repr()
         if want != got:
             raise RuntimeError(
                 f"rust mirror diverged at {where}: repr differs "
                 f"(python {len(want)}B, rust {len(got)}B)")
+
+    def _rust_pick(self, board) -> int:
+        """The champion's decision, taken by the Rust mirror.
+
+        ⚠️ THE SYNC CHECK IS UNCONDITIONAL, not reconcile-gated (REVIEW.md C-i,
+        CONFIRMED 2026-08-02). This used to be
+        `lambda board: int(self.rs.choose_action())` — which ignored its `board`
+        argument entirely, so the one surface a human plays against was the only
+        caller in the repo with NO mirror guard at all: `_assert_mirror` ran at game
+        start and then per-ply only under `CARC_RS_RECONCILE`, a module constant read
+        once at import and off on the phone. A mirror that went stale for any reason
+        would go on answering, with a move computed for a position the game had left.
+        `RustFairAgent.choose_action` was given exactly this guard, unconditionally,
+        on 2026-08-01 (`rust_agent.py`) at a measured 0.005% of a decision; the phone
+        pays proportionally less, because its decision is longer, not shorter.
+        """
+        self._assert_mirror("choose_action", board)
+        return int(self.rs.choose_action())
 
     def _degrade_to_python(self, note: str) -> None:
         """Lose the speedup AND the budget it bought — never the game.
@@ -1045,6 +1065,28 @@ class _Session:
         self.backend = BACKEND_PYTHON
         self._build_opponent()
         self.rs_note = note          # after the rebuild, which may set its own note
+
+    def _degrade_mid_game(self, note: str) -> None:
+        """The same demotion, but with a game already in progress (REVIEW.md C-i).
+
+        `_degrade_to_python` is explicitly documented as safe only BEFORE any action
+        is applied, because rebuilding the opponent resets the agent's move counter.
+        Mid-game there are two extra jobs:
+
+        * re-seat `_move_idx` to the number of AI decisions already taken, exactly as
+          `restore_game` does — the per-move search seeds derive from it, so a fresh
+          zero would make the rest of the game a different champion;
+        * repoint the module-level `_agent_ref`, which `get_progress` reads.
+
+        The budget still drops to the floor, which is the point: continuing at a
+        rust-priced 11008 on the Python engine is a ~25 s/move phone hang."""
+        global _agent_ref
+        decisions = len(self.ai_elapsed)
+        self._degrade_to_python(note)
+        if hasattr(self.agent, "_move_idx"):
+            self.agent._move_idx = decisions
+        if _S is self:
+            _agent_ref = self.agent
 
     def _start_rust_mirror(self) -> None:
         try:
@@ -1122,7 +1164,14 @@ class _Session:
             )
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
-        except Exception as exc:                  # noqa: BLE001
+        except BaseException as exc:              # noqa: BLE001
+            # ⚠️ BaseException, not Exception (REVIEW.md C-a): this IS the degrade
+            # net, and the failure it exists to absorb — a Rust panic — arrives as
+            # `pyo3_runtime.PanicException`, which does not derive from `Exception`.
+            # A safety net whose stated job is to keep the app playable when the Rust
+            # core misbehaves cannot be scoped to the misbehaviours already known.
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
             self._degrade_to_python(
                 f"rust backend failed to start ({type(exc).__name__}: {exc})")
             return
@@ -1130,7 +1179,7 @@ class _Session:
         # agent entirely (RuleBasedPlayer, no search) and has no Rust port; its
         # session keeps the mirror for state, not for picking.
         if self.opponent_kind == "champion":
-            self.pick = lambda board: int(self.rs.choose_action())
+            self.pick = self._rust_pick
         else:
             self.rs_note = ("mirror only: the rust backend replaces the CHAMPION's "
                             f"move choice, and this game's opponent is "
@@ -1158,6 +1207,17 @@ class _Session:
                 else meeple_pass_index(size))
 
     def apply(self, action_id: int) -> None:
+        """Apply one action to the engine AND the mirror, or to neither.
+
+        ⚠️ FAILURE-ATOMIC since 2026-08-02 (REVIEW.md C-i). It used to mutate the
+        Python side first and then call `self.rs.advance(...)` with no rollback, so
+        any FFI failure left Python one ply ahead of a mirror that then stayed
+        permanently stale — `apply_action` caught it, returned an error JSON, and
+        KEPT `_S` live with the mirror still seated as the move chooser. Nothing
+        detected it afterwards, because the per-ply reconcile is off on the phone.
+        Now the Python half is snapshotted and rolled back, the mirror is dropped,
+        and the game continues on the Python engine at the floor budget."""
+        snapshot = (self.prev_board, self.board, self.last_action, self.turn)
         self.prev_board = self.board
         self.last_action = int(action_id)
         self.board, _ = self.game.get_next_state(self.board, int(action_id))
@@ -1167,10 +1227,27 @@ class _Session:
         # once. The mirror is advanced here and nowhere else — that is what keeps
         # it from drifting, and it is why `undo_last_tile` / `restore_game` (which
         # rebuild the session by replaying the log) need no mirror-specific code.
-        if self.rs is not None:
+        if self.rs is None:
+            return
+        try:
             self.rs.advance(int(action_id))
             if _RS_RECONCILE:
                 self._assert_mirror(f"ply {self.turn}")
+        except BaseException as exc:              # noqa: BLE001
+            # BaseException for the C-a reason: `advance` is one of the two public
+            # FFI entry points a Rust panic is reachable through today.
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            ply = self.turn
+            (self.prev_board, self.board, self.last_action, self.turn) = snapshot
+            self.action_log.pop()
+            self._degrade_mid_game(
+                f"rust mirror failed at ply {ply} ({type(exc).__name__}: {exc}); "
+                f"the rest of this game is played by the Python engine at the "
+                f"k{ANDROID_FALLBACK_BUDGET['k_dets']}x"
+                f"{ANDROID_FALLBACK_BUDGET['sims_per_det']} floor")
+            # `self.rs` is None now, so this re-applies on the Python path only.
+            self.apply(int(action_id))
 
     def _claim_of(self, action_id: int) -> tuple | None:
         """``(player, MeeplePosition)`` if ``action_id`` puts a meeple down here.
@@ -1516,6 +1593,29 @@ def _ok(d: dict) -> str:
     return json.dumps(d, default=str)
 
 
+def _jni_err(exc: BaseException) -> str:
+    """Turn ANY failure into the JSON error envelope — the JNI boundary's one net.
+
+    ⚠️ CATCHES ``BaseException``, DELIBERATELY (REVIEW.md C-a, CONFIRMED 2026-08-02).
+    pyo3 maps a Rust panic to ``pyo3_runtime.PanicException``, whose MRO is
+    ``[PanicException, BaseException, object]`` — it does NOT derive from
+    ``Exception``. Every ``except Exception`` at an entry point documented as "never
+    raise across JNI" was therefore blind to exactly the failure class the Rust core
+    introduced, and a panic would have crossed into Kotlin as an unhandled Python
+    exception. Verified against the built wheel in this checkout:
+    ``carc_rs.MirrorState.from_seed('abc')`` panics, and two public FFI entry points
+    reach a panic today (`advance` on an out-of-range decode, `from_seed` on a
+    non-decimal seed).
+
+    ``KeyboardInterrupt``/``SystemExit`` are re-raised: those are interpreter control
+    flow, never a bridge result, and swallowing them would make a desktop test run
+    uninterruptible. Nothing on the device raises either.
+    """
+    if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+        raise exc
+    return _err(type(exc).__name__, str(exc))
+
+
 def _require_session() -> _Session:
     if _S is None:
         raise RuntimeError("no active game — call new_game() first")
@@ -1577,16 +1677,16 @@ def new_game(config_json: str = "{}") -> str:
         _prog_thinking = False
         s.auto_pass_forced()
         return _ok(_state_dict(s))
-    except Exception as exc:                      # noqa: BLE001 — never raise across JNI
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — never raise
+        return _jni_err(exc)                      # across JNI; see _jni_err
 
 
 def get_state() -> str:
     """The full UI state object for the live game."""
     try:
         return _ok(_state_dict(_require_session()))
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def apply_action(action_id) -> str:
@@ -1611,8 +1711,8 @@ def apply_action(action_id) -> str:
         out = _state_dict(s)
         out["applied"] = {"action_id": idx, "describe": describe}
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def ai_move(generation=None) -> str:
@@ -1676,8 +1776,8 @@ def ai_move(generation=None) -> str:
                     "elapsed_s": round(elapsed_s, 4), "generation": gen,
                     "stale": False, "leaf_calls": _prog_leaf_calls})
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def get_progress() -> str:
@@ -1701,8 +1801,8 @@ def get_progress() -> str:
         return _ok({"ok": True, "leaf_calls": leaf_calls, "expected": expected,
                     "elapsed_s": round(elapsed, 3), "phase": phase,
                     "fraction": frac})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def _spec_fingerprint() -> dict:
@@ -1760,8 +1860,8 @@ def save_game() -> str:
     lets ``archive_record`` build on it after the last tile lands."""
     try:
         return _ok(_save_payload(_require_session()))
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def archive_record() -> str:
@@ -1808,8 +1908,8 @@ def archive_record() -> str:
             "ai_elapsed": list(s.ai_elapsed),
         })
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def preview_meeple_slots(action_id) -> str:
@@ -1849,8 +1949,8 @@ def preview_meeple_slots(action_id) -> str:
                  else meeple_slots_for(preview_game, next_board))
         return _ok({"ok": True, "action_id": idx, "slots": slots,
                     "generation": s.generation})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def _replays_rng(agent) -> bool:
@@ -2018,8 +2118,8 @@ def restore_game(json_str: str) -> str:
         if mismatch is not None:
             out["save_mismatch"] = mismatch
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def undo_last_tile() -> str:
@@ -2098,8 +2198,8 @@ def undo_last_tile() -> str:
         out = _state_dict(new_s)
         out["undone"] = {"action_id": undone, "n_actions": len(new_s.action_log)}
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def get_ownership() -> str:
@@ -2246,8 +2346,8 @@ def get_ownership() -> str:
                 })
 
         return _ok({"ok": True, "generation": s.generation, "features": out})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def get_bag() -> str:
@@ -2307,8 +2407,8 @@ def get_bag() -> str:
                     "total_remaining": total_remaining,
                     "in_hand": in_hand,
                     "deck_remaining": int(len(state.deck))})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def get_manifest() -> str:
@@ -2332,8 +2432,8 @@ def get_manifest() -> str:
                     "production_yaml": PRODUCTION_YAML_PATH,
                     "opponent_name": s.opponent_name,
                     "budget_note": s.budget_note})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def production_budget() -> str:
@@ -2357,8 +2457,8 @@ def production_budget() -> str:
                     "champion_of_record_total_sims": spec.k_dets * spec.sims_per_det,
                     "exact_max_k": spec.exact_max_k,
                     "production_yaml": PRODUCTION_YAML_PATH})
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def runtime_info() -> str:
@@ -2425,8 +2525,8 @@ def runtime_info() -> str:
             "spec": _spec_fingerprint(),
             "env": RESOLVED_ENV,
         })
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def debug_fast_forward(confirm: str = "", max_plies=600) -> str:
@@ -2472,8 +2572,8 @@ def debug_fast_forward(confirm: str = "", max_plies=600) -> str:
         out = _state_dict(s)
         out["fast_forwarded"] = {"plies": plies}
         return _ok(out)
-    except Exception as exc:                      # noqa: BLE001
-        return _err(type(exc).__name__, str(exc))
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
 
 
 def reset() -> str:
