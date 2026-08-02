@@ -589,3 +589,19 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 <!-- Things Joshua explicitly decided not to do, with reasoning. Keep these so we don't re-litigate. -->
 
 (none yet)
+
+## 2026-08-02 — mutation-test false-green: order-dependent test + benign Tile._turn_cache memo (triage verdict: LOW correctness / MEDIUM test hygiene)
+`test_puct_choose_action_never_mutates_caller_board` fails in isolation and ALWAYS HAS —
+it was authored (67470f1, 2026-07-07) already-red in a fresh process and only collection
+order made it look green. What "mutates": `Tile._turn_cache`, the lazy memo b9431de
+(2026-05-13, the 1.79× tile.turn cache) added to the process-global Tile singletons that
+every deck shares by design — a pure memo of a pure function; deck order/identity/values
+all preserved. **Triage verdict: NO measurement is suspect** (no production code pickles
+or identity-keys board.state; flat_leaf's WeakKey memo explicitly depends on the cache).
+Deferred fix options (pick one when funded): (a) semantic-snapshot assertion instead of
+pickle-byte equality (cheapest, test-only); (b) `Tile.__getstate__` dropping the three
+derived caches (fixes all five pickle call sites + shrinks worker payloads, but is an
+ENGINE change → needs a bit-exactness gate); plus soften the two "never mutates" docstrings
+(`fair_agent.py:449/:893` also warm `board._str_repr_cache`). Same disease class as the
+conftest DEFAULT_CONFIG import-order note. Full report: triage agent 2026-08-02 (session
+transcript); introducing commit b9431de, test 67470f1.
