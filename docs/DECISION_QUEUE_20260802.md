@@ -20,8 +20,11 @@
    (RULES_FIDELITY_AUDIT R1–R8) + transfer-bound cell + fixed-rules descriptives +
    the JCloisterZone oracle (BACKLOG 2026-08-02). When to fund; scope in the audit doc.
 6. **Perf pass** on the review's #2–4 (+C-e/C-f riders): ~−22% RSS / −13% wall on the
-   champion, all bit-identical, gated by gate re-runs. **STAGED behind the wiring agent
-   (sequencing, not budget) — fires on wiring-green unless Joshua cancels in the morning.**
+   champion, all bit-identical, gated by gate re-runs. ✅ **FIRED 2026-08-02 afternoon**
+   (wiring went green, not cancelled): Opus agent in an isolated worktree, per-change
+   commits each gated (cargo + pytest + G3-pattern reconcile + G6-pattern 10-game
+   identity). Merge happens only after orchestrator review — cancelling mid-flight just
+   means not merging.
 7. **Paper G2** — transformer control (~1–2 box-days + GPU day) vs scoping the claim
    "at this scale". Advisor: decide after lit review.
 8. **Paper G3** — ✅ LAUNCHED 2026-08-02 (Joshua's fresh-budget go): offline decomposition
