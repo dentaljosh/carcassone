@@ -3630,3 +3630,29 @@ of cores" rule is REFUTED for this workload class: throughput scales to full thr
 change rule did its job. Bench only: band 9.69e10 throwaway, no results.csv row
 (--no-results-csv by design), no claim id. Data:
 measurement/classical_search/WSWEEP_F7D_{local,laptop}.tsv; logs /tmp/wsweep_*.log.
+
+## 2026-08-02 (late afternoon) — Rust-era GEN W-sweep: local W*=48, laptop W*=24 — gen scales past thread count; python-era RAM caps obsolete
+
+Driver scripts/classical_search/wsweep_gen_rust.sh (committed with its smoke findings) —
+gen_fair_distill at PRODUCTION knobs (k8×1376, exact-K2, --backend rust, farm threads=1),
+leaf verified = the champion curve125 (hash 158f17ff = the meeple_k=2.0 snapshot dialect
+of a36d2e15; PRODUCTION.yaml leaf_hash_dialects, all byte-identical). Metric:
+warmup-wave-dropped shard-mtime throughput, plies/s box-wide.
+
+LOCAL (32T): 9.47 / 12.35 / 13.75 / 14.65 / 15.89 / 16.33 at W=16/24/32/40/48/64 — the
+curve is latency-bound-shaped and only flattens at 2× threads (+8.5% then +2.8%);
+**settle W*=48** (−2.7% of the W64 asymptote; W40 = −10.3% misses). LAPTOP (24T):
+7.48 / 8.90 / 9.45 / 10.16 / 11.51 / 11.85 / 11.94 at W=8..32 — flat 28→32 (+0.7%),
+**settle W*=24** (−3.7% of peak). RAM: NEVER binding — local peak 10G used / ≥31G avail,
+laptop 4G / ≥7G avail. ⇒ **The python-era gen RAM caps (local W28, laptop W8, ~0.9G/worker)
+are OBSOLETE for the rust gen profile** — a rust gen worker's marginal footprint is
+~100–300 MB and the box RAM story is flat across the whole ladder.
+
+Realized rates at the settle points (incl. warmup): **local ~328 games/h (W48), laptop
+~260 games/h (W32 point; W24 similar)** ⇒ ~590 games/h two-box at full production budget.
+Decision-queue item 2 repriced accordingly (rodv3 300-game gen@11008 ≈ 35 min two-box).
+
+Same headline as F7d this morning, stronger: neither the DRAM-wall W14–16 lore nor the
+gen RAM caps transfer across the backend era. The code-era re-bench rule is now 2-for-2
+today. Bench only: throwaway seeds 9.69e10, no results.csv row, no claim id. Data:
+measurement/classical_search/WSWEEP_GEN_RUST_{local,laptop}.tsv.
