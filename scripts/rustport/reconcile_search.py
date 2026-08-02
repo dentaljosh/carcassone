@@ -80,12 +80,9 @@ def _knobs():
     return _KNOBS
 
 
-_COLLIDE = False
-
-
 def _rscfg(sims: int):
     if sims not in _RSCFG:
-        _RSCFG[sims] = T.rs_config(sims, _knobs(), collide_check=_COLLIDE)
+        _RSCFG[sims] = T.rs_config(sims, _knobs())
     return _RSCFG[sims]
 
 
@@ -130,12 +127,12 @@ def compare(py: dict, rs: dict, tag: str) -> list[dict]:
 def _blank() -> dict:
     return {"positions": 0, "sims_run": 0, "checks": 0, "mismatches": [],
             "plies": 0, "games": 0, "py_secs": 0.0, "rs_secs": 0.0,
-            "py_sims": 0, "rs_sims": 0, "cache_hits": 0, "cache_collisions": 0}
+            "py_sims": 0, "rs_sims": 0}
 
 
 def _merge(a: dict, b: dict) -> None:
     for k in ("positions", "sims_run", "checks", "plies", "games", "py_sims",
-              "rs_sims", "cache_hits", "cache_collisions"):
+              "rs_sims"):
         a[k] += b[k]
     for k in ("py_secs", "rs_secs"):
         a[k] += b[k]
@@ -199,8 +196,6 @@ def _position_job(job: dict) -> dict:
             out["rs_secs"] += t2 - t1
             out["py_sims"] += sims
             out["rs_sims"] += sims
-            out["cache_hits"] += int(rs["legal_cache_hits"])
-            out["cache_collisions"] += int(rs["legal_cache_collisions"])
             out["positions"] += 1
             out["sims_run"] += sims
             out["checks"] += len(_FIELDS)
@@ -235,8 +230,6 @@ def _game_job(job: dict) -> dict:
         out["rs_secs"] += t2 - t1
         out["py_sims"] += sims
         out["rs_sims"] += sims
-        out["cache_hits"] += int(rs["legal_cache_hits"])
-        out["cache_collisions"] += int(rs["legal_cache_collisions"])
         bad = compare(py, rs, tag)
         out["mismatches"].extend(bad)
         out["positions"] += 1
@@ -384,10 +377,6 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--tag", default="main")
     ap.add_argument("--max-mismatch-report", type=int, default=200)
-    ap.add_argument("--collide-check", action="store_true",
-                    help="DIAGNOSTIC: count legal-move-cache hits whose recomputed "
-                         "mask disagrees (two boards sharing one repr key). Costs a "
-                         "full enumeration per hit; behaviour is unchanged.")
     a = ap.parse_args(argv)
 
     a.corpus = a.corpus or ["golden"]
@@ -395,8 +384,6 @@ def main(argv=None) -> int:
         a.corpus = list(CORPORA)
     a.sims = a.sims or [344, 1376]
 
-    global _COLLIDE
-    _COLLIDE = bool(a.collide_check)
     knobs = T.production_knobs()
     jobs = build_jobs(a)
     if not jobs:
@@ -468,10 +455,6 @@ def main(argv=None) -> int:
         print(f"G3/search: throughput py={tp['python_sims_per_sec']:.0f} sims/s  "
               f"rs={tp['rust_sims_per_sec']:.0f} sims/s  "
               f"({tp['speedup']:.2f}x)")
-    if a.collide_check:
-        print(f"G3/search: legal-cache collide-check: "
-              f"{total['cache_collisions']} disagreeing hits / "
-              f"{total['cache_hits']} hits")
     for m in total["mismatches"][:10]:
         print(f"  MISMATCH {m['tag']} [{m['field']}] "
               f"{ {k: v for k, v in m.items() if k not in ('tag', 'field')} }")

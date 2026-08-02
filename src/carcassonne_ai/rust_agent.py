@@ -174,7 +174,6 @@ def search_config_rs(cfg, sims: int):
         float(getattr(cfg, "c_lcb", 1.0)),
         True,
         "glibc_fma",
-        False,
     )
 
 

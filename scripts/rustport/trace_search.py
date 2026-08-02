@@ -192,8 +192,7 @@ def py_config(knobs: dict | None = None, *, final_select: str | None = None,
 
 
 def rs_config(sims: int, knobs: dict | None = None, *,
-              final_select: str | None = None, leaf_quantize: str | None = None,
-              collide_check: bool = False):
+              final_select: str | None = None, leaf_quantize: str | None = None):
     """The SAME knobs driven into `carc_rs.SearchConfigRs`."""
     k = knobs or production_knobs()
     return carc_rs.SearchConfigRs(
@@ -209,7 +208,6 @@ def rs_config(sims: int, knobs: dict | None = None, *,
         1.0,                        # c_lcb (inert unless final_select == "lcb")
         True,                       # np.exp float64 == glibc __exp_fma  (G0 §3)
         "glibc_fma",                # math.tanh flavour on x86-64        (G0 §2)
-        bool(collide_check),        # diagnostic only; never on for a gate leg
     )
 
 

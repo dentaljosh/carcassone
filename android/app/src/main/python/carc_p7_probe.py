@@ -239,7 +239,6 @@ def _search_cfg(knobs, sims, exp_fma, tanh_flavor):
         1.0,             # c_lcb (inert unless final_select == "lcb")
         bool(exp_fma),
         str(tanh_flavor),
-        False,
     )
 
 

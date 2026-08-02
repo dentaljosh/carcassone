@@ -24,10 +24,14 @@
 //!    in `float32` inside `_expand_with_priors` (`legal_priors.sum()` on a
 //!    `float32` array returns `np.float32`, and NEP-50 keeps the following
 //!    divide in `float32`).
-//! 3. **The legal-move cache is keyed by `string_representation`.**
-//!    `NeuralMCTS.__init__` force-enables it, so two distinct boards that share
-//!    one repr key (the Phase-0.3 rotation family) are served the *first*
-//!    board's mask. Reproduced by [`Tree::legal_cache`] rather than recomputing.
+//! 3. **Python's repr-keyed legal-move cache has no observable effect HERE, so
+//!    it is not reproduced.** `NeuralMCTS.__init__` force-enables it, so two
+//!    distinct boards sharing one repr key (the Phase-0.3 rotation family) are
+//!    served the *first* board's mask — but in this port that collapse already
+//!    happens one step earlier, at [`Tree::index`]: `create_or_get` returns the
+//!    existing node and [`Searcher::expand`] short-circuits on `expanded`, so a
+//!    key can never be evaluated twice and the cache was structurally incapable
+//!    of hitting (measured: 0 hits in 50,326 lookups — ROUND2 C-e, 2026-08-02).
 //! 4. **A terminal root is never expanded**, so its `leaf_value` stays at the
 //!    `0.0` default and every simulation backs up zero.
 //! 5. **`node.children` insertion order is observable** — `best_action` falls
@@ -99,14 +103,6 @@ pub struct SearchConfig {
     pub exp_fma: bool,
     /// `math.tanh` → [`LibmFlavor::GlibcFma`] on x86-64 (G0 §2).
     pub tanh_flavor: LibmFlavor,
-    /// DIAGNOSTIC (mirrors `CARCASSONNE_CACHE_COLLIDE_CHECK=1`): on every
-    /// legal-move-cache HIT, recompute the mask and count disagreements — i.e.
-    /// measure whether two distinct boards really do share one
-    /// `string_representation` key during a search. Counting only; the CACHED
-    /// mask is still returned, so behaviour is unchanged (that is the Python
-    /// DEFAULT, and it is the semantics under gate). Costs a full enumeration
-    /// per hit, so it is off for the gate legs.
-    pub legal_cache_collide_check: bool,
     /// Reuse ONE [`LeafScratch`] for every leaf evaluation of the search (the P2
     /// perf lever). `false` calls the allocating `leaf::leaf_value_float`, which
     /// is what the P2 gate measured — kept so the lever can be A/B'd in one
@@ -130,7 +126,6 @@ impl Default for SearchConfig {
             c_lcb: 1.0,
             exp_fma: true,
             tanh_flavor: LibmFlavor::GlibcFma,
-            legal_cache_collide_check: false,
             use_leaf_scratch: true,
             leaf: LeafConfig::curve125(),
         }
@@ -171,9 +166,9 @@ impl std::fmt::Display for SearchError {
 /// `mcts._NeuralNode`.
 pub struct Node {
     /// The `string_representation` bytes, heap-allocated **once** per node.
-    /// `Tree::index` / `Tree::legal_cache` hold refcount handles onto the same
-    /// buffer (the tree is per-thread, so `Rc` suffices) — the 2026-08-02
-    /// review's finding #2 was three independent copies of a 1.2–5.0 KB key.
+    /// `Tree::index` holds a refcount handle onto the same buffer (the tree is
+    /// per-thread, so `Rc` suffices) — the 2026-08-02 review's finding #2 was
+    /// three independent copies of a 1.2–5.0 KB key.
     pub key: Rc<str>,
     pub player_to_move: usize,
     pub is_terminal: bool,
@@ -238,20 +233,11 @@ impl Node {
     }
 }
 
-/// `NeuralMCTS._nodes` + the `Game` legal-move cache, which share a lifetime
-/// (`clear()` wipes both).
+/// `NeuralMCTS._nodes`.
 #[derive(Default)]
 pub struct Tree {
     pub nodes: Vec<Node>,
     index: HashMap<Rc<str>, NodeId, FxBuildHasher>,
-    /// `Game._legal_cache` — keyed by `string_representation`, exactly as in
-    /// `game_wrapper.get_valid_moves`.
-    legal_cache: HashMap<Rc<str>, Vec<i32>, FxBuildHasher>,
-    pub legal_cache_hits: u64,
-    pub legal_cache_misses: u64,
-    /// Cache HITS whose recomputed mask disagreed (only counted under
-    /// `SearchConfig::legal_cache_collide_check`).
-    pub legal_cache_collisions: u64,
 }
 
 impl Tree {
@@ -302,9 +288,6 @@ pub struct SearchResult {
     pub root_priors: Vec<(i32, f64)>,
     pub node_count: usize,
     pub leaf_evals: u64,
-    pub legal_cache_hits: u64,
-    pub legal_cache_misses: u64,
-    pub legal_cache_collisions: u64,
 }
 
 pub struct Searcher<'a> {
@@ -394,34 +377,14 @@ impl<'a> Searcher<'a> {
         }
     }
 
-    /// `game_wrapper.Game.get_valid_moves` **through the repr-keyed cache**.
-    fn legal_actions(&mut self, g: &Game, key: &Rc<str>) -> Vec<i32> {
-        if let Some(v) = self.tree.legal_cache.get(key.as_ref()) {
-            self.tree.legal_cache_hits += 1;
-            let hit = v.clone();
-            if self.cfg.legal_cache_collide_check && hit != g.legal_actions() {
-                self.tree.legal_cache_collisions += 1;
-            }
-            return hit;
-        }
-        self.tree.legal_cache_misses += 1;
-        let legal = g.legal_actions();
-        self.tree.legal_cache.insert(Rc::clone(key), legal.clone());
-        legal
-    }
-
     // -- the evaluator ------------------------------------------------------ //
 
     /// `heuristic_prior_mcts.make_heuristic_prior_evaluator`'s closure:
     /// returns `(legal, priors_over_legal_f32, value)`.
-    fn evaluate(
-        &mut self,
-        g: &Game,
-        key: &Rc<str>,
-    ) -> Result<(Vec<i32>, Vec<f32>, f64), SearchError> {
+    fn evaluate(&mut self, g: &Game) -> Result<(Vec<i32>, Vec<f32>, f64), SearchError> {
         let mover = g.state.current_player;
         let leaf_parent = self.leaf_at(g, mover)?;
-        let legal = self.legal_actions(g, key);
+        let legal = g.legal_actions();
 
         // deltas[i] = leaf(child_i, mover) - leaf_parent, in `legal` order.
         let mut deltas: Vec<f64> = Vec::with_capacity(legal.len());
@@ -476,9 +439,7 @@ impl<'a> Searcher<'a> {
             self.trace_expand(id);
             return Ok(());
         }
-        // Refcount handle, not a fresh copy of the multi-KB key.
-        let key = Rc::clone(&self.tree.get(id).key);
-        let (legal, priors_f32, value_raw) = self.evaluate(g, &key)?;
+        let (legal, priors_f32, value_raw) = self.evaluate(g)?;
 
         if legal.is_empty() {
             let n = self.tree.get_mut(id);
@@ -738,9 +699,6 @@ impl<'a> Searcher<'a> {
                 .collect(),
             node_count: self.tree.len(),
             leaf_evals: self.leaf_evals,
-            legal_cache_hits: self.tree.legal_cache_hits,
-            legal_cache_misses: self.tree.legal_cache_misses,
-            legal_cache_collisions: self.tree.legal_cache_collisions,
         })
     }
 

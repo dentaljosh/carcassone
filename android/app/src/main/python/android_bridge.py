@@ -1262,7 +1262,7 @@ class _Session:
                 float(self.spec_knob("value_norm")), SCORE_NORM_SCALE,
                 str(self.spec_knob("leaf_quantize")), str(self.spec_knob("final_select")),
                 None, 1.0,
-                ANDROID_EXP_FMA, ANDROID_TANH_FLAVOR, False,
+                ANDROID_EXP_FMA, ANDROID_TANH_FLAVOR,
             )
             self.rs = carc_rs.FairAgentRs(
                 search, k_dets=k_dets, seed=int(self.seed),
