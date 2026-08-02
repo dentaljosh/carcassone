@@ -1,0 +1,169 @@
+{
+  "gate": "rustport A8 \u2014 adaptive_k_census python vs rust per-world search",
+  "why": "A8's census row is the pre-gate evidence that killed the adaptive-k lever and the audit calls the infra reusable; its decision fields (v_std, v_range, changed_kX, pooled_top2_gap_by_k) are functions of every visited child's pooled Q, so they move on a 1-ulp divergence.",
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "seam": "the k per-world searches only (MirrorState.set_unseen_deck + search_single). The determinization DRAW and the duplicate census stay on the Python rng stream \u2014 dup_rep is drawn from the CONTINUING stream and is compared here precisely to prove that.",
+  "surface": "every row field except ['backend', 'secs'], floats canonicalised to raw f64 bit patterns",
+  "noise_control": "not exercised \u2014 python-only by construction (carc_rs has no search seed; the census refuses the combination at argparse time rather than reporting a vacuous True)",
+  "roots": 14,
+  "field_checks": 350,
+  "skipped": [],
+  "mismatches": [],
+  "verdict": "PASS",
+  "rows": [
+    {
+      "leg": "screen",
+      "rid": "s28000000000_p12",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.0708400403796705,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000000_p40",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.06580001773570231,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000000_p72",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.01240559138300438,
+      "n_distinct_argmax": 4,
+      "changed_k2_vs_k4": true,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000000_p104",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.03849710759484606,
+      "n_distinct_argmax": 3,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000001_p12",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.016312933415329633,
+      "n_distinct_argmax": 2,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000001_p40",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.014411523771856167,
+      "n_distinct_argmax": 2,
+      "changed_k2_vs_k4": true,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000001_p72",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.015064422781794982,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000001_p104",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.013579398458112747,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000002_p12",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.08510177667552937,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": true,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000002_p40",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.11068750748155248,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000002_p72",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.0359071743299194,
+      "n_distinct_argmax": 1,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "screen",
+      "rid": "s28000000002_p104",
+      "sims": 344,
+      "k_dets": 4,
+      "fields": 25,
+      "v_std": 0.36604651807448085,
+      "n_distinct_argmax": 2,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "production",
+      "rid": "s28000000000_p12",
+      "sims": 1376,
+      "k_dets": 8,
+      "fields": 25,
+      "v_std": 0.05426362010655285,
+      "n_distinct_argmax": 2,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    },
+    {
+      "leg": "production",
+      "rid": "s28000000000_p40",
+      "sims": 1376,
+      "k_dets": 8,
+      "fields": 25,
+      "v_std": 0.10566193164176353,
+      "n_distinct_argmax": 2,
+      "changed_k2_vs_k4": false,
+      "identical": true
+    }
+  ]
+}

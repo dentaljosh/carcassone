@@ -228,8 +228,43 @@ import time                # noqa: E402
 import numpy as np         # noqa: E402
 
 import root_replay as RR   # noqa: E402
+import rust_world_search as RWS  # noqa: E402
 from carcassonne_ai import champion_factory as CF          # noqa: E402
 from carcassonne_ai.fair_agent import FairHeuristicMCTSAgent  # noqa: E402
+
+# --------------------------------------------------------------------------- #
+# AUDIT ITEM A3 / B1 — the rust backend FAILS CLOSED here. Read before adding one. #
+# --------------------------------------------------------------------------- #
+BACKEND_UNAVAILABLE_REASON = (
+    "oracle_score_pilot cannot run on carc_rs, and the blocker is MEASURED, not read off "
+    "the source:\n"
+    "  (1) GAP 2 — THE CONTINUATION IS NOT A FRESH-TREE SEARCH. "
+    "`carc_rs.MirrorState.search_single` is documented (and gated) as *fresh-tree only*: "
+    "'equivalent to HeuristicPriorAgent(game, cfg, sims).move(board) with "
+    "reuse_tree=False'. This harness's playout calls `agent.best_action(b)` — NOT "
+    "`.move(b)` — and `best_action` never clears the tree, so ONE `NeuralMCTS` "
+    "transposition table persists across every ply to terminal. "
+    "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json measures it: on the "
+    "pilot's own --oracle-sims 100, the per-ply root pre-exists with N > sims on 102 of "
+    "103 plies, and replaying the IDENTICAL determinized world fresh-tree-per-ply gives a "
+    "DIFFERENT action stream in 4/4 positions (first divergence by ply 3-7) and terminal "
+    "margins differing by up to 12 points. A converted continuation would be a DIFFERENT "
+    "PLAYER.\n"
+    "  (2) THIS IS A RULER, so (1) is disqualifying rather than merely inconvenient. The "
+    "pilot's number (+0.7375 pts/disagreement, cluster-robust z +2.97) is a property of "
+    "the instrument that produced it; a ruler whose continuation policy changed cannot be "
+    "quoted across the change, and the audit's own §6/F-6 note requires a converted ruler "
+    "to pass its own G6-pattern identity gate FIRST — which (1) says it cannot.\n"
+    "  (3) `--oracle-policy tier1-greedy` is out of scope for a different reason: it is a "
+    "`RuleBasedPlayer` on the v1 OBJECT leaf with no search at all. carc_rs ports the PUCT "
+    "search and the curve125 leaf; there is no Rust RuleBasedPlayer, and porting one would "
+    "destroy the whole point of an OUT-OF-FAMILY judge.\n"
+    "  TO REOPEN: `SearchConfigRs` would need tree persistence across calls (Gap 2 is still "
+    "OPEN in BACKEND_BYPASS_AUDIT_20260801 §3), OR the pilot's owner would have to decide "
+    "that the continuation should be fresh-tree — which is a change to the RULER and needs "
+    "the +0.7375 re-measured, not a backend flag.\n"
+    "  See measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §2 (A3) / §3 (B1)."
+)
 
 SCHEMA = "carcassonne-oracle-score-pilot/v1"
 
@@ -711,6 +746,13 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
         "harness": "oracle_score_pilot",
         "status": "PILOT — measures the per-position sd of the CRN-paired oracle delta. "
                   "Its own mean delta is NOT a verdict.",
+        "execution": RWS.backend_manifest(
+            getattr(args, "resolved_backend", "python"), extra={
+                "rust_available": False,
+                "rust_unavailable_reason": BACKEND_UNAVAILABLE_REASON,
+                "evidence": "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json",
+                "audit_item": "A3 (§2) / B1 (§3) — BACKEND_BYPASS_AUDIT_20260801.md",
+            }),
         "goal": "Convert CL-070's 'the move changed' into 'the move improved' on a "
                 "20-position pilot, and measure the world-CRN variance reduction that "
                 "decides whether the full ~652-position probe is powered.",
@@ -827,7 +869,21 @@ def main(argv=None) -> int:
                     help="skip positions that already have a record on disk")
     ap.add_argument("--dry-run", action="store_true",
                     help="sample + write the manifest, score nothing")
+    ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
+                    help="which ENGINE runs the continuation policy. ⚠️ ONLY 'python' is "
+                         "available: this is a RULER and its continuation is not a "
+                         "fresh-tree search (MEASURED — see BACKEND_UNAVAILABLE_REASON "
+                         "and GAP2_ORACLE_CONTINUATION_TREE.json). The flag exists so a "
+                         "launcher can pass one resolved backend to every probe and get a "
+                         "LOUD failure here instead of a silently re-instrumented ruler.")
     args = ap.parse_args(argv)
+
+    # FAIL CLOSED (audit item A3 / B1). `auto` resolves FIRST so a launcher passing it
+    # while PRODUCTION.yaml names `rust` errors rather than quietly running Python.
+    backend = RWS.resolve_backend(args.backend)
+    if backend != "python":
+        ap.error(f"--backend {backend} is NOT AVAILABLE here.\n{BACKEND_UNAVAILABLE_REASON}")
+    args.resolved_backend = backend
 
     run_dir = Path(args.run_dir)
     records_dir = Path(args.records_dir) if args.records_dir else run_dir / "records"

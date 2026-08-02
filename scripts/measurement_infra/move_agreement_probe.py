@@ -70,6 +70,13 @@ It is re-established here for the fair agent and PROVEN per run by two flags:
                        the reimplementation reproduces the DEPLOYED decision exactly.
 Do not trust either claim without the flags.
 
+⚠️ 2026-08-02 — THE SNAPSHOT LADDER IS ALSO WHY `--backend rust` FAILS CLOSED HERE
+(audit item A4). carc_rs has no mid-search surface: `MirrorState.search_single` is
+atomic and returns only the terminal root. `--backend {python,rust,auto}` exists so a
+launcher passing one resolved backend to every probe gets a LOUD error here rather than
+a Python run wearing a rust-shaped manifest. Full reasoning + the named route to a
+future conversion: `BACKEND_UNAVAILABLE_REASON` below.
+
 DECISION RULE
 -------------
 `q_argmax_action` = `pooled_q_argmax` (pooled Q = sum W / sum N, min_pooled_visits floor,
@@ -140,6 +147,32 @@ from carcassonne_ai.fair_agent import (  # noqa: E402
 from carcassonne_ai.mcts import NeuralMCTS  # noqa: E402
 
 import root_replay as RR  # noqa: E402
+import rust_world_search as RWS  # noqa: E402
+
+# --------------------------------------------------------------------------- #
+# AUDIT ITEM A4 — the rust backend FAILS CLOSED here. Read this before adding one. #
+# --------------------------------------------------------------------------- #
+BACKEND_UNAVAILABLE_REASON = (
+    "move_agreement_probe cannot run on carc_rs: its defining mechanism is the "
+    "MID-SEARCH SNAPSHOT LADDER (`snapshot_world_search`), which steps ONE deep "
+    "per-world search a single PUCT sim at a time (`NeuralMCTS._simulate`) and reads the "
+    "DEDUPED root-child (N, W) table at each of the levels — that is what makes the whole "
+    "7-rung ladder cost what its deepest rung alone "
+    "would. carc_rs exposes NO equivalent: `MirrorState.search_single` is ATOMIC (every "
+    "sim runs inside one FFI call) and returns only the TERMINAL root surface; there is "
+    "no sim-count list, no per-sim callback and no way to read the tree mid-search. The "
+    "one mid-search surface that exists, `search_single(trace_path=...)`, writes a JSONL "
+    "record per sim carrying the (n, w) of the nodes ON THE DESCENT PATH — not the "
+    "deduped root-child table this harness pools — to a FILE, which is a different datum "
+    "reached by a different mechanism, not the missing API.\n"
+    "  THE NAMED ROUTE, if this is ever wanted: run a SEPARATE `search_single` per level "
+    "per world (bit-exact by the same prefix argument, at sum(levels)/max(levels) ~2.7x "
+    "the search cost, still a net win against Python). That is a REDESIGN of a "
+    "pre-registered harness — it deletes the snapshot claim the module docstring makes "
+    "and makes `--verify-bit-exact` vacuous — so it needs an owner's decision, not a "
+    "backend flag. Until then: --backend python.\n"
+    "  See measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §2 (A4)."
+)
 
 # PER-WORLD sim levels. At k_dets=4 the TOTAL budgets are 4x these:
 #   86->344  172->688  344->1376  516->2064  688->2752  1376->5504  2752->11008
@@ -452,7 +485,20 @@ def main(argv=None) -> int:
     ap.add_argument("--clean-stale-claims", action="store_true",
                     help="delete .claim files with no matching .json before starting")
     ap.add_argument("--tag", default="", help="free-text label recorded in the manifest")
+    ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
+                    help="which ENGINE runs the per-world searches. ⚠️ ONLY 'python' is "
+                         "available for this harness — see BACKEND_UNAVAILABLE_REASON. "
+                         "The flag exists so a launcher can pass the same resolved value "
+                         "to every probe and get a LOUD failure here instead of silently "
+                         "running Python while a manifest claims otherwise.")
     args = ap.parse_args(argv)
+
+    # FAIL CLOSED (audit item A4). `auto` is resolved first so a launcher that passes it
+    # while PRODUCTION.yaml names `rust` gets the error rather than a Python run stamped
+    # with a rust-shaped manifest.
+    backend = RWS.resolve_backend(args.backend)
+    if backend != "python":
+        ap.error(f"--backend {backend} is NOT AVAILABLE here.\n{BACKEND_UNAVAILABLE_REASON}")
 
     levels = tuple(int(x) for x in args.levels.split(","))
     assert list(levels) == sorted(levels), "--levels must be ascending"
@@ -517,6 +563,11 @@ def main(argv=None) -> int:
                           "WITHIN a world only. NOT inherited from snapshot.py (which covers "
                           "the clairvoyant HeuristicMCTS path); re-established here and "
                           "proven by --verify-bit-exact / --verify-agent-parity.",
+        "execution": RWS.backend_manifest(backend, extra={
+            "rust_available": False,
+            "rust_unavailable_reason": BACKEND_UNAVAILABLE_REASON,
+            "audit_item": "A4 — BACKEND_BYPASS_AUDIT_20260801.md §2",
+        }),
         "roots_source": args.roots,
         "n_roots": len(roots), "n_jobs": len(jobs), "n_todo": len(todo),
         "workers": args.workers, "wall_cap_secs": args.wall_cap_secs,
