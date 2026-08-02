@@ -32,15 +32,20 @@ NDK discovery, the ``com.chaquo.python:target`` artifact, the readelf link
 assertions and the wheel writer live in ``_chaquopy_common.py``, shared with
 ``build_rust_wheels.py``. This script keeps only what is Cython-specific.
 
-⚠️ The link flags here are FROZEN. This wheel is a shipped artefact whose
-content-addressed version covers the ``.pyx`` bytes and nothing else, so a flag
-change would ship silently. In particular the 16 KiB page-alignment flag that
-``build_rust_wheels.py`` passes is deliberately NOT passed here: it would change
-these bytes. Consequence, measured 2026-08-01 and worth a decision of its own:
-**the cy extensions are 4 KiB-aligned and would not load on a 16 KiB-page
-device.** The Pixel 9 Pro runs 4 KiB pages by default, so this is latent, not
-live. ``assert_links_libpython(..., require_page_align=False)`` reports it on
-every build instead of hiding it.
+⚠️ The link flags here are NEAR-FROZEN, and for a reason worth keeping in head:
+this wheel is a shipped artefact whose content-addressed version covers the
+``.pyx`` bytes and nothing else, so a flag change ships SILENTLY — the version
+string does not move. Change them only deliberately, and say so here.
+
+✅ CHANGED ONCE, 2026-08-01: the 16 KiB page-alignment flag
+(``C.PAGE_ALIGN_LDFLAG``) is now passed, matching ``build_rust_wheels.py``.
+Until then the cy extensions were 4 KiB-aligned and **would not dlopen on a
+16 KiB-page device** (Android 15+); the Pixel 9 Pro defaults to 4 KiB pages, so
+the bug was latent rather than live. It was left alone through P7 only so the
+build-tooling refactor could be proved byte-identical (it was: ``b663f6b0…`` /
+``535934f5…``). That proof is spent, and the fix is now in:
+``assert_links_libpython(..., require_page_align=True)`` makes it a hard gate on
+every build, so the alignment can never silently regress.
 
 VERSION / CACHE BUSTING
 -----------------------
@@ -113,12 +118,21 @@ def sync_sources() -> list[Path]:
     return out
 
 
+# Link inputs that change the OUTPUT BYTES without changing any .pyx. Mixed into the
+# content-addressed version so a flag change can never be served stale out of pip's
+# cache — the 2026-08-01 page-alignment fix is exactly the case that proved it can.
+# Add to this string whenever you add a flag that affects the emitted object.
+LINK_SIGNATURE: bytes = C.PAGE_ALIGN_LDFLAG.encode()
+
+
 def source_version() -> str:
-    """Content-addressed version from the .pyx bytes (fallback when --version absent).
+    """Content-addressed version from the .pyx bytes PLUS ``LINK_SIGNATURE``.
 
     Gradle normally computes this itself so it is known at CONFIGURATION time; this
     keeps standalone runs consistent with it."""
-    return C.content_version([REPO / PYX_SOURCE_DIR / f"{mod}.pyx" for mod in MODULES])
+    return C.content_version(
+        [REPO / PYX_SOURCE_DIR / f"{mod}.pyx" for mod in MODULES],
+        extra=LINK_SIGNATURE)
 
 
 # --------------------------------------------------------------------------- #
@@ -177,8 +191,14 @@ def compile_abi(abi: str, c_files: dict[str, Path], ndk: Path, build_dir: Path) 
     built = {}
     for mod, c_file in c_files.items():
         so = out_dir / f"{mod}.so"
-        # ⚠️ FROZEN FLAGS — see the module docstring. Notably NO
-        # C.PAGE_ALIGN_LDFLAG: adding it would change these shipped bytes.
+        # FLAGS: previously frozen so the P7 build-tooling refactor could be proved
+        # byte-identical. ⚠️ UNFROZEN 2026-08-01 (Joshua: "1 yes"/"2 yes" build) to add
+        # C.PAGE_ALIGN_LDFLAG. This DELIBERATELY CHANGES THE SHIPPED BYTES: NDK r27.3
+        # does not pass -z max-page-size by default (measured, G7 build-tooling finding
+        # 2), so every cy wheel shipped before this line was 4 KiB-aligned and would not
+        # dlopen on a 16 KiB-page device. Latent, not live — the Pixel 9 Pro runs 4 KiB
+        # pages — but it is a load-time failure on the device, never here, so it is
+        # fixed before it ships rather than after. The assertion below is now HARD.
         cmd = [
             str(clang),
             f"--target={triple}{C.ANDROID_API}",
@@ -189,12 +209,13 @@ def compile_abi(abi: str, c_files: dict[str, Path], ndk: Path, build_dir: Path) 
             str(c_file),
             "-L", str(libdir), f"-lpython{PYTHON_VERSION}",
             f"-Wl,-soname,{mod}.so",
+            C.PAGE_ALIGN_LDFLAG,
         ]
         log(f"clang {abi}/{mod}.so")
         subprocess.run(cmd, check=True)
         subprocess.run([str(strip), "--strip-unneeded", str(so)], check=True)
         # Catches a bad cross-link here instead of at dlopen time on the phone.
-        C.assert_links_libpython(so, ndk, abi, log, require_page_align=False)
+        C.assert_links_libpython(so, ndk, abi, log, require_page_align=True)
         built[mod] = so
     return built
 

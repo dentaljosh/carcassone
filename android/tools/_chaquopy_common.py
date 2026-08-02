@@ -68,10 +68,14 @@ TARGET_ARTIFACT_VERSION = "3.12.12-0"
 #
 # ⚠️ MEASURED 2026-08-01, NOT assumed: NDK r27.3's clang driver does **not** pass this
 # by default. A trivial `clang --target=aarch64-linux-android21 -shared` lands at
-# p_align 0x1000; adding the flag moves it to 0x4000. The shipped `carc-cy` wheels are
-# therefore 4 KiB-aligned today (they work because the Pixel 9 Pro runs 4 KiB pages by
-# default). Passing the flag CHANGES THE OUTPUT BYTES, so the cy build deliberately
-# does not adopt it here — see build_cy_wheels.py — while the new Rust wheel does.
+# p_align 0x1000; adding the flag moves it to 0x4000.
+#
+# ✅ BOTH WHEELS CARRY IT SINCE 2026-08-01. The Rust wheel had it from the start; the cy
+# wheels were left 4 KiB-aligned so the P7 tooling refactor could be proved
+# byte-identical, which meant every cy wheel shipped before that date would fail to
+# dlopen on a 16 KiB-page device (latent only because the Pixel 9 Pro defaults to 4 KiB
+# pages). Adopting the flag CHANGES THE SHIPPED BYTES — a deliberate, approved break of
+# that freeze — and `require_page_align` is now hard for both builds.
 MAX_PAGE_SIZE = 16384
 PAGE_ALIGN_LDFLAG = f"-Wl,-z,max-page-size={MAX_PAGE_SIZE}"
 
@@ -267,15 +271,26 @@ def assert_links_libpython(so: Path, ndk: Path, abi: str, log=print,
 # --------------------------------------------------------------------------- #
 # Versioning                                                                   #
 # --------------------------------------------------------------------------- #
-def content_version(paths: list[Path]) -> str:
+def content_version(paths: list[Path], extra: bytes = b"") -> str:
     """Content-addressed ``1.<a>.<b>`` from the source bytes, in the given order.
 
     Gradle asks the build script for this at CONFIGURATION time so the pip
     requirement string itself changes whenever a source does — which invalidates
-    Chaquopy's task inputs AND makes a stale wheel in pip's cache unreachable."""
+    Chaquopy's task inputs AND makes a stale wheel in pip's cache unreachable.
+
+    ``extra`` mixes in anything OTHER than source bytes that changes the output
+    object — in practice the link flags. ⚠️ ADDED 2026-08-01 because the source-only
+    rule had a live hole: adding ``-Wl,-z,max-page-size=16384`` to the cy link changed
+    the shipped ``.so`` bytes while leaving the version string identical, so Chaquopy
+    re-served the stale 4 KiB-aligned wheel out of pip's cache and the fix would have
+    silently not shipped (observed in `app/build/python/pip/debug/*/carc_cy/*.so`).
+    A build input that changes the artefact must change the version."""
     h = hashlib.sha256()
     for p in paths:
         h.update(p.read_bytes())
+    if extra:
+        h.update(b"\0extra\0")
+        h.update(extra)
     d = h.hexdigest()
     return f"1.{int(d[:4], 16)}.{int(d[4:8], 16)}"
 
