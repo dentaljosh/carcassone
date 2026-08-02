@@ -483,9 +483,12 @@ def test_restore_mid_endgame_latches():
     for cut in range(len(actions) - 1, max(0, len(actions) - 20), -1):
         save = {"schema": B.SAVE_SCHEMA, "deck_seed": 29, "human_player": 1,
                 "opponent": "champion", "sims": 8, "k_dets": 1, "verify": False,
-                # Must match the rule the log above was played under, or the
-                # replay decodes a different game.
-                "start_rule": B.START_RULE, "actions": actions[:cut]}
+                # Must match the rules the log above was played under, or the
+                # replay decodes a different game. `grid_rule` matters for the
+                # sharper reason: an action index is a WINDOW cell, so the same
+                # log lands on different board cells on a different grid.
+                "start_rule": B.START_RULE, "grid_rule": B.GRID_RULE,
+                "actions": actions[:cut]}
         restored = ok(B.restore_game(json.dumps(save)))
         if restored["restored"]["latched"]:
             latched_at = cut
@@ -1304,8 +1307,13 @@ def test_events_survive_the_claim_that_scores_instantly():
     collects the meeple inside one engine call, so it appears in neither state — the
     hole the `claims` argument closes. Without it the bridge falls back to a bare
     '+N', which this asserts does not happen."""
+    # Seeds are a fixture, and the trajectory they produce depends on the GRID:
+    # (5, 11, 20, 56, 3) all hit on the walled engine6 grid and none of them hit
+    # on centered18 (the app default since 2026-08-02), because a different
+    # legal-move set is a different game from ply one. 19 and 46 hit 4x each on
+    # centered18; both lists are kept so the fixture is not brittle either way.
     hits = 0
-    for seed in (5, 11, 20, 56, 3):
+    for seed in (5, 11, 20, 56, 3, 19, 46):
         st = new(seed=seed, opponent="tier1", human_player=0)
         for _ in range(300):
             if st["is_terminated"]:
@@ -1727,3 +1735,118 @@ def test_retail_save_round_trips():
     assert save["start_rule"] == B.START_RULE_RETAIL
     restored = ok(B.restore_game(json.dumps(save)))
     assert _normalise_for_compare(restored) == _normalise_for_compare(before)
+
+
+# --------------------------------------------------------------------------- #
+# Start-tile GRID position (2026-08-02) — app-only recentring                    #
+#                                                                              #
+# Same shape as the retail `start_rule` block above, and for the same reason:   #
+# a rules choice the APP makes, carried in the save payload, with the library   #
+# default left alone. tests/test_start_tile_grid_bound.py owns the engine-level #
+# claim (nothing rule-legal is denied on the recentred grid, and the strict-    #
+# xfail sentinel proving the GLOBAL default did not move).                      #
+# --------------------------------------------------------------------------- #
+def test_app_default_grid_rule_is_centered18():
+    """A NEW app game starts on the recentred grid: 18 rows of headroom above
+    the start tile instead of 6. That is the fix for the "invisible border"."""
+    assert B.GRID_RULE == B.GRID_RULE_CENTERED18
+    st = new(seed=11)
+    # The app plays retail too, so the start tile is on the board and visible.
+    assert len(st["board"]) == 1
+    assert (st["board"][0]["row"], st["board"][0]["col"]) == (18, 15)
+    assert B._S.grid_row == 18 and B._S.grid_col == 15
+    # Real headroom above, which is the whole point: every legal first placement
+    # is well clear of row 0. (Not every neighbour cell is offered — the D tile
+    # has a city on TOP, so the drawn tile has to match — hence >= not ==.)
+    assert min(c["row"] for c in st["legal"]["tile_cells"]) >= 17
+    # The invariant that says it is the SAME game, shifted: identical seed on the
+    # walled grid gives the identical cell set 12 rows up.
+    centered = {(c["row"], c["col"]) for c in st["legal"]["tile_cells"]}
+    walled = {(c["row"], c["col"])
+              for c in new(seed=11, grid_rule=B.GRID_RULE_ENGINE6)["legal"]["tile_cells"]}
+    assert centered == {(r + 12, c) for r, c in walled} and walled
+
+
+def test_grid_rule_travels_in_the_save_and_the_archive():
+    new(seed=11)
+    assert ok(B.save_game())["grid_rule"] == B.GRID_RULE_CENTERED18
+    st = new(seed=11, opponent="tier1", **TINY)
+    st = play_out(st)
+    rec = ok(B.archive_record())
+    assert rec["grid_rule"] == B.GRID_RULE_CENTERED18, \
+        "the E4 manifest must record which grid the game was played on"
+
+
+def test_unknown_grid_rule_is_rejected_not_guessed():
+    """An action index is a WINDOW cell, so the same log decodes different board
+    cells on a different grid — guessing would silently replay another game."""
+    d = j(B.new_game(json.dumps({"seed": 5, "grid_rule": "centered17"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+    d = j(B.restore_game(json.dumps(
+        {"schema": B.SAVE_SCHEMA, "deck_seed": 5, "actions": [],
+         "human_player": 0, "grid_rule": "nonsense"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+
+
+def test_engine6_grid_still_available():
+    """The historical grid stays reachable — it is what every archived game, and
+    every eval number ever measured, was played on."""
+    st = new(seed=11, grid_rule=B.GRID_RULE_ENGINE6)
+    assert B._S.grid_row == 6
+    assert (st["board"][0]["row"], st["board"][0]["col"]) == (6, 15)
+    assert min(c["row"] for c in st["legal"]["tile_cells"]) >= 5
+
+
+@pytest.mark.parametrize("grid_rule", [B.GRID_RULE_CENTERED18, B.GRID_RULE_ENGINE6, None])
+def test_grid_rule_round_trips_through_save_restore(grid_rule):
+    """All three values a payload can carry: both named grids and the ABSENT
+    field, which means the walled engine6 grid forever."""
+    cfg = dict(TINY, seed=23, opponent="tier1")
+    if grid_rule is not None:
+        cfg["grid_rule"] = grid_rule
+    st = new(**cfg)
+    for _ in range(8):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    before = ok(B.get_state())
+    save = ok(B.save_game())
+    expect = B.GRID_RULE if grid_rule is None else grid_rule
+    assert save["grid_rule"] == expect
+
+    if grid_rule is None:
+        # Simulate a PRE-2026-08-02 payload: no `grid_rule` key at all.
+        legacy = {k: v for k, v in save.items() if k != "grid_rule"}
+        legacy_before = ok(B.restore_game(json.dumps(
+            dict(save, grid_rule=B.GRID_RULE_ENGINE6))))
+        assert B._S.grid_rule == B.GRID_RULE_ENGINE6
+        restored = ok(B.restore_game(json.dumps(legacy)))
+        assert B._S.grid_rule == B.GRID_RULE_LEGACY == B.GRID_RULE_ENGINE6
+        assert _normalise_for_compare(restored) == _normalise_for_compare(legacy_before)
+        return
+
+    restored = ok(B.restore_game(json.dumps(save)))
+    assert B._S.grid_rule == expect
+    assert _normalise_for_compare(restored) == _normalise_for_compare(before)
+
+
+def test_the_same_log_on_the_other_grid_is_a_different_game():
+    """WHY the field is load-bearing, demonstrated rather than asserted: replay
+    the SAME (deck_seed, actions) under the other grid and the position differs
+    (or the log is outright illegal there)."""
+    st = new(seed=23, opponent="tier1", grid_rule=B.GRID_RULE_CENTERED18, **TINY)
+    for _ in range(8):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    save = ok(B.save_game())
+    same = ok(B.restore_game(json.dumps(save)))
+    other = j(B.restore_game(json.dumps(dict(save, grid_rule=B.GRID_RULE_ENGINE6))))
+    if other.get("ok"):
+        assert _normalise_for_compare(other) != _normalise_for_compare(same), (
+            "replaying under the wrong grid produced an identical position — "
+            "then grid_rule would not need to be in the payload")
+    else:
+        assert other["error"]["code"] == "bad_save"

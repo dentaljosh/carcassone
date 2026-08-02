@@ -254,3 +254,66 @@ def test_runtime_info_reports_rust():
     # available != active: `active` is about a LIVE session, and there is none here.
     assert info["rust"]["active"] is False
     assert info["rust"]["tanh_flavor"] == B.ANDROID_TANH_FLAVOR
+
+
+# --------------------------------------------------------------------------- #
+# 3. the mirror on the RECENTRED grid (2026-08-02)                              #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("grid_rule", ["centered18", "engine6"])
+def test_the_mirror_plays_the_same_grid_as_the_engine(grid_rule):
+    """The champion must search the grid that is on screen.
+
+    The recentring changes the legal-move set from ply one, so a mirror left on
+    the engine's (6, 15) would be picking moves for a different game — and
+    because the mirror is a STATE mirror first, that shows up as a repr
+    divergence rather than as a quietly weaker opponent. `_assert_mirror` runs
+    inside `apply()` under CARC_RS_RECONCILE, so a full clean game IS the
+    assertion (`MirrorDesync` would raise loudly at the first bad ply).
+    """
+    import random
+
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(B, "_RS_RECONCILE", True)
+    try:
+        st = _j(B.new_game(json.dumps({
+            "seed": 17, "opponent": "tier1", "backend": "rust",
+            "grid_rule": grid_rule,
+        })))
+        assert st["backend"] == "rust", st["backend_note"]
+        s = B._S
+        assert s.rs is not None, s.rs_note
+        want_row = 18 if grid_rule == "centered18" else 6
+        assert s.grid_row == want_row
+        assert (st["board"][0]["row"], st["board"][0]["col"]) == (want_row, 15)
+        # `string_representation` emits ABSOLUTE engine coordinates (it walks
+        # `placed_coords`, not the window), so repr equality IS a grid check —
+        # a mirror seated on (6, 15) against an engine on (18, 15) diverges on
+        # the very first tile. `_start_rust_mirror` already ran `_assert_mirror`
+        # at game start, which is why `s.rs is not None` above is meaningful.
+        assert s.game.string_representation(s.board) == s.rs.string_repr()
+        assert f"{want_row}, 15," in s.rs.string_repr(), \
+            "the mirror is not showing the start tile at the recentred row"
+
+        # A FULL game, both seats, every ply digest-checked.
+        rng = random.Random(99)
+        plies = 0
+        while not st["is_terminated"]:
+            plies += 1
+            assert plies <= 400, "game did not terminate"
+            ids = st["legal"]["action_ids"]
+            st = _j(B.apply_action(rng.choice(ids)))
+        assert plies > 100, f"probe degenerate: only {plies} plies"
+        assert s.game.string_representation(s.board) == s.rs.string_repr()
+        assert list(s.rs.scores()) == list(st["scores"])
+    finally:
+        monkey.undo()
+
+
+def test_an_odd_grid_row_cannot_reach_the_mirror():
+    """The EVEN-shift refusal is enforced on BOTH sides, and the bridge never
+    gets to construct a half-configured mirror: `_Session` rejects the unknown
+    rule name before any engine is built."""
+    d = json.loads(B.new_game(json.dumps({"seed": 5, "backend": "rust",
+                                          "grid_rule": "centered17"})))
+    assert not d["ok"] and d["error"]["code"] == "ValueError"
+    assert B._S is None or B._S.grid_rule in B.GRID_RULE_START

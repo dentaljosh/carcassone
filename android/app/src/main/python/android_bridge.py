@@ -238,6 +238,46 @@ START_RULE = START_RULE_RETAIL          # what a NEW app game uses
 START_RULE_LEGACY = START_RULE_ENGINE   # what a save with no `start_rule` means
 
 # --------------------------------------------------------------------------- #
+# Start-tile GRID position (2026-08-02, Joshua-approved for the APP ONLY).      #
+#                                                                              #
+# THE BUG. The engine starts the board at row 6 of a 35-row grid — 6 rows of    #
+# headroom above, 28 below — and `StateUpdater.play_tile` bounds-checks         #
+# `open_positions`, so a rule-legal cell above row 0 is never offered, with no  #
+# error and no visual cue. Joshua hit it playing on the Pixel: "an invisible    #
+# border to the game". Measured over 400 games: 67.8% of games lose at least    #
+# one rule-legal placement, 2.6% of all placements, 100% of them above row 0.   #
+# (tests/test_start_tile_grid_bound.py is the executable evidence.)             #
+#                                                                              #
+#   "engine6"    — the walled engine grid, start (6, 15). What every training   #
+#                  run, eval, solver measurement and pre-2026-08-02 app game    #
+#                  was played under. Still the LIBRARY default.                 #
+#   "centered18" — start (18, 15): 18 rows above / 16 below. What a NEW app     #
+#                  game plays.                                                  #
+#                                                                              #
+# ⚠️ THE SHIFT IS EVEN ON PURPOSE (12 rows, column unmoved). `board_repr`       #
+# centres the window with banker's-rounded `round(sum/count)`, which is         #
+# equivariant under EVEN translations only — so an even shift is bit-identical  #
+# for the trained representation and an odd one silently slips the window by a  #
+# cell. `game_wrapper.check_start_position` refuses odd shifts, and so does the #
+# Rust `GameConfig::resolve`; row 18 satisfies both.                            #
+#                                                                              #
+# LIKE `start_rule`, THIS TRAVELS IN THE SAVE PAYLOAD. (deck_seed, actions) is  #
+# only lossless with respect to the grid it was played on — the legal-move set  #
+# differs, so the same action index decodes a different cell. A save or archive #
+# with no `grid_rule` was written before this shipped and means "engine6"       #
+# forever; an unrecognised value is refused rather than guessed.                #
+# --------------------------------------------------------------------------- #
+GRID_RULE_ENGINE6 = "engine6"
+GRID_RULE_CENTERED18 = "centered18"
+GRID_RULE = GRID_RULE_CENTERED18         # what a NEW app game uses
+GRID_RULE_LEGACY = GRID_RULE_ENGINE6     # what a save with no `grid_rule` means
+# The one place a grid rule becomes a row. Column is unmoved in both.
+GRID_RULE_START: dict[str, tuple[int, int]] = {
+    GRID_RULE_ENGINE6: (6, 15),
+    GRID_RULE_CENTERED18: (18, 15),
+}
+
+# --------------------------------------------------------------------------- #
 # Agent backend. ⚠️ FLIPPED 2026-08-01 (Joshua: "2 yes"): the DEFAULT IS RUST.  #
 #                                                                              #
 # "rust" swaps ONLY the opponent's move choice for `carc_rs.FairAgentRs`, the   #
@@ -737,6 +777,7 @@ class _Session:
     def __init__(self, *, seed: int, human_player: int, opponent: str,
                  sims: int | None, k_dets: int | None, verify: bool,
                  generation: int, start_rule: str = START_RULE,
+                 grid_rule: str = GRID_RULE,
                  backend: str = BACKEND_DEFAULT):
         self.seed = int(seed)
         # Which start-tile convention this session plays under. New games use the
@@ -749,6 +790,16 @@ class _Session:
                 f"unknown start_rule {start_rule!r}; expected "
                 f"{START_RULE_ENGINE!r} or {START_RULE_RETAIL!r}")
         self.start_rule = str(start_rule)
+        # Which GRID this session plays on. Same contract as start_rule, and
+        # refused the same way: a save's (deck_seed, actions) decodes a different
+        # game on a different grid, so guessing would silently replay the wrong
+        # one. `grid_row`/`grid_col` are the resolved engine coordinates.
+        if grid_rule not in GRID_RULE_START:
+            raise ValueError(
+                f"unknown grid_rule {grid_rule!r}; expected one of "
+                f"{tuple(GRID_RULE_START)}")
+        self.grid_rule = str(grid_rule)
+        self.grid_row, self.grid_col = GRID_RULE_START[self.grid_rule]
         self.human_player = int(human_player)
         self.opponent_kind = str(opponent)
         self.req_sims = None if sims is None else int(sims)
@@ -767,13 +818,19 @@ class _Session:
         self.rust_threads: int | None = None
 
         fixed_start = self.start_rule == START_RULE_RETAIL
-        self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
+        # `start_row`/`start_col` are opt-in on `Game`; with the legacy grid they
+        # are the engine's own values and `Game` makes the byte-identical call it
+        # always did (game_wrapper.check_start_position / `Game.recentred`).
+        grid = {"start_row": self.grid_row, "start_col": self.grid_col}
+        self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
+                         **grid)
         # The agent gets its OWN Game (mirrors play_vs_tier1_gui.build_opponent): the
         # UI-side Game carries a legal-moves cache and the agent may run on another
         # thread, so private Games remove any chance of a cross-thread cache race.
         # `fixed_start_tile` only affects get_init_board, which the agent's Game never
         # calls — it is passed for consistency, not because the search needs it.
-        self.ai_game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
+        self.ai_game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
+                            **grid)
 
         self.agent = None
         self.pick = None
@@ -1053,6 +1110,15 @@ class _Session:
                 # means on this side.
                 start_rule=(None if self.start_rule == START_RULE_ENGINE
                             else self.start_rule),
+                # SAME GRID, or the champion searches a different game than the
+                # one on screen. The P5 flags surface takes the resolved engine
+                # coordinates and applies the same EVEN-shift refusal as
+                # `game_wrapper.check_start_position`; the legacy grid is spelled
+                # None, matching what a save with no `grid_rule` means here.
+                start_row=(None if self.grid_rule == GRID_RULE_ENGINE6
+                           else self.grid_row),
+                start_col=(None if self.grid_rule == GRID_RULE_ENGINE6
+                           else self.grid_col),
             )
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
@@ -1471,6 +1537,10 @@ def new_game(config_json: str = "{}") -> str:
         start_rule    "retail"|"engine", default "retail" — start-tile convention
                       (see START_RULE; the app plays retail, the library default
                       stays "engine" so evals are unaffected)
+        grid_rule     "centered18"|"engine6", default "centered18" — where the
+                      start tile sits on the 35x35 grid (see GRID_RULE; the app
+                      plays centered18, which removes the invisible top border,
+                      and the library default stays engine6)
         backend       "python"|"rust", default "python" — who picks the CHAMPION's
                       move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
                       the Python engine stays authoritative for legality, UI,
@@ -1496,6 +1566,7 @@ def new_game(config_json: str = "{}") -> str:
             verify=bool(cfg.get("verify", True)),
             generation=_GENERATION,
             start_rule=str(cfg.get("start_rule", START_RULE)),
+            grid_rule=str(cfg.get("grid_rule", GRID_RULE)),
             backend=str(cfg.get("backend", BACKEND_DEFAULT)),
         )
         _S = s
@@ -1666,6 +1737,11 @@ def _save_payload(s: _Session) -> dict:
         # under the SAME start-tile rule. Saves written before this field existed
         # are read as START_RULE_LEGACY.
         "start_rule": s.start_rule,
+        # Load-bearing for the same reason as start_rule, and for a sharper one:
+        # an action index is a WINDOW cell, so the identical log decodes different
+        # board cells on a differently-placed grid. Saves written before this
+        # field existed are read as GRID_RULE_LEGACY.
+        "grid_rule": s.grid_rule,
     }
     out.update(_spec_fingerprint())
     return out
@@ -1853,6 +1929,10 @@ def restore_game(json_str: str) -> str:
             generation=_GENERATION,
             # Absent field == written before the retail start shipped.
             start_rule=str(blob.get("start_rule", START_RULE_LEGACY)),
+            # Absent field == written before the recentring shipped, i.e. the
+            # walled engine grid. Never the CURRENT default: the action log
+            # decodes different cells on a different grid.
+            grid_rule=str(blob.get("grid_rule", GRID_RULE_LEGACY)),
             # The backend is a RUNTIME choice, not a property of the saved game —
             # it changes who computes a move, never what the game is — so it is
             # carried from the live session (undo_last_tile rebuilds through here)
