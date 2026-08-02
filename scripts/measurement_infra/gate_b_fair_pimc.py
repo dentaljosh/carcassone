@@ -115,6 +115,35 @@ from carcassonne_ai.fair_agent import (  # noqa: E402
 )
 from carcassonne_ai.mcts import NeuralMCTS  # noqa: E402
 import gen_endgame_positions as GEP  # noqa: E402  (replay_to)
+import rust_world_search as RWS  # noqa: E402
+
+# --------------------------------------------------------------------------- #
+# AUDIT ITEM A7 — the rust backend FAILS CLOSED here. Read this before adding one. #
+# --------------------------------------------------------------------------- #
+BACKEND_UNAVAILABLE_REASON = (
+    "gate_b_fair_pimc cannot run on carc_rs, for the SAME structural reason as A4 "
+    "(move_agreement_probe) plus one of its own.\n"
+    "  (1) THE SNAPSHOT LADDER. `snapshot_world_search` steps ONE deep per-world search a "
+    "single PUCT sim at a time (`NeuralMCTS._simulate`) and reads the DEDUPED root-child "
+    "(N, W) table at each level. `MirrorState.search_single` is ATOMIC — every sim runs "
+    "inside one FFI call — and returns only the TERMINAL root surface. There is no "
+    "sim-count list, no per-sim callback and no mid-search read. (`search_single("
+    "trace_path=...)` emits per-sim DESCENT-PATH (n, w) to a FILE: a different datum by a "
+    "different mechanism, not the missing API.)\n"
+    "  (2) THIS harness's snapshot ALSO harvests the per-world ROOT PRIORS and the root "
+    "LEAF VALUE, and cross-checks the priors are identical across worlds "
+    "(`prior_worlds_identical`). carc_rs DOES expose `root_priors` / `root_leaf_value_bits` "
+    "on `search_single`'s result, so this half alone would port — but it is reachable only "
+    "through the atomic call that (1) already rules out, so it changes nothing.\n"
+    "  THE NAMED ROUTE, if this is ever wanted: a SEPARATE `search_single` per level per "
+    "world (bit-exact by the prefix argument, at sum(levels)/max(levels) = 1232/688 ~1.8x "
+    "the search cost at the default 200/344/688 ladder). That is a REDESIGN — it deletes "
+    "the snapshot claim and makes `--verify-bit-exact` vacuous — so it needs an owner's "
+    "decision, not a backend flag. Until then: --backend python.\n"
+    "  Note the Gate-B FAIR verdict CLOSED 2026-07-21; the audit keeps this row because "
+    "the infra is reusable, not because a run is pending.\n"
+    "  See measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §2 (A7)."
+)
 
 DEFAULT_LEVELS = (200, 344, 688)   # per-WORLD sim budgets; champion band k4x688 (CL-054)
 
@@ -519,7 +548,20 @@ def main(argv=None) -> int:
                     help="also re-run each world standalone per level; assert snapshot==standalone")
     ap.add_argument("--resume", action="store_true", default=True)
     ap.add_argument("--no-resume", dest="resume", action="store_false")
+    ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
+                    help="which ENGINE runs the per-world searches. ⚠️ ONLY 'python' is "
+                         "available for this harness — see BACKEND_UNAVAILABLE_REASON. "
+                         "The flag exists so a launcher can pass the same resolved value "
+                         "to every probe and get a LOUD failure here instead of silently "
+                         "running Python while a manifest claims otherwise.")
     args = ap.parse_args(argv)
+
+    # FAIL CLOSED (audit item A7). `auto` is resolved FIRST, so a launcher that passes it
+    # while PRODUCTION.yaml names `rust` gets the error rather than a Python run stamped
+    # with a rust-shaped manifest.
+    backend = RWS.resolve_backend(args.backend)
+    if backend != "python":
+        ap.error(f"--backend {backend} is NOT AVAILABLE here.\n{BACKEND_UNAVAILABLE_REASON}")
 
     levels = tuple(int(x) for x in args.levels.split(","))
     assert list(levels) == sorted(levels), "--levels must be ascending"
@@ -589,6 +631,11 @@ def main(argv=None) -> int:
         "endgame_solver": f"fair marginalized K<={spec.exact_max_k} handoff; the k3 root suite "
                           "is at k_remaining=3 so it NEVER fires here (per-root exact_latch "
                           "records this).",
+        "execution": RWS.backend_manifest(backend, extra={
+            "rust_available": False,
+            "rust_unavailable_reason": BACKEND_UNAVAILABLE_REASON,
+            "audit_item": "A7 — BACKEND_BYPASS_AUDIT_20260801.md §2",
+        }),
         "roots_source": str(args.roots),
         "n_roots_population": n_total_available,
         "n_roots_selected": len(roots),
