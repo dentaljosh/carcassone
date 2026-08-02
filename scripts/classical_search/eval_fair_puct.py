@@ -1074,13 +1074,14 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
     backend = _resolve_backend(backend)
     if backend == "rust" and info == "clair":
         # THE CLAIRVOYANT RULER ON carc_rs (rustport P6). `_MarginalizedHandoff` drives
-        # its prefix with `.move()`, and `HeuristicPriorAgent.move` at the champion's
-        # `reuse_tree=False` clears the tree before every move — so this arm is the
-        # FRESH-tree transition of the Rust ruler. It goes through
-        # `RustCarryClairvoyantAgent` (not `RustClairvoyantAgent`) anyway, because that
-        # class is the one whose `best_action` / `move` split matches Python's; being
-        # explicit here means a future caller that reaches for `best_action` gets the
-        # carried search Python would have given it rather than a silent fresh one.
+        # its prefix with `.move()`, which on `HeuristicPriorAgent` re-roots or clears
+        # according to the CONFIG's `reuse_tree` — and ⚠️ `production_prior_cfg()`
+        # carries `reuse_tree=True`, so this ruler RE-ROOTS between moves rather than
+        # starting fresh. `RustCarryClairvoyantAgent` resolves the flag from `cfg` the
+        # same way the Python agent does; it is also the class whose `best_action` /
+        # `move` split matches Python's, so a future caller that reaches for
+        # `best_action` gets the CARRIED search Python would have given it rather than
+        # a silent fresh one. (`RustClairvoyantAgent` does neither — see its docstring.)
         # ⚠️ A RULER: gated by scripts/rustport/gate_clair_backend.py (full-game,
         # per-ply action + root stats, bit-exact) before it grades anything.
         prefix = champion_factory.build_clairvoyant_champion(

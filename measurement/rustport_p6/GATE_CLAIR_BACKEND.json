@@ -13,9 +13,9 @@
   "root_tables_compared": 420,
   "solver_plies": 12,
   "mismatches": [],
-  "python_secs": 404.6,
-  "rust_secs": 75.0,
-  "speedup": 5.39,
+  "python_secs": 113.8,
+  "rust_secs": 59.1,
+  "speedup": 1.93,
   "verdict": "PASS",
   "scope": "the clairvoyant ruler at these knobs on this revision, net-free. Gap 3 (evaluator injection) stays OPEN: --info fair-net / fair-netprior still refuse the rust backend.",
   "rows": [
@@ -45,9 +45,9 @@
       },
       "counters_match": true,
       "diffs": [],
-      "python_secs": 122.9,
-      "rust_secs": 5.8,
-      "speedup": 21.29
+      "python_secs": 22.3,
+      "rust_secs": 5.0,
+      "speedup": 4.48
     },
     {
       "deck_seed": 96900000002,
@@ -75,9 +75,9 @@
       },
       "counters_match": true,
       "diffs": [],
-      "python_secs": 135.3,
-      "rust_secs": 23.5,
-      "speedup": 5.75
+      "python_secs": 35.2,
+      "rust_secs": 17.9,
+      "speedup": 1.97
     },
     {
       "deck_seed": 96900000000,
@@ -105,9 +105,9 @@
       },
       "counters_match": true,
       "diffs": [],
-      "python_secs": 146.4,
-      "rust_secs": 45.7,
-      "speedup": 3.2
+      "python_secs": 56.3,
+      "rust_secs": 36.2,
+      "speedup": 1.56
     }
   ]
 }

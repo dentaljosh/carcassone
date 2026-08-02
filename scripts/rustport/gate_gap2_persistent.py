@@ -272,10 +272,11 @@ def main(argv=None) -> int:
         discriminating += bool(separates)
         # The carried-visit streams must agree too: same actions off different
         # trees would be a coincidence, not an identity.
-        d_visits = (None if shipped["carried_in"] == carry["carried_in"]
-                    else {"first": next(i for i, (x, y) in
-                                        enumerate(zip(shipped["carried_in"],
-                                                      carry["carried_in"])) if x != y)})
+        d_visits = (None if shipped["carried_in"] == carry["carried_in"] else {
+            "first": next((i for i, (x, y) in enumerate(zip(shipped["carried_in"],
+                                                            carry["carried_in"]))
+                           if x != y), None),
+            "lengths": [len(shipped["carried_in"]), len(carry["carried_in"])]})
         for tag, d in (("rust_carry_vs_python_as_shipped", d_carry),
                        ("rust_fresh_vs_python_cleared", d_fresh),
                        ("carried_visit_stream", d_visits)):

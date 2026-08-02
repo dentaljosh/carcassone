@@ -10,6 +10,42 @@
   "scope": "the clairvoyant continuation at these knobs, net-free. The persistent tree closes Gap 2; Gap 3 (evaluator injection) and the snapshot/UCT family remain OPEN and still fail closed.",
   "rows": [
     {
+      "rid": "s28000000002_p115_r2",
+      "deck_seed": 28000000002,
+      "ply": 115,
+      "source": "bank",
+      "pick": 843,
+      "root_player": 0,
+      "oracle_sims": 100,
+      "python_as_shipped": {
+        "margin": -14.0,
+        "plies": 27,
+        "max_carried_in": 318,
+        "plies_with_preexisting_root": 26
+      },
+      "python_cleared_per_ply": {
+        "margin": -14.0,
+        "plies": 27
+      },
+      "rust_carry": {
+        "margin": -14.0,
+        "plies": 27,
+        "max_carried_in": 318
+      },
+      "rust_fresh": {
+        "margin": -14.0,
+        "plies": 27
+      },
+      "carry_matches_shipped": true,
+      "fresh_matches_cleared": true,
+      "carried_visits_match": true,
+      "world_discriminates": false,
+      "shipped_vs_cleared": null,
+      "python_secs": 9.55,
+      "rust_secs": 1.14,
+      "speedup": 8.35
+    },
+    {
       "rid": "s28000000008_p124_r2",
       "deck_seed": 28000000008,
       "ply": 124,
@@ -52,45 +88,9 @@
           3.0
         ]
       },
-      "python_secs": 46.49,
-      "rust_secs": 1.05,
-      "speedup": 44.24
-    },
-    {
-      "rid": "s28000000002_p115_r2",
-      "deck_seed": 28000000002,
-      "ply": 115,
-      "source": "bank",
-      "pick": 843,
-      "root_player": 0,
-      "oracle_sims": 100,
-      "python_as_shipped": {
-        "margin": -14.0,
-        "plies": 27,
-        "max_carried_in": 318,
-        "plies_with_preexisting_root": 26
-      },
-      "python_cleared_per_ply": {
-        "margin": -14.0,
-        "plies": 27
-      },
-      "rust_carry": {
-        "margin": -14.0,
-        "plies": 27,
-        "max_carried_in": 318
-      },
-      "rust_fresh": {
-        "margin": -14.0,
-        "plies": 27
-      },
-      "carry_matches_shipped": true,
-      "fresh_matches_cleared": true,
-      "carried_visits_match": true,
-      "world_discriminates": false,
-      "shipped_vs_cleared": null,
-      "python_secs": 52.21,
-      "rust_secs": 1.3,
-      "speedup": 40.05
+      "python_secs": 10.36,
+      "rust_secs": 1.13,
+      "speedup": 9.13
     },
     {
       "rid": "s28000000001_p102_r2",
@@ -135,9 +135,9 @@
           -2.0
         ]
       },
-      "python_secs": 105.45,
-      "rust_secs": 2.39,
-      "speedup": 44.12
+      "python_secs": 15.98,
+      "rust_secs": 2.14,
+      "speedup": 7.46
     },
     {
       "rid": "s28000000005_p91_r3",
@@ -182,9 +182,9 @@
           1.0
         ]
       },
-      "python_secs": 109.27,
-      "rust_secs": 3.11,
-      "speedup": 35.15
+      "python_secs": 24.57,
+      "rust_secs": 2.44,
+      "speedup": 10.06
     }
   ]
 }
