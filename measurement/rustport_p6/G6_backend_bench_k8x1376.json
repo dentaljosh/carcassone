@@ -1,6 +1,6 @@
 {
-  "gate": "G6/backend",
-  "verdict": "PASS",
+  "gate": null,
+  "verdict": "BENCH",
   "env": {
     "host": "Doctor",
     "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
@@ -533,5 +533,8 @@
       },
       "speedup_rs_over_py": 8.493537953456547
     }
-  }
+  },
+  "mode": "bench",
+  "gate_original": "G6/backend",
+  "relabel_note": "RELABELLED 2026-08-02. This artifact was produced by a BENCH-ONLY run (zero games, zero action checks) but the pre-fix reconcile scripts stamped it verdict:PASS under a gate name -- REVIEW 2026-08-02 item #6, since fixed in scripts/rustport/reconcile_backend.py + reconcile_fair.py, which now emit verdict:BENCH to a BENCH_*-prefixed filename and refuse to PASS on zero evidence. The TIMING content below is valid and is what DECISIONS cites; the verdict was never evidence of anything. FILENAME DELIBERATELY UNCHANGED so existing citations keep resolving."
 }
