@@ -275,6 +275,56 @@ class Board:
 # of which the base game has 4 copies; retail places one and shuffles the other 71.
 RETAIL_START_TILE = "city_top_straight_road"
 
+# --------------------------------------------------------------------------- #
+# Start-tile GRID position (2026-08-02). The engine's own defaults, and the two #
+# refusals that make moving them safe.                                          #
+#                                                                              #
+# `CarcassonneGameState` starts the board at (6, 15) on a 35x35 grid — 6 rows   #
+# of headroom above vs 28 below — and `StateUpdater.play_tile` bounds-checks    #
+# `open_positions`, so a rule-legal cell above row 0 is silently never offered  #
+# (2.6% of all rule-legal placements; tests/test_start_tile_grid_bound.py).     #
+#                                                                              #
+# `Game(start_row=...)` is the OPT-IN escape. DEFAULT OFF: with no argument the #
+# state is constructed exactly as before — the same call with the same          #
+# arguments — so every training run, eval and solver measurement is byte-       #
+# identical. The Android app opts in (`grid_rule: "centered18"`); the GLOBAL    #
+# engine default stays walled until that is separately decided, because moving  #
+# it changes the legal-move set in ~68% of games and retires every deck band.   #
+#                                                                              #
+# ⚠️ THE SHIFT MUST BE EVEN ON BOTH AXES. `board_repr.offset_from_centroid_sums`#
+# centres the window with banker's-rounded `round(sum/count)`, which is         #
+# equivariant under even translations only (round(6.5)=6 but round(17.5)=18).   #
+# An odd shift silently slips the window one cell on ~half of all positions and #
+# invalidates every trained checkpoint's input distribution. Refused at         #
+# construction, the same refusal the Rust port's `GameConfig::resolve` makes    #
+# (measurement/rustport_p5, `carc_rs.resolve_game_config`).                     #
+# --------------------------------------------------------------------------- #
+ENGINE_START_ROW, ENGINE_START_COL = 6, 15
+ENGINE_BOARD_ROWS, ENGINE_BOARD_COLS = 35, 35
+
+
+def check_start_position(start_row: int, start_col: int) -> None:
+    """Refuse an ODD shift or an off-board start — mirrors the Rust `check_flags`.
+
+    Raises ``ValueError``; returns None when the position is usable.
+    """
+    for axis, v, base, extent in (
+        ("start_row", int(start_row), ENGINE_START_ROW, ENGINE_BOARD_ROWS),
+        ("start_col", int(start_col), ENGINE_START_COL, ENGINE_BOARD_COLS),
+    ):
+        if (v - base) % 2 != 0:
+            raise ValueError(
+                f"{axis} shift must be EVEN: {v} is {v - base} from the engine "
+                f"default {base}; banker's rounding in "
+                "board_repr.offset_from_centroid_sums is equivariant under even "
+                "translations only"
+            )
+        if not 0 <= v < extent:
+            raise ValueError(
+                f"{axis} {v} is outside the "
+                f"{ENGINE_BOARD_ROWS}x{ENGINE_BOARD_COLS} board"
+            )
+
 
 def preplace_retail_start_tile(state: CarcassonneGameState) -> None:
     """Pre-place the fixed "D" start tile, retail/tournament style (in place).
@@ -342,6 +392,8 @@ class Game:
         include_farm_scalars: bool = False,
         sighted: bool = False,
         fixed_start_tile: bool = False,
+        start_row: int | None = None,
+        start_col: int | None = None,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -388,6 +440,16 @@ class Game:
         # checkpoint trained on random-start plays a fixed-start game with no
         # shape or semantic change (only a hair of distribution shift).
         self.fixed_start_tile = bool(fixed_start_tile)
+        # Where the start tile sits on the 35x35 grid. `None` means "say nothing
+        # to the engine", which is what makes the default path byte-identical:
+        # get_init_board then constructs CarcassonneGameState with exactly the
+        # arguments it always did. See check_start_position above for the
+        # EVEN-shift refusal, and `self.recentred` for the one-bit summary.
+        self.start_row = ENGINE_START_ROW if start_row is None else int(start_row)
+        self.start_col = ENGINE_START_COL if start_col is None else int(start_col)
+        check_start_position(self.start_row, self.start_col)
+        self.recentred = (self.start_row, self.start_col) != (
+            ENGINE_START_ROW, ENGINE_START_COL)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -422,10 +484,20 @@ class Game:
     # --- Construction ----------------------------------------------------
 
     def get_init_board(self) -> Board:
+        # `starting_position` is passed ONLY when it was asked for. The default
+        # path is therefore the same call it has always been — not an equal-
+        # valued Coordinate, no call at all — so "default unchanged" is a
+        # property of the code, not of Coordinate's __eq__.
+        extra = {}
+        if self.recentred:
+            from wingedsheep.carcassonne.objects.coordinate import Coordinate
+
+            extra["starting_position"] = Coordinate(self.start_row, self.start_col)
         state = CarcassonneGameState(
             players=self.players,
             tile_sets=list(self.tile_sets),
             supplementary_rules=list(self.supplementary_rules),
+            **extra,
         )
         # Scope guard (locked scope = 2p Base+Farmers, NO Abbots): a base+farmers
         # state has abbots == [0, 0] and no ABBOT meeple can ever be placed. If this

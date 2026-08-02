@@ -49,7 +49,13 @@ import random
 import numpy as np
 import pytest
 
-from carcassonne_ai.game_wrapper import Board, Game
+from carcassonne_ai.game_wrapper import (
+    ENGINE_START_COL,
+    ENGINE_START_ROW,
+    RETAIL_START_TILE,
+    Board,
+    Game,
+)
 from wingedsheep.carcassonne.carcassonne_game_state import CarcassonneGameState
 from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
 from wingedsheep.carcassonne.objects.coordinate import Coordinate
@@ -61,6 +67,10 @@ from wingedsheep.carcassonne.utils.state_updater import StateUpdater
 # An EVEN shift on both axes — see the module docstring. Row 6 -> 18 restores the
 # headroom (18 above / 16 below); the column stays put (shift 0, trivially even).
 ROW_SHIFT = 12
+# The recentred row the APP plays (Joshua-approved 2026-08-02, app only — the
+# library/engine default below is untouched and the strict-xfail sentinel at the
+# bottom of this module must keep failing).
+ROW_CENTERED = ENGINE_START_ROW + ROW_SHIFT      # 18
 
 
 def _fresh_deck(seed: int = 1234) -> list:
@@ -249,3 +259,151 @@ def test_no_rule_legal_placement_is_ever_denied() -> None:
             p_pick, b_pick = p_acts[0], b_acts[0]
         prod = StateUpdater.apply_action(prod, p_pick)
         big = StateUpdater.apply_action(big, b_pick)
+
+
+# =========================================================================== #
+# `Game(start_row=...)` — the OPT-IN recentring (2026-08-02).                  #
+#                                                                             #
+# Until now the shift could only be expressed by hand-building a               #
+# CarcassonneGameState (see `_state` above and                                 #
+# scripts/rustport/lockstep_fuzz.init_pair) — `Game.get_init_board` hard-coded #
+# the engine's `starting_position`, so nothing that goes through `Game` (the   #
+# Android bridge included) could play a recentred game. These tests pin the    #
+# parameter that closes that gap AND the fact that it changed nothing by       #
+# default.                                                                     #
+# =========================================================================== #
+def _wall_seeking_drive(start_row: int, plies: int = 40, pad: int = 30) -> tuple:
+    """Drive a game UPWARD against a paired oversized board; count denials.
+
+    Same construction as ``test_no_rule_legal_placement_is_ever_denied``: the
+    oversized board is a pure translate of the production one, so while nothing
+    is denied the two see identical action sets and the greedy "lowest row,
+    then lowest column" pick keeps them in step. Returns
+    ``(denied, min_row_reached, tile_plies)``.
+    """
+    deck = _fresh_deck()
+    prod = _state(start_row, deck)
+    big = _state(start_row + pad, deck, size=35 + 2 * pad)
+    denied, min_row, tile_plies = 0, start_row, 0
+    for _ in range(plies):
+        if prod.is_terminated():
+            break
+        p_acts = ActionUtil.get_possible_actions(prod)
+        b_acts = ActionUtil.get_possible_actions(big)
+        p_tiles = [a for a in p_acts if isinstance(a, TileAction)]
+        b_tiles = [a for a in b_acts if isinstance(a, TileAction)]
+        if p_tiles and b_tiles:
+            tile_plies += 1
+            denied += len(b_tiles) - len(p_tiles)
+            p_pick = min(p_tiles, key=lambda a: (a.coordinate.row, a.coordinate.column))
+            b_pick = min(b_tiles, key=lambda a: (a.coordinate.row, a.coordinate.column))
+            min_row = min(min_row, p_pick.coordinate.row)
+        else:
+            p_pick, b_pick = p_acts[0], b_acts[0]
+        prod = StateUpdater.apply_action(prod, p_pick)
+        big = StateUpdater.apply_action(big, b_pick)
+    return denied, min_row, tile_plies
+
+
+def test_game_start_position_defaults_are_the_engines():
+    """DEFAULT UNCHANGED, stated as a property of the object."""
+    g = Game()
+    assert (g.start_row, g.start_col) == (ENGINE_START_ROW, ENGINE_START_COL)
+    assert g.recentred is False
+    sp = g.get_init_board().state.starting_position
+    assert (sp.row, sp.column) == (ENGINE_START_ROW, ENGINE_START_COL)
+
+
+@pytest.mark.parametrize("fixed", [False, True])
+def test_naming_the_default_explicitly_is_byte_identical(fixed):
+    """Passing the engine's own numbers must not be a different game.
+
+    Guards the implementation choice in ``get_init_board``: the default path
+    passes NO ``starting_position`` at all, so this also pins that the explicit
+    path lands on exactly the same state.
+    """
+    g = Game()
+    random.seed(4321)
+    a = Game(fixed_start_tile=fixed).get_init_board()
+    random.seed(4321)
+    b = Game(fixed_start_tile=fixed, start_row=ENGINE_START_ROW,
+             start_col=ENGINE_START_COL).get_init_board()
+    assert g.string_representation(a) == g.string_representation(b)
+    assert np.array_equal(g.get_valid_moves(a), g.get_valid_moves(b))
+    assert a.total_tiles == b.total_tiles == 72
+
+
+@pytest.mark.parametrize("row", [5, 7, 17, 19])
+def test_odd_start_rows_are_refused_at_construction(row):
+    """The EVEN-shift caveat, enforced rather than documented — the same refusal
+    the Rust `GameConfig::resolve` makes (tests/rustport/test_p5_flags.py)."""
+    assert (row - ENGINE_START_ROW) % 2 == 1
+    with pytest.raises(ValueError, match="EVEN"):
+        Game(start_row=row)
+
+
+@pytest.mark.parametrize("row", [-2, 36])
+def test_off_board_start_rows_are_refused(row):
+    with pytest.raises(ValueError, match="outside"):
+        Game(start_row=row)
+
+
+@pytest.mark.parametrize("col", [14, 16])
+def test_odd_start_columns_are_refused_too(col):
+    with pytest.raises(ValueError, match="EVEN"):
+        Game(start_col=col)
+
+
+def test_recentring_moves_the_start_tile_and_keeps_the_tile_count():
+    g = Game(start_row=ROW_CENTERED)
+    assert g.recentred is True
+    random.seed(4321)
+    board = g.get_init_board()
+    sp = board.state.starting_position
+    assert (sp.row, sp.column) == (ROW_CENTERED, ENGINE_START_COL)
+    n_rows = len(board.state.board)
+    assert (sp.row, n_rows - 1 - sp.row) == (18, 16), "headroom above/below"
+    assert board.total_tiles == 72
+
+
+def test_retail_and_recentring_compose():
+    """The two app-only rules are independent: the fixed D tile is pre-placed at
+    the RECENTRED position, and the deck is still the retail 71."""
+    random.seed(4321)
+    board = Game(fixed_start_tile=True, start_row=ROW_CENTERED).get_init_board()
+    placed = list(board.state.placed_coords)
+    assert len(placed) == 1
+    assert (placed[0].row, placed[0].column) == (ROW_CENTERED, ENGINE_START_COL)
+    tile = board.state.board[ROW_CENTERED][ENGINE_START_COL]
+    assert tile is not None and tile.description == RETAIL_START_TILE
+    assert len(board.state.deck) + 1 == 71
+
+
+def test_the_recentred_grid_denies_nothing_the_walled_one_denies():
+    """THE POINT OF THE EXERCISE, measured on a wall-seeking game.
+
+    Same deck, same greedy "drive upward" policy, 40 tile-phase plies, each
+    board paired against its own oversized translate:
+
+      * start row 6  — the walled grid — loses rule-legal placements.
+      * start row 18 — the app's grid — loses none, and gets ABOVE the point
+        where the walled grid would already have run out of board (the lowest
+        row it reaches is more than 12 rows up, i.e. negative in row-6 terms).
+
+    This is a RECENTRING, not a wall removal: driven far enough (~60 plies) the
+    18-row grid hits row 0 too. The claim is that the headroom now matches the
+    board's real usage, not that the grid became infinite.
+    """
+    walled_denied, walled_min, walled_plies = _wall_seeking_drive(ENGINE_START_ROW)
+    assert walled_denied > 0, "control: the walled grid must still bite"
+    assert walled_min == 0
+
+    denied, min_row, tile_plies = _wall_seeking_drive(ROW_CENTERED)
+    assert denied == 0, (
+        f"the recentred grid denied {denied} rule-legal placement(s) in "
+        f"{tile_plies} tile plies")
+    assert tile_plies == walled_plies, "probes must be comparable"
+    assert min_row - ROW_SHIFT < 0, (
+        f"probe is vacuous: reached row {min_row}, which is row "
+        f"{min_row - ROW_SHIFT} in row-6 coordinates — the walled grid would "
+        "not have denied it")
