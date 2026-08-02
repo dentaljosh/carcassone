@@ -8,8 +8,11 @@ champion itself reached, with NO parallelism of any kind. One process, one threa
 one decision at a time. This is the number a phone / a laptop / an M5 actually pays.
 
 WHY A BUNDLE — the champion's play path is PURE PYTHON + numpy + pyyaml. No torch, no
-Rust, no orchestrator. So it runs anywhere CPython 3.10+ does, from a directory of
-files. The bundle is produced by ``scripts/m5_bench/build_bundle.py``, which delegates
+orchestrator. So it runs anywhere CPython 3.10+ does, from a directory of files.
+(``--backend rust`` is the one exception and it is opt-in: it needs a ``carc_rs``
+extension built for THAT machine on the import path — the bundle does not carry one.
+Default is unchanged and pure-Python.) The bundle is produced by
+``scripts/m5_bench/build_bundle.py``, which delegates
 the file mapping to ``android/tools/sync_python.py`` — the SAME mapping the Android APK
 ships, so a bundle that differs from the measured champion is a build failure, not a
 silent drift.
@@ -291,15 +294,48 @@ def _stats(xs: list[float]) -> dict:
     }
 
 
+def reseat(agent, row: dict, move_idx: int) -> None:
+    """Put a MIRRORED (Rust) agent on this position, by replay. No-op on Python.
+
+    F-3 / the mirror protocol. ``rust_agent.RustFairAgent`` owns a game state inside
+    Rust that cannot be constructed from an arbitrary board — only replayed — so a
+    bench that JUMPS between recorded roots has to re-seat it at every root: seat on
+    the row's deck, then advance the recorded action prefix. Deliberately INLINE
+    rather than importing ``carcassonne_ai.mirror_protocol``: this file is the
+    standalone-bundle bench and already literal-copies (PROD_ENV) rather than imports,
+    so it must keep running against a bundle built before that module existed.
+
+    ⚠️ ``_move_idx`` is seated too, and is not cosmetic: the per-determinization seeds
+    derive from it, so a mirror replayed to the root with its counter at 0 would search
+    DIFFERENT worlds than the Python agent this bench's numbers are compared with.
+    ``advance()`` never touches it (only a decision does), so the loop — which owns the
+    move timeline — sets it. Python's ``_move_idx`` is set the same way, which is a
+    no-op for it (one decision per iteration already leaves it exactly here) but makes
+    the two legs identical BY CONSTRUCTION rather than by coincidence.
+
+    Costs one full replay per root, OUTSIDE the timed region — the bench times
+    ``choose_action`` only."""
+    if hasattr(agent, "start_game_from_seed"):          # the Rust mirror
+        agent.start_game_from_seed(int(row["deck_seed"]))
+        for a in row["actions"]:
+            agent.advance(int(a))
+    agent._move_idx = int(move_idx)
+
+
 def run_budget(k_dets: int, sims: int, positions: list[dict], *, seed: int,
-               repeat: int, warmup: int, verify: bool, verbose: bool) -> dict:
+               repeat: int, warmup: int, verify: bool, verbose: bool,
+               backend: str = "python", rust_threads: int | None = None) -> dict:
     from carcassonne_ai import champion_factory  # noqa: PLC0415
     from carcassonne_ai.game_wrapper import Game  # noqa: PLC0415
 
     agent_game = Game(enable_legal_moves_cache=True)
     agent = champion_factory.make_production_champion(
         "fair", game=agent_game, seed=seed, sims=sims, k_dets=k_dets,
-        exact_endgame=True, verify=verify)
+        # backend passed EXPLICITLY in both directions: omitting it would mean
+        # "whatever the factory defaults to", so the day that default flips,
+        # `--backend python` would quietly bench a Rust champion.
+        exact_endgame=True, verify=verify, backend=backend,
+        **({"rust_threads": rust_threads} if backend == "rust" else {}))
 
     samples: list[dict] = []
     latched = 0
@@ -308,9 +344,11 @@ def run_budget(k_dets: int, sims: int, positions: list[dict], *, seed: int,
 
     for i, (row, rep) in enumerate(todo):
         _g, board = replay(Game, row)
+        reseat(agent, row, i)
         # The latch is one-way and per-agent; every bundled position is asserted
         # k_remaining > 2 by make_positions.py, so it must never fire. Clearing it
         # anyway makes that an invariant of the loop rather than of the input file.
+        # AFTER reseat, so it survives whatever re-seating the mirror does.
         agent._latched = False
         t0 = time.perf_counter()
         action = int(agent.choose_action(board))
@@ -362,6 +400,21 @@ def main(argv=None) -> int:
     p.add_argument("--warmup", type=int, default=2,
                    help="leading decisions discarded per budget (default 2)")
     p.add_argument("--seed", type=int, default=101)
+    p.add_argument("--backend", choices=("inherit", "python", "rust", "auto"),
+                   default="inherit",
+                   help="which ENGINE is benched. inherit (DEFAULT) = "
+                        "champion_factory's own default, today python — the number "
+                        "this bench has always reported, and a future flip of that "
+                        "default reaches this bench unedited | python = pin it | rust "
+                        "(carc_rs; needs a carc_rs built for THIS machine on the "
+                        "import path) | auto = the "
+                        "PRODUCTION.yaml fair_deploy backend. ⚠️ The engine is a "
+                        "LATENCY property, so a rust row and a python row are the two "
+                        "answers to this bench's question, not a before/after: label "
+                        "them, never pool them.")
+    p.add_argument("--rust-threads", type=int, default=None,
+                   help="backend=rust only: OS threads the k worlds fold across "
+                        "(default 1 = the single-stream number this bench measures).")
     p.add_argument("--no-verify", action="store_true",
                    help="skip champion_factory's runtime leaf proof (NOT recommended)")
     p.add_argument("--out", type=Path, default=None)
@@ -382,6 +435,19 @@ def main(argv=None) -> int:
     from carcassonne_ai import champion_factory  # noqa: PLC0415
 
     spec = champion_factory.load_production_spec()
+    # Resolve HERE (not per budget) so the manifest records the engine that ran, and so
+    # an unreadable field cannot make two budgets disagree about it. "inherit" is read
+    # off the factory's OWN signature default — the bundle-safe inline twin of
+    # `mirror_protocol.factory_default_backend()`, which this file deliberately does not
+    # import (it must keep running against a bundle built before that module existed).
+    backend = a.backend
+    if backend == "inherit":
+        import inspect  # noqa: PLC0415
+
+        backend = str(inspect.signature(champion_factory.make_production_champion)
+                      .parameters["backend"].default)
+    if backend == "auto":
+        backend = str(spec.backend)
 
     stamp = time.strftime("%Y%m%dT%H%M%S")
     host = platform.node().split(".")[0] or "unknown"
@@ -394,6 +460,9 @@ def main(argv=None) -> int:
           f"{'' if cy['leaf_active'] else '  <-- ~4.5x slower than the Cython path'}")
     print(f"  champion  : {spec.champion_id}  "
           f"(YAML budget k{spec.k_dets}x{spec.sims_per_det})")
+    print(f"  backend   : {backend}"
+          + (f" (rust_threads={a.rust_threads or 1})" if backend == "rust" else "")
+          + (f"  [--backend {a.backend}]" if a.backend == "auto" else ""))
     print(f"  positions : {len(positions)} from {positions_path.name}")
     print(f"  budgets   : {a.budgets}  repeat={a.repeat}")
     print(f"  out       : {out_path}")
@@ -412,6 +481,11 @@ def main(argv=None) -> int:
         "repeat": a.repeat,
         "seed": a.seed,
         "verify": not a.no_verify,
+        # WHICH ENGINE produced these seconds. A latency result is meaningless without
+        # it, and "auto" must never be what a reader has to resolve after the fact.
+        "backend": backend,
+        "backend_requested": a.backend,
+        "rust_threads": (a.rust_threads if backend == "rust" else None),
         "champion": {
             "id": spec.champion_id,
             "yaml_k_dets": spec.k_dets,
@@ -436,7 +510,8 @@ def main(argv=None) -> int:
         t0 = time.perf_counter()
         print(f"  -> k{k_dets}x{sims} ({k_dets * sims} sims/move) ...", flush=True)
         b = run_budget(k_dets, sims, positions, seed=a.seed, repeat=a.repeat,
-                       warmup=a.warmup, verify=not a.no_verify, verbose=a.verbose)
+                       warmup=a.warmup, verify=not a.no_verify, verbose=a.verbose,
+                       backend=backend, rust_threads=a.rust_threads)
         b["wallclock_s"] = time.perf_counter() - t0
         # The resolved runtime manifest is identical across budgets (same leaf, same
         # config — only the sim counts differ); record it once, at the top level.
