@@ -280,7 +280,7 @@ impl SearchSession {
             let node = slots[nid as usize]
                 .as_ref()
                 .expect("prune: node visited twice");
-            for a in node.child_actions.iter().rev() {
+            for a in node.child_actions.iter() {
                 let cid = node.children[a];
                 if !remap.contains_key(&cid) {
                     stack.push(cid);

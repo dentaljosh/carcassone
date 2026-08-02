@@ -842,8 +842,16 @@ class RustCarryClairvoyantAgent:
     neural_moves = 0
 
     def __init__(self, game, cfg, *, simulations: int, seed: int | None = None,
-                 reuse_tree: bool = False, evaluator=None, window_size: int = 25,
+                 reuse_tree: bool | None = None, evaluator=None, window_size: int = 25,
                  reconcile: bool | None = None, auto_advance: bool = False):
+        """``reuse_tree=None`` RESOLVES FROM ``cfg`` — the same line
+        ``HeuristicPriorAgent.__init__`` runs (``bool(cfg.reuse_tree) if reuse_tree is
+        None else bool(reuse_tree)``), and it is load-bearing: the production
+        clairvoyant config carries ``reuse_tree=True``, so a class that defaulted to
+        False would silently CLEAR where the Python champion RE-ROOTS. (Caught by
+        `gate_clair_backend.py` at ply 1 of the first game: python root_n 48 = 24
+        carried + 24 new, rust root_n 24.) A single-move gate cannot see this — a fresh
+        agent has nothing to re-root into — which is why the full-game leg exists."""
         import carc_rs
 
         if evaluator is not None:
@@ -859,7 +867,8 @@ class RustCarryClairvoyantAgent:
         # NeuralMCTS._np_rng, which only temperature sampling and Dirichlet root
         # noise consume — neither is engaged on this path.
         self._seed = seed
-        self._reuse_tree = bool(reuse_tree)
+        self._reuse_tree = (bool(getattr(cfg, "reuse_tree", False))
+                            if reuse_tree is None else bool(reuse_tree))
         self._auto_advance = bool(auto_advance)
         self._reconcile = reconcile_enabled(reconcile)
         self._scfg = search_config_rs(cfg, self._sims)

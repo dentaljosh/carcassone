@@ -233,36 +233,43 @@ from carcassonne_ai import champion_factory as CF          # noqa: E402
 from carcassonne_ai.fair_agent import FairHeuristicMCTSAgent  # noqa: E402
 
 # --------------------------------------------------------------------------- #
-# AUDIT ITEM A3 / B1 — the rust backend FAILS CLOSED here. Read before adding one. #
+# AUDIT ITEM A3 / B1 — the rust backend, and what it is still NOT allowed to do. #
 # --------------------------------------------------------------------------- #
+# HISTORY (read this before touching the backend plumbing).  This harness failed
+# closed on `--backend rust` until 2026-08-02, and the blocker was MEASURED:
+#
+#   GAP 2 — THE CONTINUATION IS NOT A FRESH-TREE SEARCH.  The playout below calls
+#   `agent.best_action(b)`, NOT `.move(b)`, and `best_action` never clears the
+#   tree at any `reuse_tree`, so ONE `NeuralMCTS` transposition table persists
+#   across every ply to terminal.  GAP2_ORACLE_CONTINUATION_TREE.json measures
+#   it at this harness's own --oracle-sims 100: the per-ply root pre-exists with
+#   N > sims on 102 of 103 plies, and replaying the IDENTICAL determinized world
+#   fresh-tree-per-ply gives a DIFFERENT action stream in 4/4 positions (first
+#   divergence by ply 3-7), terminal margins up to 12 points apart.
+#   `MirrorState.search_single` was fresh-tree ONLY, so a converted continuation
+#   would have been A DIFFERENT PLAYER — and since this is a RULER, that is
+#   disqualifying rather than inconvenient: the +0.7375 pts/disagreement
+#   (cluster-robust z +2.97) is a property of the instrument that produced it.
+#
+# GAP 2 IS NOW CLOSED (rustport P6): `carc_rs.PersistentSearcher` gives the Rust
+# search a tree that outlives the call, and `rust_agent.RustCarryClairvoyantAgent`
+# reproduces BOTH Python transitions (`best_action` carries; `move` clears or
+# re-roots).  The conversion is licensed by IDENTITY, not by judgement —
+#   scripts/rustport/gate_gap2_persistent.py    the three-way, with the fourth leg
+#   scripts/rustport/gate_oracle_pilot_backend.py  THIS harness's own `_process`
+#                                                  record, python vs rust, every
+#                                                  non-timing field as raw f64 bits
+# — so the ruler is the same ruler and the +0.7375 is quotable across the change.
+# ⚠️ Both gates are cell-and-knob scoped: they license the continuation AT THESE
+# KNOBS on THIS revision. Re-run them if either moves.
 BACKEND_UNAVAILABLE_REASON = (
-    "oracle_score_pilot cannot run on carc_rs, and the blocker is MEASURED, not read off "
-    "the source:\n"
-    "  (1) GAP 2 — THE CONTINUATION IS NOT A FRESH-TREE SEARCH. "
-    "`carc_rs.MirrorState.search_single` is documented (and gated) as *fresh-tree only*: "
-    "'equivalent to HeuristicPriorAgent(game, cfg, sims).move(board) with "
-    "reuse_tree=False'. This harness's playout calls `agent.best_action(b)` — NOT "
-    "`.move(b)` — and `best_action` never clears the tree, so ONE `NeuralMCTS` "
-    "transposition table persists across every ply to terminal. "
-    "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json measures it: on the "
-    "pilot's own --oracle-sims 100, the per-ply root pre-exists with N > sims on 102 of "
-    "103 plies, and replaying the IDENTICAL determinized world fresh-tree-per-ply gives a "
-    "DIFFERENT action stream in 4/4 positions (first divergence by ply 3-7) and terminal "
-    "margins differing by up to 12 points. A converted continuation would be a DIFFERENT "
-    "PLAYER.\n"
-    "  (2) THIS IS A RULER, so (1) is disqualifying rather than merely inconvenient. The "
-    "pilot's number (+0.7375 pts/disagreement, cluster-robust z +2.97) is a property of "
-    "the instrument that produced it; a ruler whose continuation policy changed cannot be "
-    "quoted across the change, and the audit's own §6/F-6 note requires a converted ruler "
-    "to pass its own G6-pattern identity gate FIRST — which (1) says it cannot.\n"
-    "  (3) `--oracle-policy tier1-greedy` is out of scope for a different reason: it is a "
-    "`RuleBasedPlayer` on the v1 OBJECT leaf with no search at all. carc_rs ports the PUCT "
-    "search and the curve125 leaf; there is no Rust RuleBasedPlayer, and porting one would "
-    "destroy the whole point of an OUT-OF-FAMILY judge.\n"
-    "  TO REOPEN: `SearchConfigRs` would need tree persistence across calls (Gap 2 is still "
-    "OPEN in BACKEND_BYPASS_AUDIT_20260801 §3), OR the pilot's owner would have to decide "
-    "that the continuation should be fresh-tree — which is a change to the RULER and needs "
-    "the +0.7375 re-measured, not a backend flag.\n"
+    "`--oracle-policy tier1-greedy` cannot run on carc_rs: it is a `RuleBasedPlayer` on "
+    "the v1 OBJECT leaf with no search at all. carc_rs ports the PUCT search and the "
+    "curve125 leaf; there is no Rust RuleBasedPlayer, and porting one would destroy the "
+    "whole point of an OUT-OF-FAMILY judge. Run the greedy arm with --backend python.\n"
+    "  (`--oracle-policy clair-puct` DOES run on carc_rs since 2026-08-02 — Gap 2 closed "
+    "by carc_rs.PersistentSearcher; see the comment block above this string and "
+    "measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json.)\n"
     "  See measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §2 (A3) / §3 (B1)."
 )
 
@@ -536,6 +543,7 @@ _G = {}
 def _init(cfg_kw: dict) -> None:
     _G.update(cfg_kw)
     _G["cfg"] = CF.production_prior_cfg()
+    _G.setdefault("backend", "python")
 
 
 def _deck_hash(board) -> str:
@@ -577,21 +585,51 @@ class _GreedyContinuation:
         return None
 
 
-def build_continuation_agent(game, *, policy: str, sims: int, seed: int):
+def build_continuation_agent(game, *, policy: str, sims: int, seed: int,
+                             backend: str = "python", seat: dict | None = None):
     """The ONLY thing `--oracle-policy` changes. Everything else in the harness — world
     sampling, CRN seed derivation, replay, the terminal-score read — is a shared code path.
 
-    `clair-puct` (default) is the untouched original construction, byte-for-byte."""
+    `clair-puct` (default) is the untouched original construction, byte-for-byte.
+
+    ``backend="rust"`` swaps ONLY the engine: `RustCarryClairvoyantAgent` is the same
+    player (`best_action` on a PERSISTING tree — Gap 2, closed by
+    `carc_rs.PersistentSearcher`), gated bit-exact by
+    `scripts/rustport/gate_oracle_pilot_backend.py`. It needs `seat` because a Rust
+    agent owns a MIRROR rather than reading the caller's board:
+
+        seat = {"deck_seed": .., "prefix": [..], "root_board": .., "world_board": ..,
+                "action": ..}
+
+    seating it here (rather than in `_playout_value`) keeps the playout loop below
+    literally the same code on both backends — the picks can only differ if the SEARCH
+    differs, which is exactly what the identity gate tests. `auto_advance=True` because
+    that loop owns no mirror and applies exactly the action it was handed; every
+    decision still hard-checks the mirror against the caller's board."""
     if policy == "tier1-greedy":
+        if backend != "python":
+            raise ValueError(BACKEND_UNAVAILABLE_REASON)
         return _GreedyContinuation(game, int(seed))
     if policy != "clair-puct":
         raise ValueError(f"unknown oracle policy: {policy!r}")
-    return CF.build_clairvoyant_champion(game, cfg=_G["cfg"], simulations=int(sims),
-                                         seed=int(seed))
+    if backend == "python":
+        return CF.build_clairvoyant_champion(game, cfg=_G["cfg"], simulations=int(sims),
+                                             seed=int(seed))
+    if seat is None:
+        raise ValueError("the rust continuation agent owns a mirror and must be seated "
+                         "(pass seat={deck_seed, prefix, root_board, world_board, action})")
+    ag = CF.build_clairvoyant_champion(game, cfg=_G["cfg"], simulations=int(sims),
+                                       seed=int(seed), backend="rust",
+                                       auto_advance=True)
+    ag.seat(seat["deck_seed"], seat["prefix"], board=seat.get("root_board"))
+    ag.set_world(seat["world_board"])
+    ag.advance(int(seat["action"]))
+    return ag
 
 
 def _playout_value(game, world_board, action: int, root_player: int,
-                   seed: int, sims: int, max_plies: int, policy: str = "clair-puct"):
+                   seed: int, sims: int, max_plies: int, policy: str = "clair-puct",
+                   seat: dict | None = None):
     """Apply `action` to a COPY of `world_board`, play to terminal with the continuation
     policy on both seats, and return (margin_pts, afterstate_deck_hash,
     afterstate_board_key, n_plies)."""
@@ -599,7 +637,11 @@ def _playout_value(game, world_board, action: int, root_player: int,
     b, _ = game.get_next_state(b, int(action))
     dh = _deck_hash(b)
     bk = hashlib.sha256(game.string_representation(b).encode()).hexdigest()[:16]
-    agent = build_continuation_agent(game, policy=policy, sims=int(sims), seed=int(seed))
+    agent = build_continuation_agent(
+        game, policy=policy, sims=int(sims), seed=int(seed),
+        backend=_G.get("backend", "python"),
+        seat=(None if seat is None
+              else dict(seat, world_board=world_board, action=int(action))))
     plies = 0
     while not b.state.is_terminated():
         if plies >= max_plies:
@@ -654,6 +696,13 @@ def _process(item: dict) -> dict:
         rec["world_seeds"] = ws
         rec["playout_seeds"] = ps
 
+        # Seating info for a mirror-owning (rust) continuation agent. Inert on the
+        # python backend, where the agent reads the caller's board directly.
+        seat = ({"deck_seed": int(item["deck_seed"]),
+                 "prefix": [int(a) for a in item["actions"][:int(item["ply"])]],
+                 "root_board": board}
+                if _G.get("backend", "python") != "python" else None)
+
         va, vb, dh_a, dh_b, bk_a, bk_b, plies_a, plies_b = [], [], [], [], [], [], [], []
         for j in range(_G["m"]):
             # ONE determinization per world, SHARED by both picks. This is the CRN.
@@ -661,10 +710,10 @@ def _process(item: dict) -> dict:
                 board, random.Random(ws[j]))
             ma, ha, ka, pa = _playout_value(game, wb, item["pick_a"], item["root_player"],
                                             ps[j], _G["oracle_sims"], _G["max_plies"],
-                                            _G["oracle_policy"])
+                                            _G["oracle_policy"], seat)
             mb, hb, kb, pb = _playout_value(game, wb, item["pick_b"], item["root_player"],
                                             ps[j], _G["oracle_sims"], _G["max_plies"],
-                                            _G["oracle_policy"])
+                                            _G["oracle_policy"], seat)
             va.append(ma); vb.append(mb)
             dh_a.append(ha); dh_b.append(hb)
             bk_a.append(ka); bk_b.append(kb)
@@ -748,8 +797,22 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
                   "Its own mean delta is NOT a verdict.",
         "execution": RWS.backend_manifest(
             getattr(args, "resolved_backend", "python"), extra={
-                "rust_available": False,
-                "rust_unavailable_reason": BACKEND_UNAVAILABLE_REASON,
+                "rust_available": bool(args.oracle_policy == "clair-puct"),
+                "rust_unavailable_reason": (
+                    None if args.oracle_policy == "clair-puct"
+                    else BACKEND_UNAVAILABLE_REASON),
+                "continuation_tree_policy":
+                    "PERSISTING — the playout calls best_action(), which never clears "
+                    "NeuralMCTS._nodes, so ONE tree spans every ply to terminal. On the "
+                    "rust backend this is carc_rs.PersistentSearcher via "
+                    "rust_agent.RustCarryClairvoyantAgent, NOT MirrorState.search_single "
+                    "(which is fresh-tree only and would be a different player).",
+                "gap2_status": "CLOSED 2026-08-02 (rustport P6) — "
+                               "measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
+                "identity_gate":
+                    "measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json — this "
+                    "harness's own _process record, python vs rust, every non-timing "
+                    "field as raw f64 bits",
                 "evidence": "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json",
                 "audit_item": "A3 (§2) / B1 (§3) — BACKEND_BYPASS_AUDIT_20260801.md",
             }),
@@ -870,19 +933,23 @@ def main(argv=None) -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="sample + write the manifest, score nothing")
     ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
-                    help="which ENGINE runs the continuation policy. ⚠️ ONLY 'python' is "
-                         "available: this is a RULER and its continuation is not a "
-                         "fresh-tree search (MEASURED — see BACKEND_UNAVAILABLE_REASON "
-                         "and GAP2_ORACLE_CONTINUATION_TREE.json). The flag exists so a "
-                         "launcher can pass one resolved backend to every probe and get a "
-                         "LOUD failure here instead of a silently re-instrumented ruler.")
+                    help="which ENGINE runs the continuation policy. 'python' (default) "
+                         "is byte-for-byte every record already banked. 'rust' runs the "
+                         "SAME player on carc_rs — the persisting-tree continuation "
+                         "(Gap 2, closed 2026-08-02 by carc_rs.PersistentSearcher), gated "
+                         "bit-exact by scripts/rustport/gate_oracle_pilot_backend.py. "
+                         "⚠️ --oracle-policy tier1-greedy stays python-only (no Rust "
+                         "RuleBasedPlayer, and porting one would destroy the point of an "
+                         "OUT-OF-FAMILY judge).")
     args = ap.parse_args(argv)
 
-    # FAIL CLOSED (audit item A3 / B1). `auto` resolves FIRST so a launcher passing it
-    # while PRODUCTION.yaml names `rust` errors rather than quietly running Python.
+    # `auto` resolves FIRST so a launcher passing it gets the engine PRODUCTION.yaml
+    # names — and a policy that has no Rust implementation still fails LOUDLY rather
+    # than silently re-instrumenting the ruler.
     backend = RWS.resolve_backend(args.backend)
-    if backend != "python":
-        ap.error(f"--backend {backend} is NOT AVAILABLE here.\n{BACKEND_UNAVAILABLE_REASON}")
+    if backend != "python" and args.oracle_policy != "clair-puct":
+        ap.error(f"--backend {backend} with --oracle-policy {args.oracle_policy} is NOT "
+                 f"AVAILABLE.\n{BACKEND_UNAVAILABLE_REASON}")
     args.resolved_backend = backend
 
     run_dir = Path(args.run_dir)
@@ -943,7 +1010,8 @@ def main(argv=None) -> int:
                   oracle_sims=int(args.oracle_sims), world_seed_salt=args.world_seed_salt,
                   oracle_policy=str(args.oracle_policy),
                   wall_cap=int(args.wall_cap), max_plies=int(args.max_plies),
-                  strict_crn=bool(args.strict_crn))
+                  strict_crn=bool(args.strict_crn),
+                  backend=str(args.resolved_backend))
 
     t0 = time.time()
     results = []
