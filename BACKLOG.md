@@ -25,11 +25,17 @@ with the F9 re-baselining program — the oracle certifies the FIXED rules befor
 doubles as a permanent CI referee. Joshua raised the class 2026-08-02 ("bad taste in my mouth").
 
 ## 2026-07-31 — Shared-claim launcher hardening: no-progress abort on the retry loop
-The leaf-ablation launcher's `while count<N && iter<60` retry loop spun ~3.5 h relaunching
-16 games that a cross-workload contention overload kept pushing past the harness's 3600 s
-per-game abandon-wall — every iteration abandoned all in-flight games recordless and
-restarted them, and nothing anywhere noticed zero progress (DECISIONS 2026-07-31 Shabbat
-eve; the operator-side rule is memory `no-agent-compute-beside-eval`). Hardening: any
+⚠️ **ROOT CAUSE CORRECTED (the first post-mortem blamed contention; it was a BUG CLASS).**
+The leaf-ablation launcher's `while count<N && iter<60` retry loop spun ~5 h relaunching 16
+games that could never finish: the worker raised `action_space.WindowOverflowError` ~40–60 min
+into each game (the capoff candidate's play sprawls into the grid wall until the 25×25 centroid
+window can encode no legal move), the pool died recordless, and the launcher relaunched into the
+**identical deterministic crash** — same CRN decks, same outcome, forever. Nothing anywhere
+noticed zero progress (DECISIONS 2026-07-31 Shabbat eve; the operator-side rule is memory
+`no-agent-compute-beside-eval`). ⚠️ **This changes the fix:** cross-workload contention only
+STRETCHED each crash cycle (~11 min → 40–65 min) and made it look like a timeout problem — that
+is the operator-side lesson, not the root cause — so a wall-clock or load-aware guard would NOT
+have caught this. Only a **no-progress abort** would. Hardening: any
 shared-claim retry loop should track records-at-iteration-start and ABORT LOUDLY (STALLED
 row + nonzero rc) after N (say 2) consecutive zero-new-record iterations, instead of
 spinning; optionally print a load warning when loadavg >> W at iteration start. Applies to

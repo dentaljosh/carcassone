@@ -5,9 +5,15 @@ schema `carcassonne-android-archive/v1`: lossless `(deck_seed, actions)` per the
 root_replay contract, plus result summary, per-move AI latencies, and provenance
 (champion id, leaf hash, effective budget).
 
-**⚠️ Grading context: the phone plays the k4×688 mobile carve-out** (~50 elo below the
-k8×1376 desktop champion of record — see PRODUCTION.yaml `deploy_profiles`); E4 stats
-grade against that budget, and each archive records `sims_effective`/`k_dets_effective`.
+**⚠️ Grading context is EPOCH-DEPENDENT — read the archive, not this sentence.** Archives
+from **before the 2026-08-01 app build** were played at the **k4×688 mobile carve-out**
+(~50 elo below the champion of record) and grade against that budget. Archives from the
+**2026-08-01 build onward** were played by the **champion of record** — k8×1376 = 11008 on
+the rust backend; the carve-out is **CLOSED** (see PRODUCTION.yaml `deploy_profiles` and
+DECISIONS 2026-08-01 evening). Every archive records `sims_effective`/`k_dets_effective`,
+and from 2026-08-01 the **ABSENCE of `runtime_budget_override`** is the full-strength
+marker. Full epoch rules — including `start_rule` and `grid_rule` — in the
+"Grading-epoch boundary at 2026-08-01" section below.
 
 **Replay verification (2026-07-30, desktop, PROD_ENV + project venv):** both archives
 replay to termination and the desktop-recomputed final scores match the phone's recorded
