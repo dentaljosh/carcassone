@@ -99,6 +99,32 @@ off-default. The cost trick's three facts (one det stream, per-world seed `base+
 world-order pooling with a constant `min_pooled_visits`) are k_dets-independent, so the
 prefix argument holds for ANY k_a < k_b at a FIXED sims_per_det — and fixing sims_per_det
 is exactly what makes it work, which is a second reason the 10x arm is width-scaled.
+
+2026-08-02 `--backend {python,rust,auto}` — AUDIT ITEM A2, CONVERTED
+--------------------------------------------------------------------
+`BACKEND_BYPASS_AUDIT_20260801.md` §2 lists this harness as ~100% Python at 12.7 s/move
+because it reaches INSIDE the champion (`agent._evaluator`, `agent._c_puct`,
+`agent._min_pooled_visits`, `agent.det_seed_base`) and runs the per-world searches
+itself — a shape no `backend=` kwarg on the builder can reach.  Its Rust route is the
+per-world primitive `MirrorState` + `set_unseen_deck` + `search_single`, wrapped in
+`rust_world_search.RustWorldSearcher`.
+
+⚠️ **EXACTLY ONE THING MOVES: the per-world search.**  The determinization draw stays on
+the Python `random.Random(det_seed_base(0) + 1)` stream and the pooling stays on
+`fair_agent._merge_root_stats` / `pooled_q_argmax`.  That is deliberate — **the cost
+trick's three facts are statements about THAT rng stream and THAT accumulation order**,
+so leaving both in Python keeps the module docstring above true word-for-word on either
+backend, and makes the two backends differ in the search and nothing else.
+`FairAgentRs.determinizations()` would have been the "native" route and is NOT used: it
+builds its own MT19937 per call and cannot hand the stream back.
+
+`--verify-agent-parity` is re-gated, not inherited: on `--backend rust` it drives the
+REAL `RustFairAgent` (mirror seated by `start_game_from_seed` + `advance` over the
+recorded prefix) at k_a and k_b and asserts both equal the prefix-pool picks — the same
+assertion against the same-backend deployed agent, so the flag still proves the trick
+for the engine that actually ran.  Identity against the PYTHON leg is a separate claim,
+gated by `scripts/rustport/gate_kwidth_backend.py` (0 mismatches on every non-timing
+field, per-world raw f64 bits included).
 """
 from __future__ import annotations
 
@@ -147,6 +173,7 @@ from collections import defaultdict  # noqa: E402
 import numpy as np             # noqa: E402
 
 import root_replay as RR       # noqa: E402
+import rust_world_search as RWS  # noqa: E402
 from carcassonne_ai import champion_factory as CF                  # noqa: E402
 from carcassonne_ai.fair_agent import (                            # noqa: E402
     FairHeuristicMCTSAgent,
@@ -286,9 +313,16 @@ def _process(item: dict) -> dict:
 
         rseed = root_seed(item["deck_seed"], item["ply"], item["salt"])
         rec["agent_seed"] = rseed
+        backend = _G["backend"]
+        rec["backend"] = backend
         # The k_b agent. Its worlds 0..k_a-1 ARE the k_a agent's worlds (module docstring).
-        agent = CF.build_fair_champion(game, sims=SIMS_PER_DET, k_dets=K_B,
-                                       seed=rseed, cfg=_G["cfg"])
+        # On the rust backend this object is a RustFairAgent and is used ONLY as the
+        # config oracle (`det_seed_base`, `_min_pooled_visits`, the exact-latch band) —
+        # the per-world searches go through RustWorldSearcher below.
+        agent = CF.build_fair_champion(
+            game, sims=SIMS_PER_DET, k_dets=K_B, seed=rseed, cfg=_G["cfg"],
+            **({"backend": "rust", "rust_threads": _G["rust_threads"]}
+               if backend == "rust" else {}))
         # Fidelity guard: the prefix argument reads `_pimc_move` as it is TODAY. If a
         # later rev turned on a per-world knob, the prefix identity could silently break.
         for attr in ("_meeple_dedup", "_intra_reuse", "_parallel_workers"):
@@ -306,8 +340,19 @@ def _process(item: dict) -> dict:
         root_key = game.string_representation(board)
 
         world_stats = []
+        # The determinization DRAW is identical on both backends (same rng stream, same
+        # `reshuffled_determinization`); only who searches the drawn world changes.
+        ws = None
+        if backend == "rust":
+            ws = RWS.RustWorldSearcher(game, _G["cfg"], sims=SIMS_PER_DET,
+                                       deck_seed=item["deck_seed"],
+                                       prefix=item["actions"][:item["ply"]])
+            ws.check_sync(board, "kwidth-root")
         for i in range(K_B):
             b = FairHeuristicMCTSAgent.reshuffled_determinization(board, det_rng)
+            if ws is not None:
+                world_stats.append(ws.search_world(b))
+                continue
             m, stats, _telem = search_one_world(
                 game, agent._evaluator, b, root_key,
                 sims=SIMS_PER_DET, c_puct=agent._c_puct, seed=base + 100 + i)
@@ -325,15 +370,35 @@ def _process(item: dict) -> dict:
         rec["root_player"] = int(board.state.current_player)
 
         if _G["verify_parity"]:
-            # PROVE the prefix trick on this cell: the DEPLOYED _pimc_move at each width.
+            # PROVE the prefix trick on this cell: the DEPLOYED decision at each width,
+            # on the SAME backend that produced the prefix pools. The python leg calls
+            # `_pimc_move` (which bypasses the exact latch); the rust agent's
+            # `choose_action` IS the latching decision, so the two are the same function
+            # only OUTSIDE the solver band — which is why a solver-region cell refuses
+            # the check instead of quietly comparing two different rules.
+            if backend == "rust" and rec["solver_region_now"]:
+                raise AssertionError(
+                    "agent-parity on backend=rust is not defined inside the solver band: "
+                    "RustFairAgent.choose_action latches to the marginalized solver while "
+                    "the prefix pools are pure PIMC. Run this cell without "
+                    "--include-solver-region, or verify parity on --backend python.")
             for k, want in ((K_A, pa), (K_B, pb)):
-                ag = CF.build_fair_champion(game, sims=SIMS_PER_DET, k_dets=k,
-                                            seed=rseed, cfg=_G["cfg"])
-                got = int(ag._pimc_move(board, 0))
+                if backend == "rust":
+                    ag = CF.build_fair_champion(
+                        game, sims=SIMS_PER_DET, k_dets=k, seed=rseed, cfg=_G["cfg"],
+                        backend="rust", rust_threads=_G["rust_threads"])
+                    ag.start_game_from_seed(item["deck_seed"])
+                    for a in item["actions"][:item["ply"]]:
+                        ag.advance(int(a))
+                    got = int(ag.choose_action(board, move_idx=0))
+                else:
+                    ag = CF.build_fair_champion(game, sims=SIMS_PER_DET, k_dets=k,
+                                                seed=rseed, cfg=_G["cfg"])
+                    got = int(ag._pimc_move(board, 0))
                 if want is None or got != int(want):
                     raise AssertionError(
-                        f"AGENT PARITY FAILED at k={k}: deployed _pimc_move chose {got}, "
-                        f"prefix-pool reported {want}")
+                        f"AGENT PARITY FAILED at k={k} (backend={backend}): deployed "
+                        f"agent chose {got}, prefix-pool reported {want}")
             rec["agent_parity_verified"] = True
 
         rec["ok"] = True
@@ -416,6 +481,12 @@ def build_manifest(args, n_pool: int, chosen: list) -> dict:
                      "order": "fixed shuffle, PREFIX taken — extending N never re-draws",
                      "include_solver_region": bool(args.include_solver_region)},
         "workers": int(args.workers), "wall_cap_secs": int(args.wall_cap),
+        "execution": RWS.backend_manifest(
+            args.resolved_backend, rust_threads=int(args.rust_threads),
+            extra={"identity_gate": "scripts/rustport/gate_kwidth_backend.py -> "
+                                    "measurement/rustport_p6/GATE_KWIDTH_BACKEND.json",
+                   "per_world_seed": "det_seed_base+100+i — passed on both backends; "
+                                     "INERT (GAP1_SEED_INVARIANCE.json)"}),
         "env": dict(_CANON_ENV), "src_root": SRC_ROOT, "code_rev": _git_rev(REPO),
         "host": socket.gethostname(),
         "champion_manifest": CF.resolved_manifest("fair", verify=True),
@@ -446,6 +517,15 @@ def main(argv=None) -> int:
                     default=DEFAULT_ARMS[2],
                     help="simulations per determinization, HELD FIXED across both arms "
                          "(the prefix identity requires it). DEFAULT 1376.")
+    ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
+                    help="which ENGINE runs the per-world searches. 'python' (default) "
+                         "is byte-identical to before this flag existed; 'auto' resolves "
+                         f"from PRODUCTION.yaml. Escape hatch: {RWS.FORCE_PYTHON_ENV}=1 "
+                         "forces python without editing a launcher.")
+    ap.add_argument("--rust-threads", type=int, default=1,
+                    help="carc_rs threads for the WHOLE-AGENT parity check only (the "
+                         "per-world search_single is single-threaded). MUST stay 1 in a "
+                         "game-parallel farm: W x t is the documented failure mode.")
     ap.add_argument("--out-root", default="/mnt/c/carc-shared/oracle_22016_20260729")
     ap.add_argument("--out-subdir", default="picks")
     ap.add_argument("--resume", action="store_true")
@@ -465,6 +545,18 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 2
     K_A, K_B, SIMS_PER_DET = int(args.k_a), int(args.k_b), int(args.sims_per_det)
+
+    args.resolved_backend = RWS.resolve_backend(args.backend)
+    if args.rust_threads != 1:
+        if args.resolved_backend != "rust":
+            print(f"[fatal] --rust-threads is a backend=rust knob (resolved backend is "
+                  f"{args.resolved_backend})", file=sys.stderr)
+            return 2
+        if args.workers > 1:
+            print(f"[fatal] --rust-threads {args.rust_threads} with --workers "
+                  f"{args.workers}: this is a GAME-PARALLEL farm and W x t hot threads is "
+                  f"the documented failure mode. Keep rust_threads=1.", file=sys.stderr)
+            return 2
 
     run_dir = Path(args.run_dir)
     args.records_dir = Path(args.records_dir) if args.records_dir else run_dir / "records"
@@ -501,7 +593,8 @@ def main(argv=None) -> int:
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
     print(f"[kwidth] pool={len(pool)} cells | chosen n={len(items)} | "
           f"k{K_A}x{SIMS_PER_DET}={K_A * SIMS_PER_DET} vs k{K_B}x{SIMS_PER_DET}="
-          f"{K_B * SIMS_PER_DET} | W={args.workers} | parity-verify={args.verify_parity}")
+          f"{K_B * SIMS_PER_DET} | W={args.workers} | parity-verify={args.verify_parity} "
+          f"| backend={args.resolved_backend}")
     print(f"[kwidth] out -> {out_dir}")
     if args.dry_run:
         print("[kwidth] --dry-run: manifest written, nothing computed")
@@ -521,7 +614,9 @@ def main(argv=None) -> int:
     if todo:
         w = max(1, min(int(args.workers), len(todo)))
         ctx = mp.get_context("fork")
-        base_kw = dict(wall_cap=int(args.wall_cap))
+        base_kw = dict(wall_cap=int(args.wall_cap),
+                       backend=args.resolved_backend,
+                       rust_threads=int(args.rust_threads))
         with ctx.Pool(w, initializer=_init,
                       initargs=({**base_kw, "verify_parity": False},)) as pool_:
             payload = [dict(it, _verify=(it["rid"] in verify_rids)) for it in todo]
@@ -548,6 +643,7 @@ def main(argv=None) -> int:
     roots_ok = {r["root_id"] for r in ok}
     summary = {
         "schema": SCHEMA,
+        "backend": args.resolved_backend,
         "n_attempted": len(items), "n_ok": len(ok),
         "n_failed": sum(1 for r in rows if not r.get("ok")),
         "n_disagreements": len(dis),
