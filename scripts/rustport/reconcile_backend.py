@@ -238,29 +238,38 @@ def run_job(job: dict) -> dict:
 # --------------------------------------------------------------------------- #
 # The bench leg — the DEPLOY-PATH multiplier                                   #
 # --------------------------------------------------------------------------- #
-def _bench_positions(n: int, deck_base: int, plies: list[int]) -> list[dict]:
-    """`(deck_seed, ply)` roots: a mix of opening/mid/late boards, since per-leaf
-    cost grows with placed meeples and an all-opening bench flatters both legs."""
-    return [{"deck_seed": deck_base + 900_000 + i, "ply": p}
-            for i in range(n) for p in plies]
+CHAMP = REPO / "measurement" / "champ_action_logs" / "champ_games.jsonl"
 
 
-def _seat_py(deck_seed: int, ply: int):
-    """Replay `ply` GREEDY-free plies by taking the first legal action — a cheap,
-    deterministic way to reach a realistic board without needing a record."""
+def _champ_games(n: int) -> list[dict]:
+    """Recorded CHAMPION games. The bench roots come from real champion play, not
+    from random legal moves: per-leaf cost tracks placed tiles and meeples, and a
+    randomly-played board is both unrepresentative and liable to sprawl into the
+    engine's border bugs (the col-34 / last-row fatals of G1/G5)."""
+    recs = [json.loads(line) for line in CHAMP.open() if line.strip()]
+    return recs[:n]
+
+
+def _bench_positions(n: int, plies: list[int]) -> list[dict]:
+    """`(deck_seed, actions, ply)` roots — an opening/mid/late mix over `n` games."""
+    out = []
+    for g in _champ_games(n):
+        acts = [int(a) for a in g["actions"]]
+        for p in plies:
+            if p < len(acts):
+                out.append({"deck_seed": int(g["deck_seed"]), "ply": int(p),
+                            "actions": acts[:p]})
+    return out
+
+
+def _seat_py(deck_seed: int, actions: list[int]):
+    """Replay a recorded prefix; returns the live `(game, board, actions)`."""
     random.seed(int(deck_seed))
     game = Game(enable_legal_moves_cache=True)
     board = game.get_init_board()
-    actions = []
-    rng = random.Random(int(deck_seed) ^ 0x5EED)
-    for _ in range(ply):
-        if game.get_game_ended(board, 0):
-            break
-        legal = [i for i, v in enumerate(game.get_valid_moves(board)) if v]
-        a = int(rng.choice(legal))
-        actions.append(a)
-        board, _ = game.get_next_state(board, a)
-    return game, board, actions
+    for a in actions:
+        board, _ = game.get_next_state(board, int(a))
+    return game, board, list(actions)
 
 
 def _bench_one(payload: dict) -> dict:
@@ -269,7 +278,7 @@ def _bench_one(payload: dict) -> dict:
     leg = payload["leg"]
     sims, k = int(payload["sims"]), int(payload["k_dets"])
     n_moves = int(payload["moves"])
-    game, board, actions = _seat_py(payload["deck_seed"], payload["ply"])
+    game, board, actions = _seat_py(payload["deck_seed"], payload["actions"])
     t_setup = time.perf_counter()
     if leg == "py":
         agent = F.py_agent(game, sims=sims, k_dets=k, seed=7)
@@ -290,6 +299,11 @@ def _bench_one(payload: dict) -> dict:
     setup_s = time.perf_counter() - t_setup
 
     moves = 0
+    # `time.perf_counter` is CLOCK_MONOTONIC on Linux — system-wide, so these
+    # absolute stamps are comparable ACROSS forked workers. The game-parallel
+    # throughput is computed from them rather than from the pool's wall clock,
+    # which would otherwise charge a 3-move measurement the full agent-construction
+    # + replay setup that a real 144-ply eval game amortizes to nothing.
     t0 = time.perf_counter()
     if leg == "py":
         with F.PoolSpy() as spy:
@@ -309,6 +323,7 @@ def _bench_one(payload: dict) -> dict:
     return {"leg": leg, "threads": payload.get("threads", 0),
             "deck_seed": payload["deck_seed"], "ply": payload["ply"],
             "moves": moves, "secs": secs, "setup_s": setup_s,
+            "t_start": t0, "t_end": t0 + secs,
             "s_per_move": secs / max(1, moves)}
 
 
@@ -354,8 +369,8 @@ def bench(args) -> dict:
     leaf and Cython repr — because "X times faster" is only an honest answer if
     X is measured against what we run today."""
     dispatch = _deploy_dispatch_probe()      # refuses to time a non-deployed leg
-    roots = _bench_positions(args.bench_roots, args.deck_base,
-                             [int(x) for x in args.bench_plies.split(",")])
+    plies = [int(x) for x in args.bench_plies.split(",")]
+    roots = _bench_positions(args.bench_roots, plies)
     tlist = [int(x) for x in args.threads_list.split(",")]
 
     single = []
@@ -382,12 +397,12 @@ def bench(args) -> dict:
     par = {}
     if args.bench_workers > 0:
         W = int(args.bench_workers)
-        pw_roots = _bench_positions(1, args.deck_base + 1,
-                                    [int(x) for x in args.bench_plies.split(",")])
+        # W DISTINCT recorded games, one per worker, all seated at the same ply —
+        # the shape of a real eval (independent games, one per process).
+        pw_roots = _bench_positions(W, [plies[len(plies) // 2]])
         jobs_py, jobs_rs = [], []
         for i in range(W):
             root = dict(pw_roots[i % len(pw_roots)])
-            root["deck_seed"] = int(root["deck_seed"]) + i
             jobs_py.append({"leg": "py", "sims": args.sims, "k_dets": args.k_dets,
                             "moves": args.bench_par_moves, **root})
             jobs_rs.append({"leg": "rs", "threads": 1, "sims": args.sims,
@@ -400,13 +415,22 @@ def bench(args) -> dict:
                 rows = list(pool.map(_bench_one, jobs))
             wall = time.perf_counter() - t0
             n = sum(r["moves"] for r in rows)
-            par[name] = {"workers": W, "wall_secs": wall, "decisions": n,
-                         "decisions_per_s": n / wall if wall else 0.0,
-                         "wall_s_per_decision": wall / max(1, n),
+            # The DECISION-PHASE span across all workers (setup excluded).
+            span = max(r["t_end"] for r in rows) - min(r["t_start"] for r in rows)
+            par[name] = {"workers": W, "pool_wall_secs": wall,
+                         "decision_span_secs": span, "decisions": n,
+                         "decisions_per_s": n / span if span else 0.0,
+                         "s_per_decision_per_worker":
+                             sum(r["secs"] for r in rows) / max(1, n),
+                         "setup_s_max": max(r["setup_s"] for r in rows),
+                         "pool_wall_decisions_per_s": n / wall if wall else 0.0,
                          "rows": rows}
         if par["rs"]["decisions_per_s"] > 0 and par["py"]["decisions_per_s"] > 0:
             par["speedup_rs_over_py"] = (par["rs"]["decisions_per_s"]
                                          / par["py"]["decisions_per_s"])
+            par["speedup_rs_over_py_pool_wall"] = (
+                par["rs"]["pool_wall_decisions_per_s"]
+                / par["py"]["pool_wall_decisions_per_s"])
 
     return {
         "config": {"sims_per_det": args.sims, "k_dets": args.k_dets,
@@ -449,8 +473,9 @@ def main(argv=None) -> int:
     ap.add_argument("--max-moves", type=int, default=None,
                     help="cap plies per game (None = play to termination)")
     ap.add_argument("--workers", type=int, default=14, help="game-level fork pool")
-    ap.add_argument("--bench-roots", type=int, default=2)
-    ap.add_argument("--bench-plies", default="0,40,80")
+    ap.add_argument("--bench-roots", type=int, default=3,
+                    help="how many recorded champion games supply bench roots")
+    ap.add_argument("--bench-plies", default="20,60,100,130")
     ap.add_argument("--bench-moves", type=int, default=3)
     ap.add_argument("--bench-workers", type=int, default=8)
     ap.add_argument("--bench-par-moves", type=int, default=3)
@@ -571,10 +596,12 @@ def main(argv=None) -> int:
                         for t, v in ss["rs_s_per_move"].items()))
         gp = bench_out["game_parallel"]
         if gp:
-            print(f"    W{gp['py']['workers']} game-parallel: py "
+            print(f"    W{gp['py']['workers']} game-parallel (decision span): py "
                   f"{gp['py']['decisions_per_s']:.4f} dec/s | rust "
                   f"{gp['rs']['decisions_per_s']:.4f} dec/s "
-                  f"({gp.get('speedup_rs_over_py', 0):.2f}x)")
+                  f"({gp.get('speedup_rs_over_py', 0):.2f}x)  "
+                  f"[per-worker s/move py {gp['py']['s_per_decision_per_worker']:.3f} "
+                  f"rust {gp['rs']['s_per_decision_per_worker']:.3f}]")
     return 0 if ok else 1
 
 
