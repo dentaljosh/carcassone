@@ -3611,3 +3611,22 @@ non-zero per decade. Read-out doc:
 measurement/classical_search/KWIDTH_110K_READOUT_20260802.md (+ .json). No CL id, no
 results.csv row, PRODUCTION.yaml untouched — all pre-committed. CL-068's clock sentence
 travels with any citation. Joshua decides: decision-queue item 1.
+
+## 2026-08-02 (afternoon) — F7d W-sweep DONE (Rust-era workload): local W*=30, laptop W*=22 — and the python-era W14–16 lore does NOT transfer
+
+Crude 4-point pass + endpoint-bracketing refine per the house protocol (both crude passes
+peaked at the ladder ENDPOINT W=30, so neither was adoptable until extended —
+feedback_bracket_hyperparams applied as written). Full ladders, throughput_idx = W/mean
+ms/move (tail-free, order-statistic-safe): local 5.575/6.681/7.716/8.182/**8.335**/8.273
+at W=12/16/24/30/**32**/36 → peak W32, settle **W*=30** (smallest within 5% of peak; W24
+= −7.4% is the desktop-friendly 10% alternative). Laptop 6.368/6.715/7.219/**7.496**/
+7.410/7.341 at W=12/16/22/**26**/30/34 (nproc=24) → peak W26, settle **W*=22**. Workload
+= the F7 ablation cell class through the CONVERTED eval_puct_priors: rust clairvoyant
+candidate + python PUCT champion opponent + python exact-K tail, s2750/K2, `--backend
+rust` (driver patched 0333d5a — the old default would have swept the dead python-era
+workload). ⚠️ The standing "self-play is DRAM-latency-bound, W optimum ≈14–16 regardless
+of cores" rule is REFUTED for this workload class: throughput scales to full thread count
+(local peak = exactly 32T; laptop peaks 1.08× oversubscribed). The re-bench-after-code-era-
+change rule did its job. Bench only: band 9.69e10 throwaway, no results.csv row
+(--no-results-csv by design), no claim id. Data:
+measurement/classical_search/WSWEEP_F7D_{local,laptop}.tsv; logs /tmp/wsweep_*.log.
