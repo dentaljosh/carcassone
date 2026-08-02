@@ -1,0 +1,27 @@
+# `carc-net` — the neural-evaluator BACKEND crate.
+#
+# ⚠️ THIS IS AN INDEPENDENT WORKSPACE, ON PURPOSE. It is listed in
+# `../Cargo.toml`'s `exclude`, so `rust/carc`'s Cargo.lock — the one every
+# bit-exactness gate builds against — is untouched by anything in here. A backend
+# experiment must not be able to perturb the dependency graph of the gated crates.
+#
+# ⚠️ THE DEPENDENCY ARROW POINTS INWARD. `carc-net` depends on `carc-core`;
+# `carc-core` must NEVER depend on `carc-net`, because `carc-core` is required to
+# stay WASM/iOS-buildable and dependency-free. The seam is the `carc_core::eval`
+# trait module, which pulls in nothing.
+[workspace]
+
+[package]
+name = "carc-net"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "ONNX Runtime policy evaluator for carc-core search (rustport net-arm prototype)"
+
+[dependencies]
+carc-core = { path = "../carc-core" }
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "cuda", "tls-rustls", "ndarray"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"

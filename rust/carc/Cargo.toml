@@ -1,6 +1,11 @@
 [workspace]
 resolver = "2"
 members = ["carc-core", "carc-py", "carc-cli"]
+# `carc-net` (the ONNX-Runtime net-evaluator backend) is an INDEPENDENT workspace,
+# excluded on purpose: it must not be able to perturb THIS workspace's Cargo.lock,
+# which every bit-exactness gate builds against. It depends on carc-core by path;
+# carc-core does not depend on it. See rust/carc/carc-net/Cargo.toml.
+exclude = ["carc-net"]
 
 [workspace.package]
 version = "0.1.0"
