@@ -1,5 +1,41 @@
 # BACKEND BYPASS AUDIT — who stays on Python after the `backend: rust` flip
 
+> ## ⚠️ ACTIONED 2026-08-02 — read this banner before acting on the fix list below
+>
+> The wiring agent executed §6. **What landed:**
+>
+> | item | status |
+> |---|---|
+> | **F-1** backend on the THIN BUILDERS (`build_fair_champion` / `build_clairvoyant_champion`) | **DONE.** `backend=` / `rust_threads=`, default `"python"`, `"auto"` reads the YAML. Gap-3 knobs RAISE instead of being dropped. Clairvoyant builder fails closed on non-python. |
+> | **F-2** `eval_fair_puct` (A1) | **DONE.** `--backend` / `--rust-threads`; the whole `_MarginalizedHandoff` is replaced (not just `._prefix`); mirror protocol threaded through `_play_one` + `_smoke`. Gate: `G6_eval_fair_puct_wiring.json` — 10 deck-paired games, 130 field checks, **0 mismatches**. |
+> | **F-4** `gen_fair_distill` (A5) | **DONE.** Routed through the factory; 431/431 actions identical python-vs-rust over 3 games. The k4x688 argparse staleness was deliberately **left alone** (it must not move as a side effect of a backend flip — the audit's own instruction). |
+> | **A6** `eval_puct_priors` | **DONE, but reclassified — see below.** |
+> | **Gap 1** (no search seed) | **CLOSED.** `GAP1_SEED_INVARIANCE.json`: 75 cross-seed comparisons, 15 recorded-champion roots, production per-world budget, bit-identical action + root N/W at every seed including `None`. The missing field is genuinely inert. |
+> | **Gap 2** (`reuse_tree`) / **Gap 3** (evaluator injection) | **STILL OPEN, now ENFORCED** — `RustClairvoyantAgent` and the fair builder RAISE on both rather than approximating them. |
+> | **F-6** clair-wiring | **PRIMITIVE BUILT AND GATED**, callers not yet converted. `rust_agent.RustClairvoyantAgent` over `MirrorState.search_single`; `GATE_CLAIRVOYANT.json` = 15 roots / 60 field checks bit-exact (chosen action + root N/W + every child edge, raw f64 bits). |
+> | **A2 / A3 / A4 / A7 / A8** (`kwidth_agreement_probe`, `oracle_score_pilot`, `move_agreement_probe`, `gate_b_*`, `adaptive_k_census`) | **NOT CONVERTED — deliberate.** See "what is still Python" below. |
+> | **F-3** the four `make_production_champion` desktop callers | **NOT DONE** — not routed to this agent. §1 stands unchanged: do not flip the factory default until they learn the mirror protocol. |
+> | **F-5** the A9 android provenance hole | routed to the android agent, tracked separately. |
+>
+> **§7's Amdahl caveat is now MEASURED, not modelled** — and the audit's ~5× guess was right
+> for the cell it described. On a champion-vs-h800 cell the **champion side runs 8.96×** faster,
+> the frozen h800 rung measures a real **409.9 ms/move**, and the **realised farm speedup is
+> 4.8× at W10** (k4×344). ⚠️ That multiplier is **budget-dependent**: the rung is a fixed 800
+> sims, so its share shrinks as the champion budget grows. Read the production-budget figure
+> from `G6_eval_fair_puct_wiring_PROD.json`, not this one, before sizing a k8×1376 run.
+>
+> **Why A2/A4/A7/A8 stayed Python:** they are the "component library" shape §2 identifies — they
+> build a champion and then reach *inside* it (`agent._evaluator`, `agent._c_puct`,
+> `agent.det_seed_base`) and run the per-world searches themselves. The Rust route
+> (`determinizations()` → `set_unseen_deck` → `search_single`) now exists and is gated, so this
+> is cheap for the next agent — but each probe's own invariants (e.g. A2's `--verify-agent-parity`
+> assertion against the DEPLOYED `_pimc_move`) have to be re-gated, and **A2/A3 were running live
+> on the laptop during this session**. Converting a live probe's driver mid-run was not worth it.
+>
+> **A3 (`oracle_score_pilot`) additionally needs a decision, not just wiring:** it is a *scoring
+> ruler*. Converting it changes the ruler, so it needs its own G6-pattern identity gate before it
+> prices anything — exactly the caution §6 attaches to B1/B2.
+>
 > **Status: READ-ONLY AUDIT, 2026-08-01.** No code was changed by this audit. It answers Joshua's
 > question — *"no more python eating cpu cycles?"* — with the honest residual list, and it found a
 > second problem on the way that is more urgent than the first.
