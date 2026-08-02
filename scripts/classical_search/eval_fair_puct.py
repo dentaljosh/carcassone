@@ -2762,6 +2762,14 @@ def main(argv=None) -> int:
                  "(carc_rs has no net evaluator)")
     if args.rust_threads is not None and _backend != "rust":
         ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
+    if args.rust_threads is not None and args.info == "clair":
+        # rust_threads splits the k_dets WORLDS of the PIMC agent across OS threads.
+        # The clairvoyant ruler has no determinizations — one tree, one world — so
+        # there is nothing to split and the knob would be silently dropped (and then
+        # stamped into the manifest as if it had applied).
+        ap.error("--rust-threads is a --info fair knob (it splits the PIMC agent's "
+                 "k_dets worlds); the clairvoyant ruler runs ONE search and has no "
+                 "worlds to split")
     # ⚠️ THE FARM RULE, enforced not merely documented. In a game-parallel pool the
     # game parallelism owns the cores; W16 x t8 = 128 hot threads is the failure mode
     # that motivates this. Explicit parameter, farm default 1, resolved value asserted
