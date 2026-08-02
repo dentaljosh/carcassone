@@ -3761,3 +3761,72 @@ change — note its refusal string is now stale prose).
 **~49× faster** end-to-end (41–61× per position, 20 positions). That is what makes the
 full ~652-position oracle probe affordable, but nothing here licenses re-grading anything:
 the conversion is quotable across the change precisely BECAUSE the records are bit-identical.
+
+## 2026-08-02 (night) — THE SIX-PORT WAVE: every named python↔rust wiring residual closed in one evening (5 conversions + 1 crate feature), all bit-exact-gated; fleet atomic at 9c57d80
+
+Joshua: "get opus agents working on all 5 ports" (+ port 6 on the measured blocker). Six
+worktree'd Opus agents, disjoint file territories, merged sequentially after review:
+
+- **Port 1** — eval_puct_priors OPPONENT side → RustClairvoyantAgent: **both clairvoyant
+  sides now rust, 49.4×/48.8× per side, farm wall 28×** (residual = the symmetric python
+  exact-K tail; no rust surface for the clairvoyant ordered-deck alphabeta solve — left
+  python BOTH sides, unbiased). Latent single-mirror bug found+fixed (a second seated
+  mirror was never advanced). Gates: 15 roots ×2 config legs 0/120; 4 deck-paired games
+  0/76 identical elo/margins.
+- **Port 2** — class-B instruments: gate_b_depth_transfer converted (0/42 raw-f64;
+  2.72× NET of a 1.79× work penalty — no per-sim hook, so rust runs sum(levels) not
+  max(levels); mechanism stamped in manifests); snapshot.py family FAIL-CLOSED with the
+  needs-list in-code (needs rust UCT + a stepped/snapshot API — different gap).
+- **Port 3 (F11)** — all four desktop make_production_champion callers wired to the
+  mirror protocol (444 checks 5/5 legs byte-identical; MirrorDesync proven live by 3
+  injection tests; `--backend inherit` = a future default flip reaches callers unedited).
+  Pre-flip blockers enumerated (top: factory must resolve per-mode or clairvoyant builds
+  raise). New module src/carcassonne_ai/mirror_protocol.py.
+- **Port 4** — audit A-items: kwidth probe (0/770) + adaptive_k census (0/350) converted;
+  A3/A4/A7 FAIL CLOSED with measured evidence — **Gap 2 attributed**: the oracle pilot's
+  best_action carry-over is load-bearing (fresh-tree replay diverges 4/4 positions, up to
+  12 pts terminal). New module scripts/measurement_infra/rust_world_search.py.
+- **Port 5** — net-evaluator design memo + benched prototype
+  (docs/RUST_NET_EVAL_DESIGN_20260802.md): ort recommended conditionally; **CUDA-Graph
+  capture is the un-indexed lever (7.1× batch-1)**; the right statistic is cost_ratio ≈
+  0.5 + r (netprior deletes the classical child sweep) → torch+Graph batch-8 = **2.12×,
+  inside the ~2.4–2.6× break-even for the first time**; PyO3 callback dead by measurement
+  (254 µs 8-thread GIL convoy); acceptance = argmax tiers (100% on 1,168 positions).
+  Go/no-go spike ≈ half a day (IOBinding CUDA-Graph); then encode_board is the big item.
+  LEVER_INDEX rows 16–18.
+- **Port 6** — **Gap 2 CLOSED**: carc_core SearchSession (persistent/re-rootable tree),
+  opt-in default-off, feature-off byte-identical (regate 0/576, cargo 84, pytest 288;
+  clean search-only 10.03×). All three python transitions ported incl. _reroot_or_clear
+  verbatim. Conversions same day: **oracle_score_pilot --backend rust 9.41× (0/940)** and
+  eval_fair_puct --info clair (3 full games, 432 plies bit-exact). Gate (d) CAUGHT a real
+  bug pre-merge: production_prior_cfg carries reuse_tree=True and the first implementation
+  cleared where python re-roots — a single-move gate is structurally blind to this class.
+  ⚠️ CORRECTION OF RECORD: port 2's reported 3-way magnitudes (+6.0/−16.0/−16.0) did NOT
+  reproduce — the verified numbers are +4.0/−2.0/−2.0 on the same cell, with the
+  RELATIONS exact (carry==as-shipped, fresh==cleared, 4/4 bit-exact action streams). The
+  structural claim stands; the magnitudes in port 2's report text were from its discarded
+  pre-re-scope run.
+
+**Fair-eval W-sweep (same evening): flagship elo workload settles local W\*=32** (plateau
+17.0–18.0 moves/s across W=32–64; ±8% point noise measured via a triple-run of W=32 —
+one pass contaminated by co-resident agent compute, discarded and re-run on a quiet box).
+Multiplier discipline: **7.77×/9.79× (matched-W) is the FLOOR of record**; respective-peaks
+≈10.5× wall / ~13.6× champ-side rests on an assumed-linear python baseline — quote the
+floor. An n=400 elo cell: ~7.5 h python-era → **~45 min** at W*=32.
+
+**Still fail-closed (correctly, named owners):** Gap 3 evaluator injection (net arms — the
+port-5 spike decides), snapshot/UCT family (needs rust UCT + stepped API), tier1-greedy
+oracle policy (deliberately out-of-family), meeple_dedup/intra_reuse knobs,
+make_production_champion(clairvoyant, rust) (refusal string now stale prose — small
+follow-up). ⚠️ **F7d's morning W\* (local 30 / laptop 22) is STALE** — the ablation
+workload changed era again when its opponent converted; re-sweep owed before sizing any
+farm on it (cheap at 49×/side). leaf_ablation_launcher.sh still needs --backend threaded.
+⚠️ Port-6 read-across: RustClairvoyantAgent (port 1's route) defaults reuse_tree=False —
+its full-game gate passed for the gated reuse-off cell configs, but any reuse-carrying
+config through eval_puct_priors must be re-gated over a full game first.
+
+Fleet: repo 9c57d80 + wheel fac1853e local+laptop, atomic. All gates that touch the
+champion path re-ran green post-merge. No PRODUCTION.yaml change, no strength claim, no
+results.csv row (wave = execution substrate + instruments). Roadmap F10 substantially
+done / F11 done; LEVER_INDEX rows 16–19; decision queue updated (default-flip blockers,
+net-arm spike).

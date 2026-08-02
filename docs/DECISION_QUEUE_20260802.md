@@ -19,6 +19,18 @@
    Menu unchanged: gen@11008 · n→800 teacher-h2h extension · or bank the lean and park.
 3. **ANE n≈2150 cell** — recommendation: CLOSE UNFUNDED (the port inflated r ~8× past the
    reopen bar; STATUS 2026-08-01 note). Needs your ack to flip the claim line.
+3b. **NEW — the CUDA-Graph net-arm spike (~half a day, port-5 memo):** desktop torch+Graph
+   at batch-8 lands cost_ratio **2.12×, inside the netprior break-even for the first time**
+   (the right statistic is 0.5+r, not 1+r — netprior deletes the classical child sweep).
+   The go/no-go: reach CUDA-Graph from Rust via ort IOBinding; if batch-8 ≥ ~0.18 ms, stop.
+   This REOPENS (on new grounds, desktop-only) what the ANE post-mortem closed — it does
+   not contradict 3: the ANE r-bar stays failed. → docs/RUST_NET_EVAL_DESIGN_20260802.md,
+   LEVER_INDEX 16–17. Fund/park.
+3c. **NEW — backend default flip readiness (F11 done):** all four desktop callers wired +
+   injection-proven; remaining pre-flip blockers (port-3 list): (i) factory must resolve
+   per-mode or clairvoyant builds raise — top item; (ii) tests/release/test_factory_manifest
+   re-check; (iii) the flip moves only the 6 make_production_champion sites (the eval fleet
+   rides build_fair_champion's own default). Flip when you say so.
 4. **F7b farm knockout cells** — cheap post-wiring (Rust-severable). Go/no-go.
 5. **F9 rules-fix program** — the big one: global recentring + rules remediation
    (RULES_FIDELITY_AUDIT R1–R8) + transfer-bound cell + fixed-rules descriptives +
