@@ -85,33 +85,44 @@ RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
 ANDROID_EXACT_BUDGET: int = 100_000
 
 # --------------------------------------------------------------------------- #
-# 1a. THE MOBILE BUDGET PROFILE (added 2026-07-29 with the k8x1376 promotion).  #
+# 1a. THE MOBILE BUDGET PROFILE. ⚠️ UNPINNED 2026-08-01 — the phone now plays   #
+#     the CHAMPION OF RECORD (k8x1376 = 11008). The carve-out is CLOSED.        #
 #                                                                              #
-# On 2026-07-29 the DESKTOP deploy budget was promoted k4x688 (2752) ->         #
-# k8x1376 (11008), which is +49.85 elo (CL-060, paired z 3.48) and is only      #
-# clock-legal because the k determinization worlds are split across 8 spawn     #
-# processes (6.37x, 2.16 s/move).                                               #
+# HISTORY IN TWO LINES. On 2026-07-29 the desktop budget was promoted k4x688    #
+# (2752) -> k8x1376 (11008) — +49.85 elo (CL-060, paired z 3.48) — and the      #
+# phone was CARVED OUT at 2752, because that budget was only clock-legal via 8  #
+# spawn processes and Chaquopy has no `multiprocessing`.                        #
 #                                                                              #
-# ⚠️ THE PHONE CANNOT DO THAT. Chaquopy has no `multiprocessing`, so on-device   #
-# the ONLY available execution is the sequential k-loop -> 11008 sims would     #
-# cost ~25 s/move (4.26x the measured 1.7 s/move at 2752). So PRODUCTION.yaml    #
-# carries `champion.fair_deploy.deploy_profiles.mobile` pinning this platform   #
-# at k4x688, and this module resolves THAT, not the champion-of-record fields.  #
+# WHAT CHANGED: not the parallelism story, the ENGINE. rustport P7/G7 put a     #
+# native `carc_rs` core on the device that folds the k worlds across 4 OS       #
+# threads INSIDE one GIL-released call — no processes needed. Measured on the   #
+# Pixel 9 Pro: 11008 sims at 1.551 s/move median, thermal 1.007x. That is the   #
+# mobile profile's own written UNPIN CONDITION, met literally, so the profile   #
+# was unpinned to the champion of record.                                       #
+#                                                                              #
+# ⚠️ THE BUDGET IS CONDITIONAL ON THE BACKEND — the one invariant to hold in     #
+# head here. 11008 sims on the PYTHON path is still ~25 s/move on this device.  #
+# So `_build_opponent` resolves backend and budget TOGETHER, and a session that #
+# cannot get `carc_rs` degrades BOTH: Python engine AND the k4x688 floor below. #
+# Never honour this profile's k_dets/sims_per_det without its `backend`.        #
 #                                                                              #
 # DESIGN CONTRACT 3 ("the YAML is the champion, no strength knob is hardcoded   #
-# here") is preserved: the numbers still come from the YAML. The constant below #
-# is a FAIL-CLOSED floor for the one case the contract cannot cover — a bundled #
-# YAML with no `mobile` profile, where inheriting the champion budget would ship #
-# a 25 s/move hang. It must never be read when the profile is present.          #
+# here") is preserved: every number still comes from the YAML. The constant     #
+# below is a FAIL-CLOSED floor for the two cases the contract cannot cover — a  #
+# bundled YAML with no `mobile` profile, and a device with no Rust wheel — both #
+# of which would otherwise ship a 25 s/move hang.                               #
 #                                                                              #
-# The phone is therefore running a WEAKER agent than the champion of record     #
-# (same family, same leaf a36d2e15, same priors, same exact-K<=2 tail; only the #
-# budget differs). `champion_factory` stamps `runtime_budget_override` on the   #
-# manifest automatically, so every archived game says which budget played —     #
-# E4 human-vs-champion games must be graded against k4x688.                     #
+# E4: because the running budget now EQUALS the champion of record,             #
+# `champion_factory` stamps NO `runtime_budget_override`, and the ABSENCE of    #
+# that key is the signal that a game was played at full champion strength.      #
+# Games archived before this build carry the override naming k4x688 and are     #
+# still graded against k4x688.                                                  #
 # --------------------------------------------------------------------------- #
 ANDROID_DEPLOY_PROFILE: str = "mobile"
 ANDROID_FALLBACK_BUDGET: dict[str, int] = {"k_dets": 4, "sims_per_det": 688}
+# Threads used when the YAML profile names no `rust_threads`. 4 is the G7-measured
+# setting on the Pixel; the YAML is authoritative when it says otherwise.
+ANDROID_FALLBACK_RUST_THREADS: int = 4
 
 # Desktop convenience: when the repo tree is visible above this file and the package is
 # not installed, make src/ importable. On device this resolves to a path that does not
@@ -186,7 +197,12 @@ from carcassonne_ai.action_space import (  # noqa: E402
     tile_action_count,
     tile_pass_index,
 )
-from carcassonne_ai.game_wrapper import RETAIL_START_TILE, Board, Game  # noqa: E402
+from carcassonne_ai.game_wrapper import (  # noqa: E402
+    RETAIL_START_TILE,
+    SCORE_NORM_SCALE,
+    Board,
+    Game,
+)
 # The intra-tile meeple grouping of record. It USED to be defined in this file; it moved
 # into the package (2026-07-27) when the search grew a MEEPLE-DEDUP mode that needs the
 # same definition, and a second copy would drift. Re-exported here so `feature_groups`
@@ -222,20 +238,52 @@ START_RULE = START_RULE_RETAIL          # what a NEW app game uses
 START_RULE_LEGACY = START_RULE_ENGINE   # what a save with no `start_rule` means
 
 # --------------------------------------------------------------------------- #
-# Agent backend (P7). DEFAULT IS UNCHANGED: the Python champion.                #
+# Agent backend. ⚠️ FLIPPED 2026-08-01 (Joshua: "2 yes"): the DEFAULT IS RUST.  #
 #                                                                              #
 # "rust" swaps ONLY the opponent's move choice for `carc_rs.FairAgentRs`, the   #
-# bit-exact port gated at G1-G5. The Python engine stays authoritative for      #
+# bit-exact port gated at G1-G7. The Python engine stays authoritative for      #
 # everything else — legality, UI, scoring, the save/archive record — so the     #
 # switch cannot change what a game IS, only who picks the champion's move.      #
+# Behaviour identity, not assertion: G6 = 14,384/14,384 identical actions over  #
+# 100 full games; G7 leg 2 = 0/3,165 plies of replay divergence ON THIS DEVICE. #
 #                                                                              #
-# It is OPT-IN and stays opt-in until Joshua flips it: the phone keeps playing  #
-# the Python k4x688 path. Selectable per game via new_game's `backend` key, or  #
-# process-wide via CARC_ANDROID_BACKEND for a test harness.                     #
+# WHY THE DEFAULT MOVED. The flip is what pays for the mobile UNPIN: the full   #
+# champion budget (k8x1376 = 11008) costs 1.551 s/move on the Rust core with 4  #
+# threads (G7 leg 3) and ~25 s/move on the Python one. So backend and budget    #
+# are COUPLED — `_build_opponent` resolves them together and degrades BOTH if   #
+# `carc_rs` is missing. See `mobile_budget()` and PRODUCTION.yaml's mobile note.#
+#                                                                              #
+# Still selectable per game via new_game's `backend` key, and process-wide via  #
+# CARC_ANDROID_BACKEND (a test harness pins "python" that way).                 #
 # --------------------------------------------------------------------------- #
 BACKEND_PYTHON = "python"
 BACKEND_RUST = "rust"
-BACKEND_DEFAULT = os.environ.get("CARC_ANDROID_BACKEND", BACKEND_PYTHON)
+BACKEND_DEFAULT = os.environ.get("CARC_ANDROID_BACKEND", BACKEND_RUST)
+
+# The reason the last `rust_available()` said no — folded into the session's
+# `backend_note` so a degraded game can say WHY on screen, not just that it did.
+_RUST_IMPORT_ERROR: str | None = None
+
+
+def rust_available() -> bool:
+    """Is the `carc_rs` wheel importable in THIS process?
+
+    Deliberately NOT cached: `tests/android/test_bridge_backend.py` proves the
+    degrade path by monkeypatching `__import__`, and a cached answer would make
+    that test assert against a stale probe. The import itself is a `sys.modules`
+    hit after the first call, so re-asking is free.
+
+    Answered BEFORE the champion is built, because since the 2026-08-01 unpin the
+    on-device BUDGET is conditional on this being true (11008 sims is 1.551 s/move
+    on the Rust core and ~25 s/move on the Python one)."""
+    global _RUST_IMPORT_ERROR
+    try:
+        import carc_rs  # noqa: F401
+    except ImportError as exc:
+        _RUST_IMPORT_ERROR = str(exc)
+        return False
+    _RUST_IMPORT_ERROR = None
+    return True
 
 # The libm configuration Android actually needs, MEASURED at G7 leg 1
 # (measurement/rustport_p7/G7_REPORT.md; raw in device/p7/libm_chaquopy.json).
@@ -314,24 +362,54 @@ PRODUCTION_YAML_PATH = _resolve_production_yaml()
 def mobile_budget(spec=None) -> dict:
     """The per-move budget THIS PLATFORM runs — the YAML's ``mobile`` deploy profile.
 
-    Returns ``{"k_dets", "sims_per_det", "total_sims", "profile", "from_yaml"}``.
+    Returns ``{"k_dets", "sims_per_det", "total_sims", "backend", "rust_threads",
+    "profile", "from_yaml"}``.
 
     FAIL-CLOSED, and that is the whole point of the function: if the bundled YAML has no
     ``mobile`` profile (an old bundle, a hand-edited file), we fall back to
     ``ANDROID_FALLBACK_BUDGET`` — **never** to ``spec.k_dets``/``spec.sims_per_det``.
-    Since 2026-07-29 the champion of record is k8x1376 = 11008 sims, which on a phone is
-    ~25 s/move sequentially (no ``multiprocessing`` under Chaquopy), so inheriting it
-    silently is the exact failure this guards. ``from_yaml=False`` in the response says
-    the fallback fired."""
+    ``from_yaml=False`` in the response says the fallback fired.
+
+    ⚠️ ``backend`` IS PART OF THE BUDGET, not decoration (2026-08-01 unpin). The profile
+    now names the CHAMPION-OF-RECORD budget, which is 1.551 s/move on ``carc_rs`` and
+    ~25 s/move on the Python engine. A caller that takes ``total_sims`` from here and
+    ignores ``backend`` reintroduces exactly the hang the carve-out existed to prevent.
+    ``budget_for_backend()`` is the one place that resolves the pair; prefer it."""
     spec = spec or champion_factory.load_production_spec()
     prof = champion_factory.deploy_profile(ANDROID_DEPLOY_PROFILE, spec)
     if prof["found"]:
         k, s = int(prof["k_dets"]), int(prof["sims_per_det"])
+        backend = str(prof["backend"])
+        threads = prof["rust_threads"]
     else:
         k = int(ANDROID_FALLBACK_BUDGET["k_dets"])
         s = int(ANDROID_FALLBACK_BUDGET["sims_per_det"])
+        backend, threads = BACKEND_PYTHON, None
+    if backend == BACKEND_RUST and threads in (None, ""):
+        threads = ANDROID_FALLBACK_RUST_THREADS
     return {"k_dets": k, "sims_per_det": s, "total_sims": k * s,
+            "backend": backend,
+            "rust_threads": (None if threads in (None, "") else int(threads)),
             "profile": ANDROID_DEPLOY_PROFILE, "from_yaml": bool(prof["found"])}
+
+
+def budget_for_backend(backend: str, spec=None) -> dict:
+    """The budget actually payable on ``backend`` — ``mobile_budget()`` gated by it.
+
+    The YAML profile's budget is the champion of record and is priced for the Rust
+    core. If this session is running the Python engine — because the wheel is absent,
+    the ABI is unknown, the mirror failed to start, or the caller simply asked for
+    ``backend: "python"`` — that budget is ~25 s/move here, so the honest answer is the
+    ``ANDROID_FALLBACK_BUDGET`` floor rather than the profile. This is the ONE function
+    that couples the two, and it is why unpinning the profile could not be done by
+    editing the YAML alone. Same shape as ``mobile_budget()`` plus ``floored``."""
+    mob = mobile_budget(spec)
+    if backend == BACKEND_RUST or mob["backend"] != BACKEND_RUST:
+        return {**mob, "floored": False}
+    k = int(ANDROID_FALLBACK_BUDGET["k_dets"])
+    s = int(ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    return {**mob, "k_dets": k, "sims_per_det": s, "total_sims": k * s,
+            "backend": BACKEND_PYTHON, "rust_threads": None, "floored": True}
 
 
 def _shim_factory_repo() -> str | None:
@@ -634,6 +712,22 @@ def _wrap_evaluator_with_counter(agent) -> None:
     agent._evaluator = counting
 
 
+def _expected_leaf_calls(s) -> int:
+    """The nominal leaf budget for the progress bar, or 0 meaning "indeterminate".
+
+    The counter above wraps the PYTHON evaluator. When the Rust mirror is the move
+    chooser (the default since 2026-08-01) the whole search runs inside `carc_rs` and
+    never touches that closure, so a nonzero expectation would render a progress bar
+    frozen at 0% for the entire move and then jump to done. Returning 0 makes
+    `get_progress` report `fraction: null` instead, which the UI shows as an
+    indeterminate spinner — honest rather than stuck. `elapsed_s` and the `search`/
+    `exact` phase still work, and at 1.551 s/move there is little to fill anyway."""
+    if s is not None and getattr(s, "rs", None) is not None \
+            and s.opponent_kind == "champion":
+        return 0
+    return max(0, s.eff_sims * s.eff_k_dets)
+
+
 # --------------------------------------------------------------------------- #
 # 5. The session                                                                #
 # --------------------------------------------------------------------------- #
@@ -668,6 +762,9 @@ class _Session:
         # The Rust mirror, or None. `apply()` is the ONE place it is advanced.
         self.rs = None
         self.rs_note: str | None = None
+        # OS threads the mirror folds its k worlds across; resolved from the YAML
+        # profile by `_build_opponent` (None until then, and for tier1).
+        self.rust_threads: int | None = None
 
         fixed_start = self.start_rule == START_RULE_RETAIL
         self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start)
@@ -747,18 +844,34 @@ class _Session:
                              f"{self.opponent_kind!r}")
 
         spec = champion_factory.load_production_spec()
-        # THE MOBILE PROFILE, not the champion-of-record fields: since 2026-07-29 the
-        # champion budget is k8x1376 = 11008, which needs the 8-way k-parallel split to
-        # be playable and Chaquopy has no multiprocessing. See mobile_budget().
-        mob = mobile_budget(spec)
+        # BACKEND FIRST, BUDGET SECOND — they are one decision (2026-08-01 unpin). The
+        # mobile profile now names the CHAMPION-OF-RECORD budget, which is only payable
+        # on `carc_rs`; if the wheel cannot be imported we must demote the budget too,
+        # not just the engine, or the phone inherits a ~25 s/move hang.
+        if self.backend == BACKEND_RUST and not rust_available():
+            self.backend = BACKEND_PYTHON
+            self.rs_note = (f"carc_rs unavailable ({_RUST_IMPORT_ERROR}); using the "
+                            f"Python backend at the k"
+                            f"{ANDROID_FALLBACK_BUDGET['k_dets']}x"
+                            f"{ANDROID_FALLBACK_BUDGET['sims_per_det']} floor")
+        mob = budget_for_backend(self.backend, spec)
         eff_sims = mob["sims_per_det"] if self.req_sims is None else int(self.req_sims)
         eff_k = mob["k_dets"] if self.req_k_dets is None else int(self.req_k_dets)
+        self.rust_threads = mob["rust_threads"]
         # parallel_workers is deliberately NEVER passed here: the fair agent's split uses
         # spawn processes, which Chaquopy cannot provide. Omitting it is the byte-identical
         # sequential path — the SAME player, just slower, not a different agent.
+        #
+        # backend=BACKEND_PYTHON is passed EXPLICITLY, and that is deliberate even though
+        # the session may be running Rust. This agent is the bridge's Python anchor — it
+        # owns the manifest, the progress evaluator and the `_move_idx` a restore reseats
+        # — while the Rust move CHOOSER is the separate `self.rs` mirror, advanced at
+        # `apply()`. `champion_factory.RustFairAgent` is NOT a drop-in for that role: its
+        # mirror only moves on an explicit `.advance()`, so pinning the engine here keeps
+        # a future factory-default flip from silently swapping the anchor underneath us.
         agent = champion_factory.make_production_champion(
             "fair", game=self.ai_game, seed=self.seed, sims=eff_sims, k_dets=eff_k,
-            exact_endgame=True, verify=self.verify,
+            exact_endgame=True, verify=self.verify, backend=BACKEND_PYTHON,
             # Bound the endgame solver on-device: the desktop default is 2,000,000
             # nodes with no wall-clock component and no mid-search cancel, so a bad
             # board is an unbounded hang on a phone. 100k is ~45x the largest solve
@@ -786,17 +899,30 @@ class _Session:
                 f"k{spec.k_dets}x{spec.sims_per_det}={full}). This is a WEAKENED agent; "
                 f"beating it is not beating the champion.")
             self.opponent_name = f"Champion(weakened k{eff_k}x{eff_sims})"
+        elif mob.get("floored"):
+            # DEGRADED: the profile named the champion budget on the Rust core, but this
+            # process could not get `carc_rs`, so both the engine and the budget dropped
+            # to the Python floor. The game is playable; it is not the champion of record,
+            # and an E4 archive from it must be graded at the floor.
+            self.budget_note = (
+                f"REDUCED — no Rust core on this device, so the champion budget "
+                f"k{spec.k_dets}x{spec.sims_per_det}={full} is not payable here (it is "
+                f"~25 s/move on the Python engine). Running the k{mob['k_dets']}x"
+                f"{mob['sims_per_det']}={mob['total_sims']} floor instead. Same agent, "
+                f"same leaf, smaller search — grade results against this budget, not the "
+                f"champion's.")
+            self.opponent_name = f"Champion(reduced k{eff_k}x{eff_sims})"
         elif mob["total_sims"] != full:
-            # Running exactly the device profile, but the profile is below the champion of
-            # record (the 2026-07-29 promotion made the phone a deliberate carve-out).
+            # Running exactly the device profile, but the profile is below the champion
+            # of record. This was the 2026-07-29 .. 2026-08-01 carve-out's normal state;
+            # after the unpin it can only be reached by a hand-edited YAML profile.
             # Honest, and archived with the game — E4 must grade against THIS budget.
             self.budget_note = (
                 f"MOBILE PROFILE — k{mob['k_dets']}x{mob['sims_per_det']}="
-                f"{mob['total_sims']} sims/move, the on-device budget. The desktop "
-                f"champion of record runs k{spec.k_dets}x{spec.sims_per_det}={full} "
-                f"across 8 worker processes, which Chaquopy cannot do; the same budget "
-                f"sequentially here would be ~25 s/move. Same agent, same leaf, smaller "
-                f"search — grade results against this budget, not the champion's.")
+                f"{mob['total_sims']} sims/move, the on-device budget, BELOW the champion "
+                f"of record k{spec.k_dets}x{spec.sims_per_det}={full}. Same agent, same "
+                f"leaf, smaller search — grade results against this budget, not the "
+                f"champion's.")
 
     # -- the Rust mirror (P7, opt-in) ---------------------------------------
     def _full_deck_descriptions(self) -> list[str]:
@@ -848,12 +974,27 @@ class _Session:
                 f"rust mirror diverged at {where}: repr differs "
                 f"(python {len(want)}B, rust {len(got)}B)")
 
+    def _degrade_to_python(self, note: str) -> None:
+        """Lose the speedup AND the budget it bought — never the game.
+
+        Since the 2026-08-01 unpin the on-device budget is the champion of record,
+        priced for the Rust core (1.551 s/move) and unplayable on the Python one
+        (~25 s/move). So a failed mirror cannot just swap the engine and keep the
+        budget: `_build_opponent` is re-run, which re-resolves through
+        `budget_for_backend()` and lands on the k4x688 floor. Safe to rebuild here
+        because the mirror starts before any action is applied — the agent has no
+        state to lose."""
+        self.rs = None
+        self.backend = BACKEND_PYTHON
+        self._build_opponent()
+        self.rs_note = note          # after the rebuild, which may set its own note
+
     def _start_rust_mirror(self) -> None:
         try:
             import carc_rs
         except ImportError as exc:
-            self.rs_note = f"carc_rs unavailable ({exc}); using the Python backend"
-            self.backend = BACKEND_PYTHON
+            self._degrade_to_python(
+                f"carc_rs unavailable ({exc}); using the Python backend")
             return
         # The mirror is a state mirror FIRST and a move chooser second. Against
         # tier1 the session has no search budget at all (eff_sims/eff_k_dets are
@@ -863,12 +1004,40 @@ class _Session:
         mob = mobile_budget()
         sims = int(self.eff_sims) or int(mob["sims_per_det"])
         k_dets = int(self.eff_k_dets) or int(mob["k_dets"])
+        # The k worlds fold across OS threads INSIDE one GIL-released call — the
+        # mechanism that made the unpin possible, since Chaquopy has no processes.
+        # From the YAML profile (rust_threads: 4), never hardcoded here.
+        threads = int(self.rust_threads or mob["rust_threads"]
+                      or ANDROID_FALLBACK_RUST_THREADS)
         try:
-            leaf = carc_rs.LeafConfigRs.curve125()
+            # THE LEAF THAT WILL PLAY, DERIVED FROM THE YAML — not a preset.
+            #
+            # This used to be `carc_rs.LeafConfigRs.curve125()`, whose own docstring
+            # says it is "a convenience for tests only" and which hard-codes the leaf
+            # shape on the Rust side. Using it here broke DESIGN CONTRACT 3 in the way
+            # that matters most: every save and archive stamps the YAML's `leaf_hash`
+            # (`_spec_fingerprint`), so the record asserted a leaf the executed engine
+            # was never checked against — a LABEL, not the function. Exactly the
+            # R1/R7 failure `champion_factory` exists to prevent.
+            #
+            # Now: `production_leaf_cfg(spec)` resolves the leaf from PRODUCTION.yaml +
+            # the PROD_ENV set at the top of this module, `leaf_config_rs` translates it
+            # field-for-field (the mapping G2 gated bit-exact over 3,341,772 values in
+            # all 12 config dialects), and `verify_leaf(..., backend="rust")` proves it
+            # on real boards through carc_rs BEFORE a move is played or archived.
+            from carcassonne_ai.rust_agent import leaf_config_rs
+
+            spec = champion_factory.load_production_spec()
+            leaf_cfg = champion_factory.production_leaf_cfg(spec)
+            if self.verify:
+                # Raises ProvenanceError unless BOTH panels (python and rust) equal the
+                # golden AND the three leaf-hash dialects match. Fail loud, never warn.
+                champion_factory.verify_leaf(leaf_cfg, spec, backend="rust")
+            leaf = leaf_config_rs(leaf_cfg)
             search = carc_rs.SearchConfigRs(
                 leaf, sims,
                 float(self.spec_knob("c_puct")), float(self.spec_knob("tau_p")),
-                float(self.spec_knob("value_norm")), 15.0,
+                float(self.spec_knob("value_norm")), SCORE_NORM_SCALE,
                 str(self.spec_knob("leaf_quantize")), str(self.spec_knob("final_select")),
                 None, 1.0,
                 ANDROID_EXP_FMA, ANDROID_TANH_FLAVOR, False,
@@ -877,7 +1046,7 @@ class _Session:
                 search, k_dets=k_dets, seed=int(self.seed),
                 min_pooled_visits=2.0, exact_endgame=True, exact_max_k=2,
                 exact_budget=ANDROID_EXACT_BUDGET, tt_cap=0, chance_drop="type",
-                threads=1,
+                threads=threads,
                 # Start-rule semantics are preserved EXACTLY: the mirror is told
                 # the session's own rule, and "engine" is spelled None on the FFI
                 # (the P5 flag default), matching what a save with no `start_rule`
@@ -888,9 +1057,8 @@ class _Session:
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
         except Exception as exc:                  # noqa: BLE001
-            self.rs = None
-            self.rs_note = f"rust backend failed to start ({type(exc).__name__}: {exc})"
-            self.backend = BACKEND_PYTHON
+            self._degrade_to_python(
+                f"rust backend failed to start ({type(exc).__name__}: {exc})")
             return
         # Only the CHAMPION's move choice moves to Rust. Tier-1 is a different
         # agent entirely (RuleBasedPlayer, no search) and has no Rust port; its
@@ -1333,7 +1501,7 @@ def new_game(config_json: str = "{}") -> str:
         _S = s
         _agent_ref = s.agent
         _prog_leaf_calls = 0
-        _prog_expected = max(0, s.eff_sims * s.eff_k_dets)
+        _prog_expected = _expected_leaf_calls(s)
         _prog_t0 = 0.0
         _prog_thinking = False
         s.auto_pass_forced()
@@ -1399,7 +1567,7 @@ def ai_move(generation=None) -> str:
         board = s.board
         t0 = time.perf_counter()
         _prog_leaf_calls = 0
-        _prog_expected = max(0, s.eff_sims * s.eff_k_dets)
+        _prog_expected = _expected_leaf_calls(s)
         _prog_t0 = t0
         _prog_thinking = True
         try:
@@ -1734,11 +1902,22 @@ def restore_game(json_str: str) -> str:
             s.agent._move_idx = ai_decisions
         if hasattr(s.agent, "_latched"):
             s.agent._latched = latched
+        # THE MIRROR NEEDS THE SAME TWO SEATS (2026-08-01, with the rust default).
+        # The replay above reaches the position with `advance()` only, and `advance()`
+        # runs neither the search nor the latch trigger — so the Rust agent's own move
+        # counter is still 0 and its latch still false, exactly the case
+        # `FairAgentRs.set_latched`'s docstring names. Leaving them unseated would make
+        # a RESUMED game derive different per-move search seeds than the live game did
+        # (and skip the endgame handoff), i.e. a silently different champion from a
+        # restore — the very thing this function's `_move_idx` line exists to prevent.
+        if s.rs is not None:
+            s.rs.set_move_idx(ai_decisions)
+            s.rs.set_latched(latched)
 
         _S = s
         _agent_ref = s.agent
         _prog_leaf_calls = 0
-        _prog_expected = max(0, s.eff_sims * s.eff_k_dets)
+        _prog_expected = _expected_leaf_calls(s)
         _prog_t0 = 0.0
         _prog_thinking = False
         s.auto_pass_forced()

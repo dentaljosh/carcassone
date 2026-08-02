@@ -61,9 +61,20 @@ def _reset():
 # --------------------------------------------------------------------------- #
 # 1. the default                                                               #
 # --------------------------------------------------------------------------- #
-def test_default_backend_is_python():
-    assert B.BACKEND_DEFAULT == B.BACKEND_PYTHON
+def test_default_backend_is_rust():
+    """⚠️ FLIPPED 2026-08-01 (Joshua: "2 yes"). The phone plays the Rust champion by
+    default; this is what pays for the mobile budget unpin (11008 sims = 1.551 s/move
+    on carc_rs, ~25 s/move on Python). A regression here silently changes what the
+    shipped app plays AND what budget it can afford."""
+    assert B.BACKEND_DEFAULT == B.BACKEND_RUST
     st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1"})))
+    assert st["backend"] == "rust", st["backend_note"]
+    assert B._S.rs is not None, "the rust backend must build a mirror"
+
+
+def test_python_is_still_selectable_and_builds_no_mirror():
+    st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1",
+                                   "backend": "python"})))
     assert st["backend"] == "python"
     assert st["backend_note"] is None
     assert B._S.rs is None, "the Python backend must not build a Rust mirror"
@@ -149,10 +160,69 @@ def test_rust_unavailable_degrades_to_python(monkeypatch):
     assert "carc_rs unavailable" in (st["backend_note"] or "")
 
 
+def test_rust_unavailable_also_drops_the_budget_not_just_the_engine(monkeypatch):
+    """THE COUPLING GUARD (2026-08-01 unpin). The mobile profile's k8x1376 is priced
+    for the Rust core. Degrading the ENGINE while keeping the BUDGET would hand the
+    phone a ~25 s/move champion — the exact UX the carve-out existed to prevent. So a
+    session that cannot get carc_rs must land on the k4x688 floor as well."""
+    real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) \
+        else __builtins__.__import__
+
+    def no_carc_rs(name, *a, **kw):
+        if name == "carc_rs":
+            raise ImportError("simulated: no wheel for this ABI")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr("builtins.__import__", no_carc_rs)
+    st = _j(B.new_game(json.dumps({"seed": 7, "opponent": "champion",
+                                   "backend": "rust", "verify": False})))
+    s = B._S
+    assert st["backend"] == "python" and s.rs is None
+    assert (s.eff_k_dets, s.eff_sims) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"], B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert "REDUCED" in (st["budget_note"] or ""), st["budget_note"]
+
+
+def test_restore_reseats_the_rust_mirror():
+    """A resumed game must play the SAME champion the saved one did.
+
+    The replay reaches the position with `advance()` only, which runs neither the
+    search nor the endgame-latch trigger — so the mirror's own move counter and latch
+    are still at zero unless `restore_game` seats them (`FairAgentRs.set_latched`'s
+    docstring names exactly this case). Unseated, the resumed champion derives
+    different per-move search seeds and can play a different move from the same
+    position. Asserted behaviourally, which is the property that actually matters."""
+    cfg = {"seed": 31, "opponent": "champion", "human_player": 0,
+           "backend": "rust", "sims": 8, "k_dets": 2, "verify": False}
+    st = _j(B.new_game(json.dumps(cfg)))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    for _ in range(10):
+        if st["is_terminated"]:
+            break
+        st = _j(B.apply_action(st["legal"]["action_ids"][0])
+                if st["is_human_turn"] else B.ai_move())
+    live_stats = B._S.rs.stats()
+    assert live_stats["move_idx"] > 0, "the live mirror never searched"
+    save = _j(B.save_game())
+
+    # STRUCTURAL, not behavioural: at a tiny test budget two different seeds usually
+    # pick the same move anyway, so a move-equality assertion here passes even with
+    # the re-seating deleted (verified). The timeline itself is the contract.
+    r = _j(B.restore_game(json.dumps(save)))
+    assert B._S.rs is not None, B._S.rs_note
+    got = B._S.rs.stats()
+    assert got["move_idx"] == live_stats["move_idx"] == r["restored"]["ai_decisions"], (
+        "the restored mirror's move counter was not re-seated — the resumed champion "
+        "would derive different per-move search seeds than the saved one")
+    assert got["latched"] == live_stats["latched"]
+
+
 def test_runtime_info_reports_rust():
     info = _j(B.runtime_info())
     assert "rust" in info
-    assert info["rust"]["default_backend"] == "python"
-    # available != active: the wheel ships inert.
+    assert info["rust"]["default_backend"] == "rust"
+    assert info["rust"]["available"] is True
+    # available != active: `active` is about a LIVE session, and there is none here.
     assert info["rust"]["active"] is False
     assert info["rust"]["tanh_flavor"] == B.ANDROID_TANH_FLAVOR

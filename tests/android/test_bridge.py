@@ -178,25 +178,42 @@ def test_production_yaml_resolved():
     assert Path(d["production_yaml"]).is_file()
 
 
-def test_mobile_profile_is_the_device_budget_not_the_champion_of_record():
-    """THE CARVE-OUT GUARD (2026-07-29). The desktop champion was promoted to k8x1376 =
-    11008 sims/move, which is only clock-legal because the k worlds are split across 8
-    spawn processes — something Chaquopy cannot do, so on-device it would be ~25 s/move.
-    The bridge must resolve the YAML's `mobile` deploy profile, NEVER the champion-of-
-    record fields, and must fail CLOSED (its own floor) if that profile is missing."""
+def test_mobile_profile_is_the_champion_of_record_on_the_rust_backend():
+    """THE UNPIN GUARD (2026-08-01). The mobile profile was PINNED at k4x688 from
+    2026-07-29 because 11008 sims needed 8 spawn processes and Chaquopy has none. The
+    rustport native core (4 OS threads inside ONE call, 1.551 s/move on the Pixel — G7
+    leg 3) met the profile's own written unpin condition, so the phone now plays the
+    CHAMPION OF RECORD.
+
+    Two halves, and the second is the one that keeps the phone safe: the profile must
+    resolve to the champion budget, AND that budget must be inseparable from
+    `backend: rust`. 11008 sims on the Python engine is ~25 s/move here."""
     from carcassonne_ai import champion_factory as cf
 
     spec = cf.load_production_spec()
     mob = B.mobile_budget(spec)
     assert mob["profile"] == "mobile" and mob["from_yaml"] is True
-    assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == (4, 688, 2752)
-    assert mob["total_sims"] <= spec.k_dets * spec.sims_per_det
+    full = (spec.k_dets, spec.sims_per_det, spec.k_dets * spec.sims_per_det)
+    assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == full, \
+        "the phone must now run the champion of record"
+    assert mob["backend"] == B.BACKEND_RUST
+    assert mob["rust_threads"] and mob["rust_threads"] >= 1
+    # parallel_workers stays null forever: Chaquopy has no multiprocessing. The
+    # parallelism here is Rust threads inside one call, a different mechanism.
+    assert cf.deploy_profile("mobile", spec)["parallel_workers"] is None
 
-    # production_budget() reports what the DEVICE runs (what the UI prints), and carries
-    # the champion of record alongside so the record is not lost.
     d = ok(B.production_budget())
-    assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == (4, 688, 2752)
-    assert d["champion_of_record_total_sims"] == spec.k_dets * spec.sims_per_det
+    assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == full
+    assert d["total_sims"] == d["champion_of_record_total_sims"]
+
+    # THE COUPLING: asking for the Python engine must drop the BUDGET too, never leave
+    # the phone holding a 25 s/move champion budget on the slow path.
+    py = B.budget_for_backend(B.BACKEND_PYTHON, spec)
+    assert py["floored"] is True
+    assert (py["k_dets"], py["sims_per_det"]) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"], B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert py["total_sims"] < spec.k_dets * spec.sims_per_det
+    assert B.budget_for_backend(B.BACKEND_RUST, spec)["floored"] is False
 
     # FAIL-CLOSED: a spec with no `mobile` profile must fall back to the module's own
     # floor, never to the champion budget.
@@ -207,6 +224,7 @@ def test_mobile_profile_is_the_device_budget_not_the_champion_of_record():
     assert fb["from_yaml"] is False
     assert (fb["k_dets"], fb["sims_per_det"]) == (
         B.ANDROID_FALLBACK_BUDGET["k_dets"], B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert fb["backend"] == B.BACKEND_PYTHON, "the floor is a PYTHON budget"
     assert fb["total_sims"] < spec.k_dets * spec.sims_per_det
 
 
@@ -343,11 +361,28 @@ def test_forced_pass_is_auto_applied():
     assert seen_forced > 0, "expected at least one auto-applied forced pass in a game"
 
 
+def test_progress_is_indeterminate_on_the_rust_backend():
+    """The leaf counter wraps the PYTHON evaluator, and a Rust-backed champion never
+    touches it (the search runs inside carc_rs). Reporting the nominal budget anyway
+    would render a bar frozen at 0% for the whole move, so `expected` must be 0 —
+    which `get_progress` turns into `fraction: null`, an indeterminate spinner."""
+    st = new(seed=6, opponent="champion", human_player=1,
+             backend=B.BACKEND_RUST, **TINY)
+    if st["backend"] != B.BACKEND_RUST:
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    d = ok(B.get_progress())
+    assert d["expected"] == 0
+    assert d["fraction"] is None
+
+
 def test_get_progress_shape():
     d = ok(B.get_progress())
     assert set(d) == {"ok", "leaf_calls", "expected", "elapsed_s", "phase", "fraction"}
     assert d["phase"] == "idle"
-    st = new(seed=6, opponent="champion", human_player=1, **TINY)
+    # PYTHON backend explicitly: this test is about the evaluator-counting seam, which
+    # is a property of the Python agent. The rust twin is the test above.
+    st = new(seed=6, opponent="champion", human_player=1,
+             backend=B.BACKEND_PYTHON, **TINY)
     # The opening move is forced (one legal placement) and the fair agent short-circuits
     # without searching, so walk on until a real search happens.
     leaf_calls = 0
@@ -406,7 +441,13 @@ def test_save_restore_round_trip_is_identical():
 
 
 def test_restore_reseats_agent_move_idx():
-    st = new(seed=19, opponent="champion", human_player=0, **TINY)
+    # PYTHON backend explicitly: `_move_idx` is the PYTHON agent's move timeline, and it
+    # only advances when that agent is the one choosing. Under the rust default the
+    # Python agent is the bridge's anchor (manifest/progress) and never searches, so its
+    # counter legitimately stays 0 live — the mirror carries the timeline instead, and
+    # test_bridge_backend.py::test_restore_reseats_the_rust_mirror is that guard.
+    st = new(seed=19, opponent="champion", human_player=0,
+             backend=B.BACKEND_PYTHON, **TINY)
     for _ in range(10):
         if st["is_terminated"]:
             break
