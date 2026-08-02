@@ -1,0 +1,281 @@
+{
+  "gate": "rustport Class-B / audit B4 \u2014 gate_b_depth_transfer on the rust backend",
+  "why": "converting an instrument CHANGES the instrument; G4/G6 gated the champion as a PLAYER and does not transfer to a ruler",
+  "conversion": "ONE STANDALONE SEARCH PER LEVEL replaces ONE SNAPSHOTTED DEEP SEARCH (carc_rs has no per-sim hook \u2014 snapshot.RUST_BACKEND_GAP). Legitimate only because snapshot-at-L == standalone-at-L, which the harness proves separately with --verify-bit-exact; this gate closes the other half.",
+  "surface": "raw f64 BIT PATTERNS throughout (the G3 pattern) \u2014 never decimals",
+  "roots_file": "/home/doctor/carc_p2wt/measurement/f3_public_state_oracle/roots_k3_suite.jsonl",
+  "n_roots": 6,
+  "legs": {
+    "identity": {
+      "leg": "identity",
+      "levels": [
+        200,
+        344,
+        688
+      ],
+      "roots": 6,
+      "surface": "every level's FULL deduped child map {action: (N, Q-bits)}, the root priors, the root leaf value, then the whole emitted record \u2014 raw f64 bit patterns, never decimals",
+      "mechanism_note": "python snapshots ONE deep search (max(levels) sims); rust runs ONE STANDALONE SEARCH PER LEVEL (sum(levels) sims). The speedup below is NET of that 1.79x work penalty.",
+      "sims_per_root": {
+        "python": 688,
+        "rust": 1232
+      },
+      "checks": 42,
+      "mismatches": [],
+      "rows": [
+        {
+          "root_id": "s3200000000_p138",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 47,
+          "played_by_level": {
+            "200": 970,
+            "344": 970,
+            "688": 970
+          },
+          "python_secs": 2.581,
+          "rust_secs": 1.078,
+          "speedup": 2.39
+        },
+        {
+          "root_id": "s3200000001_p138",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 45,
+          "played_by_level": {
+            "200": 859,
+            "344": 859,
+            "688": 859
+          },
+          "python_secs": 5.679,
+          "rust_secs": 1.621,
+          "speedup": 3.5
+        },
+        {
+          "root_id": "s3200000002_p137",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 1,
+          "played_by_level": {
+            "200": 642,
+            "344": 642,
+            "688": 642
+          },
+          "python_secs": 3.444,
+          "rust_secs": 1.411,
+          "speedup": 2.44
+        },
+        {
+          "root_id": "s3200000003_p138",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 21,
+          "played_by_level": {
+            "200": 1029,
+            "344": 1029,
+            "688": 1029
+          },
+          "python_secs": 3.305,
+          "rust_secs": 1.183,
+          "speedup": 2.79
+        },
+        {
+          "root_id": "s3200000004_p138",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 92,
+          "played_by_level": {
+            "200": 727,
+            "344": 727,
+            "688": 727
+          },
+          "python_secs": 2.241,
+          "rust_secs": 1.018,
+          "speedup": 2.2
+        },
+        {
+          "root_id": "s3200000005_p138",
+          "levels": [
+            200,
+            344,
+            688
+          ],
+          "n_children_deepest": 25,
+          "played_by_level": {
+            "200": 1369,
+            "344": 1369,
+            "688": 1369
+          },
+          "python_secs": 4.326,
+          "rust_secs": 1.621,
+          "speedup": 2.67
+        }
+      ],
+      "python_secs": 21.57,
+      "rust_secs": 7.93,
+      "speedup": 2.72
+    },
+    "seed": {
+      "leg": "seed invariance at THIS harness's ladder",
+      "why": "GAP1_SEED_INVARIANCE closed the seed question at the CHAMPION's per-world budget only; carc_rs SearchConfigRs still has no seed field, so gate_b's own levels need their own evidence",
+      "sim_levels": [
+        200,
+        344,
+        688
+      ],
+      "seeds": [
+        "None",
+        0,
+        7,
+        101,
+        12345
+      ],
+      "comparisons": 12,
+      "mismatches": [],
+      "rows": [
+        {
+          "root_id": "s3200000000_p138",
+          "sims": 200,
+          "chosen": 970,
+          "root_n": 200
+        },
+        {
+          "root_id": "s3200000000_p138",
+          "sims": 344,
+          "chosen": 970,
+          "root_n": 344
+        },
+        {
+          "root_id": "s3200000000_p138",
+          "sims": 688,
+          "chosen": 970,
+          "root_n": 688
+        }
+      ]
+    },
+    "clair": {
+      "leg": "B2 \u2014 eval_fair_puct --info clair",
+      "status": "STAYS PYTHON. Blocked by the same tree carry-over as the oracle pilot, and already failing closed. No code change made.",
+      "clair_agent_reuse_tree": true,
+      "mechanism": "eval_fair_puct builds ONE HeuristicPriorAgent prefix and calls .move(board) every ply of a full game; move() re-roots the tree when reuse_tree is set, and resolved_manifest marks reuse_tree EFFECTIVE in clairvoyant mode. search_single is fresh-tree only.",
+      "cross_reference": "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json \u2014 the same gap, measured on the oracle continuation",
+      "factory_refuses_rust": true,
+      "factory_refusal": "ValueError: backend='rust' is a FAIR-mode capability; there is no clairvoyant Rust agent (carc_rs ports the PIMC agent, not the true-deck ruler). Build this ruler with backend='python' explicitly \u2014 do not pass 'auto' here while PRODUCTION.yaml names a non-python engine.",
+      "checks": 2,
+      "mismatches": [],
+      "unblocks_when": "carc_core::search grows a persistent / re-rootable tree"
+    }
+  },
+  "total_mismatches": 0,
+  "verdict": "PASS",
+  "scope": "these levels, this code revision, fresh-tree, net-free. Says NOTHING about evaluator injection (Gap 3), about snapshot.py (no rust UCT and no per-sim hook), or about any caller that carries a tree across plies (Gap 2 \u2014 see the clair leg).",
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "champion_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "clairvoyant",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "HeuristicPriorAgent",
+    "reshuffle_semantics": "clairvoyant descent of the true engine deck (dev/ruler only)",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": true,
+      "config_hash": "82e11eedebe71db3"
+    },
+    "fair_deploy": {
+      "k_dets": 8,
+      "sims_per_det": 1376,
+      "total_sims": 11008,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "6a3b0189ba801fa49d6e4aa0bafd16858e0c8b8c",
+    "dirty": false,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+    "backend": {
+      "name": "rust",
+      "default": "python",
+      "scope": "engine only \u2014 the same PRODUCTION.yaml knobs, the same leaf (panel re-verified through carc_rs), the same k_dets worlds merged in the same order",
+      "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction: G4 reproduced the deployed champion bit-exactly (0/305,515 checks) and G6 read 14,384/14,384 identical actions over 100 full games. governance/PRODUCTION.yaml names this as the champion's execution backend of record (2026-08-01); it is an ENGINE, not a player \u2014 no strength claim moves with it.",
+      "carc_rs_version": "0.1.0",
+      "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+      "tile_data_source_sha256": "1a05c6c0ad071e4e55e5302e10fd551a7dd32fea85fd7ddeb7c3c18d417e3cce",
+      "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+    },
+    "leaf_value_panel_rust": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    }
+  },
+  "wall_secs": 128.8
+}
