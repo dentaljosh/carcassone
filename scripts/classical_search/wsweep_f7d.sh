@@ -35,6 +35,10 @@ OUT_TSV=$REPO/measurement/classical_search/WSWEEP_F7D_${BOX_TAG}.tsv
 
 N="${WSWEEP_N:-24}"                 # 12 decks x 2 seats per point — enough moves for stable ms
 BAND="${WSWEEP_BAND:-96900000000}"  # the ablation smoke's throwaway band (9.69e10)
+# Rust-era workload (2026-08-02): the candidate side rides RustClairvoyantAgent; the
+# opponent PUCT champion and the exact-K tail have no Rust route and stay Python — that
+# MIXED profile is exactly what future ablation cells will run, so it is what we sweep.
+BACKEND="${WSWEEP_BACKEND:-rust}"
 K=2; CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750
 
 case "$BOX_TAG" in
@@ -59,7 +63,7 @@ echo "[wsweep $BOX_TAG $(ts)] start: W list = [$WLIST], n/point=$N, band=$BAND"
 for W in $WLIST; do
   # a point must saturate the box for most of its life: n >= 2*W (rounded up to a paired even)
   PN=$N; [ "$PN" -lt $((2*W)) ] && PN=$((2*W)); PN=$(( (PN+1)/2*2 ))
-  sub="wsweep_${BOX_TAG}_w${W}"
+  sub="wsweep_${BOX_TAG}_${BACKEND}_w${W}"
   dir="$OUT_ROOT/$sub"
   if [ -f "$dir/summary.json" ] && $PY -c "import json,sys;s=json.load(open(sys.argv[1]));sys.exit(0 if s.get('n',0)>=int(sys.argv[2]) else 1)" "$dir/summary.json" "$PN" 2>/dev/null; then
     echo "[wsweep $BOX_TAG $(ts)] W=$W cached -> skip"
@@ -71,8 +75,9 @@ for W in $WLIST; do
       --candidate puct --opponent puct \
       --c-puct $CPUCT --tau-p $TAU --leaf-quantize $QUANT --final-select $SELECT \
       --cand-sims $SIMS --exact-k $K --n $PN --paired \
-      --cand-leaf-json "$CELL_JSON" --exp-id "wsweep_${BOX_TAG}_w${W}" \
+      --cand-leaf-json "$CELL_JSON" --exp-id "wsweep_${BOX_TAG}_${BACKEND}_w${W}" \
       --seed-start $BAND --out-root "$OUT_ROOT" --out-subdir "$sub" \
+      --backend "$BACKEND" \
       --workers "$W" --no-results-csv > "/tmp/wsweep_${BOX_TAG}_w${W}.log" 2>&1
     secs=$(( $(date +%s) - t0 ))
     echo "$secs" > "$dir/.wall_secs"
