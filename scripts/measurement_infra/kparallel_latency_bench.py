@@ -84,6 +84,23 @@ def _git_rev() -> str:
         return "unknown"
 
 
+def _reseat(agent, meta: dict) -> None:
+    """Seat a MIRRORED (Rust) agent on this root, by replay. No-op on Python.
+
+    F-3. The Rust state cannot be built from an arbitrary board — only replayed — so a
+    bench whose roots are recorded mid-game positions must reconstruct each one: seat
+    on the game's deck, advance the recorded prefix. Outside the timed region.
+
+    ``_move_idx`` stays 0 here, deliberately and unlike ``m5_bench/bench_champion.py``:
+    this bench's whole design is a FRESH agent per root so that ``move_idx`` — and
+    therefore every per-world determinization seed — is 0 at every root in every row
+    (see time_row's docstring). Seating it to the ply would search different worlds
+    than the sequential row it is asserted identical to."""
+    from carcassonne_ai.mirror_protocol import reseat
+
+    reseat(agent, deck_seed=meta["deck_seed"], actions=meta["prefix"], move_idx=0)
+
+
 def load_roots(games_path: Path, n_roots: int, ply_lo: float, ply_hi: float,
                stride: int):
     """Replay REAL champion games and return mid-game (game, board, meta) roots.
@@ -116,30 +133,57 @@ def load_roots(games_path: Path, n_roots: int, ply_lo: float, ply_hi: float,
                 continue
             roots.append((game, board, {"game_id": g.get("game_id"),
                                         "deck_seed": g["deck_seed"], "ply": ply,
-                                        "n_plies": n}))
+                                        "n_plies": n,
+                                        # the action prefix, so a Rust mirror can be
+                                        # replayed onto this exact root (F-3)
+                                        "prefix": [int(x) for x in actions[:ply]]}))
     if len(roots) < n_roots:
         raise SystemExit(f"only found {len(roots)} usable roots (wanted {n_roots})")
     return roots
 
 
-def time_row(roots, k_dets: int, sims: int, workers, seed_base: int):
+def time_row(roots, k_dets: int, sims: int, workers, seed_base: int,
+             backend: str = "python"):
     """Time one (budget, mode) row over every root.
 
     Returns ``(secs[], actions[], telem)``. A FRESH agent per root (so ``move_idx``
     — and therefore every per-world seed — is 0 at every root in every row, and the
     modes search identical worlds), but ONE pool for the whole row: the spawn cost is
     a per-GAME cost, not a per-move one, and paying it 30 times would swamp the bench
-    with a number the deployed agent never pays."""
+    with a number the deployed agent never pays.
+
+    ⚠️ ``backend`` CHANGES WHAT ``workers`` MEANS, and that is the F-3 decision this
+    bench needed rather than a patch (BACKEND_BYPASS_AUDIT_20260801 §6 F-3). The whole
+    point of the bench is the cost of splitting the k determinization worlds — but the
+    Rust core splits them across OS THREADS inside one GIL-released call, not across
+    SPAWN PROCESSES, and the factory raises on the pair. So on ``backend="rust"`` the
+    worker list is read as a THREAD count (``None`` = 1 = the sequential fold), no pool
+    is created, and the transport telemetry (a parent-side pickle/dispatch tax that
+    does not exist for threads) is simply absent. A rust row and a python row measure
+    two different splits of the same worlds: report both, never divide one by the
+    other and call it a speedup."""
     secs, actions = [], []
     telem = {"prep_s": 0.0, "dispatch_s": 0.0, "worker_s": 0.0, "moves": 0}
     pool = None
     pool_w = None
+    rust = backend == "rust"
     try:
-        for i, (game, board, _meta) in enumerate(roots):
+        for i, (game, board, meta) in enumerate(roots):
             agent = make_production_champion(
                 "fair", game=game, seed=seed_base + i, sims=sims, k_dets=k_dets,
-                verify=False, parallel_workers=workers)
-            if workers is not None:
+                verify=False, backend=backend,
+                # backend is passed EXPLICITLY in both directions (never omitted on the
+                # python leg): omitting it would mean "whatever the factory defaults
+                # to", so a flipped default would turn a python row into a rust one.
+                **({"rust_threads": workers} if rust
+                   else {"parallel_workers": workers}))
+            if rust:
+                # THE MIRROR PROTOCOL: this root is a recorded mid-game position, so
+                # the Rust mirror is replayed onto it (the agent is fresh, so there is
+                # nothing to unwind). choose_action hard-raises MirrorDesync if this
+                # were skipped — the bench cannot silently time the wrong position.
+                _reseat(agent, meta)
+            if workers is not None and not rust:
                 w = min(workers, k_dets)
                 if pool is None:
                     pool, pool_w = agent._ensure_pool(w), w
@@ -151,7 +195,7 @@ def time_row(roots, k_dets: int, sims: int, workers, seed_base: int):
             a = agent.choose_action(board)
             secs.append(time.perf_counter() - t0)
             actions.append(int(a))
-            if workers is not None:
+            if workers is not None and not rust:
                 telem["prep_s"] += agent.kparallel_prep_secs
                 telem["dispatch_s"] += agent.kparallel_dispatch_secs
                 telem["worker_s"] += agent.kparallel_worker_secs
@@ -179,6 +223,17 @@ def main(argv=None):
                    help="plies between sampled roots within one game (decorrelate)")
     p.add_argument("--seed-base", type=int, default=90_000,
                    help="agent seed for root i is seed_base + i (same in every row)")
+    p.add_argument("--backend", choices=("inherit", "python", "rust", "auto"),
+                   default="inherit",
+                   help="which ENGINE runs the search, and therefore WHAT THE WORKER "
+                        "COUNTS MEAN. inherit (DEFAULT) = champion_factory's own "
+                        "default, today python. python: workers = SPAWN "
+                        "PROCESSES. rust (carc_rs): workers = OS THREADS folded inside "
+                        "one GIL-released call, no pool, no transport tax — the Rust "
+                        "core has no process split and the factory raises on the pair. "
+                        "auto = the PRODUCTION.yaml fair_deploy backend. The two "
+                        "backends are two different splits: label the rows, never "
+                        "divide one by the other.")
     p.add_argument("--smoke", action="store_true",
                    help="tiny sims + few roots: proves the harness, NOT the lever")
     p.add_argument("--rows", default=None,
@@ -187,6 +242,10 @@ def main(argv=None):
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+
+    # One resolution for the whole run (rows must not disagree about the engine).
+    from carcassonne_ai.mirror_protocol import resolve_execution
+    backend = resolve_execution(args.backend)["backend"]
 
     if args.rows:
         rows_spec = []
@@ -205,15 +264,21 @@ def main(argv=None):
     for k_dets, sims, worker_list in rows_spec:
         baseline_actions = None
         for workers in worker_list:
-            label = "sequential" if workers is None else f"parallel_w{workers}"
+            if backend == "rust":
+                label = f"rust_t{1 if workers is None else workers}"
+            else:
+                label = "sequential" if workers is None else f"parallel_w{workers}"
             t_row = time.perf_counter()
             secs, actions, telem = time_row(roots, k_dets, sims, workers,
-                                            args.seed_base)
+                                            args.seed_base, backend=backend)
             arr = np.asarray(secs, dtype=float)
             rec = {
                 "k_dets": k_dets, "sims_per_det": sims,
                 "total_sims": k_dets * sims,
                 "mode": label,
+                "backend": backend,
+                # PROCESSES on python, OS THREADS on rust — see time_row's docstring.
+                "split_unit": "os_threads" if backend == "rust" else "spawn_processes",
                 "workers": workers,
                 "worlds_per_worker": (None if workers is None
                                       else -(-k_dets // min(workers, k_dets))),
@@ -227,7 +292,7 @@ def main(argv=None):
                 "secs": [float(x) for x in arr],
                 "actions": actions,
             }
-            if workers is not None:
+            if workers is not None and backend != "rust":
                 # parent-side prep + (dispatch - slowest in-worker chunk) = the
                 # transport + scheduling tax the split has to pay for itself against.
                 moves = max(1, telem["moves"])
@@ -265,7 +330,7 @@ def main(argv=None):
                      if "transport_ms_per_move" in rec else ""),
                   flush=True)
 
-    probe = make_production_champion("fair", seed=0, verify=False)
+    probe = make_production_champion("fair", seed=0, verify=False, backend=backend)
     manifest = {
         "bench": "kparallel_latency_bench",
         "purpose": "single-GAME latency of the behavior-identical k-process split "
@@ -289,10 +354,20 @@ def main(argv=None):
             "ply_fraction_window": [args.ply_lo, args.ply_hi],
             "stride": args.stride,
             "forced_moves_skipped": True,
-            "refs": [m for _g, _b, m in roots],
+            # the action prefix is carried on each root for the Rust mirror replay; it
+            # is reconstructible from (deck_seed, ply) and would bloat the manifest
+            "refs": [{k: v for k, v in m.items() if k != "prefix"}
+                     for _g, _b, m in roots],
         },
         "agent": {
             "builder": "champion_factory.make_production_champion('fair', verify=False)",
+            "backend": backend,
+            "backend_requested": args.backend,
+            "split_unit": ("os_threads (rust_threads) — the Rust core has no spawn "
+                           "split" if backend == "rust" else
+                           "spawn_processes (parallel_workers)"),
+            "mirror_protocol": ("start_game_from_seed + advance(prefix) per root, "
+                                "move_idx seated to 0" if backend == "rust" else None),
             "seed_rule": "seed_base + root_index (identical across rows)",
             "seed_base": args.seed_base,
             "fresh_agent_per_root": True,

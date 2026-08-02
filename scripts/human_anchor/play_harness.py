@@ -28,6 +28,20 @@ this harness did NOT run the current champion (PRODUCTION.yaml stale_path_flag).
 factory PROVES the leaf on real boards at construction and records a runtime manifest
 into every game log. E4 (the human exam) itself stays PARKED (Joshua).
 
+✅ F-3 LANDED 2026-08-02: this harness now speaks the RUST MIRROR PROTOCOL. ``--backend
+rust|auto`` builds the champion on ``carc_rs`` (~9.8x faster per move at the champion
+budget — the felt difference is ~13.8 s/move sequential vs ~1.3 s/move), and ``play_game``
+seats that agent's mirror on the dealt deck and ``advance()``s it for every applied
+action of BOTH seats. The wiring is DUCK-TYPED and unconditional, so it is already
+correct if ``champion_factory``'s default ever flips off ``python``; the flag DEFAULT is
+still ``python``, i.e. a bare invocation is byte-identical to before. The engine is
+provenance, never strength: it is gated behaviour-identical (G4 bit-exact, G6 100%
+action agreement), and this harness's own gate is
+``measurement/rustport_p6/F3_CALLER_GATES_20260802.json``. ⚠️ ``backend=rust`` and
+``parallel_workers`` are mutually exclusive — Rust folds the same k worlds across
+``--rust-threads`` OS threads instead of spawn processes — and ``resolve_execution()``
+resolves the pair so a caller can never hand the factory the illegal combination.
+
 Enforces the locked 2p Base+Farmers ruleset (the wingedsheep engine already
 constrains this; we assert `state.players == 2`). No ELO math lives here — this
 just produces trustworthy game records for the human-anchor program to score.
@@ -109,8 +123,24 @@ def resolve_parallel_workers(no_parallel: bool = False,
         return None
 
 
+def resolve_execution(backend="inherit", profile="desktop", rust_threads=None,
+                      no_parallel=False):
+    """The ENGINE + split for this run, resolved from ``--backend`` / the deploy profile.
+
+    Superset of resolve_parallel_workers() (kept above for its callers): it also answers
+    WHICH ENGINE runs the search, because the two are coupled — ``backend="rust"`` and
+    ``parallel_workers`` are mutually exclusive in the factory (Rust folds the same k
+    worlds across OS threads inside one GIL-released call). Same fail-safe posture.
+    ``--backend auto`` reads the profile's ``backend`` from PRODUCTION.yaml; the DEFAULT
+    is ``inherit`` = champion_factory's own default (today python), so a bare invocation
+    is byte-identical to before this flag AND a flip of that default reaches here."""
+    from carcassonne_ai.mirror_protocol import resolve_execution as _resolve
+    return _resolve(backend, profile=profile, rust_threads=rust_threads,
+                    no_parallel=no_parallel)
+
+
 def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
-                     parallel_workers=None):
+                     parallel_workers=None, execution=None):
     """The PRODUCTION fair champion, built + runtime-verified by the champion factory
     (F1, 2026-07-19). Rewired from the PRE-FLIP FairHeuristicMCTSAgent (random-expansion
     UCT + old leaf) to the current champion: FairHeuristicPriorAgent (PUCT heuristic
@@ -122,11 +152,21 @@ def _make_fair_agent(game, sims, k_dets, seed, exact_endgame=True,
 
     ``parallel_workers`` (None = the sequential k-loop, byte-identical to before this
     kwarg existed) splits the k determinization worlds across spawn processes. LATENCY
-    ONLY — same player, same chosen action; see resolve_parallel_workers()."""
+    ONLY — same player, same chosen action; see resolve_parallel_workers().
+
+    ``execution`` (F-3, 2026-08-02) is the resolved ENGINE+split from
+    resolve_execution(); when it names ``backend="rust"`` the returned agent is a
+    ``rust_agent.RustFairAgent``, whose mirror play_game() below drives. It supersedes
+    ``parallel_workers`` when both are given (the pair is illegal on Rust)."""
     from carcassonne_ai.champion_factory import make_production_champion
+    from carcassonne_ai.mirror_protocol import Execution
+
+    if execution is None:
+        execution = Execution(backend="python", rust_threads=None,
+                              parallel_workers=parallel_workers)
     return make_production_champion("fair", game=game, seed=seed, sims=sims,
                                     k_dets=k_dets, exact_endgame=exact_endgame,
-                                    parallel_workers=parallel_workers)
+                                    **execution.factory_kwargs())
 
 
 class HumanCLIAgent:
@@ -169,9 +209,17 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
     """Play one full 2p game. `agents` = {seat: agent} (seat -> object with
     choose_action(board)->int + the telemetry attrs). Returns a game record
     {manifest, moves, result}. Never records a peek at the true deck."""
+    from carcassonne_ai import mirror_protocol as MP
+
     random.seed(int(deck_seed))          # fixes the engine shuffle (root_replay contract)
     board = game.get_init_board()
     assert board.state.players == 2, "locked scope: 2-player only"
+    # THE MIRROR PROTOCOL (F-3). A Rust-backed champion owns a game state that moves
+    # only on advance(); seat it on the deck THIS board was dealt, then advance it for
+    # every applied action of BOTH seats at the choke point below. No-op (duck-typed)
+    # for the Python champion and for HumanCLIAgent, so this file is correct on either
+    # backend — including if the factory default ever flips.
+    MP.seat(agents, board)
     dh = deck_hash(board.state)
     moves = []
     t_start = time.time()
@@ -209,6 +257,7 @@ def play_game(game, deck_seed: int, agents: dict, agent_labels: dict,
             "ts": time.time(),
         })
         board, _ = game.get_next_state(board, a)
+        MP.advance(agents, a)            # EVERY applied action, BOTH seats
         move_idx += 1
 
     scores = list(board.state.scores)
@@ -268,20 +317,21 @@ def play_paired(game, deck_seed, ctor_a, ctor_b, label_a, label_b, config,
 
 
 # --------------------------------------------------------------------------- #
-def self_test() -> int:
+def self_test(execution=None) -> int:
     print("=== play_harness self-test ===")
     from carcassonne_ai.game_wrapper import Game
     game = Game(enable_legal_moves_cache=True)
     seed = 777_000_001
     sims, k_dets = 48, 2   # LIGHT smoke config (NOT production strength)
-    print(f"[1] one full fair-vs-fair game  seed={seed} sims={sims} k_dets={k_dets} ...")
+    print(f"[1] one full fair-vs-fair game  seed={seed} sims={sims} k_dets={k_dets} "
+          f"| {execution.describe() if execution else 'backend=python'} ...")
     t0 = time.time()
 
     def ctor_a():
-        return _make_fair_agent(game, sims, k_dets, seed=101)
+        return _make_fair_agent(game, sims, k_dets, seed=101, execution=execution)
 
     def ctor_b():
-        return _make_fair_agent(game, sims, k_dets, seed=202)
+        return _make_fair_agent(game, sims, k_dets, seed=202, execution=execution)
 
     config = {"sims": sims, "k_dets": k_dets,
               "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
@@ -357,12 +407,31 @@ def main(argv=None) -> int:
                          "parallel_workers is used (default: desktop = 8). NOTE this "
                          "selects only the WORKER COUNT here; the BUDGET still comes from "
                          "fair_deploy/--sims/--k-dets.")
+    ap.add_argument("--backend", choices=("inherit", "python", "rust", "auto"),
+                    default="inherit",
+                    help="which ENGINE computes the champion's search. inherit "
+                         "(DEFAULT) = champion_factory's own default, which today is "
+                         "python — so a bare invocation is byte-identical to before "
+                         "this flag, AND a future flip of that default reaches this "
+                         "harness without editing it. python = pin the Python "
+                         "champion. rust = carc_rs, the rustport core (~9.8x faster "
+                         "per move at the champion budget). auto = read the deploy "
+                         "profile's `backend` from PRODUCTION.yaml. This harness "
+                         "drives the Rust mirror (start_game + advance for both "
+                         "seats), so all four are safe; the ENGINE never changes the "
+                         "play (G4/G6 identity gates).")
+    ap.add_argument("--rust-threads", type=int, default=None,
+                    help="backend=rust only: fold the k determinization worlds across "
+                         "this many OS threads inside one GIL-released call (default: "
+                         "the profile's rust_threads, else 1). The Rust analogue of "
+                         "parallel_workers, and mutually exclusive with it.")
     ap.add_argument("--paired", action="store_true", help="play a seat-swapped rematch too")
     ap.add_argument("--out", type=Path, default=C.REPO_ROOT / "measurement/human_anchor/games")
     args = ap.parse_args(argv)
 
     if args.self_test:
-        return self_test()
+        return self_test(resolve_execution(args.backend, args.profile,
+                                           args.rust_threads, args.no_parallel))
 
     from carcassonne_ai.champion_factory import load_production_spec
     from carcassonne_ai.game_wrapper import Game
@@ -376,17 +445,23 @@ def main(argv=None) -> int:
         args.sims = _spec.sims_per_det
     if args.k_dets is None:
         args.k_dets = _spec.k_dets
-    pw = resolve_parallel_workers(args.no_parallel, args.profile)
+    execution = resolve_execution(args.backend, args.profile, args.rust_threads,
+                                  args.no_parallel)
+    pw = execution["parallel_workers"]
     game = Game(enable_legal_moves_cache=True)
     seed = args.seed if args.seed is not None else random.randint(1, 2_000_000_000)
     config = {"sims": args.sims, "k_dets": args.k_dets,
               "champion": "puct_priors_v29_bmild_cap8 (champion_factory)",
               "exact_endgame": True, "ruleset": "2p_base_farmers",
               # LATENCY provenance, not strength: which execution the log was produced by.
-              "parallel_workers": pw, "deploy_profile": args.profile}
+              # The ENGINE is provenance for the same reason and on the same terms — it
+              # is gated behaviour-identical (G4/G6), so it can never explain a result.
+              "parallel_workers": pw, "deploy_profile": args.profile,
+              "backend": execution["backend"],
+              "rust_threads": execution["rust_threads"]}
     print(f"[exec] budget k{args.k_dets}x{args.sims} = {args.k_dets * args.sims} sims/move | "
-          f"parallel_workers={pw if pw is not None else 'None (sequential k-loop)'}"
-          f"{'' if pw is None else f' (profile {args.profile!r})'}")
+          f"{execution.describe()}"
+          f"{'' if execution['source'] != 'profile' else f' (profile {args.profile!r})'}")
 
     if args.human is None:
         print("no --human seat and no --self-test: playing fair-vs-fair "
@@ -394,11 +469,11 @@ def main(argv=None) -> int:
 
         def ctor_a():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=101,
-                                    parallel_workers=pw)
+                                    execution=execution)
 
         def ctor_b():
             return _make_fair_agent(game, args.sims, args.k_dets, seed=202,
-                                    parallel_workers=pw)
+                                    execution=execution)
 
         if args.paired:
             play_paired(game, seed, ctor_a, ctor_b, "fairA", "fairB", config, out_dir=args.out)
@@ -412,7 +487,7 @@ def main(argv=None) -> int:
     human_seat = args.human
     ai_seat = 1 - human_seat
     human = HumanCLIAgent(game)
-    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, parallel_workers=pw)
+    ai = _make_fair_agent(game, args.sims, args.k_dets, seed=303, execution=execution)
     agents = {human_seat: human, ai_seat: ai}
     labels = {human_seat: "human", ai_seat: f"fair@{args.sims}"}
     rec = play_game(game, seed, agents, labels, config)

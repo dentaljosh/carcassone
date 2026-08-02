@@ -18,6 +18,16 @@ thread. This restores the threading design of ``play_vs_mcts_gui.py`` (play-vs-m
 branch, commit 04e4330), which this file was adapted from and which had dropped the
 threading only because the Tier-1 stand-in answered instantly.
 
+✅ F-3 LANDED 2026-08-02 — ``--backend rust|auto`` (default still ``python``, so a bare
+invocation is byte-identical to before). The champion is then ``rust_agent.RustFairAgent``
+over ``carc_rs``, and this GUI drives its MIRROR: ``GameGUI._seat_mirror()`` on the
+initial board, ``_advance_mirror()`` inside ``_apply_action`` — the single choke point
+every applied action of BOTH seats passes through, on the Tk main thread, never while
+the AI worker is alive. The engine never changes the play (G4 bit-exact / G6 100% action
+agreement); it changes ~12.7 s/move to ~1.3 s/move at the champion budget, which on an
+interactive window is the difference between a hang and a pause. Ignored for
+``--opponent tier1`` (the rule-based player has no Rust port and needs none).
+
 ``--opponent tier1`` keeps the old instant rule-based player (the SATURATED Tier-1
 reference — far weaker than the champion). It uses the same worker-thread path and
 simply returns almost immediately.
@@ -221,6 +231,10 @@ class Opponent:
     pick: Callable[[Board, np.ndarray], int]
     manifest: dict | None = None
     budget_note: str | None = None
+    # F-3: the agent OBJECT behind `pick`, so the GUI can drive a Rust mirror
+    # (start_game once + advance for every applied action of BOTH seats). None for
+    # agents that own no mirror; `mirror_protocol` duck-types it either way.
+    agent: object | None = None
 
 
 class GameGUI:
@@ -239,6 +253,10 @@ class GameGUI:
         self.human = human_player
         self.board: Board = game.get_init_board()
         self.turn = 0
+        # THE MIRROR PROTOCOL (F-3), seated on the board the deck was actually dealt
+        # into — main thread, before any worker exists. `_apply_action` is the single
+        # choke point that advances it, for the human's moves as well as the AI's.
+        self._seat_mirror()
 
         self.selected_cell: tuple[int, int] | None = None
         self.rotation_options: list[int] = []
@@ -560,8 +578,28 @@ class GameGUI:
         self.last_ai = summary
         self._apply_action(summary.idx)
 
+    # -------------------- rust mirror protocol (F-3) --------------------
+
+    def _seat_mirror(self) -> None:
+        """Seat the AI's Rust mirror on the initial board. No-op on Python."""
+        from carcassonne_ai import mirror_protocol as MP
+
+        MP.seat(self.ai.agent, self.board)
+
+    def _advance_mirror(self, idx: int) -> None:
+        """THE choke point: one applied action -> one mirror step, EITHER seat.
+
+        Called on the Tk MAIN thread only, and never while the AI worker thread is
+        alive (the turn structure serialises them: the worker's result is applied by
+        `_commit_ai_move` after the thread has finished). The Rust agent hard-raises
+        `MirrorDesync` if this is ever missed, so a regression here is loud."""
+        from carcassonne_ai import mirror_protocol as MP
+
+        MP.advance(self.ai.agent, idx)
+
     def _apply_action(self, idx: int) -> None:
         self.board, _ = self.game.get_next_state(self.board, idx)
+        self._advance_mirror(idx)
         self.selected_cell = None
         self.rotation_options = []
         self.rotation_idx = 0
@@ -1044,7 +1082,9 @@ def _apply_scale(scale: float) -> None:
 
 
 def build_opponent(kind: str, *, seed: int, sims: int | None,
-                   k_dets: int | None, verbose: bool = True) -> Opponent:
+                   k_dets: int | None, verbose: bool = True,
+                   backend: str = "inherit", rust_threads: int | None = None,
+                   profile: str = "desktop") -> Opponent:
     """Construct the AI side and wrap it in the uniform `Opponent` façade.
 
     The agent gets its OWN `Game` instance: the GUI's Game carries a legal-moves
@@ -1070,13 +1110,27 @@ def build_opponent(kind: str, *, seed: int, sims: int | None,
     from carcassonne_ai.champion_factory import (
         load_production_spec, make_production_champion,
     )
+    from carcassonne_ai.mirror_protocol import resolve_execution
+
     spec = load_production_spec()
     eff_sims = spec.sims_per_det if sims is None else int(sims)
     eff_k = spec.k_dets if k_dets is None else int(k_dets)
-    # verify=True PROVES the curve125 leaf on real boards and RAISES on mismatch.
+    # WHICH ENGINE (F-3). `--backend auto` reads PRODUCTION.yaml; the default stays
+    # python, so a bare invocation is byte-identical to before the flag. The GUI drives
+    # the Rust mirror (GameGUI._seat_mirror / _advance_mirror), so rust is safe here —
+    # and it is the difference between ~12.7 s and ~1.3 s per move at the champion
+    # budget on a window the human is staring at. Same player either way (G4/G6).
+    # ⚠️ parallel_workers is NOT resolved here even on python: this GUI has never run
+    # the spawn split (the agent lives on a daemon worker thread), and quietly adding
+    # it would be a different change wearing this one's clothes.
+    execution = resolve_execution(backend, profile=profile, rust_threads=rust_threads)
+    # backend is passed EXPLICITLY in both directions — never omitted on the python
+    # leg. Omitting it would mean "whatever the factory defaults to", so the day that
+    # default flips, `--backend python` would quietly build a Rust champion.
     agent = make_production_champion(
         "fair", game=ai_game, seed=seed, sims=eff_sims, k_dets=eff_k,
-        exact_endgame=True, verify=True,
+        exact_endgame=True, verify=True, backend=execution["backend"],
+        **({"rust_threads": execution["rust_threads"]} if execution.is_rust else {}),
     )
     manifest = getattr(agent, "manifest", None)
 
@@ -1094,9 +1148,9 @@ def build_opponent(kind: str, *, seed: int, sims: int | None,
         name = f"Champion(weakened k{eff_k}x{eff_sims})"
 
     if verbose:
-        print(f"[champion] {spec.champion_id}  agent=FairHeuristicPriorAgent  "
+        print(f"[champion] {spec.champion_id}  agent={type(agent).__name__}  "
               f"k_dets={eff_k} sims_per_det={eff_sims} total={eff_k * eff_sims} "
-              f"exact_K<={spec.exact_max_k}")
+              f"exact_K<={spec.exact_max_k}  {execution.describe()}")
         if manifest is not None:
             import json
             print("[champion] runtime manifest:")
@@ -1109,6 +1163,7 @@ def build_opponent(kind: str, *, seed: int, sims: int | None,
         pick=lambda board, mask: agent.choose_action(board),
         manifest=manifest,
         budget_note=budget_note,
+        agent=agent,          # F-3: the GUI drives this object's mirror
     )
 
 
@@ -1136,10 +1191,33 @@ def main(argv: list[str] | None = None) -> int:
                         "budget (fair_deploy.k_dets). Same honesty rule as --sims.")
     p.add_argument("--scale", type=float, default=1.0,
                    help="UI scale factor (0.5 = half size, 1.0 = original)")
+    p.add_argument("--backend", choices=("inherit", "python", "rust", "auto"),
+                   default="inherit",
+                   help="which ENGINE computes the champion's search. inherit "
+                        "(DEFAULT) = champion_factory's own default, today python — a "
+                        "bare invocation is byte-identical to before this flag, and a "
+                        "future flip of that default reaches this GUI unedited. python "
+                        "= pin it. rust = carc_rs (~12.7 s to ~1.3 s per move at the "
+                        "champion budget, i.e. the difference between a hang and a "
+                        "pause). auto = the deploy profile's backend from "
+                        "PRODUCTION.yaml. The GUI drives the Rust mirror, so all four "
+                        "are safe; the engine never changes the play.")
+    p.add_argument("--rust-threads", type=int, default=None,
+                   help="backend=rust only: fold the k worlds across this many OS "
+                        "threads inside one GIL-released call (default: the profile's "
+                        "rust_threads, else 1).")
+    p.add_argument("--profile", default="desktop",
+                   help="deploy EXECUTION profile in PRODUCTION.yaml consulted by "
+                        "--backend auto / --rust-threads (default: desktop). The BUDGET "
+                        "still comes from fair_deploy/--sims/--k-dets.")
     args = p.parse_args(argv)
 
     if args.opponent == "tier1" and (args.sims is not None or args.k_dets is not None):
         print("[warn] --sims/--k-dets are champion-only; ignored for --opponent tier1",
+              file=sys.stderr)
+    if args.opponent == "tier1" and args.backend not in ("python", "inherit"):
+        print("[warn] --backend is champion-only (RuleBasedPlayer has no carc_rs port "
+              "and needs none — it answers instantly); ignored for --opponent tier1",
               file=sys.stderr)
 
     # Build the agent BEFORE any Tk work: champion_factory's verify raises on a leaf
@@ -1147,6 +1225,7 @@ def main(argv: list[str] | None = None) -> int:
     opponent = build_opponent(
         args.opponent, seed=args.seed if args.seed is not None else 0,
         sims=args.sims, k_dets=args.k_dets,
+        backend=args.backend, rust_threads=args.rust_threads, profile=args.profile,
     )
 
     _patch_pillow_antialias()

@@ -56,10 +56,15 @@ K_DETS = 4
 # --------------------------------------------------------------------------- #
 def _champion(game, seed, workers, sims=SIMS, k_dets=K_DETS):
     """The PRODUCTION fair champion (routed through champion_factory so the
-    kwarg threading is covered too). verify=False only skips the leaf re-proof."""
+    kwarg threading is covered too). verify=False only skips the leaf re-proof.
+
+    ``backend="python"`` is PINNED, not inherited (F-3, 2026-08-02): the SPAWN split
+    this module tests is a python-only feature — the Rust core folds the same k worlds
+    across OS threads and the factory RAISES on the pair — so these cases must keep
+    naming their engine if the factory default is ever flipped off ``python``."""
     return make_production_champion(
         "fair", game=game, seed=seed, sims=sims, k_dets=k_dets,
-        verify=False, parallel_workers=workers)
+        verify=False, backend="python", parallel_workers=workers)
 
 
 class _PoolSpy:
@@ -141,7 +146,7 @@ def test_factory_manifest_unstamped_when_off_and_stamped_when_on():
     off = make_production_champion("fair", seed=0, sims=8, k_dets=2, verify=False)
     assert "parallel_workers" not in off.manifest      # no hash drift when OFF
     on = make_production_champion("fair", seed=0, sims=8, k_dets=2, verify=False,
-                                  parallel_workers=2)
+                                  backend="python", parallel_workers=2)
     try:
         assert on.manifest["parallel_workers"]["workers"] == 2
         assert on.parallel_workers == 2
@@ -227,7 +232,7 @@ def test_rejected_combinations(kw, msg):
 def test_factory_rejects_parallel_in_clairvoyant_mode():
     with pytest.raises(ValueError, match="FAIR-mode feature"):
         make_production_champion("clairvoyant", seed=0, sims=8, verify=False,
-                                 parallel_workers=2)
+                                 backend="python", parallel_workers=2)
 
 
 def test_close_is_idempotent_and_reaps_the_pool():
