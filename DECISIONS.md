@@ -3673,3 +3673,28 @@ fn is 4.6–12% faster hoisted) yet the adoption bar held (end-to-end +0.2–0.6
 c27cc1a8) installed local + laptop with repo at 55f7eea both boxes; Android wheels ride
 the NEXT app release (phone already meets its bar; bridge/wheel skew impossible — APK
 bundles both). No strength claim: bit-exactness transfers (CL-071 pattern).
+
+## 2026-08-02 (evening) — Xeon revival probe: RE-RETIRE (+ a fourth libm implementation found — the G0 x86-64-parity claim is QUALIFIED)
+
+Joshua powered the box; a probe agent ran recon → bundle-sync → wheel → G0 → one 24-game
+gen bench at production knobs. **Verdict: re-retire.** The "rust reclaims more on old
+memory-latency-bound cores" hypothesis is REFUTED for this box: per-thread steady gen
+throughput at each box's settled W* is **0.478 (xeon W16) / 0.497 (local W48) / 0.479
+(laptop W24) plies/s/thread — parity within 4%**. Rust-era gen is thread-count-bound;
+the Xeon (W-2135, 6C/12T) adds exactly its thread share (+21%, ~+123 games/h on 588)
+and not a point more, against real ops surface: the WSL VM tears down seconds after the
+last session (needs a standing keepalive daemon on local), no C compiler on the box
+(cython unbuildable; measured immaterial at 0.008% of per-worker work), the share at 99%,
+and — the finding that outlives the verdict — **G0 FAILS by default on this box**:
+its AVX-512 (Skylake-X) makes numpy dispatch a different np.exp kernel (digest 8f463c13
+vs 0c8d0bfa on local+laptop) = a FOURTH libm implementation and the first x86-64
+non-parity box, **qualifying the 2026-07-31 fleet claim** that x86-64/glibc parity is
+robust across CPU generations. With `NPY_DISABLE_CPU_FEATURES="X86_V4 AVX512F AVX512_SKX
+AVX512_ICL AVX512_SPR"` it PASSES byte-identical (exp64_fma + glibc_fma, same as desktop)
+— so the box is results-capable ONLY with that env var on every launcher. Conditional-keep
+recipe (all three required): both boxes saturated + embarrassingly-parallel CPU gen with
+no cython dependency + the env var in the launcher. Evidence:
+/mnt/c/carc-shared/xeon_probe_20260802/ (G0 JSONs + verdict logs); box left clean, VM
+stopped, repo at 1a6cdf7 with prior work stashed. Any future AVX-512 box (cloud rentals
+included) must run G0 before results-bearing work — the flavor enum does not cover
+AVX-512 np.exp unmasked.
