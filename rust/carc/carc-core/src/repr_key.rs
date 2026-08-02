@@ -18,6 +18,8 @@
 //! * meeple tuples appear in `placed_meeples` **list insertion order** (NOT
 //!   sorted) — the spec calls this out explicitly.
 
+use std::fmt::Write;
+
 use crate::engine::GameState;
 use crate::tiles;
 
@@ -30,17 +32,38 @@ pub fn py_tuple(items: &[String]) -> String {
     }
 }
 
-/// `repr()` of a plain-ASCII identifier-ish str (every value we emit is one).
-fn py_str(s: &str) -> String {
+/// Push `repr()` of a plain-ASCII identifier-ish str (every value we emit is one).
+#[inline]
+fn push_py_str(out: &mut String, s: &str) {
     debug_assert!(
         !s.contains('\'') && !s.contains('\\') && s.is_ascii(),
         "repr() of {s:?} needs the full CPython escaping rules"
     );
-    format!("'{s}'")
+    out.push('\'');
+    out.push_str(s);
+    out.push('\'');
 }
 
-pub fn string_representation(state: &GameState) -> String {
-    let mut placed: Vec<String> = Vec::with_capacity(state.placed_coords.len());
+/// The `(x,)` vs `(x, y)` vs `()` trailing-comma rule, applied to a tuple whose
+/// elements were streamed straight into `out`: `n` is how many were written, and
+/// the caller has already emitted `", "` between them.
+#[inline]
+fn close_py_tuple(out: &mut String, n: usize) {
+    if n == 1 {
+        out.push(',');
+    }
+    out.push(')');
+}
+
+/// Byte-for-byte [`string_representation`], appended to `out` in a single pass —
+/// no `Vec<String>`, no per-field `format!`, no `rot_sig_repr` clone (the
+/// 2026-08-02 review's finding #4: ~350 throwaway `String`s per call).
+pub fn string_representation_into(state: &GameState, out: &mut String) {
+    out.push('(');
+
+    // 1. placed tiles, in `placed_coords` order.
+    out.push('(');
+    let mut n = 0usize;
     for &(row, col) in &state.placed_coords {
         let tid = match state.get_tile(row, col) {
             // defensive, exactly like the Python `continue`
@@ -48,64 +71,91 @@ pub fn string_representation(state: &GameState) -> String {
             Some(t) => t,
         };
         let tile = tiles::tile(tid);
-        placed.push(py_tuple(&[
-            row.to_string(),
-            col.to_string(),
-            py_str(tile.description),
-            tile.rot_sig_repr.clone(),
-        ]));
+        if n > 0 {
+            out.push_str(", ");
+        }
+        let _ = write!(out, "({row}, {col}, ");
+        push_py_str(out, tile.description);
+        out.push_str(", ");
+        // `'static` registry string — borrow it, never clone it.
+        out.push_str(&tile.rot_sig_repr);
+        out.push(')');
+        n += 1;
+    }
+    close_py_tuple(out, n);
+    out.push_str(", ");
+
+    // 2. meeples, per player, in `placed_meeples` INSERTION order.
+    out.push('(');
+    for p in 0..state.players {
+        if p > 0 {
+            out.push_str(", ");
+        }
+        out.push('(');
+        for (i, mp) in state.placed_meeples[p].iter().enumerate() {
+            if i > 0 {
+                out.push_str(", ");
+            }
+            out.push('(');
+            push_py_str(out, mp.meeple_type.value());
+            let _ = write!(out, ", {}, {}, ", mp.coord.row, mp.coord.col);
+            push_py_str(out, mp.side.value());
+            out.push(')');
+        }
+        close_py_tuple(out, state.placed_meeples[p].len());
+    }
+    close_py_tuple(out, state.players);
+    out.push_str(", ");
+
+    // 3. scores, 4. meeple counts.
+    out.push('(');
+    for p in 0..state.players {
+        if p > 0 {
+            out.push_str(", ");
+        }
+        let _ = write!(out, "{}", state.scores[p]);
+    }
+    close_py_tuple(out, state.players);
+    out.push_str(", ");
+
+    out.push('(');
+    for p in 0..state.players {
+        if p > 0 {
+            out.push_str(", ");
+        }
+        let _ = write!(out, "{}", state.meeples[p]);
+    }
+    close_py_tuple(out, state.players);
+    out.push_str(", ");
+
+    // 5. current player, 6. phase, 7. deck length.
+    let _ = write!(out, "{}, ", state.current_player);
+    push_py_str(out, state.phase.value());
+    let _ = write!(out, ", {}, ", state.deck_len());
+
+    // 8. next tile description.
+    match state.next_tile {
+        None => out.push_str("None"),
+        Some(base) => push_py_str(out, tiles::tile(tiles::tile_id(base, 0)).description),
+    }
+    out.push_str(", ");
+
+    // 9. last tile coordinate.
+    match state.last_tile_action {
+        None => out.push_str("None"),
+        Some(lta) => {
+            let _ = write!(out, "({}, {})", lta.coord.row, lta.coord.col);
+        }
     }
 
-    let meeples = py_tuple(
-        &(0..state.players)
-            .map(|p| {
-                py_tuple(
-                    &state.placed_meeples[p]
-                        .iter()
-                        .map(|mp| {
-                            py_tuple(&[
-                                py_str(mp.meeple_type.value()),
-                                mp.coord.row.to_string(),
-                                mp.coord.col.to_string(),
-                                py_str(mp.side.value()),
-                            ])
-                        })
-                        .collect::<Vec<_>>(),
-                )
-            })
-            .collect::<Vec<_>>(),
-    );
+    out.push(')');
+}
 
-    let scores = py_tuple(
-        &(0..state.players)
-            .map(|p| state.scores[p].to_string())
-            .collect::<Vec<_>>(),
-    );
-    let meeple_counts = py_tuple(
-        &(0..state.players)
-            .map(|p| state.meeples[p].to_string())
-            .collect::<Vec<_>>(),
-    );
-    let next_tile = match state.next_tile {
-        None => "None".to_string(),
-        Some(base) => py_str(tiles::tile(tiles::tile_id(base, 0)).description),
-    };
-    let last_tile_coord = match state.last_tile_action {
-        None => "None".to_string(),
-        Some(lta) => py_tuple(&[lta.coord.row.to_string(), lta.coord.col.to_string()]),
-    };
-
-    py_tuple(&[
-        py_tuple(&placed),
-        meeples,
-        scores,
-        meeple_counts,
-        state.current_player.to_string(),
-        py_str(state.phase.value()),
-        state.deck_len().to_string(),
-        next_tile,
-        last_tile_coord,
-    ])
+pub fn string_representation(state: &GameState) -> String {
+    // One allocation, sized so the late-game key (~4–6 KB) does not realloc.
+    let mut out = String::with_capacity(256 + state.placed_coords.len() * 96);
+    string_representation_into(state, &mut out);
+    out
 }
 
 #[cfg(test)]
