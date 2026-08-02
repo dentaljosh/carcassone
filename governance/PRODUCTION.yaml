@@ -177,7 +177,25 @@ champion:
     #     (scripts/human_anchor/play_harness.py) to read `desktop.parallel_workers` so
     #     clocked human-facing play gets the 6.37× automatically instead of by hand.
     # ---------------------------------------------------------------------------------
-    parallel_workers: 8                 # DESKTOP-CLASS DEPLOY EXECUTION. Splits the 8 determinization worlds across 8
+    backend: rust                       # ⭐ THE CHAMPION'S EXECUTION BACKEND OF RECORD (2026-08-01, Joshua "1 yes").
+                                        # carc_rs, the rustport core. An ENGINE, not a player: BEHAVIOR-IDENTICAL by
+                                        # gate, so NO strength claim moves and no re-eval is owed. Evidence:
+                                        # G4 = the deployed champion reproduced bit-exactly (0/305,515 checks incl.
+                                        # all 1,852 record solver decisions node-for-node); G6 = 14,384/14,384
+                                        # identical actions over 100 full deck-paired games, 0/101,088 checks, 2,880
+                                        # reconcile asserts, 0 raised (measurement/rustport_p6/G6_backend_g6_k8x1376.json).
+                                        # Speed: 9.55x the Python champion on the same box (G6 wall: 201,179 s -> 21,071 s).
+                                        # ⚠️ HOW IT IS REACHED — read before assuming a harness runs it. `carc_rs`'s
+                                        # agent owns a game MIRROR that advances only on an explicit `advance()` call,
+                                        # so it is NOT a drop-in: 5 of the repo's 6 `make_production_champion` call
+                                        # sites never advance one (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md).
+                                        # champion_factory therefore still DEFAULTS to python and reads this field only
+                                        # for a caller that passes `backend="auto"` — that caller asserting it drives
+                                        # the mirror. Caller conversion is a separate, in-flight piece of work; until a
+                                        # given harness is converted it runs the python engine, which is the same
+                                        # player. A wrong assertion cannot be silent: `RustFairAgent.choose_action`
+                                        # hard-raises `MirrorDesync` on any drift (12.8 us/decision, 0.005%).
+    parallel_workers: 8                 # DESKTOP-CLASS DEPLOY EXECUTION (the PYTHON engine's k-split). Splits the 8 determinization worlds across 8
                                         # spawn processes. BEHAVIOR-IDENTICAL (tests/test_kparallel.py: same action AND
                                         # same pooled root (N,W) at every move of full games, endgame latch included;
                                         # latency bench re-verified 30/30 identical actions at production budget).
@@ -189,31 +207,60 @@ champion:
         k_dets: 8
         sims_per_det: 1376
         total_sims: 11008
-        parallel_workers: 8
+        backend: rust                   # as fair_deploy.backend above — read its comment before quoting this.
+        parallel_workers: 8             # the PYTHON engine's spawn split; the rust engine uses rust_threads instead.
         measured_s_per_move: 2.1595     # quiet 5900XT, W=8 (p90 2.6167) ⇒ ~20.6% of the 900 s clock (corrected 2026-07-30, audit F3)
         note: >
           The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
           Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock
           problem, not a different agent.
-      mobile:                           # ⚠️ ANDROID / CHAQUOPY CARVE-OUT — read the note. THE PHONE DOES NOT GET 11008.
-        k_dets: 4
-        sims_per_det: 688
-        total_sims: 2752
-        parallel_workers: null          # Chaquopy has no multiprocessing; the phone can ONLY run the sequential k-loop.
+      mobile:                           # ANDROID / CHAQUOPY. ⚠️ UNPINNED 2026-08-01 — the phone now plays
+                                        # the CHAMPION OF RECORD. The carve-out below is CLOSED. Read the note.
+        k_dets: 8                       # = the champion of record (the two fields above), not a carve-out.
+        sims_per_det: 1376
+        total_sims: 11008
+        backend: rust                   # carc_rs, the rustport core (P4 bit-exact / P6 G6 / P7 G7). LOAD-BEARING:
+                                        # the budget above is payable ONLY on this backend. See the note.
+        rust_threads: 4                 # the k worlds split across 4 OS threads INSIDE one GIL-released
+                                        # choose_action call. G4 proved threads {1,4,8} bit-identical.
+        parallel_workers: null          # still null and always will be: Chaquopy has no multiprocessing. The
+                                        # parallelism here is Rust threads inside ONE call — a different
+                                        # mechanism, which is exactly why the unpin condition could be met.
+        measured_s_per_move: 1.551      # Pixel 9 Pro (caiman), threads=4, 20 replayed midgame roots: median
+                                        # 1.551, mean 1.5154, p90 1.6552, max 1.7056. Thermal 1.007x over 68.7 s
+                                        # of continuous full-budget search (fixed-position soak, 50 repeats).
+                                        # RAW: measurement/rustport_p7/device/p7/bench_k8x1376.json (authoritative
+                                        # over the G7_REPORT.md leg-3 prose table, which is a stale earlier run).
         note: >
-          PINNED at the PRE-PROMOTION deploy budget k4×688 = 2752 by the 2026-07-29 promotion decision
-          (Joshua approved the promotion as desktop-class; DECISIONS 2026-07-29). REASON: the phone has no
-          multiprocessing, so it cannot buy the 6.37× split — k8×1376 sequential on the Pixel is ≈25 s/move
-          (the M5 bench puts a fast ARM core at ~0.93–1.07× the Pixel at deploy budget, and 11008 is 4.26×
-          the sequential cost of 2752, whose on-device measurement is 1.7 s/move full budget). 25 s/move with
-          an uncancellable, progress-less spinner is not a shippable UX, so the phone stays where it was.
-          CONSEQUENCE, STATE IT PLAINLY: the on-device opponent is now WEAKER than the champion of record by
-          the CL-060 margin (~50 elo). It is the SAME agent family, same leaf a36d2e15, same priors, same
-          exact-K≤2 endgame — only the budget differs, and every on-device manifest records that via
-          `runtime_budget_override`. Human-vs-champion games archived on the phone for E4 must be graded
-          against k4×688, NOT against the champion of record.
-          UNPIN CONDITION: a native (non-Chaquopy) search core with real thread/process parallelism on the
-          device, benchmarked at ≤3 s/move at 11008 — not before.
+          ⭐ CARVE-OUT CLOSED 2026-08-01 (Joshua: "2 yes"). THE PHONE NOW PLAYS THE CHAMPION OF RECORD —
+          same budget (k8×1376 = 11008), same leaf a36d2e15, same priors, same exact-K≤2 endgame. What
+          changed is not the agent but the ENGINE it executes on: `carc_rs` replaces the Python search.
+          THE UNPIN CONDITION WAS MET LITERALLY. It read: "a native (non-Chaquopy) search core with real
+          thread/process parallelism on the device, benchmarked at ≤3 s/move at 11008 — not before."
+          rustport P7/G7 delivered exactly that: a native Rust core, 4 OS threads inside one GIL-released
+          call, measured 1.551 s/move median on the Pixel 9 Pro (bar was ≤2 s), thermal 1.007×. The full
+          champion budget is now CHEAPER on the phone than the old carve-out was in Python (1.551 s at
+          11008 vs ~1.7 s at 2752) — 4× the search for ~0.9× the clock.
+          ⚠️ THE BUDGET IS CONDITIONAL ON THE BACKEND. 11008 sims on the PYTHON path is ~25 s/move on this
+          device, which is the unshippable UX the carve-out existed to prevent. So the bridge ties the two
+          together: if `carc_rs` is unavailable (missing wheel, unknown ABI, failed mirror start) it falls
+          back to the Python engine AND to its own k4×688 floor, never to this budget. Never read the
+          k_dets/sims_per_det here without also honouring `backend`.
+          E4 CONSEQUENCE — THE GRADING CHANGED: human-vs-champion games archived on the phone from this
+          build forward are played by the CHAMPION OF RECORD and grade against it. Because the running
+          budget now EQUALS the champion of record, `champion_factory` correctly stamps NO
+          `runtime_budget_override` on those manifests — the absence of that key is the signal that a game
+          was played at full strength. Games archived BEFORE this build carry the override naming k4×688
+          and must still be graded against k4×688; the archive is self-describing either way.
+          NO STRENGTH CLAIM IS MADE HERE. Behaviour identity is what transfers strength (the CL-071
+          precedent): G6 = 14,384/14,384 identical actions over 100 full desktop games, G7 leg 2 = 0/3,165
+          plies of replay divergence on the device itself. The phone inherits CL-060's +49.85 by being the
+          same player, not by a new measurement.
+          HISTORY (compressed): PINNED at k4×688 = 2752 from 2026-07-29 (the desktop k8×1376 promotion was
+          approved as desktop-class only, because Chaquopy cannot spawn processes and could not buy the
+          6.37× split) until 2026-08-01. During that window the on-device opponent was deliberately ~50 elo
+          (CL-060) weaker than the champion of record. Full reasoning: DECISIONS 2026-07-29 (the promotion
+          + carve-out) and DECISIONS 2026-08-01 (the rust port P7/G7 + this unpin).
           READER: android/app/src/main/python/android_bridge.py resolves THIS profile (fail-closed: if the
           profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).
     stale_path_flag: >
@@ -318,6 +365,10 @@ notes: >
   (2.16 s/move, ~14-17% of the 900 s clock). +49.85 elo / paired z 3.48 over the outgoing k4x688 (CL-060 head-to-head,
   n=400 deck-paired). The k-parallel split is BEHAVIOR-IDENTICAL, so this is a budget promotion plus an execution
   profile, NOT a new agent — nothing about the leaf, the priors, the search knobs or the endgame handoff changed.
-  ⚠️ THE PHONE IS CARVED OUT at k4x688 (fair_deploy.deploy_profiles.mobile) — Chaquopy has no multiprocessing.
+  ⚠️ THE PHONE WAS CARVED OUT at k4x688 (fair_deploy.deploy_profiles.mobile) from 2026-07-29 — Chaquopy has no
+  multiprocessing. ✅ CARVE-OUT CLOSED 2026-08-01: the rustport native core (carc_rs, 4 OS threads inside one call)
+  runs the FULL k8x1376 champion at 1.551 s/move on the Pixel, so the mobile profile is UNPINNED to the champion of
+  record and the phone now plays it. The budget there is CONDITIONAL on backend: rust — read that profile's note
+  before quoting its numbers. DECISIONS 2026-08-01.
   ⚠️ EVAL COST: the deploy baseline is now ~4.26x more expensive per move sequentially; budget confirms accordingly.
   Full queue: docs/PROGRAM_ROADMAP_2026-07-07.md.

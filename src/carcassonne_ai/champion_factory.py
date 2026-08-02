@@ -111,6 +111,10 @@ class ProductionSpec:
     # see deploy_profile() and the YAML's own "WIRING STATUS" comment.
     parallel_workers: int | None = None
     deploy_profiles: dict = dc.field(default_factory=dict)
+    # champion.fair_deploy.backend — the ENGINE the champion of record executes on
+    # (added 2026-08-01). Absent ⇒ "python", so an older YAML resolves identically.
+    # Reached only through backend="auto"; see make_production_champion.
+    backend: str = "python"
 
 
 def load_production_spec(path: Path | None = None) -> ProductionSpec:
@@ -149,6 +153,7 @@ def load_production_spec(path: Path | None = None) -> ProductionSpec:
         parallel_workers=(None if fair.get("parallel_workers") in (None, "")
                           else int(fair["parallel_workers"])),
         deploy_profiles=dict(fair.get("deploy_profiles") or {}),
+        backend=str(fair.get("backend", "python") or "python"),
     )
 
 
@@ -163,19 +168,29 @@ DEPLOY_PROFILE_DEFAULT = "desktop"
 def deploy_profile(name: str = DEPLOY_PROFILE_DEFAULT,
                    spec: ProductionSpec | None = None) -> dict:
     """The named deploy EXECUTION profile from PRODUCTION.yaml, as
-    ``{"k_dets", "sims_per_det", "total_sims", "parallel_workers", "name", "found"}``.
+    ``{"k_dets", "sims_per_det", "total_sims", "parallel_workers", "backend",
+    "rust_threads", "name", "found"}``.
 
     FAIL-SAFE, NOT FAIL-OPEN: an unknown/absent profile falls back to the champion of
     record with ``parallel_workers=None`` (i.e. the sequential, byte-identical path) and
     ``found=False``. Callers that must NEVER inherit the champion budget — the Android
-    bridge is the live example, since Chaquopy has no multiprocessing and the champion
-    budget is ~25 s/move there — must check ``found`` and supply their own floor rather
-    than trusting this default."""
+    bridge is the live example, since Chaquopy has no multiprocessing — must check
+    ``found`` and supply their own floor rather than trusting this default.
+
+    ``backend`` / ``rust_threads`` (added 2026-08-01 with the mobile unpin) name the
+    ENGINE a profile is executed on and how many OS threads it folds its ``k_dets``
+    worlds across. Absent ⇒ ``"python"`` / ``None``, i.e. exactly the pre-field
+    behaviour, so an old YAML resolves identically. ⚠️ For the ``mobile`` profile the
+    two are COUPLED to the budget and must be honoured together: k8x1376 is payable on
+    the Rust core (1.551 s/move, G7) and is ~25 s/move on the Python one. Reading a
+    profile's budget while ignoring its ``backend`` is the failure this field exists to
+    prevent; see that profile's own note."""
     spec = spec or load_production_spec()
     prof = dict((spec.deploy_profiles or {}).get(name) or {})
     k = int(prof.get("k_dets", spec.k_dets))
     s = int(prof.get("sims_per_det", spec.sims_per_det))
     pw = prof.get("parallel_workers", None)
+    rt = prof.get("rust_threads", None)
     return {
         "name": str(name),
         "found": bool(prof),
@@ -183,6 +198,8 @@ def deploy_profile(name: str = DEPLOY_PROFILE_DEFAULT,
         "sims_per_det": s,
         "total_sims": k * s,
         "parallel_workers": (None if pw in (None, "") else int(pw)),
+        "backend": str(prof.get("backend", "python") or "python"),
+        "rust_threads": (None if rt in (None, "") else int(rt)),
     }
 
 
@@ -455,9 +472,12 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
             "scope": "engine only — the same PRODUCTION.yaml knobs, the same leaf "
                      "(panel re-verified through carc_rs), the same k_dets worlds "
                      "merged in the same order",
-            "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction. "
-                    "governance/PRODUCTION.yaml still names the python champion; this "
-                    "is a capability, not a promotion.",
+            "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction: "
+                    "G4 reproduced the deployed champion bit-exactly (0/305,515 checks) "
+                    "and G6 read 14,384/14,384 identical actions over 100 full games. "
+                    "governance/PRODUCTION.yaml names this as the champion's execution "
+                    "backend of record (2026-08-01); it is an ENGINE, not a player — no "
+                    "strength claim moves with it.",
             **backend_provenance(),
         }
     if leaf_prov.get("leaf_value_panel_rust") is not None:
@@ -693,19 +713,29 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     tests/test_kparallel.py), so it is a single-GAME LATENCY lever and needs no
     strength re-eval. FAIR MODE ONLY; passing it with mode="clairvoyant" raises.
 
-    ``backend`` selects which ENGINE computes the champion: ``"python"`` (default, the
-    agent of record) or ``"rust"`` (``rust_agent.RustFairAgent`` over ``carc_rs``, the
-    rustport P4 core). The Rust backend is BEHAVIOR-IDENTICAL BY GATE — G4 reproduced
-    the deployed champion bit-exactly (0/305,515 checks) and G6 re-proves it as 100%
-    action agreement over deck-paired full games — and the leaf VALUE PANEL is
-    re-verified through ``carc_rs`` at construction, so a wrong Rust leaf cannot reach
-    the board. FAIR MODE ONLY (there is no clairvoyant Rust agent). ``rust_threads``
-    splits the ``k_dets`` worlds across that many OS threads INSIDE one GIL-released
-    call (None = 1, the sequential fold); G4 proved the merge bit-identical at threads
-    {1, 4, 8}, so it is a latency lever exactly like ``parallel_workers``.
+    ``backend`` selects which ENGINE computes the champion: ``"python"`` (the default),
+    ``"rust"`` (``rust_agent.RustFairAgent`` over ``carc_rs``, the rustport P4 core), or
+    ``"auto"`` (resolve from ``governance/PRODUCTION.yaml``
+    ``champion.fair_deploy.backend``; absent ⇒ python). The Rust backend is
+    BEHAVIOR-IDENTICAL BY GATE — G4 reproduced the deployed champion bit-exactly
+    (0/305,515 checks) and G6 re-proves it as 100% action agreement over 100 full
+    deck-paired games (14,384/14,384) — and the leaf VALUE PANEL is re-verified through
+    ``carc_rs`` at construction, so a wrong Rust leaf cannot reach the board. FAIR MODE
+    ONLY (there is no clairvoyant Rust agent). ``rust_threads`` splits the ``k_dets``
+    worlds across that many OS threads INSIDE one GIL-released call (None = 1, the
+    sequential fold); G4 proved the merge bit-identical at threads {1, 4, 8}, so it is a
+    latency lever exactly like ``parallel_workers``.
 
-    ⚠️ ``backend="rust"`` is a CAPABILITY, not a promotion: governance/PRODUCTION.yaml
-    still names the python champion and this function still defaults to it."""
+    ⚠️ WHY "auto" EXISTS AND WHY IT IS NOT THE DEFAULT. Since 2026-08-01 the YAML names
+    ``backend: rust`` for the desktop profile, but ``RustFairAgent`` is NOT a drop-in for
+    the Python champion: it owns a game mirror that advances ONLY on an explicit
+    ``advance()`` call, and 5 of this repo's 6 call sites never make one
+    (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md). Flipping the default
+    would hand those callers a mirror frozen at ply 1. So the YAML value is reached only
+    by a caller that opts in with ``"auto"``, which is that caller ASSERTING it drives
+    the mirror (``start_game()`` once, then ``advance()`` for EVERY applied action of
+    BOTH seats). A wrong assertion is no longer silent in either direction:
+    ``choose_action`` hard-raises ``MirrorDesync`` on any drift, unconditionally."""
     from . import intra_reuse as intra_carry
     from . import meeple_equiv
     from .game_wrapper import Game
@@ -715,8 +745,21 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
         game = Game(enable_legal_moves_cache=True)
     leaf_cfg = production_leaf_cfg(spec)
     cfg = production_prior_cfg(spec, leaf_cfg)
+    # "auto" = "resolve the engine from governance/PRODUCTION.yaml". It is a SEPARATE
+    # value rather than the default because a caller cannot be swapped onto the Rust
+    # backend behind its back: `RustFairAgent` owns a mirror that only moves on an
+    # explicit `advance()`, and 5 of this repo's 6 call sites never call it
+    # (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md). Passing "auto" is
+    # therefore a caller ASSERTION — "I drive the mirror: start_game() once, advance()
+    # for every applied action of BOTH seats". Callers that do not are unaffected,
+    # because the default is still "python" and is byte-identical to before this field.
+    # A wrong assertion can no longer be silent either way: since 2026-08-01
+    # `RustFairAgent.choose_action` hard-raises `MirrorDesync` on drift.
+    if backend == "auto":
+        backend = str(spec.backend)
     if backend not in ("python", "rust"):
-        raise ValueError(f"backend must be 'python'|'rust'; got {backend!r}")
+        raise ValueError(
+            f"backend must be 'python'|'rust'|'auto'; got {backend!r}")
     manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
                                  backend=backend)
 

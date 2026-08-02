@@ -49,10 +49,18 @@ contributes ZERO prefix time and does not increment `prefix_moves`, exactly as
 fallback to the prefix and its dead solve to `solver_secs`, again exactly as the
 Python path does.
 
-NOT IN SCOPE.  This adapter does not decide anything: `governance/PRODUCTION.yaml`
-still names the Python champion, and `champion_factory.make_production_champion`
-still defaults to `backend="python"`.  G6 delivers the capability and the
-evidence; the flip is Joshua's.
+STATUS (2026-08-01).  `governance/PRODUCTION.yaml` now names `fair_deploy.backend:
+rust` — this engine is the champion's execution backend OF RECORD, on G4/G6
+evidence (bit-exact reproduction; 14,384/14,384 identical actions over 100 full
+games).  `champion_factory.make_production_champion` nevertheless STILL DEFAULTS
+to `backend="python"`, and that is deliberate, not a leftover: the mirror
+contract above means this class is not a drop-in.  A caller reaches the YAML
+value by passing `backend="auto"`, which is that caller asserting it calls
+`start_game()` once and `advance()` for every applied action of both seats.  Five
+of this repo's six call sites do neither (measurement/rustport_p6/
+BACKEND_BYPASS_AUDIT_20260801.md), which is why the resolution is opt-in and why
+`choose_action` now hard-raises `MirrorDesync` on drift unconditionally rather
+than only under `CARC_RS_RECONCILE`.
 """
 from __future__ import annotations
 
@@ -244,8 +252,10 @@ class RustFairAgent:
 
         `[next_tile] + deck` is the engine's draw order (`get_init_board` pops
         the first tile into `next_tile`), so it reconstructs the game exactly —
-        with no dependence on how the caller seeded `random`. Verified against
-        `start_game_from_seed` on construction when reconcile mode is on."""
+        with no dependence on how the caller seeded `random`. Under reconcile
+        mode the seated mirror is immediately digest-checked against `board`
+        (and `tests/rustport/test_p6_backend.py` pins it equal to what
+        `start_game_from_seed` produces for the same deck)."""
         st = board.state
         if st.next_tile is None:
             raise ValueError("start_game needs an INITIAL board (next_tile is None)")
@@ -306,7 +316,23 @@ class RustFairAgent:
             # A caller that only ever calls choose_action/advance still gets a
             # correctly seated mirror instead of a RuntimeError.
             self.start_game(board)
-        self._check_sync(board, "choose_action")
+        # ⚠️ UNCONDITIONAL, NOT reconcile-gated (2026-08-01). This used to be
+        # `self._check_sync(...)`, i.e. a no-op unless CARC_RS_RECONCILE=1 — which
+        # made the single most dangerous failure mode of this adapter SILENT: a
+        # caller that never calls `advance()` keeps a mirror frozen at its first
+        # decision and is handed a move computed for a position the game left long
+        # ago, with no error anywhere. Measured: a naive caller re-returns its ply-1
+        # action, which is then merely "illegal" if you are lucky and legal-but-wrong
+        # if you are not. Five of the six `make_production_champion` call sites in
+        # this repo were such callers (BACKEND_BYPASS_AUDIT_20260801.md), so the
+        # check has to be free-standing rather than something a gate opts into.
+        # COST: 12.8 us per decision on the 5900XT at a midgame board (python
+        # `string_representation` ~0.1 us memoised + rust `string_repr` 12.6 us)
+        # against a 266 ms k8x1376 t8 decision = 0.005%. There is no budget argument
+        # for leaving a correctness guard off at that price.
+        # `_check_sync` stays for `advance(board_after=...)`, which is the caller's
+        # opt-in per-ply audit and IS the expensive one (a repr per applied action).
+        self.check_sync(board, "choose_action")
         solver_before = float(self._rs.stats()["solver_secs"])
         t0 = time.perf_counter()
         action = int(self._rs.choose_action(None if move_idx is None else int(move_idx)))

@@ -24,32 +24,48 @@ def test_spec_matches_production_yaml():
     assert (spec.bonus_cap, spec.opp_bonus_cap) == (8.0, 8.0)
 
 
-def test_deploy_profiles_and_the_mobile_carve_out():
-    """The 2026-07-29 promotion is DESKTOP-class. The phone cannot run 11008 sims (no
-    multiprocessing under Chaquopy => ~25 s/move sequentially), so PRODUCTION.yaml must
-    carry an explicit `mobile` profile pinning it at the pre-promotion k4x688, and
-    deploy_profile() must resolve it. If this test ever fails open, the phone silently
-    inherits the champion budget — the exact failure the carve-out exists to prevent."""
+def test_deploy_profiles_and_the_mobile_unpin():
+    """⚠️ REWRITTEN 2026-08-01: the mobile CARVE-OUT is CLOSED.
+
+    From 2026-07-29 the phone was pinned at the pre-promotion k4x688 because 11008 sims
+    needed 8 spawn processes and Chaquopy has none. The rustport native core (4 OS
+    threads inside ONE GIL-released call, 1.551 s/move on the Pixel — G7 leg 3) met the
+    profile's own written unpin condition, so the phone now runs the CHAMPION OF RECORD.
+
+    What this test guards is the replacement invariant, and it is a tighter one: the
+    mobile budget and `backend: rust` must travel TOGETHER. 11008 sims on the Python
+    engine is still ~25 s/move on a phone, so a profile that names the champion budget
+    without naming the Rust engine is the same failure the carve-out used to prevent,
+    wearing different clothes."""
     spec = cf.load_production_spec()
-    assert spec.parallel_workers == 8, "desktop deploy execution profile"
+    assert spec.parallel_workers == 8, "desktop deploy execution profile (python engine)"
+    # The champion's execution backend of record (2026-08-01). Behaviour-identical by
+    # gate (G4/G6), so this moves no strength claim.
+    assert spec.backend == "rust"
 
     desktop = cf.deploy_profile("desktop", spec)
     assert desktop["found"] is True
     assert (desktop["k_dets"], desktop["sims_per_det"]) == (spec.k_dets, spec.sims_per_det)
     assert desktop["total_sims"] == 11008 and desktop["parallel_workers"] == 8
+    assert desktop["backend"] == "rust"
 
     mobile = cf.deploy_profile("mobile", spec)
     assert mobile["found"] is True
-    assert (mobile["k_dets"], mobile["sims_per_det"]) == (4, 688)
-    assert mobile["total_sims"] == 2752
-    assert mobile["parallel_workers"] is None, "Chaquopy has no multiprocessing"
-    assert mobile["total_sims"] < desktop["total_sims"], "the phone is a WEAKER config"
+    assert (mobile["k_dets"], mobile["sims_per_det"]) == (spec.k_dets, spec.sims_per_det), \
+        "the phone runs the champion of record since the 2026-08-01 unpin"
+    assert mobile["total_sims"] == desktop["total_sims"]
+    assert mobile["backend"] == "rust", \
+        "the mobile budget is ONLY payable on the rust core — never unpin one without the other"
+    assert mobile["rust_threads"] == 4, "G7 measured 1.551 s/move at threads=4"
+    assert mobile["parallel_workers"] is None, "Chaquopy has no multiprocessing, ever"
 
-    # Unknown profile -> the champion of record on the SEQUENTIAL path, and it says so.
+    # Unknown profile -> the champion of record on the SEQUENTIAL PYTHON path, and it
+    # says so. Fail-SAFE: an absent profile must never inherit a rust-priced budget.
     unknown = cf.deploy_profile("no_such_profile", spec)
     assert unknown["found"] is False
     assert (unknown["k_dets"], unknown["sims_per_det"]) == (spec.k_dets, spec.sims_per_det)
     assert unknown["parallel_workers"] is None
+    assert unknown["backend"] == "python" and unknown["rust_threads"] is None
 
 
 def test_fair_manifest_matches_intent():

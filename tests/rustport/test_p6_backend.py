@@ -129,6 +129,64 @@ def test_rust_backend_rejects_the_wrong_modes_and_knobs():
         CF.make_production_champion("fair", sims=8, k_dets=1, backend="julia")
 
 
+def test_backend_auto_resolves_from_the_yaml():
+    """`backend="auto"` is the ONLY route from PRODUCTION.yaml to the engine, and it is
+    a caller ASSERTION that it drives the mirror (2026-08-01). The plain default must
+    stay python so the 5 non-advancing call sites of BACKEND_BYPASS_AUDIT_20260801.md
+    are untouched."""
+    spec = CF.load_production_spec()
+    game, _ = _fresh()
+    auto = CF.make_production_champion("fair", game=game, sims=8, k_dets=1,
+                                       verify=False, backend="auto")
+    assert type(auto).__name__ == ("RustFairAgent" if spec.backend == "rust"
+                                   else "FairHeuristicPriorAgent")
+    # The default did NOT move.
+    game2, _ = _fresh()
+    plain = CF.make_production_champion("fair", game=game2, sims=8, k_dets=1,
+                                        verify=False)
+    assert type(plain).__name__ == "FairHeuristicPriorAgent"
+
+
+def test_auto_falls_back_to_python_when_the_yaml_says_nothing(monkeypatch):
+    """An older YAML with no `backend` field must resolve exactly as before."""
+    import dataclasses as dc
+
+    real = CF.load_production_spec
+
+    def no_backend(*a, **kw):
+        return dc.replace(real(*a, **kw), backend="python")
+
+    monkeypatch.setattr(CF, "load_production_spec", no_backend)
+    game, _ = _fresh()
+    agent = CF.make_production_champion("fair", game=game, sims=8, k_dets=1,
+                                        verify=False, backend="auto")
+    assert type(agent).__name__ == "FairHeuristicPriorAgent"
+
+
+def test_a_stale_mirror_raises_instead_of_playing_a_wrong_move():
+    """THE BYPASS GUARD (2026-08-01). A caller that never calls `advance()` used to be
+    handed a move computed for the position the game left at ply 1 — silently, because
+    `_check_sync` was a no-op unless CARC_RS_RECONCILE=1. Measured before the fix: the
+    agent re-returned its ply-1 action. That has to be loud, because it is the exact
+    mistake 5 of 6 call sites in this repo would have made under a default flip."""
+    game, board = _fresh()
+    agent = _rs(game)
+    a = int(agent.choose_action(board))          # ply 0: fine, mirror is seated
+    board, _ = game.get_next_state(board, a)
+    # ...and now the caller forgets `agent.advance(a)`.
+    with pytest.raises(RA.MirrorDesync) as e:
+        agent.choose_action(board)
+    assert "desync" in str(e.value)
+
+    # The compliant caller is unaffected: advance() then choose_action() is clean.
+    game2, board2 = _fresh()
+    ok = _rs(game2)
+    for _ in range(4):
+        act = int(ok.choose_action(board2))
+        board2, _ = game2.get_next_state(board2, act)
+        ok.advance(act)
+
+
 def test_rust_threads_stamp_only_when_asked():
     game, _ = _fresh()
     a = CF.make_production_champion("fair", game=game, sims=8, k_dets=1,
