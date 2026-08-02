@@ -75,6 +75,32 @@ PROXY / LIMITATION (read before quoting a number)
    `--noise-control`, which re-searches world 0 under a different seed and asserts an
    identical result.
 
+2026-08-02 `--backend {python,rust,auto}` — AUDIT ITEM A8, CONVERTED
+--------------------------------------------------------------------
+`BACKEND_BYPASS_AUDIT_20260801.md` §2/A8: this census is the "component library" shape —
+it builds the champion for `agent._evaluator` / `agent._c_puct` / `det_seed_base` and
+runs the k per-world searches itself, so no builder kwarg reaches it. Only those
+per-world searches move, through `rust_world_search.RustWorldSearcher`
+(`MirrorState` + `set_unseen_deck` + `search_single`).
+
+⚠️ **THE DETERMINIZATION STREAM MUST STAY PYTHON, and here that is load-bearing rather
+than merely tidy.** The duplicate census draws replicate groups 1..R-1 from the SAME
+CONTINUING `det_rng` after the k searched worlds; `FairAgentRs.determinizations()` builds
+its own MT19937 per call and cannot hand the stream back, so using it would silently
+decorrelate `dup_rep` from `dup`. The Python draw is kept verbatim and only the search of
+each drawn world is handed to carc_rs.
+
+⚠️ **`--noise-control` IS REFUSED ON THE RUST BACKEND**, not silently passed. It exists to
+re-search world 0 *under a different seed* and assert the result is unchanged;
+`SearchConfigRs` carries no seed at all (audit §3 Gap 1), so on Rust the "different seed"
+leg is the identical call and the control would report `True` while testing nothing. A
+vacuous green control is worse than no control. Run it on `--backend python` — and note
+its conclusion already generalises: GAP1_SEED_INVARIANCE.json proved seed-invariance of
+this exact search over 75 cross-seed comparisons.
+
+Identity gate: `scripts/rustport/gate_adaptive_k_backend.py` ->
+`measurement/rustport_p6/GATE_ADAPTIVE_K_BACKEND.json`.
+
 USAGE
 -----
     .venv/bin/python -u scripts/measurement_infra/adaptive_k_census.py \
@@ -132,6 +158,7 @@ from carcassonne_ai import fair_agent as FA  # noqa: E402
 from carcassonne_ai.mcts import NeuralMCTS  # noqa: E402
 
 import root_replay as RR  # noqa: E402
+import rust_world_search as RWS  # noqa: E402
 
 # Phase strata — VERBATIM the CL-070 root-bank cuts (sample_agreement_roots.PHASE_CUTS),
 # so this census is directly joinable to the bank's own phase_bucket column.
@@ -288,12 +315,15 @@ _KDETS = None
 _SALT = None
 _REPS = None
 _NOISE = False
+_BACKEND = "python"
+_RUST_THREADS = 1
 
 
-def _init(cfg, sims, k_dets, salt, reps, noise):
-    global _CFG, _SIMS, _KDETS, _SALT, _REPS, _NOISE
+def _init(cfg, sims, k_dets, salt, reps, noise, backend="python", rust_threads=1):
+    global _CFG, _SIMS, _KDETS, _SALT, _REPS, _NOISE, _BACKEND, _RUST_THREADS
     _CFG, _SIMS, _KDETS, _SALT = cfg, int(sims), int(k_dets), int(salt)
     _REPS, _NOISE = int(reps), bool(noise)
+    _BACKEND, _RUST_THREADS = str(backend), int(rust_threads)
 
 
 def _census_root(r: dict) -> dict:
@@ -317,9 +347,14 @@ def _census_root(r: dict) -> dict:
         legal = np.flatnonzero(game.get_valid_moves(board))
         out["n_legal"] = int(legal.size)
 
-        agent = CF.build_fair_champion(game, sims=_SIMS, k_dets=_KDETS,
-                                       seed=world_seed(r["deck_seed"], r["ply"], _SALT),
-                                       cfg=_CFG)
+        out["backend"] = _BACKEND
+        # On the rust backend this agent is a RustFairAgent used ONLY as the config
+        # oracle (det_seed_base); the per-world searches go through RustWorldSearcher.
+        agent = CF.build_fair_champion(
+            game, sims=_SIMS, k_dets=_KDETS,
+            seed=world_seed(r["deck_seed"], r["ply"], _SALT), cfg=_CFG,
+            **({"backend": "rust", "rust_threads": _RUST_THREADS}
+               if _BACKEND == "rust" else {}))
         base = agent.det_seed_base(0)
         det_rng = random.Random(base + 1)      # the agent's own deck-reshuffle stream
         canon = canonical_deck_descriptions(board.state.deck)
@@ -350,7 +385,26 @@ def _census_root(r: dict) -> dict:
         per_world = []
         v_best = []
         a_best = []
+        ws = None
+        if _BACKEND == "rust":
+            ws = RWS.RustWorldSearcher(game, _CFG, sims=_SIMS,
+                                       deck_seed=int(r["deck_seed"]),
+                                       prefix=r["actions"][:int(r["ply"])])
+            ws.check_sync(board, "adaptive-k-root")
         for i, b in enumerate(worlds):
+            if ws is not None:
+                stats = ws.search_world(b)
+                n_map = {int(a): float(n) for a, n, _w in stats}
+                w_map = {int(a): float(w) for a, _n, w in stats}
+                per_world.append((n_map, w_map))
+                if n_map:
+                    v_best.append(max(w_map[a] / n_map[a] for a in n_map))
+                    a_best.append(int(max(n_map, key=lambda a: (n_map[a],
+                                                               w_map[a] / n_map[a], -a))))
+                else:
+                    v_best.append(None)
+                    a_best.append(None)
+                continue
             m = NeuralMCTS(game=game, evaluator=agent._evaluator, simulations=_SIMS,
                            c_puct=agent._c_puct, seed=base + 100 + i)
             m.search(b)
@@ -367,6 +421,16 @@ def _census_root(r: dict) -> dict:
             m.clear()
 
         if _NOISE and worlds:
+            if _BACKEND != "python":
+                # Defensive: main() already refuses this combination. The control varies
+                # the SEARCH SEED, and carc_rs SearchConfigRs has no seed field (audit §3
+                # Gap 1) — the second leg would be the identical call and the control
+                # would read True while testing nothing.
+                raise AssertionError(
+                    f"--noise-control is a backend='python' control; got {_BACKEND!r}. "
+                    "carc_rs has no search seed, so the control is vacuous there "
+                    "(seed-invariance is separately proven by "
+                    "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json).")
             m = NeuralMCTS(game=game, evaluator=agent._evaluator, simulations=_SIMS,
                            c_puct=agent._c_puct, seed=base + 999)
             m.search(worlds[0])
@@ -501,7 +565,32 @@ def main(argv=None) -> int:
                     help="re-search world 0 under a different seed (determinism check)")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--tag", default="")
+    ap.add_argument("--backend", default="python", choices=list(RWS.BACKENDS),
+                    help="which ENGINE runs the per-world searches. 'python' (default) "
+                         "is byte-identical to before this flag existed; 'auto' resolves "
+                         f"from PRODUCTION.yaml. Escape hatch: {RWS.FORCE_PYTHON_ENV}=1.")
+    ap.add_argument("--rust-threads", type=int, default=1,
+                    help="carc_rs threads. MUST stay 1 in this game-parallel census "
+                         "(search_single is single-threaded anyway).")
     args = ap.parse_args(argv)
+
+    backend = RWS.resolve_backend(args.backend)
+    if args.noise_control and backend != "python":
+        ap.error(
+            f"--noise-control is incompatible with --backend {backend}: the control "
+            "re-searches world 0 UNDER A DIFFERENT SEED, and carc_rs SearchConfigRs has "
+            "no seed field at all (BACKEND_BYPASS_AUDIT_20260801 §3 Gap 1), so the "
+            "second leg is the identical call and the control would report True while "
+            "testing nothing. Run it with --backend python; seed-invariance of this "
+            "exact search is separately proven by "
+            "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json.")
+    if args.rust_threads != 1:
+        if backend != "rust":
+            ap.error(f"--rust-threads is a backend=rust knob (resolved: {backend})")
+        if args.workers > 1:
+            ap.error(f"--rust-threads {args.rust_threads} with --workers {args.workers}: "
+                     "this is a game-parallel census and W x t hot threads is the "
+                     "documented failure mode. Keep rust_threads=1.")
 
     spec = CF.load_production_spec()
     cfg = CF.production_prior_cfg(spec)
@@ -510,7 +599,7 @@ def main(argv=None) -> int:
 
     rows = [json.loads(l) for l in Path(args.roots).read_text().splitlines() if l.strip()]
     rows = [r for r in rows if r.get("ok", True)]
-    print(f"[census] roots={len(rows)} from {args.roots}", flush=True)
+    print(f"[census] roots={len(rows)} from {args.roots} | backend={backend}", flush=True)
     if args.n:
         rows = stratified_sample(rows, args.n, args.sample_seed)
         print(f"[census] stratified sample -> {len(rows)} "
@@ -524,7 +613,8 @@ def main(argv=None) -> int:
     ctx = get_context("fork")
     with ctx.Pool(args.workers, initializer=_init,
                   initargs=(cfg, sims, k_dets, args.salt, args.dup_replicates,
-                            args.noise_control)) as pool:
+                            args.noise_control, backend,
+                            int(args.rust_threads))) as pool:
         done = []
         for i, res in enumerate(pool.imap_unordered(_census_root, rows, chunksize=1), 1):
             done.append(res)
@@ -580,6 +670,13 @@ def main(argv=None) -> int:
                        "note": "k_remaining<=K is owned by the marginalized solver — "
                                "no determinization is drawn there"},
         "phase_cuts_k_remaining": PHASE_CUTS,
+        "execution": RWS.backend_manifest(
+            backend, rust_threads=int(args.rust_threads),
+            extra={"identity_gate": "scripts/rustport/gate_adaptive_k_backend.py -> "
+                                    "measurement/rustport_p6/GATE_ADAPTIVE_K_BACKEND.json",
+                   "noise_control": ("run" if args.noise_control else "off") +
+                                    " — python-only by construction (carc_rs has no "
+                                    "search seed; the control would be vacuous)"}),
         "env": _CANON_ENV,
         "src_root": SRC_ROOT,
         "fair_agent_file": _fa.__file__,
