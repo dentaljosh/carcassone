@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import struct
 import sys
@@ -197,7 +198,7 @@ def main(argv=None) -> int:
         "why": "gate_clairvoyant.py licenses the CANDIDATE knobs on the PRODUCTION "
                "leaf. The opponent runs final_select=visits (a different argmax rule) "
                "on this harness's OWN v2.9 Bmild_cap8 leaf, so it needs its own gate.",
-        "leaf_env": {k: __import__("os").environ.get(k) for k in H._CANON_ENV
+        "leaf_env": {k: os.environ.get(k) for k in H._CANON_ENV
                      if k.startswith("CARCASSONNE_")},
         "leaf_hash": H._leaf_hash(H.DEFAULT_CONFIG),
         "config_legs": legs,
