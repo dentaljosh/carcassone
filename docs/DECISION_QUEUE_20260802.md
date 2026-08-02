@@ -11,8 +11,12 @@
    elo-equiv, 95% CI [−5.7, +44.6] vs the 25-elo bar — couldn't exclude a fundable
    effect, couldn't detect one). Your call: accept the default, or fund the overrule
    sizing (~610 deck-paired games, one seat at 10×) / a cheaper intermediate rung first.
-2. **rodv3 menu** (CL-072 leaning-negative): gen@11008 discriminator (now ~4–6 h at Rust
-   speeds) · n→800 teacher-h2h extension · or bank the lean and park.
+2. **rodv3 menu** (CL-072 leaning-negative): gen@11008 discriminator — **REPRICED with
+   MEASURED gen throughput (2026-08-02 gen W-sweep, production knobs k8×1376 rust): ~260
+   games/h laptop-only, ~314 games/h local-only, wall-parallel both boxes ⇒ the 300-game
+   gen is ~35 min (two boxes) / <1 h (either box alone)** — down from the ~4–6 h estimate
+   and the 29 h python-era price. The blocking cost is now the TRAIN + eval tail, not gen.
+   Menu unchanged: gen@11008 · n→800 teacher-h2h extension · or bank the lean and park.
 3. **ANE n≈2150 cell** — recommendation: CLOSE UNFUNDED (the port inflated r ~8× past the
    reopen bar; STATUS 2026-08-01 note). Needs your ack to flip the claim line.
 4. **F7b farm knockout cells** — cheap post-wiring (Rust-severable). Go/no-go.
