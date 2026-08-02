@@ -218,6 +218,34 @@ def test_restore_reseats_the_rust_mirror():
     assert got["latched"] == live_stats["latched"]
 
 
+def test_pre_flip_e4_archives_still_restore_under_the_new_default():
+    """BACKWARD COMPAT for the 2026-08-01 flip, at the BRIDGE level.
+
+    The real E4 archives were written by the PRE-flip app: no `start_rule` key (so
+    they mean the legacy "engine" rule) and `sims`/`k_dets` null (so a restore
+    resolves whatever the CURRENT profile says — which the unpin just moved from
+    2752 to 11008). Both of those are exactly the kind of thing a budget/rule flip
+    breaks, and these two files are the only human-vs-champion games that exist, so
+    a regression here is unrecoverable data.
+
+    tests/rustport/test_p1_engine.py replays them at the ENGINE level; this asserts
+    the BRIDGE path — the one the app's Past-games list actually calls.
+    """
+    archives = sorted((REPO / "measurement" / "e4_games").glob("*.json"))
+    if not archives:
+        pytest.skip("no E4 archives in this checkout")
+    for path in archives:
+        blob = json.loads(path.read_text())
+        r = _j(B.restore_game(json.dumps(blob)))
+        assert B._S.start_rule == B.START_RULE_ENGINE, \
+            f"{path.name}: an archive with no start_rule must replay as 'engine'"
+        assert r["restored"]["actions"] == len(blob["actions"])
+        assert r["scores"] == blob["scores"], f"{path.name}: replay diverged"
+        # The archive keeps its OWN budget, so E4 grading of old games is untouched
+        # by the unpin — the new champion budget must not be retro-applied to them.
+        assert (blob["k_dets_effective"], blob["sims_effective"]) == (4, 688)
+
+
 def test_runtime_info_reports_rust():
     info = _j(B.runtime_info())
     assert "rust" in info
