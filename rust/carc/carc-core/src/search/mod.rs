@@ -37,6 +37,7 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use crate::compat::{self, LibmFlavor};
 use crate::game::Game;
@@ -162,7 +163,11 @@ impl std::fmt::Display for SearchError {
 
 /// `mcts._NeuralNode`.
 pub struct Node {
-    pub key: Box<str>,
+    /// The `string_representation` bytes, heap-allocated **once** per node.
+    /// `Tree::index` / `Tree::legal_cache` hold refcount handles onto the same
+    /// buffer (the tree is per-thread, so `Rc` suffices) — the 2026-08-02
+    /// review's finding #2 was three independent copies of a 1.2–5.0 KB key.
+    pub key: Rc<str>,
     /// First 16 hex of `sha256(key)` — the trace-harness identity.
     pub digest: Box<str>,
     pub player_to_move: usize,
@@ -190,10 +195,10 @@ pub struct Node {
 }
 
 impl Node {
-    fn new(key: String, player_to_move: usize, terminal_value: f64) -> Self {
+    fn new(key: Rc<str>, player_to_move: usize, terminal_value: f64) -> Self {
         let digest = sha256_hex(key.as_bytes())[..16].to_string().into_boxed_str();
         Node {
-            key: key.into_boxed_str(),
+            key,
             digest,
             player_to_move,
             is_terminal: terminal_value != 0.0,
@@ -235,10 +240,10 @@ impl Node {
 #[derive(Default)]
 pub struct Tree {
     pub nodes: Vec<Node>,
-    index: HashMap<Box<str>, NodeId, FxBuildHasher>,
+    index: HashMap<Rc<str>, NodeId, FxBuildHasher>,
     /// `Game._legal_cache` — keyed by `string_representation`, exactly as in
     /// `game_wrapper.get_valid_moves`.
-    legal_cache: HashMap<Box<str>, Vec<i32>, FxBuildHasher>,
+    legal_cache: HashMap<Rc<str>, Vec<i32>, FxBuildHasher>,
     pub legal_cache_hits: u64,
     pub legal_cache_misses: u64,
     /// Cache HITS whose recomputed mask disagreed (only counted under
@@ -268,7 +273,8 @@ impl Tree {
             return *id;
         }
         let id = self.nodes.len() as NodeId;
-        self.index.insert(node.key.clone(), id);
+        // Refcount handle onto the node's single key allocation, not a copy.
+        self.index.insert(Rc::clone(&node.key), id);
         self.nodes.push(node);
         id
     }
@@ -386,8 +392,8 @@ impl<'a> Searcher<'a> {
     }
 
     /// `game_wrapper.Game.get_valid_moves` **through the repr-keyed cache**.
-    fn legal_actions(&mut self, g: &Game, key: &str) -> Vec<i32> {
-        if let Some(v) = self.tree.legal_cache.get(key) {
+    fn legal_actions(&mut self, g: &Game, key: &Rc<str>) -> Vec<i32> {
+        if let Some(v) = self.tree.legal_cache.get(key.as_ref()) {
             self.tree.legal_cache_hits += 1;
             let hit = v.clone();
             if self.cfg.legal_cache_collide_check && hit != g.legal_actions() {
@@ -397,9 +403,7 @@ impl<'a> Searcher<'a> {
         }
         self.tree.legal_cache_misses += 1;
         let legal = g.legal_actions();
-        self.tree
-            .legal_cache
-            .insert(key.to_string().into_boxed_str(), legal.clone());
+        self.tree.legal_cache.insert(Rc::clone(key), legal.clone());
         legal
     }
 
@@ -410,7 +414,7 @@ impl<'a> Searcher<'a> {
     fn evaluate(
         &mut self,
         g: &Game,
-        key: &str,
+        key: &Rc<str>,
     ) -> Result<(Vec<i32>, Vec<f32>, f64), SearchError> {
         let mover = g.state.current_player;
         let leaf_parent = self.leaf_at(g, mover)?;
@@ -469,7 +473,8 @@ impl<'a> Searcher<'a> {
             self.trace_expand(id);
             return Ok(());
         }
-        let key = self.tree.get(id).key.to_string();
+        // Refcount handle, not a fresh copy of the multi-KB key.
+        let key = Rc::clone(&self.tree.get(id).key);
         let (legal, priors_f32, value_raw) = self.evaluate(g, &key)?;
 
         if legal.is_empty() {
@@ -530,7 +535,7 @@ impl<'a> Searcher<'a> {
         }
         let player = g.state.current_player;
         let tv = self.game_ended(g, player);
-        self.tree.intern(Node::new(key, player, tv))
+        self.tree.intern(Node::new(Rc::from(key), player, tv))
     }
 
     // -- selection ---------------------------------------------------------- //
