@@ -154,8 +154,15 @@ def search_config_rs(cfg, sims: int):
             "Rust backend, which implements no Gumbel root. They would be silently "
             "dropped; build this agent with backend='python'.")
 
+    # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
+    # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller
+    # that relies on the leaf env rather than an explicit override passes — including
+    # `gen_fair_distill._champion_cfg`. Reading the raw attribute crashed there with
+    # `NoneType has no attribute v29_meeple_curve`. The champion_factory path never hit
+    # it because `production_prior_cfg` always injects an explicit curve125 LeafConfig.
     return carc_rs.SearchConfigRs(
-        leaf_config_rs(cfg.leaf_cfg),
+        leaf_config_rs(cfg.resolved_leaf_cfg() if hasattr(cfg, "resolved_leaf_cfg")
+                       else cfg.leaf_cfg),
         int(sims),
         float(cfg.c_puct),
         float(cfg.tau_p),
@@ -540,3 +547,177 @@ def _short(s: str) -> str:
     import hashlib
 
     return hashlib.sha256(s.encode()).hexdigest()[:16]
+
+
+# --------------------------------------------------------------------------- #
+# CLASS B — the clairvoyant / instrument tier                                   #
+# --------------------------------------------------------------------------- #
+class RustClairvoyantAgent:
+    """`HeuristicPriorAgent` (the true-deck ruler) on the Rust single-world search.
+
+    The clairvoyant agent is NOT the PIMC champion: it descends the REAL deck
+    (`fair_chance=False`) with one tree, no determinizations and no pooling. On the
+    Rust side that is exactly `MirrorState.search_single`, whose own docstring pins
+    it as *"equivalent to `HeuristicPriorAgent(game, cfg, sims).move(board)` with
+    `reuse_tree=False`"*, driven over a mirror seated on the true deck.
+
+    ⚠️ THIS IS A RULER. Converting an instrument changes the instrument, so nothing
+    here licenses grading with it — a converted ruler needs its own identity gate on
+    the G6 pattern (100% action agreement) before it prices anything. The gate for
+    this class is `scripts/rustport/gate_clairvoyant.py`.
+
+    THE THREE GAPS of BACKEND_BYPASS_AUDIT_20260801 §3, and where they now stand:
+
+      * Gap 1 (no search seed on `SearchConfigRs`) — **CLOSED 2026-08-02** by
+        `scripts/rustport/gap1_seed_invariance.py`: 75 cross-seed comparisons over 15
+        recorded-champion roots at the production per-world budget, bit-identical
+        chosen action and root N/W at every seed including `None`. The seed feeds
+        `NeuralMCTS._np_rng`, consumed only by temperature sampling and Dirichlet root
+        noise, neither engaged under `best_action`. `seed` is therefore accepted and
+        recorded here but is genuinely inert; a caller passing one is not lied to.
+      * Gap 2 (no `reuse_tree`) — **OPEN, and enforced**: `search_single` is
+        fresh-tree only, so `reuse_tree=True` RAISES rather than silently running a
+        different search. Inert for the champion (fresh trees per determinization),
+        but a ruler that sets it would not be reproducible.
+      * Gap 3 (no evaluator injection) — **OPEN, and enforced**: the Rust core carries
+        no net, so an injected evaluator RAISES.
+
+    Same mirror contract as `RustFairAgent`: `start_game()` once, then `advance()`
+    for every applied action of BOTH seats, and `choose_action` hard-checks sync.
+    """
+
+    neural_moves = 0
+
+    def __init__(self, game, cfg, *, simulations: int, seed: int | None = None,
+                 reuse_tree: bool = False, evaluator=None,
+                 window_size: int = 25, reconcile: bool | None = None):
+        import carc_rs
+
+        if reuse_tree:
+            raise ValueError(
+                "reuse_tree has no carc_rs implementation (MirrorState.search_single "
+                "is fresh-tree only — Gap 2 of BACKEND_BYPASS_AUDIT_20260801 §3). "
+                "Build this ruler on the python backend.")
+        if evaluator is not None:
+            raise ValueError(
+                "evaluator injection has no carc_rs implementation (the Rust core "
+                "carries no net — Gap 3). Build this ruler on the python backend.")
+        self._game = game
+        self._cfg = cfg
+        self._sims = int(simulations)
+        # Recorded for the manifest and accepted for signature parity, but PROVEN
+        # inert at these knobs (Gap 1 above) — not silently dropped.
+        self._seed = seed
+        self._reconcile = reconcile_enabled(reconcile)
+        self._scfg = search_config_rs(cfg, self._sims)
+        self._ms = None
+        self._carc_rs = carc_rs
+        self._window_size = int(window_size)
+        self._started = False
+        self._plies = 0
+        self._moves = 0
+        self.total_secs = 0.0
+        self.prefix_moves = 0
+        self.prefix_secs = 0.0
+
+    # --- lifecycle ---------------------------------------------------------- #
+    def start_game(self, board) -> None:
+        """Seat the mirror on the deck THIS board was dealt (draw order)."""
+        st = board.state
+        if st.next_tile is None:
+            raise ValueError("start_game needs an INITIAL board (next_tile is None)")
+        descs = [st.next_tile.description] + [t.description for t in st.deck]
+        self._ms = self._carc_rs.MirrorState.from_deck(descs)
+        self._started = True
+        self._plies = self._moves = 0
+        self.total_secs = self.prefix_secs = 0.0
+        self.prefix_moves = 0
+        self._check_sync(board, "start_game")
+
+    def start_game_from_seed(self, deck_seed: int | str) -> None:
+        self._ms = self._carc_rs.MirrorState.from_seed(str(deck_seed))
+        self._started = True
+        self._plies = self._moves = 0
+        self.total_secs = self.prefix_secs = 0.0
+        self.prefix_moves = 0
+
+    def close(self) -> None:
+        """No-op — the Rust ruler owns no processes. Present for drop-in parity."""
+
+    # --- the single mirror choke point -------------------------------------- #
+    def advance(self, action: int, board_after=None) -> None:
+        if not self._started:
+            raise RuntimeError("advance before start_game()")
+        self._ms.advance(int(action))
+        self._plies += 1
+        if board_after is not None:
+            self._check_sync(board_after, f"advance({action})")
+
+    # --- the decision ------------------------------------------------------- #
+    def choose_action(self, board) -> int:
+        """Pick the clairvoyant move for `board`. Never mutates the caller's board."""
+        if not self._started:
+            self.start_game(board)
+        # Unconditional, for the same reason RustFairAgent's is: a caller that forgets
+        # to advance would otherwise be answered from a frozen mirror, silently.
+        self.check_sync(board, "choose_action")
+        t0 = time.perf_counter()
+        res = self._ms.search_single(self._scfg)
+        dt = time.perf_counter() - t0
+        self.total_secs += dt
+        self.prefix_secs += dt
+        self.prefix_moves += 1
+        self._moves += 1
+        self._last = res
+        return int(res["chosen_action"])
+
+    move = choose_action
+    best_action = choose_action
+
+    # --- reconcile ---------------------------------------------------------- #
+    def _check_sync(self, board, where: str) -> None:
+        if not self._reconcile:
+            return
+        self.check_sync(board, where)
+
+    def check_sync(self, board, where: str = "check_sync") -> None:
+        want = self._game.string_representation(board)
+        got = self._ms.string_repr()
+        if want == got:
+            return
+        raise MirrorDesync(
+            f"rust clairvoyant mirror desync at {where} (ply {self._plies}): "
+            f"python digest {_short(want)} != rust digest {_short(got)}\n"
+            f"  python: {want[:400]}\n  rust  : {got[:400]}")
+
+    # --- read-off ----------------------------------------------------------- #
+    def last_search(self) -> dict:
+        """The last search's raw surface (floats as raw f64 BITS) — the G3 shape."""
+        return dict(self._last)
+
+    def string_repr(self) -> str:
+        return self._ms.string_repr()
+
+    def stats(self) -> dict:
+        return {
+            "backend": "rust",
+            "agent_class": "RustClairvoyantAgent",
+            "neural_moves": 0,
+            "moves": int(self._moves),
+            "prefix_moves": int(self.prefix_moves),
+            "prefix_secs": float(self.prefix_secs),
+            "total_secs": float(self.total_secs),
+            "ms_per_move": (1e3 * self.total_secs / self._moves
+                            if self._moves else 0.0),
+            "simulations": int(self._sims),
+            "seed": self._seed,
+            "seed_note": "inert at these knobs — proven by "
+                         "measurement/rustport_p6/GAP1_SEED_INVARIANCE.json",
+            "reuse_tree": False,
+            "reconcile": bool(self._reconcile),
+            "plies_advanced": int(self._plies),
+        }
+
+    def __repr__(self) -> str:
+        return (f"RustClairvoyantAgent(sims={self._sims}, seed={self._seed}, "
+                f"reconcile={self._reconcile})")

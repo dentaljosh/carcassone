@@ -93,7 +93,8 @@ sys.path.insert(0, str(REPO / "scripts" / "measurement_infra"))
 
 from carcassonne_ai.aux_targets import OWNERSHIP_PLANES  # noqa: E402
 from carcassonne_ai.claim import try_claim as _try_claim  # noqa: E402
-from carcassonne_ai.fair_agent import FairHeuristicPriorAgent  # noqa: E402
+from carcassonne_ai import champion_factory  # noqa: E402
+from carcassonne_ai.fair_agent import FairHeuristicPriorAgent  # noqa: F401,E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorConfig,
@@ -180,6 +181,7 @@ def play_fair_distill_game_to_dataset(
     net=None, handles=None, eval_sighted_game=None,
     window_size: int = 25, max_plies: int = 400,
     batch_size: int = 1,
+    backend: str = "python", rust_threads: int | None = None,
 ) -> tuple[GameDataset | None, dict]:
     """Play ONE FAIR champion self-play game (FairHeuristicPriorAgent vs itself) and
     return (GameDataset, info).
@@ -239,17 +241,37 @@ def play_fair_distill_game_to_dataset(
             fair_net_batch_evaluator = make_fair_net_prior_batch_evaluator(
                 champ_cfg, net=net, handles=handles, sighted_game=eval_sighted_game,
             )
-    agent = FairHeuristicPriorAgent(
-        agent_game,
-        cfg=champ_cfg,
-        sims=sims, k_dets=k_dets, seed=seed,
-        exact_endgame=exact_endgame, exact_max_k=exact_max_k,
-        evaluator=fair_net_evaluator,
-        batch_size=(batch_size if fair_net_evaluator is not None else 1),
-        batch_evaluator=fair_net_batch_evaluator,
-    )
+    # ENGINE (rustport P6, wired 2026-08-02). Routed through the champion factory —
+    # this file previously imported FairHeuristicPriorAgent directly and so was
+    # structurally unable to see any governance change (Class A5 of
+    # BACKEND_BYPASS_AUDIT_20260801). backend="python" forwards verbatim and is
+    # byte-identical to the direct construction it replaces.
+    if backend == "rust":
+        if fair_net_evaluator is not None or fair_net_batch_evaluator is not None:
+            raise SystemExit(
+                "--backend rust cannot carry a net evaluator (--net-ckpt / "
+                "--shm-eval-server): carc_rs has no net. Generate the net-guided "
+                "arm with --backend python.")
+        agent = champion_factory.build_fair_champion(
+            agent_game, cfg=champ_cfg, sims=sims, k_dets=k_dets, seed=seed,
+            exact_endgame=exact_endgame, exact_max_k=exact_max_k,
+            backend="rust", rust_threads=rust_threads)
+    else:
+        agent = champion_factory.build_fair_champion(
+            agent_game,
+            cfg=champ_cfg,
+            sims=sims, k_dets=k_dets, seed=seed,
+            exact_endgame=exact_endgame, exact_max_k=exact_max_k,
+            evaluator=fair_net_evaluator,
+            batch_size=(batch_size if fair_net_evaluator is not None else 1),
+            batch_evaluator=fair_net_batch_evaluator,
+        )
 
     board = game.get_init_board()
+    # Seat the Rust mirror on the real deck. SELF-PLAY: one agent owns both seats, so
+    # every action below is one of its own and must be advanced exactly once.
+    if backend == "rust":
+        agent.start_game(board)
     A = game.get_action_size()
     obs_list: list[np.ndarray] = []
     scl_list: list[np.ndarray] = []
@@ -293,6 +315,8 @@ def play_fair_distill_game_to_dataset(
         action_list.append(int(action))
 
         board, _ = game.get_next_state(board, action)
+        if backend == "rust":
+            agent.advance(int(action))
         plies += 1
 
     s0, s1 = int(board.state.scores[0]), int(board.state.scores[1])
@@ -340,13 +364,24 @@ _W: dict = {}
 def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_max_k,
                  sighted, window_size, shared_claim, claim_host, claim_stale,
                  net_ckpt=None, shm_eval_server="", id_q=None, batch_size=1,
-                 log_actions=False, actions_only=False, action_meta=None):
+                 log_actions=False, actions_only=False, action_meta=None,
+                 backend="python", rust_threads=None):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
               exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
               shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale,
               batch_size=batch_size, log_actions=log_actions,
-              actions_only=actions_only, action_meta=(action_meta or {}))
+              actions_only=actions_only, action_meta=(action_meta or {}),
+              backend=backend)
+    # ⚠️ FARM RULE: this is a GAME-PARALLEL gen pool, so each worker runs the Rust
+    # agent at threads=1 — the game parallelism owns the cores (W16 x t8 = 128 hot
+    # threads is the failure mode). main() resolves it; asserted here so a worker can
+    # never silently inherit a multi-thread agent.
+    _W["rust_threads"] = rust_threads
+    if backend == "rust":
+        _t = 1 if rust_threads is None else int(rust_threads)
+        assert _t >= 1, f"rust_threads must be >=1; got {_t}"
+        _W["rust_threads"] = _t
     # STAGE-2 fair-net-prior wiring (default net-free: both stay None). Set up ONCE per
     # worker, reused across every game the worker plays.
     _W["net"] = None
@@ -401,6 +436,8 @@ def _play_one(args) -> dict | None:
         batch_size=_W.get("batch_size", 1),
         net=_W.get("net"), handles=_W.get("handles"),
         eval_sighted_game=_W.get("sighted_game"),
+        backend=_W.get("backend", "python"),
+        rust_threads=_W.get("rust_threads"),
     )
     if ds is None:
         info["skipped"] = True
@@ -432,6 +469,19 @@ def main(argv=None) -> int:
                          "encoding changes (policy/value TARGETS identical) — the "
                          "warm-from net must be built for the chosen dims")
     ap.add_argument("--window-size", type=int, default=25)
+    # --- ENGINE (rustport P6, wired 2026-08-02) ---
+    ap.add_argument("--backend", choices=("python", "rust", "auto"), default="python",
+                    help="which ENGINE runs the teacher. `python` (default) is "
+                         "byte-identical to every shard already on disk. `rust` runs "
+                         "carc_rs (BEHAVIOUR-IDENTICAL BY GATE: rustport G4/G6). "
+                         "`auto` resolves governance/PRODUCTION.yaml. ⚠️ Net-guided "
+                         "gen (--net-ckpt / --shm-eval-server) is python-only: "
+                         "carc_rs has no net evaluator. `--backend python` is the "
+                         "permanent escape hatch.")
+    ap.add_argument("--rust-threads", type=int, default=None,
+                    help="OS threads per Rust agent (--backend rust only). ⚠️ FARM "
+                         "RULE: leave UNSET for gen. It defaults to 1 whenever "
+                         "--workers > 1 because game parallelism owns the cores.")
     ap.add_argument("--workers", type=int, default=None, help="Pool size (default min(cpu,games))")
     ap.add_argument("--seed-start", type=int, default=700_000_000,
                     help="first seed; games use seed_start..seed_start+games-1")
@@ -476,7 +526,35 @@ def main(argv=None) -> int:
     if args.actions_only:
         args.log_actions = True
 
+    # ENGINE (rustport P6). Resolved ONCE in main so workers and manifest agree; a
+    # worker that re-read the YAML could resolve "auto" differently from the manifest.
+    _backend = str(args.backend)
+    if _backend == "auto":
+        _backend = str(champion_factory.load_production_spec().backend)
+    if _backend not in champion_factory.KNOWN_BACKENDS:
+        ap.error(f"--backend must be one of "
+                 f"{sorted(champion_factory.KNOWN_BACKENDS)} or 'auto'; "
+                 f"got {args.backend!r}")
+    if args.rust_threads is not None and _backend != "rust":
+        ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
+    _rust_threads = None
+    if _backend == "rust":
+        _rust_threads = 1 if args.rust_threads is None else int(args.rust_threads)
+        assert _rust_threads >= 1, f"resolved rust_threads={_rust_threads}"
+
+    def _backend_provenance_block() -> dict:
+        from carcassonne_ai.rust_agent import backend_provenance
+
+        return {"backend_provenance": {
+            "note": "BEHAVIOUR-IDENTICAL BY GATE (rustport G4/G6), not by "
+                    "construction — an ENGINE, not a player. The recorded policy "
+                    "and value TARGETS carry no strength claim from it.",
+            **backend_provenance()}}
+
     net_mode = bool(args.net_ckpt) or bool(args.shm_eval_server)
+    if _backend == "rust" and net_mode:
+        ap.error("--backend rust cannot carry a net evaluator (--net-ckpt / "
+                 "--shm-eval-server): carc_rs has no net. Use --backend python.")
     if net_mode and not args.sighted:
         ap.error("--net-ckpt / --shm-eval-server (fair-net-prior mode) require --sighted "
                  "(the net is an 81ch/42-scalar sighted net; the recorded obs must match)")
@@ -514,6 +592,13 @@ def main(argv=None) -> int:
             "[severed value loop — the learned value head never steers search]"),
         "teacher": {
             "fair_agent": "FairHeuristicPriorAgent",
+            # ENGINE provenance: recorded ALWAYS here (unlike the eval manifests, which
+            # stamp only off-default) because a distillation CORPUS outlives the run
+            # that made it, and "which engine produced these targets" is exactly the
+            # question a later reader cannot reconstruct.
+            "backend": _backend,
+            "rust_threads": _rust_threads,
+            **({} if _backend == "python" else _backend_provenance_block()),
             "kind": ("net-priors + frozen-leaf-value blind PIMC (fair-net flywheel)" if net_mode
                      else "classical PUCT-with-heuristic-priors, blind PIMC (non-clairvoyant)"),
             "k_dets": args.k_dets,
@@ -605,7 +690,8 @@ def main(argv=None) -> int:
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q,
-                      args.batch_size, args.log_actions, args.actions_only, action_meta))
+                      args.batch_size, args.log_actions, args.actions_only, action_meta,
+                      _backend, _rust_threads))
     else:
         _pool_cm = Pool(
             processes=workers, initializer=_worker_init,
@@ -613,7 +699,8 @@ def main(argv=None) -> int:
                       args.value_norm, args.exact_endgame, args.exact_max_k,
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, "", None,
-                      args.batch_size, args.log_actions, args.actions_only, action_meta))
+                      args.batch_size, args.log_actions, args.actions_only, action_meta,
+                      _backend, _rust_threads))
 
     t0 = time.perf_counter()
     played = skipped = rows = aux_rows = val_rows = 0

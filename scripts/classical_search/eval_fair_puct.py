@@ -950,13 +950,78 @@ def _build_fairnet_evaluator(game, cfg, net_mode, net_lambda, *, net=None,
     raise ValueError(f"unknown net_mode {net_mode!r}")
 
 
+# --------------------------------------------------------------------------- #
+# BACKEND — which ENGINE computes a fair agent (rustport P6, wired 2026-08-02).  #
+# --------------------------------------------------------------------------- #
+def _resolve_backend(backend) -> str:
+    """``"auto"`` -> governance/PRODUCTION.yaml; anything else validated and returned.
+
+    Kept here rather than inlined so the candidate side, the opponent side and the
+    manifest all resolve the SAME string exactly once per process."""
+    b = str(backend or "python")
+    if b == "auto":
+        b = str(champion_factory.load_production_spec().backend)
+    if b not in champion_factory.KNOWN_BACKENDS:
+        raise SystemExit(
+            f"--backend must be one of {sorted(champion_factory.KNOWN_BACKENDS)} "
+            f"or 'auto'; got {backend!r}")
+    return b
+
+
+def _drives_mirror(agent) -> bool:
+    """Does this agent own a Rust game mirror that the caller must advance?
+
+    Duck-typed on the lifecycle rather than isinstance so this module never has to
+    import carc_rs (the python-backend path must stay importable on a box with no
+    Rust wheel — that is the whole point of the --backend python escape hatch)."""
+    return hasattr(agent, "start_game") and hasattr(agent, "advance")
+
+
+def _start_mirrors(board, *agents) -> None:
+    """Seat every mirror-owning agent on the REAL initial board (its deck)."""
+    for a in agents:
+        if a is not None and _drives_mirror(a):
+            a.start_game(board)
+
+
+def _advance_mirrors(action, *agents) -> None:
+    """Apply ONE action to every mirror — BOTH seats, every ply.
+
+    ⚠️ This is the whole call-protocol difference between the Python and Rust
+    champions, and the reason the audit told us not to flip a default underneath
+    the harnesses. A caller that skips it leaves the mirror frozen at the ply it
+    first saw; since 2026-08-01 that raises MirrorDesync instead of silently
+    answering for a stale position, but it is still a broken run."""
+    for a in agents:
+        if a is not None and _drives_mirror(a):
+            a.advance(int(action))
+
+
 def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                    net_mode="residual", net_lambda=0.25, handles=None,
                    sighted_game=None, rep=None, batch_size=1,
                    oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                    meeple_dedup=None, intra_reuse=None,
-                   coreml_model=None, net_backend=None):
+                   coreml_model=None, net_backend=None,
+                   backend="python", rust_threads=None):
     """Build the champion side, wrapped in the fair marginalized endgame at K.
+
+    ``backend`` (2026-08-02) selects the ENGINE for the ``fair`` arm: ``"python"``
+    (default, byte-identical to every row already in experiments/results.csv),
+    ``"rust"``, or ``"auto"`` (resolve governance/PRODUCTION.yaml). On ``"rust"`` the
+    WHOLE ``_MarginalizedHandoff`` is replaced, not just its ``._prefix``: RustFairAgent
+    was deliberately built to emit this wrapper's exact counter shape
+    (``prefix_moves`` / ``prefix_secs`` / ``exact_moves`` / ``solver_secs`` /
+    ``solver_nodes`` / ``max_solve_secs`` / ``n_timeouts`` / ``latch_k``) and
+    ``FairAgentRs`` owns ``solve_marginalized``, so the endgame solve moves into Rust
+    too and the read-out below is unchanged. ⚠️ The returned agent OWNS A MIRROR — the
+    caller MUST call ``start_game(board)`` once and ``advance(action)`` for every
+    applied action of BOTH seats (``_play_one`` / ``_smoke`` do; see ``_advance_mirrors``).
+
+    Only the ``fair`` arm converts. ``fair-netprior`` / ``fair-net`` need an injected
+    evaluator and ``clair`` needs the true-deck ruler; carc_rs has neither (Gap 3 of
+    BACKEND_BYPASS_AUDIT_20260801 §3), so they RAISE under ``backend="rust"`` rather
+    than silently returning a Python agent a manifest would then stamp as Rust.
 
     ``oracle_prior_mult`` (Track-F Gate A, CANDIDATE side only; None = OFF) engages the
     per-world oracle-prior probe on the ``fair`` arm — see FairHeuristicPriorAgent. It is
@@ -982,6 +1047,27 @@ def _make_champion(info, cfg, sims, k_dets, K, seed, game, net=None,
                         FROZEN curve125 champion leaf (the severed value loop). `cfg`
                         MUST already carry the curve125 candidate leaf.
     info=="clair"    -> HeuristicPriorAgent prefix (clairvoyant PUCT on the true deck)."""
+    backend = _resolve_backend(backend)
+    if backend == "rust":
+        if info != "fair":
+            raise SystemExit(
+                f"--backend rust is a --info fair capability; got --info {info}. "
+                "carc_rs carries no net evaluator (fair-netprior / fair-net) and no "
+                "clairvoyant ruler (clair) — run those with --backend python.")
+        if oracle_prior_mult is not None:
+            raise SystemExit(
+                "--oracle-prior-mult is a python-only search overlay (it presearches "
+                "each world with the true deck); it has no carc_rs implementation. "
+                "Run the oracle arm with --backend python.")
+        # The WHOLE handoff, not just the prefix: RustFairAgent emits this wrapper's
+        # counter shape and FairAgentRs.solve_marginalized moves the endgame solve into
+        # Rust as well, so nothing downstream of here changes shape.
+        return champion_factory.build_fair_champion(
+            game, cfg=cfg, sims=sims, k_dets=k_dets, seed=seed,
+            exact_endgame=True, exact_max_k=int(K), exact_budget=EXACT_BUDGET,
+            backend="rust", rust_threads=rust_threads,
+            **({} if meeple_dedup is None else dict(meeple_dedup=bool(meeple_dedup))),
+            **({} if intra_reuse is None else dict(intra_reuse=bool(intra_reuse))))
     if info == "fair":
         # F1: route through the champion factory (single construction point). Byte-
         # identical to FairHeuristicPriorAgent(game, cfg, sims=..., k_dets=..., seed=...,
@@ -1087,8 +1173,17 @@ _NET_OPPONENTS = ("net", _BARE_NET)
 
 def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                    opp_leaf_cfg=None, net=None, handles=None, sighted_game=None,
-                   rep=None, opp_sims=None, opp_k_dets=None):
+                   rep=None, opp_sims=None, opp_k_dets=None,
+                   backend="python", rust_threads=None):
     """Build the OPPONENT side.
+
+    ``backend`` reaches ONLY the ``fair-champion`` head-to-head, which is the same
+    production PIMC agent as the candidate. The rungs are deliberately excluded: h800
+    (`_RungPrefix`), greedy (`_GreedyPrefix`) and bare-net are FROZEN RULERS whose
+    ratings in experiments/results.csv are interpretable only because they are
+    bit-for-bit unchanged, so they stay Python whatever --backend says (Class C of
+    BACKEND_BYPASS_AUDIT_20260801 §4). That asymmetry is also why a converted
+    champion-vs-h800 cell realises ~5x rather than ~8x end-to-end: only one side moves.
 
     opponent=="h800"          -> the fixed CL-022 rung: HeuristicMCTS @ rung_sims on
                                  env DEFAULT_CONFIG (curve100). BYTE-IDENTICAL to the
@@ -1156,9 +1251,13 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
     # `sims`/`k_dets` (see _play_one / _smoke).
     _opp_sims = sims if opp_sims is None else opp_sims
     _opp_k_dets = k_dets if opp_k_dets is None else opp_k_dets
+    # Only the symmetric fair-champion head-to-head can convert: `net` (fair-netprior)
+    # needs an evaluator carc_rs does not have, and _make_champion raises on it anyway.
+    _opp_backend = backend if info == "fair" else "python"
     return _make_champion(info, opp_cfg, _opp_sims, _opp_k_dets, K, seed + 1,
                           Game(enable_legal_moves_cache=True), net=net,
-                          handles=handles, sighted_game=sighted_game, rep=rep)
+                          handles=handles, sighted_game=sighted_game, rep=rep,
+                          backend=_opp_backend, rust_threads=rust_threads)
 
 
 # The PRODUCTION champion's search knobs (governance/PRODUCTION.yaml). These are ALSO
@@ -1369,8 +1468,19 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  opp_net_ckpt=None, opp_rep=None, opp_orch_shm_name="", batch_size=1,
                  opp_sims=None, oracle_prior_mult=None, oracle_prior_eps_coef=1e-3,
                  opp_k_dets=None, meeple_dedup=None, intra_reuse=None,
-                 netprior_backend=None):
+                 netprior_backend=None, backend="python", rust_threads=None):
     _W["info"] = info
+    # ENGINE (rustport P6). Resolved ONCE in main() and passed as a literal, never as
+    # "auto" — a worker that re-resolved the YAML could disagree with the manifest.
+    _W["backend"] = backend
+    # ⚠️ FARM RULE: this is a GAME-PARALLEL pool, so each worker runs the Rust agent at
+    # threads=1 and the game parallelism owns the cores. W16 x t8 = 128 hot threads is
+    # the failure mode. main() defaults this to 1 for any pooled run and asserts it.
+    _W["rust_threads"] = rust_threads
+    if backend == "rust":
+        _t = 1 if rust_threads is None else int(rust_threads)
+        assert _t >= 1, f"rust_threads must be >=1; got {_t}"
+        _W["rust_threads"] = _t
     # within-search leaf batching for the net-prior CANDIDATE (1 = serial byte-exact).
     _W["batch_size"] = batch_size
     # Track-F Gate A oracle-prior probe (CANDIDATE side; None = OFF).
@@ -1567,13 +1677,21 @@ def _play_one(args) -> GameResult | None:
                            oracle_prior_mult=_W.get("oracle_prior_mult"),
                            oracle_prior_eps_coef=_W.get("oracle_prior_eps_coef", 1e-3),
                            meeple_dedup=_W.get("meeple_dedup"),
-                           intra_reuse=_W.get("intra_reuse"))
+                           intra_reuse=_W.get("intra_reuse"),
+                           backend=_W.get("backend", "python"),
+                           rust_threads=_W.get("rust_threads"))
     rung = _make_opponent(
         _W.get("opponent", "h800"), _W["champ_cfg_dict"], _W["sims"], _W["k_dets"],
         _W["exact_k"], _W["rung_sims"], seed, opp_leaf_cfg=_W.get("opp_leaf_cfg"),
         net=_W.get("opp_net"), handles=_W.get("opp_handles"),
         sighted_game=_W.get("opp_sighted_game"), rep=_W.get("opp_rep"),
-        opp_sims=_W.get("opp_sims"), opp_k_dets=_W.get("opp_k_dets"))
+        opp_sims=_W.get("opp_sims"), opp_k_dets=_W.get("opp_k_dets"),
+        backend=_W.get("backend", "python"),
+        rust_threads=_W.get("rust_threads"))
+
+    # Seat any Rust mirror on the REAL initial board before the first decision, and
+    # advance it on EVERY applied action of BOTH seats below. No-op for python agents.
+    _start_mirrors(board, champ, rung)
 
     t0 = time.perf_counter()
     moves = 0
@@ -1589,6 +1707,7 @@ def _play_one(args) -> GameResult | None:
             rung_secs += time.perf_counter() - r0
             rung_moves += 1
         board, _ = game.get_next_state(board, action)
+        _advance_mirrors(action, champ, rung)
         moves += 1
     elapsed = time.perf_counter() - t0
     s0, s1 = board.state.scores
@@ -1888,12 +2007,16 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                                meeple_dedup=(True if args.meeple_dedup else None),
                                intra_reuse=(True if args.intra_reuse else None),
                                coreml_model=smoke_coreml_model,
-                               net_backend=getattr(args, "net_backend", None))
+                               net_backend=getattr(args, "net_backend", None),
+                               backend=args.backend,
+                               rust_threads=args.rust_threads)
         rung = _make_opponent(
             args.opponent, champ_cfg_dict, args.sims, args.k_dets, args.exact_k,
             args.rung_sims, seed, opp_leaf_cfg=opp_leaf_cfg, net=smoke_opp_net,
             sighted_game=smoke_opp_game, rep=opp_rep, opp_sims=args.opp_sims,
-            opp_k_dets=args.opp_k_dets)
+            opp_k_dets=args.opp_k_dets, backend=args.backend,
+            rust_threads=args.rust_threads)
+        _start_mirrors(board, champ, rung)
         moves = 0
         rung_moves = 0
         rung_secs = 0.0
@@ -1909,6 +2032,7 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                 rung_moves += 1
             assert mask[act], f"illegal action {act}"
             board, _ = game.get_next_state(board, act)
+            _advance_mirrors(act, champ, rung)
             moves += 1
         s0, s1 = board.state.scores
         diff = (s0 - s1) if a_seat == 0 else (s1 - s0)
@@ -1977,8 +2101,14 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
             assert _leaf_hash(rung.leaf_cfg) != _leaf_hash(cfg.resolved_leaf_cfg()), \
                 ("candidate and bare-net opponent resolved the SAME leaf — the "
                  "curve125 injection leaked onto the opponent")
-            _cand_prefix = getattr(champ, "_prefix", None)
-            assert isinstance(_cand_prefix, FairHeuristicPriorAgent), \
+            # On the rust backend the candidate IS the agent (no _MarginalizedHandoff
+            # wrapper, so no `._prefix`), so check the agent itself in that case. The
+            # assertion being made is about INFORMATION — blind fair PIMC, not a
+            # sighted/clairvoyant searcher — which both engines satisfy identically;
+            # it is not about which engine executes it.
+            _cand_prefix = getattr(champ, "_prefix", champ)
+            assert isinstance(_cand_prefix, FairHeuristicPriorAgent) or \
+                _drives_mirror(_cand_prefix), \
                 ("candidate must be the BLIND fair PIMC agent for a blind-vs-sighted "
                  f"cell; got {type(_cand_prefix).__name__}")
 
@@ -2073,6 +2203,29 @@ def main(argv=None) -> int:
                          "reorder near-tied priors, so the ANE agent is its own player "
                          "— run scripts/m5_bench/verify_coreml_evaluator.py first and "
                          "cite it. Requires --batch-size 1.")
+    # --- ENGINE (rustport P6, wired 2026-08-02) ------------------------------- #
+    ap.add_argument("--backend", choices=("python", "rust", "auto"), default="python",
+                    help="which ENGINE computes the fair agent(s). `python` (default) "
+                         "is byte-identical to every row already in "
+                         "experiments/results.csv. `rust` runs carc_rs "
+                         "(rust_agent.RustFairAgent) — BEHAVIOUR-IDENTICAL BY GATE, "
+                         "not by construction: rustport G4 reproduced the deployed "
+                         "champion bit-exactly (0/305,515 checks) and G6 read "
+                         "14,384/14,384 identical actions over 100 full games. `auto` "
+                         "resolves governance/PRODUCTION.yaml "
+                         "champion.fair_deploy.backend. ⚠️ Reaches --info fair ONLY "
+                         "(carc_rs has no net evaluator and no clairvoyant ruler) and, "
+                         "on the opponent side, --opponent fair-champion ONLY — the "
+                         "h800 / greedy / bare-net rungs are FROZEN RULERS and stay "
+                         "Python whatever this says. `--backend python` is the "
+                         "permanent escape hatch and needs no Rust wheel installed.")
+    ap.add_argument("--rust-threads", type=int, default=None,
+                    help="OS threads the Rust agent folds its k_dets worlds across "
+                         "(--backend rust only). ⚠️ FARM RULE: leave this UNSET in any "
+                         "game-parallel run. It defaults to 1 whenever --workers > 1 "
+                         "because the game parallelism owns the cores; W16 x t8 = 128 "
+                         "hot threads is the documented failure mode. Raise it only "
+                         "for a single-game / interactive latency measurement.")
     ap.add_argument("--coreml-model", type=str, default=None,
                     help="path to the .mlpackage for --net-backend coreml (build it "
                          "with scripts/m5_bench/export_cl067_coreml.py; its sidecar "
@@ -2557,6 +2710,41 @@ def main(argv=None) -> int:
               "lineage gap is at least this', nor a loss as 'the net is stronger'. What "
               "the cell buys is an OUT-OF-LINEAGE ruler.",
               file=sys.stderr)
+
+    # ENGINE (rustport P6). Resolved ONCE here so the workers and the manifest can never
+    # disagree — a worker that re-read the YAML could resolve "auto" differently from the
+    # manifest that describes the run.
+    _backend = _resolve_backend(args.backend)
+    if _backend == "rust" and args.info != "fair":
+        ap.error(f"--backend rust reaches --info fair only; got --info {args.info} "
+                 "(carc_rs has no net evaluator and no clairvoyant ruler)")
+    if args.rust_threads is not None and _backend != "rust":
+        ap.error(f"--rust-threads is a --backend rust knob; got --backend {_backend}")
+    # ⚠️ THE FARM RULE, enforced not merely documented. In a game-parallel pool the
+    # game parallelism owns the cores; W16 x t8 = 128 hot threads is the failure mode
+    # that motivates this. Explicit parameter, farm default 1, resolved value asserted
+    # and printed here and stamped into the manifest below.
+    _rust_threads = None
+    if _backend == "rust":
+        _pooled = int(getattr(args, "workers", 1) or 1) > 1 and not args.smoke
+        if args.rust_threads is None:
+            _rust_threads = 1
+        else:
+            _rust_threads = int(args.rust_threads)
+            if _pooled and _rust_threads != 1:
+                ap.error(
+                    f"--rust-threads {_rust_threads} with --workers {args.workers}: a "
+                    "game-parallel farm must run the Rust agent at threads=1 (game "
+                    "parallelism owns the cores). Use --workers 1 for a threaded "
+                    "latency measurement.")
+        assert _rust_threads >= 1, f"resolved rust_threads={_rust_threads}"
+        print(f"[backend] engine=rust (from --backend {args.backend}) "
+              f"rust_threads={_rust_threads} workers={getattr(args, 'workers', 1)} "
+              f"{'[FARM: threads=1 per worker]' if _pooled else '[single-process]'}",
+              flush=True)
+    # Write the RESOLVED values back so _smoke (which early-returns just below)
+    # and the pooled path read the same literals, never the raw "auto".
+    args.backend, args.rust_threads = _backend, _rust_threads
 
     if args.smoke:
         if args.orch_shm_name or args.opp_orch_shm_name:
@@ -3060,6 +3248,40 @@ def main(argv=None) -> int:
         }
         man_cfg["meeple_dedup"] = dedup_block
         man_cfg["champion"]["meeple_dedup"] = dedup_block
+    # ENGINE provenance — stamped ONLY when the run is not on the python default, on the
+    # same no-hash-drift terms as every block around it (a python-backend manifest stays
+    # byte-identical to every manifest already on disk). Records WHICH carc_rs build
+    # executed and at how many threads, because a latency number is uninterpretable
+    # without the thread count and a bit-exactness claim is uninterpretable without the
+    # wheel's own version + tile-data digests.
+    if _backend != "python":
+        from carcassonne_ai.rust_agent import backend_provenance
+
+        man_cfg["backend"] = {
+            "name": _backend,
+            "default": "python",
+            "requested": args.backend,
+            "rust_threads": _rust_threads,
+            "workers": int(getattr(args, "workers", 1) or 1),
+            "threads_policy": (
+                "FARM: game parallelism owns the cores, so each worker process runs "
+                "the Rust agent at threads=1 (W16 x t8 = 128 hot threads is the "
+                "failure mode this prevents)"
+                if int(getattr(args, "workers", 1) or 1) > 1 else
+                "single-process: threads is a latency knob, not a farm setting"),
+            "converted_sides": (
+                ["candidate", "opponent"] if args.opponent in _HEAD_TO_HEAD
+                else ["candidate"]),
+            "unconverted_note": (
+                "the h800 / greedy / bare-net rungs are FROZEN RULERS and stay Python "
+                "by design, so an asymmetric cell realises a smaller end-to-end "
+                "speedup than the champion-side multiplier — read rung_ms_per_move "
+                "next to champ_prefix_ms_per_move before quoting one"),
+            "note": "BEHAVIOUR-IDENTICAL BY GATE (rustport G4/G6), not by "
+                    "construction. It is an ENGINE, not a player — no strength claim "
+                    "moves with it.",
+            **backend_provenance(),
+        }
     # C3-INTRA provenance — added ONLY when the carry is ON (CANDIDATE side), so a plain
     # (OFF) manifest stays byte-identical to the pre-change output. Same shape and same
     # candidate-only scope as the meeple-dedup block above.
@@ -3145,7 +3367,7 @@ def main(argv=None) -> int:
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
-                          _netprior_backend))
+                          _netprior_backend, _backend, _rust_threads))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -3158,7 +3380,7 @@ def main(argv=None) -> int:
                           args.oracle_prior_eps_coef, args.opp_k_dets,
                           (True if args.meeple_dedup else None),
                           (True if args.intra_reuse else None),
-                          _netprior_backend))
+                          _netprior_backend, _backend, _rust_threads))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
