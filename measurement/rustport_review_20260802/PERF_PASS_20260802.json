@@ -1,0 +1,315 @@
+{
+  "what": "2026-08-02 perf pass on the Rust core \u2014 the three measured perf findings of the 93-agent review (#2 node-key triple allocation, #3 per-node SHA-256, #4 repr String storm) plus the ROUND2 C-e / C-f riders.",
+  "review": "measurement/rustport_review_20260802/REVIEW.md (CONFIRMED #2/#3/#4)",
+  "riders": "measurement/eff_dario_round2_20260802/ROUND2.md (C-e CONFIRM; C-f re-opened at LOW as a measure-first rider by the Fable judge)",
+  "protocol": {
+    "box": "local 5900XT (16C/32T), quiet \u2014 no other CPU load",
+    "binary": "rust/carc/carc-core/examples/perfprobe.rs, --release (lto=thin)",
+    "workload": "search_single at the SearchConfig default budget (1376 sims), deck seed 98000000000, position reached by first-legal replay to the stated ply",
+    "reps": "9 alternating rounds x median-of-7 in-process reps; reported value = median across rounds of each run's median",
+    "rss": "one process per (arm, ply) so VmHWM is that ply's own peak",
+    "arms_built_identically": "every arm rebuilt from the same example source, so the only difference is carc-core"
+  },
+  "structural_identity_check": {
+    "note": "every arm reports the same node_count and the same string_representation byte length at every ply",
+    "ply40": {
+      "nodes": 949,
+      "repr_bytes": 2225
+    },
+    "ply55": {
+      "nodes": 1355,
+      "repr_bytes": 2926
+    },
+    "ply80": {
+      "nodes": 1097,
+      "repr_bytes": 3994
+    }
+  },
+  "ladder": [
+    {
+      "arm": "base",
+      "ply": 40,
+      "wall_s": 0.0762,
+      "peak_rss_kib": 11264,
+      "wall_vs_base_pct": 0.0,
+      "rss_vs_base_pct": 0.0,
+      "wall_vs_prev_pct": null,
+      "rss_vs_prev_pct": null
+    },
+    {
+      "arm": "base",
+      "ply": 55,
+      "wall_s": 0.0994,
+      "peak_rss_kib": 18944,
+      "wall_vs_base_pct": 0.0,
+      "rss_vs_base_pct": 0.0,
+      "wall_vs_prev_pct": null,
+      "rss_vs_prev_pct": null
+    },
+    {
+      "arm": "base",
+      "ply": 80,
+      "wall_s": 0.157,
+      "peak_rss_kib": 20224,
+      "wall_vs_base_pct": 0.0,
+      "rss_vs_base_pct": 0.0,
+      "wall_vs_prev_pct": null,
+      "rss_vs_prev_pct": null
+    },
+    {
+      "arm": "r2_rc_key",
+      "ply": 40,
+      "wall_s": 0.0757,
+      "peak_rss_kib": 5888,
+      "wall_vs_base_pct": -0.66,
+      "rss_vs_base_pct": -47.73,
+      "wall_vs_prev_pct": -0.66,
+      "rss_vs_prev_pct": -47.73
+    },
+    {
+      "arm": "r2_rc_key",
+      "ply": 55,
+      "wall_s": 0.0993,
+      "peak_rss_kib": 8192,
+      "wall_vs_base_pct": -0.1,
+      "rss_vs_base_pct": -56.76,
+      "wall_vs_prev_pct": -0.1,
+      "rss_vs_prev_pct": -56.76
+    },
+    {
+      "arm": "r2_rc_key",
+      "ply": 80,
+      "wall_s": 0.1557,
+      "peak_rss_kib": 8448,
+      "wall_vs_base_pct": -0.83,
+      "rss_vs_base_pct": -58.23,
+      "wall_vs_prev_pct": -0.83,
+      "rss_vs_prev_pct": -58.23
+    },
+    {
+      "arm": "r3_lazy_sha",
+      "ply": 40,
+      "wall_s": 0.0696,
+      "peak_rss_kib": 5888,
+      "wall_vs_base_pct": -8.66,
+      "rss_vs_base_pct": -47.73,
+      "wall_vs_prev_pct": -8.06,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "r3_lazy_sha",
+      "ply": 55,
+      "wall_s": 0.0872,
+      "peak_rss_kib": 8192,
+      "wall_vs_base_pct": -12.27,
+      "rss_vs_base_pct": -56.76,
+      "wall_vs_prev_pct": -12.19,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "r3_lazy_sha",
+      "ply": 80,
+      "wall_s": 0.1474,
+      "peak_rss_kib": 8704,
+      "wall_vs_base_pct": -6.11,
+      "rss_vs_base_pct": -56.96,
+      "wall_vs_prev_pct": -5.33,
+      "rss_vs_prev_pct": 3.03
+    },
+    {
+      "arm": "r4_repr_writer",
+      "ply": 40,
+      "wall_s": 0.0574,
+      "peak_rss_kib": 5888,
+      "wall_vs_base_pct": -24.67,
+      "rss_vs_base_pct": -47.73,
+      "wall_vs_prev_pct": -17.53,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "r4_repr_writer",
+      "ply": 55,
+      "wall_s": 0.0723,
+      "peak_rss_kib": 7936,
+      "wall_vs_base_pct": -27.26,
+      "rss_vs_base_pct": -58.11,
+      "wall_vs_prev_pct": -17.09,
+      "rss_vs_prev_pct": -3.12
+    },
+    {
+      "arm": "r4_repr_writer",
+      "ply": 80,
+      "wall_s": 0.1275,
+      "peak_rss_kib": 8448,
+      "wall_vs_base_pct": -18.79,
+      "rss_vs_base_pct": -58.23,
+      "wall_vs_prev_pct": -13.5,
+      "rss_vs_prev_pct": -2.94
+    },
+    {
+      "arm": "ce_cache_deleted",
+      "ply": 40,
+      "wall_s": 0.0557,
+      "peak_rss_kib": 5632,
+      "wall_vs_base_pct": -26.9,
+      "rss_vs_base_pct": -50.0,
+      "wall_vs_prev_pct": -2.96,
+      "rss_vs_prev_pct": -4.35
+    },
+    {
+      "arm": "ce_cache_deleted",
+      "ply": 55,
+      "wall_s": 0.07,
+      "peak_rss_kib": 7936,
+      "wall_vs_base_pct": -29.58,
+      "rss_vs_base_pct": -58.11,
+      "wall_vs_prev_pct": -3.18,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "ce_cache_deleted",
+      "ply": 80,
+      "wall_s": 0.1257,
+      "peak_rss_kib": 8192,
+      "wall_vs_base_pct": -19.94,
+      "rss_vs_base_pct": -59.49,
+      "wall_vs_prev_pct": -1.41,
+      "rss_vs_prev_pct": -3.03
+    },
+    {
+      "arm": "cf_hoist_CANDIDATE_NOT_ADOPTED",
+      "ply": 40,
+      "wall_s": 0.0558,
+      "peak_rss_kib": 5632,
+      "wall_vs_base_pct": -26.77,
+      "rss_vs_base_pct": -50.0,
+      "wall_vs_prev_pct": 0.18,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "cf_hoist_CANDIDATE_NOT_ADOPTED",
+      "ply": 55,
+      "wall_s": 0.0704,
+      "peak_rss_kib": 7936,
+      "wall_vs_base_pct": -29.18,
+      "rss_vs_base_pct": -58.11,
+      "wall_vs_prev_pct": 0.57,
+      "rss_vs_prev_pct": 0.0
+    },
+    {
+      "arm": "cf_hoist_CANDIDATE_NOT_ADOPTED",
+      "ply": 80,
+      "wall_s": 0.1262,
+      "peak_rss_kib": 8192,
+      "wall_vs_base_pct": -19.62,
+      "rss_vs_base_pct": -59.49,
+      "wall_vs_prev_pct": 0.4,
+      "rss_vs_prev_pct": 0.0
+    }
+  ],
+  "adopted_total": {
+    "arm": "ce_cache_deleted",
+    "wall_vs_base_pct": {
+      "40": -26.9,
+      "55": -29.58,
+      "80": -19.94
+    },
+    "rss_vs_base_pct": {
+      "40": -50.0,
+      "55": -58.11,
+      "80": -59.49
+    }
+  },
+  "cf_verdict": {
+    "status": "REFUTED-BY-MEASUREMENT \u2014 NOT ADOPTED",
+    "claim": "hoisting the four loop-invariant neighbour reads out of the rotation loop in possible_playing_positions",
+    "isolated_microbench": {
+      "what": "20,000 possible_playing_positions calls, 5 alternating rounds x median-of-7, seconds",
+      "rows": [
+        {
+          "ply": 40,
+          "no_hoist_s": 0.0196,
+          "hoisted_s": 0.0174,
+          "delta_pct": -11.22
+        },
+        {
+          "ply": 55,
+          "no_hoist_s": 0.0248,
+          "hoisted_s": 0.0218,
+          "delta_pct": -12.1
+        },
+        {
+          "ply": 80,
+          "no_hoist_s": 0.0303,
+          "hoisted_s": 0.0289,
+          "delta_pct": -4.62
+        }
+      ],
+      "reading": "the function itself IS 4.6-12.1% faster, so ROUND2 \u00a71's LICM expectation does not fully hold \u2014 but that expectation was never the adoption criterion"
+    },
+    "end_to_end": {
+      "rows": [
+        {
+          "ply": 40,
+          "delta_pct": 0.18
+        },
+        {
+          "ply": 55,
+          "delta_pct": 0.57
+        },
+        {
+          "ply": 80,
+          "delta_pct": 0.4
+        }
+      ],
+      "reading": "+0.18 / +0.57 / +0.40 % \u2014 the WRONG SIGN at all three plies and far inside run-to-run spread. legal_actions is ~3% of a decision and only part of that is neighbour reads, so the ~1% ceiling ROUND2 computed was right even though its mechanism argument was not."
+    },
+    "decision": "below the <1% bar; the port's no-engine-edits-without-a-measured-win rule refuses it. Reverted, not committed."
+  },
+  "gates": {
+    "bar": "bit-exactness \u2014 action identity + raw-float (N,W) equality. Every leg run against the WORKTREE wheel (maturin build + PYTHONPATH override); the main tree's installed carc_rs was never touched.",
+    "cargo_test": {
+      "scope": "all crates in rust/carc",
+      "result": "72 passed, 0 failed, 2 ignored",
+      "note": "+1 vs baseline \u2014 a new test pins sha256_hex(x)[..n] == sha256_hex_prefix(x, n), the trace-digest contract"
+    },
+    "pytest": {
+      "scope": "tests/rustport + tests/android",
+      "result": "419 passed, 0 failed",
+      "covers": "G1 per-ply repr byte-equality, G2 leaf, G3 search, G4 fair/k-parallel, G5 flags, G6 backend, the two Python-vs-Rust trace-record legs, and the android bridge backend surface"
+    },
+    "g3_search_reconcile": {
+      "artifact": "measurement/rustport_p3/G3_search_perfpass_20260802.json",
+      "cmd": "reconcile_search.py --corpus champ --limit 6 --stride 16 --sims 1376 --workers 12",
+      "verdict": "PASS",
+      "searches": 54,
+      "sims": 74304,
+      "field_checks": 432,
+      "mismatches": 0,
+      "fields_compared": "chosen_action, root_children (action,N,W with W as raw f64 bits), deduped, root_n, root_w_bits, root_leaf_value_bits, root_priors, node_count",
+      "throughput": {
+        "python_sims_per_sec": 884,
+        "rust_sims_per_sec": 8922,
+        "speedup": 10.09,
+        "note": "9.55x at P3 close on the same box \u2014 the perf pass is visible here"
+      }
+    },
+    "g6_backend_identity": {
+      "artifact": "measurement/rustport_p6/G6_backend_perfpass_20260802.json",
+      "cmd": "reconcile_backend.py --leg agree --games 10 --reconcile-games 10 --deck-base 98000000000 --workers 10",
+      "mode": "gate",
+      "verdict": "PASS",
+      "games": 10,
+      "decisions": 1435,
+      "checks": 10085,
+      "action_checks": 1435,
+      "action_agree": 1435,
+      "action_agreement": 1.0,
+      "mismatches": 0,
+      "reconcile_digest_asserts": 2880,
+      "reconcile_raised": 0,
+      "budget": "k8x1376 = 11008",
+      "wall_s": 2215
+    }
+  }
+}
