@@ -1716,6 +1716,15 @@ def archive_record() -> str:
             "budget_note": s.budget_note,
             "sims_effective": s.eff_sims,
             "k_dets_effective": s.eff_k_dets,
+            # WHICH ENGINE PLAYED (added 2026-08-01 with the rust flip). Behaviour-
+            # identical by gate, so this changes no result — but the archive is a
+            # permanent record and "a log records which engine played" is the same
+            # rule `champion_factory` follows when it stamps `parallel_workers` and
+            # `backend`. Without it, a future reader cannot tell a rust-era game from
+            # a python-era one, and the two eras straddle a budget change.
+            "backend": s.backend,
+            "backend_note": s.rs_note,
+            "rust_threads": (s.rust_threads if s.backend == BACKEND_RUST else None),
             "result": st.get("result"),
             "scores": st["scores"],
             "n_actions": len(s.action_log),
