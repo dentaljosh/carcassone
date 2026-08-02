@@ -403,6 +403,11 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
     if mode not in ("fair", "clairvoyant"):
         raise ValueError(f"mode must be 'fair'|'clairvoyant'; got {mode!r}")
     spec = spec or load_production_spec()
+    # make_production_champion resolves "auto" before it gets here, but this is a
+    # public entry point too — and a manifest that recorded the literal string "auto"
+    # would name an engine that does not exist, which is worse than either answer.
+    if backend == "auto":
+        backend = str(spec.backend)
     if leaf_cfg is None:
         leaf_cfg = production_leaf_cfg(spec)
     if cfg is None:
