@@ -256,6 +256,249 @@ def test_runtime_info_reports_rust():
     assert info["rust"]["tanh_flavor"] == B.ANDROID_TANH_FLAVOR
 
 
+def test_the_msun_flavour_actually_reaches_the_rust_search(monkeypatch):
+    """The claim that matters, asserted behaviourally (ROUND2 F-12).
+
+    `test_runtime_info_reports_rust` compares `runtime_info()`'s output to the module
+    constant that `runtime_info()` interpolates, so it cannot fail whatever the Rust
+    core is configured with — the same label-not-function shape the flip fixed for the
+    leaf config. What G7 leg 1 measured is that ANDROID needs the **msun** tanh/expm1
+    flavour (it differs from this desktop's glibc_fma), and the only thing that makes
+    that true at runtime is the argument reaching `carc_rs.SearchConfigRs`."""
+    seen: dict = {}
+    real = carc_rs.SearchConfigRs
+
+    def spy(*args, **kw):
+        seen["args"] = args
+        return real(*args, **kw)
+
+    monkeypatch.setattr(carc_rs, "SearchConfigRs", spy)
+    st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1",
+                                   "backend": "rust"})))
+    assert st["backend"] == "rust", st["backend_note"]
+    args = seen["args"]
+    assert B.ANDROID_TANH_FLAVOR == "msun", "G7 leg 1 measured msun on every ABI"
+    assert args[11] == B.ANDROID_TANH_FLAVOR, \
+        "the libm flavour the Rust search runs is not the one G7 measured on Android"
+    assert args[10] == B.ANDROID_EXP_FMA
+
+
+def test_the_manifest_says_carc_rs_played(monkeypatch):
+    """ROUND2 F-8. `get_manifest()` is documented as "the manifest of the agent that is
+    ACTUALLY playing", but it comes from the bridge's PYTHON anchor (built with
+    `backend=python` on purpose), and champion_factory stamps its backend block only
+    when the backend is NOT the python default — so under the rust flip the phone
+    carried a byte-identical pure-Python manifest while carc_rs picked every move."""
+    st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "champion",
+                                   "backend": "rust", "sims": 8, "k_dets": 1,
+                                   "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    man = _j(B.get_manifest())["manifest"]
+    assert man["backend"]["name"] == "rust"
+    assert man["backend"]["role"] == "move_chooser"
+    assert man["backend"]["anchor"] == "python"
+    # The anchor is untouched: it is still the Python agent that owns the manifest.
+    assert man["agent_class"] == "FairHeuristicPriorAgent"
+
+    # Against tier1 the mirror is state-only, and the manifest must not overclaim.
+    _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1", "backend": "rust"})))
+    assert _j(B.get_manifest())["manifest"] is None       # tier1 has no manifest
+
+    # A python game keeps a manifest with no backend block (champion_factory's rule).
+    _j(B.new_game(json.dumps({"seed": 5, "opponent": "champion",
+                              "backend": "python", "sims": 8, "k_dets": 1,
+                              "verify": False})))
+    assert "backend" not in _j(B.get_manifest())["manifest"]
+
+
+def _no_carc_rs(monkeypatch):
+    """Simulate a device whose ABI has no wheel."""
+    real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) \
+        else __builtins__.__import__
+
+    def no_carc_rs(name, *a, **kw):
+        if name == "carc_rs":
+            raise ImportError("simulated: no wheel for this ABI")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr("builtins.__import__", no_carc_rs)
+
+
+def test_production_budget_never_advertises_a_budget_this_device_cannot_pay(monkeypatch):
+    """ROUND2 F-6. `production_budget()` is the ONLY budget the Home and Settings
+    screens print, and it called `mobile_budget()` directly — whose own docstring warns
+    that ignoring the backend "reintroduces exactly the hang the carve-out existed to
+    prevent". On a device without carc_rs it advertised 11008 sims/move while every
+    game actually started at the k4x688 floor."""
+    B.reset()
+    full = _j(B.production_budget())
+    assert full["backend"] == "rust" and full["floored"] is False
+
+    _no_carc_rs(monkeypatch)
+    floored = _j(B.production_budget())
+    assert floored["backend"] == "python"
+    assert floored["floored"] is True
+    assert (floored["k_dets"], floored["sims_per_det"]) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"],
+        B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert floored["total_sims"] < floored["champion_of_record_total_sims"]
+    # The YAML profile is still reported, just not as the headline.
+    assert floored["profile_sims_per_det"] == full["sims_per_det"]
+
+
+def test_an_explicit_python_request_does_not_claim_the_device_lacks_rust():
+    """ROUND2 F-7. `budget_for_backend` sets `floored` whenever the session is python
+    and the profile is rust — it cannot tell a MISSING WHEEL from a caller that asked
+    for python. Keying the note on it alone asserted a hardware fact that was false,
+    and `archive_record` persists that sentence into the permanent E4 record."""
+    st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "champion",
+                                   "backend": "python", "verify": False})))
+    note = st["budget_note"] or ""
+    assert "REDUCED" in note, note
+    assert "no Rust core on this device" not in note, note
+    assert "by request" in note
+    assert st["backend_note"] is None
+
+
+def test_a_missing_wheel_still_says_so():
+    """The other half of F-7 — the true statement must survive the fix."""
+    monkey = pytest.MonkeyPatch()
+    _no_carc_rs(monkey)
+    try:
+        st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "champion",
+                                       "backend": "rust", "verify": False})))
+        assert "no Rust core on this device" in (st["budget_note"] or "")
+    finally:
+        monkey.undo()
+
+
+# --------------------------------------------------------------------------- #
+# 5. the resolution is sticky per game (ROUND2 F-2)                            #
+# --------------------------------------------------------------------------- #
+def _tiny_rust_save() -> dict:
+    st = _j(B.new_game(json.dumps({"seed": 31, "opponent": "champion",
+                                   "human_player": 0, "backend": "rust",
+                                   "sims": 8, "k_dets": 2, "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    for _ in range(6):
+        if st["is_terminated"]:
+            break
+        st = _j(B.apply_action(st["legal"]["action_ids"][0])
+                if st["is_human_turn"] else B.ai_move())
+    return _j(B.save_game())
+
+
+def test_a_save_records_what_it_was_played_on():
+    save = _tiny_rust_save()
+    assert save["backend"] == "rust"
+    assert (save["k_dets_effective"], save["sims_effective"]) == (2, 8)
+
+
+def test_a_resume_reproduces_the_played_budget_instead_of_re_resolving():
+    """THE F-2 GUARD. Before the 2026-08-01 unpin the mobile profile was pinned
+    unconditionally, so a restore reproduced the played budget by construction. Once
+    the budget became conditional on the backend resolving, the same saved game could
+    silently continue at a different sims/move — and `archive_record` stamped only the
+    post-restore half."""
+    save = _tiny_rust_save()
+    # A CHAMPION save carries no explicit request (both null on the real phone path);
+    # the effective pair is the only record of what it played at.
+    save["sims"] = save["k_dets"] = None
+    save["sims_effective"], save["k_dets_effective"] = 8, 2
+
+    _j(B.restore_game(json.dumps(save)))
+    s = B._S
+    assert (s.eff_k_dets, s.eff_sims) == (2, 8), \
+        "the resumed game was re-budgeted against today's device profile"
+    assert s.played_backend == "rust" and s.backend == "rust"
+    assert s.resume_note is None
+    assert "RESUMED AT THE BUDGET THIS GAME WAS PLAYED AT" in (s.budget_note or "")
+
+
+def test_a_save_with_no_backend_stamp_keeps_the_old_behaviour():
+    """Every shipped E4 archive is in this class: an ABSENT stamp is not evidence
+    about what the game ran, and inventing one would be worse than re-resolving."""
+    save = _tiny_rust_save()
+    save.pop("backend")
+    save["sims"] = save["k_dets"] = None
+    _j(B.restore_game(json.dumps(save)))
+    s = B._S
+    assert s.played_backend is None
+    assert (s.eff_k_dets, s.eff_sims) == (B.mobile_budget()["k_dets"],
+                                          B.mobile_budget()["sims_per_det"])
+
+
+def test_a_resume_that_cannot_get_the_played_engine_says_so():
+    """The pin is DROPPED when the backend resolves differently — carrying a
+    rust-priced budget onto the Python engine is the ~25 s/move hang, not fidelity —
+    and the game says which halves were played against what."""
+    save = _tiny_rust_save()
+    save["sims"] = save["k_dets"] = None
+    save["sims_effective"], save["k_dets_effective"] = 1376, 8
+
+    monkey = pytest.MonkeyPatch()
+    _no_carc_rs(monkey)
+    try:
+        out = _j(B.restore_game(json.dumps(save)))
+    finally:
+        monkey.undo()
+    s = B._S
+    assert s.backend == "python" and s.played_backend == "rust"
+    assert (s.eff_k_dets, s.eff_sims) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"],
+        B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert "RESUMED ON A DIFFERENT ENGINE" in (s.resume_note or "")
+    assert out["resume_note"] == s.resume_note
+
+
+def test_the_archive_stamps_both_sides_of_a_resume():
+    """`measurement/e4_games/README.md` grades E4 games off exactly these fields, so
+    "played at 11008, resumed at 2752" must be visible in the record rather than
+    collapsed into the post-restore answer."""
+    save = _tiny_rust_save()
+    save["sims"] = save["k_dets"] = None
+    save["sims_effective"], save["k_dets_effective"] = 1376, 8
+    monkey = pytest.MonkeyPatch()
+    _no_carc_rs(monkey)
+    try:
+        _j(B.restore_game(json.dumps(save)))
+        B._S.board.state.is_terminated = lambda: True     # archive wants a result
+        rec = _j(B.archive_record())
+    finally:
+        monkey.undo()
+    assert rec["backend"] == "python"
+    assert (rec["k_dets_effective"], rec["sims_effective"]) == (
+        B.ANDROID_FALLBACK_BUDGET["k_dets"],
+        B.ANDROID_FALLBACK_BUDGET["sims_per_det"])
+    assert rec["played_backend"] == "rust"
+    assert (rec["played_k_dets_effective"], rec["played_sims_effective"]) == (8, 1376)
+    assert "RESUMED ON A DIFFERENT ENGINE" in (rec["resume_note"] or "")
+
+
+def test_undo_keeps_the_session_resolution():
+    """`undo_last_tile` rebuilds through `restore_game`, so the sticky fields must
+    round-trip rather than re-resolving mid-game."""
+    st = _j(B.new_game(json.dumps({"seed": 3, "opponent": "champion",
+                                   "human_player": 0, "backend": "rust",
+                                   "sims": 8, "k_dets": 2, "verify": False})))
+    if st["backend"] != "rust":
+        pytest.skip(f"no rust backend here: {st['backend_note']}")
+    steps = 0
+    while st["phase"] != "meeples" and not st["is_terminated"] and steps < 20:
+        st = _j(B.apply_action(st["legal"]["action_ids"][0])
+                if st["is_human_turn"] else B.ai_move())
+        steps += 1
+    if st["phase"] != "meeples" or not st["is_human_turn"]:
+        pytest.skip("did not reach a human meeple decision in 20 plies")
+    _j(B.undo_last_tile())
+    s = B._S
+    assert s.backend == "rust" and s.rs is not None
+    assert (s.eff_k_dets, s.eff_sims) == (2, 8)
+    assert s.resume_note is None
+
+
 # --------------------------------------------------------------------------- #
 # 3. the mirror on the RECENTRED grid (2026-08-02)                              #
 # --------------------------------------------------------------------------- #

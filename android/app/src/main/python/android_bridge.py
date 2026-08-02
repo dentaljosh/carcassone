@@ -325,6 +325,50 @@ def rust_available() -> bool:
     _RUST_IMPORT_ERROR = None
     return True
 
+
+def rust_build_provenance() -> dict:
+    """WHICH carc_rs is running — compiler, target triple, profile, real version.
+
+    ⚠️ ``carc_rs.__version__`` IS NOT AN ANSWER (REVIEW.md #9/#10). It is
+    ``carc_core::VERSION`` = the workspace ``0.1.0`` that has never been bumped, so it
+    distinguishes nothing — two builds from different rustc versions were identical in
+    every record the repo wrote. ``android/tools/build_rust_wheels.py`` now ships a
+    generated ``carc_rs_build`` sidecar alongside the extension carrying the real
+    content-addressed wheel version and the toolchain that produced it; a desktop
+    maturin wheel has no sidecar, so the installed distribution's metadata is the
+    fallback and the frozen literal is the last resort (and is labelled as such).
+    """
+    out: dict = {}
+    try:
+        import carc_rs_build
+
+        out.update(dict(getattr(carc_rs_build, "PROVENANCE", {}) or {}))
+        out.setdefault("wheel_version", getattr(carc_rs_build, "__version__", None))
+        out["source"] = "wheel_sidecar"
+        return out
+    except ImportError:
+        pass
+    try:
+        import importlib.metadata as _md
+
+        out["wheel_version"] = _md.version("carc-rs")
+        out["source"] = "dist_metadata"
+        return out
+    except BaseException:                         # noqa: BLE001 — provenance only
+        pass
+    try:
+        import carc_rs
+
+        out["wheel_version"] = getattr(carc_rs, "__version__", None)
+        out["source"] = "carc_rs.__version__ (frozen literal — see #9)"
+    except BaseException:                         # noqa: BLE001
+        pass
+    return out
+
+
+def _rust_wheel_version() -> str | None:
+    return rust_build_provenance().get("wheel_version")
+
 # The libm configuration Android actually needs, MEASURED at G7 leg 1
 # (measurement/rustport_p7/G7_REPORT.md; raw in device/p7/libm_chaquopy.json).
 #
@@ -778,7 +822,10 @@ class _Session:
                  sims: int | None, k_dets: int | None, verify: bool,
                  generation: int, start_rule: str = START_RULE,
                  grid_rule: str = GRID_RULE,
-                 backend: str = BACKEND_DEFAULT):
+                 backend: str = BACKEND_DEFAULT,
+                 played_backend: str | None = None,
+                 played_sims: int | None = None,
+                 played_k_dets: int | None = None):
         self.seed = int(seed)
         # Which start-tile convention this session plays under. New games use the
         # app default (retail); a RESTORE passes whatever the save recorded, so a
@@ -810,6 +857,22 @@ class _Session:
             raise ValueError(f"unknown backend {backend!r}; expected "
                              f"{BACKEND_PYTHON!r} or {BACKEND_RUST!r}")
         self.backend = str(backend)
+        # What this game was ACTUALLY PLAYED ON before it was saved — the sticky
+        # half of the resolution (ROUND2 F-2). `None` for a new game; set from the
+        # save blob by `restore_game`. `_build_opponent` reproduces this budget
+        # instead of re-resolving, PROVIDED the backend still resolves the same way;
+        # if it does not, the pin is dropped (a rust-priced budget on the Python
+        # engine is a ~25 s/move hang) and `resume_note` says the game changed
+        # engines mid-way.
+        self.played_backend = (None if played_backend is None
+                               else str(played_backend))
+        self.played_sims = None if played_sims is None else int(played_sims)
+        self.played_k_dets = None if played_k_dets is None else int(played_k_dets)
+        self.resume_note: str | None = None
+        # What was ASKED FOR, kept apart from what was RESOLVED: `self.backend` is
+        # rewritten in place when the wheel is missing, and the two cases must not
+        # produce the same on-screen claim (ROUND2 F-7).
+        self.backend_requested = str(backend)
         # The Rust mirror, or None. `apply()` is the ONE place it is advanced.
         self.rs = None
         self.rs_note: str | None = None
@@ -912,8 +975,34 @@ class _Session:
                             f"{ANDROID_FALLBACK_BUDGET['k_dets']}x"
                             f"{ANDROID_FALLBACK_BUDGET['sims_per_det']} floor")
         mob = budget_for_backend(self.backend, spec)
-        eff_sims = mob["sims_per_det"] if self.req_sims is None else int(self.req_sims)
-        eff_k = mob["k_dets"] if self.req_k_dets is None else int(self.req_k_dets)
+        # STICKY PER GAME (ROUND2 F-2). A resumed game keeps the budget it was PLAYED
+        # at rather than re-resolving against today's device answer — before the
+        # 2026-08-01 unpin the mobile profile was pinned unconditionally, so a restore
+        # always reproduced the played budget by construction; once the budget became
+        # conditional on the backend resolving to rust, "played at 11008, resumed at
+        # 2752" needed no code change to happen, and the archive recorded only the
+        # post-restore half. The pin is DROPPED if the backend itself resolved
+        # differently — the budget is priced for the engine, so carrying it across an
+        # engine change would be the ~25 s/move hang, not fidelity.
+        pinned = (self.played_sims is not None and self.played_k_dets is not None)
+        if pinned and self.played_backend == self.backend:
+            eff_sims, eff_k = int(self.played_sims), int(self.played_k_dets)
+        else:
+            eff_sims, eff_k = mob["sims_per_det"], mob["k_dets"]
+            if pinned:
+                self.resume_note = (
+                    f"RESUMED ON A DIFFERENT ENGINE — this game was played on the "
+                    f"{self.played_backend!r} backend at k{self.played_k_dets}x"
+                    f"{self.played_sims}={self.played_k_dets * self.played_sims}; "
+                    f"this device resolved {self.backend!r}, so the rest of it runs "
+                    f"k{eff_k}x{eff_sims}={eff_k * eff_sims}. The two halves were not "
+                    f"played against the same opponent — grade them separately.")
+        # An explicit request always wins: it is a deliberate act by the caller
+        # (a debug screen, a difficulty tier, a test), not a resolution.
+        if self.req_sims is not None:
+            eff_sims = int(self.req_sims)
+        if self.req_k_dets is not None:
+            eff_k = int(self.req_k_dets)
         self.rust_threads = mob["rust_threads"]
         # parallel_workers is deliberately NEVER passed here: the fair agent's split uses
         # spawn processes, which Chaquopy cannot provide. Omitting it is the byte-identical
@@ -946,28 +1035,62 @@ class _Session:
         self.opponent_name = "Champion"
         self.budget_note = None
         full = spec.k_dets * spec.sims_per_det
+        requested = self.req_sims is not None or self.req_k_dets is not None
+        resumed_at_played = (pinned and self.played_backend == self.backend
+                             and not requested)
         if (eff_sims, eff_k) != (mob["sims_per_det"], mob["k_dets"]):
-            # The user (or a debug screen) asked for LESS than this device's profile.
-            self.budget_note = (
-                f"BELOW CHAMPION BUDGET — running k{eff_k}x{eff_sims}="
-                f"{eff_k * eff_sims} sims/move vs this device's "
-                f"k{mob['k_dets']}x{mob['sims_per_det']}="
-                f"{mob['total_sims']} (champion of record: "
-                f"k{spec.k_dets}x{spec.sims_per_det}={full}). This is a WEAKENED agent; "
-                f"beating it is not beating the champion.")
-            self.opponent_name = f"Champion(weakened k{eff_k}x{eff_sims})"
+            if resumed_at_played:
+                # RESUMED AT ITS OWN BUDGET, which happens to differ from what this
+                # device would resolve today. Deliberate: the game keeps the opponent
+                # it was played against (ROUND2 F-2).
+                self.budget_note = (
+                    f"RESUMED AT THE BUDGET THIS GAME WAS PLAYED AT — k{eff_k}x"
+                    f"{eff_sims}={eff_k * eff_sims} sims/move on the "
+                    f"{self.backend!r} backend, vs the k{mob['k_dets']}x"
+                    f"{mob['sims_per_det']}={mob['total_sims']} this device would "
+                    f"resolve now. The whole game is one opponent; grade it at this "
+                    f"budget.")
+                self.opponent_name = f"Champion(resumed k{eff_k}x{eff_sims})"
+            else:
+                # The user (or a debug screen) asked for LESS than the device profile.
+                self.budget_note = (
+                    f"BELOW CHAMPION BUDGET — running k{eff_k}x{eff_sims}="
+                    f"{eff_k * eff_sims} sims/move vs this device's "
+                    f"k{mob['k_dets']}x{mob['sims_per_det']}="
+                    f"{mob['total_sims']} (champion of record: "
+                    f"k{spec.k_dets}x{spec.sims_per_det}={full}). This is a WEAKENED "
+                    f"agent; beating it is not beating the champion.")
+                self.opponent_name = f"Champion(weakened k{eff_k}x{eff_sims})"
         elif mob.get("floored"):
             # DEGRADED: the profile named the champion budget on the Rust core, but this
-            # process could not get `carc_rs`, so both the engine and the budget dropped
-            # to the Python floor. The game is playable; it is not the champion of record,
-            # and an E4 archive from it must be graded at the floor.
-            self.budget_note = (
-                f"REDUCED — no Rust core on this device, so the champion budget "
-                f"k{spec.k_dets}x{spec.sims_per_det}={full} is not payable here (it is "
-                f"~25 s/move on the Python engine). Running the k{mob['k_dets']}x"
-                f"{mob['sims_per_det']}={mob['total_sims']} floor instead. Same agent, "
-                f"same leaf, smaller search — grade results against this budget, not the "
-                f"champion's.")
+            # session is running the Python one, so both the engine and the budget
+            # dropped to the floor. The game is playable; it is not the champion of
+            # record, and an E4 archive from it must be graded at the floor.
+            #
+            # ⚠️ TWO CAUSES, TWO SENTENCES (ROUND2 F-7). `floored` only says "python
+            # here, rust in the profile" — it cannot tell a MISSING WHEEL from a caller
+            # that asked for `backend: "python"`. Keying the note purely on it asserted
+            # a hardware fact ("no Rust core on this device") that was simply false for
+            # the requested case, and `archive_record` persists that sentence into the
+            # permanent E4 record.
+            if self.backend_requested == BACKEND_PYTHON:
+                self.budget_note = (
+                    f"REDUCED — this game was started on the Python backend by "
+                    f"request, and the champion budget k{spec.k_dets}x"
+                    f"{spec.sims_per_det}={full} is not payable there (~25 s/move). "
+                    f"Running the k{mob['k_dets']}x{mob['sims_per_det']}="
+                    f"{mob['total_sims']} floor instead. Same agent, same leaf, "
+                    f"smaller search — grade results against this budget, not the "
+                    f"champion's. (This says nothing about the device: the Rust core "
+                    f"was not asked for.)")
+            else:
+                self.budget_note = (
+                    f"REDUCED — no Rust core on this device, so the champion budget "
+                    f"k{spec.k_dets}x{spec.sims_per_det}={full} is not payable here "
+                    f"(it is ~25 s/move on the Python engine). Running the "
+                    f"k{mob['k_dets']}x{mob['sims_per_det']}={mob['total_sims']} floor "
+                    f"instead. Same agent, same leaf, smaller search — grade results "
+                    f"against this budget, not the champion's.")
             self.opponent_name = f"Champion(reduced k{eff_k}x{eff_sims})"
         elif mob["total_sims"] != full:
             # Running exactly the device profile, but the profile is below the champion
@@ -1184,6 +1307,49 @@ class _Session:
             self.rs_note = ("mirror only: the rust backend replaces the CHAMPION's "
                             f"move choice, and this game's opponent is "
                             f"{self.opponent_kind!r}")
+        self._stamp_backend_on_manifest()
+
+    def _stamp_backend_on_manifest(self) -> None:
+        """Record IN THE MANIFEST that `carc_rs` is the one playing (ROUND2 F-8).
+
+        `get_manifest()`'s docstring says it returns "the manifest of the agent that
+        is ACTUALLY playing", but the manifest comes from the bridge's PYTHON anchor,
+        built with `backend=BACKEND_PYTHON` on purpose — and `champion_factory` stamps
+        its backend block "ONLY when it is not the python default". So under the
+        2026-08-01 rust default the phone carried a byte-identical pure-Python
+        manifest while `self.rs` was the move chooser: the Settings "resolved AI
+        manifest" sheet asserted Python about a game Rust was playing. The archive got
+        `backend` for exactly this reason (2ca65c0); this is the same fact in the other
+        record. `champion_factory`'s own rationale for the block is "a log records
+        which engine played"."""
+        if self.rs is None or not isinstance(self.manifest, dict):
+            return
+        module = None
+        version = None
+        try:
+            import carc_rs
+
+            module = getattr(carc_rs, "__file__", None)
+            version = _rust_wheel_version()
+        except BaseException:                     # noqa: BLE001 — provenance only
+            pass
+        # A COPY: `agent.manifest` belongs to champion_factory and other readers.
+        self.manifest = {
+            **self.manifest,
+            "backend": {
+                "name": BACKEND_RUST,
+                # The mirror is a state mirror first; against tier1 it never picks.
+                "role": ("move_chooser" if self.opponent_kind == "champion"
+                         else "state_mirror_only"),
+                "anchor": BACKEND_PYTHON,
+                "rust_threads": self.rust_threads,
+                "module": module,
+                "wheel_version": version,
+                "note": ("carc_rs picks the champion's moves; the Python anchor in "
+                         "this session owns the manifest, the progress evaluator and "
+                         "the legality/scoring/save record."),
+            },
+        }
 
     def spec_knob(self, name: str):
         """One champion knob from PRODUCTION.yaml (no strength number is ever
@@ -1552,6 +1718,10 @@ def _state_dict(s: _Session) -> dict:
         # carries the reason when a requested "rust" fell back.
         "backend": s.backend,
         "backend_note": s.rs_note,
+        # Set only when a RESUME resolved differently from the session that played
+        # the earlier half — i.e. the game changed opponents mid-way (ROUND2 F-2).
+        # Null for every game played and resumed on the same resolution.
+        "resume_note": s.resume_note,
         "ai_last_tile": ({"row": s.ai_last_tile[0], "col": s.ai_last_tile[1]}
                          if s.ai_last_tile is not None else None),
         "ai_last_move": s.ai_last_move,
@@ -1842,6 +2012,17 @@ def _save_payload(s: _Session) -> dict:
         # board cells on a differently-placed grid. Saves written before this
         # field existed are read as GRID_RULE_LEGACY.
         "grid_rule": s.grid_rule,
+        # WHAT THIS GAME WAS PLAYED ON — the sticky resolution (ROUND2 F-2). `sims`
+        # and `k_dets` above are what was REQUESTED (both null for the champion), so
+        # before these fields existed a Resume after an app restart re-resolved the
+        # backend from BACKEND_DEFAULT and re-budgeted from today's device answer —
+        # and since the 2026-08-01 unpin made the budget conditional on that
+        # resolution, the same saved game could continue at a different sims/move
+        # than it was played at, with the archive stamping only the post-restore
+        # half. `restore_game` reads these back and reproduces them.
+        "backend": s.backend,
+        "sims_effective": s.eff_sims,
+        "k_dets_effective": s.eff_k_dets,
     }
     out.update(_spec_fingerprint())
     return out
@@ -1901,6 +2082,23 @@ def archive_record() -> str:
             "backend": s.backend,
             "backend_note": s.rs_note,
             "rust_threads": (s.rust_threads if s.backend == BACKEND_RUST else None),
+            # BOTH SIDES OF A RESUME (ROUND2 F-2). The three `*_effective`/`backend`
+            # fields above describe THIS session; if the game was resumed and the
+            # resolution changed under it, `played_*` is what the earlier half ran
+            # and `resume_note` says so in words. Equal to the current values for a
+            # game played in one sitting, and null for a save written before the
+            # sticky fields existed. E4 grades off these (measurement/e4_games).
+            #
+            # ONE LEVEL DEEP, deliberately: a re-save carries the CURRENT session's
+            # values forward, so a game resumed twice records its most recent change,
+            # not a full chain. `resume_note` is the human-readable audit trail.
+            "played_backend": (s.played_backend or s.backend),
+            "played_sims_effective": (s.played_sims
+                                      if s.played_sims is not None else s.eff_sims),
+            "played_k_dets_effective": (s.played_k_dets
+                                        if s.played_k_dets is not None
+                                        else s.eff_k_dets),
+            "resume_note": s.resume_note,
             "result": st.get("result"),
             "scores": st["scores"],
             "n_actions": len(s.action_log),
@@ -2018,6 +2216,21 @@ def restore_game(json_str: str) -> str:
         if human_player not in (0, 1):
             return _err("bad_save", "human_player must be 0 or 1")
 
+        # THE RESOLUTION IS STICKY PER GAME (ROUND2 F-2). A save written since
+        # 2026-08-02 records the backend and the effective budget it was PLAYED at;
+        # those are reproduced rather than re-resolved, so a Resume after an app
+        # restart cannot silently continue the same game at a different sims/move.
+        # A save with no `backend` key predates the sticky fields (all shipped E4
+        # archives are in that class) and keeps the old behaviour — an ABSENT stamp
+        # is not evidence about what it ran, and inventing one would be worse.
+        played_backend = blob.get("backend")
+        played_backend = str(played_backend) if played_backend else None
+        played_sims = blob.get("sims_effective") if played_backend else None
+        played_k = blob.get("k_dets_effective") if played_backend else None
+        # A tier1 game has no search budget (both 0) — nothing to pin.
+        if not played_sims or not played_k:
+            played_sims = played_k = None
+
         _GENERATION += 1
         s = _Session(
             seed=int(blob.get("deck_seed", 0)),
@@ -2033,11 +2246,16 @@ def restore_game(json_str: str) -> str:
             # walled engine grid. Never the CURRENT default: the action log
             # decodes different cells on a different grid.
             grid_rule=str(blob.get("grid_rule", GRID_RULE_LEGACY)),
-            # The backend is a RUNTIME choice, not a property of the saved game —
-            # it changes who computes a move, never what the game is — so it is
-            # carried from the live session (undo_last_tile rebuilds through here)
-            # and falls back to the process default, NOT to anything in the blob.
-            backend=(_S.backend if _S is not None else BACKEND_DEFAULT),
+            # ⚠️ WAS "a RUNTIME choice, not a property of the saved game" — true of
+            # the ENGINE, and false of everything downstream of it since the
+            # 2026-08-01 unpin coupled the budget to it. The saved answer wins; the
+            # live session (undo_last_tile rebuilds through here) and then the
+            # process default are the fallbacks for a save that carries none.
+            backend=(played_backend
+                     or (_S.backend if _S is not None else BACKEND_DEFAULT)),
+            played_backend=played_backend,
+            played_sims=played_sims,
+            played_k_dets=played_k,
         )
 
         # Replay. Whose decision each logged action was is decided by the board it was
@@ -2439,19 +2657,45 @@ def get_manifest() -> str:
 def production_budget() -> str:
     """The budget THIS DEVICE runs, so the UI never hardcodes a strength knob.
 
-    ``k_dets``/``sims_per_det``/``total_sims`` are the **mobile deploy profile** — what the
-    on-device agent actually searches — because those are the fields the UI prints and it
-    must never advertise a budget the phone does not run. The champion of record is carried
-    alongside under ``champion_of_record_*`` (since 2026-07-29 the two differ: desktop
-    k8x1376=11008, mobile k4x688=2752 — see mobile_budget())."""
+    ``k_dets``/``sims_per_det``/``total_sims`` are what the on-device agent actually
+    searches, because those are the fields the UI prints and it must never advertise a
+    budget the phone does not run. The champion of record is carried alongside under
+    ``champion_of_record_*``.
+
+    ⚠️ BACKEND-AWARE SINCE 2026-08-02 (ROUND2 F-6). It used to call ``mobile_budget()``
+    directly, whose own docstring warns that "a caller that takes total_sims from here
+    and ignores backend reintroduces exactly the hang the carve-out existed to
+    prevent" — so on a device without ``carc_rs`` the Home and Settings screens
+    advertised 11008 sims/move while every game actually started at the k4x688 floor.
+    ``budget_for_backend()`` is the one function that resolves the pair, and the
+    backend used here is the LIVE session's when there is one (that is the budget being
+    printed alongside a running game) and otherwise the default gated on whether the
+    wheel is importable in this process at all."""
     try:
         spec = champion_factory.load_production_spec()
-        mob = mobile_budget(spec)
+        s = _S
+        if s is not None:
+            backend = s.backend
+        elif BACKEND_DEFAULT == BACKEND_RUST and not rust_available():
+            backend = BACKEND_PYTHON
+        else:
+            backend = BACKEND_DEFAULT
+        prof = mobile_budget(spec)
+        mob = budget_for_backend(backend, spec)
         return _ok({"ok": True, "champion_id": spec.champion_id,
                     "sims_per_det": mob["sims_per_det"], "k_dets": mob["k_dets"],
                     "total_sims": mob["total_sims"],
                     "profile": mob["profile"],
                     "profile_from_yaml": mob["from_yaml"],
+                    # What the numbers above are CONDITIONAL ON — never print one
+                    # without being able to answer "on which engine?".
+                    "backend": backend,
+                    "floored": bool(mob.get("floored")),
+                    "session_backend": (None if s is None else s.backend),
+                    # The unconditional YAML profile, for the debug view — NOT the
+                    # headline, which is what this device can actually pay.
+                    "profile_k_dets": prof["k_dets"],
+                    "profile_sims_per_det": prof["sims_per_det"],
                     "champion_of_record_k_dets": spec.k_dets,
                     "champion_of_record_sims_per_det": spec.sims_per_det,
                     "champion_of_record_total_sims": spec.k_dets * spec.sims_per_det,
@@ -2505,8 +2749,17 @@ def runtime_info() -> str:
         try:
             import carc_rs
 
+            prov = rust_build_provenance()
             rust = {"available": True,
+                    # ⚠️ `carc_rs.__version__` is `carc_core::VERSION`, the workspace
+                    # "0.1.0" that has never been bumped — it distinguishes nothing
+                    # (REVIEW.md #9/#10). Kept under its own name because it is what
+                    # the module reports; `wheel_version` and `build` are the fields
+                    # that identify WHICH carc_rs this is.
                     "version": getattr(carc_rs, "__version__", None),
+                    "wheel_version": prov.get("wheel_version"),
+                    "build": prov,
+                    "module": getattr(carc_rs, "__file__", None),
                     "tanh_flavor": ANDROID_TANH_FLAVOR,
                     "exp_fma": ANDROID_EXP_FMA}
         except ImportError as exc:
