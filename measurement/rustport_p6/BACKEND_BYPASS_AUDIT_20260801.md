@@ -17,12 +17,27 @@
 > | **F-3** the four `make_production_champion` desktop callers | **NOT DONE** — not routed to this agent. §1 stands unchanged: do not flip the factory default until they learn the mirror protocol. |
 > | **F-5** the A9 android provenance hole | routed to the android agent, tracked separately. |
 >
-> **§7's Amdahl caveat is now MEASURED, not modelled** — and the audit's ~5× guess was right
-> for the cell it described. On a champion-vs-h800 cell the **champion side runs 8.96×** faster,
-> the frozen h800 rung measures a real **409.9 ms/move**, and the **realised farm speedup is
-> 4.8× at W10** (k4×344). ⚠️ That multiplier is **budget-dependent**: the rung is a fixed 800
-> sims, so its share shrinks as the champion budget grows. Read the production-budget figure
-> from `G6_eval_fair_puct_wiring_PROD.json`, not this one, before sizing a k8×1376 run.
+> **§7's Amdahl caveat is now MEASURED, not modelled — and §7's ~5× end-to-end estimate is
+> REFUTED at the production budget.** On a champion-vs-h800 cell at the champion's own
+> **k8×1376** (`G6_eval_fair_puct_wiring_PROD.json`):
+>
+> | quantity | measured |
+> |---|---|
+> | champion side, python | **12,687 ms/move** — independently reproduces §7's 12.688 s/move |
+> | champion side, rust (threads=1) | **1,297 ms/move** → **9.79×** |
+> | the frozen h800 rung | **424 ms/move** (a real `rung_ms_per_move`, not the 7% sims-ratio estimate) |
+> | **realised farm, W10** | **7.77×** (python leg 1089.4 s → rust leg 140.2 s) |
+>
+> ⚠️ **The multiplier is BUDGET-DEPENDENT — this is the correction §7 could not make.** The rung
+> is a *fixed* 800 sims, so its share of the pair shrinks as the champion budget grows. The same
+> gate on a **k4×344** cell reads champion-side 8.96×, rung 409.9 ms/move, and realised farm only
+> **4.8×** (`G6_eval_fair_puct_wiring.json`). §7's ~5× was right for a cell where the rung is a
+> large share, and wrong for the champion of record. **Quote the PROD figure for anything sized
+> at k8×1376; quote neither for a third budget without re-measuring.**
+>
+> Identity is exact at BOTH budgets: 10 deck-paired games / 130 field checks / **0 mismatches**
+> each, and at k8×1376 the two legs return identical 6W/0D/4L, winrate 0.600, elo 70.44, paired
+> margin 1.60 — the backend owes no elo, as CL-071's precedent requires.
 >
 > **Why A2/A4/A7/A8 stayed Python:** they are the "component library" shape §2 identifies — they
 > build a champion and then reach *inside* it (`agent._evaluator`, `agent._c_puct`,

@@ -1,0 +1,65 @@
+{
+  "gate": "G6/eval_fair_puct wiring identity",
+  "question": "does routing the flagship elo harness through --backend rust change what it PLAYS? (the engine is already G4/G6-gated; this gates the harness wiring and the mirror protocol)",
+  "config": {
+    "games": 10,
+    "paired": true,
+    "sims": 1376,
+    "k_dets": 8,
+    "exact_k": 2,
+    "rung_sims": 800,
+    "opponent": "h800",
+    "seed_start": 98000000000,
+    "workers": 10
+  },
+  "identity_fields": [
+    "score_p0",
+    "score_p1",
+    "diff",
+    "moves",
+    "deck_hash",
+    "champ_prefix_moves",
+    "champ_exact_moves",
+    "latch_k",
+    "rung_moves",
+    "won_by_champ",
+    "drew",
+    "a_seat",
+    "seed"
+  ],
+  "excluded": "every timing field (elapsed_s, *_secs) \u2014 those are meant to differ",
+  "games_compared": 10,
+  "field_checks": 130,
+  "mismatches": [],
+  "verdict": "PASS",
+  "timing": {
+    "python_leg_wall_s": 1089.4,
+    "rust_leg_wall_s": 140.2,
+    "wall_speedup": 7.77,
+    "champ_prefix_ms_per_move_python": 12687.206896551725,
+    "champ_prefix_ms_per_move_rust": 1296.5847701149423,
+    "champ_side_speedup": 9.79,
+    "rung_ms_per_move": 423.9664335664336,
+    "note": "wall_speedup is the FARM-REALISED number for this cell and is smaller than champ_side_speedup because the frozen Python rung does not convert. Both legs ran at the same --workers."
+  },
+  "python_summary": {
+    "n": 10,
+    "W": 6,
+    "D": 0,
+    "L": 4,
+    "winrate": 0.6,
+    "elo": 70.43650362227247,
+    "avg_diff": 1.6,
+    "paired_mean_margin": 1.6
+  },
+  "rust_summary": {
+    "n": 10,
+    "W": 6,
+    "D": 0,
+    "L": 4,
+    "winrate": 0.6,
+    "elo": 70.43650362227247,
+    "avg_diff": 1.6,
+    "paired_mean_margin": 1.6
+  }
+}
