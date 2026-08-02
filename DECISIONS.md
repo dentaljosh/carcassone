@@ -3594,3 +3594,20 @@ Joshua approved the recentring on 2026-08-01 evening ("I'll take your rec on rec
 **NO STRENGTH CLAIM MOVES.** No `results.csv` row, no claim id, no band consumed, `governance/PRODUCTION.yaml` untouched. The app now plays a **different game** from the eval corpus (that is the point of it being app-only), which is precisely why the global default is left for F9's rules-fix eval re-runs to price.
 
 **Touches:** this entry · `src/carcassonne_ai/game_wrapper.py` (`ENGINE_START_ROW/COL`, `check_start_position`, `Game(start_row=, start_col=)`, `Game.recentred`) · `scripts/diagnose_grid_wall.py` (`start_row` argument, so the fix is priced by the instrument that priced the bug) · `android/app/src/main/python/android_bridge.py` (`GRID_RULE*`, `_Session.grid_rule/grid_row`, both `Game`s, the mirror's `start_row`, `new_game`, `restore_game`, `_save_payload`) · tests (`test_start_tile_grid_bound` +8, `tests/android/test_bridge` +6, `tests/android/test_bridge_backend` +3, 2 fixtures re-seeded) · `BridgeFlipDeviceTest` (+leg 5, E4 archives as androidTest assets) · STATUS · LEVER_INDEX. Tests: android 106 · rustport 272 (unchanged, incl. all P5 flag/even-shift gates) · grid-bound 19 (1 xfail, still strict) · device 5/5. **NOT touched:** `results.csv`, claim registry, `CHECKPOINT_LINEAGE.csv`, `PRODUCTION.yaml`, the engine's own default.
+
+## 2026-08-02 — G10 champ-vs-10× oracle screen: read-out (pre-registered branch fires)
+
+The 110k screen closed clean (900/900 pick cells, arm-A cross-run identity vs the 22016 run
+900/900, 129 disagreements scored at M=32 CRN, 0 failures). The pre-registered analysis pass
+(`analyze_kwidth110k_oracle.py`, committed before any score existed) fires the
+**UNDERPOWERED/INCONCLUSIVE** branch of the §6 verdict map: cluster-robust mean
++0.484 pts/disagreement (z +1.51), compound elo-equivalent **+19.4, 95% CI [−5.7, +44.6]**
+against the pre-fixed 25-elo funding bar. Neither the DETECTED branch (needed ≥ +0.639 pts)
+nor NOT-DETECTED (needed ≤ −0.002 pts — effectively unreachable at the realized se) could
+fire. **Default recommendation: DO NOT FUND the h2h**; what the screen failed to exclude is
+an effect up to ~45 elo-equiv. Ladder context: 49.7 / 3.7 / 19.4 elo-equiv across the
+4×/2×/10× rungs — consistent-with (not evidence-of) returns that are locally flat but
+non-zero per decade. Read-out doc:
+measurement/classical_search/KWIDTH_110K_READOUT_20260802.md (+ .json). No CL id, no
+results.csv row, PRODUCTION.yaml untouched — all pre-committed. CL-068's clock sentence
+travels with any citation. Joshua decides: decision-queue item 1.

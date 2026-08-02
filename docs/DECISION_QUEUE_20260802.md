@@ -5,8 +5,12 @@
 > weekend: port complete, flips landed, review rounds done.)
 
 ## Compute / funding
-1. **Champ-vs-10× h2h** — wait for the probe's funding memo (landing ~this morning); its
-   pre-registered branch decides the recommendation.
+1. **Champ-vs-10× h2h** — ✅ READ-OUT LANDED 2026-08-02
+   ([KWIDTH_110K_READOUT_20260802.md](../measurement/classical_search/KWIDTH_110K_READOUT_20260802.md)):
+   pre-registered branch = **UNDERPOWERED/INCONCLUSIVE → default DO NOT FUND** (+19.4
+   elo-equiv, 95% CI [−5.7, +44.6] vs the 25-elo bar — couldn't exclude a fundable
+   effect, couldn't detect one). Your call: accept the default, or fund the overrule
+   sizing (~610 deck-paired games, one seat at 10×) / a cheaper intermediate rung first.
 2. **rodv3 menu** (CL-072 leaning-negative): gen@11008 discriminator (now ~4–6 h at Rust
    speeds) · n→800 teacher-h2h extension · or bank the lean and park.
 3. **ANE n≈2150 cell** — recommendation: CLOSE UNFUNDED (the port inflated r ~8× past the
