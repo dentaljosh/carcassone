@@ -53,6 +53,33 @@ HOW TO READ (GO / NULL for depth-transfer):
       - played_eq_q_argmax flips with depth      -> SELECTOR (visits vs Q disagree, resolve late)
       - top2_q_gap widens with depth             -> Q CONVERGENCE (a late-favored move pulls ahead)
       - a top-3 non-top-1 move overtakes by 688  -> EARLY DISCOVERY (deep search finds it itself)
+
+2026-08-02 `--backend {python,rust,auto}` — AUDIT ITEM B4, CONVERTED
+---------------------------------------------------------------------
+`BACKEND_BYPASS_AUDIT_20260801.md` §3 lists this harness (B4) in the instrument tier.
+**`--backend python` is the default and is byte-for-byte the pre-flag harness.**
+
+⚠️ **THE RUST PATH TRADES THE SNAPSHOT FOR STANDALONE SEARCHES, EXPLICITLY.** `carc_rs`
+exposes `MirrorState.search_single` — a whole search per FFI call — and has no per-sim hook,
+so the levels cannot be peeled off one deep run there (`snapshot.RUST_BACKEND_GAP`). They do
+not have to be: **snapshot-at-L == a standalone L-sim search is exactly what this harness
+already proves per run with `--verify-bit-exact`**, so the rust path runs ONE SEARCH PER LEVEL
+and reads the same `{action: (N, Q_rootpov)}` off each.
+
+That is a real cost trade and it is stated rather than hidden: python costs `max(levels)` sims
+per root, rust costs `sum(levels)` — 1232 vs 688 at the default ladder, **1.79x the work** —
+and it still wins by a wide margin because the per-sim ratio is ~8-10x. The manifest records
+both the mechanism and `sims_per_root`, so no reader can mistake a rust record for a
+snapshotted one. This is the same trade `snapshot.py` REFUSES to make silently; here it is
+worth taking, so it is taken in the open.
+
+⚠️ IT IS A CONVERTED INSTRUMENT, so it carries its own identity gate rather than inheriting
+G4/G6 (which gated the champion as a PLAYER — a different agent and a different read-out):
+`scripts/rustport/gate_depth_transfer_backend.py` compares every level's full deduped child
+map, the root priors and the root leaf value as RAW f64 BIT PATTERNS, plus the whole emitted
+record. `--verify-bit-exact` stays a PYTHON-side proof (snapshot vs standalone) and is
+inapplicable on the rust path, where every level IS a standalone search; it is rejected there
+rather than silently ignored.
 """
 from __future__ import annotations
 
@@ -104,6 +131,7 @@ import numpy as np  # noqa: E402
 from carcassonne_ai import champion_factory as CF  # noqa: E402
 from carcassonne_ai.heuristic_prior_mcts import HeuristicPriorAgent  # noqa: E402
 import gen_endgame_positions as GEP  # noqa: E402  (replay_to, k_remaining)
+import rust_world_search as RWS  # noqa: E402  (the shared per-search rust primitive)
 import snapshot as SNAP  # noqa: E402  (read_children, best_action_from)
 
 DEFAULT_LEVELS = (200, 344, 688)   # k4×{200,344,688} per-world sim budgets (CL-054 champion band)
@@ -114,6 +142,7 @@ _LEVELS = None
 _WALL = None
 _VERIFY = None
 _INFO = None
+_BACKEND = "python"
 
 
 # --------------------------------------------------------------------------- #
@@ -147,6 +176,72 @@ def snapshot_prior_search(agent: HeuristicPriorAgent, board, levels):
         if idx < len(levels) and i == levels[idx]:
             snaps[levels[idx]] = SNAP.read_children(root, root_player)
             idx += 1
+    return snaps, root_player, root_priors, root_leaf_value
+
+
+def _actions_for_rust(r: dict) -> tuple:
+    """``(deck_seed, actions)`` for the rust mirror — SOURCE-AGNOSTIC, self-checking.
+
+    `carc_rs.MirrorState` cannot be built from an arbitrary position, only REPLAYED, so the
+    rust path needs an action sequence. Champion roots carry one. GREEDY roots carry only
+    `(seed, ply)`, so this re-runs `gen_endgame_positions.replay_to`'s own loop while RECORDING
+    the moves. The duplication is safe because it is verified twice over: `_process_root`
+    already asserts the record's `checksum` against the reconstructed board, and
+    `RustWorldSearcher.check_sync` then hard-asserts the mirror's `string_repr()` against that
+    same board. A drifted replay cannot reach a search."""
+    if r.get("actions"):
+        return int(r["deck_seed"]), [int(a) for a in r["actions"]][:int(r["ply"])]
+    import random as _random
+
+    from carcassonne_ai.rule_based_player import RuleBasedPlayer
+
+    _random.seed(int(r["seed"]))
+    game = GEP._new_game()
+    board = game.get_init_board()
+    player = RuleBasedPlayer(seed=GEP.GEN_PLAYER_SEED)
+    acts = []
+    for _ in range(int(r["ply"])):
+        a = int(player.choose_action(game, board, game.get_valid_moves(board)))
+        board, _ = game.get_next_state(board, a)
+        acts.append(a)
+    return int(r["seed"]), acts
+
+
+def rust_prior_levels(r: dict, game, board, levels, cfg):
+    """The rust counterpart of `snapshot_prior_search` — ONE STANDALONE SEARCH PER LEVEL.
+
+    Returns the identical 4-tuple `snapshot_prior_search` does, so `_process_root` below is
+    backend-agnostic from here on.
+
+    Built on `rust_world_search.RustWorldSearcher`, the shared per-search primitive (audit
+    A2/A8). Its `search_world_full(det_board)` installs `det_board`'s unseen deck and searches;
+    passing the REAL board therefore installs the REAL deck, which is exactly the clairvoyant
+    true-deck search this harness runs. One searcher per level because `SearchConfigRs` carries
+    the sim budget — re-seating the mirror is a few hundred `advance` calls against a
+    200-688-sim search, i.e. free.
+
+    Q is recomputed as `W_rootpov / N` from `pooled_stats`. That is bit-identical to the python
+    read: python computes `ch.Q = ch.W / ch.N` and negates the QUOTIENT for an
+    opponent-to-move child, this side negates the DIVIDEND, and IEEE negation is an exact
+    sign-bit flip — `(-W)/N` and `-(W/N)` are the same f64."""
+    from carcassonne_ai.rust_agent import search_config_rs
+
+    deck_seed, acts = _actions_for_rust(r)
+    base_cfg_rs = search_config_rs(cfg, max(int(x) for x in levels))
+    snaps, root_player, root_priors, root_leaf_value = {}, None, None, None
+    for L in sorted(int(x) for x in levels):
+        ws = RWS.RustWorldSearcher(game, cfg, sims=L, deck_seed=deck_seed, prefix=acts,
+                                   cfg_rs=base_cfg_rs.with_simulations(L))
+        ws.check_sync(board, f"gate_b seat @L={L}")
+        res = ws.search_world_full(board)
+        snaps[L] = {int(a): (int(n), RWS._f64(w) / int(n))
+                    for a, n, w in res["pooled_stats"] if int(n) > 0}
+        if root_player is None:
+            # Root expansion is level-independent, so the priors and the root leaf value are
+            # read off the first search rather than recomputed per level.
+            root_player = int(res["root_player"])
+            root_priors = {int(a): RWS._f64(p) for a, p in res["root_priors"]}
+            root_leaf_value = RWS._f64(res["root_leaf_value_bits"])
     return snaps, root_player, root_priors, root_leaf_value
 
 
@@ -198,7 +293,10 @@ def _process_root(r: dict) -> dict:
     rec = {"root_id": root_id, "seed": seed, "ply": ply,
            "k_remaining": int(r.get("k_remaining", -1)),
            "source_agent": r.get("source_agent"),
-           "levels": list(_LEVELS), "info_mode": _INFO}
+           "levels": list(_LEVELS), "info_mode": _INFO,
+           # Per-RECORD, not just per-manifest: a resumed out-dir can hold records from
+           # differently-backed runs, and the level MECHANISM differs between them.
+           "backend": _BACKEND}
     t0 = time.time()
 
     def _on_alarm(signum, frame):
@@ -214,11 +312,19 @@ def _process_root(r: dict) -> dict:
             rec["ok"] = False
             return rec
         rseed = _root_seed(seed, ply)
+        # Recorded on BOTH backends. `SearchConfigRs` has no seed field; the seed is proven
+        # inert (measurement/rustport_p6/GAP1_SEED_INVARIANCE.json, re-proven at THIS
+        # harness's own levels by gate_depth_transfer_backend.py --leg seed), so it is
+        # stamped rather than silently dropped.
         rec["mcts_seed"] = rseed
         max_L = max(_LEVELS)
-        agent = HeuristicPriorAgent(game, _CFG, simulations=max_L, seed=rseed)
-        snaps, root_player, root_priors, root_leaf_value = snapshot_prior_search(
-            agent, board, _LEVELS)
+        if _BACKEND == "rust":
+            snaps, root_player, root_priors, root_leaf_value = rust_prior_levels(
+                r, game, board, _LEVELS, _CFG)
+        else:
+            agent = HeuristicPriorAgent(game, _CFG, simulations=max_L, seed=rseed)
+            snaps, root_player, root_priors, root_leaf_value = snapshot_prior_search(
+                agent, board, _LEVELS)
         rec["root_player"] = int(root_player)
         rec["root_leaf_value"] = root_leaf_value
 
@@ -314,9 +420,10 @@ def _process_root(r: dict) -> dict:
     return rec
 
 
-def _init_worker(cfg, levels, wall, verify, info):
-    global _CFG, _LEVELS, _WALL, _VERIFY, _INFO
+def _init_worker(cfg, levels, wall, verify, info, backend="python"):
+    global _CFG, _LEVELS, _WALL, _VERIFY, _INFO, _BACKEND
     _CFG, _LEVELS, _WALL, _VERIFY, _INFO = cfg, tuple(levels), wall, verify, info
+    _BACKEND = str(backend)
 
 
 # --------------------------------------------------------------------------- #
@@ -340,7 +447,10 @@ def _summary(records: list) -> dict:
     ok = [r for r in records if r.get("ok")]
     Ls = ok[0]["levels"] if ok else list(DEFAULT_LEVELS)
     n = len(ok)
-    s = {"n_records": len(records), "n_ok": n, "levels": Ls}
+    s = {"n_records": len(records), "n_ok": n, "levels": Ls,
+         # A resumed dir can mix engines (and therefore mix level MECHANISMS); say so rather
+         # than let a reader assume one.
+         "backends_seen": sorted({str(r.get("backend", "python")) for r in records})}
     if not n:
         return s
     L0, Ld = Ls[0], Ls[-1]
@@ -381,9 +491,33 @@ def main(argv=None) -> int:
                     help="agent info mode (v1 = clairvoyant prior core; fair-PIMC is a layer-on)")
     ap.add_argument("--verify-bit-exact", action="store_true",
                     help="also run standalone searches per level and assert snapshot==standalone")
+    ap.add_argument("--backend", choices=list(RWS.BACKENDS), default="python",
+                    help="ENGINE for the per-level PUCT search. DEFAULT python = "
+                         "byte-identical to every existing record (ONE deep snapshotted "
+                         "search). 'rust' runs ONE STANDALONE SEARCH PER LEVEL through "
+                         "carc_rs — equivalent by this harness's own snapshot==standalone "
+                         "guarantee, at sum(levels) sims instead of max(levels); 'auto' "
+                         "reads governance/PRODUCTION.yaml. Gate first: "
+                         "scripts/rustport/gate_depth_transfer_backend.py.")
     ap.add_argument("--resume", action="store_true", default=True)
     ap.add_argument("--no-resume", dest="resume", action="store_false")
     args = ap.parse_args(argv)
+
+    try:
+        args.backend = RWS.resolve_backend(args.backend)
+    except ValueError as exc:
+        print(f"[fatal] {exc}", file=sys.stderr)
+        return 2
+    if args.backend == "rust" and args.verify_bit_exact:
+        # FAIL CLOSED rather than silently ignore. --verify-bit-exact proves
+        # snapshot==standalone, and there IS no snapshot on the rust path — every level is a
+        # standalone search already. The identity that does need proving there (rust ==
+        # python) belongs to the gate, not to this flag.
+        print("[fatal] --verify-bit-exact is a PYTHON-path proof (snapshot vs standalone); "
+              "the rust path runs standalone searches at every level, so it has nothing to "
+              "compare. Use scripts/rustport/gate_depth_transfer_backend.py.",
+              file=sys.stderr)
+        return 2
 
     levels = tuple(int(x) for x in args.levels.split(","))
     assert list(levels) == sorted(levels), "--levels must be ascending"
@@ -396,7 +530,11 @@ def main(argv=None) -> int:
 
     # Build + VERIFY the production champion leaf (F1 runtime guard; raises on drift).
     cfg = CF.production_prior_cfg()
-    manifest_champ = CF.resolved_manifest("clairvoyant", verify=True)
+    # verify=True on the RESOLVED backend: the leaf VALUE panel is re-evaluated through the
+    # engine that will actually run the searches, so the R1/R7 provenance guard grades the
+    # executing leaf rather than a python stand-in.
+    manifest_champ = CF.resolved_manifest("clairvoyant", verify=True,
+                                          backend=args.backend)
 
     todo = []
     skipped = 0
@@ -427,11 +565,26 @@ def main(argv=None) -> int:
         "workers": args.workers,
         "verify_bit_exact": bool(args.verify_bit_exact),
         "env": {k: os.environ.get(k) for k in _CANON_ENV},
+        "engine": RWS.backend_manifest(args.backend, extra={
+            "level_mechanism": ("ONE deep search snapshotted at each level"
+                                if args.backend == "python" else
+                                "ONE STANDALONE SEARCH PER LEVEL — carc_rs has no per-sim "
+                                "hook (snapshot.RUST_BACKEND_GAP); equivalent by the "
+                                "snapshot==standalone guarantee this harness proves with "
+                                "--verify-bit-exact"),
+            "sims_per_root": (max(levels) if args.backend == "python" else sum(levels)),
+            "sims_penalty_vs_snapshot": (1.0 if args.backend == "python"
+                                         else round(sum(levels) / max(levels), 3)),
+            "mcts_seed": "recorded per root; no SearchConfigRs field — proven inert "
+                         "(measurement/rustport_p6/GAP1_SEED_INVARIANCE.json)",
+            "gate": "scripts/rustport/gate_depth_transfer_backend.py",
+        }),
         "champion_manifest": manifest_champ,
     }
     (out_dir.parent / "manifest.json").write_text(json.dumps(manifest, indent=2))
     print(f"[gate_b] roots={len(roots)} todo={len(todo)} skipped(resume)={skipped} "
-          f"levels={levels} workers={args.workers} verify={args.verify_bit_exact}")
+          f"levels={levels} workers={args.workers} verify={args.verify_bit_exact} "
+          f"backend={args.backend}")
 
     records = []
     # read back any already-completed records so the summary covers the full set
@@ -449,7 +602,7 @@ def main(argv=None) -> int:
         ctx = get_context("fork")
         with ctx.Pool(args.workers, initializer=_init_worker,
                       initargs=(cfg, levels, args.wall_cap_secs, args.verify_bit_exact,
-                                args.info)) as pool:
+                                args.info, args.backend)) as pool:
             for rec in pool.imap_unordered(_process_root, todo, chunksize=1):
                 (out_dir / f"{rec['root_id']}.json").write_text(json.dumps(rec))
                 records.append(rec)

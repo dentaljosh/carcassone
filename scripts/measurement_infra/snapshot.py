@@ -17,6 +17,35 @@ The leaf *path* env (`CARCASSONNE_USE_FLAT_LEAF` etc.) is read at engine import 
 want the frozen v2.9 leaf must set the env block BEFORE importing engine modules. Use the literal
 block from `FROZEN_V29_ENV` (see README) or call `set_frozen_v29_env()` as the very first thing in
 the program. `frozen_v29_cfg()` then builds the LeafConfig and asserts its config_hash.
+
+## ⚠️ NO RUST BACKEND — this primitive stays Python (rustport P6 Class-B, 2026-08-02)
+
+The Class-B wiring pass converted the per-world probes (`kwidth_agreement_probe`,
+`adaptive_k_census`) onto `carc_rs` via `rust_world_search.RustWorldSearcher`, and converted
+`gate_b_depth_transfer`. **This module was NOT converted, and the reason is structural rather
+than a matter of effort** — see `RUST_BACKEND_GAP` / `rust_backend()` below. Two independent
+blockers, either one sufficient:
+
+  1. **No Rust agent to call.** `make_heuristic_agent` builds `HeuristicMCTS` — vanilla UCT with a
+     `virtual_score` leaf replacing the rollout. `carc_core::search` implements the
+     PUCT-with-heuristic-priors search *only*; `MirrorState.search_single`'s own contract is
+     "equivalent to `HeuristicPriorAgent(...).move(board)`". There is no Rust UCT at all.
+  2. **No mid-search surface.** `snapshot_search` steps `_simulate` one simulation at a time and
+     reads the root *between* sims. `search_single` is a whole search in one FFI call; there is no
+     per-sim hook, no snapshot callback, and no way to resume a finished search.
+
+⚠️ **AND THE ONLY FAITHFUL WORKAROUND DELETES THIS MODULE'S REASON TO EXIST.** Running one
+`search_single` per level per world reproduces the numbers (snapshot-at-L == standalone-at-L is
+exactly this module's guarantee), but it costs `sum(levels)` instead of `max(levels)` — ~2-2.7x the
+sims for the usual ladders — which is precisely the Kx saving the snapshot claim is *made of*. So a
+"converted" snapshot module would be a slower module with the same output and a false name. Where
+that trade is still worth taking because the per-sim ratio dominates, it is taken EXPLICITLY and
+labelled, in `gate_b_depth_transfer.py --backend rust`; it is not smuggled in here.
+
+A third reason to leave this file alone even if both blockers closed: it is deliberately pinned to
+the **pre-C5 frozen `7fc930b8` substrate**, and `champion_factory._hashers()` imports
+`_frozen_config_hash` from it. It is a HASH SOURCE for the factory as well as a search primitive,
+so it is not a place to introduce an engine switch casually.
 """
 from __future__ import annotations
 import os
@@ -133,6 +162,29 @@ def frozen_v29_cfg(value_norm: float = 2.0):
     h = _frozen_config_hash(cfg)
     assert h == FROZEN_V29_HASH, f"leaf is not frozen v2.9 (config_hash {h} != {FROZEN_V29_HASH})"
     return cfg
+
+
+RUST_BACKEND_GAP = (
+    "snapshot.py has NO carc_rs backend and cannot get one from a caller-side change. "
+    "(1) AGENT: it drives HeuristicMCTS (vanilla UCT + virtual_score leaf); carc_core::search "
+    "implements PUCT-with-heuristic-priors only, so there is no surface to call. "
+    "(2) MECHANISM: snapshot_search reads the root BETWEEN simulations; "
+    "MirrorState.search_single is one whole search per FFI call with no per-sim hook, no "
+    "snapshot callback and no resume. "
+    "(3) EVEN IF BOTH CLOSED, the only faithful route — one search_single per level — costs "
+    "sum(levels) instead of max(levels) (~2-2.7x) and therefore DELETES the Kx snapshot claim "
+    "this module exists for. Closing this needs a rust UCT search AND a stepped/snapshot API in "
+    "carc_core; until then run the multi-depth ladder on the python backend, or use "
+    "gate_b_depth_transfer --backend rust, which takes the sum(levels) trade EXPLICITLY and "
+    "says so in its manifest.")
+
+
+def rust_backend(*_args, **_kwargs):
+    """FAIL CLOSED for any caller reaching for a Rust snapshot search.
+
+    Exists so the gap is a raised error carrying its own reason, rather than something a reader
+    has to infer from the absence of a `--backend` flag (rustport P6 Class-B, 2026-08-02)."""
+    raise NotImplementedError(RUST_BACKEND_GAP)
 
 
 def make_heuristic_agent(sims, leaf_cfg, heur_leaf: str = "v2_7", seed: int = 0):
