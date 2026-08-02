@@ -1,0 +1,464 @@
+{
+  "kind": "p1_paper_G3_label_variance_decomposition",
+  "purpose": "Turn CLAIMS_LEDGER row D1 from interpretation into a measured decomposition: how much of the outcome-label variance lives at the level an outcome-regression value head can learn from, vs the between-sibling level move discrimination actually consumes.",
+  "generated_utc": "2026-08-02T05:16:09Z",
+  "code_rev": "fb238d3",
+  "house_rules": "offline arithmetic only \u2014 no games, no search, no net forward, no GPU; every number traceable to an input file named in `parts[*].inputs`.",
+  "headline": {
+    "training_corpus_outcome_label": {
+      "n_games": 2400,
+      "n_rows": 345333,
+      "frac_variance_at_game_x_side_level": 0.9999999997451084,
+      "frac_variance_at_position_level": -1.0856430953236916e-17,
+      "frac_variance_at_sibling_level": 0.0,
+      "sibling_level_note": "0 by construction \u2014 the corpus stores one row per decision (group_id == -1 on all 345,333 rows); sibling sets are absent."
+    },
+    "exact_solver_child_value_K2_bank": {
+      "n_roots": 1119,
+      "n_children": 50637,
+      "frac_variance_between_root": 0.9971906390363111,
+      "frac_variance_within_root": 0.0028093609636889454,
+      "frac_variance_within_root_tanh_units": 0.0034526760703800273
+    },
+    "heuristic_leaf_value_same_bank": {
+      "frac_variance_between_root": 0.9983364986222807,
+      "frac_variance_within_root": 0.0016635013777192,
+      "within_root_kendall_tau_vs_solver": 0.6152820150615235
+    },
+    "one_sentence": "Of the label an outcome-trained value head sees, 100.0% of the variance is fixed at the (game x side-to-move) level and 0.0% varies across positions within a game; and even with perfect counterfactual labels, only 0.281% of the exact-solver child-value variance on the 1,119-root bank lies between siblings \u2014 so a predictor explaining 99.719% of the label variance can still carry zero move-ordering information."
+  },
+  "derived": {
+    "sibling_residual_sd_over_training_label_sd": {
+      "value": 0.060668130795944485,
+      "formula": "sd_within_root(tanh(solver_child_value/15)) / sd(training outcome label)",
+      "inputs": [
+        0.043156753682186716,
+        0.7113578927846519
+      ]
+    },
+    "sibling_residual_var_over_heldout_value_mse": {
+      "value": 0.006877789469663725,
+      "formula": "var_within_root(tanh(solver_child_value/15)) / heldout value MSE of value_unlock_v1",
+      "inputs": [
+        0.0018625053883849366,
+        0.2708
+      ],
+      "caveat": "CROSS-INSTRUMENT and indicative only: the numerator is exact-solver variance on 1,119 K=2 endgame roots; the denominator is a held-out MSE against sampled game outcomes over all plies of 120 val games. Same units (tanh(score_diff/15)), different distributions."
+    },
+    "leaf_within_root_advantage_over_value_head_tau": {
+      "value": 32.38421052631579,
+      "formula": "leaf tau / value_unlock_v1 tau (both within-root, same 1,119 roots)"
+    },
+    "position_level_ceiling_r2": {
+      "value": 0.9971906390363111,
+      "formula": "frac_between_root of the exact solver child value == R^2 of a predictor that knows every root's mean exactly and nothing else"
+    }
+  },
+  "imported_from_prior_measurement": {
+    "value_unlock_v1_value_outcome_r_heldout": {
+      "value": 0.6795,
+      "source": "/home/doctor/projects/carcassone/measurement/value_unlock_20260730/READOUT.md \u00a72 (train log, `value\u2194outcome corr`)",
+      "caveat": "within-window, position-level (READOUT \u00a72 caveats a/b)"
+    },
+    "value_unlock_v1_solver_tau_within_root": {
+      "value": 0.019,
+      "source": "/home/doctor/projects/carcassone/measurement/value_unlock_20260730/VERDICT.json / READOUT \u00a74.1"
+    },
+    "iter_03_value_outcome_r_heldout": {
+      "value": 0.6564,
+      "source": "READOUT \u00a72"
+    },
+    "iter_03_solver_tau_within_root": {
+      "value": 0.0177,
+      "source": "READOUT \u00a74.1"
+    },
+    "heuristic_leaf_value_outcome_r_reference": {
+      "value": 0.61,
+      "source": "scripts/train_iter.py:706 (project reference), via READOUT \u00a72"
+    },
+    "leaf_solver_tau_within_root": {
+      "value": 0.6153,
+      "source": "READOUT \u00a74.1 (curve125 row)"
+    },
+    "value_unlock_v1_heldout_value_mse_best_epoch": {
+      "value": 0.2708,
+      "source": "READOUT \u00a72 loss curve, epoch 2 val"
+    }
+  },
+  "parts": {
+    "corpus": {
+      "kind": "g3_corpus_outcome_label_decomposition",
+      "generated_utc": "2026-08-02T05:08:08Z",
+      "code_rev": "ef2425e",
+      "inputs": {
+        "corpus_root": "/mnt/c/carc-shared/distill_strong_20260723",
+        "iters": [
+          "iter_00",
+          "iter_01",
+          "iter_02",
+          "iter_03"
+        ],
+        "n_files": 2400,
+        "file_list_sha256": "24c2e468824bc9e5f6467e2bb10f5979409f00b0a6a2b4a816a8c98968725741",
+        "label_definition": "values = tanh((p0-p1)/15), mover-POV, backfilled from the FINAL score (scripts/distill_flywheel/gen_fair_distill.py:319-320; corpus manifest config.value_target_desc)",
+        "manifest": "/mnt/c/carc-shared/distill_strong_20260723/iter_00/manifest.json"
+      },
+      "counts": {
+        "n_games": 2400,
+        "n_rows": 345333,
+        "rows_per_game_mean": 143.88875,
+        "n_game_x_side_cells": 4716,
+        "n_aux_true_rows": 335734,
+        "n_zero_label_rows": 6044
+      },
+      "label_moments_all_rows": {
+        "mean": 8.584763680900995e-05,
+        "var": 0.5060300516270203,
+        "sd": 0.7113578927846519,
+        "readout_reference_sd": 0.711358
+      },
+      "within_game_label_constancy": {
+        "max_within_game_range_of_abs_label": 0.0,
+        "n_games_with_more_than_one_abs_label": 0,
+        "per_game_abs_label_mean": 0.6455299054272473,
+        "per_game_abs_label_sd": 0.29886936706122824,
+        "per_game_abs_label_min": 0.0,
+        "per_game_abs_label_max": 0.9999877214431763
+      },
+      "sibling_structure_in_corpus": {
+        "group_id_min": -1,
+        "group_id_max": -1,
+        "note": "group_id is -1 on every row: the corpus stores ONE row per decision (the played move's resulting position), never the sibling set. There is no within-sibling level in the training data at all."
+      },
+      "decomposition": {
+        "ss_total": 174748.87581851383,
+        "L1_game": {
+          "ss_between": 0.8788109042064197,
+          "ss_within": 174747.99700761007,
+          "frac_between": 5.028993177152753e-06,
+          "frac_within": 0.9999949710068254
+        },
+        "L2_game_x_side": {
+          "ss_between": 174748.8757739718,
+          "ss_within": -1.8971491044794675e-12,
+          "frac_between": 0.9999999997451084,
+          "frac_within": -1.0856430953236916e-17,
+          "note": "within-(game x side) SS is the variance left at the POSITION level once the game and the side-to-move are known."
+        }
+      },
+      "wall_secs": 3.028576612472534
+    },
+    "sibling_bank": {
+      "kind": "g3_sibling_variance_decomposition",
+      "generated_utc": "2026-08-02T05:10:57Z",
+      "code_rev": "ef2425e",
+      "inputs": {
+        "cache": "/home/doctor/projects/carcassone/measurement/gatec_c0_20260723/cache/c0_cache.npz",
+        "cache_sha256": "6bbe7a4a4f06639192177ba9c9b185afd091b77ca3d7085fb6f4c48f8bb60264",
+        "cache_manifest": "/home/doctor/projects/carcassone/measurement/gatec_c0_20260723/cache/manifest.json",
+        "root_bank": "1,119 K=2 marginalized exact-solver roots (qprobe_A JOIN pool_A); the identical bank used by measurement/value_unlock_20260730 and measurement/canonical_az/solver_score_derisk_it00_03.json",
+        "y_units": "raw points, mover-oriented exact solver child value",
+        "leaf_units": "tanh(virtual_score_v2/15), mover-POV; curve100 cfg \u2014 READOUT \u00a74.3(b) records curve125 and curve100 pick the SAME child on 1119/1119 roots",
+        "value_norm": 15.0
+      },
+      "provenance_checks": {
+        "leaf_tau_from_cache": 0.6152820150615235,
+        "leaf_tau_recomputed": 0.6152820150615235,
+        "leaf_top1_recomputed": 0.6094727435210009,
+        "leaf_regret_recomputed": 0.9508489722966935,
+        "expected_from_READOUT": {
+          "tau": 0.6153,
+          "top1": 0.6095,
+          "regret": 0.9508
+        },
+        "ridge_tau_recomputed": 0.3465423394977192,
+        "ridge_top1_recomputed": 0.46380697050938335,
+        "ridge_regret_recomputed": 0.7899910634495085,
+        "expected_from_CL065_gate_full_ridge": {
+          "tau": 0.3466,
+          "top1": 0.4638,
+          "regret": 0.79
+        }
+      },
+      "bank_shape": {
+        "n_roots": 1119,
+        "n_children": 50637,
+        "children_per_root_mean": 45.25201072386059,
+        "children_per_root_median": 44.0,
+        "children_per_root_min": 8,
+        "children_per_root_max": 116,
+        "root_n_legal_mean": 45.25201072386059
+      },
+      "decomposition": {
+        "solver_child_value_points": {
+          "n_children": 50637,
+          "n_roots": 1119,
+          "grand_mean": -0.6985208444418113,
+          "var_total": 489.59621658493296,
+          "sd_total": 22.12682120379999,
+          "ss_total": 24791683.61921125,
+          "ss_between_root": 24722034.83102731,
+          "ss_within_root": 69648.78818393876,
+          "frac_between_root": 0.9971906390363111,
+          "frac_within_root": 0.0028093609636889454,
+          "sd_between_root": 22.095718229695304,
+          "sd_within_root": 1.1727968702394753,
+          "root_mean_sd": 22.055803483270918,
+          "within_root_sd_mean_over_roots": 0.8603953966752818,
+          "within_root_sd_median_over_roots": 0.6614378277661477,
+          "frac_roots_with_zero_within_var": 0.11528150134048257
+        },
+        "solver_child_value_tanh15": {
+          "n_children": 50637,
+          "n_roots": 1119,
+          "grand_mean": -0.017791301057847406,
+          "var_total": 0.5394382068920631,
+          "sd_total": 0.7344645715703809,
+          "ss_total": 27315.5324823934,
+          "ss_between_root": 27221.220797041744,
+          "ss_within_root": 94.31168535164804,
+          "frac_between_root": 0.9965473239296198,
+          "frac_within_root": 0.0034526760703800273,
+          "sd_between_root": 0.733195541110063,
+          "sd_within_root": 0.043156753682186716,
+          "root_mean_sd": 0.7339412576761076,
+          "within_root_sd_mean_over_roots": 0.025169866202428958,
+          "within_root_sd_median_over_roots": 0.01232996834318937,
+          "frac_roots_with_zero_within_var": 0.11528150134048257
+        },
+        "heuristic_leaf_value_tanh15": {
+          "n_children": 50637,
+          "n_roots": 1119,
+          "grand_mean": 0.03563344385116037,
+          "var_total": 0.5433284065002486,
+          "sd_total": 0.7371081375892201,
+          "ss_total": 27512.520519953086,
+          "ss_between_root": 27466.753404163614,
+          "ss_within_root": 45.76711578946972,
+          "frac_between_root": 0.9983364986222807,
+          "frac_within_root": 0.0016635013777192,
+          "sd_between_root": 0.7364947922066261,
+          "sd_within_root": 0.030063724865145056,
+          "root_mean_sd": 0.7385863312960617,
+          "within_root_sd_mean_over_roots": 0.01792161539582614,
+          "within_root_sd_median_over_roots": 0.009467712093306916,
+          "frac_roots_with_zero_within_var": 0.13494191242180517
+        },
+        "ridge_pooled_mse_prediction_points": {
+          "n_children": 50637,
+          "n_roots": 1119,
+          "grand_mean": -0.7123630785646465,
+          "var_total": 483.8589584316775,
+          "sd_total": 21.996794276250288,
+          "ss_total": 24501166.078104854,
+          "ss_between_root": 24464358.750831746,
+          "ss_within_root": 36807.327273108756,
+          "frac_between_root": 0.9984977316118028,
+          "frac_within_root": 0.0015022683881972924,
+          "sd_between_root": 21.980265521919417,
+          "sd_within_root": 0.8525761066309429,
+          "root_mean_sd": 21.968058884137346,
+          "within_root_sd_mean_over_roots": 0.5732640171541847,
+          "within_root_sd_median_over_roots": 0.3897730905284922,
+          "frac_roots_with_zero_within_var": 0.0071492403932082215
+        }
+      },
+      "cross_level_agreement_leaf_vs_solver": {
+        "pooled_pearson_r": 0.9317017857930181,
+        "between_root_pearson_r": 0.9322662879068425,
+        "within_root_pearson_r": 0.44048108611261344,
+        "between_root_r2": 0.8691204315676038,
+        "within_root_r2": 0.19402358722294757,
+        "within_root_pearson_r_matched_tanh_units": 0.5213049239104078,
+        "within_root_pearson_r_zscored_by_root": 0.6171872831401927,
+        "within_root_zscored_n_roots_used": 937,
+        "within_root_zscored_n_children_used": 41914,
+        "within_root_kendall_tau_mean": 0.6152820150615235,
+        "note": "the points-scale within-root Pearson under-reads the leaf because the leaf is a tanh of its score; the matched-unit and z-scored-by-root readings are the fair ones. Kendall tau (rank, per-root) is the paper's primary statistic and is scale-free."
+      },
+      "supplementary_pooled_mse_ridge": {
+        "learner": "closed-form standardized ridge, lam=1, 5-fold cross-fit BY ROOT (c0_fit.make_folds seed 0) on the leaf's own 84 component features",
+        "objective": "pooled MSE against the exact solver child value (points)",
+        "r2_pooled": 0.9880230298733744,
+        "r2_between_root": 0.9895552991687814,
+        "r2_within_root": 0.44413969924713037,
+        "within_root_pearson_r_zscored_by_root": 0.682973735566154,
+        "within_root_kendall_tau_mean": 0.3465423394977192,
+        "note": "the same fit that CL-065 reports as gate_full_ridge; the R^2 split is the new number."
+      },
+      "position_level_oracle": {
+        "r2_of_perfect_root_mean_predictor": 0.9971906390363111,
+        "its_within_root_kendall_tau": 0.0,
+        "note": "a predictor that knows each root's mean exactly and nothing else explains frac_between_root of the total label variance and has zero sibling-ordering information by construction."
+      },
+      "wall_secs": 3.2253899574279785
+    },
+    "phase_curve_supplementary": {
+      "kind": "g3_phase_curve_h6400_oracle",
+      "generated_utc": "2026-08-02T05:11:29Z",
+      "code_rev": "ef2425e",
+      "inputs": {
+        "probe": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl",
+        "probe_sha256": "eb9a65c589535772943ec434a2081dae533fc13fbebb27c1784c3aead949664c",
+        "value": "action_q \u2014 h6400_v2.9 deep-search per-child Q, mover-oriented, tanh units",
+        "caveat": "SEARCH ESTIMATE, not ground truth; correlates 0.995 with the v2.9 leaf (autopsy F4). Shape only \u2014 never a verdict.",
+        "n_roots_with_action_q": 10067
+      },
+      "overall": {
+        "n_roots": 10067,
+        "n_children": 314911,
+        "children_per_root_mean": 31.281513857157048,
+        "sd_total": 0.6732150694645052,
+        "sd_between_root": 0.670688721848569,
+        "sd_within_root": 0.05826807135326093,
+        "frac_between_root": 0.992508761411248,
+        "frac_within_root": 0.007491238588746171
+      },
+      "by_k_remaining": {
+        "2": {
+          "n_roots": 1119,
+          "n_children": 41452,
+          "children_per_root_mean": 37.0437890974084,
+          "sd_total": 0.7336409530250495,
+          "sd_between_root": 0.7327369811686014,
+          "sd_within_root": 0.03640830102362895,
+          "frac_between_root": 0.9975371742040627,
+          "frac_within_root": 0.0024628257959365464
+        },
+        "4": {
+          "n_roots": 1119,
+          "n_children": 40565,
+          "children_per_root_mean": 36.25111706881144,
+          "sd_total": 0.7409667059293383,
+          "sd_between_root": 0.7399174744451351,
+          "sd_within_root": 0.039418146918740536,
+          "frac_between_root": 0.9971699440638809,
+          "frac_within_root": 0.0028300559361192604
+        },
+        "6": {
+          "n_roots": 1120,
+          "n_children": 40815,
+          "children_per_root_mean": 36.441964285714285,
+          "sd_total": 0.7308797536606267,
+          "sd_between_root": 0.7296486723509858,
+          "sd_within_root": 0.04240317496912236,
+          "frac_between_root": 0.9966340714806545,
+          "frac_within_root": 0.003365928519345239
+        },
+        "10": {
+          "n_roots": 1119,
+          "n_children": 39567,
+          "children_per_root_mean": 35.35924932975871,
+          "sd_total": 0.7191427363649641,
+          "sd_between_root": 0.7178484639535703,
+          "sd_within_root": 0.04312607176625334,
+          "frac_between_root": 0.996403752226439,
+          "frac_within_root": 0.003596247773561174
+        },
+        "14": {
+          "n_roots": 1119,
+          "n_children": 38309,
+          "children_per_root_mean": 34.23503127792672,
+          "sd_total": 0.7101830065511018,
+          "sd_between_root": 0.7085419680357375,
+          "sd_within_root": 0.04825124170428485,
+          "frac_between_root": 0.9953838869563009,
+          "frac_within_root": 0.0046161130436977085
+        },
+        "22": {
+          "n_roots": 1120,
+          "n_children": 35839,
+          "children_per_root_mean": 31.99910714285714,
+          "sd_total": 0.6714941863779613,
+          "sd_between_root": 0.6693709735184994,
+          "sd_within_root": 0.05335674418755329,
+          "frac_between_root": 0.9936861519138601,
+          "frac_within_root": 0.0063138480861385715
+        },
+        "32": {
+          "n_roots": 1119,
+          "n_children": 32534,
+          "children_per_root_mean": 29.074173369079535,
+          "sd_total": 0.6221134179381901,
+          "sd_between_root": 0.6189445386737729,
+          "sd_within_root": 0.06271174391329998,
+          "frac_between_root": 0.9898384813385785,
+          "frac_within_root": 0.01016151866142038
+        },
+        "44": {
+          "n_roots": 1119,
+          "n_children": 26120,
+          "children_per_root_mean": 23.342269883824844,
+          "sd_total": 0.4590792256740499,
+          "sd_between_root": 0.44703179644873225,
+          "sd_within_root": 0.10448113901228565,
+          "frac_between_root": 0.9482034878943906,
+          "frac_within_root": 0.05179651210560978
+        },
+        "56": {
+          "n_roots": 1113,
+          "n_children": 19710,
+          "children_per_root_mean": 17.7088948787062,
+          "sd_total": 0.3371498930125254,
+          "sd_between_root": 0.32175615611096886,
+          "sd_within_root": 0.10071259287224874,
+          "frac_between_root": 0.9107678202739055,
+          "frac_within_root": 0.08923217972609603
+        }
+      },
+      "by_phase": {
+        "endgame": {
+          "n_roots": 3358,
+          "n_children": 122832,
+          "children_per_root_mean": 36.57891602144134,
+          "sd_total": 0.7351939244909879,
+          "sd_between_root": 0.7341336247669965,
+          "sd_within_root": 0.03947059151989158,
+          "frac_between_root": 0.9971176716662955,
+          "frac_within_root": 0.002882328333702524
+        },
+        "late_mid": {
+          "n_roots": 1120,
+          "n_children": 35839,
+          "children_per_root_mean": 31.99910714285714,
+          "sd_total": 0.6714941863779613,
+          "sd_between_root": 0.6693709735184994,
+          "sd_within_root": 0.05335674418755329,
+          "frac_between_root": 0.9936861519138601,
+          "frac_within_root": 0.0063138480861385715
+        },
+        "midgame": {
+          "n_roots": 2238,
+          "n_children": 58654,
+          "children_per_root_mean": 26.20822162645219,
+          "sd_total": 0.5554565927197869,
+          "sd_between_root": 0.5490804377803485,
+          "sd_within_root": 0.0839207914811085,
+          "frac_between_root": 0.9771735228751275,
+          "frac_within_root": 0.02282647712487149
+        },
+        "opening": {
+          "n_roots": 1113,
+          "n_children": 19710,
+          "children_per_root_mean": 17.7088948787062,
+          "sd_total": 0.3371498930125254,
+          "sd_between_root": 0.32175615611096886,
+          "sd_within_root": 0.10071259287224874,
+          "frac_between_root": 0.9107678202739055,
+          "frac_within_root": 0.08923217972609603
+        },
+        "pre_endgame": {
+          "n_roots": 2238,
+          "n_children": 77876,
+          "children_per_root_mean": 34.79714030384272,
+          "sd_total": 0.7147496380801722,
+          "sd_between_root": 0.7132859227322622,
+          "sd_within_root": 0.04571911599890782,
+          "frac_between_root": 0.9959084509607251,
+          "frac_within_root": 0.004091549039273446
+        }
+      },
+      "wall_secs": 0.27454566955566406
+    }
+  }
+}

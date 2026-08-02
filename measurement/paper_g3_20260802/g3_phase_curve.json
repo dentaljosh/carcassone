@@ -1,0 +1,167 @@
+{
+  "kind": "g3_phase_curve_h6400_oracle",
+  "generated_utc": "2026-08-02T05:11:29Z",
+  "code_rev": "ef2425e",
+  "inputs": {
+    "probe": "/home/doctor/projects/carcassone/measurement/high_gap_distillation/scaled/qprobe_A/probe.jsonl",
+    "probe_sha256": "eb9a65c589535772943ec434a2081dae533fc13fbebb27c1784c3aead949664c",
+    "value": "action_q \u2014 h6400_v2.9 deep-search per-child Q, mover-oriented, tanh units",
+    "caveat": "SEARCH ESTIMATE, not ground truth; correlates 0.995 with the v2.9 leaf (autopsy F4). Shape only \u2014 never a verdict.",
+    "n_roots_with_action_q": 10067
+  },
+  "overall": {
+    "n_roots": 10067,
+    "n_children": 314911,
+    "children_per_root_mean": 31.281513857157048,
+    "sd_total": 0.6732150694645052,
+    "sd_between_root": 0.670688721848569,
+    "sd_within_root": 0.05826807135326093,
+    "frac_between_root": 0.992508761411248,
+    "frac_within_root": 0.007491238588746171
+  },
+  "by_k_remaining": {
+    "2": {
+      "n_roots": 1119,
+      "n_children": 41452,
+      "children_per_root_mean": 37.0437890974084,
+      "sd_total": 0.7336409530250495,
+      "sd_between_root": 0.7327369811686014,
+      "sd_within_root": 0.03640830102362895,
+      "frac_between_root": 0.9975371742040627,
+      "frac_within_root": 0.0024628257959365464
+    },
+    "4": {
+      "n_roots": 1119,
+      "n_children": 40565,
+      "children_per_root_mean": 36.25111706881144,
+      "sd_total": 0.7409667059293383,
+      "sd_between_root": 0.7399174744451351,
+      "sd_within_root": 0.039418146918740536,
+      "frac_between_root": 0.9971699440638809,
+      "frac_within_root": 0.0028300559361192604
+    },
+    "6": {
+      "n_roots": 1120,
+      "n_children": 40815,
+      "children_per_root_mean": 36.441964285714285,
+      "sd_total": 0.7308797536606267,
+      "sd_between_root": 0.7296486723509858,
+      "sd_within_root": 0.04240317496912236,
+      "frac_between_root": 0.9966340714806545,
+      "frac_within_root": 0.003365928519345239
+    },
+    "10": {
+      "n_roots": 1119,
+      "n_children": 39567,
+      "children_per_root_mean": 35.35924932975871,
+      "sd_total": 0.7191427363649641,
+      "sd_between_root": 0.7178484639535703,
+      "sd_within_root": 0.04312607176625334,
+      "frac_between_root": 0.996403752226439,
+      "frac_within_root": 0.003596247773561174
+    },
+    "14": {
+      "n_roots": 1119,
+      "n_children": 38309,
+      "children_per_root_mean": 34.23503127792672,
+      "sd_total": 0.7101830065511018,
+      "sd_between_root": 0.7085419680357375,
+      "sd_within_root": 0.04825124170428485,
+      "frac_between_root": 0.9953838869563009,
+      "frac_within_root": 0.0046161130436977085
+    },
+    "22": {
+      "n_roots": 1120,
+      "n_children": 35839,
+      "children_per_root_mean": 31.99910714285714,
+      "sd_total": 0.6714941863779613,
+      "sd_between_root": 0.6693709735184994,
+      "sd_within_root": 0.05335674418755329,
+      "frac_between_root": 0.9936861519138601,
+      "frac_within_root": 0.0063138480861385715
+    },
+    "32": {
+      "n_roots": 1119,
+      "n_children": 32534,
+      "children_per_root_mean": 29.074173369079535,
+      "sd_total": 0.6221134179381901,
+      "sd_between_root": 0.6189445386737729,
+      "sd_within_root": 0.06271174391329998,
+      "frac_between_root": 0.9898384813385785,
+      "frac_within_root": 0.01016151866142038
+    },
+    "44": {
+      "n_roots": 1119,
+      "n_children": 26120,
+      "children_per_root_mean": 23.342269883824844,
+      "sd_total": 0.4590792256740499,
+      "sd_between_root": 0.44703179644873225,
+      "sd_within_root": 0.10448113901228565,
+      "frac_between_root": 0.9482034878943906,
+      "frac_within_root": 0.05179651210560978
+    },
+    "56": {
+      "n_roots": 1113,
+      "n_children": 19710,
+      "children_per_root_mean": 17.7088948787062,
+      "sd_total": 0.3371498930125254,
+      "sd_between_root": 0.32175615611096886,
+      "sd_within_root": 0.10071259287224874,
+      "frac_between_root": 0.9107678202739055,
+      "frac_within_root": 0.08923217972609603
+    }
+  },
+  "by_phase": {
+    "endgame": {
+      "n_roots": 3358,
+      "n_children": 122832,
+      "children_per_root_mean": 36.57891602144134,
+      "sd_total": 0.7351939244909879,
+      "sd_between_root": 0.7341336247669965,
+      "sd_within_root": 0.03947059151989158,
+      "frac_between_root": 0.9971176716662955,
+      "frac_within_root": 0.002882328333702524
+    },
+    "late_mid": {
+      "n_roots": 1120,
+      "n_children": 35839,
+      "children_per_root_mean": 31.99910714285714,
+      "sd_total": 0.6714941863779613,
+      "sd_between_root": 0.6693709735184994,
+      "sd_within_root": 0.05335674418755329,
+      "frac_between_root": 0.9936861519138601,
+      "frac_within_root": 0.0063138480861385715
+    },
+    "midgame": {
+      "n_roots": 2238,
+      "n_children": 58654,
+      "children_per_root_mean": 26.20822162645219,
+      "sd_total": 0.5554565927197869,
+      "sd_between_root": 0.5490804377803485,
+      "sd_within_root": 0.0839207914811085,
+      "frac_between_root": 0.9771735228751275,
+      "frac_within_root": 0.02282647712487149
+    },
+    "opening": {
+      "n_roots": 1113,
+      "n_children": 19710,
+      "children_per_root_mean": 17.7088948787062,
+      "sd_total": 0.3371498930125254,
+      "sd_between_root": 0.32175615611096886,
+      "sd_within_root": 0.10071259287224874,
+      "frac_between_root": 0.9107678202739055,
+      "frac_within_root": 0.08923217972609603
+    },
+    "pre_endgame": {
+      "n_roots": 2238,
+      "n_children": 77876,
+      "children_per_root_mean": 34.79714030384272,
+      "sd_total": 0.7147496380801722,
+      "sd_between_root": 0.7132859227322622,
+      "sd_within_root": 0.04571911599890782,
+      "frac_between_root": 0.9959084509607251,
+      "frac_within_root": 0.004091549039273446
+    }
+  },
+  "wall_secs": 0.27454566955566406
+}

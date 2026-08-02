@@ -236,10 +236,15 @@ says X; the experiment that closes X"):**
   variance is dominated by everything *both* players do after the decision — the label
   is (almost) common to all siblings. Between-sibling contrasts are a small-signal
   residual on top of a large shared component; the head can reduce its loss massively
-  by learning the shared component and never resolving the residual. Formalize lightly
-  (variance decomposition of the outcome label at a root into within-sibling and
-  across-position components — TODO-MEASURE if we want the actual decomposition on the
-  345K-row corpus; it does not exist on disk today).
+  by learning the shared component and never resolving the residual. **MEASURED
+  2026-08-02 (gap G3 closed) — this is now figure F-G3, not a hand-wave:**
+  [measurement/paper_g3_20260802/G3_VARIANCE_DECOMP.md](../../../measurement/paper_g3_20260802/G3_VARIANCE_DECOMP.md).
+  The training label is *exactly* common within a game (max within-game range of |label|
+  = 0.0 over 2,400 games / 345,333 rows; zero residual variance once game × side-to-move
+  is known; no sibling sets in the corpus at all). Supplied counterfactually on the
+  1,119-root exact-solver bank: 99.72% between-root / 0.28% between-sibling, so a
+  root-mean-only predictor scores R² = 0.99719 with Kendall tau = 0 by construction.
+  Figure data table ships as `G3_FIGURE_DATA.csv` (3 panels).
 - **What argmax needs:** exactly the residual. Kendall tau against exact child values
   is the operational definition; the leaf's advantage is *globally calibrated absolute
   values* (CL-065's finding) — its additive terms were tuned by game outcomes of

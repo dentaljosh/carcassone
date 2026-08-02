@@ -1,0 +1,145 @@
+{
+  "kind": "g3_sibling_variance_decomposition",
+  "generated_utc": "2026-08-02T05:10:57Z",
+  "code_rev": "ef2425e",
+  "inputs": {
+    "cache": "/home/doctor/projects/carcassone/measurement/gatec_c0_20260723/cache/c0_cache.npz",
+    "cache_sha256": "6bbe7a4a4f06639192177ba9c9b185afd091b77ca3d7085fb6f4c48f8bb60264",
+    "cache_manifest": "/home/doctor/projects/carcassone/measurement/gatec_c0_20260723/cache/manifest.json",
+    "root_bank": "1,119 K=2 marginalized exact-solver roots (qprobe_A JOIN pool_A); the identical bank used by measurement/value_unlock_20260730 and measurement/canonical_az/solver_score_derisk_it00_03.json",
+    "y_units": "raw points, mover-oriented exact solver child value",
+    "leaf_units": "tanh(virtual_score_v2/15), mover-POV; curve100 cfg \u2014 READOUT \u00a74.3(b) records curve125 and curve100 pick the SAME child on 1119/1119 roots",
+    "value_norm": 15.0
+  },
+  "provenance_checks": {
+    "leaf_tau_from_cache": 0.6152820150615235,
+    "leaf_tau_recomputed": 0.6152820150615235,
+    "leaf_top1_recomputed": 0.6094727435210009,
+    "leaf_regret_recomputed": 0.9508489722966935,
+    "expected_from_READOUT": {
+      "tau": 0.6153,
+      "top1": 0.6095,
+      "regret": 0.9508
+    },
+    "ridge_tau_recomputed": 0.3465423394977192,
+    "ridge_top1_recomputed": 0.46380697050938335,
+    "ridge_regret_recomputed": 0.7899910634495085,
+    "expected_from_CL065_gate_full_ridge": {
+      "tau": 0.3466,
+      "top1": 0.4638,
+      "regret": 0.79
+    }
+  },
+  "bank_shape": {
+    "n_roots": 1119,
+    "n_children": 50637,
+    "children_per_root_mean": 45.25201072386059,
+    "children_per_root_median": 44.0,
+    "children_per_root_min": 8,
+    "children_per_root_max": 116,
+    "root_n_legal_mean": 45.25201072386059
+  },
+  "decomposition": {
+    "solver_child_value_points": {
+      "n_children": 50637,
+      "n_roots": 1119,
+      "grand_mean": -0.6985208444418113,
+      "var_total": 489.59621658493296,
+      "sd_total": 22.12682120379999,
+      "ss_total": 24791683.61921125,
+      "ss_between_root": 24722034.83102731,
+      "ss_within_root": 69648.78818393876,
+      "frac_between_root": 0.9971906390363111,
+      "frac_within_root": 0.0028093609636889454,
+      "sd_between_root": 22.095718229695304,
+      "sd_within_root": 1.1727968702394753,
+      "root_mean_sd": 22.055803483270918,
+      "within_root_sd_mean_over_roots": 0.8603953966752818,
+      "within_root_sd_median_over_roots": 0.6614378277661477,
+      "frac_roots_with_zero_within_var": 0.11528150134048257
+    },
+    "solver_child_value_tanh15": {
+      "n_children": 50637,
+      "n_roots": 1119,
+      "grand_mean": -0.017791301057847406,
+      "var_total": 0.5394382068920631,
+      "sd_total": 0.7344645715703809,
+      "ss_total": 27315.5324823934,
+      "ss_between_root": 27221.220797041744,
+      "ss_within_root": 94.31168535164804,
+      "frac_between_root": 0.9965473239296198,
+      "frac_within_root": 0.0034526760703800273,
+      "sd_between_root": 0.733195541110063,
+      "sd_within_root": 0.043156753682186716,
+      "root_mean_sd": 0.7339412576761076,
+      "within_root_sd_mean_over_roots": 0.025169866202428958,
+      "within_root_sd_median_over_roots": 0.01232996834318937,
+      "frac_roots_with_zero_within_var": 0.11528150134048257
+    },
+    "heuristic_leaf_value_tanh15": {
+      "n_children": 50637,
+      "n_roots": 1119,
+      "grand_mean": 0.03563344385116037,
+      "var_total": 0.5433284065002486,
+      "sd_total": 0.7371081375892201,
+      "ss_total": 27512.520519953086,
+      "ss_between_root": 27466.753404163614,
+      "ss_within_root": 45.76711578946972,
+      "frac_between_root": 0.9983364986222807,
+      "frac_within_root": 0.0016635013777192,
+      "sd_between_root": 0.7364947922066261,
+      "sd_within_root": 0.030063724865145056,
+      "root_mean_sd": 0.7385863312960617,
+      "within_root_sd_mean_over_roots": 0.01792161539582614,
+      "within_root_sd_median_over_roots": 0.009467712093306916,
+      "frac_roots_with_zero_within_var": 0.13494191242180517
+    },
+    "ridge_pooled_mse_prediction_points": {
+      "n_children": 50637,
+      "n_roots": 1119,
+      "grand_mean": -0.7123630785646465,
+      "var_total": 483.8589584316775,
+      "sd_total": 21.996794276250288,
+      "ss_total": 24501166.078104854,
+      "ss_between_root": 24464358.750831746,
+      "ss_within_root": 36807.327273108756,
+      "frac_between_root": 0.9984977316118028,
+      "frac_within_root": 0.0015022683881972924,
+      "sd_between_root": 21.980265521919417,
+      "sd_within_root": 0.8525761066309429,
+      "root_mean_sd": 21.968058884137346,
+      "within_root_sd_mean_over_roots": 0.5732640171541847,
+      "within_root_sd_median_over_roots": 0.3897730905284922,
+      "frac_roots_with_zero_within_var": 0.0071492403932082215
+    }
+  },
+  "cross_level_agreement_leaf_vs_solver": {
+    "pooled_pearson_r": 0.9317017857930181,
+    "between_root_pearson_r": 0.9322662879068425,
+    "within_root_pearson_r": 0.44048108611261344,
+    "between_root_r2": 0.8691204315676038,
+    "within_root_r2": 0.19402358722294757,
+    "within_root_pearson_r_matched_tanh_units": 0.5213049239104078,
+    "within_root_pearson_r_zscored_by_root": 0.6171872831401927,
+    "within_root_zscored_n_roots_used": 937,
+    "within_root_zscored_n_children_used": 41914,
+    "within_root_kendall_tau_mean": 0.6152820150615235,
+    "note": "the points-scale within-root Pearson under-reads the leaf because the leaf is a tanh of its score; the matched-unit and z-scored-by-root readings are the fair ones. Kendall tau (rank, per-root) is the paper's primary statistic and is scale-free."
+  },
+  "supplementary_pooled_mse_ridge": {
+    "learner": "closed-form standardized ridge, lam=1, 5-fold cross-fit BY ROOT (c0_fit.make_folds seed 0) on the leaf's own 84 component features",
+    "objective": "pooled MSE against the exact solver child value (points)",
+    "r2_pooled": 0.9880230298733744,
+    "r2_between_root": 0.9895552991687814,
+    "r2_within_root": 0.44413969924713037,
+    "within_root_pearson_r_zscored_by_root": 0.682973735566154,
+    "within_root_kendall_tau_mean": 0.3465423394977192,
+    "note": "the same fit that CL-065 reports as gate_full_ridge; the R^2 split is the new number."
+  },
+  "position_level_oracle": {
+    "r2_of_perfect_root_mean_predictor": 0.9971906390363111,
+    "its_within_root_kendall_tau": 0.0,
+    "note": "a predictor that knows each root's mean exactly and nothing else explains frac_between_root of the total label variance and has zero sibling-ordering information by construction."
+  },
+  "wall_secs": 3.2253899574279785
+}

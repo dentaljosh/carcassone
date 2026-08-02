@@ -1,0 +1,62 @@
+{
+  "kind": "g3_corpus_outcome_label_decomposition",
+  "generated_utc": "2026-08-02T05:08:08Z",
+  "code_rev": "ef2425e",
+  "inputs": {
+    "corpus_root": "/mnt/c/carc-shared/distill_strong_20260723",
+    "iters": [
+      "iter_00",
+      "iter_01",
+      "iter_02",
+      "iter_03"
+    ],
+    "n_files": 2400,
+    "file_list_sha256": "24c2e468824bc9e5f6467e2bb10f5979409f00b0a6a2b4a816a8c98968725741",
+    "label_definition": "values = tanh((p0-p1)/15), mover-POV, backfilled from the FINAL score (scripts/distill_flywheel/gen_fair_distill.py:319-320; corpus manifest config.value_target_desc)",
+    "manifest": "/mnt/c/carc-shared/distill_strong_20260723/iter_00/manifest.json"
+  },
+  "counts": {
+    "n_games": 2400,
+    "n_rows": 345333,
+    "rows_per_game_mean": 143.88875,
+    "n_game_x_side_cells": 4716,
+    "n_aux_true_rows": 335734,
+    "n_zero_label_rows": 6044
+  },
+  "label_moments_all_rows": {
+    "mean": 8.584763680900995e-05,
+    "var": 0.5060300516270203,
+    "sd": 0.7113578927846519,
+    "readout_reference_sd": 0.711358
+  },
+  "within_game_label_constancy": {
+    "max_within_game_range_of_abs_label": 0.0,
+    "n_games_with_more_than_one_abs_label": 0,
+    "per_game_abs_label_mean": 0.6455299054272473,
+    "per_game_abs_label_sd": 0.29886936706122824,
+    "per_game_abs_label_min": 0.0,
+    "per_game_abs_label_max": 0.9999877214431763
+  },
+  "sibling_structure_in_corpus": {
+    "group_id_min": -1,
+    "group_id_max": -1,
+    "note": "group_id is -1 on every row: the corpus stores ONE row per decision (the played move's resulting position), never the sibling set. There is no within-sibling level in the training data at all."
+  },
+  "decomposition": {
+    "ss_total": 174748.87581851383,
+    "L1_game": {
+      "ss_between": 0.8788109042064197,
+      "ss_within": 174747.99700761007,
+      "frac_between": 5.028993177152753e-06,
+      "frac_within": 0.9999949710068254
+    },
+    "L2_game_x_side": {
+      "ss_between": 174748.8757739718,
+      "ss_within": -1.8971491044794675e-12,
+      "frac_between": 0.9999999997451084,
+      "frac_within": -1.0856430953236916e-17,
+      "note": "within-(game x side) SS is the variance left at the POSITION level once the game and the side-to-move are known."
+    }
+  },
+  "wall_secs": 3.028576612472534
+}

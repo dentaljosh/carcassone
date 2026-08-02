@@ -1,0 +1,30 @@
+panel,series,x,y,label,unit,source
+A_variance_share_by_level,coarse_level,"training outcome label (345,333 rows / 2,400 games)",0.9999999997451084,game x side-to-move,fraction of total variance,g3_corpus_decomp.json
+A_variance_share_by_level,sibling_level,"training outcome label (345,333 rows / 2,400 games)",0.0,between siblings,fraction of total variance,g3_corpus_decomp.json (group_id == -1: no sibling sets in the corpus)
+A_variance_share_by_level,position_level,"training outcome label (345,333 rows / 2,400 games)",-1.0856430953236916e-17,between positions within (game x side),fraction of total variance,g3_corpus_decomp.json
+A_variance_share_by_level,coarse_level,"exact solver child value (1,119 K=2 roots, tanh units)",0.9965473239296198,between roots,fraction of total variance,g3_sibling_decomp.json
+A_variance_share_by_level,sibling_level,"exact solver child value (1,119 K=2 roots, tanh units)",0.0034526760703800273,between siblings,fraction of total variance,g3_sibling_decomp.json
+A_variance_share_by_level,coarse_level,"heuristic leaf value (same 50,637 children)",0.9983364986222807,between roots,fraction of total variance,g3_sibling_decomp.json
+A_variance_share_by_level,sibling_level,"heuristic leaf value (same 50,637 children)",0.0016635013777192,between siblings,fraction of total variance,g3_sibling_decomp.json
+A_variance_share_by_level,coarse_level,"h6400 search Q, all phases (10,067 roots) [supplementary]",0.992508761411248,between roots,fraction of total variance,g3_phase_curve.json
+A_variance_share_by_level,sibling_level,"h6400 search Q, all phases (10,067 roots) [supplementary]",0.007491238588746171,between siblings,fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,2,0.0024628257959365464,k_remaining=2 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,4,0.0028300559361192604,k_remaining=4 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,6,0.003365928519345239,k_remaining=6 (n_roots=1120),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,10,0.003596247773561174,k_remaining=10 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,14,0.0046161130436977085,k_remaining=14 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,22,0.0063138480861385715,k_remaining=22 (n_roots=1120),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,32,0.01016151866142038,k_remaining=32 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,44,0.05179651210560978,k_remaining=44 (n_roots=1119),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,h6400_search_Q,56,0.08923217972609603,k_remaining=56 (n_roots=1113),fraction of total variance,g3_phase_curve.json
+B_within_sibling_share_vs_game_phase,exact_solver,2,0.0034526760703800273,"exact solver, K=2 (n_roots=1119)",fraction of total variance,g3_sibling_decomp.json
+C_position_skill_vs_sibling_skill,value_outcome_r,value_unlock_v1 (CL-073 head),0.6795,held-out r,pearson r,READOUT.md §2
+C_position_skill_vs_sibling_skill,solver_tau,value_unlock_v1 (CL-073 head),0.019,within-root tau,kendall tau-b,VERDICT.json
+C_position_skill_vs_sibling_skill,value_outcome_r,iter_03 (warm parent),0.6564,held-out r,pearson r,READOUT.md §2
+C_position_skill_vs_sibling_skill,solver_tau,iter_03 (warm parent),0.0177,within-root tau,kendall tau-b,READOUT.md §4.1
+C_position_skill_vs_sibling_skill,value_outcome_r,hand-crafted leaf,0.61,held-out r (reference),pearson r,train_iter.py:706 via READOUT §2
+C_position_skill_vs_sibling_skill,solver_tau,hand-crafted leaf,0.6153,within-root tau,kendall tau-b,READOUT.md §4.1
+C_position_skill_vs_sibling_skill,value_outcome_r,root-mean oracle (position-level perfect),1.0,R^2 = 0.99719 of label variance,pearson r,g3_sibling_decomp.json position_level_oracle
+C_position_skill_vs_sibling_skill,solver_tau,root-mean oracle (position-level perfect),0.0,within-root tau = 0 by construction,kendall tau-b,g3_sibling_decomp.json position_level_oracle
+C_position_skill_vs_sibling_skill,value_outcome_r,pooled-MSE ridge on the leaf's own features [supplementary],0.9880230298733744,cross-fit R^2 (pooled),r^2,g3_sibling_decomp.json
+C_position_skill_vs_sibling_skill,solver_tau,pooled-MSE ridge on the leaf's own features [supplementary],0.3465423394977192,within-root tau,kendall tau-b,g3_sibling_decomp.json (== CL-065 gate_full_ridge)
