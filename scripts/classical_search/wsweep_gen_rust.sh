@@ -20,6 +20,11 @@ OUT_TSV=$REPO/measurement/classical_search/WSWEEP_GEN_RUST_${BOX_TAG}.tsv
 ROUNDS="${WSWEEP_GEN_ROUNDS:-3}"   # games per worker per point
 SEED0="${WSWEEP_GEN_SEED0:-96900000000}"  # throwaway; throughput only, no strength claim
 
+# champion env — identical to the production gen launchers (leaf must hash to the
+# champion config, else the sweep prices a different workload)
+export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
+export CARCASSONNE_V29_MEEPLE_CURVE=-10,-5,-1.25,0,2.5,3.75,5,6.25 CARCASSONNE_V25_MEEPLE_K=2.0
+export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_V25_VALUE_BLEND=0
 export CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 cd $REPO || exit 1
 ts() { date +%F_%T; }
@@ -44,7 +49,7 @@ import json, sys, time, os, glob
 box, w, d = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 shards = sorted(glob.glob(os.path.join(d, "seed_*.npz")), key=os.path.getmtime)
 plies = {}
-for j in glob.glob(os.path.join(d, "seed_*.json")):
+for j in glob.glob(os.path.join(d, "seed_*.json")) + glob.glob(os.path.join(d, "actions", "seed_*.json")):
     r = json.load(open(j)); plies[r["deck_seed"]] = r["n_plies"]
 def seed_of(p): return int(os.path.basename(p)[5:17])
 if len(shards) <= w:
