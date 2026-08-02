@@ -42,7 +42,14 @@ use std::rc::Rc;
 use crate::compat::{self, LibmFlavor};
 use crate::game::Game;
 use crate::leaf::{self, LeafConfig, LeafError, LeafScratch};
-use crate::sha256::sha256_hex;
+use crate::sha256::sha256_hex_prefix;
+
+/// The trace-harness node identity: `hashlib.sha256(state_key).hexdigest()[:16]`
+/// (`scripts/rustport/trace_search.py:digest`).  A RECORDED ARTIFACT CONTRACT —
+/// the algorithm must not change; only *when* it is paid may.
+fn node_digest(key: &str) -> String {
+    sha256_hex_prefix(key.as_bytes(), 16)
+}
 
 mod fxhash;
 pub mod trace;
@@ -168,8 +175,6 @@ pub struct Node {
     /// buffer (the tree is per-thread, so `Rc` suffices) — the 2026-08-02
     /// review's finding #2 was three independent copies of a 1.2–5.0 KB key.
     pub key: Rc<str>,
-    /// First 16 hex of `sha256(key)` — the trace-harness identity.
-    pub digest: Box<str>,
     pub player_to_move: usize,
     pub is_terminal: bool,
     pub terminal_value: f64,
@@ -196,10 +201,8 @@ pub struct Node {
 
 impl Node {
     fn new(key: Rc<str>, player_to_move: usize, terminal_value: f64) -> Self {
-        let digest = sha256_hex(key.as_bytes())[..16].to_string().into_boxed_str();
         Node {
             key,
-            digest,
             player_to_move,
             is_terminal: terminal_value != 0.0,
             terminal_value,
@@ -905,8 +908,12 @@ impl<'a> Searcher<'a> {
             Some(s) => &mut **s,
         };
         let n = &self.tree.nodes[id as usize];
+        // `sha256(key)[:16]` — a pure function of `node.key`, so the trace format
+        // is unchanged; computed HERE (sink attached) instead of for every node
+        // of every production search, which never has a sink.
+        let digest = node_digest(&n.key);
         sink.expand(&trace::ExpandRecord {
-            digest: &n.digest,
+            digest: &digest,
             player_to_move: n.player_to_move,
             is_terminal: n.is_terminal,
             terminal_value: n.terminal_value,
@@ -922,7 +929,11 @@ impl<'a> Searcher<'a> {
             Some(s) => &mut **s,
         };
         let nodes = &self.tree.nodes;
-        let digests: Vec<&str> = path.iter().map(|&i| nodes[i as usize].digest.as_ref()).collect();
+        let owned: Vec<String> = path
+            .iter()
+            .map(|&i| node_digest(&nodes[i as usize].key))
+            .collect();
+        let digests: Vec<&str> = owned.iter().map(String::as_str).collect();
         let nw: Vec<(i64, f64)> = path
             .iter()
             .map(|&i| (nodes[i as usize].n, nodes[i as usize].w))

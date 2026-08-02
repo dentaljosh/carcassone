@@ -137,20 +137,47 @@ pub fn sha256_bytes(data: &[u8]) -> [u8; 32] {
     h.finalize()
 }
 
+const HEX: &[u8; 16] = b"0123456789abcdef";
+
 pub fn sha256_hex(data: &[u8]) -> String {
-    let mut h = Sha256::new();
-    h.update(data);
-    let digest = h.finalize();
-    let mut s = String::with_capacity(64);
-    for b in digest {
-        s.push_str(&format!("{b:02x}"));
+    sha256_hex_prefix(data, 64)
+}
+
+/// First `n` hex chars of `sha256(data)` (`n` clamped to 64) — the same bytes
+/// `sha256_hex(..)[..n]` yields, without the 64 `format!` allocations the
+/// per-byte loop used to make.
+pub fn sha256_hex_prefix(data: &[u8], n: usize) -> String {
+    let n = n.min(64);
+    let digest = sha256_bytes(data);
+    let mut s = String::with_capacity(n);
+    for i in 0..n {
+        let b = digest[i / 2];
+        let nib = if i % 2 == 0 { b >> 4 } else { b & 0x0f };
+        s.push(HEX[nib as usize] as char);
     }
     s
 }
 
 #[cfg(test)]
 mod tests {
-    use super::sha256_hex;
+    use super::{sha256_hex, sha256_hex_prefix};
+
+    /// The trace-harness contract: `sha256_hex(x)[..n] == sha256_hex_prefix(x, n)`
+    /// for every prefix length, including the 16 the trace records use.
+    #[test]
+    fn hex_prefix_matches_full_hex() {
+        for data in [
+            b"".to_vec(),
+            b"abc".to_vec(),
+            vec![0u8; 1000],
+            b"((1, 2, 'RRRRRRR', ((0, 1, 0, 1), False, False, False)),)".to_vec(),
+        ] {
+            let full = sha256_hex(&data);
+            for n in [0usize, 1, 15, 16, 17, 63, 64, 99] {
+                assert_eq!(sha256_hex_prefix(&data, n), full[..n.min(64)]);
+            }
+        }
+    }
 
     #[test]
     fn known_vectors() {
