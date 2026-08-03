@@ -590,6 +590,57 @@ def build_jobs(args) -> list[dict]:
 
 # --------------------------------------------------------------------------
 
+def rebuild_from_rows(rows_path: Path, args) -> int:
+    """Rebuild the verdict from an incremental rows file.
+
+    A partial record is still a real record: every row in it is a comparison
+    that actually ran.  It is reported as `partial: true` so nobody can read an
+    interrupted run as a complete one, and the SAME exit discipline applies —
+    zero mismatches over zero checks is never a PASS.
+    """
+    totals = blank()
+    per_leg: dict[str, dict] = {}
+    n_rows = 0
+    for line in rows_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        out = json.loads(line)
+        n_rows += 1
+        leg = out.pop("leg", "?")
+        per_leg.setdefault(leg, blank())
+        merge(per_leg[leg], dict(out))
+        merge(totals, out)
+    n_bad = len(totals["mismatches"])
+    ok = n_bad == 0 and totals["checks"] > 0
+    payload = {
+        "gate": "G7/exact_solver",
+        "verdict": "PASS" if ok else "FAIL",
+        "partial": True,
+        "rebuilt_from": str(rows_path),
+        "jobs_recorded": n_rows,
+        "generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "carc_rs_version": carc_rs.__version__,
+        "positions": totals["positions"],
+        "checks": totals["checks"],
+        "skipped_budget": totals["skipped"],
+        "cells": totals["cells"],
+        "n_mismatches": n_bad,
+        "mismatches": totals["mismatches"][: args.max_mismatch_report],
+        "per_leg": {k: {"positions": v["positions"], "checks": v["checks"],
+                        "skipped": v["skipped"], "cells": v["cells"],
+                        "n_mismatches": len(v["mismatches"])}
+                    for k, v in sorted(per_leg.items())},
+    }
+    out_path = rows_path.with_name(rows_path.name.replace("_rows.jsonl", "_partial.json"))
+    out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    print(json.dumps({k: payload[k] for k in
+                      ("verdict", "partial", "jobs_recorded", "positions",
+                       "checks", "skipped_budget", "n_mismatches", "per_leg",
+                       "cells")}, indent=2))
+    print(f"-> {out_path}")
+    return 0 if ok else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -622,9 +673,15 @@ def main() -> int:
     ap.add_argument("--out", default=None, help="directory for the verdict JSON")
     ap.add_argument("--tag", default="run")
     ap.add_argument("--max-mismatch-report", type=int, default=200)
+    ap.add_argument("--from-rows", default=None,
+                    help="rebuild the verdict from an incremental rows file "
+                         "instead of running (an interrupted gate's record)")
     args = ap.parse_args()
     if not args.leg:
         args.leg = ["all"]
+
+    if args.from_rows:
+        return rebuild_from_rows(Path(args.from_rows), args)
 
     from carcassonne_ai import rules_profile as rp
     if args.rules_profile:
@@ -656,6 +713,21 @@ def main() -> int:
     print(f"[reconcile_exact_solver] profile={profile.name} jobs={len(jobs)} "
           f"workers={args.workers} budget={args.budget}", flush=True)
 
+    out_dir = Path(args.out) if args.out else REPO / "measurement" / "rustport_exact_solver"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"G7_exact_solver_{args.tag}.json"
+    # INCREMENTAL: append each finished job the moment it lands.  A long gate
+    # that is interrupted before its final write would otherwise lose every
+    # comparison it paid for (measured: a 50/102 run, ~30 min of K=3 solves,
+    # zero mismatches, no artifact).  `--from-rows` rebuilds the verdict from
+    # this file, and it is the honest partial record either way.
+    rows_path = out_dir / f"G7_exact_solver_{args.tag}_rows.jsonl"
+    rows_fh = rows_path.open("a")
+
+    def _record(out: dict) -> None:
+        rows_fh.write(json.dumps(out, sort_keys=True, default=str) + "\n")
+        rows_fh.flush()
+
     totals = blank()
     per_leg: dict[str, dict] = {}
     done = 0
@@ -665,22 +737,26 @@ def main() -> int:
             with ctx.Pool(args.workers) as pool:
                 for out in pool.imap_unordered(run_job, jobs, chunksize=1):
                     done += 1
+                    _record(out)
                     leg = out.pop("leg")
                     per_leg.setdefault(leg, blank())
                     merge(per_leg[leg], dict(out))
                     merge(totals, out)
-                    if done % 25 == 0:
+                    if done % 10 == 0:
                         print(f"  {done}/{len(jobs)} jobs, "
+                              f"{totals['checks']} checks, "
                               f"{len(totals['mismatches'])} mismatches "
                               f"({time.time() - t0:.0f}s)", flush=True)
         else:
             for job in jobs:
                 out = run_job(job)
                 done += 1
+                _record(out)
                 leg = out.pop("leg")
                 per_leg.setdefault(leg, blank())
                 merge(per_leg[leg], dict(out))
                 merge(totals, out)
+    rows_fh.close()
 
     n_bad = len(totals["mismatches"])
     # POSITIVE EVIDENCE REQUIRED: zero mismatches over zero checks is the
@@ -706,9 +782,6 @@ def main() -> int:
                         "n_mismatches": len(v["mismatches"])}
                     for k, v in sorted(per_leg.items())},
     }
-    out_dir = Path(args.out) if args.out else REPO / "measurement" / "rustport_exact_solver"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"G7_exact_solver_{args.tag}.json"
     out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
     print(json.dumps({k: payload[k] for k in
