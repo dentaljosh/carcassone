@@ -48,7 +48,7 @@ node count, so a capped run would not measure the solver's natural footprint.
 
 <!--RESULTS-->
 
-Host `Doctor`, `carc_rs` 0.1.0. Artifacts: `BENCH_pyx4.json`, `BENCH_pyx4_rows.jsonl`, `BENCH_rest_rows.jsonl`, `BENCH_rust_rows.jsonl`.
+Host `Doctor`, `carc_rs` 0.1.0. Artifacts: `BENCH_pyx4.json`, `BENCH_pyx4_rows.jsonl`, `BENCH_rest.json`, `BENCH_rest_rows.jsonl`, `BENCH_rust_rows.jsonl`.
 
 | cell | n ok / n | wall median | wall p90 | wall max | nodes median | nodes max | TT entries max | peak RSS max | timeouts |
 |---|---|---|---|---|---|---|---|---|---|
@@ -56,7 +56,8 @@ Host `Doctor`, `carc_rs` 0.1.0. Artifacts: `BENCH_pyx4.json`, `BENCH_pyx4_rows.j
 | `rust_clairvoyant_ab_k5` | 2/4 | 13.71 s | 16.52 s | 16.52 s | 193,999 | 259,668 | 259,668 | 62.9 MB | 2 |
 | `rust_clairvoyant_ab_k6` | 2/6 | 129.64 s | 193.79 s | 193.79 s | 1,293,756 | 2,228,339 | 2,228,339 | 239.2 MB | 4 |
 | `rust_marginalized_k3` | 6/6 | 94.36 s | 205.92 s | 288.90 s | 307,986 | 1,005,104 | 1,005,104 | 115.1 MB | 0 |
-| `rust_marginalized_k4` | 1/5 | 102.31 s | 102.31 s | 102.31 s | 496,046 | 496,046 | 496,046 | 77.6 MB | 4 |
+| `rust_marginalized_k4` | 1/6 | 102.31 s | 102.31 s | 102.31 s | 496,046 | 496,046 | 496,046 | 77.6 MB | 5 |
+| `rust_marginalized_k5_probe` | 0/1 | — | — | — | — | — | — | — MB | 1 |
 | `py_clairvoyant_ab_k4` | 5/6 | 254.54 s | 337.41 s | 337.41 s | 60,560 | 137,574 | — | 1669.7 MB | 1 |
 
 ### Rust vs Python, position-paired
@@ -64,6 +65,31 @@ Host `Doctor`, `carc_rs` 0.1.0. Artifacts: `BENCH_pyx4.json`, `BENCH_pyx4_rows.j
 | K | paired n | median × | min × | max × | aggregate × | node-count agreement | value agreement |
 |---|---|---|---|---|---|---|---|
 | k4 | 5 | 20.77× | 19.63× | 28.71× | 22.11× | 5/5 | 5/5 |
+
+### What the numbers say
+
+* **K=4 clairvoyant is comfortably tractable in Rust** — 20/20 complete, median
+  14.5 s, and the whole cell cost about as much wall clock as *five* Python
+  solves of the same kind.
+* **The cost wall is the mode, not the depth.** Clairvoyant has alpha-beta;
+  marginalized cannot (chance nodes have no minimax cutoff). So marginalized
+  K=4 finishes 1/6 under a 300 s cap while clairvoyant K=6 — two tiles deeper —
+  finishes 2/6. Marginalized K=5 does not finish at all: the probe was killed at
+  the cap, so the honest statement is **> 300 s**, not a measured time.
+* **A 300 s cap is the wrong budget for K=5/K=6 clairvoyant**, and the timeout
+  counts say so: 2/4 and 4/6 respectively exceeded it. The completed solves
+  bound the *easy* tail only, so read those rows as "at least this fast on the
+  easier positions", never as a cell median.
+* **Memory is a Rust win as large as the speed one.** At K=4 the peak child RSS
+  is 88 MB against the Python oracle's 1 670 MB on the same positions — ~19×,
+  from the 16-byte digest key and the absence of a per-node `deepcopy`. The
+  Python solver's ~1–2 GB/worker (which is what forces `CARCASSONNE_TT_CAP`
+  and low W) is not a property of the search; it is a property of the
+  implementation.
+* **Peak table size** on completed solves: 506 K entries at K=4, 260 K at K=5,
+  **2.23 M entries / 239 MB at K=6**. Extrapolating the RSS is safe here in a
+  way the wall clock is not — the table grows with distinct positions, and the
+  ~107 B/entry constant held across every cell measured.
 
 ## Caveats
 
