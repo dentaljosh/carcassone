@@ -110,14 +110,14 @@ reviewer could reasonably want inverted.
   leak, and it biases both cells **towards null** (the candidate is rescued at the very end).
   Read a null accordingly: it is a null *for the leaf*, slightly conservative.
 
-## Gates (all run 2026-08-02, all PASS — the knockouts are proven inert when off)
+## Gates (run 2026-08-02 — the knockouts are proven inert when off)
 
 | gate | what it proves | result |
 |---|---|---|
 | **(i) knobs-OFF byte identity** | the two additive fields changed nothing | `reconcile_leaf.py --corpus all --configs all` (the G2 three-leg harness: pure-Python flat · Cython flat · Rust) — **3,341,772 values, 0 mismatches**, across all 12 pre-existing config dialects and all 7 corpora. Byte-identical to the pre-F7b G2 total. |
 | **(ii) knobs-ON py-vs-rust** | the two implementations of the knockout agree bit-exactly, separately and together | `reconcile_leaf.py --corpus all --configs farmoff` — **2,706,092 values, 0 mismatches**; the three knockout dialects (`farmbaseoff`, `farmgrowthoff`, both) contributed **63,568 positions×POVs each** (int + float-hex ⇒ 127,136 values each, 381,408 total) over 5 corpora. |
 | **(ii-b) the knockouts BITE** | an inert knob would produce a null for an uninteresting reason | on the same sample, `farmbaseoff` changes the leaf on **65.7 %** of values, `farmgrowthoff` **76.8 %**, both-off **84.5 %**. |
-| **(iii) harness wiring identity, PER KNOCKOUT** | `--backend rust` plays the same games as `--backend python` *on the knocked-out leaf* — so the cell's engine choice is not the measurement | `gate_eval_puct_priors_backend.py --games 4 --cand-sims 2750 --opp-sims 2750 --exact-k 2 --workers 4 --cand-leaf-json <cell>` (the `--cand-leaf-json` passthrough was added for this). Run **under the launcher's champion leaf env**, so the graded pair is exactly the cell's: champion `a36d2e15a3b3d71d`, candidate `b2c20e1452d8e5d4` / `86ecb5375676feae`. Artifacts: `F7B_GATE_WIRING_farmbaseoff.json` / `F7B_GATE_WIRING_farmgrowthoff.json`. |
+| **(iii) harness wiring identity, PER KNOCKOUT** | `--backend rust` plays the same games as `--backend python` *on the knocked-out leaf* — so the cell's engine choice is not the measurement | `gate_eval_puct_priors_backend.py --games 4 --cand-sims 2750 --opp-sims 2750 --exact-k 2 --workers 4 --cand-leaf-json <cell>` (the `--cand-leaf-json` passthrough was added for this). Run **under the launcher's champion leaf env**, so the graded pair is exactly the cell's: champion `a36d2e15a3b3d71d`, candidate `b2c20e1452d8e5d4` / `86ecb5375676feae`. Artifacts: `F7B_GATE_WIRING_farmbaseoff.json` / `F7B_GATE_WIRING_farmgrowthoff.json`. ⏳ **IN FLIGHT** at the time of writing (the python reference leg runs the candidate on the ~12.5× pure-Python flat leaf, ~2 h/knockout); this row is stamped with the verdict when it lands, and until then gate (iii) is **not** claimed. |
 | **hash stability** | the champion's fingerprints did not move under two additive fields | `a36d2e15a3b3d71d` (harness dialect) · `158f17ff76adaa02` / `6dfffd57051690f2` (frozen recipe) all recompute unchanged; the golden fixture was regenerated per the standing rule with a verified diff of **exactly the 4 full-asdict hash fields**, all behaviour values bit-identical. |
 
 **Gate (iii) is doing double duty and it is worth naming.** Its python leg computes the knockout
