@@ -1,0 +1,85 @@
+{
+  "probe": "F9-A2/cloister_mutations",
+  "verdict": "PASS",
+  "note": "PASS means: both unmutated controls are clean, the flags-on control actually observes accelerated completions (coverage), and EVERY mutation is caught. A GREEN mutation means the gate is blind to that regression.",
+  "seed_indices": [
+    5,
+    14,
+    18,
+    23,
+    30,
+    42,
+    44,
+    48,
+    52,
+    54,
+    56
+  ],
+  "deck_seeds": [
+    97000000005,
+    97000000014,
+    97000000018,
+    97000000023,
+    97000000030,
+    97000000042,
+    97000000044,
+    97000000048,
+    97000000052,
+    97000000054,
+    97000000056
+  ],
+  "policy": "monk",
+  "controls": {
+    "control_flags_on": {
+      "games": 11,
+      "cloister_accel": 12,
+      "mismatch_games": 0,
+      "mismatch_kinds": {}
+    },
+    "control_flags_off": {
+      "games": 11,
+      "cloister_accel": 0,
+      "mismatch_games": 0,
+      "mismatch_kinds": {}
+    }
+  },
+  "control_clean": true,
+  "coverage_events_seen": 12,
+  "mutations": {
+    "fix_regressed": {
+      "games": 11,
+      "cloister_accel": 0,
+      "mismatch_games": 11,
+      "mismatch_kinds": {
+        "string_representation": 11
+      }
+    },
+    "quirk_removed": {
+      "games": 11,
+      "cloister_accel": 0,
+      "mismatch_games": 11,
+      "mismatch_kinds": {
+        "string_representation": 11
+      }
+    },
+    "counter_dead": {
+      "games": 11,
+      "cloister_accel": 0,
+      "mismatch_games": 11,
+      "mismatch_kinds": {
+        "cloister_completions_accelerated": 11
+      }
+    },
+    "counter_always": {
+      "games": 11,
+      "cloister_accel": 4,
+      "mismatch_games": 9,
+      "mismatch_kinds": {
+        "cloister_completions_accelerated": 9
+      }
+    }
+  },
+  "n_mutations": 4,
+  "n_discriminated": 4,
+  "wallclock_s": 12.684530915052164
+}
