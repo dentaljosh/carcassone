@@ -30,9 +30,18 @@ D deck-pairs with 1.96*sigma_pair/sqrt(D) < e, i.e. it removes the deck/seat luc
 from the test and cuts the games required.
 
 Writes measurement/human_anchor/LUCK_FLOOR.md and prints the same to stdout.
+
+PROFILE-SCOPED ARCHIVES (added 2026-08-03, F9 Phase C §1 residue). The curated
+`NEAR_EQUAL` list below is a WALLED-rules set (every archive predates the
+`fixed_v1` adoption). `--extra-near-equal DIR` adds an archive without editing
+the list, `--only-extra` drops the curated ones so a single profile's archive can
+be read alone, and `-o` redirects the markdown so a fixed-rules run never
+overwrites the walled `LUCK_FLOOR.md`. With no flags this module's output is
+byte-identical to the pre-2026-08-03 behaviour.
 """
 from __future__ import annotations
 
+import argparse
 import glob
 import json
 import math
@@ -114,9 +123,26 @@ def load_pairs(archive_dir: Path):
     return {s: v for s, v in by.items() if 0 in v and 1 in v}
 
 
-def archive_stats(archive_dir: Path):
+def _won_by_a(rec: dict, diff: int) -> bool:
+    """Did agent-A win this game?
+
+    The paired archives are emitted by three harness generations that spell the
+    same boolean differently: `won_by_a` (eval_hybrid_handoff, the June v28
+    archives), `won_by_cand` (eval_puct_priors) and `won_by_champ`
+    (eval_fair_puct — the harness the fixed_v1 luck-pair archive uses; there the
+    "champion" IS the candidate/A side). Fall back to the sign of A's margin if a
+    future emitter spells it a fourth way. Legacy archives carry `won_by_a`, so
+    this is a no-op for every number already on disk.
+    """
+    for k in ("won_by_a", "won_by_cand", "won_by_champ"):
+        if k in rec:
+            return bool(rec[k])
+    return diff > 0
+
+
+def archive_stats(archive_dir: Path, min_pairs: int = 10):
     pairs = load_pairs(archive_dir)
-    if len(pairs) < 10:
+    if len(pairs) < min_pairs:
         return None
     S_a0, S_a1 = [], []          # seat0-margin, A-in-seat0 vs B-in-seat0
     diff_a0, diff_a1 = [], []    # A-perspective margin per seating
@@ -130,8 +156,8 @@ def archive_stats(archive_dir: Path):
         S_a1.append(s1)
         diff_a0.append(g0.get("diff", s0))
         diff_a1.append(g1.get("diff", -s1))
-        won_a0.append(0.5 if g0.get("drew") else (1.0 if g0.get("won_by_a") else 0.0))
-        won_a1.append(0.5 if g1.get("drew") else (1.0 if g1.get("won_by_a") else 0.0))
+        won_a0.append(0.5 if g0.get("drew") else (1.0 if _won_by_a(g0, diff_a0[-1]) else 0.0))
+        won_a1.append(0.5 if g1.get("drew") else (1.0 if _won_by_a(g1, diff_a1[-1]) else 0.0))
     all_diff = diff_a0 + diff_a1
 
     # luck share = correlation of the seat-0 margin across the two agent-in-seat0
@@ -143,7 +169,7 @@ def archive_stats(archive_dir: Path):
     seat_adv = (st.mean(diff_a0) - st.mean(diff_a1)) / 2
     wr_A = st.mean(won_a0 + won_a1)
     return {
-        "archive": archive_dir.name,
+        "archive": archive_dir.name, "path": str(archive_dir),
         "n_pairs": len(pairs), "n_games": 2 * len(pairs),
         "wr_A": wr_A, "sigma_game": sigma_game, "sigma_pair": sigma_pair,
         "luck_share": luck_share, "seat_adv": seat_adv,
@@ -177,14 +203,44 @@ def required_n(target_wr: float, sigma_game: float, sigma_pair: float, z=1.96):
 
 
 # --------------------------------------------------------------------------- #
-def main() -> int:
-    near = [s for d in NEAR_EQUAL if (s := _safe(archive_stats, d))]
-    for d in sorted(glob.glob(V29_GLOB)):
-        s = _safe(archive_stats, Path(d))
-        # keep self-play / near-equal arms (small mean margin) with enough n
-        if s and s["n_pairs"] >= 100 and abs(s["mean_A_margin"]) <= 12:
-            near.append(s)
-    strong = [s for d in STRONG_VS_EXPERT if (s := _safe(archive_stats, d))]
+def _parse_args(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--extra-near-equal", action="append", default=[], metavar="DIR",
+                    help="additional near-equal paired archive dir (repeatable). Use for "
+                         "an archive generated under a NON-walled rules profile — the "
+                         "curated NEAR_EQUAL list is walled-only.")
+    ap.add_argument("--only-extra", action="store_true",
+                    help="use ONLY --extra-near-equal dirs as the near-equal set (skip the "
+                         "curated walled archives + the v29 glob), so one profile's luck "
+                         "floor is read without pooling across profiles.")
+    ap.add_argument("--min-pairs", type=int, default=10,
+                    help="minimum deck-pairs for an archive to count (default 10; lower "
+                         "only for a smoke).")
+    ap.add_argument("-o", "--out", type=Path, default=OUT_MD,
+                    help=f"markdown output path (default {OUT_MD})")
+    return ap.parse_args(argv)
+
+
+def main(argv=None) -> int:
+    args = _parse_args(argv)
+    _stats = lambda d: archive_stats(d, min_pairs=args.min_pairs)  # noqa: E731
+
+    near = []
+    if not args.only_extra:
+        near += [s for d in NEAR_EQUAL if (s := _safe(_stats, d))]
+        for d in sorted(glob.glob(V29_GLOB)):
+            s = _safe(_stats, Path(d))
+            # keep self-play / near-equal arms (small mean margin) with enough n
+            if s and s["n_pairs"] >= 100 and abs(s["mean_A_margin"]) <= 12:
+                near.append(s)
+    for d in args.extra_near_equal:
+        s = _safe(_stats, Path(d))
+        if s is None:
+            print(f"ERROR: --extra-near-equal {d} yielded no usable pairs "
+                  f"(need >= {args.min_pairs} decks with BOTH seatings present)")
+            return 1
+        near.append(s)
+    strong = [s for d in STRONG_VS_EXPERT if (s := _safe(_stats, d))]
 
     if not near:
         print("ERROR: no near-equal paired archives found under", SHARE)
@@ -310,7 +366,8 @@ def main() -> int:
     P("### Archives used")
     P("")
     for r in near + strong:
-        P(f"- `{SHARE}/.../{r['archive']}`  (n_pairs={r['n_pairs']})")
+        _p = r.get("path") or f"{SHARE}/.../{r['archive']}"
+        P(f"- `{_p}`  (n_pairs={r['n_pairs']})")
     P("")
     P("### Perfect-play edge bound (pending)")
     P("")
@@ -322,10 +379,11 @@ def main() -> int:
       "empirical proxy. Generating the solver-vs-expert full games is a boxes job.")
 
     md = "\n".join(lines) + "\n"
-    OUT_MD.parent.mkdir(parents=True, exist_ok=True)
-    OUT_MD.write_text(md)
+    out_md = Path(args.out)
+    out_md.parent.mkdir(parents=True, exist_ok=True)
+    out_md.write_text(md)
     print(md)
-    print(f"\n[wrote {OUT_MD}]")
+    print(f"\n[wrote {out_md}]")
     return 0
 
 
