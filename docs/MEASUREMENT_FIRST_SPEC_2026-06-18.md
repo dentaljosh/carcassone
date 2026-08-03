@@ -1,7 +1,18 @@
 # Measurement-First Design Spec (2026-06-18)
 
-> **Status:** PROPOSED. Written after the value-head architecture swing was closed (CL-021,
-> `value_ranking/VALUE_RANKING_VERDICT.md`). The binding constraint on the superhuman goal is now
+> **✅ STATUS: EXECUTED — and it is still the DIAGNOSIS of record, but NOT the queue (stamped 2026-08-03).**
+> The three-level program below was built and read out (Level-1/Level-2 verdicts CL-022…CL-027, plus the
+> clairvoyance-gap and endgame-regret verdicts under `measurement/`); the *diagnosis* — measurement is the
+> binding constraint, and a self-anchored ladder can climb while absolute strength regresses — is what
+> CLAUDE.md still cites as blocker #1. **The live work queue moved to
+> [PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md) on 2026-07-07** — read that for what's
+> next, not this file. Two things below are superseded by later work: the *ruler of record* is now the
+> **fair** sub-ladder (D0/CL-046, the 2026-07-09 pivot demoted the clairvoyant ladder to a cheap screen),
+> and offline value/ranking gates score against the **exact solver**, not h6400 (POST_REVIEW_PLAN F4).
+> *(Original status header follows.)*
+>
+> **Status (as written 2026-06-18):** PROPOSED. Written after the value-head architecture swing was closed
+> (CL-021, `value_ranking/VALUE_RANKING_VERDICT.md`). The binding constraint on the superhuman goal is now
 > **measurement**, not modeling. This spec is the next-bet design; no build started.
 
 ## 1. Why measurement is the binding constraint
