@@ -177,6 +177,18 @@ champion:
     #     (scripts/human_anchor/play_harness.py) to read `desktop.parallel_workers` so
     #     clocked human-facing play gets the 6.37× automatically instead of by hand.
     # ---------------------------------------------------------------------------------
+    rules_profile: fixed_v1             # ⭐ THE RULES PROFILE OF RECORD FOR NEW EVAL/DESKTOP WORK (2026-08-03,
+                                        # Joshua "1-4 I'll take your recs" — adopts the F9 bundle: centered18 +
+                                        # retail start + cloister_scan fixed + unplaceable redraw + R9 farm-data fix
+                                        # via CARCASSONNE_FIX_R9=1; src/carcassonne_ai/rules_profile.py "fixed_v1").
+                                        # EVIDENCE: the Phase-B transfer bound — the flagship contrast reproduces
+                                        # under fixed rules, deck-matched z +0.98, bound ≈[−18,+53] elo-equiv
+                                        # (measurement/classical_search/PHASEB_TRANSFER_READOUT_20260803.md);
+                                        # W2 geometry by probe (0/400 sentinel events). ⚠️ SCOPE: NEW confirmatory
+                                        # work runs fixed_v1 on fresh bands; the walled record stays interpretable
+                                        # via the bound; ABSOLUTE fixed-rules strength claims are GATED on the
+                                        # caps/curve re-sweep (bug-fix-shifts-optima; in flight 2026-08-03) —
+                                        # until it lands, fixed_v1 numbers are contrasts, not absolutes.
     backend: rust                       # ⭐ THE CHAMPION'S EXECUTION BACKEND OF RECORD (2026-08-01, Joshua "1 yes").
                                         # carc_rs, the rustport core. An ENGINE, not a player: BEHAVIOR-IDENTICAL by
                                         # gate, so NO strength claim moves and no re-eval is owed. Evidence:

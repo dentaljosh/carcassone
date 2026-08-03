@@ -3945,3 +3945,16 @@ same pass: make_production_champion's rust branch forwarded no geometry/flags (i
 sibling build_fair_champion did since A0). Guards-not-vigilance, exhibits 6 and 7 of
 the weekend. PRODUCTION.yaml untouched; nothing adopted; adoption decisions (J1/J3/J5)
 remain Joshua's with W2 now data-answered and the transfer bound in hand.
+
+## 2026-08-03 (morning) — ADOPTION: fixed_v1 is the rules profile of record for new eval/desktop work (Joshua, "1-4 I'll take your recs"); backend default flip + CUDA-Graph spike funded; standing defaults accepted
+
+Joshua's morning decisions, queued shortest-wall-clock-first: (a) champ-vs-10× NOT FUNDED
+(the readout's own default), rodv3 PARKED (CL-072 stays Provisional with the lean
+banked), farm-growth CLOSED (no third cell); (b) **fixed_v1 ADOPTED** —
+PRODUCTION.yaml gains `rules_profile: fixed_v1` with the scope note: new confirmatory
+work on fresh bands under fixed rules; walled record interpretable via the Phase-B
+bound; absolute fixed-rules claims GATED on the caps/curve re-sweep (launching today);
+(c) backend default flip funded (per-mode factory resolution + release-test recheck,
+then flip); (d) CUDA-Graph net-arm spike funded (~half day, hard go/no-go at 0.18 ms
+batch-8). Walled bands retire from confirmatory use for fixed-rules claims per the F9
+spec rider — BAND_REGISTRY discipline unchanged.
