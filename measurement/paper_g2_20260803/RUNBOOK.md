@@ -15,9 +15,29 @@
 | staged corpus (local ext4, off 9p) | `/tmp/g2_stage/{train,val}` |
 | ruler report (written later) | `measurement/paper_g2_20260803/solver_score_g2.json` |
 
-Arms, in chain order: `resnet_scratch` (≈0.8 h) → `tf_match` (≈1.3 h) →
-`tf_large` (≈7.7 h). Every arm writes `epoch_NN.pt`, `last.pt`, `best.pt`,
-`final.pt`, `history.json`, `manifest.json`, `train_state.pt`.
+Arms, in chain order: `resnet_scratch` → `tf_match` → `tf_large`. Every arm
+writes `epoch_NN.pt`, `last.pt`, `best.pt`, `final.pt`, `history.json`,
+`manifest.json`, `train_state.pt`.
+
+**Launched 2026-08-03 06:59 EDT.** Chain PID group under
+`scripts/paper_g2/run_g2_chain.sh`; watchdog armed at 07:00 (15-min heartbeat).
+
+**ETA, revised on a MEASURED epoch** (the pre-flight bench's compute-only figures
+were optimistic by ~30% once the fp32 validation passes and the dataloader are
+counted; the 1-epoch `tf_match` smoke ran **356.3 s**):
+
+| arm | min/epoch | 16 epochs |
+|---|---|---|
+| `resnet_scratch` | ≈3.5 | ≈0.9 h |
+| `tf_match` | 5.9 (measured) | ≈1.6 h |
+| `tf_large` | ≈31 (bench + val) | ≈8.3 h |
+
+**≈11 h total**, finishing ≈2026-08-03 18:00 EDT if uninterrupted.
+
+⚠️ **A CPU re-sweep farm (`capscurve_resweep_launcher.sh`, ~28 workers) is live on
+this box.** That is expected and has priority — the G2 chain is GPU work with only
+4 dataloader workers, all at `nice -n 19`. Do NOT raise `--num-workers` to fight
+it, and do NOT start the ruler pass (16 CPU workers) while the farm is up.
 
 ## Is it alive?
 
