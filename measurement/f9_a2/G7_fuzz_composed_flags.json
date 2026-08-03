@@ -1,0 +1,203 @@
+{
+  "gate": "G1/lockstep_fuzz",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "8e7fd53-dirty",
+    "utc": "2026-08-03T04:56:09Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/carc_rs_wt/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "games": 500,
+    "start": 0,
+    "workers": 3,
+    "wall_frac": 0.2,
+    "monk_frac": 0.6,
+    "policy_base": 5000000,
+    "max_plies": 400,
+    "tag": "f9a2_composed",
+    "out": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a10ee30c4a5b2d991/measurement/f9_a2/G7_fuzz_composed_flags.json",
+    "jsonl": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/f9a2_composed.jsonl",
+    "repro_dir": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/repro_composed",
+    "start_rule": "retail",
+    "start_row": 8,
+    "start_col": 17,
+    "cloister_scan_fix": true
+  },
+  "deck_seed_range": [
+    97000000000,
+    97000000499
+  ],
+  "deck_seed_band_note": "throwaway fuzz-only range 97e9+i \u2014 NOT a registered claim band (governance/BAND_REGISTRY.csv); these games are a correctness fuzz, never an estimate",
+  "flags": {
+    "start_rule": "retail",
+    "start_row": 8,
+    "start_col": 17,
+    "cloister_scan_fix": true,
+    "default_semantics": false
+  },
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask(bytes)",
+    "mask_counts(n_total,n_overflow)",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "flat_base_score_decomp[p0]",
+    "flat_base_score_decomp[p1]",
+    "state_scalars",
+    "window_offset",
+    "cloister_completions_accelerated",
+    "window_overflow_error_parity",
+    "count_final_scores_error_parity"
+  ],
+  "setup_checks": [
+    "total_tiles",
+    "tile_count",
+    "starting_position",
+    "start_rule",
+    "cloister_scan_fix"
+  ],
+  "per_mode": {
+    "monk": {
+      "games": 250,
+      "plies": 35496,
+      "positions_compared": 35746,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 0,
+      "games_touching_row0": 45,
+      "games_touching_col0": 0,
+      "games_touching_row34": 0,
+      "games_touching_col34": 0,
+      "placements_row0": 100,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 0,
+      "dropped_legal_total": 0,
+      "cloister_accel_total": 47,
+      "games_with_cloister_accel": 41,
+      "max_cloister_accel_in_a_game": 2,
+      "min_row_seen": 0,
+      "min_col_seen": 5,
+      "max_row_seen": 20,
+      "max_col_seen": 29
+    },
+    "uniform": {
+      "games": 200,
+      "plies": 28400,
+      "positions_compared": 28600,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 0,
+      "games_touching_row0": 38,
+      "games_touching_col0": 0,
+      "games_touching_row34": 0,
+      "games_touching_col34": 0,
+      "placements_row0": 89,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 2,
+      "dropped_legal_total": 5,
+      "cloister_accel_total": 0,
+      "games_with_cloister_accel": 0,
+      "max_cloister_accel_in_a_game": 0,
+      "min_row_seen": 0,
+      "min_col_seen": 4,
+      "max_row_seen": 21,
+      "max_col_seen": 29
+    },
+    "wall": {
+      "games": 50,
+      "plies": 6950,
+      "positions_compared": 7000,
+      "mismatches": 0,
+      "window_overflow_games": 0,
+      "engine_error_games": 2,
+      "games_touching_row0": 50,
+      "games_touching_col0": 0,
+      "games_touching_row34": 0,
+      "games_touching_col34": 2,
+      "placements_row0": 1280,
+      "placements_col0": 0,
+      "plies_with_dropped_legal": 1587,
+      "dropped_legal_total": 7954,
+      "cloister_accel_total": 0,
+      "games_with_cloister_accel": 0,
+      "max_cloister_accel_in_a_game": 0,
+      "min_row_seen": 0,
+      "min_col_seen": 1,
+      "max_row_seen": 9,
+      "max_col_seen": 34
+    }
+  },
+  "total_games": 500,
+  "total_plies": 70846,
+  "total_positions_compared": 71346,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "window_overflow_games": 0,
+  "window_overflow_reproducers": [],
+  "engine_error_games": 2,
+  "engine_error_reproducers": [
+    {
+      "deck_seed": 97000000039,
+      "policy_seed": 5000039,
+      "mode": "wall",
+      "ply": 69,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        8
+      ],
+      "extent_cols": [
+        15,
+        34
+      ]
+    },
+    {
+      "deck_seed": 97000000049,
+      "policy_seed": 5000049,
+      "mode": "wall",
+      "ply": 65,
+      "phase": "meeples",
+      "error_class": "IndexError",
+      "python_error": "IndexError: list index out of range",
+      "rust_error": "PanicException: IndexError: board column index 35 out of range (len 35)",
+      "last_tile": [
+        0,
+        34
+      ],
+      "extent_rows": [
+        0,
+        8
+      ],
+      "extent_cols": [
+        16,
+        34
+      ]
+    }
+  ],
+  "matched_error_games": 2,
+  "cloister_accel_total": 47,
+  "cloister_accel_games": 41,
+  "cloister_accel_per_game": 0.094,
+  "exception_games": 0,
+  "wallclock_s": 41.474810903018806,
+  "games_per_s": 12.055510058120765,
+  "plies_per_s_wall": 1708.1693311552474,
+  "jsonl": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/f9a2_composed.jsonl",
+  "reproducer_dir": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/repro_composed"
+}

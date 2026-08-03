@@ -117,6 +117,12 @@ pub struct GameConfig {
     pub start_rule: StartRule,
     pub start_row: i32,
     pub start_col: i32,
+    /// F9-A2 — fix the RF-D-1 cloister-completion scan drift.  **OPT-IN, and
+    /// `false` in [`GameConfig::default`]**: the drifting scan is what every
+    /// recorded game, checkpoint and gate was produced under, and the Rust port
+    /// carries it verbatim (mutation-proven load-bearing at G1).  On, a cloister
+    /// scores the moment its 3x3 is full and its monk returns to supply.
+    pub cloister_scan_fix: bool,
 }
 
 impl Default for GameConfig {
@@ -126,12 +132,13 @@ impl Default for GameConfig {
             start_rule: StartRule::Engine,
             start_row: DEFAULT_START_ROW,
             start_col: DEFAULT_START_COL,
+            cloister_scan_fix: false,
         }
     }
 }
 
 impl GameConfig {
-    /// Validate and resolve the three opt-in knobs.  `None` everywhere ⇒
+    /// Validate and resolve the opt-in rules knobs.  `None` everywhere ⇒
     /// [`GameConfig::default`].
     ///
     /// **The shift must be EVEN on both axes.**
@@ -148,6 +155,7 @@ impl GameConfig {
         start_row: Option<i32>,
         start_col: Option<i32>,
         window_size: i32,
+        cloister_scan_fix: Option<bool>,
     ) -> Result<Self, String> {
         let rule = StartRule::parse(start_rule)?;
         let row = start_row.unwrap_or(DEFAULT_START_ROW);
@@ -179,6 +187,7 @@ impl GameConfig {
             start_rule: rule,
             start_row: row,
             start_col: col,
+            cloister_scan_fix: cloister_scan_fix.unwrap_or(false),
         })
     }
 
@@ -245,6 +254,9 @@ impl Game {
     /// `placed_coords` (`board_repr.centroid_sums`).
     pub fn from_deck_with_config(deck: Vec<u16>, cfg: GameConfig) -> Result<Self, String> {
         let mut state = GameState::from_deck_with_start(deck, cfg.starting_position());
+        // The scoring convention rides on the state (that is all the scorer
+        // sees), seeded here and carried by every clone.
+        state.cloister_scan_fix = cfg.cloister_scan_fix;
         if cfg.start_rule.fixed_start_tile() {
             let base = retail_start_base()?;
             state.preplace_start_tile(base, RETAIL_START_TILE)?;
@@ -445,7 +457,7 @@ mod tests {
         assert_eq!(d.start_rule, StartRule::Engine);
         assert_eq!((d.start_row, d.start_col), (6, 15));
         assert_eq!(d.window_size, 25);
-        assert_eq!(GameConfig::resolve(None, None, None, 25).unwrap(), d);
+        assert_eq!(GameConfig::resolve(None, None, None, 25, None).unwrap(), d);
         // and it is byte-identical to the pre-P5 constructor
         let a = Game::from_seed("20260730");
         let b = Game::from_seed_with_config("20260730", d).unwrap();
@@ -466,14 +478,14 @@ mod tests {
 
     #[test]
     fn odd_shifts_are_refused_even_shifts_are_not() {
-        assert!(GameConfig::resolve(None, Some(18), None, 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(6), None, 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(17), None, 25).is_err());
-        assert!(GameConfig::resolve(None, Some(5), None, 25).is_err());
-        assert!(GameConfig::resolve(None, None, Some(16), 25).is_err());
-        assert!(GameConfig::resolve(None, None, Some(17), 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(-2), None, 25).is_err()); // off-board
-        assert!(GameConfig::resolve(None, Some(36), None, 25).is_err());
+        assert!(GameConfig::resolve(None, Some(18), None, 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(6), None, 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(17), None, 25, None).is_err());
+        assert!(GameConfig::resolve(None, Some(5), None, 25, None).is_err());
+        assert!(GameConfig::resolve(None, None, Some(16), 25, None).is_err());
+        assert!(GameConfig::resolve(None, None, Some(17), 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(-2), None, 25, None).is_err()); // off-board
+        assert!(GameConfig::resolve(None, Some(36), None, 25, None).is_err());
     }
 
     #[test]

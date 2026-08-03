@@ -37,6 +37,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::tiles::{self, tile_id, FarmerSide, RotTile, Side, TerrainType, TileId};
 
+#[cfg(test)]
+mod cloister_scan_fix_tests;
+
 pub const BOARD_ROWS: i32 = 35;
 pub const BOARD_COLS: i32 = 35;
 pub const EMPTY: u16 = u16::MAX;
@@ -182,6 +185,15 @@ pub struct GameState {
     pub open_positions: BTreeSet<(i32, i32)>,
     pub placed_coords: BTreeSet<(i32, i32)>,
     pub starting_position: Coord,
+    /// F9-A2, OPT-IN and DEFAULT FALSE: score a cloister the moment its 3x3 is
+    /// full instead of leaving it to the drifting scan (audit RF-D-1).  Seeded
+    /// from [`crate::game::GameConfig`]; a `clone()` (search / determinization)
+    /// carries it, so a subtree can never change convention mid-search.
+    pub cloister_scan_fix: bool,
+    /// Completions scored at their true ply that the legacy drifting window
+    /// would NOT have visited — an upper bound on monk-pins avoided.  Only ever
+    /// incremented when `cloister_scan_fix` is on.
+    pub cloister_completions_accelerated: i64,
 }
 
 impl GameState {
@@ -216,6 +228,8 @@ impl GameState {
             open_positions: BTreeSet::new(),
             placed_coords: BTreeSet::new(),
             starting_position,
+            cloister_scan_fix: false,
+            cloister_completions_accelerated: 0,
         };
         st.next_tile = st.pop_deck();
         st
@@ -489,6 +503,25 @@ impl GameState {
 
     // --- scoring ----------------------------------------------------------
 
+    /// `PointsCollector._legacy_scan_cells` — the cells the LEGACY (drifting)
+    /// cloister scan would visit for this placement.  Pure enumeration, no
+    /// scoring; called only when `cloister_scan_fix` is on, to count the
+    /// completions the drift would have missed.
+    fn legacy_scan_cells(&self, coordinate: Coord) -> HashSet<(i32, i32)> {
+        let mut visited = HashSet::new();
+        let mut anchor = coordinate;
+        for row in (coordinate.row - 1)..=(coordinate.row + 1) {
+            for column in (anchor.col - 1)..=(anchor.col + 1) {
+                if self.get_tile(row, column).is_none() {
+                    continue;
+                }
+                anchor = Coord::new(row, column);
+                visited.insert((row, column));
+            }
+        }
+        visited
+    }
+
     /// `PointsCollector.remove_meeples_and_collect_points`.
     pub fn remove_meeples_and_collect_points(&mut self, coordinate: Coord) {
         // --- finished cities ---
@@ -539,28 +572,44 @@ impl GameState {
         // columns around whatever tile was last touched, not around the
         // original coordinate.  The outer row range is evaluated once, from the
         // original coordinate.
+        //
+        // F9-A2: `cloister_scan_fix` (DEFAULT FALSE) stops the rebinding —
+        // `anchor` is the loop bound, `scan` is the cell.  Mirrors the Python
+        // `PointsCollector.remove_meeples_and_collect_points` split exactly,
+        // including `legacy_scan_cells` for the event counter.
+        let fix = self.cloister_scan_fix;
+        let legacy_visited: Option<HashSet<(i32, i32)>> =
+            if fix { Some(self.legacy_scan_cells(coordinate)) } else { None };
         let row_lo = coordinate.row - 1;
         let row_hi = coordinate.row + 1;
-        let mut cur = coordinate;
+        let mut anchor = coordinate;
         for row in row_lo..=row_hi {
-            let col_lo = cur.col - 1;
-            let col_hi = cur.col + 1;
+            let col_lo = anchor.col - 1;
+            let col_hi = anchor.col + 1;
             for column in col_lo..=col_hi {
                 let tid = match self.get_tile(row, column) {
                     None => continue,
                     Some(t) => t,
                 };
                 let tile = tiles::tile(tid);
-                cur = Coord::new(row, column);
-                let meeple_of_player = self.position_contains_meeple(cur, Side::Center);
+                let scan = Coord::new(row, column);
+                if !fix {
+                    anchor = scan; // LEGACY: the rebinding quirk (RF-D-1)
+                }
+                let meeple_of_player = self.position_contains_meeple(scan, Side::Center);
                 if (tile.chapel || tile.flowers) && meeple_of_player.is_some() {
-                    let points = self.chapel_or_flowers_points(cur);
+                    let points = self.chapel_or_flowers_points(scan);
                     if points == 9 {
+                        if let Some(seen) = legacy_visited.as_ref() {
+                            if !seen.contains(&(row, column)) {
+                                self.cloister_completions_accelerated += 1;
+                            }
+                        }
                         let p = meeple_of_player.unwrap();
                         self.scores[p] += points;
                         let mut per_player: [Vec<MeeplePosition>; 2] = [Vec::new(), Vec::new()];
                         for mp in &self.placed_meeples[p] {
-                            if mp.coord == cur && mp.side == Side::Center {
+                            if mp.coord == scan && mp.side == Side::Center {
                                 per_player[p].push(*mp);
                             }
                         }
