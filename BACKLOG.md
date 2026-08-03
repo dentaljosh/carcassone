@@ -670,3 +670,12 @@ decision). Terminal-scoring-only change ⇒ no mid-game search effect expected; 
 sensitivity is tie-frequency-bounded (ties are rare — measure the rate in the Phase C corpora
 first to size whether the flag can matter at all). Build when convenient; not launched
 2026-08-03 (three agents already in flight).
+
+## 2026-08-03 — claim.py-level clock-skew check (the deeper F7c fix, unfunded)
+
+The launcher-level guard (F7c, done) can't catch (a) a clock that drifts MID-RUN (the observed
+cause — WSL2 clock jumps after host sleep — can happen at any point in a long run), or (b) the
+`--shared-claim` .py entry points invoked directly, bypassing every launcher. The complete fix is
+a skew check inside `src/carcassonne_ai/claim.py` itself (compare client time to a fresh probe
+mtime per claim-scan, or derive staleness purely from server-stamped mtimes). Small, but touches
+the claim contract → wants its own test pass. Trigger phrase: "claim-side skew check".
