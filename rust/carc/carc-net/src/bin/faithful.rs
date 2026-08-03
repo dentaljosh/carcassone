@@ -68,13 +68,14 @@ fn main() {
         "backend", "n", "argmax%", "top5%", "bitexact", "max_abs", "max_tv"
     );
 
-    // `Backend::CudaGraph` is deliberately NOT exercised here. On this box
-    // (ort rc.13 + onnxruntime 1.22) it panics inside ORT's own value layer
-    // ("expected `typeinfo_ptr` to not be null") because CUDA-Graph capture wants
-    // its inputs and outputs bound to DEVICE memory via IOBinding, and this
-    // evaluator hands it host slices. That is an implementation gap, not a
-    // faithfulness question — see the design memo §6.2.
-    for backend in [Backend::Cpu(4), Backend::Cuda] {
+    // ⚠️ `CudaBound` and `CudaGraph` are exercised HERE, not just in the bench.
+    // A device-resident path is a NEW NUMERICAL SURFACE and has to re-earn T1 on
+    // its own: the logits now travel host -> cudaMemcpy -> conv stack -> captured
+    // graph replay -> cudaMemcpy -> host, and a captured graph in particular pins
+    // the conv ALGORITHM choices made during capture, which need not be the ones
+    // eager mode re-selects per run. Inheriting the eager row's 100% would be an
+    // assumption, and the whole point of tier T1 is not to assume.
+    for backend in [Backend::Cpu(4), Backend::Cuda, Backend::CudaBound, Backend::CudaGraph] {
         let path = format!("{dir}/policy_b{batch}.onnx");
         let mut ev = match OrtPolicyEvaluator::new(&path, rep, batch, backend) {
             Ok(e) => e,

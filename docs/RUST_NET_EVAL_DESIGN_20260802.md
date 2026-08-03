@@ -1,6 +1,30 @@
 # Rust-side neural evaluator for `carc_rs` — design, measurements, and the gate
 
-**Status: DESIGN + BENCHED PROTOTYPE (2026-08-02).** No search integration, no strength
+> ## ⚠️ RESOLVED 2026-08-03 — THE SPIKE RAN, AND THE ANSWER IS **STOP**
+>
+> §7.1's half-day go/no-go spike is **complete**:
+> [`measurement/rust_net_cudagraph_spike_20260803/`](../measurement/rust_net_cudagraph_spike_20260803/README.md).
+>
+> * **§6.2 is superseded.** CUDA-Graph capture **IS** reachable from Rust through `ort`.
+>   Binding device-resident tensors via `IoBinding` fixes the panic; batch-1 goes
+>   1.158 → **0.434 ms** and batch-8 to **0.152 ms/leaf**, within ~4% of the torch
+>   reference. T1 is unaffected (100.00% argmax, byte-identical to the eager CUDA row).
+> * **§6.3 is RETIRED, and this is the finding.** Its denominator, 0.0903 ms/sim, was
+>   measured on a box holding a live 13-worker eval. The census-clean figure is
+>   **0.0584** — 1.55× smaller. Every `r` and `cost_ratio` in §6.1/§6.3 is inflated in
+>   the candidate's favour by that factor. Recomputed, this spike's forward reads
+>   `r = 2.61` / `cost_ratio ≈ 3.06`, and **even §6.3's aspirational torch+Graph row
+>   reads 2.95** — all outside the ~2.4–2.6 break-even. The line could not have been
+>   rescued by any forward path here.
+> * **§7.1's bar fires both ways and the substantive half governs**: the literal
+>   "≤ ~0.18 ms" **passes** at 0.152, while the "`r ≤ ~2.0`, `cost_ratio ≤ ~2.5`" it
+>   was standing in for **fails**. A bar in absolute milliseconds silently assumed a
+>   denominator.
+>
+> Nothing below is edited; read §6.1–§7.1 as the 2026-08-02 record and the spike README
+> as the verdict.
+
+**Status: DESIGN + BENCHED PROTOTYPE (2026-08-02); SPIKE RESOLVED 2026-08-03 — see the banner above.** No search integration, no strength
 claim, no `results.csv` row, `governance/PRODUCTION.yaml` untouched. The deliverable is
 this memo plus a working forward path (`rust/carc/carc-net/`) whose `r` is measured
 rather than asserted. ⚠️ **Nothing here promotes anything.**
