@@ -67,7 +67,7 @@ REPO="${ABL_REPO:-/home/doctor/projects/carcassone}"
 PY="${ABL_PY:-$REPO/.venv/bin/python}"
 HARNESS=$REPO/scripts/classical_search/eval_puct_priors.py
 CELL_DIR=$REPO/measurement/leaf_ablation_20260730/cells
-PROG=$REPO/measurement/leaf_ablation_20260730/ABL_PROGRESS.tsv
+PROG=$REPO/measurement/leaf_ablation_20260730/ABL_PROGRESS.tsv   # --smoke redirects this
 
 # ---- pre-registered knobs (PREREG.md "Cell configuration") ----
 N=400                      # deck-paired: 200 decks x 2 seats
@@ -103,6 +103,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$BACKEND" in python|rust) ;; *) echo "bad --backend '$BACKEND' (python|rust)"; exit 1 ;; esac
+# A smoke must not append to the REAL run's progress record (its rows carry a
+# throwaway band and an under-powered n, and would read as run history).
+[ "$SMOKE" = 1 ] && PROG="${PROG%.tsv}_SMOKE.tsv"
 for c in $CELLS; do
   case " $CELLS_ALL " in *" $c "*) ;; *) echo "unknown cell id '$c' (valid: $CELLS_ALL)"; exit 1 ;; esac
   # F7b farm knockouts have no Cython leaf by design (see the F7b addendum): on the
