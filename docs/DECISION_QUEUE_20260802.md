@@ -31,7 +31,7 @@
    per-mode or clairvoyant builds raise — top item; (ii) tests/release/test_factory_manifest
    re-check; (iii) the flip moves only the 6 make_production_champion sites (the eval fleet
    rides build_fair_champion's own default). Flip when you say so.
-4. **F7b farm knockout cells** — cheap post-wiring (Rust-severable). Go/no-go.
+4. **F7b farm knockout cells** — ✅ RAN 2026-08-02 (funded by your "lets do the farm knockout cells"): farm base **−142 elo** (z −9.4, verdict); farm-growth **+42.8 (z +1.87) — the champion LEANS BETTER WITHOUT it**. NEW SUB-DECISION: fund the ~15-min fresh-band n=400 CONFIRM of the farm-growth deletion (if it holds ≥2σ it is a free ~+40 elo + 4% cheaper leaf — the first positive strength lever since curve125). No leaf change until then.
 5. **F9 rules-fix program** — the big one: global recentring + rules remediation
    (RULES_FIDELITY_AUDIT R1–R8) + transfer-bound cell + fixed-rules descriptives +
    the JCloisterZone oracle (BACKLOG 2026-08-02). When to fund; scope in the audit doc.

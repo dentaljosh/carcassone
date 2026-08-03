@@ -3830,3 +3830,33 @@ champion path re-ran green post-merge. No PRODUCTION.yaml change, no strength cl
 results.csv row (wave = execution substrate + instruments). Roadmap F10 substantially
 done / F11 done; LEVER_INDEX rows 16–19; decision queue updated (default-flip blockers,
 net-arm spike).
+
+## 2026-08-02 (late night) — F7b farm knockouts DONE: farm base = −142 elo; farm-growth block LEANS DELETABLE (+42.8, z +1.87 — confirm owed) — CL-074 table extended
+
+Both cells n=400 deck-paired, band 1.00e11, rust backend both sides (the first ablation
+cells of the converted era — realized ~1800 games/h two-box vs F7's 101/h python era;
+14 + 13 min wall). Prereg F7B_PREREG.md committed with the band claim before game 1;
+the exact-K tail stayed farm-sighted BOTH sides by ratified design (the tail is the
+rules, not a heuristic leaf; leak biases toward null, documented).
+
+- **abl_farmbaseoff: −142.1 ± 18.8 elo, paired z −9.39** (119W/7D/274L, ms 0.93×). The
+  farm award in flat_base_score is worth ~142 elo — between selfanticoff (~89) and
+  meepleflat (~177) in the component table. The build smoke's n=32 peek (−190.8) shrank
+  to −142 at n=400: winner's-curse regression in its textbook direction, prereg
+  thresholds untouched throughout.
+- **abl_farmgrowthoff: +42.8 ± 17.5 elo, paired z +1.87** (216W/17D/167L, ms 0.96×).
+  ⚠️ POSITIVE: the champion LEANS BETTER WITHOUT the farm-growth block of
+  flat_closure_bonus — sub-2σ, so per the F7 conventions this is a LEAN, not a verdict.
+  **DELETION-CANDIDATE FLAG**: if real it is a free ~+40 elo AND ~4% cheaper. Follow-up
+  (Joshua's funding call, decision queue): a fresh-band n=400 deck-paired CONFIRM (at
+  ~13 min/cell it is nearly free); do NOT touch the production leaf on this lean
+  (feedback_results_table_source_of_truth: never promote from a single screen; and a
+  z-1.87 lone positive against parameter-neighbors is exactly the noise signature the
+  rules warn about — but the direction was unprompted and the cell was pre-registered,
+  so it has earned its confirm).
+
+CL-074 AMENDED (the component-value table gains the two farm rows; the claim's scope now
+covers all named leaf components). Band 1.00e11 → retired (influenced CL-074). Updated
+table: meeple ~300 · curve shape ~177 · oppantic ~153 · **farm base ~142** · selfantic
+~89 · **farm-growth −43 (leaning, sub-2σ)** · both-antic-off ≈ null · cap null.
+results.csv rows abl_farm{baseoff,growthoff}_vs_puctchamp2750_k2.

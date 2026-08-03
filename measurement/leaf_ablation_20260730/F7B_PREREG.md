@@ -1,6 +1,7 @@
 # F7b — FARM-TERM KNOCKOUT ABLATION — PRE-REGISTRATION
 
-> **STATUS: ✅ AUTHORIZED 2026-08-02 (Joshua: "lets do the farm knockout cells"; orchestrator
+> **STATUS: ✅ COMPLETE 2026-08-02 late night — farmbaseoff −142.1 ± 18.8 (z −9.39); farmgrowthoff +42.8 ± 17.5 (z +1.87, LEANING champion-better-without, sub-2σ ⇒ deletion-candidate, CONFIRM OWED). CL-074 amended; band 1.00e11 retired; DECISIONS 2026-08-02 (late night).** *(Authorization banner follows.)*
+> **AUTHORIZED 2026-08-02 (Joshua: "lets do the farm knockout cells"; orchestrator
 > ratified the farm-sighted-tail design call — the tail is the RULES, not a heuristic leaf,
 > and the toward-null leak is documented in §design). Band `1.00e11` REGISTERED in
 > `governance/BAND_REGISTRY.csv` in this same commit, before game 1. Launched two-box
