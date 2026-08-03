@@ -3895,3 +3895,15 @@ the replay harness at 1–1.5 agent-days, gated on Phase A (per-ply legality dif
 light up on walled/start-tile/redraw divergences by design). Unverified, named: the
 meeple-slot mapping (D1's main unknown) and whether flat_leaf/rust reproduce the merge
 (argued from shared data, not measured — D0's flag build must gate it).
+
+## 2026-08-03 (early) — F7d RE-SWEEP (both-sides-rust era): local W*=30 (peak W36), laptop W*=26 — the workload is now ~6.6× the morning's mixed figure
+
+Owed since port 1 converted the ablation opponent (code-era change ⇒ re-bench). Full
+ladders, same driver/metric: local 40.2/51.2/53.8/54.6/56.2/53.9 at W=16/24/30/32/36/48
+(peak W36, endpoint-bracketed by the W48 turn-down; settle W*=30 = smallest within 5%);
+laptop 44.0/47.6/51.3/50.9 at 16/22/26/30 (peak+settle W*=26). Throughput at settle:
+~54/51 moves/s vs 8.18/7.22 on the morning's half-converted workload. The curve moved
+gen-ward (peak above threads) exactly as the W-heuristic predicts for a
+nearly-GIL-free workload; cand/champ ms now symmetric (~550/560 at W30). Stale morning
+rows retained in the TSVs above the new ones (timestamps disambiguate).
+CLUSTER_OPS fourth profile + memory updated. Bench only, throwaway band 9.69e10.
