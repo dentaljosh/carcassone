@@ -194,6 +194,17 @@ pub struct GameState {
     /// would NOT have visited — an upper bound on monk-pins avoided.  Only ever
     /// incremented when `cloister_scan_fix` is on.
     pub cloister_completions_accelerated: i64,
+    /// F9/A3 — `CarcassonneGameState.redraw_unplaceable`.  `false` (default) is
+    /// the engine of record: a TILES-phase pass costs the drawer their turn.
+    /// `true` is the retail rule (set aside, draw again, same player).  Lives on
+    /// the state, not the config, for the same reason the Python twin does:
+    /// every transition helper takes the state alone, so the flag must ride
+    /// `clone()` into every search node, PIMC world and solver child.
+    pub redraw_unplaceable: bool,
+    /// Tiles that left the game unplaced, in removal order.  Written under BOTH
+    /// draw rules (pure telemetry — no scorer, repr, mask or leaf reads it);
+    /// only `redraw_unplaceable` makes it behavioural.
+    pub set_aside: Vec<u16>,
 }
 
 impl GameState {
@@ -230,6 +241,8 @@ impl GameState {
             starting_position,
             cloister_scan_fix: false,
             cloister_completions_accelerated: 0,
+            redraw_unplaceable: false,
+            set_aside: Vec::new(),
         };
         st.next_tile = st.pop_deck();
         st
@@ -414,9 +427,24 @@ impl GameState {
                     // Vendored patch (2026-04-28): the unplaceable tile is
                     // discarded, `last_tile_action` cleared, a new tile drawn,
                     // and the turn handed off.  No meeple decision is owed.
+                    //
+                    // F9/A3: under `redraw_unplaceable` the turn is NOT handed
+                    // off — the tile is set aside (removed from the game) and
+                    // the same player draws again.  Recursion is realized as a
+                    // sequence of forced passes (the redrawn-and-still-
+                    // unplaceable state has Pass as its only legal move), and
+                    // it terminates because the bag strictly shrinks.  Deck
+                    // exhausted mid-redraw falls into the same
+                    // `is_terminated()` / `count_final_scores` block below, as
+                    // the normal path does.  Full rationale on the Python twin.
                     self.last_tile_action = None;
+                    if let Some(t) = self.next_tile {
+                        self.set_aside.push(t);
+                    }
                     self.draw_tile();
-                    self.next_player();
+                    if !self.redraw_unplaceable {
+                        self.next_player();
+                    }
                     if self.is_terminated() {
                         self.count_final_scores();
                     }

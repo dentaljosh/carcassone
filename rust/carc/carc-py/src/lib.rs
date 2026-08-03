@@ -27,6 +27,7 @@ fn game_cfg(
     start_col: Option<i32>,
     window_size: i32,
     cloister_scan_fix: Option<bool>,
+    draw_rule: Option<&str>,
 ) -> PyResult<GameConfig> {
     GameConfig::resolve(
         start_rule,
@@ -34,6 +35,7 @@ fn game_cfg(
         start_col,
         window_size,
         cloister_scan_fix,
+        draw_rule,
     )
     .map_err(pyo3::exceptions::PyValueError::new_err)
 }
@@ -43,7 +45,7 @@ fn game_cfg(
 /// and for the EVEN-shift assertion, without building a deck.
 #[pyfunction]
 #[pyo3(signature = (start_rule=None, start_row=None, start_col=None, window_size=25,
-                    cloister_scan_fix=None))]
+                    cloister_scan_fix=None, draw_rule=None))]
 fn resolve_game_config<'py>(
     py: Python<'py>,
     start_rule: Option<&str>,
@@ -51,6 +53,7 @@ fn resolve_game_config<'py>(
     start_col: Option<i32>,
     window_size: i32,
     cloister_scan_fix: Option<bool>,
+    draw_rule: Option<&str>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cfg = game_cfg(
         start_rule,
@@ -58,6 +61,7 @@ fn resolve_game_config<'py>(
         start_col,
         window_size,
         cloister_scan_fix,
+        draw_rule,
     )?;
     let d = PyDict::new(py);
     d.set_item("start_rule", cfg.start_rule.value())?;
@@ -66,6 +70,11 @@ fn resolve_game_config<'py>(
     d.set_item("start_col", cfg.start_col)?;
     d.set_item("window_size", cfg.window_size)?;
     d.set_item("cloister_scan_fix", cfg.cloister_scan_fix)?;
+    d.set_item("draw_rule", cfg.draw_rule.value())?;
+    d.set_item(
+        "redraw_unplaceable",
+        cfg.draw_rule.redraw_unplaceable(),
+    )?;
     Ok(d)
 }
 
@@ -193,7 +202,7 @@ impl PyMirrorState {
     /// round-trip (see the G0 mt19937 gate).
     #[staticmethod]
     #[pyo3(signature = (deck_seed, window_size=25, start_rule=None, start_row=None, start_col=None,
-                        cloister_scan_fix=None))]
+                        cloister_scan_fix=None, draw_rule=None))]
     fn from_seed(
         deck_seed: &str,
         window_size: i32,
@@ -201,6 +210,7 @@ impl PyMirrorState {
         start_row: Option<i32>,
         start_col: Option<i32>,
         cloister_scan_fix: Option<bool>,
+        draw_rule: Option<&str>,
     ) -> PyResult<Self> {
         let cfg = game_cfg(
             start_rule,
@@ -208,6 +218,7 @@ impl PyMirrorState {
             start_col,
             window_size,
             cloister_scan_fix,
+            draw_rule,
         )?;
         Ok(PyMirrorState {
             game: Game::from_deck_with_config(deck_from_seed(deck_seed), cfg)
@@ -218,7 +229,7 @@ impl PyMirrorState {
     /// Build from an explicit deck of tile descriptions, in draw order.
     #[staticmethod]
     #[pyo3(signature = (descriptions, window_size=25, start_rule=None, start_row=None,
-                        start_col=None, cloister_scan_fix=None))]
+                        start_col=None, cloister_scan_fix=None, draw_rule=None))]
     fn from_deck(
         descriptions: Vec<String>,
         window_size: i32,
@@ -226,6 +237,7 @@ impl PyMirrorState {
         start_row: Option<i32>,
         start_col: Option<i32>,
         cloister_scan_fix: Option<bool>,
+        draw_rule: Option<&str>,
     ) -> PyResult<Self> {
         let deck = deck_from_descriptions(&descriptions)
             .map_err(pyo3::exceptions::PyValueError::new_err)?;
@@ -235,6 +247,7 @@ impl PyMirrorState {
             start_col,
             window_size,
             cloister_scan_fix,
+            draw_rule,
         )?;
         Ok(PyMirrorState {
             game: Game::from_deck_with_config(deck, cfg)
@@ -261,6 +274,22 @@ impl PyMirrorState {
     /// observable and not just a report.
     fn cloister_accel(&self) -> i64 {
         self.game.state.cloister_completions_accelerated
+    }
+
+    /// F9/A3 — `"engine"` | `"redraw"`, the resolved unplaceable-tile rule.
+    fn draw_rule(&self) -> &'static str {
+        self.game.cfg.draw_rule.value()
+    }
+
+    /// Tile descriptions that have left the game unplaced, in removal order —
+    /// `CarcassonneGameState.set_aside_tiles`.  The lockstep observable for A3.
+    fn set_aside_tiles(&self) -> Vec<String> {
+        self.game
+            .state
+            .set_aside
+            .iter()
+            .map(|&b| carc_core::tiles::generated::BASE_TILES[b as usize].description.to_string())
+            .collect()
     }
 
     /// `(row, col)` of `CarcassonneGameState.starting_position`.
@@ -1214,6 +1243,7 @@ impl PyFairAgent {
         start_row = None,
         start_col = None,
         cloister_scan_fix = None,
+        draw_rule = None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1232,6 +1262,7 @@ impl PyFairAgent {
         start_row: Option<i32>,
         start_col: Option<i32>,
         cloister_scan_fix: Option<bool>,
+        draw_rule: Option<&str>,
     ) -> PyResult<Self> {
         // The agent takes the SAME rules knobs as the mirror, so a flags-on
         // eval cannot silently be graded under the flags-off convention.
@@ -1241,6 +1272,7 @@ impl PyFairAgent {
             start_col,
             window_size,
             cloister_scan_fix,
+            draw_rule,
         )?;
         if k_dets < 1 {
             return Err(pyo3::exceptions::PyValueError::new_err(format!(

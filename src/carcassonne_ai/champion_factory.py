@@ -626,6 +626,17 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
             rs_kw["start_col"] = int(game.start_col)
         if getattr(game, "fixed_start_tile", False):
             rs_kw["start_rule"] = "retail"
+        # F9 A2+A3 (2026-08-03, the compose merge): the same argument one line
+        # up, for the two RULES flags. Both default to the engine of record, so
+        # this stays byte-identical under `walled`; without it a flags-on cell
+        # built through this factory would mirror a flags-OFF Rust agent, and
+        # `state_digest` does not hash the deck, so the split would only surface
+        # plies after the two boards had already parted.
+        if getattr(game, "cloister_scan_fix", False):
+            rs_kw["cloister_scan_fix"] = True
+        _dr = getattr(game, "draw_rule", None)
+        if _dr is not None and _dr != "engine":
+            rs_kw["draw_rule"] = str(_dr)
         return RustFairAgent(game, cfg, threads=int(rust_threads or 1), **rs_kw)
 
     kw = {k: v for k, v in dict(

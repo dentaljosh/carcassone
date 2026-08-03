@@ -87,7 +87,25 @@ exactly what this is.  The event counter
 observable, so the manifest's "monk-pins avoided" rate is parity-checked rather
 than self-reported, and is asserted identically 0 with the flag off.
 
-Defaults are unchanged (engine rule, start (6, 15), drifting scan) — the G1
+**A3 flag (F9, 2026-08-03).**  `--draw-rule` drives the same lockstep through the
+unplaceable-tile rule (audit RF-D-2):
+
+    --draw-rule engine    the vendored default: a TILES-phase pass discards the
+                          unplaceable tile, draws the next AND passes the turn.
+    --draw-rule redraw    the retail rule: reveal, set the tile aside (it leaves
+                          the game), draw again, SAME player continues.
+
+Three checks come with it, because A3 is the one flag that mutates state the
+other flags only set up: `set_aside_tiles` (which tiles left, in order) and
+`total_tiles` are compared EVERY ply rather than only at setup, and under
+`redraw` the fuzz asserts the bag-accounting invariant that the two live
+definitions of "tiles left" agree (TILES phase only — `next_tile` is stale in
+MEEPLES).  Per-mode counters `redraw_events` / `games_with_a_redraw` /
+`tiles_by_seat` / `seat_imbalance_games` are the free per-flag attribution the
+spec's T1 resolution asks every flag to emit.
+
+Defaults are unchanged (engine rule, start (6, 15), drifting scan, engine draw
+rule) — the G1
 invocation and its recorded verdict reproduce byte-for-byte.
 
 Usage:
@@ -148,14 +166,20 @@ BOARD_ROWS = BOARD_COLS = 35      # engine grid (walled)
 # expressed as (even) shifts away from it.
 DEFAULT_START_ROW, DEFAULT_START_COL = 6, 15
 START_RULES = ("engine", "retail")
+# F9/A3 — the unplaceable-tile draw rule. "engine" is the engine of record.
+DRAW_RULES = ("engine", "redraw")
 
 
-def check_flags(start_rule: str, start_row: int, start_col: int) -> None:
-    """Refuse an unknown rule or an ODD shift — the same two refusals the Rust
+def check_flags(start_rule: str, start_row: int, start_col: int,
+                draw_rule: str = "engine") -> None:
+    """Refuse an unknown rule or an ODD shift — the same refusals the Rust
     `GameConfig::resolve` makes, applied before any game is launched."""
     if start_rule not in START_RULES:
         raise ValueError(
             f"unknown start_rule {start_rule!r}; expected one of {START_RULES}")
+    if draw_rule not in DRAW_RULES:
+        raise ValueError(
+            f"unknown draw_rule {draw_rule!r}; expected one of {DRAW_RULES}")
     for axis, v, base in (("start_row", start_row, DEFAULT_START_ROW),
                           ("start_col", start_col, DEFAULT_START_COL)):
         if (v - base) % 2 != 0:
@@ -189,7 +213,7 @@ def object_engine_refusal(state) -> str | None:
 
 
 def init_pair(seed: int, start_rule: str, start_row: int, start_col: int,
-              cloister_scan_fix: bool = False):
+              cloister_scan_fix: bool = False, draw_rule: str = "engine"):
     """`(Game, Board, MirrorState)` for one deck seed under the P5/F9 flags.
 
     The deck comes from `random.seed(deck_seed)` in BOTH branches — the
@@ -198,7 +222,7 @@ def init_pair(seed: int, start_rule: str, start_row: int, start_col: int,
     """
     fixed = start_rule == "retail"
     game = Game(enable_legal_moves_cache=False, fixed_start_tile=fixed,
-                cloister_scan_fix=cloister_scan_fix)
+                cloister_scan_fix=cloister_scan_fix, draw_rule=draw_rule)
     random.seed(int(seed))
     if (start_row, start_col) == (DEFAULT_START_ROW, DEFAULT_START_COL):
         board = game.get_init_board()
@@ -217,13 +241,17 @@ def init_pair(seed: int, start_rule: str, start_row: int, start_col: int,
             starting_position=Coordinate(start_row, start_col),
             cloister_scan_fix=cloister_scan_fix,
         )
+        # A3: `Game.get_init_board` latches the draw rule onto the state; this
+        # hand-built branch bypasses it, so latch it here too or the shifted-grid
+        # leg would silently run the engine rule against a `redraw` mirror.
+        state.redraw_unplaceable = game.redraw_unplaceable
         if fixed:
             gw.preplace_retail_start_tile(state)
         total_tiles = len(state.deck) + 1 + len(state.placed_coords)
         board = gw.Board.from_state(state, total_tiles, game.window_size)
     ms = carc_rs.MirrorState.from_seed(
         str(seed), start_rule=start_rule, start_row=start_row, start_col=start_col,
-        cloister_scan_fix=cloister_scan_fix)
+        cloister_scan_fix=cloister_scan_fix, draw_rule=draw_rule)
     return game, board, ms
 
 
@@ -302,6 +330,7 @@ def fuzz_game(job: dict) -> dict:
     start_row = job.get("start_row", DEFAULT_START_ROW)
     start_col = job.get("start_col", DEFAULT_START_COL)
     csf = bool(job.get("cloister_scan_fix", False))
+    draw_rule = job.get("draw_rule", "engine")
 
     res = {
         "deck_seed": seed, "policy_seed": pseed, "mode": mode,
@@ -310,6 +339,14 @@ def fuzz_game(job: dict) -> dict:
         # F9-A2 event counter: completions scored at the true ply that the
         # legacy drifting window would not have visited (0 with the flag off).
         "cloister_accel": 0,
+        "draw_rule": draw_rule,
+        # --- A3 event counters (the free per-flag attribution of spec T1) ----
+        # `redraw_events` = tiles that left the game unplaced. Under "engine"
+        # each one ALSO costs the drawer their turn; under "redraw" it does not.
+        "redraw_events": 0,
+        "set_aside_tiles": [],
+        # The direct observable of what A3 changes: tiles PLACED per seat.
+        "tiles_by_seat": [0, 0],
         "plies": 0, "compared": 0, "status": "ok",
         "terminal_scores": None,
         "window_overflow": None,      # {"ply":..., "n_total":...} if it fired
@@ -331,6 +368,7 @@ def fuzz_game(job: dict) -> dict:
                "deck_seed": seed, "policy_seed": pseed, "mode": mode,
                "start_rule": start_rule, "start_row": start_row,
                "start_col": start_col, "cloister_scan_fix": csf,
+               "draw_rule": draw_rule,
                "actions": list(actions)}
         if extra:
             rec.update(extra)
@@ -339,7 +377,8 @@ def fuzz_game(job: dict) -> dict:
 
     try:
         # cache OFF: every ply audits.  Deck via random.seed(deck_seed).
-        game, board, ms = init_pair(seed, start_rule, start_row, start_col, csf)
+        game, board, ms = init_pair(seed, start_rule, start_row, start_col,
+                                    csf, draw_rule)
         gw.drain_window_audit()
         rng = random.Random(pseed)
 
@@ -357,6 +396,9 @@ def fuzz_game(job: dict) -> dict:
         if (bool(board.state.cloister_scan_fix), ms.cloister_scan_fix()) != (csf, csf):
             fail("cloister_scan_fix", 0,
                  bool(board.state.cloister_scan_fix), ms.cloister_scan_fix())
+            return res
+        if ms.draw_rule() != draw_rule:
+            fail("draw_rule", 0, draw_rule, ms.draw_rule())
             return res
 
         while True:
@@ -445,6 +487,39 @@ def fuzz_game(job: dict) -> dict:
             if py_sc != rs_sc:
                 fail("state_scalars", ply, py_sc, rs_sc)
                 return res
+
+            # 6b. A3 — the tiles that have left the game, and the bag total they
+            # shrink.  `total_tiles` is compared EVERY ply (not just at setup)
+            # because the redraw rule mutates it mid-game; a leg where only one
+            # engine decremented would otherwise pass every other check.
+            py_aside = [t.description for t in st.set_aside_tiles]
+            rs_aside = ms.set_aside_tiles()
+            if py_aside != rs_aside:
+                fail("set_aside_tiles", ply, py_aside, rs_aside)
+                return res
+            if int(board.total_tiles) != ms.total_tiles():
+                fail("total_tiles", ply, int(board.total_tiles), ms.total_tiles())
+                return res
+            # The bag-accounting invariant A3 owes (game_wrapper._next_total_tiles):
+            # the two live definitions of "tiles left" must agree under `redraw`.
+            #
+            # ⚠️ TILES PHASE ONLY.  In the MEEPLES phase `next_tile` is a STALE
+            # reference to the tile that was just PLACED (it is not re-drawn
+            # until the meeple decision resolves), so `has_next` double-counts it
+            # — the same trap `flat_leaf`'s bag gate, `features`, `sighted_planes`
+            # and the bridge's bag viewer each guard independently.  Asserting it
+            # in MEEPLES would fire on every ply of every game and say nothing
+            # about A3.  (This check caught exactly that mistake on its first run.)
+            if draw_rule == "redraw" and st.phase.value == "tiles":
+                k_deck = len(st.deck) + (1 if st.next_tile is not None else 0)
+                k_total = int(board.total_tiles) - int(board.tile_count)
+                if k_deck != k_total:
+                    fail("tiles_left_definitions_disagree", ply,
+                         {"len_deck_plus_has_next": k_deck},
+                         {"total_tiles_minus_tile_count": k_total})
+                    return res
+            res["redraw_events"] = len(py_aside)
+            res["set_aside_tiles"] = py_aside
 
             # 7. the centred window itself.  Implied by the mask on the engine
             # rule (placements are window-relative), but the retail flag seeds
@@ -566,6 +641,7 @@ def fuzz_game(job: dict) -> dict:
             a = int(_choose(rng, legal, mode, st.phase.value, off, tile_pass, st))
 
             if st.phase.value == "tiles" and a < tile_pass:
+                res["tiles_by_seat"][st.current_player] += 1
                 r, c = _tile_coord(a, off)
                 res["min_row"] = r if res["min_row"] is None else min(res["min_row"], r)
                 res["max_row"] = r if res["max_row"] is None else max(res["max_row"], r)
@@ -622,6 +698,7 @@ def build_jobs(args) -> list[dict]:
             "start_row": args.start_row,
             "start_col": args.start_col,
             "cloister_scan_fix": args.cloister_scan_fix,
+            "draw_rule": args.draw_rule,
         })
     return jobs
 
@@ -643,6 +720,10 @@ def main(argv=None) -> int:
     ap.add_argument("--jsonl", default=None)
     ap.add_argument("--repro-dir", default=None)
     # --- P5 flags (all default to the byte-compatible walled engine) ---
+    ap.add_argument("--draw-rule", choices=DRAW_RULES, default="engine",
+                    help="F9/A3 unplaceable-tile rule. 'engine' (default) = the "
+                         "engine of record (discard + lose the turn); 'redraw' = "
+                         "the retail rule (set aside, draw again, same player).")
     ap.add_argument("--start-rule", choices=START_RULES, default="engine",
                     help="start-tile convention (default: the vendored engine rule)")
     ap.add_argument("--start-row", type=int, default=DEFAULT_START_ROW,
@@ -654,7 +735,7 @@ def main(argv=None) -> int:
                     help="score a cloister the moment its 3x3 is full and return "
                          "the monk (audit RF-D-1); default OFF = the drifting scan")
     args = ap.parse_args(argv)
-    check_flags(args.start_rule, args.start_row, args.start_col)
+    check_flags(args.start_rule, args.start_row, args.start_col, args.draw_rule)
 
     jobs = build_jobs(args)
     OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -700,8 +781,20 @@ def main(argv=None) -> int:
             "max_cloister_accel_in_a_game": 0,
             "min_row_seen": None, "min_col_seen": None,
             "max_row_seen": None, "max_col_seen": None,
+            # --- A3 manifest counters -------------------------------------
+            "redraw_events": 0, "games_with_a_redraw": 0,
+            "tiles_by_seat": [0, 0], "seat_imbalance_games": 0,
         })
         m["games"] += 1
+        m["redraw_events"] += r["redraw_events"]
+        m["games_with_a_redraw"] += bool(r["redraw_events"])
+        for _s in (0, 1):
+            m["tiles_by_seat"][_s] += r["tiles_by_seat"][_s]
+        # The A3 parity invariant, per game: how far apart the two seats' tile
+        # counts are.  Under `engine` a discard costs the drawer a placement, so
+        # a discarded game skews by 2 per event; under `redraw` it cannot.
+        m["seat_imbalance_games"] += bool(
+            abs(r["tiles_by_seat"][0] - r["tiles_by_seat"][1]) > 1)
         m["plies"] += r["plies"]
         m["positions_compared"] += r["compared"]
         m["placements_row0"] += r["placements_row0"]
@@ -764,9 +857,11 @@ def main(argv=None) -> int:
                                 "claim band (governance/BAND_REGISTRY.csv); these games "
                                 "are a correctness fuzz, never an estimate"),
         "flags": {"start_rule": args.start_rule, "start_row": args.start_row,
+                  "draw_rule": args.draw_rule,
                   "start_col": args.start_col,
                   "cloister_scan_fix": args.cloister_scan_fix,
                   "default_semantics": (args.start_rule == "engine"
+                                       and args.draw_rule == "engine"
                                         and args.start_row == DEFAULT_START_ROW
                                         and args.start_col == DEFAULT_START_COL
                                         and not args.cloister_scan_fix)},
@@ -777,9 +872,11 @@ def main(argv=None) -> int:
                            "state_scalars", "window_offset",
                            "cloister_completions_accelerated",
                            "window_overflow_error_parity",
-                           "count_final_scores_error_parity"],
+                           "count_final_scores_error_parity",
+                           "set_aside_tiles", "total_tiles",
+                           "tiles_left_definitions_agree(redraw only)"],
         "setup_checks": ["total_tiles", "tile_count", "starting_position",
-                         "start_rule", "cloister_scan_fix"],
+                         "start_rule", "cloister_scan_fix", "draw_rule"],
         "per_mode": by_mode,
         "total_games": len(results),
         "total_plies": total_plies,
