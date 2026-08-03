@@ -55,10 +55,12 @@
 #   scripts/rules_fixed/gen_luck_pairs.sh [--decks 200] [--workers 24]
 #          [--seed-start 109500000000] [--out DIR] [--backend rust]
 #          [--foreground] [--smoke]
-# Then (local view of the share):
-#   scripts/human_anchor/luck_floor.py --only-extra \
+# Then, from the repo root on the LOCAL box (its share view is /mnt/c/carc-shared):
+#   .venv/bin/python scripts/human_anchor/luck_floor.py --only-extra \
 #       --extra-near-equal /mnt/c/carc-shared/f9_luck_pairs_fixed_v1 \
 #       -o measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md
+#   (`--only-extra` matters: the curated NEAR_EQUAL archives are WALLED, and
+#    pooling a fixed_v1 archive with them would report a cross-profile average.)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -150,8 +152,8 @@ else
   nohup setsid "${CMD[@]}" > "$OUT/gen_luck_pairs.log" 2>&1 < /dev/null &
   disown || true
   echo "launched detached; log: $OUT/gen_luck_pairs.log"
-  echo "when it finishes (LOCAL share view /mnt/c/carc-shared):"
-  echo "  scripts/human_anchor/luck_floor.py --only-extra \\"
+  echo "when it finishes, from the repo root on the LOCAL box (share /mnt/c/carc-shared):"
+  echo "  .venv/bin/python scripts/human_anchor/luck_floor.py --only-extra \\"
   echo "      --extra-near-equal /mnt/c/carc-shared/$(basename "$OUT") \\"
   echo "      -o measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md"
 fi
