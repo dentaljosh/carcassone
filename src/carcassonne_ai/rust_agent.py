@@ -360,6 +360,66 @@ def _draw_order_for_mirror(st, mirror_preplaces: bool) -> list[str]:
     return [tile.description] + descs
 
 
+def mirror_geometry_kwargs(game) -> dict:
+    """The RULES kwargs a Rust mirror must be built with to mirror `game`.
+
+    F9-A0 hole, closed 2026-08-03 (the caps/curve re-sweep build). The rules
+    profile reaches `game_wrapper.Game` through `rules_profile.active()`, and
+    `champion_factory`'s rust branch already forwarded the resolved geometry to
+    `RustFairAgent` — but the two CLAIRVOYANT adapters below built their mirrors
+    with a bare `MirrorState.from_deck(descs)`, i.e. always on the ENGINE OF
+    RECORD, whatever `--rules-profile` said. Measured under `fixed_v1`: the
+    Python board carries the retail start tile at (18,15) and the Rust mirror is
+    an empty engine6 board at ply 0 — and `_check_sync` is gated on
+    `CARC_RS_RECONCILE` (default OFF), so a `--backend rust --rules-profile
+    fixed_v1` eval would have graded two agents reading a different game from
+    the referee, silently.
+
+    Deriving the kwargs FROM THE GAME (rather than re-reading the profile) is
+    deliberate: the mirror's contract is with the `Game` object it is handed, so
+    an explicitly-constructed `Game(draw_rule=...)` is honoured too, and a
+    caller that builds the agent from a different Game than the board came from
+    still trips `_draw_order_for_mirror`'s pre-placement refusals.
+
+    DEFAULT-OFF: under `walled` every test below is False/engine, so this
+    returns `{}` minus the always-default `window_size`, and the FFI call is the
+    one it always made. Mirrors champion_factory's rust branch field for field.
+    """
+    kw: dict = {}
+    if getattr(game, "recentred", False):
+        kw["start_row"] = int(game.start_row)
+        kw["start_col"] = int(game.start_col)
+    if getattr(game, "fixed_start_tile", False):
+        kw["start_rule"] = "retail"
+    if getattr(game, "cloister_scan_fix", False):
+        kw["cloister_scan_fix"] = True
+    _dr = getattr(game, "draw_rule", None)
+    if _dr is not None and str(_dr) != "engine":
+        kw["draw_rule"] = str(_dr)
+    return kw
+
+
+def _resolve_mirror_window(game, window_size: int) -> int:
+    """The window the mirror must run: `game`'s, and it may not be contradicted.
+
+    Before 2026-08-03 the clairvoyant adapters stored `window_size` and never
+    passed it to the FFI, so a caller's value was silently dead. Now that it is
+    live, "the game quietly wins" would be a second silent class — the mirror
+    cannot be on a different window from the board it is digest-checked against.
+    No caller in the tree passes this argument, so the raise is a contract
+    statement, not a migration.
+    """
+    gw = getattr(game, "window_size", None)
+    if gw is None:
+        return int(window_size)
+    if int(window_size) != int(gw):
+        raise ValueError(
+            f"window_size={window_size} contradicts the Game's window_size={gw}; "
+            "the mirror must run the window of the board it mirrors. Build the "
+            "agent from the Game the board came from, or drop the argument.")
+    return int(gw)
+
+
 class RustFairAgent:
     """`carc_rs.FairAgentRs` behind the `FairHeuristicPriorAgent` surface.
 
@@ -775,7 +835,11 @@ class RustClairvoyantAgent:
         self._scfg = search_config_rs(cfg, self._sims)
         self._ms = None
         self._carc_rs = carc_rs
-        self._window_size = int(window_size)
+        self._window_size = _resolve_mirror_window(game, window_size)
+        # F9-A0: the mirror must run `game`'s RULES, not the engine of record.
+        # `{}` under `walled`, so the default FFI call is unchanged.
+        self._geom = mirror_geometry_kwargs(game)
+        self._mirror_preplaces = (self._geom.get("start_rule") == "retail")
         self._started = False
         self._plies = 0
         self._moves = 0
@@ -789,16 +853,21 @@ class RustClairvoyantAgent:
         st = board.state
         if st.next_tile is None:
             raise ValueError("start_game needs an INITIAL board (next_tile is None)")
-        descs = [st.next_tile.description] + [t.description for t in st.deck]
-        self._ms = self._carc_rs.MirrorState.from_deck(descs)
+        descs = _draw_order_for_mirror(st, self._mirror_preplaces)
+        self._ms = self._carc_rs.MirrorState.from_deck(
+            descs, window_size=self._window_size, **self._geom)
         self._started = True
         self._plies = self._moves = 0
         self.total_secs = self.prefix_secs = 0.0
         self.prefix_moves = 0
-        self._check_sync(board, "start_game")
+        # UNCONDITIONAL at ply 0 (F9-A0, 2026-08-03): one digest per GAME is free
+        # and it is the only cheap place a rules mismatch is guaranteed visible.
+        # `_check_sync` (reconcile-gated) stays the per-ply policy.
+        self.check_sync(board, "start_game")
 
     def start_game_from_seed(self, deck_seed: int | str) -> None:
-        self._ms = self._carc_rs.MirrorState.from_seed(str(deck_seed))
+        self._ms = self._carc_rs.MirrorState.from_seed(
+            str(deck_seed), window_size=self._window_size, **self._geom)
         self._started = True
         self._plies = self._moves = 0
         self.total_secs = self.prefix_secs = 0.0
@@ -966,7 +1035,11 @@ class RustCarryClairvoyantAgent:
         self._reconcile = reconcile_enabled(reconcile)
         self._scfg = search_config_rs(cfg, self._sims)
         self._carc_rs = carc_rs
-        self._window_size = int(window_size)
+        self._window_size = _resolve_mirror_window(game, window_size)
+        # F9-A0, same hole and same fix as RustClairvoyantAgent (see
+        # `mirror_geometry_kwargs`): `{}` under `walled`.
+        self._geom = mirror_geometry_kwargs(game)
+        self._mirror_preplaces = (self._geom.get("start_rule") == "retail")
         self._ps = None
         self._started = False
         self._plies = 0
@@ -995,12 +1068,14 @@ class RustCarryClairvoyantAgent:
         st = board.state
         if st.next_tile is None:
             raise ValueError("start_game needs an INITIAL board (next_tile is None)")
-        descs = [st.next_tile.description] + [t.description for t in st.deck]
-        self._open(self._carc_rs.MirrorState.from_deck(descs))
-        self._check_sync(board, "start_game")
+        descs = _draw_order_for_mirror(st, self._mirror_preplaces)
+        self._open(self._carc_rs.MirrorState.from_deck(
+            descs, window_size=self._window_size, **self._geom))
+        self.check_sync(board, "start_game")   # unconditional at ply 0 — see above
 
     def start_game_from_seed(self, deck_seed: int | str) -> None:
-        self._open(self._carc_rs.MirrorState.from_seed(str(deck_seed)))
+        self._open(self._carc_rs.MirrorState.from_seed(
+            str(deck_seed), window_size=self._window_size, **self._geom))
 
     def seat(self, deck_seed: int | str, prefix, board=None) -> None:
         """Seat MID-GAME: ``from_seed(deck_seed)`` + ``advance`` over ``prefix``.
@@ -1010,7 +1085,8 @@ class RustCarryClairvoyantAgent:
         and the same construction ``rust_world_search.RustWorldSearcher`` uses.
         Pass ``board`` to have the seating PROVED rather than assumed.
         """
-        ms = self._carc_rs.MirrorState.from_seed(str(int(deck_seed)))
+        ms = self._carc_rs.MirrorState.from_seed(
+            str(int(deck_seed)), window_size=self._window_size, **self._geom)
         n = 0
         for a in prefix:
             ms.advance(int(a))
