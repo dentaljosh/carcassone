@@ -958,3 +958,120 @@ base_tile_counts = {
     "three_split_road": 4,
     "crossroads": 1
 }
+
+
+# ===========================================================================
+# R9 — "a field half-edge may not lie on a city edge"   (F9 remediation)
+#
+#   *** DEFAULT OFF.  Building this flag adopts nothing. ***
+#
+# Found 2026-08-03 by the JCloisterZone differential tile oracle
+# (measurement/jcz_spike_20260803/SPIKE_REPORT.md, Finding 1; the oracle is now
+# tests/test_jcz_tile_oracle.py).  Exactly one of our 32 tile kinds declares a
+# farm region containing half-edges that lie on one of its own CITY edges:
+#
+#     city_top_straight_road (JCZ BA/RCr, x4 in the deck)
+#         north field region tile_connections = [TLL, TLT, TRT, TRR]
+#         TLT and TRT are the two halves of the NORTH edge — and north is a city.
+#         JCZ lists the equivalent of [TLL, TRR] only.  The other 31 kinds agree
+#         with JCZ field-for-field, and JCZ's whole base set is clean.
+#
+# `FarmUtil.find_farm` — and `flat_leaf`, `flat_leaf_cy` and the Rust
+# `leaf/decomp.rs`, which all read this same `tile_connections` data — cross a
+# tile_connection UNCONDITIONALLY (no grass/city gate anywhere on the
+# traversal; the data is supposed to encode that).  So the two surplus entries
+# let a field walk straight through a city: two RCr tiles placed city-to-city
+# have their under-city field strips merged into ONE farm.  Reproducer +
+# control: measurement/jcz_spike_20260803/rcr_merge_probe.py, promoted to
+# tests/test_r9_field_on_city_edge.py.
+#
+# --- what the flag does ----------------------------------------------------
+# ON  (CARCASSONNE_FIX_R9=1): every farm region drops the tile_connections that
+#     lie on a city edge of the same tile.  Derived by predicate, not by a
+#     hand-typed patch, so it cannot transcribe wrong and it stays correct if
+#     the deck ever gains another such tile.  Today it removes exactly
+#     {TLT, TRT} from one region of one kind — `R9_OVERRIDE` records precisely
+#     what changed and is asserted against the JCZ oracle.
+# OFF (default): `base_tiles` is the literal data above, untouched, and
+#     `scripts/rustport/export_tile_data.py`'s SEMANTIC_DIGEST is unchanged.
+#
+# --- riders ----------------------------------------------------------------
+# * ADOPTION IS NOT MINE TO MAKE.  This is a rules/data change that moves FARM
+#   scoring, which is exactly the axis the v2.7/v2.9 leaf's farm caps and
+#   curves were tuned against, so `feedback_bug_fix_shifts_optima` applies: if
+#   this is ever adopted, RE-SWEEP the leaf's farm caps/weights before trusting
+#   any pre-R9 bench number.  See docs/F9_BUILD_SPEC_20260802.md §2.4.
+# * The flag is PROCESS-GLOBAL by construction: `base_tiles` is an import-time
+#   module global here, and the Rust registry is a `OnceLock` — neither engine
+#   has a per-Game tile table.  Set the env var before importing anything.
+# * The flag changes NO tile description, count or insertion order, so deck
+#   shuffles, action spaces, board reprs and legal masks are bit-identical
+#   either way.  Only farm decomposition moves.
+# ===========================================================================
+R9_ENV_VAR = "CARCASSONNE_FIX_R9"
+
+
+def _r9_env_on(environ=None) -> bool:
+    raw = (os.environ if environ is None else environ).get(R9_ENV_VAR, "")
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
+
+
+def r9_farm_override(tiles=None) -> dict:
+    """`{description: [FarmerConnection, ...]}` for every tile whose farm data
+    changes under R9 — computed from the tile's own geometry.
+
+    A *road* edge legitimately carries field on both halves (a road is a line,
+    not a band); only a **city** edge carries none.  That is the whole rule.
+    Pure function: it does not consult the flag and does not mutate anything.
+    """
+    tiles = base_tiles if tiles is None else tiles
+    override = {}
+    for name, tile in tiles.items():
+        city_edges = {side for group in (tile.city or []) for side in group}
+        if not city_edges:
+            continue
+        new_farms, changed = [], False
+        for fc in (tile.farms or []):
+            keep = [fs for fs in fc.tile_connections if fs.get_side() not in city_edges]
+            if len(keep) != len(fc.tile_connections):
+                changed = True
+                new_farms.append(FarmerConnection(
+                    farmer_positions=list(fc.farmer_positions),
+                    tile_connections=keep,
+                    city_sides=list(fc.city_sides),
+                ))
+            else:
+                new_farms.append(fc)
+        if changed:
+            override[name] = new_farms
+    return override
+
+
+def _r9_apply(tiles: dict, override: dict) -> None:
+    """Replace each overridden tile with a fresh, otherwise-identical `Tile`.
+
+    A fresh object rather than an in-place mutation: `Tile` memoises
+    `_type_cache` / `_rot_sig_cache` / `_turn_cache` lazily and hands out
+    canonical shared references, so mutating farms under a live cache would be
+    a correctness trap.  At import time nothing holds a reference yet.
+    """
+    for name, farms in override.items():
+        old = tiles[name]
+        tiles[name] = Tile(
+            description=old.description, turns=old.turns,
+            road=old.road, river=old.river, city=old.city, grass=old.grass,
+            farms=farms, shield=old.shield, chapel=old.chapel,
+            flowers=old.flowers, inn=old.inn, cathedral=old.cathedral,
+            unplayable_sides=old.unplayable_sides, image=old.image,
+        )
+
+
+#: What R9 *would* change, always available regardless of the flag state (the
+#: exporter and the parity tests need it in both states).
+R9_OVERRIDE = r9_farm_override(base_tiles)
+
+#: Resolved flag state for this process.  Read once, at import.
+R9_FIELD_ON_CITY_EDGE_FIX = _r9_env_on()
+
+if R9_FIELD_ON_CITY_EDGE_FIX:
+    _r9_apply(base_tiles, R9_OVERRIDE)

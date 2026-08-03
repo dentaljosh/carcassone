@@ -12,7 +12,7 @@
 
 use super::{FarmerConnectionDef, Side, FarmerSide, TileDef};
 
-pub const SOURCE_SHA256: &str = "1a05c6c0ad071e4e55e5302e10fd551a7dd32fea85fd7ddeb7c3c18d417e3cce";
+pub const SOURCE_SHA256: &str = "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c";
 pub const SEMANTIC_DIGEST: &str = "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800";
 
 pub static BASE_TILES: &[TileDef] = &[
