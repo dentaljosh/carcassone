@@ -46,7 +46,16 @@ Corpora (`--corpus`, repeatable, or `all`):
 Config matrix (`--configs`): `core` = the production curve125 leaf + the three
 fixture dialects; `all` adds the off-production stressors that
 `scripts/reconcile_cy_leaf.py` uses (pre-v2.7 caps, a weird schedule, the two C7
-wave-2 terms, the F6 soft caps, the v2.10 bag-close gate).
+wave-2 terms, the F6 soft caps, the v2.10 bag-close gate); `farmoff` = `core` plus
+the three **F7b farm knockouts** (`farm_base_off`, `farm_growth_off`, both).
+
+⚠️ The `farmoff` configs are the ONE family compared on **two** legs, not three:
+`flat_leaf_cy.pyx` deliberately does not implement them (roadmap F7b — the ablation
+cells run `--backend rust`, so no Python leaf is computed in-cell, and the exact-K
+tail scores the TRUE final score with farms intact by design). For those configs the
+Cython leg is skipped and the identity reduces to **pure-Python == Rust**;
+`tests/test_f7b_farm_knockout.py` separately proves the dispatcher refuses the cy
+fast path for them, so a stale `.so` can never serve an intact-farm leaf.
 
 Usage:
     .venv/bin/python scripts/rustport/reconcile_leaf.py --corpus all --workers 12
@@ -109,6 +118,14 @@ _CURVE_V29 = (-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0)
 _CURVE125 = (-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25)   # governance/PRODUCTION.yaml
 
 
+# F7b farm-knockout configs. These are the ONE knob family the Cython leaf
+# deliberately does not implement (roadmap F7b: the ablation cells run
+# `--backend rust`, where no Python leaf is computed at all), so for these the gate
+# runs TWO legs — pure-Python flat vs Rust — and asserts separately that the
+# DISPATCHER refuses the cy fast path for them (tests/test_f7b_farm_knockout.py).
+CY_UNSUPPORTED = frozenset({"farmbaseoff", "farmgrowthoff", "farmbothoff"})
+
+
 def _cfgs(which: str) -> dict[str, LeafConfig]:
     core = {
         # the leaf of record: v2_9_2_Bmild_cap8_curve125 (leaf_hash a36d2e15a3b3d71d)
@@ -122,6 +139,18 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
                           meeple_k=2.0, v29_meeple_curve=_CURVE_V29),
     }
     if which == "core":
+        return core
+    if which == "farmoff":
+        # The two F7b cells, plus both-off (the joint knockout: a farm-blind leaf).
+        # Built on the champion leaf so the ONLY difference from `prod-curve125` is
+        # the knocked-out farm term — the same contrast the ablation cells play.
+        prod = dict(closure_p=dict(_CLOSURE), bonus_cap=8.0, opp_bonus_cap=8.0,
+                    meeple_k=2.0, v29_meeple_curve=_CURVE125)
+        core.update({
+            "farmbaseoff": LeafConfig(**prod, farm_base_off=True),
+            "farmgrowthoff": LeafConfig(**prod, farm_growth_off=True),
+            "farmbothoff": LeafConfig(**prod, farm_base_off=True, farm_growth_off=True),
+        })
         return core
     c7 = dict(closure_p=dict(_CLOSURE), bonus_cap=8.0, opp_bonus_cap=8.0, meeple_k=2.0,
               v29_meeple_curve=_CURVE_V29)
@@ -180,6 +209,8 @@ def _to_rs(cfg: LeafConfig):
         bool(getattr(cfg, "bag_close", False)),
         bool(cfg.tile_counting_closure),
         float(cfg.closure_continuous_slack),
+        bool(getattr(cfg, "farm_base_off", False)),
+        bool(getattr(cfg, "farm_growth_off", False)),
     )
 
 
@@ -229,9 +260,13 @@ def check_position(state, ms, cfgs, rcfgs, tag: str, out: dict) -> None:
     # --- the leaf itself ---
     for name, cfg in cfgs.items():
         rcfg = rcfgs[name]
+        # F7b farm knockouts: two legs (see CY_UNSUPPORTED). `cy` is set to the
+        # python leg so the identity below reduces to python==rust WITHOUT weakening
+        # the comparison for every other config.
+        two_leg = name in CY_UNSUPPORTED
         for p in (0, 1):
             py_i, py_f = _py(state, p, cfg)
-            cy_i, cy_f = _cy(state, p, cfg)
+            cy_i, cy_f = (py_i, py_f) if two_leg else _cy(state, p, cfg)
             rs_i, rs_f = _rs(ms, p, rcfg)
             out["values"] += 2
             out["by_config"][name] = out["by_config"].get(name, 0) + 2
@@ -246,11 +281,18 @@ def check_position(state, ms, cfgs, rcfgs, tag: str, out: dict) -> None:
                     "python": hpy, "cython": hcy, "rust": hrs,
                     "python_repr": repr(py_f), "rust_repr": repr(rs_f),
                     "rust_terms": dict(ms.leaf_terms(p, rcfg))})
+            # A knockout that never changes a value would produce a null cell for a
+            # boring reason. Count how often it actually bites vs the champion leaf.
+            if two_leg and "prod-curve125" in cfgs:
+                prod_f = _py(state, p, cfgs["prod-curve125"])[1]
+                out["knockout_seen"][name] = out["knockout_seen"].get(name, 0) + 1
+                if _hx(prod_f) != _hx(py_f):
+                    out["knockout_bites"][name] = out["knockout_bites"].get(name, 0) + 1
 
 
 def _new_out() -> dict:
     return {"positions": 0, "values": 0, "mismatches": [], "by_config": {},
-            "disk_values": 0, "plies": 0}
+            "disk_values": 0, "plies": 0, "knockout_seen": {}, "knockout_bites": {}}
 
 
 def _merge(a: dict, b: dict) -> None:
@@ -261,6 +303,9 @@ def _merge(a: dict, b: dict) -> None:
     a["mismatches"].extend(b["mismatches"])
     for k, v in b["by_config"].items():
         a["by_config"][k] = a["by_config"].get(k, 0) + v
+    for key in ("knockout_seen", "knockout_bites"):
+        for k, v in b.get(key, {}).items():
+            a[key][k] = a[key].get(k, 0) + v
 
 
 # ---------------------------------------------------------------------------
@@ -543,7 +588,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", action="append", default=None,
                     choices=CORPORA + ["all"])
-    ap.add_argument("--configs", default="all", choices=["core", "all"])
+    ap.add_argument("--configs", default="all", choices=["core", "all", "farmoff"])
     ap.add_argument("--limit", type=int, default=None,
                     help="cap records per corpus (screening only)")
     ap.add_argument("--stride", type=int, default=8,
@@ -578,6 +623,19 @@ def main(argv=None) -> int:
     total_values = sum(c["values"] + c["disk_values"] for c in per_corpus.values())
     ok = not mismatches
 
+    # F7b: per-knockout "does it bite" tally (values that differ from the champion
+    # leaf on the same position). Empty unless --configs farmoff.
+    knockout_bites: dict[str, dict] = {}
+    for c in per_corpus.values():
+        for k, seen in c["knockout_seen"].items():
+            e = knockout_bites.setdefault(
+                k, {"values_compared": 0, "values_changed_vs_champion": 0})
+            e["values_compared"] += seen
+            e["values_changed_vs_champion"] += c["knockout_bites"].get(k, 0)
+    for e in knockout_bites.values():
+        e["frac_changed"] = round(e["values_changed_vs_champion"]
+                                  / max(1, e["values_compared"]), 4)
+
     payload = {
         "gate": "G2/leaf",
         "verdict": "PASS" if ok else "FAIL",
@@ -597,6 +655,8 @@ def main(argv=None) -> int:
                            "by_config": v["by_config"],
                            "mismatches": len(v["mismatches"])}
                        for k, v in sorted(per_corpus.items())},
+        "cy_unsupported_configs": sorted(CY_UNSUPPORTED & set(_cfgs(args.configs))),
+        "knockout_bites": knockout_bites,
         "total_values_compared": total_values,
         "mismatch_count": len(mismatches),
         "mismatches": mismatches[:20],
@@ -607,6 +667,8 @@ def main(argv=None) -> int:
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     tag = "_".join(corpora) if len(corpora) < len(CORPORA) else "all"
+    if args.configs == "farmoff":       # never overwrite the standing G2 artifact
+        tag = f"farmoff_{tag}"
     out = Path(args.out) if args.out else OUTDIR / f"G2_leaf_{tag}.json"
     out.write_text(json.dumps(payload, indent=2, default=str))
 

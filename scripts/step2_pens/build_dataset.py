@@ -128,7 +128,7 @@ assert N_FEAT == 89, N_FEAT
 
 
 def _cfg_hash(cfg):
-    _off = {"bag_close": False, "v29_meeple_return_k": 0.0, "v29_farm_flip_k": 0.0, "soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0}  # default-off C7/v2.10 knobs
+    _off = {"bag_close": False, "v29_meeple_return_k": 0.0, "v29_farm_flip_k": 0.0, "soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0, "farm_base_off": False, "farm_growth_off": False}  # default-off C7/v2.10 knobs
     d = {k: (list(v) if isinstance(v, tuple) else v) for k, v in dc.asdict(cfg).items()
          if not (k in _off and v == _off[k])}
     return hashlib.sha256(json.dumps(d, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
