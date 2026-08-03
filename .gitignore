@@ -93,3 +93,7 @@ scripts/m5_bench/bundle/
 scripts/m5_bench/results/
 scripts/m5_bench/cython_build.log
 scripts/m5_bench/MANIFEST.json
+
+# F9/A3: worktree-local shadow of the carc_rs extension, so a build here can
+# never reach the shared venv while a live eval farm is importing from it.
+.rsshadow/

@@ -48,6 +48,24 @@ class CarcassonneGameState:
         # so string_representation can iterate ~80 coords instead of walking
         # the full 1225-cell board. Maintained by StateUpdater.play_tile.
         self.placed_coords: set = set()
+        # Patched (vendored fork, F9/A3): the unplaceable-tile DRAW RULE.
+        #   False (DEFAULT, the walled engine of record) -- a TILES-phase
+        #     PassAction discards the tile, draws the next one AND hands the
+        #     turn to the opponent: the drawer loses their whole placement.
+        #   True  -- the retail rule: reveal, set the tile aside (it leaves the
+        #     game), draw again, SAME player continues.  Opt-in only, via
+        #     `Game(draw_rule="redraw")`.
+        # Set on the state rather than passed to StateUpdater because every
+        # transition helper is a staticmethod over the state alone; the flag
+        # therefore rides deepcopy/clone into every MCTS node and PIMC world.
+        self.redraw_unplaceable: bool = False
+        # Tiles that left the game without being placed, in removal order.
+        # Written under BOTH draw rules (it is pure telemetry -- no scorer,
+        # repr, mask or leaf reads it), so the C-lite event counter can price
+        # the flag-off discard rate too.  Only `redraw_unplaceable` makes it
+        # BEHAVIOURAL (turn retention, the total_tiles decrement and the
+        # solver's re-marginalization all key off it).
+        self.set_aside_tiles: list = []
 
     def __deepcopy__(self, memo):
         # Patched (vendored fork, 2026-05-13): bypass the default recursive
@@ -75,6 +93,7 @@ class CarcassonneGameState:
         new.current_player = self.current_player
         new.last_tile_action = self.last_tile_action
         new.next_tile = self.next_tile
+        new.redraw_unplaceable = self.redraw_unplaceable
 
         # Lists/sets of immutable refs — shallow copy the container only.
         new.deck = self.deck[:]
@@ -85,6 +104,7 @@ class CarcassonneGameState:
         new.placed_meeples = [pl[:] for pl in self.placed_meeples]
         new.open_positions = set(self.open_positions)
         new.placed_coords = set(self.placed_coords)
+        new.set_aside_tiles = self.set_aside_tiles[:]
 
         # 2D board: refs are immutable Tile / None; shallow per row.
         new.board = [row[:] for row in self.board]

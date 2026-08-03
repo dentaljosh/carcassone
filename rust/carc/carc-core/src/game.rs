@@ -109,14 +109,59 @@ impl StartRule {
     }
 }
 
+/// The unplaceable-tile draw rule (F9/A3, audit RF-D-2), mirroring
+/// `game_wrapper.DRAW_RULES`.
+///
+/// * `"engine"` — the vendored engine's native behaviour: a TILES-phase
+///   `PassAction` discards the unplaceable tile, draws the next AND passes the
+///   turn, so the drawer forfeits a placement.  This is what a **missing**
+///   `draw_rule` means and it stays the default everywhere.
+/// * `"redraw"` — the retail rule: reveal, set the tile aside (it leaves the
+///   game), draw again, same player continues.
+///
+/// Anything else is an error, never a silent default: the two rules decode
+/// DIFFERENT games from the same `(deck_seed, actions)`.  The rules clause and
+/// the recursion / bag sub-decisions are documented on the Python twin,
+/// `StateUpdater._apply_action_to`.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum DrawRule {
+    Engine,
+    Redraw,
+}
+
+impl DrawRule {
+    pub fn parse(s: Option<&str>) -> Result<Self, String> {
+        match s {
+            None | Some("engine") => Ok(DrawRule::Engine),
+            Some("redraw") => Ok(DrawRule::Redraw),
+            Some(other) => Err(format!(
+                "unknown draw_rule {other:?}; expected 'engine' or 'redraw'"
+            )),
+        }
+    }
+
+    pub const fn value(self) -> &'static str {
+        match self {
+            DrawRule::Engine => "engine",
+            DrawRule::Redraw => "redraw",
+        }
+    }
+
+    pub const fn redraw_unplaceable(self) -> bool {
+        matches!(self, DrawRule::Redraw)
+    }
+}
+
 /// Game-setup configuration.  `GameConfig::default()` is byte-compatible with
-/// the walled engine of record: engine start rule, start (6, 15), window 25.
+/// the walled engine of record: engine start rule, start (6, 15), window 25,
+/// engine draw rule.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct GameConfig {
     pub window_size: i32,
     pub start_rule: StartRule,
     pub start_row: i32,
     pub start_col: i32,
+    pub draw_rule: DrawRule,
 }
 
 impl Default for GameConfig {
@@ -126,6 +171,7 @@ impl Default for GameConfig {
             start_rule: StartRule::Engine,
             start_row: DEFAULT_START_ROW,
             start_col: DEFAULT_START_COL,
+            draw_rule: DrawRule::Engine,
         }
     }
 }
@@ -148,8 +194,10 @@ impl GameConfig {
         start_row: Option<i32>,
         start_col: Option<i32>,
         window_size: i32,
+        draw_rule: Option<&str>,
     ) -> Result<Self, String> {
         let rule = StartRule::parse(start_rule)?;
+        let draw = DrawRule::parse(draw_rule)?;
         let row = start_row.unwrap_or(DEFAULT_START_ROW);
         let col = start_col.unwrap_or(DEFAULT_START_COL);
 
@@ -179,6 +227,7 @@ impl GameConfig {
             start_rule: rule,
             start_row: row,
             start_col: col,
+            draw_rule: draw,
         })
     }
 
@@ -245,6 +294,9 @@ impl Game {
     /// `placed_coords` (`board_repr.centroid_sums`).
     pub fn from_deck_with_config(deck: Vec<u16>, cfg: GameConfig) -> Result<Self, String> {
         let mut state = GameState::from_deck_with_start(deck, cfg.starting_position());
+        // F9/A3: latch the draw rule onto the state so it rides `clone()` into
+        // every search node, determinized world and solver child.
+        state.redraw_unplaceable = cfg.draw_rule.redraw_unplaceable();
         if cfg.start_rule.fixed_start_tile() {
             let base = retail_start_base()?;
             state.preplace_start_tile(base, RETAIL_START_TILE)?;
@@ -307,7 +359,16 @@ impl Game {
             self.sum_col += ta.coord.col as i64;
             self.tile_count += 1;
         }
+        let n_set_aside_before = self.state.set_aside.len();
         self.state.apply_action(action);
+        // F9/A3: a tile set aside leaves the game, so `total_tiles` must shrink
+        // with it or `total_tiles - tile_count` stops equalling
+        // `deck_len + has_next`.  `game_wrapper._next_total_tiles` is the twin.
+        // Gated on the flag: flags-off keeps the pre-existing (latent) drift, so
+        // the byte-identity gate stays clean.
+        if self.state.redraw_unplaceable {
+            self.total_tiles -= (self.state.set_aside.len() - n_set_aside_before) as i64;
+        }
         self.offset = offset_from_centroid_sums(
             self.state.starting_position,
             self.sum_row,
@@ -445,7 +506,7 @@ mod tests {
         assert_eq!(d.start_rule, StartRule::Engine);
         assert_eq!((d.start_row, d.start_col), (6, 15));
         assert_eq!(d.window_size, 25);
-        assert_eq!(GameConfig::resolve(None, None, None, 25).unwrap(), d);
+        assert_eq!(GameConfig::resolve(None, None, None, 25, None).unwrap(), d);
         // and it is byte-identical to the pre-P5 constructor
         let a = Game::from_seed("20260730");
         let b = Game::from_seed_with_config("20260730", d).unwrap();
@@ -466,14 +527,14 @@ mod tests {
 
     #[test]
     fn odd_shifts_are_refused_even_shifts_are_not() {
-        assert!(GameConfig::resolve(None, Some(18), None, 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(6), None, 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(17), None, 25).is_err());
-        assert!(GameConfig::resolve(None, Some(5), None, 25).is_err());
-        assert!(GameConfig::resolve(None, None, Some(16), 25).is_err());
-        assert!(GameConfig::resolve(None, None, Some(17), 25).is_ok());
-        assert!(GameConfig::resolve(None, Some(-2), None, 25).is_err()); // off-board
-        assert!(GameConfig::resolve(None, Some(36), None, 25).is_err());
+        assert!(GameConfig::resolve(None, Some(18), None, 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(6), None, 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(17), None, 25, None).is_err());
+        assert!(GameConfig::resolve(None, Some(5), None, 25, None).is_err());
+        assert!(GameConfig::resolve(None, None, Some(16), 25, None).is_err());
+        assert!(GameConfig::resolve(None, None, Some(17), 25, None).is_ok());
+        assert!(GameConfig::resolve(None, Some(-2), None, 25, None).is_err()); // off-board
+        assert!(GameConfig::resolve(None, Some(36), None, 25, None).is_err());
     }
 
     #[test]

@@ -302,6 +302,54 @@ RETAIL_START_TILE = "city_top_straight_road"
 ENGINE_START_ROW, ENGINE_START_COL = 6, 15
 ENGINE_BOARD_ROWS, ENGINE_BOARD_COLS = 35, 35
 
+# --------------------------------------------------------------------------- #
+# F9/A3 — THE UNPLACEABLE-TILE DRAW RULE (audit RF-D-2, spec §A3).             #
+#                                                                             #
+# `"engine"` (DEFAULT, the walled engine of record): a TILES-phase PassAction  #
+# discards the unplaceable tile, draws the next AND passes the turn — the      #
+# drawer forfeits a whole placement and every turn parity after it flips.      #
+# Measured 8.5 discards / 100 games, 7.0% of games affected (audit RF-D-2).    #
+#                                                                             #
+# `"redraw"` (opt-in): the retail rule — reveal, set the tile aside (it leaves #
+# the game), draw again, SAME player continues, repeat while unplaceable. The  #
+# rules clause and both sub-decision resolutions (recursion; the bag / the     #
+# exact solver's histogram) are documented at length on                        #
+# `StateUpdater._apply_action_to`, which is where the divergence lives.        #
+#                                                                             #
+# LIKE `start_rule` AND `grid_rule`, THIS TRAVELS IN THE SAVE PAYLOAD:         #
+# (deck_seed, actions) decodes to a DIFFERENT game under the two rules, so a   #
+# record that omits the rule is not replayable. A payload with no `draw_rule`  #
+# was written before this shipped and means "engine" (DRAW_RULE_LEGACY).       #
+# --------------------------------------------------------------------------- #
+DRAW_RULE_ENGINE = "engine"
+DRAW_RULE_REDRAW = "redraw"
+DRAW_RULES = (DRAW_RULE_ENGINE, DRAW_RULE_REDRAW)
+DRAW_RULE_LEGACY = DRAW_RULE_ENGINE   # what a record with no `draw_rule` means
+
+
+def _next_total_tiles(total_tiles: int, state, n_set_aside_before: int) -> int:
+    """`board.total_tiles` after a transition, minus any tile set aside by it.
+
+    Under `draw_rule="redraw"` a tile can leave the game unplaced, so the
+    ORIGINAL total stops describing the game. Two live definitions of "tiles
+    left" would then drift apart by the set-aside count:
+
+      * `len(state.deck) + (state.next_tile is not None)` — what
+        `fair_agent.k_remaining` and the exact-endgame latch band use;
+      * `board.total_tiles - board.tile_count` — what the window audit
+        (`Game._audit_window`), `scripts/analyzer/clip_trace.py` and
+        `features.progress` use.
+
+    Decrementing keeps them equal, which is the bag-accounting invariant that
+    `tests/test_unplaceable_redraw.py::test_the_two_tiles_left_definitions_agree_
+    under_redraw` pins. Flag-OFF this returns `total_tiles` unchanged — the
+    flag-off discard path leaves the same latent drift it always had, and
+    byte-identity forbids fixing it here.
+    """
+    if not state.redraw_unplaceable:
+        return total_tiles
+    return total_tiles - (len(state.set_aside_tiles) - n_set_aside_before)
+
 
 def check_start_position(start_row: int, start_col: int) -> None:
     """Refuse an ODD shift or an off-board start — mirrors the Rust `check_flags`.
@@ -394,6 +442,7 @@ class Game:
         fixed_start_tile: bool = False,
         start_row: int | None = None,
         start_col: int | None = None,
+        draw_rule: str = DRAW_RULE_ENGINE,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -450,6 +499,15 @@ class Game:
         check_start_position(self.start_row, self.start_col)
         self.recentred = (self.start_row, self.start_col) != (
             ENGINE_START_ROW, ENGINE_START_COL)
+        # F9/A3 — the unplaceable-tile draw rule (audit RF-D-2). Named rules,
+        # never a loose bool at the CLI, and never a silent default: picking one
+        # for the caller would decode a DIFFERENT game from the same
+        # (deck_seed, actions), exactly as `start_rule`/`grid_rule` would.
+        if draw_rule not in DRAW_RULES:
+            raise ValueError(
+                f"unknown draw_rule {draw_rule!r}; expected one of {DRAW_RULES}")
+        self.draw_rule = str(draw_rule)
+        self.redraw_unplaceable = self.draw_rule == DRAW_RULE_REDRAW
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -506,6 +564,11 @@ class Game:
         assert not any(state.abbots), (
             f"scope violation: abbots enabled ({state.abbots}); locked scope is "
             "2p Base+Farmers, no Abbots")
+        # F9/A3: latch the draw rule onto the state so it rides deepcopy into
+        # every MCTS node, PIMC world and solver clone. Assigned unconditionally
+        # (it is already False from the ctor) so the flag can never be *absent*
+        # on a state the engine is about to transition.
+        state.redraw_unplaceable = self.redraw_unplaceable
         if self.fixed_start_tile:
             preplace_retail_start_tile(state)
         # +1 for the first tile already drawn into next_tile, + any tile already on
@@ -564,6 +627,7 @@ class Game:
         """
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
+        n_set_aside_before = len(state.set_aside_tiles)
         new_state = StateUpdater.apply_action(game_state=state, action=action)
         # Carry the centroid sums forward (O(1)) instead of re-scanning the whole
         # board in Board.from_state. Bit-identical to the full scan; verified by
@@ -571,7 +635,8 @@ class Game:
         sr, sc, tc = self._next_centroid_sums(board, action)
         new_board = Board(
             state=new_state,
-            total_tiles=board.total_tiles,
+            total_tiles=_next_total_tiles(board.total_tiles, new_state,
+                                          n_set_aside_before),
             offset=offset_from_centroid_sums(new_state, sr, sc, tc, self.window_size),
             sum_row=sr,
             sum_col=sc,
@@ -588,7 +653,10 @@ class Game:
         """
         state = board.state
         action = self._decode_for(state, board.offset, action_idx)
+        n_set_aside_before = len(state.set_aside_tiles)
         StateUpdater.apply_action_inplace(game_state=state, action=action)
+        board.total_tiles = _next_total_tiles(board.total_tiles, state,
+                                              n_set_aside_before)
         # Offset depends on placed tiles. Update the running centroid sums in
         # O(1) (only a tile placement moves the centroid) and re-derive the
         # offset — replaces the full board re-scan (compute_window_offset).

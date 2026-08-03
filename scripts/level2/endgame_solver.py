@@ -74,6 +74,31 @@ def _legal(game: Game, board: Board) -> np.ndarray:
     return np.flatnonzero(game.get_valid_moves(board))
 
 
+def _drew_a_tile(board: Board, nb: Board, was_meeples: bool) -> bool:
+    """Did the transition `board -> nb` DRAW a replacement tile from the bag?
+
+    Two transitions draw. The MEEPLES-phase one (`was_meeples`) has always been
+    marginalized. The second is the F9/A3 redraw: under `draw_rule="redraw"` a
+    TILES-phase Pass sets the unplaceable tile aside and draws again, and that
+    draw is a chance event of exactly the same kind.
+
+    Marginalizing it is REQUIRED, not cosmetic: `_key` hashes the SORTED bag in
+    marginalized mode (the multiset is the information set), so if the value of
+    a redraw depended on which tile happened to sit at the front of `state.deck`
+    the TT would return one deck order's answer for another's. Marginalizing
+    restores order-independence and makes the key sound again.
+
+    (The same unsoundness is latent on the flag-OFF discard path, which also
+    pops the front without marginalizing. It is deliberately NOT fixed: flags
+    off must stay byte-identical, and the gate that proves it would fail if
+    this returned True there. See spec docs/F9_BUILD_SPEC_20260802.md §A3.)
+    """
+    if was_meeples:
+        return True
+    return (nb.state.redraw_unplaceable
+            and len(nb.state.set_aside_tiles) > len(board.state.set_aside_tiles))
+
+
 def _clone_with_tile(board: Board, tile, remaining_deck: list) -> Board:
     """A copy of `board` whose in-hand tile is `tile` and future deck is
     `remaining_deck`. Board layout (offset/centroid) is unchanged by a deck
@@ -161,7 +186,8 @@ class _Solver:
         vals = []
         for a in _legal(self.game, board):
             nb, _ = self.game.get_next_state(board, int(a))
-            if self.mode == "marginalized" and was_meeples and not _terminal(nb):
+            if (self.mode == "marginalized" and not _terminal(nb)
+                    and _drew_a_tile(board, nb, was_meeples)):
                 vals.append(self._chance(nb))   # marginalize the just-happened draw
             else:
                 vals.append(self._value(nb))
@@ -263,7 +289,7 @@ def solve(game: Game, board: Board, mode: str = "marginalized",
         nb, _ = game.get_next_state(board, a)
         if _terminal(nb):
             child_values[a] = float(flat_base_score(nb.state, 0))
-        elif mode == "marginalized" and was_meeples:
+        elif mode == "marginalized" and _drew_a_tile(board, nb, was_meeples):
             child_values[a] = s._chance(nb)
         elif alphabeta:                       # clairvoyant + pruning (full window)
             child_values[a] = s._value_ab(nb, -math.inf, math.inf)

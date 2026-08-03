@@ -187,7 +187,7 @@ impl<'a> Solver<'a> {
         for a in g.legal_actions() {
             let mut nb = g.clone();
             nb.advance(a).map_err(SolveError::Engine)?;
-            if was_meeples && !nb.state.is_terminated() {
+            if drew_a_tile(g, &nb, was_meeples) && !nb.state.is_terminated() {
                 vals.push(self.chance(&nb)?);
             } else {
                 vals.push(self.value(&nb)?);
@@ -263,6 +263,24 @@ impl<'a> Solver<'a> {
     }
 }
 
+/// `endgame_solver._drew_a_tile` — did `g -> nb` DRAW a replacement from the bag?
+///
+/// Two transitions draw.  The MEEPLES-phase one (`was_meeples`) has always been
+/// marginalized.  The second is the F9/A3 redraw: under `draw_rule="redraw"` a
+/// TILES-phase pass sets the unplaceable tile aside and draws again, and that
+/// draw is a chance event of exactly the same kind.
+///
+/// Marginalizing it is REQUIRED, not cosmetic: [`Solver::key`] hashes the
+/// **sorted** bag (the multiset is the information set), so letting a redraw's
+/// value depend on which tile happened to sit at the front of the deck would
+/// return one deck order's answer for another's.  The same unsoundness is latent
+/// on the flag-OFF discard path and is deliberately NOT fixed there — flags-off
+/// must stay byte-identical.
+fn drew_a_tile(g: &Game, nb: &Game, was_meeples: bool) -> bool {
+    was_meeples
+        || (nb.state.redraw_unplaceable && nb.state.set_aside.len() > g.state.set_aside.len())
+}
+
 /// `endgame_solver.solve(game, board, mode="marginalized", budget, alphabeta=False)`.
 ///
 /// Every legal root action is solved exactly (no cross-action pruning), so a
@@ -278,7 +296,7 @@ pub fn solve_marginalized(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
         nb.advance(a).map_err(SolveError::Engine)?;
         let v = if nb.state.is_terminated() {
             nb.flat_base_score(0) as f64
-        } else if was_meeples {
+        } else if drew_a_tile(g, &nb, was_meeples) {
             s.chance(&nb)?
         } else {
             s.value(&nb)?
