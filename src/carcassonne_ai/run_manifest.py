@@ -29,6 +29,12 @@ _LEAF_ENV_KEYS = (
     "CARCASSONNE_V25_TILE_COUNTING",
     "CARCASSONNE_V25_CLOSURE_SLACK",
     "CARCASSONNE_V25_ONE_OPEN_ONLY",
+    # D0/R9 (2026-08-03): env-latched FARM-DATA flag. It belongs in the LEAF env
+    # block, not just the rules_profile block, for two reasons: it moves farm
+    # decomposition — the axis every one of the caps above was tuned against
+    # (feedback_bug_fix_shifts_optima) — and it is readable here even from the
+    # harnesses that never resolve a rules profile.
+    "CARCASSONNE_FIX_R9",
     "CARC_RUN",
 )
 

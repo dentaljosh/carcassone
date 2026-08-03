@@ -47,6 +47,27 @@ _ENGINE_START_ROW, _ENGINE_START_COL = 6, 15
 _ENGINE_BOARD_ROWS, _ENGINE_BOARD_COLS = 35, 35
 _DEFAULT_WINDOW = 25
 
+# The A2/A3 vocabularies. Left element is the engine of record in both cases, so
+# a profile that says nothing new adds no `Game(...)` argument.
+_CLOISTER_SCANS = ("drifting", "fixed")          # RF-D-1: drifting == today
+_UNPLACEABLE_RULES = ("next_player", "redraw")   # RF-D-2: next_player == today
+
+# R9 is a DATA flag, not a Game kwarg: `base_deck` derives it at IMPORT time from
+# the process environment and the Rust registry latches it in a `OnceLock`, so it
+# can only be set BEFORE the first import — there is no per-Game seam to thread
+# it through (see the D0/R9 merge). The profile therefore cannot *apply* it; it
+# can only declare that a leg is expected to carry it, and stamp whether the
+# process actually did. Spellings mirror `base_deck._r9_env_on` /
+# `carc_rs.r9_enabled`; `test_rules_profile.py` pins them equal.
+R9_ENV_VAR = "CARCASSONNE_FIX_R9"
+_R9_TRUTHY = ("1", "true", "yes", "on")
+
+
+def r9_env_on(environ=None) -> bool:
+    """Is `CARCASSONNE_FIX_R9` on in this process? (observation, not control)."""
+    raw = (os.environ if environ is None else environ).get(R9_ENV_VAR, "")
+    return str(raw).strip().lower() in _R9_TRUTHY
+
 
 @dataclass(frozen=True)
 class RulesProfile:
@@ -74,6 +95,11 @@ class RulesProfile:
     unplaceable_tile: str     # "next_player" (today, RF-D-2) | "redraw" (A3)
     # Free-text: why this profile exists / what it is NOT. Manifest-visible.
     note: str = ""
+    # R9 (D0) rides OUTSIDE the profile — env-latched at import, see R9_ENV_VAR.
+    # True means "a leg on this profile is expected to export CARCASSONNE_FIX_R9";
+    # `as_manifest` stamps expected AND observed so a leg that forgot is visible
+    # in the artifact rather than only in the operator's memory.
+    r9_env_expected: bool = False
 
     # --- derived ------------------------------------------------------------ #
     @property
@@ -104,12 +130,28 @@ class RulesProfile:
             kw["fixed_start_tile"] = True
         if self.window_size != _DEFAULT_WINDOW:
             kw["window_size"] = self.window_size
+        # A2 (F9) — `Game(cloister_scan_fix=True)`. Named for the kwarg
+        # `game_wrapper.Game` actually landed, not for this module's vocabulary.
+        if self.cloister_scan == "fixed":
+            kw["cloister_scan_fix"] = True
+        # A3 (F9) — `Game(draw_rule="redraw")`. `Game` validates the string and
+        # raises on anything it does not know, so a typo cannot degrade to the
+        # engine rule silently.
+        if self.unplaceable_tile == "redraw":
+            kw["draw_rule"] = "redraw"
         return kw
 
     def as_manifest(self) -> dict:
         d = asdict(self)
         d["fixed_start_tile"] = self.fixed_start_tile
         d["recentred"] = self.recentred
+        # R9 is env-latched and cannot be applied from here, so the manifest
+        # carries the CONTRACT and the OBSERVATION side by side: `r9_env_ok`
+        # False on a fixed_v1 artifact means the leg ran without the env var and
+        # its farm scoring is the unfixed data, whatever the profile name says.
+        d["r9_env_var"] = R9_ENV_VAR
+        d["r9_env_observed"] = r9_env_on()
+        d["r9_env_ok"] = (d["r9_env_observed"] == self.r9_env_expected)
         return d
 
 
@@ -145,6 +187,37 @@ PROFILES: dict[str, RulesProfile] = {
     "retail": replace(
         _WALLED, name="retail", start_rule="retail",
         note="A4 candidate (spec A1/A4) — retail fixed 'D' start tile; costs CRN deck pairing",
+    ),
+    # ----------------------------------------------------------------------- #
+    # THE PHASE-B BUNDLE. All four rules levers at once; adopts nothing.       #
+    # ----------------------------------------------------------------------- #
+    "fixed_v1": replace(
+        _WALLED, name="fixed_v1",
+        grid_rule="centered18", start_row=18,     # W2 / A1
+        start_rule="retail",                      # A4
+        cloister_scan="fixed",                    # A2 (RF-D-1)
+        unplaceable_tile="redraw",                # A3 (RF-D-2)
+        r9_env_expected=True,                     # D0/R9, env-latched (below)
+        note=(
+            "PHASE-B BUNDLE (spec J3) — the four rules-fidelity levers composed: "
+            "centered18 grid + retail start tile + fixed cloister scan + redraw on "
+            "an unplaceable tile. NOT A DEFAULT: every elo of record is a `walled` "
+            "number and this profile refuses a results.csv row unless the exp_id "
+            "names it. "
+            "⚠️ THE BUNDLE IS DELIBERATELY NOT ORTHOGONAL: A3 and A4 interact, and "
+            "retail ABSORBS ~5.6x of A3's blast radius (A3's own gate measured the "
+            "redraw rate at 7.8/100 games under the engine start rule vs 1.4/100 "
+            "under retail — an unplaceable tile is almost purely a first-move "
+            "event, so which tile starts the board decides it). Bundling them is "
+            "the point here; a SINGLE-FLAG attribution ladder must therefore run "
+            "the A3 cell at a STATED start rule, not against this profile. "
+            "⚠️ R9 IS NOT IN THIS PROFILE AND CANNOT BE: `base_deck` derives the "
+            "farm data at import time and the Rust registry latches a OnceLock, so "
+            "CARCASSONNE_FIX_R9 must be exported in the ENVIRONMENT before the "
+            "process starts. `r9_env_expected=True` records that a fixed_v1 leg "
+            "owes that env var; `as_manifest()` stamps r9_env_observed/r9_env_ok "
+            "so an artifact from a leg that forgot it is detectable after the fact."
+        ),
     ),
 }
 
@@ -186,14 +259,19 @@ def _check_supported(prof: RulesProfile) -> None:
             "board: runtime board size is W3 (spec A1-b) and is NOT built — the "
             "Rust BOARD_ROWS/COLS are compile-time consts and N_CELLS is on the "
             "leaf hot path. Refusing rather than silently playing 35x35.")
-    if prof.cloister_scan != "drifting":
+    # A2 and A3 landed 2026-08-03 (the F9 compose merge) and are honoured by
+    # `game_kwargs()` above, so the "not built" refusals are gone. What remains
+    # is a VOCABULARY check — an unrecognised value must raise here rather than
+    # fall through `game_kwargs`'s equality tests and silently play the engine
+    # rule, which is the exact silent class F9 exists to kill.
+    if prof.cloister_scan not in _CLOISTER_SCANS:
         raise RulesProfileError(
-            f"profile {prof.name!r} asks for cloister_scan={prof.cloister_scan!r}: "
-            "the A2 fix is not built. Refusing rather than silently deferring.")
-    if prof.unplaceable_tile != "next_player":
+            f"profile {prof.name!r} asks for cloister_scan={prof.cloister_scan!r}; "
+            f"known: {list(_CLOISTER_SCANS)}")
+    if prof.unplaceable_tile not in _UNPLACEABLE_RULES:
         raise RulesProfileError(
-            f"profile {prof.name!r} asks for unplaceable_tile={prof.unplaceable_tile!r}: "
-            "the A3 redraw is not built. Refusing rather than silently passing the turn.")
+            f"profile {prof.name!r} asks for unplaceable_tile={prof.unplaceable_tile!r}; "
+            f"known: {list(_UNPLACEABLE_RULES)}")
 
 
 # --------------------------------------------------------------------------- #

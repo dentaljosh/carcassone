@@ -74,6 +74,79 @@ def test_activating_a_profile_moves_the_default_game_geometry():
     assert g2.recentred is False
 
 
+# --------------------------------------------------------------------------- #
+# fixed_v1 — the Phase-B bundle (spec J3)                                       #
+# --------------------------------------------------------------------------- #
+def test_fixed_v1_carries_all_four_levers_into_the_game_call():
+    """The bundle's whole point: ONE name resolves to all four rules levers, so a
+    Phase-B leg cannot be half-applied. The kwarg NAMES are the ones
+    `game_wrapper.Game` actually landed (`cloister_scan_fix`, `draw_rule`), not
+    this module's vocabulary (`cloister_scan`, `unplaceable_tile`) — a mismatch
+    there would be a TypeError at construction, which is why the Game is really
+    built below rather than the dict merely inspected."""
+    prof = rp.resolve("fixed_v1")
+    assert prof.game_kwargs() == {
+        "start_row": 18, "start_col": ENGINE_START_COL,   # W2 / A1
+        "fixed_start_tile": True,                          # A4
+        "cloister_scan_fix": True,                         # A2
+        "draw_rule": "redraw",                             # A3
+    }
+    assert prof.is_walled is False
+
+    rp.activate("fixed_v1")
+    g = Game()
+    assert g.recentred is True and (g.start_row, g.start_col) == (18, ENGINE_START_COL)
+    assert g.fixed_start_tile is True
+    assert g.cloister_scan_fix is True
+    assert g.draw_rule == "redraw" and g.redraw_unplaceable is True
+
+
+def test_fixed_v1_declares_the_r9_env_and_a_leg_without_it_is_detectable():
+    """R9 is env-latched at import (base_deck derives the farm data, the Rust
+    registry latches a OnceLock), so the profile CANNOT apply it — it can only
+    declare the debt and stamp whether the process paid it. Without the env, a
+    fixed_v1 manifest must say so: otherwise a leg that forgot `CARCASSONNE_FIX_R9`
+    produces an artifact indistinguishable from one that did not."""
+    prof = rp.resolve("fixed_v1")
+    assert prof.r9_env_expected is True
+
+    os.environ.pop(rp.R9_ENV_VAR, None)
+    m = prof.as_manifest()
+    assert m["r9_env_expected"] is True
+    assert m["r9_env_observed"] is False
+    assert m["r9_env_ok"] is False, "a fixed_v1 leg with no env must be detectable"
+
+    os.environ[rp.R9_ENV_VAR] = "1"
+    try:
+        m2 = prof.as_manifest()
+        assert m2["r9_env_observed"] is True and m2["r9_env_ok"] is True
+    finally:
+        os.environ.pop(rp.R9_ENV_VAR, None)
+
+    # ...and walled, which expects no env, is flagged when the env IS set —
+    # a walled number measured under R9 is not a walled number.
+    os.environ[rp.R9_ENV_VAR] = "1"
+    try:
+        assert rp.resolve("walled").as_manifest()["r9_env_ok"] is False
+    finally:
+        os.environ.pop(rp.R9_ENV_VAR, None)
+
+
+def test_rules_profile_r9_truthiness_matches_both_engines():
+    """The spellings are duplicated here to keep this module import-cycle free
+    (same convenience as the geometry constants); pin them equal to the two real
+    implementations so the convenience cannot drift into a third truth."""
+    import carc_rs
+    from wingedsheep.carcassonne.tile_sets.base_deck import _r9_env_on
+
+    assert rp.R9_ENV_VAR == "CARCASSONNE_FIX_R9"
+    for raw in ("1", "true", "TRUE", "yes", "on", " on ", "0", "", "no", "off", "2"):
+        assert rp.r9_env_on({rp.R9_ENV_VAR: raw}) == _r9_env_on({rp.R9_ENV_VAR: raw}), raw
+    # the Rust side is a OnceLock resolved once per process, so it can only be
+    # compared against the env this process actually started with
+    assert carc_rs.r9_enabled() == rp.r9_env_on()
+
+
 def test_an_explicit_kwarg_always_beats_the_profile():
     """The profile fills in what the caller left unsaid; it never overrides an
     explicit argument (otherwise a probe or a test could not pin its own grid)."""
@@ -104,13 +177,18 @@ def test_an_unknown_profile_raises_rather_than_defaulting():
 
 @pytest.mark.parametrize("field,value,needle", [
     ("board_rows", 143, "W3"),
-    ("cloister_scan", "fixed", "A2"),
-    ("unplaceable_tile", "redraw", "A3"),
 ])
 def test_a_profile_the_code_cannot_honour_is_refused_not_ignored(field, value, needle):
     """A HALF-applied profile is the failure mode F9 exists to detect, so anything
     not yet built raises at resolve time. These assertions lift as A1-b/A2/A3 land —
-    when they start failing, that is the signal to move them, not to delete them."""
+    when they start failing, that is the signal to move them, not to delete them.
+
+    MOVED 2026-08-03 (the F9 compose merge): `cloister_scan="fixed"` (A2) and
+    `unplaceable_tile="redraw"` (A3) used to live in this list. They are now
+    BUILT, so their "not built" refusals were retired exactly as the paragraph
+    above instructs — and replaced by the two tests directly below, which assert
+    the stronger property (the values are HONOURED, and an unknown value in
+    either vocabulary still raises). Only W3 remains unbuilt."""
     from dataclasses import replace
 
     bad = replace(rp.PROFILES["walled"], name="not_built", **{field: value})
@@ -121,6 +199,31 @@ def test_a_profile_the_code_cannot_honour_is_refused_not_ignored(field, value, n
         assert needle in str(e.value)
     finally:
         del rp.PROFILES["not_built"]
+
+
+@pytest.mark.parametrize("field,value", [
+    ("cloister_scan", "drifting_typo"),
+    ("unplaceable_tile", "next-player"),
+])
+def test_an_unknown_rules_vocabulary_raises_rather_than_playing_the_engine_rule(
+        field, value):
+    """The replacement for the A2/A3 "not built" refusals above.
+
+    `game_kwargs()` turns these fields into kwargs by EQUALITY (`== "fixed"`,
+    `== "redraw"`), so a typo would fall through every branch and add no
+    argument — i.e. quietly play the engine rule under a profile whose name and
+    manifest both claim otherwise. That is the exact silent class F9 exists to
+    kill, so the vocabulary is checked at resolve time."""
+    from dataclasses import replace
+
+    bad = replace(rp.PROFILES["walled"], name="typo", **{field: value})
+    rp.PROFILES["typo"] = bad
+    try:
+        with pytest.raises(rp.RulesProfileError) as e:
+            rp.resolve("typo")
+        assert field in str(e.value)
+    finally:
+        del rp.PROFILES["typo"]
 
 
 # --------------------------------------------------------------------------- #

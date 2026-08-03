@@ -507,6 +507,19 @@ class Game:
             fixed_start_tile = True
         if window_size == DEFAULT_WINDOW_SIZE and "window_size" in _prof_kw:
             self.window_size = int(_prof_kw["window_size"])
+        # A2/A3 joined the profile at the F9 compose merge (2026-08-03). Same
+        # "fill in only what the caller left unsaid" rule as the three above:
+        # the caller's explicit value always wins, and under `walled` neither key
+        # is present so this stays the no-op that Gate A0's identity rests on.
+        # ⚠️ These two lines are load-bearing — without them a `fixed_v1` leg
+        # resolves the profile, stamps all four levers in its manifest, and then
+        # plays the DRIFTING scan and the engine draw rule, which is precisely
+        # the half-applied profile F9 exists to detect
+        # (tests/test_rules_profile.py::test_fixed_v1_carries_all_four_levers...).
+        if not cloister_scan_fix and _prof_kw.get("cloister_scan_fix"):
+            cloister_scan_fix = True
+        if draw_rule == DRAW_RULE_ENGINE and "draw_rule" in _prof_kw:
+            draw_rule = _prof_kw["draw_rule"]
         self.fixed_start_tile = bool(fixed_start_tile)
         # Where the start tile sits on the 35x35 grid. `None` means "say nothing
         # to the engine", which is what makes the default path byte-identical:
