@@ -18,6 +18,7 @@ compute as a strength play on their basis.
 | `verify_h12800.py` | certifies snapshot==standalone up to **h12800** on a random sample. |
 | `adaptive_k_census.py` | **PIMC world-ensemble census** — replays archived champion games and reports, per decision and by phase, the across-world value spread / per-world pick disagreement / whether worlds 3–4 change the **pooled** pick, plus the exact duplicate-world (and next-N-tile near-duplicate) rate. Built as the adaptive-k pre-gate (verdict: [ADAPTIVE_K_CENSUS_20260728](../../measurement/classical_search/ADAPTIVE_K_CENSUS_20260728.md) — FLAT, lever died free); reusable for any "is the determinization ensemble earning its width **here**?" question. `--noise-control` proves the per-world searches are deterministic (no noise floor to subtract). Tests: `tests/test_adaptive_k_census.py`. |
 | `kparallel_latency_bench.py` | **Single-GAME latency bench for the k-parallel split** (G6 stage 1) — mean + p90 s/move for the fair champion, sequential vs `parallel_workers ∈ {2,4,8}`, at k4×688 and the CL-068 k8×1376 shape, over ≥30 replayed REAL mid-game roots (`root_replay`). Writes `manifest.json` + `rows.csv`. Re-verifies on every run that each parallel row chose the SAME action as its sequential sibling (the split is behavior-identical — `tests/test_kparallel.py`), so a latency number can never come from a row that played differently. ⚠️ Run it ALONE: it measures a DRAM-latency-bound workload, so a contended box reports contention, not the lever. `--smoke` is a harness check, not a verdict. |
+| `clock_skew_guard.sh` | **Cluster CLOCK-SKEW GUARD for every `--shared-claim` run** (sourced shell lib, roadmap F7c). A box whose clock is fast by more than `--claim-stale-secs` sees every sibling box's **live** claim as stale and steals it — `claim.py:is_stale()` compares the share's **SERVER** mtime to the **CLIENT**'s `time.time()` — so the cluster silently collapses to one box's throughput with no crash and no warning. `carc_clock_skew_guard` / `carc_clock_skew_check` / `carc_clock_skew_seconds`. See [wiring](#wiring-the-clock-skew-guard-into-a-launcher) below. Tests: `tests/test_clock_skew_guard.py`. |
 | `demo_labeling_queue.py` | runnable example of the queue. |
 | `tests/test_measurement_infra.py` | contracts (A) replay lossless (B) snapshot==standalone (C) tagging (D) frozen cfg. |
 
@@ -79,6 +80,42 @@ q.emit("queue.jsonl", strata)            # one row per unique root, with tags + 
 
 `low_top2gap` selects the roots where `HeuristicMCTS(200)`'s top-2 backed-up Q are nearly tied — the
 signal the pilot found best predicts where shallow search is wrong. **It targets MEASUREMENT, not play.**
+
+## Wiring the clock-skew guard into a launcher
+
+Every launcher that passes `--shared-claim` must carry this — enforced by
+`tests/test_clock_skew_guard.py::test_every_shared_claim_launcher_carries_the_guard`, which
+enumerates the `scripts/**/*.sh` that actually invoke a shared-claim run and fails on any that
+doesn't. Paste the stanza near the top (after `set -...`, before any real work):
+
+```bash
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+```
+
+The upward search resolves the repo root from the script's own location, so it works unchanged
+in a `git worktree`; `$REPO` (then the canonical checkout path) is the last-resort fallback for a
+script piped in over ssh, where `BASH_SOURCE` is not a path.
+
+- `carc_clock_skew_guard [dir]` — probes `dir`, else `$OUT_ROOT` if the caller already set one,
+  else the auto-detected share mount (`/mnt/c/carc-shared` locally, `/mnt/carc-shared` on a remote
+  box). It **aborts with `exit 3`** above 60 s of \|skew\| in **either** direction: ahead steals the
+  siblings' live claims, behind makes this box's own claims read as instantly stale.
+- `carc_clock_skew_check [dir]` — same logic but **returns** 3 instead of exiting, for a caller
+  that wants to handle it.
+- It **fails open with a loud `WARNING … UNCHECKED`** when the skew can't be measured (local-only
+  run, no share mounted) — a run that never touches the share must not be bricked by this.
+- `CARC_CLOCK_SKEW_MAX` retunes the threshold; `CARC_CLOCK_SKEW_DISABLE=1` skips it and says so
+  loudly (it exists so nobody deletes the guard line instead — don't set it for a multi-box run).
+
+The two launchers that pioneered the guard — `scripts/classical_search/leaf_ablation_launcher.sh`
+and `capscurve_resweep_launcher.sh` — deliberately keep their **inline** copies (they were live when
+this lib was hoisted); the coverage test accepts those and pins that they still abort.
 
 ## Provenance / origin
 
