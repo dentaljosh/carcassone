@@ -3860,3 +3860,18 @@ covers all named leaf components). Band 1.00e11 → retired (influenced CL-074).
 table: meeple ~300 · curve shape ~177 · oppantic ~153 · **farm base ~142** · selfantic
 ~89 · **farm-growth −43 (leaning, sub-2σ)** · both-antic-off ≈ null · cap null.
 results.csv rows abl_farm{baseoff,growthoff}_vs_puctchamp2750_k2.
+
+## 2026-08-03 (early) — farm-growth deletion confirm: UNCONFIRMED (+10.4, margin z −0.07) — parked suggestive-unpromoted; the screen's +42.8 was a winner's-curse crest
+
+The funded fresh-band confirm (band 1.01e11, n=400 deck-paired, byte-identical config,
+13 min two-box) fires the |z|<2 branch of the pre-registered map: **+10.4 ± 17.4 elo,
+202W/8D/190L, deck-paired margin z −0.07** — flat. Against the screen's +42.8 (z +1.87,
+band 1.00e11) this is the project's fifth screen-shrinks-on-extension observation
+(c=3 "+47" · it16 "+88.7" · C3-intra "+40.1" · the oracle pilot's +1.91→+0.74 · this).
+Pooled per the map: elo +26.6 ± 12.3 (z +2.16) BUT margin-pooled z ≈ +1.27 and the two
+statistics disagree in the confirm — the robust class (within-band paired margin) does
+not support a positive verdict. **Disposition: PARKED suggestive-unpromoted, no leaf
+change; the map's "one more cell may be justified by the pooled read" option is Joshua's
+call (morning brief), not run tonight.** CL-074's farm-growth row reads: "component ≈
+0 to −27 (screen-inflated); champion-better-without NOT confirmed." Band 1.01e11 retired.
+results.csv row abl_farmgrowthoff_confirm_vs_puctchamp2750_k2.

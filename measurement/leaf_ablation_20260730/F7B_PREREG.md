@@ -252,7 +252,7 @@ adjusted after**. The n=4 pass-2 figure (0W/0D/4L) is not an effect estimate at 
 
 ---
 
-## CONFIRM ADDENDUM — farm-growth deletion (registered 2026-08-02 late night, BEFORE game 1)
+## CONFIRM ADDENDUM — farm-growth deletion — ✅ RAN 2026-08-03: **UNCONFIRMED** (+10.4 ± 17.4, margin z −0.07; the |z|<2 branch). Parked suggestive-unpromoted; pooled read in DECISIONS 2026-08-03 (early). *(Registered 2026-08-02 late night, BEFORE game 1.)*
 
 Joshua funded ("I'm funding") the fresh-band confirm of the `farmgrowthoff` lean
 (+42.8 ± 17.5, z +1.87, band 1.00e11 — a LEAN, not a verdict). Cell
