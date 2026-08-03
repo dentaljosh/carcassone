@@ -5,6 +5,7 @@
 //! scripts drive. `FairAgentRs` / `choose_action` land with P3–P4.
 
 use carc_core::compat;
+use carc_core::endgame;
 use carc_core::fair;
 use carc_core::game::{deck_from_descriptions, deck_from_seed, Game, GameConfig};
 use carc_core::leaf;
@@ -527,6 +528,98 @@ impl PyMirrorState {
     fn flat_base_score_decomp(&self, player: usize) -> i64 {
         let d = leaf::decompose(&self.game.state);
         leaf::flat_base_score(&self.game.state, player, &d)
+    }
+
+    // --- P7: the deep exact-K endgame solver -------------------------------
+
+    /// `scripts/level2/endgame_solver.solve(game, board, mode, budget, alphabeta)`.
+    ///
+    /// Solves the CURRENT position exactly in either mode, at any K.  Returns a
+    /// dict with `mode` / `value` / `value_bits` / `to_move` /
+    /// `optimal_actions` / `child_values` (as `[(action, f64 raw bits)]`) /
+    /// `nodes` / `tt_entries` / `wall_ms`, or **`None`** on `BudgetExceeded`
+    /// (the Python raises; the gate treats a blown budget as "skip", so `None`
+    /// is the honest wire value).
+    ///
+    /// `chance_drop` is the marginalized chance node's bag-removal reading —
+    /// `"type"` is what the Python actually does and is the only value any gate
+    /// should pass; `"one"` exists so the divergence stays nameable.
+    ///
+    /// **`tt_cap` changes `nodes`** (freeze-not-evict), so a node-count
+    /// comparison must run both sides at the same cap.  The solve runs under
+    /// `allow_threads`, so a Python-side pool is free to fan out.
+    #[pyo3(signature = (mode="clairvoyant", budget=4_000_000, alphabeta=false,
+                        tt_cap=0, chance_drop="type"))]
+    fn solve_endgame<'py>(
+        &self,
+        py: Python<'py>,
+        mode: &str,
+        budget: u64,
+        alphabeta: bool,
+        tt_cap: usize,
+        chance_drop: &str,
+    ) -> PyResult<Option<Bound<'py, PyDict>>> {
+        let m = endgame::Mode::parse(mode).map_err(pyo3::exceptions::PyValueError::new_err)?;
+        let cfg = endgame::Config {
+            budget,
+            tt_cap,
+            alphabeta,
+            chance_drop: parse_chance_drop(chance_drop)?,
+        };
+        let game = &self.game;
+        let t0 = std::time::Instant::now();
+        let res = py.allow_threads(|| endgame::solve(game, m, &cfg));
+        let wall_ms = t0.elapsed().as_secs_f64() * 1e3;
+        let res = match res {
+            Err(fair::SolveError::BudgetExceeded) => return Ok(None),
+            Err(e) => return Err(pyo3::exceptions::PyRuntimeError::new_err(e.to_string())),
+            Ok(r) => r,
+        };
+        let d = PyDict::new(py);
+        d.set_item("mode", res.mode.value())?;
+        d.set_item("value", res.value)?;
+        d.set_item("value_bits", res.value.to_bits())?;
+        d.set_item("to_move", res.to_move)?;
+        d.set_item("optimal_actions", res.optimal_actions)?;
+        d.set_item(
+            "child_values",
+            res.child_values
+                .iter()
+                .map(|&(a, v)| (a, v.to_bits()))
+                .collect::<Vec<_>>(),
+        )?;
+        d.set_item("nodes", res.nodes)?;
+        d.set_item("tt_entries", res.tt_entries)?;
+        d.set_item("wall_ms", wall_ms)?;
+        Ok(Some(d))
+    }
+
+    /// The independent brute force (`tests/test_endgame_solver._brute_root`) —
+    /// pure clairvoyant minimax, **no TT and no pruning**.  Exponential; only
+    /// usable at tiny K.  Returns `(value, optimal_actions, [(action, bits)])`,
+    /// or `None` if `budget` recursion steps were exceeded.
+    #[pyo3(signature = (budget=5_000_000))]
+    #[allow(clippy::type_complexity)]
+    fn brute_solve_endgame(
+        &self,
+        py: Python<'_>,
+        budget: u64,
+    ) -> PyResult<Option<(f64, Vec<i32>, Vec<(i32, u64)>)>> {
+        let game = &self.game;
+        match py.allow_threads(|| endgame::brute_clairvoyant_root(game, budget)) {
+            Err(fair::SolveError::BudgetExceeded) => Ok(None),
+            Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(e.to_string())),
+            Ok((v, opt, cv)) => Ok(Some((
+                v,
+                opt,
+                cv.into_iter().map(|(a, x)| (a, x.to_bits())).collect(),
+            ))),
+        }
+    }
+
+    /// `k_remaining` — undrawn deck + the in-hand tile, the suites' key.
+    fn k_remaining(&self) -> usize {
+        self.game.state.deck_len() + usize::from(self.game.state.next_tile.is_some())
     }
 
     /// TEST HOOK — force an explicit board from `(row, col, description, rot)`.
