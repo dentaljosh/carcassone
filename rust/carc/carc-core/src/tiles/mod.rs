@@ -280,17 +280,50 @@ pub fn n_base_tiles() -> usize {
     generated::BASE_TILES.len()
 }
 
-fn build_registry() -> Vec<RotTile> {
+// ---------------------------------------------------------------------------
+// R9 — "a field half-edge may not lie on a city edge" (F9 remediation).
+//
+//   *** DEFAULT OFF.  Building this flag adopts nothing. ***
+//
+// A **data** flag: `generated::R9_FARM_OVERRIDE` (codegen'd from
+// `base_deck.r9_farm_override()`, the single Python derivation) replaces the
+// `farms` of the affected tiles, and nothing else in this crate changes.
+// Descriptions, counts and insertion order are untouched, so `TileId`s, deck
+// shuffles, action spaces, board reprs and legal masks are bit-identical in
+// both states — only farm decomposition moves.
+//
+// Process-global by construction, mirroring the Python side: `base_tiles` is an
+// import-time module global there and the registry is a `OnceLock` here.
+// Set `CARCASSONNE_FIX_R9` before first use.  Both registries are built lazily
+// and independently so a test can hold both in one process.
+// ---------------------------------------------------------------------------
+
+/// `farms` for `def` under R9, or `def.farms` when the tile is unaffected.
+fn r9_farms_for(def: &'static TileDef) -> &'static [FarmerConnectionDef] {
+    generated::R9_FARM_OVERRIDE
+        .iter()
+        .find(|(name, _)| *name == def.description)
+        .map(|&(_, farms)| farms)
+        .unwrap_or(def.farms)
+}
+
+fn build_registry(r9: bool) -> Vec<RotTile> {
     let mut out = Vec::with_capacity(generated::BASE_TILES.len() * 4);
     for (bi, def) in generated::BASE_TILES.iter().enumerate() {
+        let farms = if r9 { r9_farms_for(def) } else { def.farms };
         for rot in 0u8..4 {
-            out.push(rotate(def, bi as u16, rot));
+            out.push(rotate_with_farms(def, farms, bi as u16, rot));
         }
     }
     out
 }
 
-fn rotate(def: &'static TileDef, base: u16, rot: u8) -> RotTile {
+fn rotate_with_farms(
+    def: &'static TileDef,
+    def_farms: &'static [FarmerConnectionDef],
+    base: u16,
+    rot: u8,
+) -> RotTile {
     let t = rot as u32;
     let road: Vec<(Side, Side)> = def.road.iter().map(|&(a, b)| (a.turn(t), b.turn(t))).collect();
     let river: Vec<(Side, Side)> =
@@ -301,8 +334,7 @@ fn rotate(def: &'static TileDef, base: u16, rot: u8) -> RotTile {
         .map(|g| g.iter().map(|&s| s.turn(t)).collect())
         .collect();
     let grass: Vec<Side> = def.grass.iter().map(|&s| s.turn(t)).collect();
-    let farms: Vec<FarmerConn> = def
-        .farms
+    let farms: Vec<FarmerConn> = def_farms
         .iter()
         .map(|f| FarmerConn {
             farmer_positions: f.farmer_positions.iter().map(|&s| s.turn(t)).collect(),
@@ -422,10 +454,33 @@ fn rotate(def: &'static TileDef, base: u16, rot: u8) -> RotTile {
 }
 
 static REGISTRY: OnceLock<Vec<RotTile>> = OnceLock::new();
+static REGISTRY_R9: OnceLock<Vec<RotTile>> = OnceLock::new();
+static R9_ON: OnceLock<bool> = OnceLock::new();
+
+/// The `CARCASSONNE_FIX_R9` env flag, resolved once per process.  Accepts the
+/// same spellings as the Python side (`1`/`true`/`yes`/`on`, case-insensitive).
+pub fn r9_enabled() -> bool {
+    *R9_ON.get_or_init(|| {
+        std::env::var("CARCASSONNE_FIX_R9")
+            .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(),
+                              "1" | "true" | "yes" | "on"))
+            .unwrap_or(false)
+    })
+}
+
+/// The registry for an explicit flag state — both are independently memoised so
+/// a parity test can compare them inside one process.
+pub fn registry_for(r9: bool) -> &'static [RotTile] {
+    if r9 {
+        REGISTRY_R9.get_or_init(|| build_registry(true))
+    } else {
+        REGISTRY.get_or_init(|| build_registry(false))
+    }
+}
 
 /// All `N_BASE * 4` rotated tiles, indexed by [`tile_id`].
 pub fn registry() -> &'static [RotTile] {
-    REGISTRY.get_or_init(build_registry)
+    registry_for(r9_enabled())
 }
 
 #[inline]

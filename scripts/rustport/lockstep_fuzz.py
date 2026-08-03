@@ -136,6 +136,33 @@ BOARD_ROWS = BOARD_COLS = 35      # engine grid (walled)
 DEFAULT_START_ROW, DEFAULT_START_COL = 6, 15
 START_RULES = ("engine", "retail")
 
+# --- R9 (F9 remediation, DEFAULT OFF) --------------------------------------
+# A *data* flag: both engines latch `CARCASSONNE_FIX_R9` when their tile table
+# is first built (Python at `base_deck` import, Rust at its `OnceLock`
+# registry), so unlike the P5 flags it cannot be a per-game job field.  It has
+# to be in the environment before python starts.  `--fix-r9` therefore
+# *asserts* the state rather than setting it, and every worker re-checks that
+# BOTH engines latched the same value.
+from wingedsheep.carcassonne.tile_sets.base_deck import (  # noqa: E402
+    R9_FIELD_ON_CITY_EDGE_FIX as R9_PY,
+)
+
+R9_RS = carc_rs.r9_enabled()
+
+
+def check_r9(want: bool | None = None) -> bool:
+    """Both engines agree on R9 (and, if `want` is given, agree with it)."""
+    if R9_PY != R9_RS:
+        raise RuntimeError(
+            f"R9 flag disagreement: python={R9_PY} rust={R9_RS} — "
+            "CARCASSONNE_FIX_R9 must be set before python starts, for both")
+    if want is not None and want != R9_PY:
+        raise SystemExit(
+            f"--fix-r9={want} but CARCASSONNE_FIX_R9 resolved to {R9_PY}.  R9 is "
+            "a data flag latched at import; set it in the ENVIRONMENT:\n"
+            f"    CARCASSONNE_FIX_R9={'1' if want else '0'} python {sys.argv[0]} ...")
+    return R9_PY
+
 
 def check_flags(start_rule: str, start_row: int, start_col: int) -> None:
     """Refuse an unknown rule or an ODD shift — the same two refusals the Rust
@@ -272,6 +299,10 @@ def fuzz_game(job: dict) -> dict:
         res["actions"] = list(actions)
 
     try:
+        # R9 is latched at import in BOTH engines; re-assert per worker, since a
+        # worker that latched a different value would silently compare two
+        # different rule sets and still report 0 mismatches.
+        res["fix_r9"] = check_r9()
         # cache OFF: every ply audits.  Deck via random.seed(deck_seed).
         game, board, ms = init_pair(seed, start_rule, start_row, start_col)
         gw.drain_window_audit()
@@ -555,8 +586,13 @@ def main(argv=None) -> int:
                     help="starting_position row; the shift from 6 must be EVEN")
     ap.add_argument("--start-col", type=int, default=DEFAULT_START_COL,
                     help="starting_position column; the shift from 15 must be EVEN")
+    # --- F9/R9 (a DATA flag: env-latched, so this asserts rather than sets) ---
+    ap.add_argument("--fix-r9", action="store_true",
+                    help="assert CARCASSONNE_FIX_R9 is ON in both engines "
+                         "(set it in the environment, not here)")
     args = ap.parse_args(argv)
     check_flags(args.start_rule, args.start_row, args.start_col)
+    check_r9(args.fix_r9)
 
     jobs = build_jobs(args)
     OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -661,9 +697,11 @@ def main(argv=None) -> int:
                                 "are a correctness fuzz, never an estimate"),
         "flags": {"start_rule": args.start_rule, "start_row": args.start_row,
                   "start_col": args.start_col,
+                  "fix_r9": R9_PY, "fix_r9_rust": R9_RS,
                   "default_semantics": (args.start_rule == "engine"
                                         and args.start_row == DEFAULT_START_ROW
-                                        and args.start_col == DEFAULT_START_COL)},
+                                        and args.start_col == DEFAULT_START_COL
+                                        and not R9_PY)},
         "per_ply_checks": ["string_representation(bytes)", "legal_mask(bytes)",
                            "mask_counts(n_total,n_overflow)", "scores",
                            "flat_base_score[p0]", "flat_base_score[p1]",

@@ -83,9 +83,64 @@ def semantic_payload() -> dict:
     }
 
 
-def semantic_digest() -> str:
-    blob = json.dumps(semantic_payload(), sort_keys=False, separators=(",", ":")).encode()
+def _digest(payload: dict) -> str:
+    blob = json.dumps(payload, sort_keys=False, separators=(",", ":")).encode()
     return hashlib.sha256(blob).hexdigest()
+
+
+def semantic_digest() -> str:
+    return _digest(semantic_payload())
+
+
+# --------------------------------------------------------------------------
+# R9 (F9 remediation, DEFAULT OFF) — see base_deck.py's R9 block.
+#
+# The flag is a *data* flag, so the Rust side carries no patching logic at all:
+# the delta is codegen'd here from `base_deck.r9_farm_override()` — the single
+# Python derivation — and Rust just swaps in the replacement `farms` when the
+# env var is set.  That is what makes python<->Rust parity structural rather
+# than a hand-transcription that has to be tested for.  Emitting only the DELTA
+# (not a second full 32-tile table) keeps it auditable: you can read exactly
+# which regions change.
+#
+# NOTE: these functions are correct in EITHER flag state.  `r9_farm_override`
+# is idempotent — run against an already-patched deck it finds nothing to
+# change — so a process with CARCASSONNE_FIX_R9=1 renders the same file.
+# --------------------------------------------------------------------------
+def r9_override() -> dict:
+    """`{description: [farm dict, ...]}` — the post-R9 farms of changed tiles."""
+    from wingedsheep.carcassonne.tile_sets.base_deck import (
+        R9_OVERRIDE, base_tiles, r9_farm_override,
+    )
+
+    live = r9_farm_override(base_tiles)          # {} once already applied
+    src = live or R9_OVERRIDE
+    return {
+        name: [
+            {
+                "farmer_positions": [s.value for s in f.farmer_positions],
+                "tile_connections": [fs.value for fs in f.tile_connections],
+                "city_sides": [s.value for s in f.city_sides],
+            }
+            for f in farms
+        ]
+        for name, farms in src.items()
+    }
+
+
+def r9_semantic_payload() -> dict:
+    """`semantic_payload()` with R9 applied — the flags-ON data digest."""
+    payload = semantic_payload()
+    ov = r9_override()
+    tiles = [dict(t) for t in payload["tiles"]]
+    for t in tiles:
+        if t["description"] in ov:
+            t["farms"] = ov[t["description"]]
+    return {**payload, "tiles": tiles}
+
+
+def semantic_digest_r9() -> str:
+    return _digest(r9_semantic_payload())
 
 
 def source_sha256() -> str:
@@ -127,6 +182,9 @@ def render() -> str:
     w(f'pub const SOURCE_SHA256: &str = "{source_sha256()}";')
     w(f'pub const SEMANTIC_DIGEST: &str = "{semantic_digest()}";')
     w("")
+    w("/// Semantic digest of the deck **with R9 applied** (the flags-ON data).")
+    w(f'pub const SEMANTIC_DIGEST_R9: &str = "{semantic_digest_r9()}";')
+    w("")
     w("pub static BASE_TILES: &[TileDef] = &[")
     for name, t in zip(payload["tile_order"], payload["tiles"]):
         assert name == t["description"] or True
@@ -161,6 +219,28 @@ def render() -> str:
     w("pub static COUNTS: &[(&str, u32)] = &[")
     for name, count in payload["counts_in_insertion_order"]:
         w(f'    ("{name}", {count}),')
+    w("];")
+    w("")
+    w("// -------------------------------------------------------------------------")
+    w("// R9 — \"a field half-edge may not lie on a city edge\" (F9 remediation).")
+    w("//")
+    w("// *** DEFAULT OFF.  Consulted only when CARCASSONNE_FIX_R9 is set. ***")
+    w("//")
+    w("// Replacement `farms` for every tile whose farm data changes under R9,")
+    w("// codegen'd from `base_deck.r9_farm_override()` — the SAME single Python")
+    w("// derivation the Python engine applies, so the two engines cannot drift.")
+    w("// `BASE_TILES` above is untouched; flags-off is byte-identical.")
+    w("// -------------------------------------------------------------------------")
+    w("pub static R9_FARM_OVERRIDE: &[(&str, &[FarmerConnectionDef])] = &[")
+    for name, farms in r9_override().items():
+        w(f'    ("{name}", &[')
+        for f in farms:
+            w("        FarmerConnectionDef {")
+            w(f'            farmer_positions: {_sides(f["farmer_positions"])},')
+            w(f'            tile_connections: {_fsides(f["tile_connections"])},')
+            w(f'            city_sides: {_sides(f["city_sides"])},')
+            w("        },")
+        w("    ]),")
     w("];")
     w("")
     return "\n".join(lines)

@@ -15,6 +15,9 @@ use super::{FarmerConnectionDef, Side, FarmerSide, TileDef};
 pub const SOURCE_SHA256: &str = "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c";
 pub const SEMANTIC_DIGEST: &str = "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800";
 
+/// Semantic digest of the deck **with R9 applied** (the flags-ON data).
+pub const SEMANTIC_DIGEST_R9: &str = "ae5a34c9db0fcb163af944f5ee0d2dc1de45dea6d36afd617948a81611d83620";
+
 pub static BASE_TILES: &[TileDef] = &[
     TileDef {
         description: "chapel_with_road",
@@ -786,4 +789,29 @@ pub static COUNTS: &[(&str, u32)] = &[
     ("bent_road_flowers", 1),
     ("three_split_road", 4),
     ("crossroads", 1),
+];
+
+// -------------------------------------------------------------------------
+// R9 — "a field half-edge may not lie on a city edge" (F9 remediation).
+//
+// *** DEFAULT OFF.  Consulted only when CARCASSONNE_FIX_R9 is set. ***
+//
+// Replacement `farms` for every tile whose farm data changes under R9,
+// codegen'd from `base_deck.r9_farm_override()` — the SAME single Python
+// derivation the Python engine applies, so the two engines cannot drift.
+// `BASE_TILES` above is untouched; flags-off is byte-identical.
+// -------------------------------------------------------------------------
+pub static R9_FARM_OVERRIDE: &[(&str, &[FarmerConnectionDef])] = &[
+    ("city_top_straight_road", &[
+        FarmerConnectionDef {
+            farmer_positions: &[Side::TopLeft, Side::TopRight],
+            tile_connections: &[FarmerSide::Tll, FarmerSide::Trr],
+            city_sides: &[Side::Top],
+        },
+        FarmerConnectionDef {
+            farmer_positions: &[Side::BottomLeft, Side::BottomRight],
+            tile_connections: &[FarmerSide::Brr, FarmerSide::Brb, FarmerSide::Blb, FarmerSide::Bll],
+            city_sides: &[],
+        },
+    ]),
 ];
