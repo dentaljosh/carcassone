@@ -78,7 +78,7 @@ CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750   # champion-sibling A/B
 # PRIORITY ORDER (PREREG.md "Priority"). Cells run left-to-right; n=400 completes per-cell
 # rather than spreading thin, so a partial night yields whole verdicts, not partial ones.
 CELLS_F7="meepleoff oppanticoff anticoff selfanticoff meepleflat capoff"
-CELLS_F7B="farmbaseoff farmgrowthoff"          # run these explicitly via --cells
+CELLS_F7B="farmbaseoff farmgrowthoff farmgrowthoff_confirm"   # run these explicitly via --cells
 CELLS_ALL="$CELLS_F7 $CELLS_F7B"               # the VALID id set
 
 case "$BOX_TAG" in
