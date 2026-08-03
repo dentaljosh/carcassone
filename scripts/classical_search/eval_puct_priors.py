@@ -1798,11 +1798,29 @@ def main(argv=None) -> int:
                         "opponent": opp_block,
                         "champ_sims": opp_sims})
         del man_cfg["champion"]   # replaced by the resolved "opponent" block
+
+    # Resolved BEFORE the manifest write so `writer.workers` records the number this
+    # process will actually run at, not the raw flag. (The primary's final AGGREGATE
+    # pass has no --workers and plays 0 games; it rewrites the manifest, so recording
+    # the raw flag there would blank out the W the games were actually played at.)
+    todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
+    workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
+    man_cfg["writer"].update({"workers": workers, "workers_flag": args.workers,
+                              "games_to_play": len(todo)})
+    if not todo:
+        # A 0-game pass (the primary's aggregate, or a fully cached rerun) knows
+        # nothing about the W the games were played at — carry the previous writer
+        # block forward instead of stamping this process's idle default over it.
+        try:
+            _prev = json.loads((Path(out) / "manifest.json").read_text())
+            _pw = _prev.get("config", {}).get("writer")
+            if _pw and _pw.get("games_to_play"):
+                man_cfg["writer"] = {**_pw, "last_aggregate_pass": True}
+        except (OSError, ValueError, KeyError):
+            pass
     write_manifest(out, kind="eval_puct_priors", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
 
-    todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
-    workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"puct-priors[{tag}]: n={args.n} paired={args.paired} | "
           f"{len(tasks)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}")
     sys.stdout.flush()

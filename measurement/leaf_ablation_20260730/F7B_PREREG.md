@@ -47,11 +47,14 @@ Identical to F7 except where flagged in §Deviations. Two cells:
   `abl_anticoff_vs_puctchamp2750_k2` removed **all** closure anticipation — city closure,
   cloister completion **and farm growth**, both sides — and read **−7.8 ± 17.4 (z −1.37)**,
   a powered null, while its two *halves* read −88.7 (`selfanticoff`) and −153.4
-  (`oppanticoff`): CL-074's "anticipation = BALANCE not information". `farmgrowthoff` is a
-  farm-only slice of that same machinery on **one** side of the balance, so the F7 record
-  predicts it should be *small but not necessarily zero*; a large `farmgrowthoff` would say the
-  farm slice is where the imbalance bites. `farmbaseoff` has **no prior of any kind** — no leaf
-  experiment in the project has ever removed base farm scoring. Both readings against F7 are
+  (`oppanticoff`): CL-074's "anticipation = BALANCE not information". `farmgrowthoff` is the
+  **farm-only slice of `anticoff`** and is *also* symmetric — the candidate's own `LeafConfig`
+  drives both the self and the opponent closure-bonus pass, so the farm-growth credit vanishes
+  from both sides of the candidate's own differential and the balance CL-074 identified is
+  preserved. The F7 record therefore predicts `farmgrowthoff` should be **small**; a large one
+  says the farm slice is special — that it is *information*, not balance, which would be a
+  genuine amendment to CL-074. `farmbaseoff` has **no prior of any kind**: no leaf experiment in
+  this project has ever removed base farm scoring. Both readings against F7 are
   **cross-band** (96e9 is retired) and take the standing ~1.5–2× σ inflation: they are
   *readings*, not verdicts. The within-cell verdicts are within-band deck-paired and unaffected.
 
@@ -166,10 +169,43 @@ is the fallback"*). The `.pyx` fallback was not needed.
 
 **No promotion, adoption, or `PRODUCTION.yaml` edit follows automatically from either cell.**
 
-## Cost (measured, not extrapolated)
+## Measured smoke and cost (measured, not extrapolated)
 
-<!-- SMOKE: filled from the measured n=4 run through the patched launcher — see SMOKE section -->
-See §Measured smoke below.
+Run 2026-08-02 through the **patched launcher**, local box, `--backend rust`, **W32**, on a
+THROWAWAY band `96.98e9` with `--smoke` (no `results.csv` row, no band consumed). Production
+knobs otherwise byte-identical to the cells (same launcher, same env, same cell JSON).
+
+| pass | cell | n | W | wall | notes |
+|---|---|---|---|---|---|
+| 1 | `farmbaseoff` | **32** (a FULL saturated W32 wave) | 32 | **172 s** (repeat run: 174 s) | the throughput number |
+| 2 | `farmgrowthoff` | 4 | 32 | 53 s | second knockout end-to-end |
+
+**Throughput (local): 32 games / 172 s = 0.186 games/s = ~670 games/h.** This is a *wave* rate
+(all 32 complete), not a first-completion order statistic. Per-cell:
+
+- **local only:** `400 / 670` ≈ **0.60 h/cell** ⇒ both cells ≈ **1.2 h**.
+- **two boxes:** laptop at W24 and the CL-067-measured 1.39× clock ratio ⇒ ≈ `670 × (24/32) / 1.39`
+  ≈ 360 games/h ⇒ combined ≈ 1030 games/h ⇒ ≈ **0.39 h/cell**, both cells ≈ **0.8 h**.
+  The laptop leg is *projected*, not measured — treat the two-box figure as the optimistic bound
+  and the local-only 1.2 h as the one to plan against.
+
+For scale: the F7 python-era cells measured **101 games/h local at W16** and took ~2.3 h/cell.
+F7b is ~6.6× cheaper per game, which is what retired the roadmap's superseded "~37 h/cell"
+figure. The whole F7b run is comfortably a **single sitting**, not an overnight.
+
+Compute neutrality (the A/B fairness check): candidate/champion `ms_per_move` ratio **0.94**
+(pass 1) and **0.97** (pass 2) — the knockout makes the leaf marginally *cheaper*, as expected
+from deleting work. Equal-sims design, so this is not a confound; it is recorded because a
+large ratio would be. Exact-tail cost 20.3 s/game (pass 1) is shared identically by both sides.
+
+⚠️ **The smoke also peeked at the effect, and the prereg is not tuned to it.** Pass 1 returned
+`farmbaseoff` **−190.8 ± 70.9 (paired z −4.52)** at n=32 on a throwaway band — 8W/0D/24L. That
+is a *screen*, ~2× under-powered relative to this document's own thresholds, on decks that are
+not the claim band. It is reported here because operational honesty demands the peek be on the
+record, and because it discharges the "is the knockout inert end-to-end?" question. Every
+threshold in §Power was written from F7's conventions before pass 1 ran and **none was
+adjusted after**. The n=4 pass-2 figure (0W/0D/4L) is not an effect estimate at all.
+
 
 ## Ops
 
