@@ -1,6 +1,17 @@
 # F3 — Exact Small-Bag Public-State Oracle — BUILD SPEC
 
-**Status: DESIGN-ONLY / build-ready. NOT yet built, NOT run.** Written 2026-07-20.
+> **🛑 STATUS 2026-07-21 — BUILT, RUN, AND CLOSED BY JOSHUA. This spec is HISTORICAL; do not action it.**
+> Phase 1 was built the same day it was approved (commits `f13523b..2e28a60`, 13/13 contract tests, 354
+> genuinely-hidden K=3 roots mined) and the suite RAN: 216 solved / 138 wall-capped, pooled-Q PIMC fusion
+> regret **+0.256 pts/root** (CI 0.16–0.38), top-action agreement 78.8%, coverage-corrected selectors cut
+> regret **0.96%** (CI crosses zero). The GO bar (≥0.5 pts/root or ≥25% cut) was NOT met, but coverage 61%
+> < the 80% guard ⇒ a KILL was invalid ⇒ **F3 stands permanently INCONCLUSIVE by choice**: Joshua DROPPED
+> the Phase-2 make/unmake rewrite on 2026-07-21 (the second decline of that build — the first was A-small,
+> 2026-07-09). Re-open ONLY if a NEW line independently implicates strategy fusion. Row
+> `f3_public_state_oracle_k3`; roadmap **F3**; STATUS 2026-07-21; [INDEX](INDEX.md) row.
+> *(Original spec follows, retained for the record.)*
+
+**Original status (2026-07-20): DESIGN-ONLY / build-ready. NOT yet built, NOT run.** Written 2026-07-20.
 Track-F item **F3** (roadmap [PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md) L78);
 the review's **Candidate 1** ([reviews/INTEGRATED_REVIEW_20260719.md](reviews/INTEGRATED_REVIEW_20260719.md)
 §"Candidate 1"); adoption item 5 ([reviews/REVIEW_ADOPTION_20260719.md](reviews/REVIEW_ADOPTION_20260719.md)).
