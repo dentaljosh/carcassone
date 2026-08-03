@@ -101,7 +101,12 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     make_fair_net_prior_batch_evaluator,
     make_fair_net_prior_evaluator,
 )
-from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
+from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
+from carcassonne_ai import wall_sentinel as _ws  # noqa: E402
+from carcassonne_ai.action_space import WindowOverflowError  # noqa: E402
+from carcassonne_ai.run_manifest import (  # noqa: E402
+    code_rev, game_tag, patch_manifest, write_manifest,
+)
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 from carcassonne_ai.warmstart import GameDataset  # noqa: E402
 
@@ -168,6 +173,14 @@ def _actions_path(out: Path, seed: int) -> Path:
     return out / "actions" / f"seed_{seed:012d}.json"
 
 
+def _sentinel_path(out: Path, seed: int) -> Path:
+    """Per-game W4 SENTINEL shard. One json per game, same lock-free reason as the
+    action log — and written for ABORTED games too, which is the whole point: a
+    game killed by `WindowOverflowError` must leave a record saying so, not vanish
+    from the denominator (the capoff precedent, DECISIONS 2026-07-31 Shabbat eve)."""
+    return out / "sentinel" / f"seed_{seed:012d}.json"
+
+
 def _done_path(out: Path, seed: int, actions_only: bool) -> Path:
     """The resume/claim key: the npz shard normally, the action log in --actions-only."""
     return _actions_path(out, seed) if actions_only else _shard_path(out, seed)
@@ -182,6 +195,7 @@ def play_fair_distill_game_to_dataset(
     window_size: int = 25, max_plies: int = 400,
     batch_size: int = 1,
     backend: str = "python", rust_threads: int | None = None,
+    sentinel: bool = True,
 ) -> tuple[GameDataset | None, dict]:
     """Play ONE FAIR champion self-play game (FairHeuristicPriorAgent vs itself) and
     return (GameDataset, info).
@@ -282,10 +296,36 @@ def play_fair_distill_game_to_dataset(
     action_list: list[int] = []      # ACTION LOG (2026-07-20): (deck_seed, actions) root_replay contract
     n_aux = n_valonly = 0
     plies = 0
+    # F9 W4 SENTINEL (default ON). A PURE OBSERVER — it reads `board.state` after a
+    # ply and never touches the state, the agent, the legal-move set or the RNG, so
+    # "sentinel on == sentinel off, action for action" is structural rather than
+    # asserted (tests/test_wall_sentinel.py holds the deck-paired gate anyway).
+    # Geometry comes from the constructed `game`, so a recentred profile is
+    # recorded on ITS grid, not on an assumed 35x35 @ row 6.
+    sent = None
+    if sentinel:
+        sent = _ws.GameSentinel(
+            board_rows=len(board.state.board), board_cols=len(board.state.board[0]),
+            start_row=game.start_row, start_col=game.start_col,
+            profile=_rules_profile.active().name)
     while game.get_game_ended(board, 0) == 0.0 and plies < max_plies:
         mover = board.state.current_player
-        obs, scl = encoder.get_canonical_form(board, mover)   # NEVER mutates board
-        action = agent.move(board)                            # deepcopies internally; board unmutated
+        try:
+            obs, scl = encoder.get_canonical_form(board, mover)  # NEVER mutates board
+            action = agent.move(board)                           # deepcopies internally; board unmutated
+        except WindowOverflowError as e:
+            # Face 5. Previously this propagated, killed the Pool, and the game
+            # left NO record — the capoff failure mode, where 16 candidate-
+            # correlated games vanished from n. Now it is caught, counted, and the
+            # game is MARKED aborted; a sentinel shard is still written.
+            if sent is not None:
+                sent.note_window_overflow(plies, str(e))
+            info = {"seed": seed, "plies": plies, "terminated": False,
+                    "aborted": True, "error": f"WindowOverflowError@ply{plies}: {e}",
+                    "actions": action_list}
+            if sent is not None:
+                info["sentinel"] = sent.to_dict()
+            return None, info
         pv = agent.last_pooled_visits                         # pooled root-visit dict (or {} / None)
 
         policy = np.zeros(A, dtype=np.float32)
@@ -314,11 +354,18 @@ def play_fair_distill_game_to_dataset(
         aux_list.append(aux)
         action_list.append(int(action))
 
+        _placed_before = len(board.state.placed_coords)
         board, _ = game.get_next_state(board, action)
+        if sent is not None and len(board.state.placed_coords) > _placed_before:
+            lta = board.state.last_tile_action
+            if lta is not None:
+                sent.note_placement(board.state, lta.coordinate, plies)
         if backend == "rust":
             agent.advance(int(action))
         plies += 1
 
+    if sent is not None:
+        sent.note_terminal(board.state)     # A2: monks pinned at the final position
     s0, s1 = int(board.state.scores[0]), int(board.state.scores[1])
     terminated = game.get_game_ended(board, 0) != 0.0
     info = {"seed": seed, "plies": plies, "score_p0": s0, "score_p1": s1,
@@ -332,6 +379,8 @@ def play_fair_distill_game_to_dataset(
             # champion actually reached. Recorded unconditionally (a few KB); WRITTEN to
             # disk only under --log-actions.
             "actions": action_list}
+    if sent is not None:
+        info["sentinel"] = sent.to_dict()
     if not terminated:
         info["error"] = f"game did not terminate in {max_plies} plies"
         return None, info
@@ -365,14 +414,14 @@ def _worker_init(k_dets, sims, c_puct, tau_p, value_norm, exact_endgame, exact_m
                  sighted, window_size, shared_claim, claim_host, claim_stale,
                  net_ckpt=None, shm_eval_server="", id_q=None, batch_size=1,
                  log_actions=False, actions_only=False, action_meta=None,
-                 backend="python", rust_threads=None):
+                 backend="python", rust_threads=None, sentinel=True):
     _W.update(k_dets=k_dets, sims=sims, c_puct=c_puct, tau_p=tau_p,
               value_norm=value_norm, exact_endgame=exact_endgame,
               exact_max_k=exact_max_k, sighted=sighted, window_size=window_size,
               shared_claim=shared_claim, claim_host=claim_host, claim_stale=claim_stale,
               batch_size=batch_size, log_actions=log_actions,
               actions_only=actions_only, action_meta=(action_meta or {}),
-              backend=backend)
+              backend=backend, sentinel=sentinel)
     # ⚠️ FARM RULE: this is a GAME-PARALLEL gen pool, so each worker runs the Rust
     # agent at threads=1 — the game parallelism owns the cores (W16 x t8 = 128 hot
     # threads is the failure mode). main() resolves it; asserted here so a worker can
@@ -411,7 +460,31 @@ def _write_action_log(out: Path, seed: int, info: dict, meta: dict) -> None:
            "actions": [int(a) for a in info["actions"]],
            "n_plies": int(info["plies"]),
            "score_p0": int(info["score_p0"]), "score_p1": int(info["score_p1"])}
+    if info.get("sentinel") is not None:
+        # W4: the events land IN the game record, not only in the aggregate — a
+        # corpus that outlives this run must still be able to say which games
+        # touched which face.
+        rec["sentinel"] = info["sentinel"]
     rec.update(meta)
+    tmp = p.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(rec) + "\n")
+    os.replace(tmp, p)
+
+
+def _write_sentinel(out: Path, seed: int, info: dict) -> None:
+    """Write the per-game W4 sentinel shard (atomic). Called for EVERY finished
+    game, including aborted ones — an aborted game with no record is the bug."""
+    sent = info.get("sentinel")
+    if sent is None:
+        return
+    p = _sentinel_path(out, seed)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    rec = dict(sent)
+    rec["seed"] = int(seed)
+    rec["plies"] = int(info.get("plies", 0))
+    rec["terminated"] = bool(info.get("terminated", False))
+    if info.get("error"):
+        rec["error"] = info["error"]
     tmp = p.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(rec) + "\n")
     os.replace(tmp, p)
@@ -438,15 +511,23 @@ def _play_one(args) -> dict | None:
         eval_sighted_game=_W.get("sighted_game"),
         backend=_W.get("backend", "python"),
         rust_threads=_W.get("rust_threads"),
+        sentinel=bool(_W.get("sentinel", True)),
     )
+    # W4: written BEFORE the ds is-None bail, so an aborted game leaves a record.
+    _write_sentinel(out, seed, info)
     if ds is None:
         info["skipped"] = True
+        info.pop("actions", None)
         return info
     if not actions_only:
         ds.save(p)
     if _W.get("log_actions"):
         _write_action_log(out, seed, info, _W.get("action_meta", {}))
     info.pop("actions", None)     # keep the Pool return payload small
+    # Keep the sentinel dict OUT of the Pool return payload (72 coords/game x W
+    # workers); main() re-reads the shards, which also picks up peers' games under
+    # --shared-claim.
+    info.pop("sentinel", None)
     return info
 
 
@@ -522,7 +603,17 @@ def main(argv=None) -> int:
                          "log (implies --log-actions). ~28 MB/game of obs tensors saved when "
                          "the consumer is a root miner, not a trainer. Resume/caching keys on "
                          "the action json instead of the npz.")
+    ap.add_argument("--no-sentinel", dest="sentinel", action="store_false", default=True,
+                    help="disable the F9 W4 wall sentinel (DEFAULT ON — it is a pure "
+                         "observer and costs ~nothing beside an 11008-budget search). "
+                         "The only reason to pass this is the sentinel-inertness gate, "
+                         "which plays the same decks both ways and diffs the actions.")
+    _rules_profile.add_argument(ap)          # F9 A0
     args = ap.parse_args(argv)
+    # F9 A0 — resolve ONCE, before any Game(), and publish through the environment
+    # so every Pool worker (fork OR spawn) inherits the same profile the manifest
+    # records. Inert under the default `walled`.
+    _profile = _rules_profile.activate(args.rules_profile)
     if args.actions_only:
         args.log_actions = True
 
@@ -691,7 +782,7 @@ def main(argv=None) -> int:
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, args.shm_eval_server, _id_q,
                       args.batch_size, args.log_actions, args.actions_only, action_meta,
-                      _backend, _rust_threads))
+                      _backend, _rust_threads, args.sentinel))
     else:
         _pool_cm = Pool(
             processes=workers, initializer=_worker_init,
@@ -700,7 +791,7 @@ def main(argv=None) -> int:
                       args.sighted, args.window_size, args.shared_claim, args.claim_host,
                       args.claim_stale_secs, args.net_ckpt, "", None,
                       args.batch_size, args.log_actions, args.actions_only, action_meta,
-                      _backend, _rust_threads))
+                      _backend, _rust_threads, args.sentinel))
 
     t0 = time.perf_counter()
     played = skipped = rows = aux_rows = val_rows = 0
@@ -725,6 +816,32 @@ def main(argv=None) -> int:
     el = time.perf_counter() - t0
     print(f"[done] {played} games, {rows} rows ({aux_rows} policy / {val_rows} value-only), "
           f"{skipped} skipped ({el:.1f}s). shards in {out}")
+
+    # F9 W4 — fold the per-game sentinel shards into the manifest. Re-read from
+    # DISK rather than from the Pool returns, so a --shared-claim run picks up the
+    # games its peers played too, and a resumed run re-aggregates everything.
+    if args.sentinel:
+        recs = []
+        for jf in sorted(_sentinel_path(out, 0).parent.glob("seed_*.json")):
+            try:
+                recs.append(json.loads(jf.read_text()))
+            except Exception:
+                continue
+        if recs:
+            agg = _ws.aggregate(recs)
+            agg["rules_profile"] = _profile.name
+            (out / "sentinel_summary.json").write_text(json.dumps(agg, indent=2))
+            patch_manifest(out, "wall_sentinel", agg)
+            print(f"[sentinel] {agg['games']} games | "
+                  f"any-event {agg['games_any_event']} | aborted {agg['games_aborted']} | "
+                  f"drops row<0 {agg['drops_row_neg']} row>max {agg['drops_row_over']} "
+                  f"col<0 {agg['drops_col_neg']} col>max {agg['drops_col_over']} | "
+                  f"row-wrap {agg['row_wrap_plies']} col-last {agg['col_last_plies']} "
+                  f"row-last {agg['row_last_plies']} | overflow {agg['window_overflow']} | "
+                  f"cloister deferrals {agg['cloister_deferrals']} "
+                  f"monk-pins {agg['monk_pins_terminal']} | "
+                  f"rel rows [{agg['rel_min_row']},{agg['rel_max_row']}] "
+                  f"cols [{agg['rel_min_col']},{agg['rel_max_col']}]", flush=True)
     return 0
 
 
