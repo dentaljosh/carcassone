@@ -1,11 +1,20 @@
 # Rules-fidelity audit — our engine vs published Carcassonne (2026-08-02)
 
 > **⚠️ STATUS 2026-08-02 — COMPLETE (read-only audit; no code changed).** The cheap sweep half of the
-> rules-fidelity instrument named in [BACKLOG.md](../BACKLOG.md) (2026-08-02 entry). The machine-checkable
-> half — the JCloisterZone differential oracle — is still unbuilt; this document is a *clause-by-clause
-> human read*, not a mechanical proof, and its "CORRECT" verdicts carry the confidence of a careful
-> reading plus targeted probes, not of an external referee. Remediation list is input to **F9** in
+> rules-fidelity instrument named in [BACKLOG.md](../BACKLOG.md) (2026-08-02 entry). This document is a
+> *clause-by-clause human read*, not a mechanical proof, and its "CORRECT" verdicts carry the confidence of
+> a careful reading plus targeted probes, not of an external referee. Remediation list is input to **F9** in
 > [docs/PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md).
+>
+> ✅ **UPDATE 2026-08-03 — the machine-checkable half EXISTS now; the "still unbuilt" clause above is
+> retired.** The JCloisterZone differential oracle was built and validated as **F9/D1**: 43/43 uncontaminated
+> games agree on exact final scores under `fixed_v1`+R9, meeple-slot mapping semantically verified 121/121,
+> and it independently found **R9** (the RCr tile claiming a field on its city edge) — a real divergence this
+> human read missed. It runs in CI as `tests/test_jcz_replay_oracle.py`. ⇒ the verdicts below now have an
+> external referee behind them for the classes the oracle covers.
+> → [VALIDATION_REPORT.md](../measurement/jcz_oracle_20260803/VALIDATION_REPORT.md), DECISIONS 2026-08-03.
+> **Also superseded downstream:** every remediation item here except the **WC tie rule** shipped in the
+> `fixed_v1` profile (adopted 2026-08-03); F9 is FULLY CLOSED.
 
 ## Why this exists
 
