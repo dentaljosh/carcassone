@@ -70,6 +70,48 @@ for _k, _v in PROD_ENV.items():
 # so RESOLVED_ENV, not os.environ, is the honest record for a manifest or a test.)
 RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
 
+# --------------------------------------------------------------------------- #
+# 1a. THE FARM DATA RULE (F9 "R9"). ⚠️ PROCESS-GLOBAL, LATCHED AT IMPORT —      #
+#     this is the ONE rules lever that is not per-game, and the block below is  #
+#     the reason it has to be set here rather than in `_Session`.               #
+#                                                                              #
+# THE BUG. `city_top_straight_road` (RCr) claims two field half-edges that lie  #
+# on its OWN city edge, and every farm traversal in the project crosses a       #
+# `tile_connection` unconditionally, so a field walks straight THROUGH a city:  #
+# two RCr tiles placed city-to-city have their under-city field strips merged   #
+# into one farm. `CARCASSONNE_FIX_R9=1` drops those half-edges (derived by      #
+# predicate in `base_deck.r9_farm_override`, not hand-typed).                   #
+#                                                                              #
+# ⚠️ WHY IT CANNOT BE A `Game(...)` KWARG. `base_deck` rewrites its module-level #
+# `base_tiles` dict at IMPORT time, and the Rust registry memoises in a         #
+# `OnceLock` — neither engine has a per-Game tile table. So the env var must be #
+# set BEFORE the first `carcassonne_ai` / `wingedsheep` import, i.e. here, and  #
+# it is then frozen for the life of the process. `rules_profile.fixed_v1` says  #
+# the same thing at length: R9 is declared by a profile, never applied by one.  #
+#                                                                              #
+# ⚠️ IT IS BEHAVIOURAL FOR REPLAY, NOT ONLY FOR SCORING. Measured on this tree  #
+# (200 random-legal games, same deck seeds, R9 off vs on): 1/200 diverged in    #
+# the LEGAL-MASK stream — farm connectivity decides whether a farmer slot is    #
+# still free, so a merged farm removes a legal meeple action. The action log    #
+# and the final scores diverged with it ([20,22] -> [17,23] at seed 148). That  #
+# is why `farm_rule` travels in the save payload and why a record played under  #
+# the other rule is REFUSED rather than replayed (see `_Session`).              #
+#                                                                              #
+# The app plays "r9". `CARC_ANDROID_FARM_RULE=engine` (or setting               #
+# `CARCASSONNE_FIX_R9` directly) pins a process to the legacy data, which is    #
+# how the desktop suite replays pre-R9 archives byte-identically.               #
+# --------------------------------------------------------------------------- #
+FARM_RULE_ENGINE = "engine"             # the vendored farm data, unfixed
+FARM_RULE_R9 = "r9"                     # the F9/R9 field-on-city-edge fix
+FARM_RULE = FARM_RULE_R9                # what a NEW app game uses
+FARM_RULE_LEGACY = FARM_RULE_ENGINE     # what a save with no `farm_rule` means
+R9_ENV_VAR = "CARCASSONNE_FIX_R9"
+# `setdefault`, so an explicit `CARCASSONNE_FIX_R9` in the environment still wins:
+# the escape hatch has to be usable by a harness that does not know this constant.
+FARM_RULE_REQUESTED: str = os.environ.get("CARC_ANDROID_FARM_RULE", FARM_RULE)
+os.environ.setdefault(
+    R9_ENV_VAR, "1" if FARM_RULE_REQUESTED == FARM_RULE_R9 else "0")
+
 # On-device endgame-solver NODE budget (measurement/ANDROID_WALLCLOCK_MEMO_20260728.md,
 # lever #1). The desktop default is 2,000,000 nodes; the budget has no wall-clock
 # component and PythonBridge.reset() queues BEHIND a running ai_move, so on a phone a
@@ -85,7 +127,7 @@ RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
 ANDROID_EXACT_BUDGET: int = 100_000
 
 # --------------------------------------------------------------------------- #
-# 1a. THE MOBILE BUDGET PROFILE. ⚠️ UNPINNED 2026-08-01 — the phone now plays   #
+# 1b. THE MOBILE BUDGET PROFILE. ⚠️ UNPINNED 2026-08-01 — the phone now plays   #
 #     the CHAMPION OF RECORD (k8x1376 = 11008). The carve-out is CLOSED.        #
 #                                                                              #
 # HISTORY IN TWO LINES. On 2026-07-29 the desktop budget was promoted k4x688    #
@@ -136,7 +178,7 @@ if _MAYBE_REPO is not None and (_MAYBE_REPO / "src" / "carcassonne_ai").is_dir()
         sys.path.append(_src)   # append, never prepend: an installed copy still wins
 
 # --------------------------------------------------------------------------- #
-# 1b. Cython fast paths — republish carc_cy.* under their carcassonne_ai names. #
+# 1c. Cython fast paths — republish carc_cy.* under their carcassonne_ai names. #
 #                                                                              #
 # The compiled extensions ship in a standalone `carc_cy` wheel (see            #
 # android/native/carc-cy). They CANNOT ship inside `carcassonne_ai` itself: on  #
@@ -208,6 +250,12 @@ from carcassonne_ai.game_wrapper import (  # noqa: E402
 # same definition, and a second copy would drift. Re-exported here so `feature_groups`
 # stays part of this module's API for existing importers (the census, tests/android).
 from carcassonne_ai.meeple_equiv import feature_groups  # noqa: E402,F401
+# The F9 profile registry — the ONE vocabulary for a named rules bundle. Imported
+# for `rules_profile_name()` below, which LABELS a session's five levers; the
+# levers themselves are still resolved here, per-field, so the app never depends on
+# a profile being applicable (R9 is not, see block 1a).
+from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
+from wingedsheep.carcassonne.tile_sets import base_deck as _base_deck  # noqa: E402
 from wingedsheep.carcassonne.objects.actions.meeple_action import MeepleAction  # noqa: E402
 from wingedsheep.carcassonne.objects.actions.tile_action import TileAction  # noqa: E402
 from wingedsheep.carcassonne.objects.coordinate import Coordinate  # noqa: E402
@@ -278,12 +326,12 @@ GRID_RULE_START: dict[str, tuple[int, int]] = {
 }
 
 # --------------------------------------------------------------------------- #
-# The UNPLACEABLE-TILE draw rule (F9/A3). ⚠️ THE APP ADOPTS NOTHING HERE.       #
+# The UNPLACEABLE-TILE draw rule (F9/A3). ⚠️ ADOPTED BY THE APP 2026-08-03.     #
 #                                                                              #
-#   "engine" — the vendored engine's native rule and the app default: a TILES-  #
-#              phase PassAction discards the unplaceable tile, draws the next   #
-#              AND passes the turn, so the drawer forfeits a placement.         #
-#   "redraw" — the retail rule: reveal, set the tile aside (it LEAVES THE       #
+#   "engine" — the vendored engine's native rule: a TILES-phase PassAction      #
+#              discards the unplaceable tile, draws the next AND passes the     #
+#              turn, so the drawer forfeits a placement.                        #
+#   "redraw" — the retail rule and what a NEW app game plays: set the tile      #
 #              GAME), draw again, SAME player continues, repeat while           #
 #              unplaceable.                                                     #
 #                                                                              #
@@ -297,8 +345,113 @@ GRID_RULE_START: dict[str, tuple[int, int]] = {
 # --------------------------------------------------------------------------- #
 DRAW_RULE_ENGINE = "engine"
 DRAW_RULE_REDRAW = "redraw"
-DRAW_RULE = DRAW_RULE_ENGINE            # what a NEW app game uses
+DRAW_RULE = DRAW_RULE_REDRAW            # what a NEW app game uses
 DRAW_RULE_LEGACY = DRAW_RULE_ENGINE     # what a save with no `draw_rule` means
+
+# --------------------------------------------------------------------------- #
+# The CLOISTER SCAN rule (F9/A2). ⚠️ ADOPTED BY THE APP 2026-08-03.             #
+#                                                                              #
+#   "drifting" — the vendored engine's behaviour: the 3x3 completion scan is    #
+#                re-anchored on the tile just played, so the neighbourhood a    #
+#                cloister is judged against drifts off the cloister itself.     #
+#   "fixed"    — `Game(cloister_scan_fix=True)`: the scan stays anchored on the #
+#                CLOISTER'S OWN coordinate. The retail reading, and what a NEW  #
+#                app game plays.                                                #
+#                                                                              #
+# SAME SAVE-PAYLOAD CONTRACT as the three rules above: the fix changes WHEN a   #
+# cloister completes, which moves scores and — through the meeple a completion  #
+# returns to its owner — which meeple actions are legal later, so the same      #
+# (deck_seed, actions) decodes a different game. Absent field == "drifting".    #
+# --------------------------------------------------------------------------- #
+CLOISTER_RULE_DRIFTING = "drifting"
+CLOISTER_RULE_FIXED = "fixed"
+CLOISTER_RULE = CLOISTER_RULE_FIXED             # what a NEW app game uses
+CLOISTER_RULE_LEGACY = CLOISTER_RULE_DRIFTING   # absent `cloister_rule` means this
+
+# What block 1a's env write ACTUALLY latched, read off the engine rather than off
+# our own request — `base_deck` resolved it at ITS import, and an environment that
+# already carried `CARCASSONNE_FIX_R9` beat our `setdefault`. THIS, not
+# FARM_RULE_REQUESTED, is what a session validates against and what a save stamps.
+FARM_RULE_LATCHED: str = (FARM_RULE_R9 if _base_deck.R9_FIELD_ON_CITY_EDGE_FIX
+                          else FARM_RULE_ENGINE)
+
+# --------------------------------------------------------------------------- #
+# THE PROFILE LABEL. The five rule fields above are the AUTHORITY in a save;    #
+# this is the one-word name for the combination, DERIVED from them and stamped  #
+# beside them so an archive says what it is without a reader re-deriving it.    #
+#                                                                              #
+# DERIVED, NEVER TRUSTED. `restore_game` rebuilds the session from the five     #
+# fields and then re-derives this name; a blob whose stored label disagrees is  #
+# REFUSED, because exactly one of the two is wrong and picking one would be the #
+# silent-divergence class F9 exists to kill. A combination `rules_profile` does #
+# not name labels as "custom" — legal, just unnamed. Vocabulary comes from      #
+# `rules_profile.PROFILES` so the app and the harnesses cannot drift apart.     #
+# --------------------------------------------------------------------------- #
+PROFILE_CUSTOM = "custom"
+
+# app vocabulary -> rules_profile vocabulary, on the one axis where they differ.
+_PROFILE_DRAW = {DRAW_RULE_ENGINE: "next_player", DRAW_RULE_REDRAW: "redraw"}
+
+
+def _profile_key(prof) -> tuple:
+    return (prof.grid_rule, prof.start_rule, prof.cloister_scan,
+            prof.unplaceable_tile, bool(prof.r9_env_expected))
+
+
+_PROFILE_BY_KEY: dict[tuple, str] = {
+    _profile_key(p): name for name, p in _rules_profile.PROFILES.items()
+}
+
+
+def rules_profile_name(*, start_rule: str, grid_rule: str, draw_rule: str,
+                       cloister_rule: str, farm_rule: str) -> str:
+    """The `rules_profile` name for these five levers, or ``"custom"``.
+
+    Pure and total over the validated vocabularies — every caller has already
+    refused an unknown value on each axis, so this never has to guess."""
+    key = (grid_rule, start_rule, cloister_rule,
+           _PROFILE_DRAW[draw_rule], farm_rule == FARM_RULE_R9)
+    return _PROFILE_BY_KEY.get(key, PROFILE_CUSTOM)
+
+
+# The five rule fields as a save blob spells them, with the LEGACY meaning of an
+# absent one. One table, so `restore_game` and any reader agree on what "written
+# before this field existed" means for each axis.
+BLOB_RULE_DEFAULTS: dict[str, str] = {
+    "start_rule": START_RULE_LEGACY,
+    "grid_rule": GRID_RULE_LEGACY,
+    "draw_rule": DRAW_RULE_LEGACY,
+    "cloister_rule": CLOISTER_RULE_LEGACY,
+    "farm_rule": FARM_RULE_LEGACY,
+}
+
+# The accepted value of each. `_Session` re-checks these and owns the error
+# messages; this copy exists so a LABEL can be derived without raising.
+RULE_VOCABULARY: dict[str, tuple[str, ...]] = {
+    "start_rule": (START_RULE_ENGINE, START_RULE_RETAIL),
+    "grid_rule": tuple(GRID_RULE_START),
+    "draw_rule": (DRAW_RULE_ENGINE, DRAW_RULE_REDRAW),
+    "cloister_rule": (CLOISTER_RULE_DRIFTING, CLOISTER_RULE_FIXED),
+    "farm_rule": (FARM_RULE_ENGINE, FARM_RULE_R9),
+}
+
+
+def blob_rules(blob: dict) -> dict[str, str]:
+    """The five rule levers a save/archive blob was played under."""
+    return {k: str(blob.get(k, default))
+            for k, default in BLOB_RULE_DEFAULTS.items()}
+
+
+def _blob_profile_name(blob: dict) -> str | None:
+    """`rules_profile_name` for a blob, or ``None`` if a field is out of vocabulary.
+
+    ``None`` is not an error signal to act on — it means "``_Session`` is about to
+    raise a field-specific message", which is a better one than anything derivable
+    here."""
+    rules = blob_rules(blob)
+    if any(v not in RULE_VOCABULARY[k] for k, v in rules.items()):
+        return None
+    return rules_profile_name(**rules)
 
 # --------------------------------------------------------------------------- #
 # Agent backend. ⚠️ FLIPPED 2026-08-01 (Joshua: "2 yes"): the DEFAULT IS RUST.  #
@@ -846,6 +999,9 @@ class _Session:
                  generation: int, start_rule: str = START_RULE,
                  grid_rule: str = GRID_RULE,
                  draw_rule: str = DRAW_RULE,
+                 cloister_rule: str = CLOISTER_RULE,
+                 farm_rule: str = FARM_RULE,
+                 cross_rule_replay: bool = False,
                  backend: str = BACKEND_DEFAULT,
                  played_backend: str | None = None,
                  played_sims: int | None = None,
@@ -880,6 +1036,52 @@ class _Session:
                 f"unknown draw_rule {draw_rule!r}; expected "
                 f"{DRAW_RULE_ENGINE!r} or {DRAW_RULE_REDRAW!r}")
         self.draw_rule = str(draw_rule)
+        # Which CLOISTER SCAN this session plays under. Same contract again: the
+        # fix moves when a cloister completes, so the meeple it returns comes back
+        # at a different ply and the same log decodes a different game.
+        if cloister_rule not in (CLOISTER_RULE_DRIFTING, CLOISTER_RULE_FIXED):
+            raise ValueError(
+                f"unknown cloister_rule {cloister_rule!r}; expected "
+                f"{CLOISTER_RULE_DRIFTING!r} or {CLOISTER_RULE_FIXED!r}")
+        self.cloister_rule = str(cloister_rule)
+        # WHICH FARM DATA. Validated like the others, and then checked against the
+        # PROCESS — because unlike the others this one cannot be honoured per game
+        # (block 1a: `base_deck` rewrote its tile table at import and the Rust
+        # registry is a OnceLock). A record played under the other farm rule is
+        # REFUSED, not replayed: 1/200 measured games diverge in the legal-mask
+        # stream, so replaying one here would silently be a different game while
+        # the record still claimed the old one.
+        if farm_rule not in (FARM_RULE_ENGINE, FARM_RULE_R9):
+            raise ValueError(
+                f"unknown farm_rule {farm_rule!r}; expected "
+                f"{FARM_RULE_ENGINE!r} or {FARM_RULE_R9!r}")
+        if str(farm_rule) != FARM_RULE_LATCHED and not cross_rule_replay:
+            raise ValueError(
+                f"farm_rule {str(farm_rule)!r} cannot be honoured: this process "
+                f"latched {FARM_RULE_LATCHED!r} at import ({R9_ENV_VAR}="
+                f"{os.environ.get(R9_ENV_VAR, '')!r}). The farm tile data is "
+                "process-global — `base_deck` rewrites its table at import and the "
+                "Rust registry memoises in a OnceLock — so this game cannot be "
+                f"played or replayed here. Restart with {R9_ENV_VAR}="
+                f"{'1' if farm_rule == FARM_RULE_R9 else '0'} "
+                f"(or CARC_ANDROID_FARM_RULE={str(farm_rule)!r}).")
+        # The rule the RECORD was played under, which is what a re-save must keep
+        # saying. When it differs from the latch this session is a CROSS-RULE
+        # REPLAY: the boards below are built on the process's farm data, and it is
+        # `restore_game`'s job to prove — from the record's own stored outcome —
+        # that the two rules decode this particular game identically. Until that
+        # proof lands the session is not installed, so nothing observes a half-
+        # verified replay. See `restore_game`.
+        self.farm_rule = str(farm_rule)
+        self.cross_rule_replay = bool(self.farm_rule != FARM_RULE_LATCHED)
+        # Filled in by `restore_game` once the cross-rule replay has been proved
+        # against the record's own outcome; surfaced in the restore response.
+        self.rules_note: str | None = None
+        # The one-word name for the five levers. Derived, never an input.
+        self.rules_profile = rules_profile_name(
+            start_rule=self.start_rule, grid_rule=self.grid_rule,
+            draw_rule=self.draw_rule, cloister_rule=self.cloister_rule,
+            farm_rule=self.farm_rule)
         self.human_player = int(human_player)
         self.opponent_kind = str(opponent)
         self.req_sims = None if sims is None else int(sims)
@@ -913,23 +1115,15 @@ class _Session:
         # profile by `_build_opponent` (None until then, and for tier1).
         self.rust_threads: int | None = None
 
-        fixed_start = self.start_rule == START_RULE_RETAIL
-        # `start_row`/`start_col` are opt-in on `Game`; with the legacy grid they
-        # are the engine's own values and `Game` makes the byte-identical call it
-        # always did (game_wrapper.check_start_position / `Game.recentred`).
-        grid = {"start_row": self.grid_row, "start_col": self.grid_col}
-        self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
-                         draw_rule=self.draw_rule, **grid)
+        self.game = self.rules_game()
         # The agent gets its OWN Game (mirrors play_vs_tier1_gui.build_opponent): the
         # UI-side Game carries a legal-moves cache and the agent may run on another
         # thread, so private Games remove any chance of a cross-thread cache race.
-        # `fixed_start_tile` only affects get_init_board, which the agent's Game never
-        # calls — it is passed for consistency, not because the search needs it.
-        # `draw_rule` DOES reach the search, unlike `fixed_start_tile`: the agent
-        # rolls forward from the live board, so a mismatched rule would simulate a
-        # different game than the one on screen.
-        self.ai_game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
-                            draw_rule=self.draw_rule, **grid)
+        # Same rules on both, from the same builder — a lever that reached one Game
+        # and not the other would have the agent searching a different game than the
+        # one on screen (`draw_rule` and `cloister_scan_fix` both reach the search;
+        # `fixed_start_tile` only affects get_init_board, which this one never calls).
+        self.ai_game = self.rules_game()
 
         self.agent = None
         self.pick = None
@@ -978,6 +1172,35 @@ class _Session:
         # wholesale by `apply_and_collect`, so it always describes exactly one
         # decision — never an accumulation across a turn.
         self.last_events: list[dict] = []
+
+    # -- the rules, in ONE place -------------------------------------------- #
+    def rules_game(self, *, cache: bool = True) -> Game:
+        """A ``Game`` carrying THIS session's four per-game rule levers.
+
+        The single constructor for every ``Game`` a session builds — the UI one,
+        the agent's private one, and the throwaway one ``preview_meeple_slots``
+        drives. A lever that reached one and not another is the half-applied
+        profile F9 exists to detect, and the only defence against it is that
+        there is exactly one call site.
+
+        The FIFTH lever, ``farm_rule``, is deliberately absent: it is not a
+        ``Game`` kwarg and cannot be (block 1a). ``__init__`` has already proved
+        the session agrees with the process latch, so every ``Game`` built here
+        is on the session's farm data by construction.
+        """
+        return Game(
+            enable_legal_moves_cache=cache,
+            fixed_start_tile=(self.start_rule == START_RULE_RETAIL),
+            # `start_row`/`start_col` are opt-in on `Game`; with the legacy grid
+            # they are the engine's own values and `Game` makes the byte-identical
+            # call it always did (game_wrapper.check_start_position / `recentred`).
+            start_row=self.grid_row, start_col=self.grid_col,
+            draw_rule=self.draw_rule,
+            # Spelled False rather than omitted for the drifting rule: `Game`'s own
+            # default is False, so the two are the same call, and naming it keeps
+            # the levers visible together at the one place they are applied.
+            cloister_scan_fix=(self.cloister_rule == CLOISTER_RULE_FIXED),
+        )
 
     # -- opponent construction (mirrors play_vs_tier1_gui.build_opponent) ----
     def _build_opponent(self) -> None:
@@ -1254,6 +1477,25 @@ class _Session:
             self._degrade_to_python(
                 f"carc_rs unavailable ({exc}); using the Python backend")
             return
+        # ⚠️ THE TWO ENGINES MUST BE ON THE SAME FARM DATA, and neither of them can
+        # be told which after the fact: `base_deck` rewrote its tile table at ITS
+        # import and `carc_rs`'s registry memoises in a `OnceLock` the first time
+        # anything asks for it. Normally both read the same `CARCASSONNE_FIX_R9`
+        # that block 1a set before either import and they agree by construction —
+        # but "before either import" is an ORDERING claim, and the one process
+        # where it can fail is the instrumented-test process, where another test
+        # class may have built a Rust game (latching the registry) before this
+        # module was ever imported. That divergence would surface as a mirror
+        # mismatch several plies later, blamed on the search. Check it here, where
+        # the answer is one call and the fix is a degrade to a single engine.
+        rust_farm = FARM_RULE_R9 if carc_rs.r9_enabled() else FARM_RULE_ENGINE
+        if rust_farm != FARM_RULE_LATCHED:
+            self._degrade_to_python(
+                f"carc_rs latched farm_rule={rust_farm!r} but this process is on "
+                f"{FARM_RULE_LATCHED!r} — the Rust tile registry was built before "
+                f"{R9_ENV_VAR} was set, so the two engines would score farms "
+                "differently. Using the Python backend.")
+            return
         # The mirror is a state mirror FIRST and a move chooser second. Against
         # tier1 the session has no search budget at all (eff_sims/eff_k_dets are
         # 0), but the mirror is still worth building — it is what proves the
@@ -1327,6 +1569,19 @@ class _Session:
                 # with no `draw_rule` means on this side.
                 draw_rule=(None if self.draw_rule == DRAW_RULE_ENGINE
                            else self.draw_rule),
+                # SAME CLOISTER SCAN, or the mirror scores a cloister on a
+                # different ply and returns its meeple at a different ply — the
+                # `_assert_mirror` board-bytes check would catch it, but only
+                # after the search had already been run on the wrong rules. The
+                # drifting rule is spelled None (the P5 flag default), matching
+                # what a save with no `cloister_rule` means on this side.
+                cloister_scan_fix=(None if self.cloister_rule == CLOISTER_RULE_DRIFTING
+                                   else True),
+                # ⚠️ NO `farm_rule` HERE, and none is possible: the Rust tile
+                # registry is a `OnceLock` keyed off the same CARCASSONNE_FIX_R9
+                # this process set in block 1a, so the mirror is ALREADY on the
+                # session's farm data by construction. `_Session.__init__` is
+                # what guarantees the session agrees with the latch.
             )
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
@@ -1854,9 +2109,16 @@ def new_game(config_json: str = "{}") -> str:
                       start tile sits on the 35x35 grid (see GRID_RULE; the app
                       plays centered18, which removes the invisible top border,
                       and the library default stays engine6)
-        draw_rule     "engine"|"redraw", default "engine" — what happens to an
-                      UNPLACEABLE tile (see DRAW_RULE; the app keeps the engine's
-                      discard-and-pass, so this adopts nothing)
+        draw_rule     "engine"|"redraw", default "redraw" — what happens to an
+                      UNPLACEABLE tile (see DRAW_RULE; the app plays the retail
+                      set-aside-and-redraw, the library default stays "engine")
+        cloister_rule "drifting"|"fixed", default "fixed" — where the 3x3
+                      completion scan is anchored (see CLOISTER_RULE; the app
+                      plays the fix, the library default stays "drifting")
+        farm_rule     "engine"|"r9", default "r9" — which farm tile data (see
+                      block 1a). ⚠️ PROCESS-GLOBAL: this key can only NAME what
+                      the process already latched from CARCASSONNE_FIX_R9; a
+                      value that disagrees is refused, not applied.
         backend       "python"|"rust", default "python" — who picks the CHAMPION's
                       move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
                       the Python engine stays authoritative for legality, UI,
@@ -1884,6 +2146,15 @@ def new_game(config_json: str = "{}") -> str:
             start_rule=str(cfg.get("start_rule", START_RULE)),
             grid_rule=str(cfg.get("grid_rule", GRID_RULE)),
             draw_rule=str(cfg.get("draw_rule", DRAW_RULE)),
+            cloister_rule=str(cfg.get("cloister_rule", CLOISTER_RULE)),
+            # ⚠️ Defaults to what the PROCESS LATCHED, not to `FARM_RULE`. The app's
+            # intent (`FARM_RULE` = "r9") is expressed by block 1a's env write, which
+            # is the only place it CAN be expressed; by the time a game is started
+            # the latch is the fact. A process pinned to the legacy data therefore
+            # starts legacy games and stamps `farm_rule: "engine"` on them — which
+            # also drops `rules_profile` off "fixed_v1", so the record still says so.
+            # An EXPLICIT `farm_rule` that disagrees with the latch is still refused.
+            farm_rule=str(cfg.get("farm_rule", FARM_RULE_LATCHED)),
             backend=str(cfg.get("backend", BACKEND_DEFAULT)),
         )
         _S = s
@@ -2064,6 +2335,23 @@ def _save_payload(s: _Session) -> dict:
         # play, so the identical log decodes a different game under the other rule.
         # Saves written before this field existed are read as DRAW_RULE_LEGACY.
         "draw_rule": s.draw_rule,
+        # Load-bearing for the same reason a fourth time: the cloister scan fix
+        # moves the ply a cloister completes on, hence the ply its meeple comes
+        # back, hence the later legal meeple set. Absent == CLOISTER_RULE_LEGACY.
+        "cloister_rule": s.cloister_rule,
+        # Load-bearing AND process-global (block 1a). Measured: 1/200 games
+        # diverge in the legal-mask stream between the two farm rules, so this is
+        # a replay input, not a footnote. Absent == FARM_RULE_LEGACY, which is
+        # what every record written before 2026-08-03 was played under. Unlike
+        # the four above, a mismatch here cannot be honoured by rebuilding the
+        # session — `restore_game` surfaces `_Session`'s refusal.
+        "farm_rule": s.farm_rule,
+        # THE LABEL for the five fields above, derived from them by
+        # `rules_profile_name` (never read back as authority — restore re-derives
+        # it and refuses a blob whose stored label disagrees). "fixed_v1" is the
+        # F9 Phase-B bundle; "walled" is the engine of record; a combination
+        # `rules_profile` does not name reads "custom".
+        "rules_profile": s.rules_profile,
         # The tiles that LEFT THE GAME unplaced, in removal order. NOT needed to
         # replay — the removal is deterministic given the seed and the rule — but
         # the record of which faces went away is what makes an archived game
@@ -2199,7 +2487,12 @@ def preview_meeple_slots(action_id) -> str:
             # A pass places no tile, so there is nothing to put a meeple on.
             return _ok({"ok": True, "action_id": idx, "slots": []})
 
-        preview_game = Game()
+        # Built with the SESSION'S rules, not the library defaults. The cloister
+        # scan already rides on the board's own state (`get_init_board` stamps it
+        # there), so this is belt-and-braces for that lever — but `draw_rule` and
+        # the grid live on the `Game`, and a preview is not the place to discover
+        # that a lever grew a `get_next_state` dependency.
+        preview_game = s.rules_game(cache=False)
         next_board, _ = preview_game.get_next_state(s.board, idx)
         slots = ([] if next_board.state.phase != GamePhase.MEEPLES
                  else meeple_slots_for(preview_game, next_board))
@@ -2289,6 +2582,69 @@ def restore_game(json_str: str) -> str:
         if not played_sims or not played_k:
             played_sims = played_k = None
 
+        # VOCABULARY FIRST, so an unknown value is reported as itself. Both checks
+        # that follow are downstream of "these five strings mean something" — the
+        # label derivation and the farm-rule gate would otherwise turn a typo'd
+        # `draw_rule` into a confusing complaint about a profile or a latch.
+        # `_Session` re-checks all five; this only decides which error comes out.
+        for _field, _value in blob_rules(blob).items():
+            if _value not in RULE_VOCABULARY[_field]:
+                raise ValueError(
+                    f"unknown {_field} {_value!r}; expected one of "
+                    f"{tuple(RULE_VOCABULARY[_field])}")
+
+        # THE FIVE RULE FIELDS ARE THE AUTHORITY; `rules_profile` is their LABEL.
+        # A blob carrying both must have them agree — if it does not, exactly one
+        # of the two is wrong about what was played, and there is no principled
+        # way to pick, so refuse. (An absent label is not a disagreement: every
+        # record written before 2026-08-03 has none.)
+        want_profile = blob.get("rules_profile")
+        got_profile = _blob_profile_name(blob)
+        # `got_profile is None` means a rule field is outside its vocabulary. That
+        # is a real error, but `_Session` raises a field-specific message for it a
+        # few lines below — so say nothing here and let the better error win.
+        if want_profile is not None and got_profile is not None:
+            if got_profile != str(want_profile):
+                return _err(
+                    "bad_save",
+                    f"save says rules_profile={str(want_profile)!r} but its rule "
+                    f"fields resolve to {got_profile!r}; refusing to guess which "
+                    "describes the game that was played")
+
+        # ------------------------------------------------------------------ #
+        # THE FARM RULE IS PROCESS-GLOBAL (block 1a), so a record played under  #
+        # the other one cannot simply be rebuilt the way the four per-game      #
+        # levers are. It is also not automatically a different game: the two    #
+        # rules only diverge when a field actually runs under a city, which     #
+        # measured at 1/200 random games. So rather than guess in either        #
+        # direction, this REPLAYS ACROSS THE RULE AND THEN PROVES IT.           #
+        #                                                                      #
+        # The proof is the record's own outcome. A finished game carries the    #
+        # scores it ended on; if the replay reaches termination on the same     #
+        # log with the same scores, then every observable this record makes a   #
+        # claim about is reproduced, and the replay is faithful TO THE RECORD.  #
+        # If anything differs the restore is refused — that is the 1/200.       #
+        #                                                                      #
+        # An UNFINISHED save has no outcome to check against, so there is       #
+        # nothing to prove with and it is refused outright. In practice that is #
+        # an autosave written by a pre-2026-08-03 build, which the app replaces #
+        # the moment a new game starts.                                         #
+        # ------------------------------------------------------------------ #
+        record_farm = str(blob.get("farm_rule", FARM_RULE_LEGACY))
+        cross_rule = (record_farm in (FARM_RULE_ENGINE, FARM_RULE_R9)
+                      and record_farm != FARM_RULE_LATCHED)
+        record_scores = blob.get("scores")
+        if cross_rule and not isinstance(record_scores, list):
+            return _err(
+                "rules_unavailable",
+                f"this save was played with farm_rule={record_farm!r} and this "
+                f"process latched {FARM_RULE_LATCHED!r} ({R9_ENV_VAR}="
+                f"{os.environ.get(R9_ENV_VAR, '')!r}). The farm tile data is "
+                "process-global, and an unfinished save carries no result to "
+                "check a cross-rule replay against. Relaunch with "
+                f"{R9_ENV_VAR}={'1' if record_farm == FARM_RULE_R9 else '0'} to "
+                "replay it exactly.")
+
         _GENERATION += 1
         s = _Session(
             seed=int(blob.get("deck_seed", 0)),
@@ -2308,6 +2664,18 @@ def restore_game(json_str: str) -> str:
             # engine's discard-and-pass. Never the CURRENT default by accident:
             # the log decodes a different game under the other rule.
             draw_rule=str(blob.get("draw_rule", DRAW_RULE_LEGACY)),
+            # Absent field == written before the cloister scan fix shipped, i.e.
+            # the drifting scan. Never the CURRENT default by accident: a cloister
+            # that completes on a different ply returns its meeple on a different
+            # ply, and the log decodes a different game from there on.
+            cloister_rule=str(blob.get("cloister_rule", CLOISTER_RULE_LEGACY)),
+            # Absent field == written before the R9 farm fix shipped, i.e. the
+            # vendored farm data. Kept on the session so a re-save keeps saying
+            # what the RECORD was played under; the boards are built on the
+            # process's own farm data either way, which is what `cross_rule`
+            # licenses and what the outcome check below proves.
+            farm_rule=record_farm,
+            cross_rule_replay=cross_rule,
             # ⚠️ WAS "a RUNTIME choice, not a property of the saved game" — true of
             # the ENGINE, and false of everything downstream of it since the
             # 2026-08-01 unpin coupled the budget to it. The saved answer wins; the
@@ -2367,6 +2735,29 @@ def restore_game(json_str: str) -> str:
                                           int(act.coordinate.column))
             s.apply(a)
 
+        # THE CROSS-RULE PROOF (see the block above `_Session`). Nothing has been
+        # installed yet — `_S` is still the previous session — so a failure here
+        # leaves the app exactly as it was.
+        if cross_rule:
+            replayed = [int(x) for x in s.board.state.scores]
+            want = [int(x) for x in record_scores]
+            if not s.board.state.is_terminated() or replayed != want:
+                return _err(
+                    "rules_unavailable",
+                    f"this record was played with farm_rule={record_farm!r}, this "
+                    f"process latched {FARM_RULE_LATCHED!r}, and the two decode "
+                    f"this game differently (replayed scores {replayed} vs the "
+                    f"record's {want}"
+                    f"{'' if s.board.state.is_terminated() else '; replay did not terminate'}"
+                    f"). Refusing to show it as the game that was played. Relaunch "
+                    f"with {R9_ENV_VAR}="
+                    f"{'1' if record_farm == FARM_RULE_R9 else '0'} to replay it "
+                    "exactly.")
+            s.rules_note = (
+                f"replayed under farm_rule={FARM_RULE_LATCHED!r}; the record was "
+                f"played under {record_farm!r}. Verified identical: same action "
+                f"log, same final scores {want}.")
+
         if hasattr(s.agent, "_move_idx"):
             s.agent._move_idx = ai_decisions
         if hasattr(s.agent, "_latched"):
@@ -2393,6 +2784,8 @@ def restore_game(json_str: str) -> str:
         out = _state_dict(s)
         out["restored"] = {"actions": len(actions), "ai_decisions": ai_decisions,
                            "latched": latched, "rng_replayed": replay_rng}
+        if s.rules_note is not None:
+            out["restored"]["rules_note"] = s.rules_note
         # Advisory, never fatal: an old save still restores and still plays.
         mismatch = _save_mismatch(blob)
         if mismatch is not None:
@@ -2854,6 +3247,27 @@ def runtime_info() -> str:
             "flat_leaf": bool(flat_leaf.USE_FLAT_LEAF),
             "spec": _spec_fingerprint(),
             "env": RESOLVED_ENV,
+            # THE RULES THIS PROCESS CAN PLAY. Four of the five are per-game and
+            # are reported as the NEW-GAME default; `farm_rule` is the latched
+            # one (block 1a) and is reported as requested-vs-latched, because
+            # they can differ — an environment that already carried
+            # CARCASSONNE_FIX_R9 beat our `setdefault`, and a phone whose games
+            # are quietly on the other farm data is exactly the thing worth
+            # being able to read off a diagnostics screen.
+            "rules": {
+                "new_game_profile": rules_profile_name(
+                    start_rule=START_RULE, grid_rule=GRID_RULE,
+                    draw_rule=DRAW_RULE, cloister_rule=CLOISTER_RULE,
+                    farm_rule=FARM_RULE_LATCHED),
+                "start_rule": START_RULE,
+                "grid_rule": GRID_RULE,
+                "draw_rule": DRAW_RULE,
+                "cloister_rule": CLOISTER_RULE,
+                "farm_rule_requested": FARM_RULE_REQUESTED,
+                "farm_rule_latched": FARM_RULE_LATCHED,
+                "farm_rule_ok": FARM_RULE_REQUESTED == FARM_RULE_LATCHED,
+                R9_ENV_VAR: os.environ.get(R9_ENV_VAR, ""),
+            },
         })
     except BaseException as exc:                  # noqa: BLE001 — see _jni_err
         return _jni_err(exc)
