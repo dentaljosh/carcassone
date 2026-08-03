@@ -1,0 +1,62 @@
+{
+  "gate": "G1/engine",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "d7734f5-dirty",
+    "utc": "2026-08-03T04:38:15Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/carc_rs_wt/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": "all",
+    "limit": null,
+    "workers": 4,
+    "bench": 0,
+    "out": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a10ee30c4a5b2d991/measurement/f9_a2/G1_engine_flagsoff_regate.json"
+  },
+  "per_corpus": {
+    "champ": {
+      "games": 449,
+      "plies": 64610,
+      "positions_compared": 65059,
+      "frozen_positions_checked": 0,
+      "mismatches": 0
+    },
+    "e4": {
+      "games": 2,
+      "plies": 288,
+      "positions_compared": 290,
+      "frozen_positions_checked": 0,
+      "mismatches": 0
+    },
+    "golden": {
+      "games": 12,
+      "plies": 1725,
+      "positions_compared": 1737,
+      "frozen_positions_checked": 56,
+      "mismatches": 0
+    }
+  },
+  "total_games": 463,
+  "total_plies": 66623,
+  "total_positions_compared": 67086,
+  "total_frozen_positions_checked": 56,
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask_sha256",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "state_scalars"
+  ],
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 52.758292535028886
+}

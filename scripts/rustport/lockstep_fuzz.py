@@ -77,14 +77,26 @@ G5 flags-on leg instead of being forked:
                           `starting_position`, optionally pre-place, then
                           `Board.from_state`.
 
-Defaults are unchanged (engine rule, start (6, 15)) — the G1 invocation and its
-recorded verdict reproduce byte-for-byte.
+**F9-A2 flag (2026-08-03).**  `--cloister-scan-fix` runs the same lockstep with
+the RF-D-1 cloister-completion fix on in BOTH engines, so this driver is the
+flags-on gate for A2 as well.  Because the fix changes behaviour deliberately,
+the G1 *replay* gate fails by construction with it on (the record was played on
+the drifting scan) — the flags-on evidence has to be fresh games, which is
+exactly what this is.  The event counter
+`state.cloister_completions_accelerated` is compared PER PLY like any other
+observable, so the manifest's "monk-pins avoided" rate is parity-checked rather
+than self-reported, and is asserted identically 0 with the flag off.
+
+Defaults are unchanged (engine rule, start (6, 15), drifting scan) — the G1
+invocation and its recorded verdict reproduce byte-for-byte.
 
 Usage:
     .venv/bin/python scripts/rustport/lockstep_fuzz.py --games 10000 \
         --workers 16 --wall-frac 0.2 --tag laptop
     .venv/bin/python scripts/rustport/lockstep_fuzz.py --games 1000 \
         --workers 16 --start-rule retail --tag p5_retail
+    .venv/bin/python scripts/rustport/lockstep_fuzz.py --games 1000 \
+        --workers 4 --cloister-scan-fix --tag f9a2_on
 """
 
 from __future__ import annotations
@@ -126,6 +138,7 @@ from carcassonne_ai import game_wrapper as gw  # noqa: E402
 from carcassonne_ai.action_space import N_ROTATIONS, WindowOverflowError  # noqa: E402
 from carcassonne_ai.flat_leaf import flat_base_score  # noqa: E402
 from carcassonne_ai.game_wrapper import Game  # noqa: E402
+from wingedsheep.carcassonne.objects.side import Side  # noqa: E402
 
 OUTDIR = REPO / "measurement" / "rustport_p1"
 FUZZ_SEED_BASE = 97_000_000_000   # throwaway range; NOT a registered band
@@ -175,15 +188,17 @@ def object_engine_refusal(state) -> str | None:
         return f"{type(exc).__name__}: {exc}"
 
 
-def init_pair(seed: int, start_rule: str, start_row: int, start_col: int):
-    """`(Game, Board, MirrorState)` for one deck seed under the P5 flags.
+def init_pair(seed: int, start_rule: str, start_row: int, start_col: int,
+              cloister_scan_fix: bool = False):
+    """`(Game, Board, MirrorState)` for one deck seed under the P5/F9 flags.
 
     The deck comes from `random.seed(deck_seed)` in BOTH branches — the
     `root_replay` contract — so a reproducer replays through the normal tooling
     whatever the flags were.
     """
     fixed = start_rule == "retail"
-    game = Game(enable_legal_moves_cache=False, fixed_start_tile=fixed)
+    game = Game(enable_legal_moves_cache=False, fixed_start_tile=fixed,
+                cloister_scan_fix=cloister_scan_fix)
     random.seed(int(seed))
     if (start_row, start_col) == (DEFAULT_START_ROW, DEFAULT_START_COL):
         board = game.get_init_board()
@@ -200,13 +215,15 @@ def init_pair(seed: int, start_rule: str, start_row: int, start_col: int):
             supplementary_rules=list(game.supplementary_rules),
             board_size=(BOARD_ROWS, BOARD_COLS),
             starting_position=Coordinate(start_row, start_col),
+            cloister_scan_fix=cloister_scan_fix,
         )
         if fixed:
             gw.preplace_retail_start_tile(state)
         total_tiles = len(state.deck) + 1 + len(state.placed_coords)
         board = gw.Board.from_state(state, total_tiles, game.window_size)
     ms = carc_rs.MirrorState.from_seed(
-        str(seed), start_rule=start_rule, start_row=start_row, start_col=start_col)
+        str(seed), start_rule=start_rule, start_row=start_row, start_col=start_col,
+        cloister_scan_fix=cloister_scan_fix)
     return game, board, ms
 
 
@@ -218,9 +235,53 @@ def _tile_coord(idx: int, off) -> tuple[int, int]:
     return wr + off.origin_row, wc + off.origin_col
 
 
+def _monk_cloisters(state) -> list[tuple[int, int]]:
+    """Coordinates of cloisters currently carrying a CENTER meeple.
+
+    These are the only tiles for which the RF-D-1 scan drift can produce an
+    OBSERVABLE difference (a completed cloister with no monk on it scores
+    nothing either way), so they are what the `monk` policy steers towards.
+    """
+    out = []
+    for per_player in state.placed_meeples:
+        for mp in per_player:
+            cws = mp.coordinate_with_side
+            if cws.side != Side.CENTER:
+                continue
+            tile = state.get_tile(cws.coordinate.row, cws.coordinate.column)
+            if tile is not None and (tile.chapel or tile.flowers):
+                out.append((cws.coordinate.row, cws.coordinate.column))
+    return out
+
+
 def _choose(rng: random.Random, legal: list[int], mode: str, phase: str, off,
-            tile_pass: int) -> int:
+            tile_pass: int, state=None) -> int:
     """Seeded policy over the encodable legal actions."""
+    if mode == "monk":
+        # COVERAGE policy for F9-A2.  Random play completes ~0.1 cloisters per
+        # game and almost never has a monk on one (audit RF-D-1's frequency
+        # caveat), so a uniform fuzz exercises the fixed scan thousands of times
+        # while its OUTCOME never differs from the drifting one — a flags-on
+        # "0 mismatches" over such games says little about the fix itself.
+        # `monk` plays the geometry strong play produces: take every cloister
+        # centre offered, then build into the 3x3 around a monk-bearing
+        # cloister.  It is a POLICY only: both engines are still driven by the
+        # same action index, so nothing about the comparison is weakened.
+        if phase != "tiles":
+            centre = tile_pass + 5           # MeepleAction NORMAL on CENTER
+            if centre in legal:
+                return centre
+            return rng.choice(legal)
+        placements = [a for a in legal if a < tile_pass]
+        targets = _monk_cloisters(state) if (placements and state is not None) else []
+        if targets:
+            near = [a for a in placements
+                    if any(max(abs(_tile_coord(a, off)[0] - r),
+                               abs(_tile_coord(a, off)[1] - c)) <= 1
+                           for r, c in targets)]
+            if near:
+                return rng.choice(near)
+        return rng.choice(legal)
     if mode != "wall" or phase != "tiles":
         return rng.choice(legal)
     placements = [a for a in legal if a < tile_pass]
@@ -240,10 +301,15 @@ def fuzz_game(job: dict) -> dict:
     start_rule = job.get("start_rule", "engine")
     start_row = job.get("start_row", DEFAULT_START_ROW)
     start_col = job.get("start_col", DEFAULT_START_COL)
+    csf = bool(job.get("cloister_scan_fix", False))
 
     res = {
         "deck_seed": seed, "policy_seed": pseed, "mode": mode,
         "start_rule": start_rule, "start_row": start_row, "start_col": start_col,
+        "cloister_scan_fix": csf,
+        # F9-A2 event counter: completions scored at the true ply that the
+        # legacy drifting window would not have visited (0 with the flag off).
+        "cloister_accel": 0,
         "plies": 0, "compared": 0, "status": "ok",
         "terminal_scores": None,
         "window_overflow": None,      # {"ply":..., "n_total":...} if it fired
@@ -264,7 +330,7 @@ def fuzz_game(job: dict) -> dict:
         rec = {"kind": kind, "ply": ply, "python": py, "rust": rs,
                "deck_seed": seed, "policy_seed": pseed, "mode": mode,
                "start_rule": start_rule, "start_row": start_row,
-               "start_col": start_col,
+               "start_col": start_col, "cloister_scan_fix": csf,
                "actions": list(actions)}
         if extra:
             rec.update(extra)
@@ -273,7 +339,7 @@ def fuzz_game(job: dict) -> dict:
 
     try:
         # cache OFF: every ply audits.  Deck via random.seed(deck_seed).
-        game, board, ms = init_pair(seed, start_rule, start_row, start_col)
+        game, board, ms = init_pair(seed, start_rule, start_row, start_col, csf)
         gw.drain_window_audit()
         rng = random.Random(pseed)
 
@@ -287,6 +353,10 @@ def fuzz_game(job: dict) -> dict:
             return res
         if ms.start_rule() != start_rule:
             fail("start_rule", 0, start_rule, ms.start_rule())
+            return res
+        if (bool(board.state.cloister_scan_fix), ms.cloister_scan_fix()) != (csf, csf):
+            fail("cloister_scan_fix", 0,
+                 bool(board.state.cloister_scan_fix), ms.cloister_scan_fix())
             return res
 
         while True:
@@ -305,6 +375,21 @@ def fuzz_game(job: dict) -> dict:
             rs_scores = list(ms.scores())
             if py_scores != rs_scores:
                 fail("scores", ply, py_scores, rs_scores)
+                return res
+
+            # 4b. F9-A2 event counter, compared per ply — so the "monk-pins
+            # avoided" number in the manifest is itself a parity observable and
+            # not a one-sided report.  Identically 0 with the flag off (the
+            # counting branch is unreachable), which is a second, cheap way for
+            # a flags-off regate to notice the fix leaking on.
+            py_accel = int(getattr(st, "cloister_completions_accelerated", 0))
+            rs_accel = int(ms.cloister_accel())
+            if py_accel != rs_accel:
+                fail("cloister_completions_accelerated", ply, py_accel, rs_accel)
+                return res
+            res["cloister_accel"] = py_accel
+            if not csf and py_accel:
+                fail("cloister_accel_nonzero_flags_off", ply, py_accel, rs_accel)
                 return res
 
             # 5. flat_base_score, both POVs, on BOTH Rust routes:
@@ -478,7 +563,7 @@ def fuzz_game(job: dict) -> dict:
 
             off = board.offset
             tile_pass = off.size * off.size * N_ROTATIONS
-            a = int(_choose(rng, legal, mode, st.phase.value, off, tile_pass))
+            a = int(_choose(rng, legal, mode, st.phase.value, off, tile_pass, st))
 
             if st.phase.value == "tiles" and a < tile_pass:
                 r, c = _tile_coord(a, off)
@@ -520,8 +605,13 @@ def build_jobs(args) -> list[dict]:
     """Deterministic job list: game i is fully described by its index."""
     jobs = []
     every = max(1, round(1.0 / args.wall_frac)) if args.wall_frac > 0 else 0
+    monk_every = max(1, round(1.0 / args.monk_frac)) if args.monk_frac > 0 else 0
     for i in range(args.start, args.start + args.games):
         mode = "wall" if (every and (i % every) == every - 1) else "uniform"
+        # `monk` wins the tie: it is the coverage policy, and a wall-biased game
+        # is not where the cloister geometry lives.
+        if monk_every and (i % monk_every) == 0:
+            mode = "monk"
         jobs.append({
             "index": i,
             "deck_seed": FUZZ_SEED_BASE + i,
@@ -531,6 +621,7 @@ def build_jobs(args) -> list[dict]:
             "start_rule": args.start_rule,
             "start_row": args.start_row,
             "start_col": args.start_col,
+            "cloister_scan_fix": args.cloister_scan_fix,
         })
     return jobs
 
@@ -542,6 +633,9 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--wall-frac", type=float, default=0.2,
                     help="fraction of games played by the wall-biased policy")
+    ap.add_argument("--monk-frac", type=float, default=0.0,
+                    help="fraction of games played by the cloister-seeking policy "
+                         "(F9-A2 coverage; 0 = off, which reproduces the G1 mix)")
     ap.add_argument("--policy-base", type=int, default=5_000_000)
     ap.add_argument("--max-plies", type=int, default=400)
     ap.add_argument("--tag", default="local")
@@ -555,6 +649,10 @@ def main(argv=None) -> int:
                     help="starting_position row; the shift from 6 must be EVEN")
     ap.add_argument("--start-col", type=int, default=DEFAULT_START_COL,
                     help="starting_position column; the shift from 15 must be EVEN")
+    # --- F9-A2 flag (default OFF = the drifting scan of record) ---
+    ap.add_argument("--cloister-scan-fix", action="store_true",
+                    help="score a cloister the moment its 3x3 is full and return "
+                         "the monk (audit RF-D-1); default OFF = the drifting scan")
     args = ap.parse_args(argv)
     check_flags(args.start_rule, args.start_row, args.start_col)
 
@@ -598,6 +696,8 @@ def main(argv=None) -> int:
             "games_touching_col0": 0, "games_touching_row34": 0,
             "games_touching_col34": 0, "placements_row0": 0, "placements_col0": 0,
             "plies_with_dropped_legal": 0, "dropped_legal_total": 0,
+            "cloister_accel_total": 0, "games_with_cloister_accel": 0,
+            "max_cloister_accel_in_a_game": 0,
             "min_row_seen": None, "min_col_seen": None,
             "max_row_seen": None, "max_col_seen": None,
         })
@@ -608,6 +708,10 @@ def main(argv=None) -> int:
         m["placements_col0"] += r["placements_col0"]
         m["plies_with_dropped_legal"] += r["plies_with_dropped_legal"]
         m["dropped_legal_total"] += r["dropped_legal_total"]
+        m["cloister_accel_total"] += r.get("cloister_accel", 0)
+        m["games_with_cloister_accel"] += bool(r.get("cloister_accel", 0))
+        m["max_cloister_accel_in_a_game"] = max(
+            m["max_cloister_accel_in_a_game"], r.get("cloister_accel", 0))
         m["games_touching_row0"] += bool(r["placements_row0"])
         m["games_touching_col0"] += bool(r["placements_col0"])
         m["games_touching_row34"] += bool(r["placements_row34"])
@@ -661,18 +765,21 @@ def main(argv=None) -> int:
                                 "are a correctness fuzz, never an estimate"),
         "flags": {"start_rule": args.start_rule, "start_row": args.start_row,
                   "start_col": args.start_col,
+                  "cloister_scan_fix": args.cloister_scan_fix,
                   "default_semantics": (args.start_rule == "engine"
                                         and args.start_row == DEFAULT_START_ROW
-                                        and args.start_col == DEFAULT_START_COL)},
+                                        and args.start_col == DEFAULT_START_COL
+                                        and not args.cloister_scan_fix)},
         "per_ply_checks": ["string_representation(bytes)", "legal_mask(bytes)",
                            "mask_counts(n_total,n_overflow)", "scores",
                            "flat_base_score[p0]", "flat_base_score[p1]",
                            "flat_base_score_decomp[p0]", "flat_base_score_decomp[p1]",
                            "state_scalars", "window_offset",
+                           "cloister_completions_accelerated",
                            "window_overflow_error_parity",
                            "count_final_scores_error_parity"],
         "setup_checks": ["total_tiles", "tile_count", "starting_position",
-                         "start_rule"],
+                         "start_rule", "cloister_scan_fix"],
         "per_mode": by_mode,
         "total_games": len(results),
         "total_plies": total_plies,
@@ -684,6 +791,15 @@ def main(argv=None) -> int:
         "engine_error_games": len(engine_errors),
         "engine_error_reproducers": engine_errors[:200],
         "matched_error_games": len(overflows) + len(engine_errors),
+        # F9-A2 event rate.  "Accelerated" = a cloister completion scored at its
+        # true ply that the legacy drifting window would NOT have visited, i.e.
+        # a monk-pin avoided (an upper bound: the drift can self-heal a miss
+        # from a later placement).  Identically 0 with the flag off.
+        "cloister_accel_total": sum(m["cloister_accel_total"] for m in by_mode.values()),
+        "cloister_accel_games": sum(m["games_with_cloister_accel"] for m in by_mode.values()),
+        "cloister_accel_per_game": (
+            sum(m["cloister_accel_total"] for m in by_mode.values()) / len(results)
+            if results else None),
         "exception_games": sum(1 for r in results if r["status"] == "EXCEPTION"),
         "wallclock_s": elapsed,
         "games_per_s": len(results) / elapsed if elapsed else None,
@@ -702,12 +818,19 @@ def main(argv=None) -> int:
               f"col0-touching {m['games_touching_col0']}, "
               f"rows [{m['min_row_seen']}, {m['max_row_seen']}], "
               f"cols [{m['min_col_seen']}, {m['max_col_seen']}], "
-              f"dropped-legal plies {m['plies_with_dropped_legal']}")
+              f"dropped-legal plies {m['plies_with_dropped_legal']}, "
+              f"cloister-accel {m['cloister_accel_total']} in "
+              f"{m['games_with_cloister_accel']} games "
+              f"(max {m['max_cloister_accel_in_a_game']}/game)")
     print(f"G1/fuzz: {'PASS' if ok else 'FAIL'}  {len(results)} games, "
           f"{total_pos} positions x {len(payload['per_ply_checks'])} checks, "
           f"{len(mismatches)} mismatches, {len(overflows)} window-overflow + "
           f"{len(engine_errors)} engine-error (matched, PASS-with-flag), {elapsed:.1f}s "
           f"({payload['plies_per_s_wall'] or 0:.0f} plies/s wall)")
+    print(f"G1/fuzz: cloister_scan_fix={args.cloister_scan_fix} "
+          f"accelerated completions {payload['cloister_accel_total']} in "
+          f"{payload['cloister_accel_games']} games "
+          f"({payload['cloister_accel_per_game'] or 0:.4f}/game)")
     print(f"G1/fuzz: result -> {out}")
     for mm in mismatches[:5]:
         print("  MISMATCH", json.dumps(mm, default=str)[:600])
