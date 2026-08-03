@@ -617,3 +617,14 @@ transcript); introducing commit b9431de, test 67470f1.
   valid — both legs same leaf — but the label reads stronger than it is). F7b's gate re-ran under
   the launcher's champion env explicitly; patch the gate script to install the champion env (or
   stamp the resolved leaf hash in its artifact) next time it's touched.
+
+## 2026-08-03 — REMEASURE the anticipation pair (and optionally the full component table) under fixed_v1 (Joshua: "we need to remember to remeasure later")
+The CL-074 component values (incl. the anticoff pair-null and its +234 interaction) were
+measured under WALLED rules with the R9 bug in the farm data. fixed_v1 moved meeple
+economy (cloister fix) and farm decomposition (R9) — the balance between the anticipation
+halves is coupled to the caps that clip them, so the pair-null does not automatically
+transfer. At rust-era cell costs (~13 min/cell two-box) the full 8-cell table under
+fixed_v1 is ~2 h. Sequencing: AFTER the caps/curve re-sweep verdict (if the optima moved,
+re-tune first, then re-measure components at the new optima — measuring components at
+stale optima answers the wrong question). Trigger word: "phase-6 table on canonical
+footing."
