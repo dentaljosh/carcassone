@@ -1,0 +1,5955 @@
+{
+ "profile": "walled",
+ "policy": "record",
+ "r9": false,
+ "n_games": 20,
+ "totals": {
+  "START_TILE_PLY": 20,
+  "START_TILE_MEEPLE": 20,
+  "DESYNC_FALLOUT": 273,
+  "FARM_ATOM_SET": 2474,
+  "WALL_LEGALITY": 147,
+  "SCORE_FINAL_EXPLAINED": 1365,
+  "UNPLACEABLE_TURN_LOSS": 3,
+  "SEAT_DESYNC": 2,
+  "FARM_PARTITION": 66
+ },
+ "real": {},
+ "score_agreement": {
+  "agree": 0,
+  "compared": 18
+ },
+ "games": [
+  {
+   "game_id": 28000000000,
+   "deck_seed": 28000000000,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    90,
+    108
+   ],
+   "jcz_final": [
+    87,
+    108
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 5,
+    "FARM_ATOM_SET": 122,
+    "WALL_LEGALITY": 7,
+    "SCORE_FINAL_EXPLAINED": 112
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "bent_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "left"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 23,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 22,
+      "detail": {
+       "ours_only": [
+        [
+         -2,
+         0,
+         "EL"
+        ],
+        [
+         -2,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 23,
+      "detail": {
+       "ours_only": [
+        [
+         -2,
+         0,
+         "EL"
+        ],
+        [
+         -2,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 24,
+      "detail": {
+       "ours_only": [
+        [
+         -2,
+         0,
+         "EL"
+        ],
+        [
+         -2,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 114,
+      "detail": {
+       "tile": "BA/RrG",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         0
+        ],
+        [
+         -3,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 116,
+      "detail": {
+       "tile": "BA/RCr",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         90
+        ],
+        [
+         -3,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 120,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         0
+        ],
+        [
+         -3,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        90,
+        108
+       ],
+       "jcz": [
+        87,
+        108
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours": [
+        3,
+        20
+       ],
+       "jcz": [
+        0,
+        20
+       ]
+      }
+     },
+     {
+      "ply": 34,
+      "detail": {
+       "ours": [
+        3,
+        20
+       ],
+       "jcz": [
+        0,
+        20
+       ]
+      }
+     },
+     {
+      "ply": 35,
+      "detail": {
+       "ours": [
+        3,
+        20
+       ],
+       "jcz": [
+        0,
+        20
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000001,
+   "deck_seed": 28000000001,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    110,
+    101
+   ],
+   "jcz_final": [
+    104,
+    101
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "FARM_ATOM_SET": 138,
+    "DESYNC_FALLOUT": 4,
+    "WALL_LEGALITY": 3,
+    "SCORE_FINAL_EXPLAINED": 124
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 6,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 7,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 8,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 21,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 49,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "SL",
+          "SR",
+          "WL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "WL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 71,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 138,
+      "detail": {
+       "tile": "BA/CFC.2",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         90
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 140,
+      "detail": {
+       "tile": "BA/RFr",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 142,
+      "detail": {
+       "tile": "BA/RFr",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        110,
+        101
+       ],
+       "jcz": [
+        104,
+        101
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 21,
+      "detail": {
+       "ours": [
+        10,
+        6
+       ],
+       "jcz": [
+        4,
+        6
+       ]
+      }
+     },
+     {
+      "ply": 22,
+      "detail": {
+       "ours": [
+        10,
+        6
+       ],
+       "jcz": [
+        4,
+        6
+       ]
+      }
+     },
+     {
+      "ply": 23,
+      "detail": {
+       "ours": [
+        10,
+        6
+       ],
+       "jcz": [
+        4,
+        6
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000002,
+   "deck_seed": 28000000002,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 143,
+   "plies_compared": 140,
+   "seat_offset": 1,
+   "seat_desync": true,
+   "our_final": [
+    85,
+    106
+   ],
+   "jcz_final": [
+    48,
+    94
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "UNPLACEABLE_TURN_LOSS": 1,
+    "SEAT_DESYNC": 1,
+    "FARM_ATOM_SET": 122,
+    "DESYNC_FALLOUT": 14,
+    "SCORE_FINAL_EXPLAINED": 112
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "chapel",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "center"
+      }
+     }
+    ],
+    "UNPLACEABLE_TURN_LOSS": [
+     {
+      "ply": 6,
+      "detail": {
+       "tile": "crossroads"
+      }
+     }
+    ],
+    "SEAT_DESYNC": [
+     {
+      "ply": 7,
+      "detail": {
+       "ours": 0,
+       "jcz": 0
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 21,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         2,
+         "EL"
+        ],
+        [
+         -1,
+         2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 22,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         2,
+         "EL"
+        ],
+        [
+         -1,
+         2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 23,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         2,
+         "EL"
+        ],
+        [
+         -1,
+         2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 22,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 62,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "SL",
+          "SR",
+          "WL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "WL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 68,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "WR"
+         ]
+        ],
+        [
+         "Road",
+         [
+          "E",
+          "W"
+         ]
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        85,
+        106
+       ],
+       "jcz": [
+        48,
+        94
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "SEAT_DESYNC",
+        "START_TILE_MEEPLE",
+        "UNPLACEABLE_TURN_LOSS"
+       ]
+      }
+     },
+     {
+      "ply": 32,
+      "detail": {
+       "ours": [
+        9,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours": [
+        9,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 34,
+      "detail": {
+       "ours": [
+        9,
+        7
+       ],
+       "jcz": [
+        0,
+        7
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "SEAT_DESYNC",
+    "START_TILE_MEEPLE",
+    "UNPLACEABLE_TURN_LOSS"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000003,
+   "deck_seed": 28000000003,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    105,
+    105
+   ],
+   "jcz_final": [
+    102,
+    105
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 15,
+    "FARM_ATOM_SET": 112,
+    "WALL_LEGALITY": 23,
+    "SCORE_FINAL_EXPLAINED": 6
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_bottom_grass",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "left"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "side": "bottom_left",
+       "wanted": [
+        "Field",
+        [
+         "NL",
+         "SR",
+         "WL",
+         "WR"
+        ]
+       ],
+       "jcz_offered": [
+        [
+         "Road",
+         "NS"
+        ],
+        [
+         "Field",
+         "NR.EL.ER.SL"
+        ],
+        [
+         "Field",
+         "NL.SR"
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 32,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -3,
+         "WL"
+        ],
+        [
+         1,
+         -3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -3,
+         "WL"
+        ],
+        [
+         1,
+         -3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 34,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -3,
+         "WL"
+        ],
+        [
+         1,
+         -3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 98,
+      "detail": {
+       "tile": "BA/CCG",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         180
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 100,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         90
+        ],
+        [
+         -1,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 102,
+      "detail": {
+       "tile": "BA/CFc+",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         0
+        ],
+        [
+         -1,
+         -7,
+         180
+        ],
+        [
+         1,
+         -7,
+         90
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 4
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        105,
+        105
+       ],
+       "jcz": [
+        102,
+        105
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 117,
+      "detail": {
+       "ours": [
+        57,
+        63
+       ],
+       "jcz": [
+        66,
+        63
+       ]
+      }
+     },
+     {
+      "ply": 118,
+      "detail": {
+       "ours": [
+        57,
+        63
+       ],
+       "jcz": [
+        66,
+        63
+       ]
+      }
+     },
+     {
+      "ply": 119,
+      "detail": {
+       "ours": [
+        57,
+        63
+       ],
+       "jcz": [
+        66,
+        63
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000004,
+   "deck_seed": 28000000004,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    124,
+    131
+   ],
+   "jcz_final": [
+    86,
+    131
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 9,
+    "FARM_ATOM_SET": 124,
+    "FARM_PARTITION": 30,
+    "SCORE_FINAL_EXPLAINED": 34
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_bottom_road_shield",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "N",
+          "S",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 37,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 53,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 20,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         3,
+         "WL"
+        ],
+        [
+         1,
+         3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 21,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         3,
+         "WL"
+        ],
+        [
+         1,
+         3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 22,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         3,
+         "WL"
+        ],
+        [
+         1,
+         3,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "FARM_PARTITION": [
+     {
+      "ply": 114,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "EL"
+         ],
+         [
+          2,
+          0,
+          "ER"
+         ],
+         [
+          3,
+          -2,
+          "NL"
+         ],
+         [
+          3,
+          -2,
+          "SR"
+         ],
+         [
+          3,
+          -1,
+          "NL"
+         ],
+         [
+          3,
+          -1,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 115,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "EL"
+         ],
+         [
+          2,
+          0,
+          "ER"
+         ],
+         [
+          3,
+          -2,
+          "NL"
+         ],
+         [
+          3,
+          -2,
+          "SR"
+         ],
+         [
+          3,
+          -1,
+          "NL"
+         ],
+         [
+          3,
+          -1,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 116,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          -1,
+          -3,
+          "ER"
+         ],
+         [
+          -1,
+          -3,
+          "SL"
+         ],
+         [
+          -1,
+          -3,
+          "SR"
+         ],
+         [
+          -1,
+          -3,
+          "WL"
+         ],
+         [
+          -1,
+          -2,
+          "EL"
+         ],
+         [
+          -1,
+          -2,
+          "ER"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "EL"
+         ],
+         [
+          2,
+          0,
+          "ER"
+         ],
+         [
+          3,
+          -2,
+          "NL"
+         ],
+         [
+          3,
+          -2,
+          "SR"
+         ],
+         [
+          3,
+          -1,
+          "NL"
+         ],
+         [
+          3,
+          -1,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        124,
+        131
+       ],
+       "jcz": [
+        86,
+        131
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "FARM_PARTITION",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 111,
+      "detail": {
+       "ours": [
+        75,
+        60
+       ],
+       "jcz": [
+        37,
+        60
+       ]
+      }
+     },
+     {
+      "ply": 112,
+      "detail": {
+       "ours": [
+        75,
+        60
+       ],
+       "jcz": [
+        37,
+        60
+       ]
+      }
+     },
+     {
+      "ply": 113,
+      "detail": {
+       "ours": [
+        75,
+        60
+       ],
+       "jcz": [
+        37,
+        60
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "FARM_PARTITION",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000005,
+   "deck_seed": 28000000005,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    104,
+    111
+   ],
+   "jcz_final": [
+    92,
+    111
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 26,
+    "FARM_ATOM_SET": 140,
+    "WALL_LEGALITY": 8,
+    "SCORE_FINAL_EXPLAINED": 44
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "bent_road_flowers",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "left"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "WR"
+         ]
+        ],
+        [
+         "Road",
+         [
+          "E",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "side": "top_left",
+       "wanted": [
+        "Field",
+        [
+         "EL",
+         "NL",
+         "NR",
+         "WR"
+        ]
+       ],
+       "jcz_offered": [
+        [
+         "Field",
+         "ER.SL.SR.WL"
+        ],
+        [
+         "Road",
+         "WE"
+        ],
+        [
+         "City",
+         "N"
+        ],
+        [
+         "Field",
+         "EL.WR"
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 4,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         0,
+         "NL"
+        ],
+        [
+         -1,
+         0,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         0,
+         "NL"
+        ],
+        [
+         -1,
+         0,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 6,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         0,
+         "NL"
+        ],
+        [
+         -1,
+         0,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 126,
+      "detail": {
+       "tile": "BA/RRR",
+       "jcz_only": [
+        [
+         -7,
+         -7,
+         180
+        ]
+       ],
+       "n": 1
+      }
+     },
+     {
+      "ply": 130,
+      "detail": {
+       "tile": "BA/C",
+       "jcz_only": [
+        [
+         -7,
+         -7,
+         0
+        ],
+        [
+         -7,
+         -7,
+         90
+        ],
+        [
+         -7,
+         -7,
+         270
+        ]
+       ],
+       "n": 3
+      }
+     },
+     {
+      "ply": 132,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         -7,
+         -7,
+         90
+        ],
+        [
+         -7,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        104,
+        111
+       ],
+       "jcz": [
+        92,
+        111
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 101,
+      "detail": {
+       "ours": [
+        53,
+        38
+       ],
+       "jcz": [
+        41,
+        38
+       ]
+      }
+     },
+     {
+      "ply": 102,
+      "detail": {
+       "ours": [
+        53,
+        38
+       ],
+       "jcz": [
+        41,
+        38
+       ]
+      }
+     },
+     {
+      "ply": 103,
+      "detail": {
+       "ours": [
+        53,
+        38
+       ],
+       "jcz": [
+        41,
+        38
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000006,
+   "deck_seed": 28000000006,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    111,
+    121
+   ],
+   "jcz_final": [
+    84,
+    121
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 13,
+    "FARM_ATOM_SET": 116,
+    "SCORE_FINAL_EXPLAINED": 18
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "three_split_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top_left"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 13,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 17,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "SL",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 28,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "SL"
+        ],
+        [
+         2,
+         -2,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 29,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "SL"
+        ],
+        [
+         2,
+         -2,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 30,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "SL"
+        ],
+        [
+         2,
+         -2,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        111,
+        121
+       ],
+       "jcz": [
+        84,
+        121
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 79,
+      "detail": {
+       "ours": [
+        28,
+        8
+       ],
+       "jcz": [
+        28,
+        26
+       ]
+      }
+     },
+     {
+      "ply": 80,
+      "detail": {
+       "ours": [
+        28,
+        8
+       ],
+       "jcz": [
+        28,
+        26
+       ]
+      }
+     },
+     {
+      "ply": 81,
+      "detail": {
+       "ours": [
+        28,
+        8
+       ],
+       "jcz": [
+        28,
+        26
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000007,
+   "deck_seed": 28000000007,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 143,
+   "plies_compared": 140,
+   "seat_offset": 1,
+   "seat_desync": true,
+   "our_final": [
+    85,
+    104
+   ],
+   "jcz_final": [
+    92,
+    94
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "FARM_ATOM_SET": 132,
+    "FARM_PARTITION": 36,
+    "DESYNC_FALLOUT": 11,
+    "UNPLACEABLE_TURN_LOSS": 1,
+    "SEAT_DESYNC": 1,
+    "WALL_LEGALITY": 7,
+    "SCORE_FINAL_EXPLAINED": 101
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top_road_bend_left",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top_left"
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 10,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         0,
+         "EL"
+        ],
+        [
+         1,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 11,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         0,
+         "EL"
+        ],
+        [
+         1,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 12,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         0,
+         "EL"
+        ],
+        [
+         1,
+         0,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "FARM_PARTITION": [
+     {
+      "ply": 14,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "NL"
+         ],
+         [
+          2,
+          0,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 15,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "NL"
+         ],
+         [
+          2,
+          0,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 16,
+      "detail": {
+       "ours_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         [
+          0,
+          -1,
+          "EL"
+         ],
+         [
+          0,
+          -1,
+          "NR"
+         ],
+         [
+          1,
+          -1,
+          "EL"
+         ],
+         [
+          1,
+          -1,
+          "ER"
+         ],
+         [
+          1,
+          -1,
+          "SL"
+         ],
+         [
+          1,
+          -1,
+          "WR"
+         ]
+        ],
+        [
+         [
+          2,
+          0,
+          "NL"
+         ],
+         [
+          2,
+          0,
+          "SR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 15,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 48,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "SL",
+          "SR",
+          "WL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "WL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 48,
+      "detail": {
+       "side": "bottom_right",
+       "wanted": [
+        "Field",
+        [
+         "ER",
+         "SL",
+         "SR",
+         "WL"
+        ]
+       ],
+       "jcz_offered": [
+        [
+         "Road",
+         "WE"
+        ],
+        [
+         "Field",
+         "NL.NR.EL.WR"
+        ],
+        [
+         "Field",
+         "ER.WL"
+        ]
+       ]
+      }
+     }
+    ],
+    "UNPLACEABLE_TURN_LOSS": [
+     {
+      "ply": 42,
+      "detail": {
+       "tile": "full_city_with_shield"
+      }
+     }
+    ],
+    "SEAT_DESYNC": [
+     {
+      "ply": 43,
+      "detail": {
+       "ours": 0,
+       "jcz": 0
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 127,
+      "detail": {
+       "tile": "BA/CRr",
+       "jcz_only": [
+        [
+         0,
+         -7,
+         0
+        ],
+        [
+         0,
+         -7,
+         90
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 131,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         0,
+         -7,
+         0
+        ],
+        [
+         0,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 133,
+      "detail": {
+       "tile": "BA/LR",
+       "jcz_only": [
+        [
+         0,
+         -7,
+         0
+        ]
+       ],
+       "n": 1
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        85,
+        104
+       ],
+       "jcz": [
+        92,
+        94
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "FARM_PARTITION",
+        "SEAT_DESYNC",
+        "START_TILE_MEEPLE",
+        "UNPLACEABLE_TURN_LOSS"
+       ]
+      }
+     },
+     {
+      "ply": 43,
+      "detail": {
+       "ours": [
+        4,
+        16
+       ],
+       "jcz": [
+        16,
+        4
+       ]
+      }
+     },
+     {
+      "ply": 44,
+      "detail": {
+       "ours": [
+        4,
+        16
+       ],
+       "jcz": [
+        16,
+        4
+       ]
+      }
+     },
+     {
+      "ply": 45,
+      "detail": {
+       "ours": [
+        4,
+        16
+       ],
+       "jcz": [
+        16,
+        4
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "FARM_PARTITION",
+    "SEAT_DESYNC",
+    "START_TILE_MEEPLE",
+    "UNPLACEABLE_TURN_LOSS"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000008,
+   "deck_seed": 28000000008,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    91,
+    79
+   ],
+   "jcz_final": [
+    84,
+    79
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 22,
+    "FARM_ATOM_SET": 102,
+    "WALL_LEGALITY": 10,
+    "SCORE_FINAL_EXPLAINED": 54
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "straight_road_flowers",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "S",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 17,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E",
+          "S"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 42,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "EL"
+        ],
+        [
+         2,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 43,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "EL"
+        ],
+        [
+         2,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 44,
+      "detail": {
+       "ours_only": [
+        [
+         2,
+         -2,
+         "EL"
+        ],
+        [
+         2,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 122,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         -4,
+         -7,
+         0
+        ],
+        [
+         -4,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 126,
+      "detail": {
+       "tile": "BA/CCG",
+       "jcz_only": [
+        [
+         -5,
+         -7,
+         180
+        ],
+        [
+         -5,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 128,
+      "detail": {
+       "tile": "BA/CcRr",
+       "jcz_only": [
+        [
+         -5,
+         -7,
+         180
+        ],
+        [
+         -5,
+         -7,
+         270
+        ],
+        [
+         -4,
+         -7,
+         0
+        ],
+        [
+         -4,
+         -7,
+         90
+        ]
+       ],
+       "n": 4
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        91,
+        79
+       ],
+       "jcz": [
+        84,
+        79
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 91,
+      "detail": {
+       "ours": [
+        26,
+        9
+       ],
+       "jcz": [
+        26,
+        18
+       ]
+      }
+     },
+     {
+      "ply": 92,
+      "detail": {
+       "ours": [
+        26,
+        9
+       ],
+       "jcz": [
+        26,
+        18
+       ]
+      }
+     },
+     {
+      "ply": 93,
+      "detail": {
+       "ours": [
+        30,
+        9
+       ],
+       "jcz": [
+        30,
+        18
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000009,
+   "deck_seed": 28000000009,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    97,
+    62
+   ],
+   "jcz_final": [
+    95,
+    62
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "FARM_ATOM_SET": 142,
+    "DESYNC_FALLOUT": 10,
+    "WALL_LEGALITY": 9,
+    "SCORE_FINAL_EXPLAINED": 2
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "straight_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "bottom"
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 2,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         0,
+         "WL"
+        ],
+        [
+         -1,
+         0,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         0,
+         "WL"
+        ],
+        [
+         -1,
+         0,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 4,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         -1,
+         "WL"
+        ],
+        [
+         -1,
+         -1,
+         "WR"
+        ],
+        [
+         -1,
+         0,
+         "WL"
+        ],
+        [
+         -1,
+         0,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 41,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 126,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 128,
+      "detail": {
+       "tile": "BA/RrC",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 130,
+      "detail": {
+       "tile": "BA/CC.2",
+       "jcz_only": [
+        [
+         0,
+         -7,
+         0
+        ],
+        [
+         0,
+         -7,
+         90
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        97,
+        62
+       ],
+       "jcz": [
+        95,
+        62
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 143,
+      "detail": {
+       "ours": [
+        97,
+        62
+       ],
+       "jcz": [
+        95,
+        62
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000010,
+   "deck_seed": 28000000010,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    109,
+    117
+   ],
+   "jcz_final": [
+    93,
+    117
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "FARM_ATOM_SET": 142,
+    "DESYNC_FALLOUT": 28,
+    "SCORE_FINAL_EXPLAINED": 64
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top_road_bend_right",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 2,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         1,
+         "WL"
+        ],
+        [
+         0,
+         1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         1,
+         "WL"
+        ],
+        [
+         0,
+         1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 4,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         1,
+         "WL"
+        ],
+        [
+         0,
+         1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 3,
+      "detail": {
+       "side": "bottom_left",
+       "wanted": [
+        "Field",
+        [
+         "NL",
+         "SR",
+         "WL",
+         "WR"
+        ]
+       ],
+       "jcz_offered": [
+        [
+         "Road",
+         "NS"
+        ],
+        [
+         "Field",
+         "NR.EL.ER.SL"
+        ],
+        [
+         "Field",
+         "NL.SR"
+        ],
+        [
+         "City",
+         "W"
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        109,
+        117
+       ],
+       "jcz": [
+        93,
+        117
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 81,
+      "detail": {
+       "ours": [
+        36,
+        27
+       ],
+       "jcz": [
+        20,
+        27
+       ]
+      }
+     },
+     {
+      "ply": 82,
+      "detail": {
+       "ours": [
+        36,
+        27
+       ],
+       "jcz": [
+        20,
+        27
+       ]
+      }
+     },
+     {
+      "ply": 83,
+      "detail": {
+       "ours": [
+        36,
+        31
+       ],
+       "jcz": [
+        20,
+        31
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000011,
+   "deck_seed": 28000000011,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    110,
+    99
+   ],
+   "jcz_final": [
+    105,
+    99
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 7,
+    "FARM_ATOM_SET": 100,
+    "SCORE_FINAL_EXPLAINED": 92
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "straight_road_flowers",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 25,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "E",
+          "W"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 44,
+      "detail": {
+       "ours_only": [
+        [
+         -4,
+         -2,
+         "WL"
+        ],
+        [
+         -4,
+         -2,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 45,
+      "detail": {
+       "ours_only": [
+        [
+         -4,
+         -2,
+         "WL"
+        ],
+        [
+         -4,
+         -2,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 46,
+      "detail": {
+       "ours_only": [
+        [
+         -4,
+         -2,
+         "WL"
+        ],
+        [
+         -4,
+         -2,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        110,
+        99
+       ],
+       "jcz": [
+        105,
+        99
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 53,
+      "detail": {
+       "ours": [
+        11,
+        12
+       ],
+       "jcz": [
+        6,
+        12
+       ]
+      }
+     },
+     {
+      "ply": 54,
+      "detail": {
+       "ours": [
+        11,
+        12
+       ],
+       "jcz": [
+        6,
+        12
+       ]
+      }
+     },
+     {
+      "ply": 55,
+      "detail": {
+       "ours": [
+        11,
+        16
+       ],
+       "jcz": [
+        6,
+        16
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000012,
+   "deck_seed": 28000000012,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    94,
+    77
+   ],
+   "jcz_final": [
+    84,
+    74
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 21,
+    "FARM_ATOM_SET": 104,
+    "WALL_LEGALITY": 28,
+    "SCORE_FINAL_EXPLAINED": 116
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 17,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 21,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "S",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 29,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 40,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         4,
+         "NL"
+        ],
+        [
+         1,
+         4,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 41,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         4,
+         "NL"
+        ],
+        [
+         1,
+         4,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 42,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         4,
+         "NL"
+        ],
+        [
+         1,
+         4,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 84,
+      "detail": {
+       "tile": "BA/RRRR",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         90
+        ],
+        [
+         1,
+         -7,
+         180
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 4
+      }
+     },
+     {
+      "ply": 88,
+      "detail": {
+       "tile": "BA/CcRr",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         90
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 90,
+      "detail": {
+       "tile": "BA/RrG",
+       "jcz_only": [
+        [
+         1,
+         -7,
+         0
+        ],
+        [
+         1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        94,
+        77
+       ],
+       "jcz": [
+        84,
+        74
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 29,
+      "detail": {
+       "ours": [
+        10,
+        8
+       ],
+       "jcz": [
+        0,
+        8
+       ]
+      }
+     },
+     {
+      "ply": 30,
+      "detail": {
+       "ours": [
+        10,
+        8
+       ],
+       "jcz": [
+        0,
+        8
+       ]
+      }
+     },
+     {
+      "ply": 31,
+      "detail": {
+       "ours": [
+        10,
+        8
+       ],
+       "jcz": [
+        0,
+        8
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000013,
+   "deck_seed": 28000000013,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    102,
+    108
+   ],
+   "jcz_final": [
+    82,
+    108
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 11,
+    "FARM_ATOM_SET": 134,
+    "SCORE_FINAL_EXPLAINED": 100
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_diagonal_top_left_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "N",
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "N",
+          "S",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 11,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 10,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         1,
+         "NL"
+        ],
+        [
+         -1,
+         1,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 11,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         1,
+         "NL"
+        ],
+        [
+         -1,
+         1,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 12,
+      "detail": {
+       "ours_only": [
+        [
+         -1,
+         1,
+         "NL"
+        ],
+        [
+         -1,
+         1,
+         "NR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        102,
+        108
+       ],
+       "jcz": [
+        82,
+        108
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 45,
+      "detail": {
+       "ours": [
+        20,
+        12
+       ],
+       "jcz": [
+        0,
+        12
+       ]
+      }
+     },
+     {
+      "ply": 46,
+      "detail": {
+       "ours": [
+        20,
+        12
+       ],
+       "jcz": [
+        0,
+        12
+       ]
+      }
+     },
+     {
+      "ply": 47,
+      "detail": {
+       "ours": [
+        20,
+        12
+       ],
+       "jcz": [
+        0,
+        12
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000014,
+   "deck_seed": 28000000014,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    133,
+    119
+   ],
+   "jcz_final": [
+    128,
+    119
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 7,
+    "FARM_ATOM_SET": 90,
+    "WALL_LEGALITY": 7,
+    "SCORE_FINAL_EXPLAINED": 112
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "straight_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 21,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 25,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "N",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 54,
+      "detail": {
+       "ours_only": [
+        [
+         -6,
+         -2,
+         "EL"
+        ],
+        [
+         -6,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 55,
+      "detail": {
+       "ours_only": [
+        [
+         -6,
+         -2,
+         "EL"
+        ],
+        [
+         -6,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 56,
+      "detail": {
+       "ours_only": [
+        [
+         -6,
+         -2,
+         "EL"
+        ],
+        [
+         -6,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 126,
+      "detail": {
+       "tile": "BA/RCr",
+       "jcz_only": [
+        [
+         -5,
+         -7,
+         90
+        ],
+        [
+         -5,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 130,
+      "detail": {
+       "tile": "BA/RCr",
+       "jcz_only": [
+        [
+         -5,
+         -7,
+         90
+        ],
+        [
+         -5,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 132,
+      "detail": {
+       "tile": "BA/Rr",
+       "jcz_only": [
+        [
+         -5,
+         -7,
+         0
+        ],
+        [
+         -5,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        133,
+        119
+       ],
+       "jcz": [
+        128,
+        119
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 33,
+      "detail": {
+       "ours": [
+        7,
+        4
+       ],
+       "jcz": [
+        2,
+        4
+       ]
+      }
+     },
+     {
+      "ply": 34,
+      "detail": {
+       "ours": [
+        7,
+        4
+       ],
+       "jcz": [
+        2,
+        4
+       ]
+      }
+     },
+     {
+      "ply": 35,
+      "detail": {
+       "ours": [
+        7,
+        4
+       ],
+       "jcz": [
+        2,
+        4
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000015,
+   "deck_seed": 28000000015,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    114,
+    95
+   ],
+   "jcz_final": [
+    93,
+    95
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 6,
+    "FARM_ATOM_SET": 118,
+    "WALL_LEGALITY": 6,
+    "SCORE_FINAL_EXPLAINED": 2
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_bottom_grass",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "S"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 27,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 26,
+      "detail": {
+       "ours_only": [
+        [
+         3,
+         1,
+         "WL"
+        ],
+        [
+         3,
+         1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 27,
+      "detail": {
+       "ours_only": [
+        [
+         3,
+         1,
+         "WL"
+        ],
+        [
+         3,
+         1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 28,
+      "detail": {
+       "ours_only": [
+        [
+         3,
+         1,
+         "WL"
+        ],
+        [
+         3,
+         1,
+         "WR"
+        ],
+        [
+         3,
+         2,
+         "WL"
+        ],
+        [
+         3,
+         2,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 130,
+      "detail": {
+       "tile": "BA/CRr",
+       "jcz_only": [
+        [
+         -2,
+         -7,
+         270
+        ]
+       ],
+       "n": 1
+      }
+     },
+     {
+      "ply": 132,
+      "detail": {
+       "tile": "BA/CFc.1",
+       "jcz_only": [
+        [
+         -2,
+         -7,
+         0
+        ],
+        [
+         -2,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 134,
+      "detail": {
+       "tile": "BA/RRR",
+       "jcz_only": [
+        [
+         -3,
+         -7,
+         180
+        ],
+        [
+         -2,
+         -7,
+         180
+        ]
+       ],
+       "n": 2
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        114,
+        95
+       ],
+       "jcz": [
+        93,
+        95
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 143,
+      "detail": {
+       "ours": [
+        114,
+        95
+       ],
+       "jcz": [
+        93,
+        95
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000016,
+   "deck_seed": 28000000016,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    104,
+    83
+   ],
+   "jcz_final": [
+    94,
+    83
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 22,
+    "FARM_ATOM_SET": 136,
+    "WALL_LEGALITY": 23,
+    "SCORE_FINAL_EXPLAINED": 128
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_top",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "S",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "E",
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 8,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -2,
+         "EL"
+        ],
+        [
+         1,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -2,
+         "EL"
+        ],
+        [
+         1,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 10,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -2,
+         "EL"
+        ],
+        [
+         1,
+         -2,
+         "ER"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 72,
+      "detail": {
+       "tile": "BA/CRr",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         180
+        ]
+       ],
+       "n": 1
+      }
+     },
+     {
+      "ply": 74,
+      "detail": {
+       "tile": "BA/CccG",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         90
+        ],
+        [
+         -1,
+         -7,
+         180
+        ],
+        [
+         -1,
+         -7,
+         270
+        ]
+       ],
+       "n": 3
+      }
+     },
+     {
+      "ply": 76,
+      "detail": {
+       "tile": "BA/CcRr+",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         180
+        ],
+        [
+         -1,
+         -7,
+         270
+        ],
+        [
+         0,
+         -7,
+         180
+        ],
+        [
+         0,
+         -7,
+         270
+        ]
+       ],
+       "n": 4
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        104,
+        83
+       ],
+       "jcz": [
+        94,
+        83
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 17,
+      "detail": {
+       "ours": [
+        10,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 18,
+      "detail": {
+       "ours": [
+        10,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 19,
+      "detail": {
+       "ours": [
+        10,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000017,
+   "deck_seed": 28000000017,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    101,
+    107
+   ],
+   "jcz_final": [
+    83,
+    89
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "DESYNC_FALLOUT": 32,
+    "FARM_ATOM_SET": 130,
+    "WALL_LEGALITY": 16,
+    "SCORE_FINAL_EXPLAINED": 2
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "bent_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "top_left"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 3,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NL",
+          "NR",
+          "SL",
+          "SR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 7,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NL",
+          "NR",
+          "SL",
+          "SR",
+          "WL",
+          "WR"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 9,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 14,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 15,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 16,
+      "detail": {
+       "ours_only": [
+        [
+         1,
+         -1,
+         "WL"
+        ],
+        [
+         1,
+         -1,
+         "WR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "WALL_LEGALITY": [
+     {
+      "ply": 102,
+      "detail": {
+       "tile": "BA/CRr",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         0
+        ],
+        [
+         -1,
+         -7,
+         90
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 106,
+      "detail": {
+       "tile": "BA/RFr",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         90
+        ],
+        [
+         -1,
+         -7,
+         270
+        ]
+       ],
+       "n": 2
+      }
+     },
+     {
+      "ply": 108,
+      "detail": {
+       "tile": "BA/LR",
+       "jcz_only": [
+        [
+         -1,
+         -7,
+         0
+        ]
+       ],
+       "n": 1
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        101,
+        107
+       ],
+       "jcz": [
+        83,
+        89
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 143,
+      "detail": {
+       "ours": [
+        101,
+        107
+       ],
+       "jcz": [
+        83,
+        89
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000018,
+   "deck_seed": 28000000018,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 143,
+   "plies_compared": 140,
+   "seat_offset": 0,
+   "seat_desync": false,
+   "our_final": [
+    100,
+    75
+   ],
+   "jcz_final": [
+    98,
+    75
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "UNPLACEABLE_TURN_LOSS": 1,
+    "DESYNC_FALLOUT": 3,
+    "FARM_ATOM_SET": 138,
+    "SCORE_FINAL_EXPLAINED": 140
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "city_bottom_road_shield",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "bottom"
+      }
+     }
+    ],
+    "UNPLACEABLE_TURN_LOSS": [
+     {
+      "ply": 2,
+      "detail": {
+       "tile": "chapel"
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 4,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Road",
+         [
+          "N"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 6,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "SL",
+          "SR",
+          "WL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "WL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 82,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "SL",
+          "SR",
+          "WL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "ER",
+          "WL"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 5,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         -1,
+         "SL"
+        ],
+        [
+         0,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 6,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         -1,
+         "SL"
+        ],
+        [
+         0,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 7,
+      "detail": {
+       "ours_only": [
+        [
+         0,
+         -1,
+         "SL"
+        ],
+        [
+         0,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        100,
+        75
+       ],
+       "jcz": [
+        98,
+        75
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE",
+        "UNPLACEABLE_TURN_LOSS"
+       ]
+      }
+     },
+     {
+      "ply": 4,
+      "detail": {
+       "ours": [
+        2,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 5,
+      "detail": {
+       "ours": [
+        2,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     },
+     {
+      "ply": 6,
+      "detail": {
+       "ours": [
+        2,
+        0
+       ],
+       "jcz": [
+        0,
+        0
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE",
+    "UNPLACEABLE_TURN_LOSS"
+   ],
+   "real": {}
+  },
+  {
+   "game_id": 28000000019,
+   "deck_seed": 28000000019,
+   "profile": "walled",
+   "policy": "record",
+   "r9": false,
+   "n_plies": 144,
+   "plies_compared": 142,
+   "seat_offset": 1,
+   "seat_desync": false,
+   "our_final": [
+    96,
+    97
+   ],
+   "jcz_final": [
+    88,
+    97
+   ],
+   "final_agree": false,
+   "counts": {
+    "START_TILE_PLY": 1,
+    "START_TILE_MEEPLE": 1,
+    "FARM_ATOM_SET": 132,
+    "DESYNC_FALLOUT": 7,
+    "SCORE_FINAL_EXPLAINED": 2
+   },
+   "samples": {
+    "START_TILE_PLY": [
+     {
+      "ply": 0,
+      "detail": {
+       "tile": "chapel_with_road",
+       "our_rotation": 0
+      }
+     }
+    ],
+    "START_TILE_MEEPLE": [
+     {
+      "ply": 1,
+      "detail": {
+       "side": "center"
+      }
+     }
+    ],
+    "FARM_ATOM_SET": [
+     {
+      "ply": 12,
+      "detail": {
+       "ours_only": [
+        [
+         -3,
+         -1,
+         "SL"
+        ],
+        [
+         -3,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 13,
+      "detail": {
+       "ours_only": [
+        [
+         -3,
+         -1,
+         "SL"
+        ],
+        [
+         -3,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     },
+     {
+      "ply": 14,
+      "detail": {
+       "ours_only": [
+        [
+         -3,
+         -1,
+         "SL"
+        ],
+        [
+         -3,
+         -1,
+         "SR"
+        ]
+       ],
+       "jcz_only": []
+      }
+     }
+    ],
+    "DESYNC_FALLOUT": [
+     {
+      "ply": 65,
+      "detail": {
+       "ours_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ]
+       ],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "NR",
+          "SL"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 73,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "Field",
+         [
+          "EL",
+          "NL",
+          "NR",
+          "WR"
+         ]
+        ],
+        [
+         "Road",
+         [
+          "E",
+          "W"
+         ]
+        ]
+       ]
+      }
+     },
+     {
+      "ply": 77,
+      "detail": {
+       "ours_only": [],
+       "jcz_only": [
+        [
+         "City",
+         [
+          "W"
+         ]
+        ],
+        [
+         "Field",
+         [
+          "EL",
+          "ER",
+          "NR",
+          "SL"
+         ]
+        ],
+        [
+         "Field",
+         [
+          "NL",
+          "SR"
+         ]
+        ],
+        [
+         "Road",
+         [
+          "N",
+          "S"
+         ]
+        ]
+       ]
+      }
+     }
+    ],
+    "SCORE_FINAL_EXPLAINED": [
+     {
+      "ply": -1,
+      "detail": {
+       "ours": [
+        96,
+        97
+       ],
+       "jcz": [
+        88,
+        97
+       ],
+       "classified_causes": [
+        "DESYNC_FALLOUT",
+        "FARM_ATOM_SET",
+        "START_TILE_MEEPLE"
+       ]
+      }
+     },
+     {
+      "ply": 143,
+      "detail": {
+       "ours": [
+        96,
+        97
+       ],
+       "jcz": [
+        88,
+        97
+       ]
+      }
+     }
+    ]
+   },
+   "error": null,
+   "contaminated_by": "START_TILE_MEEPLE",
+   "jcz_over": true,
+   "score_gap_causes": [
+    "DESYNC_FALLOUT",
+    "FARM_ATOM_SET",
+    "START_TILE_MEEPLE"
+   ],
+   "real": {}
+  }
+ ]
+}
