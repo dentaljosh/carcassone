@@ -3958,3 +3958,43 @@ bound; absolute fixed-rules claims GATED on the caps/curve re-sweep (launching t
 then flip); (d) CUDA-Graph net-arm spike funded (~half day, hard go/no-go at 0.18 ms
 batch-8). Walled bands retire from confirmatory use for fixed-rules claims per the F9
 spec rider — BAND_REGISTRY discipline unchanged.
+
+## 2026-08-03 — BACKEND DEFAULT FLIPPED: `make_production_champion(backend="auto")`, resolved PER MODE
+
+Executes queue item (c) above. `governance/PRODUCTION.yaml` is **untouched** — it has said
+`champion.fair_deploy.backend: rust` since 2026-08-01; this makes the FACTORY read it by
+default. The pre-flip blocker (BACKEND_BYPASS_AUDIT_20260801 §1: 5 of the 6
+`make_production_champion` call sites never `advance()` the Rust mirror) was closed by
+F11, which wired all four desktop callers to `carcassonne_ai.mirror_protocol` with
+`--backend inherit`; the Android bridge drives its own choke point and pins
+`backend="python"` for its anchor agent.
+
+**The resolution is per-mode, in one new function `champion_factory.resolve_auto_backend`:**
+
+| request | `"auto"` resolves to | why |
+|---|---|---|
+| `mode="fair"` | `spec.backend` = **rust** | G4 bit-exact / G6 14,384/14,384 identical actions |
+| `mode="clairvoyant"` | **python**, fail closed | the yaml key is `fair_deploy.backend` — the FAIR deploy's engine. A gated Rust ruler exists (GATE_CLAIR_BACKEND / GATE_GAP2_PERSISTENT) but that evidence covers `eval_fair_puct --info clair`, which passes `backend="rust"` EXPLICITLY and owns its mirror. Three items are open on the DEFAULT path: the Rust clairvoyant agents are PROFILE-BLIND (`MirrorState.from_deck` with no geometry/rules — load-bearing now that `fixed_v1` is the profile of record), this entry point passes no `auto_advance`, and Gap 3 (evaluator injection) is open |
+| any request naming a python-only capability (`meeple_dedup` / `intra_reuse` / `parallel_workers` / an injected evaluator) | **python** | such a request is not the champion of record, so the yaml's CHAMPION backend does not speak for it. Degrading to python is the SAFE direction (it is the status-quo engine, behaviour-identical by gate); the unsafe direction is python→rust behind a caller's back. An EXPLICIT `backend="rust"` still RAISES on the same set |
+| yaml says rust, `carc_rs` not importable | **raise**, with the remedy | the factory's contract is to PROVE at construction which engine executes; a silent demotion is the failure `verify_leaf` exists to prevent. Pass `backend="python"` to opt out |
+
+**What did NOT move, deliberately:** `build_fair_champion` / `build_clairvoyant_champion`
+/ `build_fair_netprior_candidate` / `resolved_manifest` keep `backend="python"` defaults.
+`eval_fair_puct` (every elo row we own) and the whole `measurement_infra` probe family
+reach the agent through those builders WITHOUT naming a backend — including on their
+explicit `--backend python` legs — so flipping them would silently move elo cells onto an
+engine their caller did not ask for, and would hard-raise on every net arm (carc_rs
+carries no evaluator). Their defaults are NOT dead code; the flip is one entry point.
+
+**Two real bugs the flip surfaced**, both "the python reference leg was an omitted kwarg":
+`scripts/rustport/fair_common.py::py_agent` (THE python oracle every rustport gate grades
+against — unpinned it became a Rust agent and raised `MirrorDesync` at ply 0; silently it
+would have compared rust to rust) and `gate_f3_callers.py`'s python leg. Both now pin
+explicitly. `build_clairvoyant_champion(backend="rust")` additionally fails closed on any
+non-`walled` Game rather than mirroring the engine-default rules.
+
+Gates: one scripted game per caller class at the new default resolves to Rust and is
+BYTE-IDENTICAL to the `backend="python"` leg (deck-seeded, 14 plies, actions and manifest
+compared); clairvoyant-at-default constructs as `HeuristicPriorAgent`; the `MirrorDesync`
+injection tests still fire; tests/rustport 311 pass, tests/release/test_factory_manifest
+25 pass, tests/test_f3_caller_backends 15 pass.
