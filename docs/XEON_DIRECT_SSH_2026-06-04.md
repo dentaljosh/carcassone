@@ -1,5 +1,13 @@
 # Xeon direct-WSL-ssh — kill the cmd.exe hop (2026-06-04)
 
+> **🕰️ STATUS: HISTORICAL — THE BOX IS RETIRED (stamped 2026-08-03).** The access recipe below worked and
+> is still correct if the Xeon is ever revived, but the Xeon left the cluster on 2026-07-17 and a
+> rust-era revival probe on **2026-08-02 said RE-RETIRE**: per-thread PARITY with the other boxes (it adds
+> only its ~21% thread share) and, worse, its **AVX-512 is a fourth libm implementation** — G0 determinism
+> FAILS there by default, so any AVX-512 box (including cloud) needs `NPY_DISABLE_CPU_FEATURES`.
+> "All boxes" now means the local 5900XT + the laptop. → DECISIONS 2026-08-02 (evening), memory
+> `reference_xeon_direct_ssh`, [CLUSTER_OPS.md](CLUSTER_OPS.md). *(Original doc follows.)*
+
 **Goal:** make `ssh xeon-wsl "a && b | c"` work like the laptop — no cmd.exe
 mangling, no `wsl -d … -- bash -lc` wrapper, no stage_launcher chicken-egg.
 Root cause of all Xeon friction: `ssh xeon` lands in **Windows cmd.exe**, which
