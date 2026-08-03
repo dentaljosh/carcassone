@@ -211,6 +211,56 @@ def test_start_game_from_board_equals_start_game_from_seed():
     assert a.string_repr() == game.string_representation(board)
 
 
+def test_start_game_seats_in_sync_under_the_retail_start_rule():
+    """REGRESSION (F9 fixed_v1, arm F died here at ply 0, 2026-08-03).
+
+    `start_game_from_deck` does not import a finished state — it re-runs the
+    mirror's OWN setup under the agent's `GameConfig`. Under `start_rule=retail`
+    that setup pre-places the start tile by removing the first entry whose
+    description matches. The Python board has ALREADY done exactly that, so
+    handing over its post-setup deck made Rust remove a SECOND
+    `city_top_straight_road` (the base deck holds four) and the two engines
+    parted on deck length at ply 0.
+
+    The symptom is deliberately re-asserted field-by-field rather than only via
+    the digest: `next_tile` still AGREES whenever the duplicate sits later in the
+    pool, so a test that only checked the next tile would have passed while the
+    game was already unplayable."""
+    random.seed(DECK)
+    game = Game(enable_legal_moves_cache=True, fixed_start_tile=True)
+    board = game.get_init_board()
+    assert len(board.state.placed_coords) == 1, "retail must pre-place exactly one tile"
+
+    a = _rs(game)
+    a.start_game(board)                       # raised MirrorDesync before the fix
+    assert a.string_repr() == game.string_representation(board)
+    a.check_sync(board, "regression")         # the unconditional form
+    # The divergence was DECK LENGTH, and `string_representation` encodes it as
+    # the tiles-remaining field (70 vs 69 in the arm-F report) — which is why the
+    # repr comparison above is the whole assertion and not just a proxy for it.
+    assert str(board.total_tiles - board.tile_count - 1) in a.string_repr()
+
+
+def test_start_game_seats_in_sync_under_the_whole_fixed_v1_bundle():
+    """The composed profile, through `champion_factory` — the surface the merge
+    verified INERT AT DEFAULT but never exercised flag-ON. Geometry (row 18) and
+    both rules flags must reach the mirror together with the retail deck fix."""
+    random.seed(DECK)
+    game = Game(enable_legal_moves_cache=True, fixed_start_tile=True,
+                start_row=18, start_col=15,
+                cloister_scan_fix=True, draw_rule="redraw")
+    board = game.get_init_board()
+
+    a = _rs(game)
+    a.start_game(board)
+    assert a.string_repr() == game.string_representation(board)
+    # the flags really travelled — not merely "the boards happen to match"
+    assert board.state.cloister_scan_fix is True
+    assert board.state.redraw_unplaceable is True
+    assert (board.state.starting_position.row,
+            board.state.starting_position.column) == (18, 15)
+
+
 def test_advance_is_the_only_way_the_mirror_moves():
     game, board = _fresh()
     a = _rs(game)

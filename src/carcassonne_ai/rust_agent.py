@@ -289,6 +289,77 @@ def net_arm_backend_status() -> dict:
 # --------------------------------------------------------------------------- #
 # The adapter                                                                  #
 # --------------------------------------------------------------------------- #
+def _draw_order_for_mirror(st, mirror_preplaces: bool) -> list[str]:
+    """The ORIGINAL draw order of `st`'s deck, as the Rust mirror must receive it.
+
+    ⚠️ THIS IS NOT SIMPLY ``[next_tile] + deck``, and the difference is a real
+    bug that reached a Phase-B launch (F9 `fixed_v1`, arm F, died at ply 0 with
+    python tiles-remaining 70 vs rust 69).
+
+    `start_game_from_deck` does not import a finished state — it hands the deck
+    to ``Game::from_deck_with_config``, which then runs the mirror's OWN setup
+    under the SAME `GameConfig` the agent was built with. Under
+    ``start_rule="retail"`` that setup pre-places the start tile, and it takes
+    the tile by *removing the first entry whose description matches* from
+    ``[next_tile] + deck``.
+
+    But the Python board handed to us has ALREADY been through exactly that
+    step: `game_wrapper.preplace_retail_start_tile` removed the first matching
+    `city_top_straight_road` from its own pool and put it on the board. So the
+    deck we can observe is the POST-setup one. Hand that over and the Rust side
+    removes a *second* copy — the base deck holds four — and the two engines
+    part company on deck length at ply 0. `next_tile` still agrees whenever the
+    duplicate sits later in the pool, which is why the symptom is a lone
+    tiles-remaining digest field and not an obviously wrong board.
+
+    The inverse is exact rather than heuristic. Python removed the FIRST match,
+    so re-inserting the pre-placed tile at index 0 yields a pool whose first
+    match IS that tile; Rust's identical "remove the first match" rule then
+    removes index 0 and reproduces the observed deck, in order, byte for byte.
+
+    ⚠️ It takes BOTH sides to decide this, which is the second half of the same
+    bug. `mirror_preplaces` is the mirror's own resolved `start_rule`, and the
+    board's `placed_coords` is what Python actually did. Keying off only ONE of
+    them is wrong in a way that still looks like a deck bug:
+
+      * board pre-placed + mirror pre-places  -> prepend (the case above);
+      * board pre-placed + mirror does NOT    -> the mirror was built on walled
+        geometry while the Game is retail. Prepending here would leave the tile
+        sitting unplayed at the head of the mirror's deck (71 remaining vs 70,
+        the MIRROR IMAGE of the original symptom). That is a construction bug in
+        the caller, so it RAISES rather than being papered over;
+      * board virgin + mirror pre-places      -> the mirror would invent a
+        placement the Python board never made. Also raises.
+    """
+    descs = [st.next_tile.description] + [t.description for t in st.deck]
+    placed = list(st.placed_coords)
+    if not placed:
+        if mirror_preplaces:
+            raise RuntimeError(
+                "the Rust mirror is configured start_rule='retail' but the Python "
+                "board has no pre-placed start tile: the mirror would place a tile "
+                "this game never dealt. Build the agent from the same Game the "
+                "board came from (champion_factory forwards the geometry).")
+        return descs                      # engine start rule — nothing pre-placed
+    if not mirror_preplaces:
+        raise RuntimeError(
+            "the Python board has a pre-placed retail start tile but the Rust "
+            "mirror is configured start_rule='engine': the mirror cannot "
+            "reproduce this setup and would run one tile behind for the whole "
+            "game. The agent must be built with start_rule='retail' (and the "
+            "matching start_row/start_col) — see champion_factory's rust branch.")
+    if len(placed) != 1:
+        raise RuntimeError(
+            f"start_game cannot seat a mirror on a board with {len(placed)} "
+            "pre-placed tiles: the draw order that produced them is not "
+            "recoverable. Only the retail single-start-tile setup is supported.")
+    c = placed[0]
+    tile = st.get_tile(c.row, c.column)
+    if tile is None:                      # unreachable; refuse rather than guess
+        raise RuntimeError(f"placed_coords lists {c!r} but the board cell is empty")
+    return [tile.description] + descs
+
+
 class RustFairAgent:
     """`carc_rs.FairAgentRs` behind the `FairHeuristicPriorAgent` surface.
 
@@ -323,6 +394,10 @@ class RustFairAgent:
         self._seed = int(seed)
         self._threads = int(threads)
         self._reconcile = reconcile_enabled(reconcile)
+        # Does the MIRROR run the retail pre-placement? `start_game` needs this
+        # to reconstruct the pre-setup draw order (see _draw_order_for_mirror);
+        # `None` == "engine" == the engine of record, matching the FFI default.
+        self._mirror_preplaces = (start_rule == "retail")
         # Defaults READ from fair_agent (point-don't-copy), so the adapter can
         # never quote a budget the Python champion has since moved off.
         self._exact_max_k = int(_fa.EXACT_MAX_K if exact_max_k is None else exact_max_k)
@@ -388,7 +463,7 @@ class RustFairAgent:
             raise RuntimeError(
                 "start_game after the mirror has advanced — build a fresh agent "
                 "(or call start_game before the first advance)")
-        descs = [st.next_tile.description] + [t.description for t in st.deck]
+        descs = _draw_order_for_mirror(st, self._mirror_preplaces)
         self._rs.start_game_from_deck(descs)
         self._started = True
         self._plies = 0

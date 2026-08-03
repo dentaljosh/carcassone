@@ -1,0 +1,13 @@
+### profile=fixed_v1 backend=rust R9=1  (CARC_RS_RECONCILE=1, n=4 deck-paired)
+games: 4   candidate: 1W / 1D / 2L   winrate 0.375 (z=-0.50)
+avg score diff (candidate - opponent): +4.25
+### profile=fixed_v1 backend=python R9=1  (CARC_RS_RECONCILE=1, n=4 deck-paired)
+games: 4   candidate: 1W / 1D / 2L   winrate 0.375 (z=-0.50)
+avg score diff (candidate - opponent): +4.25
+### profile=walled backend=rust R9=0  (CARC_RS_RECONCILE=1, n=4 deck-paired)
+games: 4   candidate: 0W / 0D / 4L   winrate 0.000 (z=-2.00)
+avg score diff (candidate - opponent): -4.00
+### profile=walled backend=python R9=0  (CARC_RS_RECONCILE=1, n=4 deck-paired)
+games: 4   candidate: 0W / 0D / 4L   winrate 0.000 (z=-2.00)
+avg score diff (candidate - opponent): -4.00
+### ALL 4 LEGS DONE

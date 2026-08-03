@@ -983,6 +983,26 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
     if backend == "rust":
         from .rust_agent import RustFairAgent
 
+        # ⚠️ THE MIRROR INHERITS THE PYTHON GAME'S GEOMETRY AND RULES FLAGS.
+        # This branch forwarded NONE of them until 2026-08-03, while
+        # `build_fair_champion`'s rust branch (above) has forwarded geometry
+        # since F9 A0 — so a champion built through THIS entry point ran the
+        # mirror on walled 35x35/engine-start no matter what Game it was handed.
+        # Under `fixed_v1` that is a guaranteed ply-0 desync (python pre-places
+        # the retail start tile, the mirror does not), which is how the arm-F
+        # launch failed. Same shape as the other branch, and equally inert under
+        # `walled`: window_size is already 25 and none of the flags are set.
+        _rs_geom: dict = {"window_size": int(getattr(game, "window_size", 25))}
+        if getattr(game, "recentred", False):
+            _rs_geom["start_row"] = int(game.start_row)
+            _rs_geom["start_col"] = int(game.start_col)
+        if getattr(game, "fixed_start_tile", False):
+            _rs_geom["start_rule"] = "retail"
+        if getattr(game, "cloister_scan_fix", False):
+            _rs_geom["cloister_scan_fix"] = True
+        _dr = getattr(game, "draw_rule", None)
+        if _dr is not None and _dr != "engine":
+            _rs_geom["draw_rule"] = str(_dr)
         agent = RustFairAgent(
             game, cfg,
             sims=(spec.sims_per_det if sims is None else int(sims)),
@@ -990,7 +1010,7 @@ def make_production_champion(mode: str, *, game=None, seed: int = 0,
             seed=int(seed), exact_endgame=bool(exact_endgame),
             exact_max_k=spec.exact_max_k,
             threads=(1 if rust_threads is None else int(rust_threads)),
-            **budget_kw)
+            **_rs_geom, **budget_kw)
     elif mode == "fair":
         agent = build_fair_champion(
             game, cfg=cfg,
