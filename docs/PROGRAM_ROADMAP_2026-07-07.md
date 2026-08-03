@@ -6,7 +6,11 @@
 
 ---
 
-## NOW (2026-08-02) — **NEXT THREE: F10 rust-port review remediation · F11 caller conversion for `backend="auto"` (the F8 residual) · F9 transfer-bound cell + the F7d W-sweep** (both now unblocked — F8 complete, recentring decided app-only). Live on the boxes: the **G10** champ-vs-10× oracle screen (laptop). Live state → [STATUS.md](../STATUS.md); 2026-08-02 deliverables → [docs/INDEX.md](INDEX.md).
+## NOW (2026-08-03, afternoon) — **NOTHING IS QUEUED TO RUN. The queue is empty of funded work; every remaining item waits on Joshua.** F9 is FULLY CLOSED (Phases A+B+C, `fixed_v1` adopted, caps/curve re-sweep ALL-NULL, D1 JCZ 43/43, luck floor measured) · F10/F11 DONE · F7d re-swept · the backend default is flipped (auto→rust per-mode) · G10 closed unfunded · the rust deep-K solver shipped ⇒ **F13 (the clairvoyant K2..6 ladder) is FUNDABLE and is the one live compute proposal.** Live on the boxes: **the paper-G2 transformer control's `tf_large` arm** (training, ruler pass follows — the ONLY thing running). Open Joshua calls: F13 funding · APK rebuild + the E4 fixed_v1 flip · decision-queue item 3 (the ANE close-unfunded ack, never explicitly acked) · publications · push. Point-in-time audit of everything still live → [LIVE_QUEUE_SNAPSHOT_20260803.md](LIVE_QUEUE_SNAPSHOT_20260803.md) (a snapshot, NOT a replacement for this file). Live state → [STATUS.md](../STATUS.md); doc map → [docs/INDEX.md](INDEX.md).
+
+> 🕰️ **The 2026-08-02 NOW block below is HISTORICAL — do not action it.** Its "next three" (F10 · F11 · F9 transfer-bound + F7d) are ALL COMPLETE (DECISIONS 2026-08-02 night / 2026-08-03), and the G10 screen it lists as live on the laptop closed 2026-08-02 (decision-queue item 1, NOT FUNDED).
+
+## NOW (2026-08-02, historical) — **NEXT THREE: F10 rust-port review remediation · F11 caller conversion for `backend="auto"` (the F8 residual) · F9 transfer-bound cell + the F7d W-sweep** (both now unblocked — F8 complete, recentring decided app-only). Live on the boxes: the **G10** champ-vs-10× oracle screen (laptop). Live state → [STATUS.md](../STATUS.md); 2026-08-02 deliverables → [docs/INDEX.md](INDEX.md).
 
 > 🕰️ **The block below is HISTORICAL (2026-07-10) — do not action it.** It is retained as the record of the B/A-small/C-cheap gate and is three weeks and two tracks (F, G) behind.
 
