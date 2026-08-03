@@ -136,6 +136,10 @@ def measure_child(rec: dict, engine: str, mode: str, alphabeta: bool,
     if game.string_representation(board) != ms.string_repr():
         return {**out, "status": "replay_desync"}
 
+    # SIGALRM covers the PYTHON solve only.  A Rust solve runs under
+    # `allow_threads` with the GIL dropped, so a Python-level signal handler
+    # cannot run until the FFI call returns — the wall cap for the Rust leg is
+    # enforced by the PARENT, which SIGKILLs this child (see `measure`).
     signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(TimeoutError()))
     signal.alarm(timeout_s)
     rss0 = _rss_mb()
@@ -170,7 +174,19 @@ def measure_child(rec: dict, engine: str, mode: str, alphabeta: bool,
 
 
 def measure(job: dict) -> dict:
-    """Fork, run `measure_child`, and never let a child failure kill the run."""
+    """Fork, run `measure_child`, and never let a child failure kill the run.
+
+    The PARENT owns the wall cap: it selects on the result pipe with a deadline
+    and SIGKILLs a child that overruns.  This is the only thing that can stop a
+    Rust solve — it holds no GIL, so an in-child Python alarm would not fire
+    until it had already returned.  The deadline is `timeout_s` plus a small
+    allowance for the replay, which is timed but not capped.
+    """
+    import select
+
+    label = {"pos": pos_id(job["rec"]), "engine": job["engine"],
+             "mode": job["mode"], "alphabeta": job["alphabeta"],
+             "k": int(job["rec"]["k_remaining"])}
     rfd, wfd = os.pipe()
     pid = os.fork()
     if pid == 0:                                   # child
@@ -179,21 +195,37 @@ def measure(job: dict) -> dict:
             res = measure_child(**job)
         except BaseException as exc:               # noqa: BLE001
             res = {"status": "EXCEPTION", "error": f"{type(exc).__name__}: {exc}",
-                   "pos": pos_id(job["rec"]), "engine": job["engine"],
-                   "mode": job["mode"], "alphabeta": job["alphabeta"],
-                   "k": int(job["rec"]["k_remaining"])}
-        with os.fdopen(wfd, "w") as fh:
-            json.dump(res, fh)
-        os._exit(0)
+                   **label}
+        try:
+            with os.fdopen(wfd, "w") as fh:
+                json.dump(res, fh)
+        finally:
+            os._exit(0)
     os.close(wfd)
-    with os.fdopen(rfd) as fh:
-        raw = fh.read()
+    deadline = time.monotonic() + job["timeout_s"] + 120   # +replay allowance
+    chunks: list[bytes] = []
+    killed = False
+    while True:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            os.kill(pid, signal.SIGKILL)
+            killed = True
+            break
+        ready, _, _ = select.select([rfd], [], [], min(left, 5.0))
+        if not ready:
+            continue
+        buf = os.read(rfd, 65536)
+        if not buf:
+            break
+        chunks.append(buf)
+    os.close(rfd)
     _, status = os.waitpid(pid, 0)
+    raw = b"".join(chunks).decode() or ""
+    if killed:
+        return {"status": "timeout", "timeout_s": job["timeout_s"],
+                "killed_by": "parent_deadline", **label}
     if not raw:
-        return {"status": "child_died", "exit_status": status,
-                "pos": pos_id(job["rec"]), "engine": job["engine"],
-                "mode": job["mode"], "alphabeta": job["alphabeta"],
-                "k": int(job["rec"]["k_remaining"])}
+        return {"status": "child_died", "exit_status": status, **label}
     return json.loads(raw)
 
 
@@ -259,6 +291,9 @@ def main() -> int:
     ap.add_argument("--as-limit-mb", type=int, default=6000)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--tag", default=None,
+                    help="names the artifact BENCH_<tag>.json, so a run split "
+                         "into cheap and expensive passes does not overwrite itself")
     args = ap.parse_args()
 
     jobs: list[dict] = []
@@ -347,9 +382,10 @@ def main() -> int:
     }
     out_dir = Path(args.out) if args.out else REPO / "measurement" / "rust_solver_bench"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "BENCH.json").write_text(json.dumps(payload, indent=2, sort_keys=True))
+    name = f"BENCH_{args.tag}.json" if args.tag else "BENCH.json"
+    (out_dir / name).write_text(json.dumps(payload, indent=2, sort_keys=True))
     print(json.dumps({"summary": summary, "speedup": speedup}, indent=2))
-    print(f"-> {out_dir / 'BENCH.json'}")
+    print(f"-> {out_dir / name}")
     return 0
 
 

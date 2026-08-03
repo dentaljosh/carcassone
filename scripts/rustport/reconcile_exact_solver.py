@@ -276,7 +276,36 @@ def seat_midindex(seed: int, k_target: int, max_plies: int = 400):
 # one position, both modes, both implementations
 # --------------------------------------------------------------------------
 
-def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict) -> dict:
+class _PySolveTimeout(Exception):
+    """The PYTHON oracle blew its wall cap — a SKIP, never a mismatch.
+
+    The cap exists because the oracle's cost explodes with K (measured: ~4.5 s
+    at K=2, ~122 s at K=3, and hours at K=4), and an un-capped K=4 row would
+    park a worker for the length of the run.  It applies to the PYTHON side
+    ONLY: a Rust solve that outran the budget while Python finished is a real
+    divergence and is reported as one.
+    """
+
+
+def _timed_py_solve(game, board, mode, budget, ab, cap_s: int):
+    if cap_s <= 0:
+        return S.solve(game, board, mode, budget=budget, alphabeta=ab)
+    import signal as _sig
+
+    def _fire(*_):
+        raise _PySolveTimeout()
+
+    old = _sig.signal(_sig.SIGALRM, _fire)
+    _sig.alarm(cap_s)
+    try:
+        return S.solve(game, board, mode, budget=budget, alphabeta=ab)
+    finally:
+        _sig.alarm(0)
+        _sig.signal(_sig.SIGALRM, old)
+
+
+def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict,
+                   solve_timeout_s: int = 0) -> dict:
     """Solve one position on both sides in every requested mode."""
     out = {"checks": 0, "skipped": 0, "mismatches": [], "cells": {}}
     if game.string_representation(board) != ms.string_repr():
@@ -285,8 +314,8 @@ def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict
     for mode, ab in modes:
         cell = f"{mode}{'+ab' if ab else ''}"
         try:
-            py = S.solve(game, board, mode, budget=budget, alphabeta=ab)
-        except S.BudgetExceeded:
+            py = _timed_py_solve(game, board, mode, budget, ab, solve_timeout_s)
+        except (S.BudgetExceeded, _PySolveTimeout):
             out["skipped"] += 1
             out["cells"][cell] = out["cells"].get(cell, 0)
             continue
@@ -460,7 +489,8 @@ def job_corpus(job: dict) -> dict:
             continue
         merge(out, check_position(tag, game, board, ms, budget=args["budget"],
                                   modes=modes_for(k, job["modes_args"]),
-                                  extra={"k": k}))
+                                  extra={"k": k},
+                                  solve_timeout_s=args["solve_timeout_s"]))
     return out
 
 
@@ -474,7 +504,8 @@ def job_synth(job: dict) -> dict:
     out["positions"] = 1
     k = k_remaining(board)
     merge(out, check_position(job["tag"], game, board, ms, budget=job["args"]["budget"],
-                              modes=job["modes"], extra={"k": k, "profile": job["profile"]}))
+                              modes=job["modes"], extra={"k": k, "profile": job["profile"]},
+                              solve_timeout_s=job["args"]["solve_timeout_s"]))
     return out
 
 
@@ -496,7 +527,7 @@ def build_jobs(args) -> list[dict]:
     if "all" in legs:
         legs = {"golden", "v2", "l23", "f3", "synth"}
     jobs: list[dict] = []
-    argd = {"budget": args.budget}
+    argd = {"budget": args.budget, "solve_timeout_s": args.solve_timeout_s}
     limits = {"max_k_clair": args.max_k_clair,
               "max_k_clair_noprune": args.max_k_clair_noprune,
               "max_k_marg": args.max_k_marg}
@@ -567,6 +598,9 @@ def main() -> int:
     ap.add_argument("--per-k", type=int, default=25,
                     help="positions sampled per (corpus, K) cell; 0 = all")
     ap.add_argument("--budget", type=int, default=4_000_000)
+    ap.add_argument("--solve-timeout-s", type=int, default=0,
+                    help="wall cap on each PYTHON solve (0 = none). A cap hit "
+                         "is a SKIP, counted and reported, never a PASS")
     ap.add_argument("--max-k", type=int, default=6,
                     help="skip corpus rows above this k_remaining entirely")
     ap.add_argument("--max-k-clair", type=int, default=4,
