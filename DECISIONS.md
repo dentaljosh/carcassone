@@ -4012,3 +4012,27 @@ warning: the E4 border game's 14-pt gap is explained-but-contaminated — never 
 "the wall cost". This is the independent-implementation validation plank of the
 publication story. Report: measurement/jcz_oracle_20260803/VALIDATION_REPORT.md;
 CI-mode pytest tests/test_jcz_replay_oracle.py.
+
+## 2026-08-03 (morning) — CAPS/CURVE RE-SWEEP CLOSED ALL-NULL: the walled optima TRANSFER under fixed_v1+R9; absolute fixed-rules claims UNLOCK as-is
+
+The adoption gate discharged on its expected branch. Six screen cells, n=200 deck-paired
+each, band 1.03e11 CRN-shared, rust both sides, fixed_v1+R9 manifest-verified per cell
+(`experiments/results.csv` capscurve_* rows; prereg
+measurement/capscurve_resweep_20260803/PREREG.md, decision map row 1). Paired-margin z:
+cap12 +0.70 · cap5 −1.27 · curve150 −0.06 · curve100 −1.30 · oppcap4 −1.52 · oppcap12
+−0.88 — no cell at z ≥ +2.0, so **cap8 / opp_cap8 / curve125 stand under the new rules**;
+no leaf change, no re-tune, no confirm (the 1.04e11 reservation is released). The
+`curve100` positive control read right-signed but weak (−19.1 vs the −66.8 walled prior);
+the prereg's alarm line was honored — wiring re-checked BEFORE interpretation, and the
+manifests prove each cell varied exactly its knob (cand curve100 leaf 42af12fc vs champ
+curve125 a36d2e15, distinct hashes on every cell). The weak reading is a power statement,
+not an instrument one: the cell's CI contains the prior, and the prior itself takes the
+CL-068 ~1.5–2× cross-band inflation. **Power caveat carried verbatim into
+PRODUCTION.yaml: the screen resolves ~50 elo unpaired / ~35 paired at 2σ — a ≤20-elo
+optimum shift is NOT excluded** (deliberately, per the prereg's funded claim: "the optima
+did not move enough to invalidate absolute fixed-rules strength claims"). PRODUCTION.yaml
+`rules_profile` scope note updated (gate discharged, absolutes ungated); band 1.03e11
+retired (decision-influencing). Rider honored en route: this run existed BECAUSE
+`feedback_bug_fix_shifts_optima` — the F9 rules fixes moved farm decomposition (R9) and
+the meeple economy (retail start / redraw / cloister), and the answer is that neither
+moved the leaf's tuned optima at screen resolution. Cost: ~1.9 h two-box (07:50 finish).

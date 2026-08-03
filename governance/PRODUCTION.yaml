@@ -184,11 +184,15 @@ champion:
                                         # EVIDENCE: the Phase-B transfer bound — the flagship contrast reproduces
                                         # under fixed rules, deck-matched z +0.98, bound ≈[−18,+53] elo-equiv
                                         # (measurement/classical_search/PHASEB_TRANSFER_READOUT_20260803.md);
-                                        # W2 geometry by probe (0/400 sentinel events). ⚠️ SCOPE: NEW confirmatory
+                                        # W2 geometry by probe (0/400 sentinel events). SCOPE: NEW confirmatory
                                         # work runs fixed_v1 on fresh bands; the walled record stays interpretable
-                                        # via the bound; ABSOLUTE fixed-rules strength claims are GATED on the
-                                        # caps/curve re-sweep (bug-fix-shifts-optima; in flight 2026-08-03) —
-                                        # until it lands, fixed_v1 numbers are contrasts, not absolutes.
+                                        # via the bound. The caps/curve re-sweep GATE IS DISCHARGED 2026-08-03:
+                                        # all 6 cells null at screen resolution (band 1.03e11, no paired-margin
+                                        # z >= +2.0; positive-control wiring manifest-verified) — the walled
+                                        # optima cap8/oppcap8/curve125 TRANSFER, and absolute fixed-rules claims
+                                        # are UNLOCKED as-is. Power caveat: the screen resolves ~50 elo unpaired /
+                                        # ~35 paired at 2-sigma; a <=20-elo optimum shift is NOT excluded
+                                        # (measurement/capscurve_resweep_20260803/PREREG.md, decision-map row 1).
     backend: rust                       # ⭐ THE CHAMPION'S EXECUTION BACKEND OF RECORD (2026-08-01, Joshua "1 yes").
                                         # carc_rs, the rustport core. An ENGINE, not a player: BEHAVIOR-IDENTICAL by
                                         # gate, so NO strength claim moves and no re-eval is owed. Evidence:

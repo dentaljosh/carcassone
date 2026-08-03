@@ -1,6 +1,21 @@
 # CAPS / CURVE RE-SWEEP UNDER `fixed_v1` — PRE-REGISTRATION (DRAFT)
 
-> **STATUS: 📝 DRAFT — BUILT, SMOKED, NOT AUTHORIZED. Band `1.03e11` is PROPOSED, not
+> **STATUS: ✅ RAN + CLOSED 2026-08-03 — ALL 6 CELLS NULL (decision-map row 1 fired: the
+> optima TRANSFER, absolutes UNLOCK as-is).** Paired-margin z: cap12 +0.70 · cap5 −1.27 ·
+> curve150 −0.06 · curve100 −1.30 · oppcap4 −1.52 · oppcap12 −0.88 — no cell at z ≥ +2.0.
+> Unpaired elo alongside: +6.9 / −15.6 / −8.7 / −19.1 / −47.2 / +12.2 (1σ ≈ ±24.6).
+> The `curve100` control was right-signed but weak (−19.1; its CI contains the −66.8 walled
+> prior, which itself takes the ~1.5–2× cross-band inflation); per the alarm line the wiring
+> was re-checked before interpretation — every cell's manifest proves the knob applied
+> (e.g. cand curve100 leaf `42af12fc` vs champ curve125 `a36d2e15`, `fixed_v1` + `r9_env_ok`
+> both sides). **Power caveat recorded verbatim (§Power): this screen resolves ~50 elo
+> unpaired / ~35 paired at 2σ and nothing smaller — a ≤20-elo shift on `curve150`/`cap5`/
+> `cap12` is NOT excluded.** Band `1.03e11` retired; the `1.04e11` confirm reservation is
+> RELEASED (branch never fired). Rows in `experiments/results.csv` (`capscurve_*`);
+> PRODUCTION.yaml scope note updated (gate discharged). Original draft banner preserved
+> below for the record.
+>
+> **STATUS AT AUTHORIZATION: 📝 DRAFT — BUILT, SMOKED, NOT AUTHORIZED. Band `1.03e11` is PROPOSED, not
 > registered; the orchestrator registers it in `governance/BAND_REGISTRY.csv` before game 1
 > and Joshua authorizes the launch. No games of the real band have been played.**
 >
