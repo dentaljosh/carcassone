@@ -1667,6 +1667,13 @@ def main(argv=None) -> int:
                "cand_leaf_hash": _leaf_hash(leaf_cfg),
                "champ_leaf_cfg": _leaf_dict(champ_leaf_cfg),
                "champ_leaf_hash": _leaf_hash(champ_leaf_cfg),
+               # Writer-local runtime knobs (added 2026-08-02, F7b). ⚠️ Under
+               # --shared-claim EVERY box writes this file (overwrite=True), so this
+               # block describes whichever box wrote LAST — it is a per-writer record,
+               # NOT the run's aggregate worker count. Per-thread pins live in `env`.
+               "writer": {"workers": args.workers,
+                          "shared_claim": bool(args.shared_claim),
+                          "claim_host": args.claim_host},
                "env": {k: os.environ.get(k) for k in _CANON_ENV}}
     # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON, so
     # a plain (OFF) manifest stays byte-identical to the pre-change harness output.
