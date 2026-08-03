@@ -62,6 +62,17 @@ NOT DERIVABLE from these corpora (both profiles alike): **luck_share_icc** — n
 
 To complete the descriptive: generate a seat-swap paired eval archive under this rules profile (the `seedNNN_a0.json` / `_a1.json` shape luck_floor.load_pairs reads) and add its directory to luck_floor.NEAR_EQUAL, then re-run scripts/human_anchor/luck_floor.py.
 
+> **✅ ADDENDUM 2026-08-03 (same day, later) — the paired half is now MEASURED.** The seat-swap
+> archive was generated (`/mnt/c/carc-shared/f9_luck_pairs_fixed_v1`: champion-vs-champion, 200
+> decks × 2 seatings, fixed_v1+R9 manifest-gated, k8×1376 both sides; h2h sanity 0.487 wr /
+> −8.7 ± 17.4 elo = identity-consistent) and analyzed with `luck_floor.py --only-extra` →
+> **[LUCK_FLOOR_fixed_v1.md](LUCK_FLOOR_fixed_v1.md)**. Numbers under the adopted rules:
+> **deck-luck ICC ~0.19 · σ_game 20.4 · σ_pair 12.8 · seat_adv +3.1 · pairing factor ~0.79**
+> (June walled pool for scale, NOT a controlled contrast — different pairings/budgets/era:
+> ICC ~0.14, σ_game 22.2, σ_pair 14.5, factor 0.86). E4 sizing under fixed_v1: true-wr 0.55 →
+> **193 seat-swap paired games** (vs 381 naive; 0.60 → 48 paired). This section's Δs remain
+> cross-band/cross-instrument DESCRIPTIVE.
+
 ## 2. Decision density
 
 Instrument: `scripts/rules_fixed/descriptives.py` (built for this gate — the spec's *no instrument exists* row). Pure replay under each corpus's own rules profile. `searched` = the ply had ≥2 legal actions; `forced` = exactly one legal action existed.

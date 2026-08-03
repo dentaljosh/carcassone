@@ -4121,3 +4121,26 @@ alpha-beta), which matters if the net idea ever fires — its fair labels are th
 **Reversal cost:** none (new code + bench only; no production wiring, PRODUCTION.yaml untouched;
 the fair agent's K≤2 marginalized latch path is unchanged and its parity gate is part of the suite).
 **Phase:** measurement-first
+
+## 2026-08-03 (late afternoon) — The fixed_v1 seat-swap luck archive: Phase C's named residue MEASURED same-day (measurement)
+
+**Trigger:** Joshua ("anything we should be running on laptop now?") — the idle laptop funded the
+residue the Phase C close-out had named an hour earlier. Producer = `eval_fair_puct --opponent
+fair-champion` (champion-vs-champion, near-equal by construction), 200 decks × 2 seatings on the
+F9 throwaway range 109.5e9, fixed_v1+R9 both sides at k8×1376, two-box shared-claim (laptop W26 +
+local W14 beside the GPU-bound G2 training), ~50 min wall. Driver `scripts/rules_fixed/gen_luck_pairs.sh`;
+consumer adapter in `luck_floor.py` (+10 tests; June walled outputs re-verified byte-identical).
+**Bug caught by the build agent before it could bite:** `luck_floor` read an unrecognized win-field
+spelling as a LOSS — a champion-vs-champion archive would have reported wr_A ≈ 0.0, plausible-looking
+and silently wrong (the guards-not-vigilance file grows again).
+
+**Numbers under the adopted rules** ([measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md](measurement/f9_phase_c/LUCK_FLOOR_fixed_v1.md);
+h2h sanity: 0.487 wr / −8.7 ± 17.4 = identity-consistent): **deck-luck ICC ~0.19 · σ_game 20.4 ·
+σ_pair 12.8 · seat_adv +3.1 pts · seat-swap pairing factor ~0.79**. **E4 sizing: a true-wr-0.55
+edge needs ~193 seat-swap paired games (vs 381 naive); 0.60 → 48 paired.** The June walled pool
+(ICC 0.14 / σ_pair 14.5 / factor 0.86) is scale, not a controlled contrast — different pairings,
+budgets, era. Recommendation carried from the instrument: run the E4 human protocol as seat-swap
+deck-pairs — each deck twice, seats swapped — for the ~21% variance cut.
+
+**Reversal cost:** none (descriptive; throwaway seeds, no claim id, no band, no results.csv row, no production change).
+**Phase:** measurement-first
