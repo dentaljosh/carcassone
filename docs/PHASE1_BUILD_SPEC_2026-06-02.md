@@ -1,4 +1,4 @@
-# PHASE 1 BUILD SPEC — 2026-06-02 (DRAFT, awaiting Joshua approval)
+# PHASE 1 BUILD SPEC — 2026-06-02 (✅ EXECUTED / HISTORICAL — see the Outcome addendum below)
 
 Concrete build plan for the post-audit "turn on the actual engine" work. Grounded in a
 direct read of the current code (not the audit's secondhand summary). Read with
