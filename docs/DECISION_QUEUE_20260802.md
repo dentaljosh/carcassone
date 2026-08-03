@@ -31,9 +31,10 @@
    re-check; (iii) the flip moves only the 6 make_production_champion sites (the eval fleet
    rides build_fair_champion's own default). Flip when you say so.
 4. **F7b farm knockout cells** — ✅ RAN 2026-08-02 (funded by your "lets do the farm knockout cells"): farm base **−142 elo** (z −9.4, verdict); farm-growth **+42.8 (z +1.87) — the champion LEANS BETTER WITHOUT it**. CONFIRM RAN 2026-08-03 (you funded): **UNCONFIRMED** — +10.4 ± 17.4, margin dead flat (z −0.07); the +42.8 was a winner's-curse crest (the project's 5th screen-shrink). Parked suggestive-unpromoted. ✅ JOSHUA 2026-08-03: no third cell (rec accepted). CLOSED — parked suggestive-unpromoted, final.
-5. **F9 rules-fix program** — the big one: global recentring + rules remediation
-   (RULES_FIDELITY_AUDIT R1–R8) + transfer-bound cell + fixed-rules descriptives +
-   the JCloisterZone oracle (BACKLOG 2026-08-02). When to fund; scope in the audit doc.
+5. **F9 rules-fix program** — ✅ PHASES A+B COMPLETE + **fixed_v1 ADOPTED 2026-08-03**
+   (CL-075 transfer bound; W2 by probe; all five fixes flag-gated). Remaining tail runs
+   funded: caps/curve re-sweep (in flight — gates absolutes), D1 JCZ replay harness
+   (agent building), Phase C descriptives (queued after re-sweep).
 6. **Perf pass** on the review's #2–4 (+C-e/C-f riders): ~−22% RSS / −13% wall on the
    champion, all bit-identical, gated by gate re-runs. ✅ **FIRED 2026-08-02 afternoon**
    (wiring went green, not cancelled): Opus agent in an isolated worktree, per-change
@@ -52,9 +53,8 @@
     Advisor says do it FIRST. Who/when.
 
 ## Config / technical defaults
-11. **Desktop backend default** — currently the SAFE form (yaml backend-of-record = rust,
-    reached via opt-in; harness conversion in flight). After the wiring agent lands +
-    burns in: flip `backend="auto"` to the factory default, or keep opt-in?
+11. **Desktop backend default** — ✅ FLIP FUNDED 2026-08-03 (recs accepted): agent
+    building the per-mode resolution + release-test recheck, then the default flips.
 12. **Push** — dozens of commits on `android-app`, never pushed (standing rule). Say the
     word when you want origin updated.
 13. **E4 protocol restart** — the phone now plays the champion of record on a centered
