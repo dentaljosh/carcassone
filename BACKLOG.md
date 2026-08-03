@@ -13,7 +13,15 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
-## 2026-08-02 — Differential rules oracle (JCloisterZone as external referee) — the strong instrument for the rules-fidelity bug class
+## 2026-08-02 — Differential rules oracle (JCloisterZone as external referee) — ✅ BUILT + VALIDATED 2026-08-03 (F9/D1)
+
+> ✅ **DONE — this is no longer a backlog item.** Built as roadmap **F9/D1** and validated the same
+> week it was captured: **43/43 uncontaminated games agree on exact final scores** under `fixed_v1`+R9
+> (zero divergences of any class; an E4 human-vs-champion game reproduced at 111–113), the meeple-slot
+> mapping semantically verified 121/121, and it **found R9** (the RCr tile claiming a field on its city
+> edge) before any number was taken. It is now a permanent CI referee — `tests/test_jcz_replay_oracle.py`,
+> ~1.2 s. → [VALIDATION_REPORT.md](measurement/jcz_oracle_20260803/VALIDATION_REPORT.md), DECISIONS
+> 2026-08-03 (early + mid-morning), roadmap F9. *(Original capture follows.)*
 **Context:** the border + cloister-rebinding bugs are RULES-FIDELITY divergences — invisible to every
 self-consistency gate by construction (both sides of every comparison play the same wrong rule; the Rust
 port certifies them bit-exactly). The rulebook audit (docs/RULES_FIDELITY_AUDIT_20260802.md, launched
@@ -529,7 +537,29 @@ These were candidate Phase 3 acceptance-iteration paths. Phase 3 closed on 2026-
 **UPDATE 2026-07-30 (Joshua): app-side APPROVED.** "I'd like that also fixed for the android app" — he also flagged: if the border fix forces any strength recharacterization under amended rules, consider bundling this rule in at the same time rather than re-baselining twice. The champion-vs-app convention divergence the entry warned about is accepted for the app (E4 games grade against the k4×688 carve-out, so the divergence is an E4-manifest footnote, not a measurement break). **Implemented (worktree, merged 2026-08-01):** Implemented as an opt-in: `Game(fixed_start_tile=True)` → `game_wrapper.preplace_retail_start_tile` (draws one `city_top_straight_road` out of the shuffled pool, places it unrotated at `starting_position`, leaves `last_tile_action` None so nobody spends a turn or a meeple on it; totals stay 72 placed). The bridge carries `START_RULE = "retail"` and writes `start_rule` into the save payload, so games archived before today (no field) still replay under `"engine"` — `(deck_seed, actions)` is only lossless with respect to its own rule. **The library default is unchanged and bit-identical** (`tests/test_fixed_start_tile.py::test_default_is_bit_identical`, golden suite green), so no baseline moved. What is still PARKED is flipping the *global* default — that remains the G1 re-baselining decision.
 **Not a fix for the invisible-border bug** (below): retail changes *which* tile starts, not *where* — `starting_position` is still `Coordinate(6, 15)`, and the row-0 wall bites at the same rate (72% vs 77% of games, n=60 each).
 
-## 2026-07-30 — Invisible border: the engine grid's start tile is NOT centred — ROOT-CAUSED, FIX AWAITING JOSHUA
+**UPDATE 2026-08-03 — it did NOT wait for G1: the retail tile shipped inside `fixed_v1`.** `start_rule:
+"retail"` is one of the four composed levers in the `fixed_v1` rules profile (`src/carcassonne_ai/rules_profile.py`),
+and `governance/PRODUCTION.yaml` now carries `rules_profile: fixed_v1` as the profile of record for new
+eval/desktop work (DECISIONS 2026-08-03 morning). So the "bundle with G1's re-baselining" plan was
+superseded by F9 — the re-baselining happened there instead, priced by CL-075's transfer bound and the
+all-null caps/curve re-sweep. ⚠️ **Still parked exactly as written: the GLOBAL library default.** `fixed_v1`
+is opt-in; a bare `Game()` is still `engine`-start and walled. Also worth knowing for A3 sequencing: the
+retail rule **absorbs ~5.6×** of the unplaceable-tile redraw rate (7.8 → 1.4 events/100 games), so these two
+rules are not independent (roadmap F9, A3 gate verdict).
+
+## 2026-07-30 — Invisible border: the engine grid's start tile is NOT centred — ✅ DECIDED AND SHIPPED (app 2026-08-02, eval/desktop 2026-08-03)
+
+> ✅ **NO LONGER AWAITING JOSHUA.** Two decisions closed it. (1) **App-only recentring 6→18 approved and
+> shipped 2026-08-02** — `Game` gained an opt-in `start_row`/`start_col`, the bridge gained `grid_rule`
+> (`centered18` / `engine6`, missing ⇒ engine6), verified on the Pixel; the even-shift rule this entry
+> derived is exactly what was implemented (DECISIONS 2026-08-02 early). (2) **The geometry was then
+> settled BY DATA and adopted for eval/desktop**: the F9 wall probe found **0/400 sentinel events at row
+> 18 under champion play** (bigger boards buy nothing ⇒ W2, not W3), and `centered18` shipped inside the
+> **`fixed_v1`** bundle that `governance/PRODUCTION.yaml` now names as `rules_profile` of record for new
+> eval/desktop work (DECISIONS 2026-08-03 night + morning; CL-075 is the transfer bound on the walled
+> record). ⚠️ The **global engine default is still walled** — `fixed_v1` is an opt-in profile, and the
+> strict-xfail sentinel in `tests/test_start_tile_grid_bound.py` still xfails by design. *(Original
+> diagnosis follows.)*
 
 **Context:** Joshua hit an "invisible border" playing the champion on the Pixel — no tile placeable above the topmost row, and later the whole row above the board was dead. Root cause is the engine, not the app: `carcassonne_game_state.py:24-25` has `board_size = (35, 35)` with `starting_position = Coordinate(6, 15)`, leaving only **6 rows of headroom above** the start tile vs 28 below (columns 15/19). Observed placed-tile spans reach 17 rows, so upward-drifting boards hit row 0 routinely; `StateUpdater.play_tile:42` bounds-checks before adding to `open_positions`, so off-grid cells never enter the candidate set and `TilePositionFinder` never offers them — silently. The bridge and Kotlin canvas are pure pass-throughs of that mask and are exonerated (0 disagreements); the 25×25 action window is not involved (0 dropped actions in 96k+ enumerated).
 **Blast radius** (`scripts/diagnose_grid_wall.py`, 400 random games): 67.8% of games have ≥1 rule-legal placement denied, 21.7% of tile plies, 2.6% of all legal placements, 100% of them at row < 0, 0 forced passes. True for all self-play, training data and evals to date — symmetric between players, so results are *fair*, but the game is not canonical Carcassonne. On the reported archive: first touched row 0 at ply 88, 25 denied plies, 12 on the human's turn.
