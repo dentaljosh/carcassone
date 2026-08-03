@@ -322,6 +322,15 @@ def main() -> int:
     print(f"[bench_exact_solver] cells={len(cells)} jobs={len(jobs)} "
           f"workers={args.workers} timeout={args.timeout_s}s", flush=True)
 
+    out_dir = Path(args.out) if args.out else REPO / "measurement" / "rust_solver_bench"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"BENCH_{args.tag}" if args.tag else "BENCH"
+    # INCREMENTAL: every row is appended the moment it lands, so a run that is
+    # interrupted (or a cell that turns out to be far more expensive than the
+    # calibration suggested) still leaves every measurement it did pay for.
+    rows_path = out_dir / f"{stem}_rows.jsonl"
+    rows_fh = rows_path.open("a")
+
     t0 = time.time()
     results: list[dict] = []
     # A tiny hand-rolled scheduler: `measure` forks, so a mp.Pool would nest
@@ -335,10 +344,13 @@ def main() -> int:
             r = fut.result()
             r["cell"] = j["cell"]
             results.append(r)
-            if i % 10 == 0 or r.get("status") != "ok":
+            rows_fh.write(json.dumps(r, sort_keys=True) + "\n")
+            rows_fh.flush()
+            if i % 5 == 0 or r.get("status") != "ok":
                 print(f"  {i}/{len(jobs)} {r['cell']} {r.get('status')} "
                       f"{r.get('wall_ms', '')} ({time.time() - t0:.0f}s)", flush=True)
 
+    rows_fh.close()
     by_cell: dict[str, list[dict]] = {}
     for r in results:
         by_cell.setdefault(r["cell"], []).append(r)
@@ -380,9 +392,7 @@ def main() -> int:
         "speedup_rust_vs_python": speedup,
         "raw": sorted(results, key=lambda r: (r["cell"], r["pos"])),
     }
-    out_dir = Path(args.out) if args.out else REPO / "measurement" / "rust_solver_bench"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    name = f"BENCH_{args.tag}.json" if args.tag else "BENCH.json"
+    name = f"{stem}.json"
     (out_dir / name).write_text(json.dumps(payload, indent=2, sort_keys=True))
     print(json.dumps({"summary": summary, "speedup": speedup}, indent=2))
     print(f"-> {out_dir / name}")
