@@ -249,3 +249,27 @@ adjusted after**. The n=4 pass-2 figure (0W/0D/4L) is not an effect estimate at 
 4. **Leaf source changed** (F7's headline was "no code change"). That is why gate (i) exists and
    why it is a full 3.34M-value three-leg identity rather than a spot check.
 5. **The exact-K tail is farm-sighted for the candidate** — see §The scope decision.
+
+---
+
+## CONFIRM ADDENDUM — farm-growth deletion (registered 2026-08-02 late night, BEFORE game 1)
+
+Joshua funded ("I'm funding") the fresh-band confirm of the `farmgrowthoff` lean
+(+42.8 ± 17.5, z +1.87, band 1.00e11 — a LEAN, not a verdict). Cell
+`abl_farmgrowthoff_confirm_vs_puctchamp2750_k2`: byte-identical config to the original
+(same knockout json, same harness knobs, rust backend both sides, W 32/24 two-box
+work-stealing), **fresh band `1.01e11`** (seeds 101,000,000,000..199, registered in this
+same commit), its own exp_id + output dir so no cross-band pooling can occur.
+
+**Pre-registered decision map (written before the first confirm game):**
+- **Confirm z ≥ +2.0** (candidate better without the block): the deletion candidate is
+  CONFIRMED at screen strength. Next step is a *proposal to Joshua* for the leaf change
+  (which itself triggers feedback_bug_fix_shifts_optima: caps/curve re-sweep before
+  adoption) — NOT an automatic promotion. Also report the two-band pooled estimate
+  (within-band paired each, ~n=800 combined) as the headline.
+- **|z| < 2.0**: the lean is UNCONFIRMED. Report the pooled estimate; if pooled z ≥ 2
+  the pooled result may justify one more cell (Joshua's call); otherwise park as
+  "suggestive, unpromoted" — no leaf change.
+- **z ≤ −2.0**: the original lean was noise (the classic screen artifact); record and
+  close. The component table entry reverts to "≈ null".
+No adaptive stopping; n=400 fixed. No PRODUCTION.yaml touch under any branch.
