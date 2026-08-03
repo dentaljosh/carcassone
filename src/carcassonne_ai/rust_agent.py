@@ -309,6 +309,7 @@ class RustFairAgent:
                  exact_budget: int | None = None, threads: int = 1,
                  window_size: int = 25, start_rule: str | None = None,
                  start_row: int | None = None, start_col: int | None = None,
+                 draw_rule: str | None = None,
                  reconcile: bool | None = None):
         import carc_rs
 
@@ -346,6 +347,14 @@ class RustFairAgent:
             start_rule=start_rule,
             start_row=start_row,
             start_col=start_col,
+            # F9/A3. `None` == "engine" == the engine of record, so the default
+            # path is untouched. It MUST be threaded rather than left to the
+            # Rust default: `start_game` hands over the deck and the Rust side
+            # then rolls the game forward on its OWN engine, so a mirror on the
+            # other draw rule would place different tiles from the first
+            # unplaceable draw onward — and `state_digest` (which does not hash
+            # the deck) would only catch it once the boards had already parted.
+            draw_rule=draw_rule,
         )
         self._started = False
         self._plies = 0
