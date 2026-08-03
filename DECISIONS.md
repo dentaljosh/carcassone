@@ -4152,7 +4152,14 @@ Eight rulings in one message, all executed same evening:
 1. **APK rebuild + E4 rules flip → fixed_v1: FUNDED** ("apk, go for it") — agent building: app's NEW
    games flip to full fixed_v1 (cloister fix + redraw + R9 env in the bridge; centered18+retail
    already shipped), archives self-label with the profile, both wheel families rebuilt (perf-pass+R9
-   rust). Sideload remains Joshua's.
+   rust). Sideload remains Joshua's. **→ ✅ DELIVERED + DEVICE-VERIFIED same night (~20:00):** built
+   (184 desktop + 37 mirror + 75 JVM tests green; rust wheel 1.55895.7991; R9 flips legal-masks in
+   ~1/200 games so pre-R9 records get VERIFIED cross-rule replay — both E4 archives proven
+   score-identical), installed over re-paired wireless adb, **`connectedDebugAndroidTest` 13/13 on
+   the Pixel** (fixed_v1 latch, on-device R9, mirror under the new flags, E4 cross-rule legs).
+   **E4 games from here are played under fixed_v1 — the rules of record and the real rules.**
+   Side-finds: the "cy wheels 4 KiB" worry was stale (Aug-2 APK already 16 KiB); cy content-version
+   depends on `.venv` presence (BACKLOG).
 2. **ANE n≈2150 cell: CLOSED UNFUNDED** ("we dont need anand anymore") — decision-queue item 3's
    dangling ack landed; CL-067 amended via csv. The equal-clock question stands unresolved by choice.
 3. **CL-074 component-table remeasure under fixed_v1: FUNDED** ("anticipation remeasure, go for it") —

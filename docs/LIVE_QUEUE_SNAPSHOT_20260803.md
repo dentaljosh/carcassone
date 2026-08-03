@@ -19,7 +19,7 @@
 
 | Item | Cost | Source |
 |---|---|---|
-| **Sideload the fixed_v1 APK + re-pair adb** — built, tested (184+37+75 green), staged at `/mnt/c/carc-shared/apk/app-debug-fixedv1-20260803.apk`; both E4 archives proven to survive the rules crossing. Device legs (6) run after pairing | minutes of phone time | [reference memory / STATUS]; DECISIONS 2026-08-03 evening batch |
+| ~~Sideload the fixed_v1 APK~~ — **✅ DONE ~20:00: re-paired, installed, `connectedDebugAndroidTest` 13/13 on the Pixel. E4 now plays under fixed_v1.** | — | DECISIONS 2026-08-03 evening batch |
 | **F13 — clairvoyant K2..6 winrate ladder** (prereg launch-ready; recommendation = leave shelved: the fair headroom that matters is F3-bounded tiny, so even a clairvoyant fire has a weak deployment path) | ~1–2 box-days | roadmap **F13**; [PREREG_DRAFT](../measurement/exact_k_ladder_20260803/PREREG_DRAFT.md) |
 | **Publications** — advisor's 7 questions + 90-day go/no-go; related-work sprint FIRST | 1–2 weeks of writing | [DECISION_QUEUE](DECISION_QUEUE_20260802.md) 9–10 |
 | **F12 — analyzer slice 2** (unscoped; coach-mode gating question) | scoping first | roadmap **F12** |
