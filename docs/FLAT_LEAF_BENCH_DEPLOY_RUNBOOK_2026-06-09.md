@@ -1,6 +1,13 @@
 # Flat-leaf throughput bench + deploy — runbook (2026-06-09)
 
-> **POST-COMPACTION: START HERE.** Self-contained; the executor has NO memory of
+> **🕰️ HISTORICAL RUNBOOK — DO NOT EXECUTE (stamped 2026-08-03).** Its work is DONE: the bench ran, the
+> verdict was DEPLOY, and `CARCASSONNE_USE_FLAT_LEAF=1` shipped on 2026-06-09 (see the verdict block
+> below). The instruction it opened with — *"the only remaining work is run the throughput bench →
+> decide deploy"* — is two months and several leaf eras out of date; the production leaf path today is the
+> Rust `carc_core` leaf reached via `backend: "auto"` (F8/F11), with the Cython leaf as the Python-side
+> fast path. Retained as the execution record. *(Original post-compaction header follows.)*
+>
+> **POST-COMPACTION: START HERE (as written 2026-06-09).** Self-contained; the executor has NO memory of
 > the conversation that produced it. Read this, then `git log --oneline -8`, then
 > proceed. The flat leaf is BUILT, VALIDATED bit-exact, and WIRED (default-OFF).
 > The only remaining work is: **run the throughput bench → decide deploy.**

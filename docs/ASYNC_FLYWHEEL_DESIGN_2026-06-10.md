@@ -1,7 +1,17 @@
 # Async flywheel — taking heur@800 selection off the per-iter critical path
 
-**Status:** DESIGN ONLY. Not built, not approved. Needs Joshua sign-off + the 5800x VRM
-fix first (any W-retune underneath this is untrustworthy on a throttling box).
+> **🕰️ STATUS: NEVER BUILT — AND ITS PREMISE HAS EXPIRED (stamped 2026-08-03).** This design optimises the
+> *throughput* of the learned self-play flywheel, and the flywheel program is closed: the value route
+> (CL-039/CL-042), capacity (CL-064), representation (CL-065), tabula-rasa (CL-066) and the mechanism
+> (CL-073 — outcome prediction is not move discrimination) all read out negative, and the program-level
+> synthesis is [FLYWHEEL_POSTMORTEM_2026-07-24.md](FLYWHEEL_POSTMORTEM_2026-07-24.md). The champion has
+> been **classical** since 2026-07-07. ⇒ **do not build this without a live flywheel to accelerate.** The
+> two hardware premises are also dead: the 5800x VRM box was replaced by the 5900XT (2026-06-09) and the
+> Xeon is retired. What survives is the measured phase split, which is a reusable fact. *(Original status
+> follows.)*
+>
+> **Status (as written 2026-06-10):** DESIGN ONLY. Not built, not approved. Needs Joshua sign-off + the 5800x VRM
+> fix first (any W-retune underneath this is untrustworthy on a throttling box).
 **Date:** 2026-06-10. **Supersedes** the BACKLOG stub "Train alongside self-play (async)"
 (that was a generic v1-v6-era note; this is the developed version with the measured phase
 split + the attempt-#2 philosophy-preservation).
