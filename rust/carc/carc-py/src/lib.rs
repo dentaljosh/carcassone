@@ -529,6 +529,97 @@ impl PyMirrorState {
         leaf::flat_base_score(&self.game.state, player, &d)
     }
 
+    /// TEST HOOK — force an explicit board from `(row, col, description, rot)`.
+    ///
+    /// Clears the board, meeples and scores first.  The rules-oracle
+    /// reproducers need hand-built positions that no legal play sequence has to
+    /// be found for, and they must drive the *same* position through both
+    /// engines; this is that seam.  Not used by any production path.
+    fn set_board(&mut self, cells: Vec<(i32, i32, String, u8)>) -> PyResult<()> {
+        let st = &mut self.game.state;
+        for cell in st.board.iter_mut() {
+            *cell = carc_core::engine::EMPTY;
+        }
+        st.placed_coords.clear();
+        st.open_positions.clear();
+        st.placed_meeples = [Vec::new(), Vec::new()];
+        st.scores = [0, 0];
+        for (row, col, desc, rot) in cells {
+            if rot > 3 {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    format!("rotation {rot} out of range 0..=3"),
+                ));
+            }
+            let base = tiles::generated::BASE_TILES
+                .iter()
+                .position(|t| t.description == desc.as_str())
+                .ok_or_else(|| {
+                    pyo3::exceptions::PyValueError::new_err(format!("unknown tile {desc:?}"))
+                })? as u16;
+            let idx = (row * carc_core::engine::BOARD_COLS + col) as usize;
+            if row < 0 || col < 0 || idx >= st.board.len() {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    format!("({row}, {col}) is off the board"),
+                ));
+            }
+            st.board[idx] = tiles::tile_id(base, rot);
+            st.placed_coords.insert((row, col));
+        }
+        Ok(())
+    }
+
+    /// TEST HOOK — force explicit meeples from `(player, row, col, side, type)`.
+    /// Companion to [`set_board`]; replaces `placed_meeples` wholesale.
+    fn set_meeples(&mut self, meeples: Vec<(usize, i32, i32, String, String)>) -> PyResult<()> {
+        use carc_core::engine::{MeeplePosition, MeepleType};
+        let st = &mut self.game.state;
+        st.placed_meeples = [Vec::new(), Vec::new()];
+        for (player, row, col, side, kind) in meeples {
+            if player > 1 {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    format!("player {player} out of range 0..=1"),
+                ));
+            }
+            let mt = match kind.as_str() {
+                "normal" => MeepleType::Normal,
+                "abbot" => MeepleType::Abbot,
+                "farmer" => MeepleType::Farmer,
+                "big" => MeepleType::Big,
+                "big_farmer" => MeepleType::BigFarmer,
+                _ => {
+                    return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                        "unknown MeepleType value {kind:?}"
+                    )))
+                }
+            };
+            st.placed_meeples[player].push(MeeplePosition {
+                meeple_type: mt,
+                coord: carc_core::engine::Coord::new(row, col),
+                side: side_from_value(&side)?,
+            });
+        }
+        Ok(())
+    }
+
+    /// `flat_leaf.decompose(state).farm_anypos_root.get((row, col, side))` —
+    /// the farm component id a `farmer_position` belongs to, straight off the
+    /// **production Rust decomposition**.  `None` when that slot carries no
+    /// farm.  Two positions share a farm iff they return the same id.
+    fn farm_anypos_root(&self, row: i32, col: i32, side: &str) -> PyResult<Option<u32>> {
+        let s = side_from_value(side)?;
+        Ok(leaf::decompose(&self.game.state).farm_anypos_root(row, col, s))
+    }
+
+    /// The number of distinct farm components on the board — the coarse
+    /// observable for "did two fields merge?".
+    fn n_farm_components(&self) -> usize {
+        let d = leaf::decompose(&self.game.state);
+        let mut roots: Vec<u32> = d.farm_labels.clone();
+        roots.sort_unstable();
+        roots.dedup();
+        roots.len()
+    }
+
     /// `flat_leaf._bag_stats` — `(n, ge1, ge2, ge3, ge4)`.
     fn bag_stats(&self) -> (i32, i32, i32, i32, i32) {
         let b = leaf::bag_stats(&self.game.state);
@@ -603,6 +694,61 @@ fn tile_data_digests() -> (String, String) {
         tiles::generated::SOURCE_SHA256.to_string(),
         tiles::generated::SEMANTIC_DIGEST.to_string(),
     )
+}
+
+/// `Side` from its Python `.value` string.
+fn side_from_value(v: &str) -> PyResult<tiles::Side> {
+    use tiles::Side::*;
+    Ok(match v {
+        "top" => Top,
+        "right" => Right,
+        "bottom" => Bottom,
+        "left" => Left,
+        "center" => Center,
+        "top_left" => TopLeft,
+        "top_right" => TopRight,
+        "bottom_left" => BottomLeft,
+        "bottom_right" => BottomRight,
+        _ => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "unknown Side value {v:?}"
+            )))
+        }
+    })
+}
+
+/// Semantic digest of the deck **with R9 applied** — the flags-ON drift guard.
+#[pyfunction]
+fn tile_data_digest_r9() -> String {
+    tiles::generated::SEMANTIC_DIGEST_R9.to_string()
+}
+
+/// Is the R9 field-on-city-edge fix active in this process?  (F9 remediation,
+/// `CARCASSONNE_FIX_R9`, DEFAULT OFF — resolved once, at first use.)
+#[pyfunction]
+fn r9_enabled() -> bool {
+    tiles::r9_enabled()
+}
+
+/// The R9 farm data as `(description, farm_slot, tile_connections, city_sides)`
+/// for an explicit flag state — the python<->Rust farm-data parity gate, which
+/// must be answerable for BOTH states inside one process.
+#[pyfunction]
+fn farm_table(r9: bool) -> Vec<(String, usize, u8, Vec<String>, Vec<String>, Vec<String>)> {
+    let mut out = Vec::new();
+    for t in tiles::registry_for(r9) {
+        for (slot, fc) in t.farms.iter().enumerate() {
+            out.push((
+                t.description.to_string(),
+                slot,
+                t.rot,
+                fc.farmer_positions.iter().map(|s| s.value().to_string()).collect(),
+                fc.tile_connections.iter().map(|s| s.value().to_string()).collect(),
+                fc.city_sides.iter().map(|s| s.value().to_string()).collect(),
+            ));
+        }
+    }
+    out
 }
 
 /// Every rotated tile as `(description, rot, edge_type_repr_signature)` — used
@@ -1636,6 +1782,9 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("DEFAULT_START_COL", carc_core::game::DEFAULT_START_COL)?;
     m.add_function(wrap_pyfunction!(deck_descriptions_from_seed, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
+    m.add_function(wrap_pyfunction!(tile_data_digest_r9, m)?)?;
+    m.add_function(wrap_pyfunction!(r9_enabled, m)?)?;
+    m.add_function(wrap_pyfunction!(farm_table, m)?)?;
     m.add_function(wrap_pyfunction!(rotated_tile_table, m)?)?;
     Ok(())
 }

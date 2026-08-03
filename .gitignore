@@ -23,6 +23,10 @@ dist/
 data/
 checkpoints/
 runs/
+# ...but tests/data/ is small, checked-in test FIXTURE data (vendored reference
+# decks for the differential oracles), not a regenerable artifact.
+!tests/data/
+!tests/data/**
 
 # Vendored reference (alpha-zero-general) — kept locally for reference but
 # not tracked. Recover via `git clone https://github.com/suragnair/alpha-zero-general az/`

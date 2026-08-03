@@ -1,0 +1,138 @@
+{
+  "what": "R9 \u2014 'a field half-edge may not lie on a city edge'. Gate artefacts for the DEFAULT-OFF flag CARCASSONNE_FIX_R9. Building the flag adopts nothing.",
+  "date": "2026-08-03",
+  "found_by": "measurement/jcz_spike_20260803/SPIKE_REPORT.md Finding 1 (JCloisterZone differential tile oracle)",
+  "tile": "city_top_straight_road (JCZ BA/RCr), x4 in the deck; the north farm region drops FarmerSide.TLT + FarmerSide.TRT, which lie on its city edge",
+  "seam": {
+    "decision": "process-global env flag, ONE python derivation, Rust consumes a codegen'd DELTA",
+    "why": "neither engine has a per-Game tile table (python `base_tiles` is an import-time module global; Rust `registry()` is a OnceLock), so a per-game flag is not available without a large refactor. The delta (`R9_FARM_OVERRIDE` in tiles/generated.rs) is codegen'd from `base_deck.r9_farm_override()`, so python<->Rust parity is structural rather than a hand transcription that has to be tested for.",
+    "python": "engine/wingedsheep/carcassonne/tile_sets/base_deck.py",
+    "exporter": "scripts/rustport/export_tile_data.py",
+    "rust": "rust/carc/carc-core/src/tiles/mod.rs (build_registry/registry_for/r9_enabled)"
+  },
+  "flags_off_data_identity": {
+    "semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800",
+    "semantic_digest_is_pre_r9_value": true,
+    "semantic_digest_r9": "ae5a34c9db0fcb163af944f5ee0d2dc1de45dea6d36afd617948a81611d83620",
+    "note": "regenerating generated.rs after the edit moved SOURCE_SHA256 only; SEMANTIC_DIGEST (everything the engine reads off a tile) is unchanged"
+  },
+  "lockstep_fuzz": {
+    "off": {
+      "games": 500,
+      "positions_compared": 72459,
+      "per_ply_checks": 12,
+      "mismatches": 0,
+      "flags": {
+        "start_rule": "engine",
+        "start_row": 6,
+        "start_col": 15,
+        "fix_r9": false,
+        "fix_r9_rust": false,
+        "default_semantics": true
+      },
+      "wallclock_s": 37.93781377299456,
+      "artefact": "G5_lockstep_fuzz_r9_off.json"
+    },
+    "on": {
+      "games": 500,
+      "positions_compared": 72459,
+      "per_ply_checks": 12,
+      "mismatches": 0,
+      "flags": {
+        "start_rule": "engine",
+        "start_row": 6,
+        "start_col": 15,
+        "fix_r9": true,
+        "fix_r9_rust": true,
+        "default_semantics": false
+      },
+      "wallclock_s": 34.73478462401545,
+      "artefact": "G5_lockstep_fuzz_r9_on.json"
+    }
+  },
+  "effect_under_random_play": {
+    "games": 500,
+    "games_with_different_terminal_score": 1,
+    "rate": 0.002,
+    "games_with_different_ply_count": 0,
+    "examples": [
+      {
+        "deck_seed": 97000000242,
+        "off": [
+          20,
+          33
+        ],
+        "on": [
+          38,
+          29
+        ]
+      }
+    ],
+    "caveat": "n=500, 1 event: the interval is very wide (~0.005%-1.1%) and this is RANDOM play, not champion play. The spike's 3.3% CONFIGURATION rate is the upper envelope of this; that the score-changing rate is strictly lower is exactly what it predicted. Champion play packs cities harder, so the production rate is plausibly higher. 0 games changed ply count => under this policy the flag never changed the legal-move sequence."
+  },
+  "leaf_merge_measurement": {
+    "question": "the spike argued from shared tile data that flat_leaf / the Rust core reproduce the merge, but did not measure it",
+    "answer": "they do \u2014 all four implementations, both observables",
+    "reproducer": "two city_top_straight_road tiles, cities joined across the shared N/S border; the two under-city field strips",
+    "partition": {
+      "object": {
+        "off_merged": true,
+        "on_merged": false
+      },
+      "flat": {
+        "off_merged": true,
+        "on_merged": false
+      },
+      "cy": {
+        "off_merged": true,
+        "on_merged": false
+      },
+      "rust": {
+        "off_merged": true,
+        "on_merged": false
+      }
+    },
+    "n_farm_components": {
+      "flat_leaf": [
+        3,
+        4
+      ],
+      "flat_leaf_cy": [
+        3,
+        4
+      ],
+      "rust": [
+        3,
+        4
+      ]
+    },
+    "score": {
+      "score_engine": [
+        3,
+        0
+      ],
+      "score_flat_python": [
+        3,
+        0
+      ],
+      "score_flat_cy": [
+        3,
+        0
+      ],
+      "score_rust": [
+        3,
+        0
+      ],
+      "score_rust_engine_route": [
+        3,
+        0
+      ]
+    },
+    "score_fixture": "the same board plus one more RCr east of the lower tile (a legitimate field join through a road edge); p0 has two farmers on the lower field, p1 one on the upper. Merged, p0 takes the completed city alone (+3); split, one each (0)."
+  },
+  "tests": [
+    "tests/test_jcz_tile_oracle.py",
+    "tests/test_r9_field_on_city_edge.py"
+  ],
+  "adoption": "NOT ADOPTED. Default off in both engines. Adoption is Joshua's; feedback_bug_fix_shifts_optima applies (this moves FARM scoring, the axis the leaf's farm caps/curves were tuned against)."
+}
