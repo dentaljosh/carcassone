@@ -3998,3 +3998,17 @@ BYTE-IDENTICAL to the `backend="python"` leg (deck-seeded, 14 plies, actions and
 compared); clairvoyant-at-default constructs as `HeuristicPriorAgent`; the `MirrorDesync`
 injection tests still fire; tests/rustport 311 pass, tests/release/test_factory_manifest
 25 pass, tests/test_f3_caller_backends 15 pass.
+
+## 2026-08-03 (mid-morning) — D1 CLOSED: the JCZ replay oracle — 43/43 final-score agreement with an independent implementation under fixed_v1+R9
+
+The full replay harness (scripts/jcz_oracle/, merged 503c7cc): 7 legs / 128 games /
+ZERO unclassified divergences. **Every divergence-free game — 43/43 — agrees with
+JCloisterZone on exact final scores**, including Joshua's real E4 111–113 loss
+score-for-score. The meeple mapping (the spike's named unknown) closed with SEMANTIC
+verification (121/121 deploys re-derived feature-for-feature on both engines). R9's farm
+merge measured MORE common under champion play than random (FARM_PARTITION 66→0 with the
+fix). Permanent limits documented (bounded board, the 25×25 window, gardens); attribution
+warning: the E4 border game's 14-pt gap is explained-but-contaminated — never quote it as
+"the wall cost". This is the independent-implementation validation plank of the
+publication story. Report: measurement/jcz_oracle_20260803/VALIDATION_REPORT.md;
+CI-mode pytest tests/test_jcz_replay_oracle.py.
