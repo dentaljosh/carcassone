@@ -1,0 +1,100 @@
+# carc-net CUDA-Graph spike -- GPU legs, 2026-08-03
+# repo 06fa067 | ort 2.0.0-rc.13 | onnxruntime libonnxruntime.so.1.22.0
+# binary mtime: 2026-08-03 06:47:21
+#
+# BOX STATE: a CPU-side job belonging to another session is live (loadavg below).
+# The GPU is idle and these legs are GPU-bound and core-pinned, so they are
+# unaffected; the CPU-backend rows and the DENOMINATOR are NOT re-measured here
+# -- both are quoted in the README from the census-clean window earlier today.
+# loadavg: 11.94 14.94 13.15 31/975 1353709
+# gpu: 0 %, 319 MiB, 6.90 W
+
+===== NUMERATOR: CUDA backends, denominator 0.0584, 1000 reps, DEFAULT knobs =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda              1      1.5692      1.8489          -       1.5692    26.87  fails
+cuda              8      1.8094      1.9329          -       0.2262     3.87  fails
+cuda             64      8.5953      8.8587          -       0.1343     2.30  fails
+cuda+bound        1      1.8639      2.6356     0.0830       1.8639    31.92  fails
+cuda+bound        8      1.6734      2.6464     0.2375       0.2092     3.58  fails
+cuda+bound       64      7.0512      7.9189     1.0562       0.1102     1.89  clears spike bar
+cuda+graph        1      0.4752      0.5204     0.0892       0.4752     8.14  fails
+cuda+graph        8      1.2756      1.3280     0.2286       0.1595     2.73  fails
+cuda+graph       64      6.8421      6.8938     1.0733       0.1069     1.83  clears spike bar
+
+===== CONTROL: explicit SynchronizeBoundOutputs -- does the clock bracket completion? =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.4707      0.5255     0.0907       0.4707     8.06  fails
+cuda+graph        8      1.2762      1.3266     0.2259       0.1595     2.73  fails
+cuda+graph       64      6.8617      6.9247     1.2208       0.1072     1.84  clears spike bar
+
+===== T1/T2 FAITHFULNESS, 1168 corpus positions, batch 8, DEFAULT knobs =====
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168    100.00%     99.40%        179     4.926e-4    4.942e-4
+cuda+bound       1168    100.00%     99.40%        179     4.926e-4    4.942e-4
+cuda+graph       1168    100.00%     99.40%        179     4.926e-4    4.942e-4
+
+===== KNOB PROBE: prefer_nhwc=1 -- slower, still CORRECT (latency, then faithfulness) =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.5953      0.6459     0.0876       0.5953    10.19  fails
+cuda+graph        8      1.3606      1.4159     0.2376       0.1701     2.91  fails
+cuda+graph       64      6.8927      6.9561     1.2837       0.1077     1.84  clears spike bar
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168    100.00%     99.40%        179     4.894e-4    4.916e-4
+cuda+bound       1168    100.00%     99.40%        179     4.894e-4    4.916e-4
+cuda+graph       1168    100.00%     99.40%        179     4.894e-4    4.916e-4
+
+===== KNOB TRAP: fuse_conv_bias=1 -- FASTER AND WRONG (latency, then faithfulness) =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.5662      0.6089     0.0880       0.5662     9.69  fails
+cuda+graph        8      1.2569      1.3011     0.2425       0.1571     2.69  fails
+cuda+graph       64      8.8381      8.8869     1.1766       0.1381     2.36  fails
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168     31.85%     20.03%         29      1.000e0     1.000e0
+cuda+bound       1168     29.97%     19.09%         50      1.000e0     1.000e0
+cuda+graph       1168     29.88%     19.26%         42      1.000e0     1.000e0
+
+===== T2 CONTROL: tf32=0, knobs otherwise default (latency, then faithfulness) =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      1.3364      1.3695     0.0922       1.3364    22.88  fails
+cuda+graph        8      2.0611      2.1152     0.2311       0.2576     4.41  fails
+cuda+graph       64      8.1713      8.2396     1.1123       0.1277     2.19  fails
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168    100.00%    100.00%        183     8.196e-7    9.742e-7
+cuda+bound       1168    100.00%    100.00%        183     8.196e-7    9.742e-7
+cuda+graph       1168    100.00%    100.00%        183     8.196e-7    9.742e-7

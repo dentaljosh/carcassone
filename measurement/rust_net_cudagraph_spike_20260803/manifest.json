@@ -1,0 +1,106 @@
+{
+  "schema": "carc-measurement/v1",
+  "name": "rust_net_cudagraph_spike_20260803",
+  "date": "2026-08-03",
+  "what": "Go/no-go spike: reach CUDA-Graph-class batch-1/batch-8 latency from Rust via ort IOBinding with device-resident tensors, per docs/RUST_NET_EVAL_DESIGN_20260802.md 6.2/7.1.",
+  "verdict": "STOP (qualified). Graph capture REACHED from Rust and within ~4% of the torch reference; T1 faithfulness unchanged. Rejected because a quiet-box re-measurement of the DENOMINATOR moved it 1.55x (0.0903 -> 0.0584 ms/sim), putting cost_ratio at ~3.06 against a recorded break-even of ~2.4-2.6.",
+  "promotes_anything": false,
+  "results_csv_row": null,
+  "production_yaml_touched": false,
+  "strength_claim": null,
+
+  "repo": {
+    "commit": "06fa067",
+    "branch": "android-app",
+    "worktree": true
+  },
+
+  "box": {
+    "host": "local (5900XT-box)",
+    "cpu": "AMD 5900XT, 16C/32T",
+    "gpu": "NVIDIA GeForce RTX 5060 Ti, 16 GB",
+    "driver": "610.43.02",
+    "pinning": "taskset -c 24-31 (bench), -c 24 (single-thread denominator), -c 16-23 (8-way denominator)",
+    "state": "census-clean for the denominator and the section-4 numerator table; a CPU-side job from another session was live for raw_readout_gpu.txt (GPU idle throughout, loadavg stamped in that file's header)"
+  },
+
+  "stack": {
+    "ort_crate": "2.0.0-rc.13",
+    "onnxruntime": "1.22.0 (onnxruntime-gpu wheel, CUDA-12 build)",
+    "cuda_runtime": "12.8 via torch nvidia-*-cu12 wheels",
+    "linking": "ORT_LIB_LOCATION + ORT_PREFER_DYNAMIC_LINK=1; download-binaries deliberately NOT enabled (its build is CUDA-13 and fails OPEN to the CPU)",
+    "env_script": "rust/carc/carc-net/tools/ort_cuda_env.sh"
+  },
+
+  "net": {
+    "checkpoint": "/mnt/c/carc-shared/distill_strong_20260723/ckpt/iter_03.pt",
+    "arch": "6x96 ResNet, policy-only forward (forward_policy_only)",
+    "rep": {"n_channels": 81, "n_scalars": 42, "window": 25, "action_size": 2511},
+    "onnx_batches": [1, 8, 64],
+    "note": "same ONNX exports and position dump as the memo; not checked in (~90 MB / ~258 MB)"
+  },
+
+  "corpus": {
+    "positions_bin_sha256": "b3715401e60c526b2472bbe22963298219490a2cc63eda8263887dfe9458948f",
+    "n": 1200,
+    "n_scorable": 1168,
+    "n_excluded_all_illegal": 32,
+    "source": "distill_strong_20260723/iter_03 self-play, 9 npz files"
+  },
+
+  "denominator_ms_per_sim": {
+    "probe": "rust/carc/carc-core/examples/evalprobe.rs, seed 12345, ply 40, SearchConfig::default().simulations = 1376",
+    "single_threaded_quiet": [0.05714, 0.05747, 0.05749],
+    "eight_concurrent_quiet": [0.05982, 0.05854, 0.05818, 0.05835, 0.05801, 0.05811, 0.05815, 0.05798],
+    "adopted": 0.0584,
+    "adopted_rationale": "mean of the 8-concurrent rows: the champion deploys parallel_workers=8 (CL-071), so the honest denominator is what ONE world sees while EIGHT run. It is only +2% over single-threaded, which also shows the Rust search is not DRAM-bandwidth-saturated at k=8.",
+    "memo_value": 0.0903,
+    "memo_delta": "the memo's denominator is 1.55x the quiet-box figure; its session had a live 13-worker eval throughout. No carc-core commit explains it (the memo was measured AT 3416f87, the perf-pass merge itself).",
+    "sweep_fraction_ply40": [0.523, 0.585]
+  },
+
+  "numerator_ms_forward_min": {
+    "note": "census-clean window, ORT default CUDA-EP knobs, min over 200-1000 reps",
+    "cuda_eager_host_slices": {"b1": 1.158, "b8": 1.726, "b64": 8.175},
+    "cuda_iobinding_eager": {"b1": 1.816, "b8": 1.861, "b64": 7.138},
+    "cuda_iobinding_graph": {"b1": 0.434, "b8": 1.219, "b64": 6.800},
+    "h2d_upload_b8": 0.20,
+    "torch_reference_graph": {"b1": 0.339, "b8": 1.168, "b64": 7.110}
+  },
+
+  "decision": {
+    "bar_literal": "batch-8 per-leaf <= ~0.18 ms",
+    "measured_per_leaf_b8": 0.1524,
+    "bar_literal_result": "PASS (0.176 even with the unoptimized synchronous upload folded in)",
+    "r_at_adopted_denominator": 2.61,
+    "cost_ratio": 3.06,
+    "cost_ratio_formula": "(1 - sweep_fraction) + r",
+    "break_even": [2.4, 2.6],
+    "bar_substantive_result": "FAIL",
+    "governing_reading": "substantive — the ms figure was a proxy for the break-even, and the proxy broke when the denominator moved",
+    "only_passing_config": "batch 64 (r 1.83, cost_ratio 2.29) — unreachable at k=8; needs cross-move or cross-game batching"
+  },
+
+  "acceptance_tiers": {
+    "T0": "unchanged (same artifacts, written under export_onnx.py's bit-identity assertion)",
+    "T1": {"result": "PASS", "argmax_pct": 100.0, "top5_pct": 99.4, "n": 1168,
+           "backends": ["cuda", "cuda+bound", "cuda+graph"],
+           "note": "all three identical in every reported digit incl. bit-exact count 179 — the device-resident, graph-captured path adds ZERO drift"},
+    "T2": {"max_abs_tf32_on": 4.926e-4, "max_tv_tf32_on": 4.942e-4,
+           "max_abs_tf32_off": 8.196e-7, "top5_pct_tf32_off": 100.0,
+           "tf32_off_latency_cost": "~1.6x (batch-8 forward 1.276 -> 2.061 ms, same contended run)",
+           "note": "TF32 attribution proven, not inferred"},
+    "T3": "PASS — .error_on_failure() plus runtime assertions that bound inputs AND the bound output landed on AllocationDevice::CUDA"
+  },
+
+  "traps_found": [
+    {"knob": "fuse_conv_bias=1",
+     "effect": "FASTER (~3% at batch 8) AND WRONG — argmax 100.00% -> ~30%, max-abs 4.9e-4 -> 1.0, silently, on all three CUDA backends",
+     "disposition": "left wired up, DEFAULT OFF (matches ORT's default)"},
+    {"knob": "prefer_nhwc=1",
+     "effect": "slower (batch-8 1.276 -> 1.361 ms), remains 100.00% faithful",
+     "disposition": "rejected on latency"}
+  ],
+
+  "reopen_bar": "a device reaching batch-8 per-leaf <= ~0.11 ms (r <= 2.0 at the MEASURED denominator), OR a batching design putting >=64 leaves in flight (pondering / cross-game) — a separate lever with its own gate"
+}

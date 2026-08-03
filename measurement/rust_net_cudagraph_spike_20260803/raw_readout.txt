@@ -1,0 +1,142 @@
+# carc-net CUDA-Graph spike — raw readout, 2026-08-03, quiet local box (RTX 5060 Ti / 5900XT)
+# repo: 06fa067 on worktree-agent-a8d9aebd9e911b6bd
+# onnxruntime: libonnxruntime.so.1.22.0 | ort crate: 2.0.0-rc.13
+
+===== DENOMINATOR: evalprobe, single-threaded, quiet, 3 repeats =====
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+10	10	31.24	0.02270	13206	9.60	0.72	1.15	0.00988	0.435	1377
+20	28	49.42	0.03592	14149	10.28	1.38	1.96	0.01823	0.508	955
+30	33	61.34	0.04458	14314	10.40	2.16	2.84	0.02669	0.599	1377
+40	25	75.51	0.05487	13224	9.61	2.84	3.70	0.03184	0.580	1313
+50	36	89.46	0.06502	14329	10.41	3.44	4.29	0.04034	0.620	1377
+60	54	143.91	0.10459	21745	15.80	4.16	4.94	0.07307	0.699	1353
+70	37	56.74	0.04124	6801	4.94	4.85	5.76	0.02272	0.551	1377
+
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+10	10	31.32	0.02276	13206	9.60	0.73	1.18	0.01018	0.447	1377
+20	28	49.72	0.03614	14149	10.28	1.39	1.99	0.01846	0.511	955
+30	33	61.29	0.04454	14314	10.40	2.14	2.86	0.02693	0.605	1377
+40	25	76.39	0.05552	13224	9.61	2.83	3.65	0.03146	0.567	1313
+50	36	88.49	0.06431	14329	10.41	3.48	4.44	0.04182	0.650	1377
+60	54	143.19	0.10406	21745	15.80	4.12	4.94	0.07319	0.703	1353
+70	37	57.30	0.04164	6801	4.94	4.74	5.66	0.02231	0.536	1377
+
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+10	10	31.32	0.02276	13206	9.60	0.74	1.12	0.00963	0.423	1377
+20	28	49.43	0.03592	14149	10.28	1.39	1.99	0.01852	0.515	955
+30	33	61.70	0.04484	14314	10.40	2.14	2.79	0.02620	0.584	1377
+40	25	75.85	0.05512	13224	9.61	2.85	3.72	0.03207	0.582	1313
+50	36	89.35	0.06493	14329	10.41	3.44	4.28	0.04026	0.620	1377
+60	54	144.03	0.10467	21745	15.80	4.14	4.88	0.07221	0.690	1353
+70	37	57.23	0.04159	6801	4.94	4.69	5.66	0.02231	0.537	1377
+
+===== DENOMINATOR: 8 CONCURRENT probes at ply 40 (the k=8 deploy shape) =====
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.65	0.05716	13224	9.61	2.96	3.58	0.03083	0.539	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.48	0.05704	13224	9.61	2.80	3.61	0.03107	0.545	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	79.72	0.05794	13224	9.61	2.76	3.56	0.03064	0.529	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	79.02	0.05743	13224	9.61	2.79	3.57	0.03077	0.536	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.82	0.05728	13224	9.61	2.82	3.57	0.03077	0.537	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.68	0.05718	13224	9.61	3.02	3.71	0.03193	0.558	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.53	0.05707	13224	9.61	2.79	3.58	0.03082	0.540	1313
+ply	legal	search_ms	ms_per_sim	leaf_evals	leaf_per_sim	leaf_us	child_us	sweep_ms_per_sim	sweep_frac	nodes
+40	25	78.32	0.05692	13224	9.61	2.81	3.57	0.03070	0.539	1313
+
+===== NUMERATOR: all backends, denominator 0.0584 (8-concurrent quiet), 400 reps =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cpu(threads=1)     1     10.0682     10.3625          -      10.0682   172.40  fails
+cpu(threads=1)     8     76.6558     77.7938          -       9.5820   164.07  fails
+cpu(threads=1)    64    665.1758   1014.0374          -      10.3934   177.97  fails
+cpu(threads=4)     1      4.7411      5.6756          -       4.7411    81.18  fails
+cpu(threads=4)     8     31.3447     45.2535          -       3.9181    67.09  fails
+cpu(threads=4)    64    213.5247    323.7248          -       3.3363    57.13  fails
+cpu(threads=8)     1      2.0250      2.9883          -       2.0250    34.67  fails
+cpu(threads=8)     8     11.9539     19.9931          -       1.4942    25.59  fails
+cpu(threads=8)    64    115.3010    147.5092          -       1.8016    30.85  fails
+cuda              1      1.2081      1.9753          -       1.2081    20.69  fails
+cuda              8      1.6963      1.8334          -       0.2120     3.63  fails
+cuda             64     11.0457     11.3348          -       0.1726     2.96  fails
+cuda+bound        1      1.9367      3.2963     0.1179       1.9367    33.16  fails
+cuda+bound        8      1.8980      2.2001     0.2057       0.2373     4.06  fails
+cuda+bound       64      9.8111     10.4195     1.0278       0.1533     2.62  fails
+cuda+graph        1      0.5632      0.5882     0.1272       0.5632     9.64  fails
+cuda+graph        8      1.2126      1.2457     0.2281       0.1516     2.60  fails
+cuda+graph       64      8.7207      8.7706     1.0382       0.1363     2.33  fails
+
+===== DECISION ROW at high rep count (default knobs), 1000 reps =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.5325      0.5797     0.0676       0.5325     9.12  fails
+cuda+graph        8      1.1926      1.2350     0.2102       0.1491     2.55  fails
+cuda+graph       64      8.7335      8.7838     1.0253       0.1365     2.34  fails
+
+===== KNOB PROBE: prefer_nhwc=1 (SLOWER, still correct) =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.6380      0.6802     0.1130       0.6380    10.93  fails
+cuda+graph        8      1.2297      1.2679     0.2149       0.1537     2.63  fails
+cuda+graph       64     10.0625     10.1057     1.0216       0.1572     2.69  fails
+
+===== KNOB TRAP: fuse_conv_bias=1 — FASTER AND WRONG. latency then faithfulness =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.5272      0.5582     0.0756       0.5272     9.03  fails
+cuda+graph        8      1.2061      1.2443     0.2181       0.1508     2.58  fails
+cuda+graph       64      8.7433      8.7926     1.0361       0.1366     2.34  fails
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168     31.85%     20.03%         29      1.000e0     1.000e0
+cuda+bound       1168     29.97%     19.09%         50      1.000e0     1.000e0
+cuda+graph       1168     29.88%     19.26%         42      1.000e0     1.000e0
+
+===== CONTROL: explicit SynchronizeBoundOutputs — does the clock bracket completion? =====
+# carc-net forward bench — 6x96 policy head, rep 81ch/42sc, A=2511
+# denominator search_ms_per_sim = 0.05840 ms (evalprobe, rust classical search)
+# r = per_leaf_forward_ms / search_ms_per_sim ; CL-067 reopen bar r <= ~1.5
+
+backend       batch  fwd_min_ms  fwd_med_ms  up_min_ms  per_leaf_ms        r  verdict
+cuda+graph        1      0.5413      0.5901     0.0737       0.5413     9.27  fails
+cuda+graph        8      1.1930      1.2240     0.2073       0.1491     2.55  fails
+cuda+graph       64      8.7438      8.7964     1.0219       0.1366     2.34  fails
+
+===== T1/T2 FAITHFULNESS: 1168 corpus positions, batch 8, TF32 ON (default) =====
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168     30.91%     20.98%         72      1.000e0     1.000e0
+cuda+bound       1168     29.97%     19.09%         50      1.000e0     1.000e0
+cuda+graph       1168     29.88%     19.26%         42      1.000e0     1.000e0
+
+===== T2 CONTROL: TF32 OFF — see the anomaly note in the README =====
+# positions 1200 (1168 scorable, 32 all-illegal excluded)
+# rep 81ch/42sc W25 A2511 | batch 8
+
+backend             n    argmax%      top5%   bitexact      max_abs      max_tv
+cpu(threads=4)    1168    100.00%    100.00%        194     6.407e-7    6.664e-7
+cuda             1168     31.42%     20.63%         31      1.000e0    9.999e-1
+cuda+bound       1168     30.05%     20.03%         33      1.000e0     1.000e0
+cuda+graph       1168     29.88%     19.86%         31      1.000e0     1.000e0
