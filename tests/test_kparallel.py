@@ -143,7 +143,11 @@ def test_default_is_none_and_never_builds_a_pool():
 
 
 def test_factory_manifest_unstamped_when_off_and_stamped_when_on():
-    off = make_production_champion("fair", seed=0, sims=8, k_dets=2, verify=False)
+    # backend PINNED on BOTH legs (2026-08-03): the factory default is now "auto", and
+    # an OFF leg on the yaml engine vs an ON leg on python would be a two-variable
+    # contrast in a test about one manifest key.
+    off = make_production_champion("fair", seed=0, sims=8, k_dets=2, verify=False,
+                                   backend="python")
     assert "parallel_workers" not in off.manifest      # no hash drift when OFF
     on = make_production_champion("fair", seed=0, sims=8, k_dets=2, verify=False,
                                   backend="python", parallel_workers=2)

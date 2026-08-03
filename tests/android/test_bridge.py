@@ -527,6 +527,11 @@ def test_ai_move_matches_direct_champion():
         direct = make_production_champion(
             "fair", game=Game(enable_legal_moves_cache=True), seed=seed, sims=sims,
             k_dets=k_dets, exact_endgame=True, verify=False,
+            # PINNED to match the bridge, which passes backend=BACKEND_PYTHON
+            # explicitly for its anchor agent. Since the 2026-08-03 factory-default
+            # flip, omitting it would build a Rust mirror here and compare the bridge
+            # against a different engine driven with no advance() choke point.
+            backend="python",
             exact_budget=B.ANDROID_EXACT_BUDGET)
         direct._move_idx = n_ai
         expected = int(direct.choose_action(board))

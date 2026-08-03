@@ -120,8 +120,12 @@ def test_rust_backend_stamps_the_manifest():
 def test_rust_backend_rejects_the_wrong_modes_and_knobs():
     with pytest.raises(ValueError, match="FAIR-mode"):
         CF.make_production_champion("clairvoyant", sims=8, backend="rust")
+    # ⚠️ `rust_threads` on a PYTHON agent. This used to read `backend` unset, because
+    # the default was python; since the 2026-08-03 flip the default resolves to the
+    # yaml engine, so the contradiction has to be spelled out to still be one.
     with pytest.raises(ValueError, match="rust_threads"):
-        CF.make_production_champion("fair", sims=8, k_dets=1, rust_threads=4)
+        CF.make_production_champion("fair", sims=8, k_dets=1, rust_threads=4,
+                                    backend="python")
     with pytest.raises(ValueError, match="python-only|parallel_workers"):
         CF.make_production_champion("fair", sims=8, k_dets=1, backend="rust",
                                     parallel_workers=2)
@@ -130,21 +134,26 @@ def test_rust_backend_rejects_the_wrong_modes_and_knobs():
 
 
 def test_backend_auto_resolves_from_the_yaml():
-    """`backend="auto"` is the ONLY route from PRODUCTION.yaml to the engine, and it is
-    a caller ASSERTION that it drives the mirror (2026-08-01). The plain default must
-    stay python so the 5 non-advancing call sites of BACKEND_BYPASS_AUDIT_20260801.md
-    are untouched."""
+    """`backend="auto"` is the route from PRODUCTION.yaml to the engine — and since
+    2026-08-03 it is also the DEFAULT, so a caller that says nothing gets the yaml
+    engine. The blocker that kept the default at python was that 5 of the 6 call sites
+    of BACKEND_BYPASS_AUDIT_20260801.md never advanced the mirror; F11 wired every one
+    of them, so the plain default and the explicit "auto" must now agree."""
     spec = CF.load_production_spec()
     game, _ = _fresh()
     auto = CF.make_production_champion("fair", game=game, sims=8, k_dets=1,
                                        verify=False, backend="auto")
     assert type(auto).__name__ == ("RustFairAgent" if spec.backend == "rust"
                                    else "FairHeuristicPriorAgent")
-    # The default did NOT move.
+    # ⚠️ THE DEFAULT MOVED (2026-08-03): saying nothing == saying "auto".
     game2, _ = _fresh()
     plain = CF.make_production_champion("fair", game=game2, sims=8, k_dets=1,
                                         verify=False)
-    assert type(plain).__name__ == "FairHeuristicPriorAgent"
+    assert type(plain) is type(auto)
+    # ...but ONLY for fair. The yaml key is `champion.fair_deploy.backend`, so the
+    # clairvoyant ruler fails closed to python rather than raising "FAIR-mode".
+    clair = CF.make_production_champion("clairvoyant", sims=8, verify=False)
+    assert type(clair).__name__ == "HeuristicPriorAgent"
 
 
 def test_auto_falls_back_to_python_when_the_yaml_says_nothing(monkeypatch):
