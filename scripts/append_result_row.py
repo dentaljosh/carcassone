@@ -55,6 +55,34 @@ def elo_sigma(w, l, d, n):
     return round(elo, 1), round(sig, 1)
 
 
+def check_rules_profile(man: dict, exp_id: str) -> str:
+    """F9 A0 fail-loud guard — refuse a non-`walled` row that does not SAY so.
+
+    `experiments/results.csv` has no rules column and never will have one
+    retroactively: every row in it predates F9 and is a *walled* number. So the
+    guard is on the one field a reader always sees. A fixed-rules cell must carry
+    its profile in the `exp_id` (e.g. `f9_transfer_centered18_k8x1376`), which
+    makes the condition impossible to lose in a grep and impossible to average
+    into a walled comparison by accident.
+
+    Manifests written before this existed have no `rules_profile` block; those are
+    walled by construction (nothing else could produce them) and pass.
+    """
+    prof = (man.get("rules_profile") or {}).get("name", "walled")
+    if prof == "walled":
+        return prof
+    if prof.lower() not in exp_id.lower():
+        raise SystemExit(
+            f"REFUSED: this run's manifest says rules_profile={prof!r}, but the "
+            f"exp_id {exp_id!r} does not name it.\n"
+            "experiments/results.csv is the WALLED record — every pre-F9 row in it "
+            "was played under the walled engine, and a fixed-rules number that "
+            "enters it unlabelled is silently non-comparable (F9 build spec A0).\n"
+            f"Fix: use an exp_id containing {prof!r}, e.g. "
+            f"'{exp_id}_{prof}'.")
+    return prof
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, required=True)
@@ -67,6 +95,7 @@ def main():
     args = ap.parse_args()
 
     man = json.loads((args.dir / "manifest.json").read_text())
+    check_rules_profile(man, args.exp_id)   # F9 A0 — before anything is computed
     cfg = man["config"]
     leaf = man.get("leaf_env", {})
     n, w, l, d, avg = pool(args.dir)

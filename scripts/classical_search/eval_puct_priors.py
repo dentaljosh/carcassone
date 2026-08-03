@@ -127,6 +127,7 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
     HeuristicPriorConfig,
 )
 from carcassonne_ai.mcts import HeuristicMCTS  # noqa: E402
+from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 
@@ -1484,7 +1485,12 @@ def main(argv=None) -> int:
                          "recorded in the manifest; no effect on out-dir naming "
                          "(--out-subdir owns that) or on play.")
     ap.add_argument("--smoke", action="store_true")
+    _rules_profile.add_argument(ap)          # F9 A0
     args = ap.parse_args(argv)
+    # F9 A0 — see the identical block in eval_fair_puct.main: resolve once, before
+    # any Game(), and publish through the environment so workers and the manifest
+    # cannot disagree. Inert under the default `walled`.
+    _rules_profile.activate(args.rules_profile)
     if args.games is not None:
         args.n = args.games
     if args.paired and args.n % 2 != 0:

@@ -69,6 +69,13 @@ def leaf_env() -> dict:
     return {k: os.environ.get(k) for k in _LEAF_ENV_KEYS if os.environ.get(k) is not None}
 
 
+def rules_profile_block() -> dict:
+    """The resolved F9 rules profile in force in THIS process (spec A0)."""
+    from .rules_profile import active
+
+    return active().as_manifest()
+
+
 def write_manifest(out_dir, *, kind: str, game: str, config: dict,
                    overwrite: bool = False, evaluator: dict | None = None) -> Path:
     """Write <out_dir>/manifest.json with resolved config + provenance.
@@ -93,6 +100,12 @@ def write_manifest(out_dir, *, kind: str, game: str, config: dict,
         "host": socket.gethostname(),
         "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "leaf_env": leaf_env(),
+        # F9 A0: the resolved rules profile, verbatim, in EVERY manifest — the
+        # spec's fail-loud requirement (an unstamped or partially-applied profile
+        # is precisely the failure F9 exists to detect). Under the default this
+        # reads `walled`, which is what makes "every elo we have measured is a
+        # walled number" a machine-checkable statement instead of a remembered one.
+        "rules_profile": rules_profile_block(),
         "config": config,
     }
     if evaluator is not None:
@@ -100,4 +113,30 @@ def write_manifest(out_dir, *, kind: str, game: str, config: dict,
     tmp = out_dir / f".manifest.{os.getpid()}.tmp"
     tmp.write_text(json.dumps(manifest, indent=2, default=str))
     tmp.replace(mpath)  # atomic
+    return mpath
+
+
+def patch_manifest(out_dir, key: str, value) -> Path | None:
+    """Merge one top-level key into an EXISTING manifest, atomically.
+
+    Written for the F9 W4 sentinel aggregate, which only exists once the games
+    have been played, while the manifest is (correctly) written before the first
+    one. Read-modify-write of a single key, never a rewrite of the config block —
+    so a racing ``--shared-claim`` peer can at worst lose its own aggregate, and
+    can never corrupt the provenance the manifest was written for.
+
+    Returns the path, or None if there is no manifest to patch.
+    """
+    out_dir = Path(out_dir)
+    mpath = out_dir / "manifest.json"
+    if not mpath.exists():
+        return None
+    try:
+        manifest = json.loads(mpath.read_text())
+    except Exception:
+        return None
+    manifest[key] = value
+    tmp = out_dir / f".manifest.{os.getpid()}.patch.tmp"
+    tmp.write_text(json.dumps(manifest, indent=2, default=str))
+    tmp.replace(mpath)
     return mpath

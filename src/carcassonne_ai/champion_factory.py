@@ -611,6 +611,21 @@ def build_fair_champion(game, *, cfg=None, sims=_UNSET, k_dets=_UNSET, seed=_UNS
                 "backend='rust' needs an explicit sims= and k_dets=: RustFairAgent has "
                 "no implicit budget to fall through to (the Python agent's own defaults "
                 "are what _UNSET relies on). Pass the harness's resolved budget.")
+        # F9 A0 (2026-08-02): the Rust mirror inherits the PYTHON GAME'S geometry.
+        # It previously took `window_size`/`start_rule`/`start_row`/`start_col` at
+        # their own defaults and this builder passed none of them — fine while the
+        # only geometry was the walled one, and a silent python/Rust rules split
+        # the moment a profile moves the start tile. Forwarded from `game` (not
+        # from the profile) so an explicitly-constructed non-default Game is
+        # mirrored too. Inert under `walled`: window_size is already 25, and
+        # neither `recentred` nor `fixed_start_tile` is set, so `rs_kw` is
+        # byte-identical to what it was before this block.
+        rs_kw["window_size"] = int(getattr(game, "window_size", 25))
+        if getattr(game, "recentred", False):
+            rs_kw["start_row"] = int(game.start_row)
+            rs_kw["start_col"] = int(game.start_col)
+        if getattr(game, "fixed_start_tile", False):
+            rs_kw["start_rule"] = "retail"
         return RustFairAgent(game, cfg, threads=int(rust_threads or 1), **rs_kw)
 
     kw = {k: v for k, v in dict(
