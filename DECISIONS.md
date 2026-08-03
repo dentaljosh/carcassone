@@ -3907,3 +3907,20 @@ gen-ward (peak above threads) exactly as the W-heuristic predicts for a
 nearly-GIL-free workload; cand/champ ms now symmetric (~550/560 at W30). Stale morning
 rows retained in the TSVs above the new ones (timestamps disambiguate).
 CLUSTER_OPS fourth profile + memory updated. Bench only, throwaway band 9.69e10.
+
+## 2026-08-03 (night) — F9 wall probe: W2 FIRES — champion play at row 18 = ZERO wall events in 400 games; bigger boards buy nothing this policy would use
+
+The bench-then-commit probe (Joshua's call; 400 champion self-play games at production
+k8×1376 rust, centered18, sentinel + A2 counters on, two-box work-stealing, throwaway
+seeds 1.09e11, no band): **0/400 games with any sentinel event** (CI upper bound
+0.95%/game) — and the counterfactual replay at 45×45, 55×55, and 143×143 is IDENTICALLY
+CLEAN, so W3 (runtime board size) would purchase nothing champion play reaches. **The
+spec's pre-registered branch fires: W2 (recentre-only, already app-shipped) is the F9
+fixed-rules geometry** — recorded as a policy-dependent MITIGATION BOUND (the CI, never
+"zero"), stamped in every fixed-rules manifest. A2 economics at strength: 0.250
+completion-deferrals/game (83/400 games) but **0 monks pinned at terminal** — the
+audit's permanent-pinning worst case does not materialize under champion play; the
+cloister fix's value is mid-game meeple availability, not terminal loss. Report:
+/mnt/c/carc-shared/f9_wall_probe_20260802/centered18/A1a_REPORT.json; harness merged at
+4b6d4bd. Spec J2 is thereby DATA-ANSWERED (W2); adoption of the profile for eval/desktop
+remains Joshua's J1.
