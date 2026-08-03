@@ -4144,3 +4144,36 @@ deck-pairs — each deck twice, seats swapped — for the ~21% variance cut.
 
 **Reversal cost:** none (descriptive; throwaway seeds, no claim id, no band, no results.csv row, no production change).
 **Phase:** measurement-first
+
+## 2026-08-03 (evening) — Joshua's directive batch: APK+E4 flip funded · ANE closed · component remeasure funded · F7c launched · G1/G3 moot · WC tie approved · FIRST PUSH (decisions)
+
+Eight rulings in one message, all executed same evening:
+
+1. **APK rebuild + E4 rules flip → fixed_v1: FUNDED** ("apk, go for it") — agent building: app's NEW
+   games flip to full fixed_v1 (cloister fix + redraw + R9 env in the bridge; centered18+retail
+   already shipped), archives self-label with the profile, both wheel families rebuilt (perf-pass+R9
+   rust). Sideload remains Joshua's.
+2. **ANE n≈2150 cell: CLOSED UNFUNDED** ("we dont need anand anymore") — decision-queue item 3's
+   dangling ack landed; CL-067 amended via csv. The equal-clock question stands unresolved by choice.
+3. **CL-074 component-table remeasure under fixed_v1: FUNDED** ("anticipation remeasure, go for it") —
+   8 knockout cells n=400 deck-paired, both sides fixed_v1+R9, rust, unchanged optima (the re-sweep's
+   all-null makes that legitimate); agent launching laptop-first (local owned by the G2 ruler),
+   shared-claim so local joins later; fresh band from the registry.
+4. **F7c skew-guard hoist: LAUNCHED** — agent building the shared measurement_infra guard + wiring
+   every unguarded --shared-claim launcher (donor files left inline for now; concurrent-edit safety).
+5. **G1 pondering: MOOT** (Joshua: "g1 is moot now isnt it" — yes: clock closure landed, budget rungs
+   unfundable per G10; reopen = contest registration AND budget-value evidence). Roadmap stamped.
+6. **G3 per-move cost: MOOT** (same ruling; its unpark trigger — funding the distilled-net line — is
+   counterfactual after value-unlock/rodv3/ANE/G2-failed-to-fit). Roadmap stamped; trigger unchanged.
+7. **WC tie-break flag: APPROVED to build, unscheduled** ("fine we'll update") — BACKLOG entry: F9
+   flag pattern, A3-style gates, candidate for a future fixed_v2 bundle; measure tie frequency in the
+   Phase C corpora first to size whether it can matter.
+8. **PUSH EXECUTED** — `android-app` pushed to origin for the first time (standing rule: push only on
+   ask; Joshua: "push").
+
+Also banked as standing policy (memory `feedback_worker_count_by_bottleneck`): **default W for rust
+workloads = cpu threads − 2** when no measured W* exists for the workload class.
+
+**Reversal cost:** items 1/3/4 are builds/measurements (reversible; no production change until their
+own close-outs); 2/5/6/7 are bookkeeping state; 8 is public (origin now has the branch).
+**Phase:** measurement-first

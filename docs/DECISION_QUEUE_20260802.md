@@ -26,7 +26,8 @@
    and the 29 h python-era price. The blocking cost is now the TRAIN + eval tail, not gen.
    ✅ JOSHUA 2026-08-03: PARKED (rec accepted). CL-072 stays Provisional/Open with the lean banked.
 3. **ANE n≈2150 cell** — recommendation: CLOSE UNFUNDED (the port inflated r ~8× past the
-   reopen bar; STATUS 2026-08-01 note). Needs your ack to flip the claim line.
+   reopen bar; STATUS 2026-08-01 note). ✅ **JOSHUA ACKED 2026-08-03 evening ("ANE closed for
+   now as we dont need anand anymore"): CLOSED UNFUNDED.** CL-067 claim line amended. Closed.
    ⚠️ **STILL UN-ACKED as of the 2026-08-03 evening sweep — the one item that fell through
    the cracks.** Your "1-4 I'll take your recs" (DECISIONS 2026-08-03 morning) was booked as
    items 1/2/4 + fixed_v1 + the flip + the spike; item 3 is not named in that entry and

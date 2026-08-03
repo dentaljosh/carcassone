@@ -658,3 +658,15 @@ fixed_v1 is ~2 h. Sequencing: AFTER the caps/curve re-sweep verdict (if the opti
 re-tune first, then re-measure components at the new optima — measuring components at
 stale optima answers the wrong question). Trigger word: "phase-6 table on canonical
 footing."
+
+## 2026-08-03 — WC tie-break rule flag (APPROVED to build, unscheduled)
+
+**Joshua 2026-08-03 evening ("wc tie rule, fine we'll update"):** the one rules divergence
+`fixed_v1` does not cover — official WC tie-break vs our engine's tie handling — is approved
+for a flag-gated fix in the F9 pattern (default-off flag in both engines, A3-style gates:
+flags-off replay regate + flags-on lockstep + mutation probe + composition gate with the
+fixed_v1 set; would become part of a future `fixed_v2` profile bundle, adoption a separate
+decision). Terminal-scoring-only change ⇒ no mid-game search effect expected; the ablation
+sensitivity is tie-frequency-bounded (ties are rare — measure the rate in the Phase C corpora
+first to size whether the flag can matter at all). Build when convenient; not launched
+2026-08-03 (three agents already in flight).
