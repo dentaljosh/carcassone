@@ -3924,3 +3924,24 @@ cloister fix's value is mid-game meeple availability, not terminal loss. Report:
 /mnt/c/carc-shared/f9_wall_probe_20260802/centered18/A1a_REPORT.json; harness merged at
 4b6d4bd. Spec J2 is thereby DATA-ANSWERED (W2); adoption of the profile for eval/desktop
 remains Joshua's J1.
+
+## 2026-08-03 (pre-dawn) — F9 PHASE B: B1 FIRES — the flagship contrast TRANSFERS to fixed rules (deck-matched Δ +1.18 ± 1.20 pts, z +0.98); plus the ply-0 desync fix that made arm F honest
+
+Both arms n=400 on band 1.02e11, same 200 decks, deck-paired within arm: **walled
++20.0 elo (margin +1.41)** vs **fixed_v1+R9 +41.9 elo (margin +2.59)** ⇒ deck-matched
+Δ(F−W) **+1.18 ± 1.20 pts/deck, 95% CI [−1.17, +3.53] ≈ [−18, +53] elo-equiv** — inside
+1σ, branch B1 per the prereg map: **the promotion contrast of record reproduces under
+canonical-fidelity rules within a measured bound.** Falsifiers clean (0 sentinel events,
+0 overflows, full n both arms; r9_env_ok stamped). Read-out:
+measurement/classical_search/PHASEB_TRANSFER_READOUT_20260803.md. The fresh-band walled
+arm (+20.0) vs historical +49.85 (32e9) is a new same-config cross-band datum for the
+CL-068 over-dispersion file — and the reason the same-band control arm was load-bearing.
+**En route, the MirrorDesync guard caught a ply-0 composition bug in the first arm-F
+launch** (retail start tile pre-placed TWICE: python setup + the mirror's re-setup each
+removed a copy; masked because next_tile agreed) — root-caused, fixed with a
+mutation-proven pair of regressions + a per-ply reconcile gate whose non-vacuity is
+itself checked (fixed_v1 ≠ walled results), b73cd42. A second latent hole fixed in the
+same pass: make_production_champion's rust branch forwarded no geometry/flags (its
+sibling build_fair_champion did since A0). Guards-not-vigilance, exhibits 6 and 7 of
+the weekend. PRODUCTION.yaml untouched; nothing adopted; adoption decisions (J1/J3/J5)
+remain Joshua's with W2 now data-answered and the transfer bound in hand.
