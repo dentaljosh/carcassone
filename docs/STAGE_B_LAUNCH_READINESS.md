@@ -1,6 +1,14 @@
 # Stage B — launch readiness (built overnight 2026-06-03, on branch `stage-b-wiring`)
 
-**STATUS (2026-06-03 AM): wiring DONE + code-reviewed + G-S3 wired + all decisions LOCKED.
+> **🕰️ STATUS: HISTORICAL — STAGE B LAUNCHED AND CAME BACK NO-GO (stamped 2026-08-03).** The "final gate,
+> then launch" wording below is 2026-06-03 pre-launch state. Stage B ran; the verdict is **value-blend
+> DEGRADES search** (outcome addendum in [PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md);
+> plan doc [STAGE_B_G-S1_PLAN_2026-06-03.md](STAGE_B_G-S1_PLAN_2026-06-03.md)), and the value-as-leaf route
+> is now closed on far stronger grounds (CL-039/042/064/065/066/073 — see
+> [CLAUDE.md](../CLAUDE.md) blocker #2). The `stage-b-wiring` branch and the Xeon OOM smoke referenced
+> below are both dead context — the Xeon is retired. *(Original readiness note follows.)*
+
+**STATUS (as written 2026-06-03 AM): wiring DONE + code-reviewed + G-S3 wired + all decisions LOCKED.
 Cluster synced (11965b6). Final gate = the Xeon OOM smoke; then launch.** Stage B is the
 value-in-loop retrain that tests whether the learned value head, finally put INTO the search
 loop (the F-B1 fix), can beat the v2.7 leaf ceiling on the clean base-only game. Branch

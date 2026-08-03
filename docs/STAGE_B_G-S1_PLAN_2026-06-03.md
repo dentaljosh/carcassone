@@ -1,6 +1,17 @@
 # G-S1 — value_blend ramp wiring (Stage-B core mechanism)
 
-**Status: PLAN, pending Joshua's approval. Not implemented.** Produced by a code-explorer
+> **🕰️ STATUS: HISTORICAL — IMPLEMENTED AND THE LEVER IS DEAD (stamped 2026-08-03).** The "not
+> implemented" line below is 2026-06-03 state. G-S1 *was* wired the same night
+> ([STAGE_B_LAUNCH_READINESS.md](STAGE_B_LAUNCH_READINESS.md)), Stage B ran, and the verdict was **no-go —
+> blending the learned value into the leaf DEGRADES search**
+> ([PHASE1_BUILD_SPEC_2026-06-02.md](PHASE1_BUILD_SPEC_2026-06-02.md) outcome addendum;
+> [CORRECTION_PLAN_2026-06-02.md](CORRECTION_PLAN_2026-06-02.md)). The whole value-as-leaf route has since
+> been closed on much stronger, modern ground — CL-039/CL-042 (route), CL-064 (not capacity), CL-065
+> (representation-independent), CL-066 (tabula-rasa flatline), CL-073 (the mechanism: outcome prediction
+> is not move discrimination). **Do not re-propose value_blend without a new premise** — see
+> [LEVER_INDEX.md](LEVER_INDEX.md). *(Original plan follows.)*
+
+**Status (as written 2026-06-03): PLAN, pending Joshua's approval. Not implemented.** Produced by a code-explorer
 trace agent 2026-06-03 (overnight). G-S1 is the fix for the central failure F-B1: the
 learned VALUE head is never in the search loop, so it can't beat the v2.7 heuristic. Stage B
 blends the net value into the leaf, ramped over iterations.
