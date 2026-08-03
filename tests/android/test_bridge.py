@@ -1850,3 +1850,138 @@ def test_the_same_log_on_the_other_grid_is_a_different_game():
             "then grid_rule would not need to be in the payload")
     else:
         assert other["error"]["code"] == "bad_save"
+
+
+# --------------------------------------------------------------------------- #
+# F9/A3 — the UNPLACEABLE-TILE draw rule                                        #
+#                                                                              #
+# Unlike `start_rule`/`grid_rule`, the APP ADOPTS NOTHING here: `DRAW_RULE` is  #
+# the engine's discard-and-pass, so every app game plays exactly as before.     #
+# What is under test is that the rule TRAVELS in the record (the same log       #
+# decodes a different game under "redraw"), and that the bag accounting         #
+# survives a tile leaving the game unplaced.                                    #
+# --------------------------------------------------------------------------- #
+def test_a3_app_default_draw_rule_is_engine():
+    """DEFAULT OFF. The app keeps the engine rule, so this change adopts nothing."""
+    assert B.DRAW_RULE == B.DRAW_RULE_ENGINE == "engine"
+    assert B.DRAW_RULE_LEGACY == B.DRAW_RULE_ENGINE
+    st = new(seed=11)
+    assert B._S.draw_rule == B.DRAW_RULE_ENGINE
+    assert B._S.game.draw_rule == B.DRAW_RULE_ENGINE
+    # The agent searches under the same rule, or it simulates another game.
+    assert B._S.ai_game.draw_rule == B.DRAW_RULE_ENGINE
+    assert st["ok"] is True
+
+
+def test_a3_unknown_draw_rule_is_rejected_not_guessed():
+    """The rule flips turn parity after a discard and changes which tiles ever
+    enter play, so guessing would silently replay a different game."""
+    d = j(B.new_game(json.dumps({"seed": 5, "draw_rule": "reshuffle"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+    d = j(B.restore_game(json.dumps(
+        {"schema": B.SAVE_SCHEMA, "deck_seed": 5, "actions": [],
+         "human_player": 0, "draw_rule": "nonsense"})))
+    assert d["ok"] is False and d["error"]["code"] == "ValueError"
+
+
+def test_a3_redraw_rule_is_reachable_and_reaches_both_engines():
+    """The opt-in exists and is threaded to the Python Game the UI runs on, the
+    private Game the agent searches with, and the session record."""
+    new(seed=11, draw_rule=B.DRAW_RULE_REDRAW)
+    assert B._S.draw_rule == B.DRAW_RULE_REDRAW
+    assert B._S.game.redraw_unplaceable is True
+    assert B._S.ai_game.redraw_unplaceable is True
+    assert B._S.board.state.redraw_unplaceable is True
+
+
+@pytest.mark.parametrize("draw_rule", [B.DRAW_RULE_ENGINE, B.DRAW_RULE_REDRAW, None])
+def test_a3_draw_rule_round_trips_through_save_restore(draw_rule):
+    """All three values a payload can carry: both named rules and the ABSENT
+    field, which means the engine's discard-and-pass forever."""
+    cfg = dict(TINY, seed=23, opponent="tier1")
+    if draw_rule is not None:
+        cfg["draw_rule"] = draw_rule
+    st = new(**cfg)
+    for _ in range(8):
+        if st["is_terminated"]:
+            break
+        st = (ok(B.apply_action(st["legal"]["action_ids"][0])) if st["is_human_turn"]
+              else ok(B.ai_move(st["generation"])))
+    before = ok(B.get_state())
+    save = ok(B.save_game())
+    expect = B.DRAW_RULE if draw_rule is None else draw_rule
+    assert save["draw_rule"] == expect
+    # The auditable half of the record: which tiles left the game, in order.
+    assert save["set_aside_tiles"] == [
+        t.description for t in B._S.board.state.set_aside_tiles]
+
+    if draw_rule is None:
+        # Simulate a payload written before `draw_rule` existed: no key at all.
+        legacy = {k: v for k, v in save.items() if k != "draw_rule"}
+        assert "draw_rule" not in legacy
+        restored = ok(B.restore_game(json.dumps(legacy)))
+        assert B._S.draw_rule == B.DRAW_RULE_LEGACY == B.DRAW_RULE_ENGINE
+    else:
+        restored = ok(B.restore_game(json.dumps(save)))
+        assert B._S.draw_rule == expect
+    assert _normalise_for_compare(restored) == _normalise_for_compare(before)
+
+
+def test_a3_draw_rule_travels_in_the_archive():
+    st = new(seed=21, opponent="tier1", **TINY)
+    st = play_out(st)
+    rec = ok(B.archive_record())
+    assert rec["draw_rule"] == B.DRAW_RULE_ENGINE, \
+        "the E4 manifest must record which draw rule the game was played under"
+    assert isinstance(rec["set_aside_tiles"], list)
+
+
+def test_a3_get_bag_subtracts_the_tiles_that_left_the_game():
+    """THE BUG tile removal introduces. `get_bag` derives `remaining` from the
+    board and the tile in hand and deliberately never reads `state.deck`; a
+    set-aside tile is in NEITHER place, so without the third term it would be
+    reported as still-unseen forever and `total_remaining == len(deck)` would
+    break for the rest of the game.
+
+    The removal is driven directly here rather than waited for: a natural
+    unplaceable draw is rare (0 games in seeds 0-59 on the app's own grid), and
+    the accounting claim does not depend on how the tile left."""
+    st = new(seed=5, opponent="tier1", human_player=0)
+    assert st["phase"] == "tiles"
+    state = B._S.board.state
+    before = ok(B.get_bag())
+    assert before["total_remaining"] == before["deck_remaining"]
+
+    # Exactly what `StateUpdater._apply_action_to` does to an unplaceable tile:
+    # set it aside (it leaves the game) and draw the next one.
+    gone = state.next_tile
+    state.set_aside_tiles.append(gone)
+    state.next_tile = state.deck.pop(0)
+
+    after = ok(B.get_bag())
+    assert after["deck_remaining"] == before["deck_remaining"] - 1
+    assert after["total_remaining"] == after["deck_remaining"], (
+        "a set-aside tile is neither on the board nor in hand — unsubtracted it "
+        "reads as still in the bag forever")
+    faces = {f["description"]: f["remaining"] for f in after["faces"]}
+    old = {f["description"]: f["remaining"] for f in before["faces"]}
+    # The tile that LEFT is one rarer than it was; the tile now in hand is too,
+    # and they cancel out on the face they share.
+    delta = {d: faces[d] - old[d] for d in faces if faces[d] != old[d]}
+    assert sum(delta.values()) == -1, delta
+    assert all(v < 0 for v in delta.values()), delta
+
+
+def test_a3_get_bag_still_empties_when_tiles_were_set_aside():
+    """The end-of-game invariant, with a removal forced early: every tile is
+    accounted for exactly once, so the bag still reads zero."""
+    st = new(seed=21, opponent="tier1", **TINY)
+    state = B._S.board.state
+    state.set_aside_tiles.append(state.next_tile)
+    state.next_tile = state.deck.pop(0)
+    st = ok(B.get_state())
+    st = play_out(st)
+    bag = ok(B.get_bag())
+    assert bag["total_remaining"] == 0, "a finished game has emptied the bag"
+    assert all(f["remaining"] == 0 for f in bag["faces"])
+    assert len(state.set_aside_tiles) >= 1

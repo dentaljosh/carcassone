@@ -278,6 +278,29 @@ GRID_RULE_START: dict[str, tuple[int, int]] = {
 }
 
 # --------------------------------------------------------------------------- #
+# The UNPLACEABLE-TILE draw rule (F9/A3). ⚠️ THE APP ADOPTS NOTHING HERE.       #
+#                                                                              #
+#   "engine" — the vendored engine's native rule and the app default: a TILES-  #
+#              phase PassAction discards the unplaceable tile, draws the next   #
+#              AND passes the turn, so the drawer forfeits a placement.         #
+#   "redraw" — the retail rule: reveal, set the tile aside (it LEAVES THE       #
+#              GAME), draw again, SAME player continues, repeat while           #
+#              unplaceable.                                                     #
+#                                                                              #
+# LIKE `start_rule` AND `grid_rule`, THIS TRAVELS IN THE SAVE PAYLOAD, and for  #
+# the same reason: the same (deck_seed, actions) decodes a DIFFERENT game under #
+# the two rules — the rule changes TURN PARITY (who owes the next decision      #
+# after a discard) and WHICH TILES EVER ENTER PLAY (a set-aside tile is gone,   #
+# so every later draw shifts). A save or archive with no `draw_rule` was        #
+# written before this shipped and means "engine" forever; an unrecognised value #
+# is refused rather than guessed.                                               #
+# --------------------------------------------------------------------------- #
+DRAW_RULE_ENGINE = "engine"
+DRAW_RULE_REDRAW = "redraw"
+DRAW_RULE = DRAW_RULE_ENGINE            # what a NEW app game uses
+DRAW_RULE_LEGACY = DRAW_RULE_ENGINE     # what a save with no `draw_rule` means
+
+# --------------------------------------------------------------------------- #
 # Agent backend. ⚠️ FLIPPED 2026-08-01 (Joshua: "2 yes"): the DEFAULT IS RUST.  #
 #                                                                              #
 # "rust" swaps ONLY the opponent's move choice for `carc_rs.FairAgentRs`, the   #
@@ -822,6 +845,7 @@ class _Session:
                  sims: int | None, k_dets: int | None, verify: bool,
                  generation: int, start_rule: str = START_RULE,
                  grid_rule: str = GRID_RULE,
+                 draw_rule: str = DRAW_RULE,
                  backend: str = BACKEND_DEFAULT,
                  played_backend: str | None = None,
                  played_sims: int | None = None,
@@ -847,6 +871,15 @@ class _Session:
                 f"{tuple(GRID_RULE_START)}")
         self.grid_rule = str(grid_rule)
         self.grid_row, self.grid_col = GRID_RULE_START[self.grid_rule]
+        # What happens to an UNPLACEABLE tile. Same contract as the two above and
+        # refused the same way: the rule flips turn parity after a discard and
+        # changes which tiles ever enter play, so the same (deck_seed, actions)
+        # decodes a different game and guessing would replay the wrong one.
+        if draw_rule not in (DRAW_RULE_ENGINE, DRAW_RULE_REDRAW):
+            raise ValueError(
+                f"unknown draw_rule {draw_rule!r}; expected "
+                f"{DRAW_RULE_ENGINE!r} or {DRAW_RULE_REDRAW!r}")
+        self.draw_rule = str(draw_rule)
         self.human_player = int(human_player)
         self.opponent_kind = str(opponent)
         self.req_sims = None if sims is None else int(sims)
@@ -886,14 +919,17 @@ class _Session:
         # always did (game_wrapper.check_start_position / `Game.recentred`).
         grid = {"start_row": self.grid_row, "start_col": self.grid_col}
         self.game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
-                         **grid)
+                         draw_rule=self.draw_rule, **grid)
         # The agent gets its OWN Game (mirrors play_vs_tier1_gui.build_opponent): the
         # UI-side Game carries a legal-moves cache and the agent may run on another
         # thread, so private Games remove any chance of a cross-thread cache race.
         # `fixed_start_tile` only affects get_init_board, which the agent's Game never
         # calls — it is passed for consistency, not because the search needs it.
+        # `draw_rule` DOES reach the search, unlike `fixed_start_tile`: the agent
+        # rolls forward from the live board, so a mismatched rule would simulate a
+        # different game than the one on screen.
         self.ai_game = Game(enable_legal_moves_cache=True, fixed_start_tile=fixed_start,
-                            **grid)
+                            draw_rule=self.draw_rule, **grid)
 
         self.agent = None
         self.pick = None
@@ -1284,6 +1320,13 @@ class _Session:
                            else self.grid_row),
                 start_col=(None if self.grid_rule == GRID_RULE_ENGINE6
                            else self.grid_col),
+                # SAME UNPLACEABLE-TILE RULE, or the mirror diverges the first
+                # time a tile cannot be placed — a different player would owe the
+                # next decision and a different tile would be drawn. "engine" is
+                # spelled None on the FFI (the flag default), matching what a save
+                # with no `draw_rule` means on this side.
+                draw_rule=(None if self.draw_rule == DRAW_RULE_ENGINE
+                           else self.draw_rule),
             )
             self.rs.start_game_from_deck(self._full_deck_descriptions())
             self._assert_mirror("game start")
@@ -1811,6 +1854,9 @@ def new_game(config_json: str = "{}") -> str:
                       start tile sits on the 35x35 grid (see GRID_RULE; the app
                       plays centered18, which removes the invisible top border,
                       and the library default stays engine6)
+        draw_rule     "engine"|"redraw", default "engine" — what happens to an
+                      UNPLACEABLE tile (see DRAW_RULE; the app keeps the engine's
+                      discard-and-pass, so this adopts nothing)
         backend       "python"|"rust", default "python" — who picks the CHAMPION's
                       move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
                       the Python engine stays authoritative for legality, UI,
@@ -1837,6 +1883,7 @@ def new_game(config_json: str = "{}") -> str:
             generation=_GENERATION,
             start_rule=str(cfg.get("start_rule", START_RULE)),
             grid_rule=str(cfg.get("grid_rule", GRID_RULE)),
+            draw_rule=str(cfg.get("draw_rule", DRAW_RULE)),
             backend=str(cfg.get("backend", BACKEND_DEFAULT)),
         )
         _S = s
@@ -2012,6 +2059,17 @@ def _save_payload(s: _Session) -> dict:
         # board cells on a differently-placed grid. Saves written before this
         # field existed are read as GRID_RULE_LEGACY.
         "grid_rule": s.grid_rule,
+        # Load-bearing for the same reason again: the unplaceable-tile rule decides
+        # who owes the next decision after a discard and which tiles ever enter
+        # play, so the identical log decodes a different game under the other rule.
+        # Saves written before this field existed are read as DRAW_RULE_LEGACY.
+        "draw_rule": s.draw_rule,
+        # The tiles that LEFT THE GAME unplaced, in removal order. NOT needed to
+        # replay — the removal is deterministic given the seed and the rule — but
+        # the record of which faces went away is what makes an archived game
+        # auditable, and it is what `get_bag` needs to stay honest (a set-aside
+        # tile is neither on the board nor in hand).
+        "set_aside_tiles": [t.description for t in s.board.state.set_aside_tiles],
         # WHAT THIS GAME WAS PLAYED ON — the sticky resolution (ROUND2 F-2). `sims`
         # and `k_dets` above are what was REQUESTED (both null for the champion), so
         # before these fields existed a Resume after an app restart re-resolved the
@@ -2246,6 +2304,10 @@ def restore_game(json_str: str) -> str:
             # walled engine grid. Never the CURRENT default: the action log
             # decodes different cells on a different grid.
             grid_rule=str(blob.get("grid_rule", GRID_RULE_LEGACY)),
+            # Absent field == written before the redraw rule shipped, i.e. the
+            # engine's discard-and-pass. Never the CURRENT default by accident:
+            # the log decodes a different game under the other rule.
+            draw_rule=str(blob.get("draw_rule", DRAW_RULE_LEGACY)),
             # ⚠️ WAS "a RUNTIME choice, not a property of the saved game" — true of
             # the ENGINE, and false of everything downstream of it since the
             # 2026-08-01 unpin coupled the budget to it. The saved answer wins; the
@@ -2573,9 +2635,18 @@ def get_bag() -> str:
 
     Strictly public information, and computed so that it cannot be anything else:
     ``remaining = total_in_the_base_distribution - already_on_the_board - the tile in
-    hand``. ``state.deck`` is never read. That matters — the deck is a shuffled LIST,
-    so its contents in order are the future draws, and reading it would hand the player
-    knowledge the fair champion's determinizations deliberately do not have.
+    hand - the tiles SET ASIDE``. ``state.deck`` is never read. That matters — the
+    deck is a shuffled LIST, so its contents in order are the future draws, and
+    reading it would hand the player knowledge the fair champion's determinizations
+    deliberately do not have.
+
+    The third term is the one that is easy to miss. A tile that was drawn and could
+    not be placed LEAVES THE GAME without ever reaching the board (it is appended to
+    ``state.set_aside_tiles`` under BOTH draw rules — ``"engine"`` discards it and
+    passes the turn, ``"redraw"`` discards it and redraws for the same player). It is
+    therefore neither on the board nor in hand, and without subtracting it the face
+    would be reported as still unseen forever, breaking ``total_remaining ==
+    len(deck)`` for the rest of the game.
 
     Faces are counted by ``tile.description``, the key ``base_tile_counts`` itself is
     indexed by and the one field ``Tile.turn(n)`` preserves — so a rotated tile on the
@@ -2606,12 +2677,18 @@ def get_bag() -> str:
         in_hand = (str(getattr(state.next_tile, "description", ""))
                    if (state.next_tile is not None
                        and state.phase == GamePhase.TILES) else None)
+        # Tiles that left the game unplaced (see the docstring's third term).
+        set_aside: dict[str, int] = {}
+        for tile in state.set_aside_tiles:
+            desc = str(getattr(tile, "description", ""))
+            set_aside[desc] = set_aside.get(desc, 0) + 1
 
         faces = []
         total_remaining = 0
         for desc, total in sorted(base_tile_counts.items()):
             proto = base_tiles.get(desc)
-            gone = placed.get(desc, 0) + (1 if in_hand == desc else 0)
+            gone = (placed.get(desc, 0) + (1 if in_hand == desc else 0)
+                    + set_aside.get(desc, 0))
             left = max(0, int(total) - int(gone))
             total_remaining += left
             faces.append({
