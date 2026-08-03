@@ -373,7 +373,16 @@ review FIRST because it will sharpen §1/§6 framing (advisor §6, weeks 2–5 p
   capacity, not architecture family. Either (a) run the bounded modern-architecture
   control (a transformer-style ranker at the same data budget — advisor: ~1–2 box-days
   + a GPU day, worth ~1 referee objection) or (b) scope the claim "at this scale" in
-  the abstract and here. **Decision for Joshua — see CLAIMS_LEDGER.md G2.**
+  the abstract and here. **RESOLVED 2026-08-03: option (a) was FUNDED and is RUNNING**
+  — the pre-registered transformer control,
+  [measurement/paper_g2_20260803/PREREG.md](../../../measurement/paper_g2_20260803/PREREG.md)
+  + [DESIGN_MEMO.md](../../../measurement/paper_g2_20260803/DESIGN_MEMO.md): three arms
+  from random init at matched parameters (7,731,599 vs 7,509,167) and matched corpus
+  passes (16), plus a 3.74× capacity leg, on the identical solver ruler. **Do not write
+  this paragraph — or the abstract's scope sentence — until the control returns:** the
+  wording is branch-dependent (Branch A ⇒ "conv / MLP / GBDT / ridge *and* transformer
+  families tested"; Branch B ⇒ §§5–6 and the abstract rescope to the tested family, not
+  merely this paragraph). Decision map: CLAIMS_LEDGER.md G2.
 - **9.4 Single domain.** One game, one rule set, one incumbent heuristic. The
   mechanism argument (§6) is general; the measurement is not.
 - **9.5 Endgame-weighted discrimination ruler.** The 1,119 exact roots are all K=2;
