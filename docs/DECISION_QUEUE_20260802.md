@@ -9,14 +9,13 @@
    ([KWIDTH_110K_READOUT_20260802.md](../measurement/classical_search/KWIDTH_110K_READOUT_20260802.md)):
    pre-registered branch = **UNDERPOWERED/INCONCLUSIVE → default DO NOT FUND** (+19.4
    elo-equiv, 95% CI [−5.7, +44.6] vs the 25-elo bar — couldn't exclude a fundable
-   effect, couldn't detect one). Your call: accept the default, or fund the overrule
-   sizing (~610 deck-paired games, one seat at 10×) / a cheaper intermediate rung first.
+   effect, couldn't detect one). ✅ JOSHUA ACCEPTED THE DEFAULT 2026-08-03 ("1-4 I'll take your recs"): NOT FUNDED. Closed.
 2. **rodv3 menu** (CL-072 leaning-negative): gen@11008 discriminator — **REPRICED with
    MEASURED gen throughput (2026-08-02 gen W-sweep, production knobs k8×1376 rust): ~260
    games/h laptop-only, ~314 games/h local-only, wall-parallel both boxes ⇒ the 300-game
    gen is ~35 min (two boxes) / <1 h (either box alone)** — down from the ~4–6 h estimate
    and the 29 h python-era price. The blocking cost is now the TRAIN + eval tail, not gen.
-   Menu unchanged: gen@11008 · n→800 teacher-h2h extension · or bank the lean and park.
+   ✅ JOSHUA 2026-08-03: PARKED (rec accepted). CL-072 stays Provisional/Open with the lean banked.
 3. **ANE n≈2150 cell** — recommendation: CLOSE UNFUNDED (the port inflated r ~8× past the
    reopen bar; STATUS 2026-08-01 note). Needs your ack to flip the claim line.
 3b. **NEW — the CUDA-Graph net-arm spike (~half a day, port-5 memo):** desktop torch+Graph
@@ -31,7 +30,7 @@
    per-mode or clairvoyant builds raise — top item; (ii) tests/release/test_factory_manifest
    re-check; (iii) the flip moves only the 6 make_production_champion sites (the eval fleet
    rides build_fair_champion's own default). Flip when you say so.
-4. **F7b farm knockout cells** — ✅ RAN 2026-08-02 (funded by your "lets do the farm knockout cells"): farm base **−142 elo** (z −9.4, verdict); farm-growth **+42.8 (z +1.87) — the champion LEANS BETTER WITHOUT it**. CONFIRM RAN 2026-08-03 (you funded): **UNCONFIRMED** — +10.4 ± 17.4, margin dead flat (z −0.07); the +42.8 was a winner's-curse crest (the project's 5th screen-shrink). Parked suggestive-unpromoted. Residual option per the map: ONE more cell on the pooled-elo z +2.16 (margin-pooled only +1.27 — the robust stat is unsupportive; my rec: don't).
+4. **F7b farm knockout cells** — ✅ RAN 2026-08-02 (funded by your "lets do the farm knockout cells"): farm base **−142 elo** (z −9.4, verdict); farm-growth **+42.8 (z +1.87) — the champion LEANS BETTER WITHOUT it**. CONFIRM RAN 2026-08-03 (you funded): **UNCONFIRMED** — +10.4 ± 17.4, margin dead flat (z −0.07); the +42.8 was a winner's-curse crest (the project's 5th screen-shrink). Parked suggestive-unpromoted. ✅ JOSHUA 2026-08-03: no third cell (rec accepted). CLOSED — parked suggestive-unpromoted, final.
 5. **F9 rules-fix program** — the big one: global recentring + rules remediation
    (RULES_FIDELITY_AUDIT R1–R8) + transfer-bound cell + fixed-rules descriptives +
    the JCloisterZone oracle (BACKLOG 2026-08-02). When to fund; scope in the audit doc.
