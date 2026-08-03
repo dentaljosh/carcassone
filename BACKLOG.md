@@ -679,3 +679,14 @@ cause — WSL2 clock jumps after host sleep — can happen at any point in a lon
 a skew check inside `src/carcassonne_ai/claim.py` itself (compare client time to a fresh probe
 mtime per claim-scan, or derive staleness purely from server-stamped mtimes). Small, but touches
 the claim contract → wants its own test pass. Trigger phrase: "claim-side skew check".
+
+## 2026-08-03 — cy wheel content-version depends on .venv presence (build-reproducibility)
+
+Found during the fixed_v1 APK build: `build_cy_wheels.py`'s content-addressed version changes
+with the BUILD ENVIRONMENT — gradle's buildPython has no Cython so `find_cython()` falls back
+to `<repo>/.venv`, and a worktree without the venv symlink prints a different version for
+IDENTICAL .pyx bytes (1.10840.58915 vs 1.3619.38859). The version should hash only the inputs
+that reach the artifact. Fix in `link_signature()`/`content_version()`; note any fix CHANGES the
+shipped version string once (harmless, but do it at an APK boundary). Workaround until then:
+symlink `.venv` into build worktrees (gitignore's `.venv/` doesn't match a symlink — leave it
+untracked).
