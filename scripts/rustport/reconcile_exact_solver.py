@@ -312,7 +312,10 @@ def check_position(tag: str, game, board, ms, *, budget: int, modes, extra: dict
         out["mismatches"].append({"tag": tag, "field": "replay_desync", **extra})
         return out
     for mode, ab in modes:
-        cell = f"{mode}{'+ab' if ab else ''}"
+        # K-TAGGED: "how many positions did this gate actually compare at each
+        # K" is the number a reader needs, and an untagged cell name cannot
+        # answer it from the rows file alone.
+        cell = f"k{extra.get('k', '?')}:{mode}{'+ab' if ab else ''}"
         try:
             py = _timed_py_solve(game, board, mode, budget, ab, solve_timeout_s)
         except (S.BudgetExceeded, _PySolveTimeout):
@@ -673,6 +676,9 @@ def main() -> int:
     ap.add_argument("--out", default=None, help="directory for the verdict JSON")
     ap.add_argument("--tag", default="run")
     ap.add_argument("--max-mismatch-report", type=int, default=200)
+    ap.add_argument("--plan-only", action="store_true",
+                    help="print the sampling plan (positions per source and "
+                         "per K) and exit, without solving anything")
     ap.add_argument("--from-rows", default=None,
                     help="rebuild the verdict from an incremental rows file "
                          "instead of running (an interrupted gate's record)")
@@ -682,6 +688,29 @@ def main() -> int:
 
     if args.from_rows:
         return rebuild_from_rows(Path(args.from_rows), args)
+
+    if args.plan_only:
+        from carcassonne_ai import rules_profile as rp
+        if args.rules_profile:
+            rp.activate(args.rules_profile)
+        plan: dict[str, int] = {}
+        for job in build_jobs(args):
+            if job["kind"] == "corpus":
+                for r in job["recs"]:
+                    key = f"{job['source']}:k{r['k_remaining']}"
+                    plan[key] = plan.get(key, 0) + 1
+            elif job["kind"] == "synth":
+                key = f"synth[{job['profile']}]:k{job['k']}"
+                plan[key] = plan.get(key, 0) + 1
+            else:
+                plan[job["kind"]] = plan.get(job["kind"], 0) + 1
+        by_k: dict[str, int] = {}
+        for key, n in plan.items():
+            if ":k" in key:
+                by_k[key.split(":k")[1]] = by_k.get(key.split(":k")[1], 0) + n
+        print(json.dumps({"per_source": dict(sorted(plan.items())),
+                          "positions_per_k": dict(sorted(by_k.items()))}, indent=2))
+        return 0
 
     from carcassonne_ai import rules_profile as rp
     if args.rules_profile:

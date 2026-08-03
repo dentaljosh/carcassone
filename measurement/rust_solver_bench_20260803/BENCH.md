@@ -48,6 +48,23 @@ node count, so a capped run would not measure the solver's natural footprint.
 
 <!--RESULTS-->
 
+Host `Doctor`, `carc_rs` 0.1.0. Artifacts: `BENCH_pyx4.json`, `BENCH_pyx4_rows.jsonl`, `BENCH_rest_rows.jsonl`, `BENCH_rust_rows.jsonl`.
+
+| cell | n ok / n | wall median | wall p90 | wall max | nodes median | nodes max | TT entries max | peak RSS max | timeouts |
+|---|---|---|---|---|---|---|---|---|---|
+| `rust_clairvoyant_ab_k4` | 20/20 | 14.48 s | 52.87 s | 179.73 s | 84,589 | 506,304 | 506,122 | 87.7 MB | 0 |
+| `rust_clairvoyant_ab_k5` | 2/4 | 13.71 s | 16.52 s | 16.52 s | 193,999 | 259,668 | 259,668 | 62.9 MB | 2 |
+| `rust_clairvoyant_ab_k6` | 2/6 | 129.64 s | 193.79 s | 193.79 s | 1,293,756 | 2,228,339 | 2,228,339 | 239.2 MB | 4 |
+| `rust_marginalized_k3` | 6/6 | 94.36 s | 205.92 s | 288.90 s | 307,986 | 1,005,104 | 1,005,104 | 115.1 MB | 0 |
+| `rust_marginalized_k4` | 1/5 | 102.31 s | 102.31 s | 102.31 s | 496,046 | 496,046 | 496,046 | 77.6 MB | 4 |
+| `py_clairvoyant_ab_k4` | 5/6 | 254.54 s | 337.41 s | 337.41 s | 60,560 | 137,574 | — | 1669.7 MB | 1 |
+
+### Rust vs Python, position-paired
+
+| K | paired n | median × | min × | max × | aggregate × | node-count agreement | value agreement |
+|---|---|---|---|---|---|---|---|
+| k4 | 5 | 20.77× | 19.63× | 28.71× | 22.11× | 5/5 | 5/5 |
+
 ## Caveats
 
 * **Per-position variance is large and is the headline risk**, not the median.

@@ -24,3 +24,84 @@
 {"cells": {"frozen_marginalized": 1, "live_marginalized": 1}, "checks": 2, "leg": "golden", "mismatches": [], "positions": 1, "skipped": 0}
 {"cells": {"py_clair_vs_marg": 1, "rs_clair_vs_marg": 1, "v2_clairvoyant": 1, "v2_marginalized": 1}, "checks": 4, "leg": "v2", "mismatches": [], "positions": 1, "skipped": 0}
 {"cells": {"frozen_marginalized": 1, "live_marginalized": 1}, "checks": 2, "leg": "golden", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 2, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 2}, "checks": 5, "leg": "l23", "mismatches": [], "positions": 3, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0, "marginalized": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 2}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0, "marginalized": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 3}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0, "marginalized": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 2}, "checks": 5, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 1}, "checks": 4, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 1}, "checks": 4, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 1}, "checks": 4, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant+ab": 2, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 1}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 1}, "checks": 4, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 2, "marginalized": 1}, "checks": 4, "leg": "l23", "mismatches": [], "positions": 3, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant+ab": 0, "marginalized": 0}, "checks": 0, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 2}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 1}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 1}, "checks": 2, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 0}
+{"cells": {"clairvoyant": 1, "clairvoyant+ab": 1, "marginalized": 1}, "checks": 3, "leg": "l23", "mismatches": [], "positions": 2, "skipped": 2}
+{"cells": {"clairvoyant+ab": 1, "marginalized": 0}, "checks": 1, "leg": "l23", "mismatches": [], "positions": 1, "skipped": 1}

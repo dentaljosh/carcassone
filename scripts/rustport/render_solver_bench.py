@@ -74,41 +74,45 @@ def main() -> int:
     from bench_exact_solver import summarize  # noqa: E402
 
     d = Path(sys.argv[1])
-    payloads = {}
-    for p in sorted(d.glob("BENCH*.json")):
-        payloads[p.name] = json.loads(p.read_text())
+    meta: dict = {}
+    names: list[str] = []
 
-    cells: dict[str, dict] = {}
-    speedups: dict[str, dict] = {}
-    meta = {}
-    for name, pay in payloads.items():
-        for cell, s in pay["summary"].items():
-            cells[cell] = {**s, "_artifact": name}
-        speedups.update(pay.get("speedup_rust_vs_python", {}))
+    # UNION EVERY MEASUREMENT, then summarize once.  Summarizing each artifact
+    # separately and letting one win per cell silently discards data: the
+    # expensive K=4 pass and the paired python pass both measure
+    # `rust_clairvoyant_ab_k4`, on different positions, and the answer wants
+    # both.  Rows are deduped on (cell, pos, engine, mode, alphabeta) so a
+    # finished payload and its own incremental rows file cannot double-count.
+    seen: set[tuple] = set()
+    raw_rows: list[dict] = []
+
+    def take(r: dict) -> None:
+        key = (r.get("cell"), r.get("pos"), r.get("engine"), r.get("mode"),
+               r.get("alphabeta"))
+        if key in seen:
+            return
+        seen.add(key)
+        raw_rows.append(r)
+
+    for p in sorted(d.glob("BENCH*.json")):
+        pay = json.loads(p.read_text())
+        names.append(p.name)
         meta.setdefault("host", pay.get("host"))
         meta.setdefault("carc_rs_version", pay.get("carc_rs_version"))
-
-    # An INTERRUPTED run leaves only its incremental rows file; summarize that
-    # too, so a cell that cost hours is never thrown away for want of a clean
-    # exit.  A finished `.json` for the same cell wins.
-    raw_rows: list[dict] = []
+        for r in pay.get("raw", []):
+            take(r)
     for p in sorted(d.glob("BENCH*_rows.jsonl")):
-        rows_by_cell: dict[str, list[dict]] = {}
+        names.append(p.name)
         for line in p.read_text().splitlines():
-            if not line.strip():
-                continue
-            r = json.loads(line)
-            raw_rows.append(r)
-            rows_by_cell.setdefault(r["cell"], []).append(r)
-        for cell, rows in rows_by_cell.items():
-            if cell not in cells:
-                cells[cell] = {**summarize(rows), "_artifact": p.name + " (partial)"}
-    payloads.update({p.name: None for p in sorted(d.glob("BENCH*_rows.jsonl"))})
+            if line.strip():
+                take(json.loads(line))
 
-    # position-paired speedup from the raw rows, for cells that never got a
-    # finished payload
-    if raw_rows and not speedups:
-        speedups.update(pair_speedups(raw_rows))
+    by_cell: dict[str, list[dict]] = {}
+    for r in raw_rows:
+        by_cell.setdefault(r["cell"], []).append(r)
+    cells = {c: summarize(rows) for c, rows in by_cell.items()}
+    speedups = pair_speedups(raw_rows)
+    payloads = {n: None for n in names}
 
     lines = []
     lines.append(f"Host `{meta.get('host')}`, `carc_rs` {meta.get('carc_rs_version')}. "
