@@ -15,6 +15,17 @@
 #   SHARE=/mnt/carc-shared OW=24 N=200 PH=2 KS="5 8" bash scripts/level2/run_hybrid_bands_orch.sh --shared-claim
 set -euo pipefail
 
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 REPO=${REPO:-$(cd "$(dirname "$0")/../.." && pwd)}
 PY=${PY:-python}
 SHARE=${SHARE:?set SHARE=<share mount path>}

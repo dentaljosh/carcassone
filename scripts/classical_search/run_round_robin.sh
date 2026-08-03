@@ -5,6 +5,18 @@
 #   cell in {rr1,rr2,rr3,rr4}. Workers default per Joshua 2026-07-06:
 #   CPU-only cells (rr3/rr4): local 30 / laptop 22. Orch cells (rr1/rr2): local 48 / laptop 26.
 set -u
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 ROLE="${1:?role primary|helper}"; CELL="${2:?cell rr1|rr2|rr3|rr4}"; WOVR="${3:-}"
 REPO=/home/doctor/projects/carcassone
 PY=$REPO/.venv/bin/python

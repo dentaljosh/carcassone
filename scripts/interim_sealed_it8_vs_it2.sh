@@ -6,6 +6,18 @@
 # Runs PARALLEL to the live iter9+ run with LOW workers (nice -19) so it doesn't
 # starve the main gen. Verdict via odo_paired_tally(base_it2, champ_it8).
 set -uo pipefail
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 SHARE_L=/mnt/c/carc-shared; SHARE_R=/mnt/carc-shared
 REPO_L=/home/doctor/projects/carcassone; REPO_LAP=/home/pop/carcassone; REPO_XEON=/home/doctor/projects/carcassone
 PY=$REPO_L/.venv/bin/python

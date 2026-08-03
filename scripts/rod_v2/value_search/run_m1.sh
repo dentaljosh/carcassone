@@ -3,6 +3,18 @@
 # net-on-CPU at W=cores (NOT oversubscribed). Run on BOTH boxes (shared-claim work-steal).
 #   SHARE=... CKPT=... WORKERS=16 N=200 ./run_m1.sh
 set -euo pipefail
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
 export CARCASSONNE_V29_MEEPLE_CURVE="-8,-4,-1,0,2,3,4,5" CARCASSONNE_V25_MEEPLE_K=2.0
 export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_REPR=1 CARCASSONNE_V25_VALUE_BLEND=0
