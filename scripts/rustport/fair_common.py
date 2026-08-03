@@ -104,10 +104,17 @@ def py_agent(game: Game, *, sims: int, k_dets: int, seed: int,
 
     `verify=True` runs the R1/R7-class provenance guard (curve values, caps,
     `_LEAF_VALUE_PANEL` on real boards) at construction — the thing that catches
-    a missing leaf-env preamble instead of silently gating the wrong champion."""
+    a missing leaf-env preamble instead of silently gating the wrong champion.
+
+    ⚠️ `backend="python"` is PINNED, not omitted (2026-08-03). This function is the
+    PYTHON leg of every rustport gate — the thing the Rust leg is compared AGAINST —
+    and `make_production_champion`'s default flipped to `"auto"`, i.e. to the yaml's
+    `backend: rust`. Omitting it would have made every reconcile/identity gate compare
+    Rust against Rust and report a green it had not earned (it does not even get that
+    far: the oracle is driven without a mirror, so it raises `MirrorDesync` at ply 0)."""
     agent = make_production_champion(
         "fair", game=game, seed=int(seed), sims=int(sims), k_dets=int(k_dets),
-        exact_endgame=bool(exact_endgame), verify=True,
+        exact_endgame=bool(exact_endgame), verify=True, backend="python",
         exact_budget=EXACT_BUDGET, parallel_workers=None)
     assert_same_leaf(agent)
     return agent

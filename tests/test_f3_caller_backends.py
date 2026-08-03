@@ -110,8 +110,10 @@ def test_resolve_execution_never_pairs_rust_with_parallel_workers():
 
 def test_inherit_is_the_caller_default_and_tracks_the_factory():
     """The whole point of `inherit`: it is what the factory would do unasked, so a flip
-    of the factory default reaches all four harnesses without editing one of them —
-    and today it is byte-identical to `python`."""
+    of the factory default reaches all four harnesses without editing one of them.
+    ⚠️ THAT FLIP LANDED 2026-08-03 — the factory default is `"auto"`, so `inherit` now
+    resolves to the yaml engine (today `rust`), not to `python`. This assertion was
+    written to survive it and did; it is the reason no harness needed an edit."""
     import inspect
 
     from carcassonne_ai.champion_factory import make_production_champion
@@ -324,7 +326,9 @@ def test_bench_champion_reseat_matches_python_at_every_root():
         agent = CF.make_production_champion(
             "fair", game=Game(enable_legal_moves_cache=True), seed=101, sims=SIMS,
             k_dets=K, verify=False,
-            **({} if backend == "python" else {"backend": "rust"}))
+            # PINNED in BOTH directions (2026-08-03): the factory default is now
+            # "auto", so an omitted kwarg would make the "python" leg a Rust one.
+            backend=backend)
         acts = []
         for i, row in enumerate(rows):
             _g, board = BC.replay(Game, row)

@@ -11,9 +11,10 @@ applied action of BOTH seats, and since 2026-08-01 `choose_action` hard-raises
 `MirrorDesync` on any drift (12.8 us per decision — a correctness guard, not a mode).
 Five of the six `make_production_champion` call sites drove the agent as if it were
 stateless (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §1), which is why
-the factory default is still `backend="python"` and the YAML value is reached only by a
-caller that opts in with `backend="auto"` — that opt-in BEING the caller's assertion
-that it makes these calls.
+the factory default was `backend="python"` until every one of them was taught the three
+calls below. ⚠️ THAT IS DONE, and the factory default flipped to `"auto"` on 2026-08-03:
+a harness left at `--backend inherit` now runs `carc_rs`. Wiring the protocol is no
+longer an opt-in assertion — it is the precondition that has already been paid.
 
 The three calls, at the harness's own choke points:
 
@@ -156,21 +157,28 @@ class Execution(dict):
                 + ("None (sequential k-loop)" if pw is None else str(pw)))
 
 
-def factory_default_backend() -> str:
+def factory_default_backend(mode: str = "fair") -> str:
     """What `make_production_champion` does when a caller says NOTHING about backend.
 
     Read from the factory's own signature (and resolved through the YAML if that
-    default is ``"auto"``), never guessed — which is what lets a harness default to
-    ``"inherit"`` and be carried along by a future flip of that default WITHOUT this
-    module or the harness being edited again. `champion_factory` stays read-only here:
-    this only reads a default value, it does not set one."""
+    default is ``"auto"``), never guessed — which is what let a harness default to
+    ``"inherit"`` and be carried along by the flip of that default WITHOUT this module
+    or the harness being edited. ⚠️ THAT FLIP HAPPENED on 2026-08-03: the signature
+    default is now ``"auto"``, so this returns the YAML engine (today ``rust``) and
+    every ``--backend inherit`` harness moved with it. `champion_factory` stays
+    read-only here: this reads a default value, it does not set one.
+
+    ``mode`` is forwarded to the factory's own `resolve_auto_backend`, because "auto" is
+    resolved PER MODE there (the YAML key names the FAIR deploy's engine, not the
+    clairvoyant ruler's). Every caller in this module's contract is a fair harness, so
+    it defaults to ``"fair"``."""
     import inspect
 
-    from .champion_factory import load_production_spec, make_production_champion
+    from .champion_factory import make_production_champion, resolve_auto_backend
 
     d = inspect.signature(make_production_champion).parameters["backend"].default
     d = str(d)
-    return str(load_production_spec().backend) if d == "auto" else d
+    return resolve_auto_backend(mode) if d == "auto" else d
 
 
 def resolve_execution(backend: str = "python", *, profile: str | None = None,
@@ -184,13 +192,14 @@ def resolve_execution(backend: str = "python", *, profile: str | None = None,
       * ``"rust"``   — the caller demands `carc_rs`,
       * ``"auto"``   — read `governance/PRODUCTION.yaml`: the named deploy PROFILE's
         `backend` when a profile is given and found, else `fair_deploy.backend`,
-      * ``"inherit"`` — whatever `make_production_champion`'s OWN default resolves to
-        (today: ``python``). ⚠️ This is the value a converted harness should DEFAULT to.
-        It is byte-identical to ``"python"`` right now, and it is the difference between
-        a harness that merely tolerates the factory-default flip and one the flip
-        actually reaches — the flip is one edit in `champion_factory`, and no caller
-        has to be touched again. The resolved literal is still passed explicitly, so
-        what the harness resolved and what the factory builds can never disagree.
+      * ``"inherit"`` — whatever `make_production_champion`'s OWN default resolves to.
+        ⚠️ This is the value a converted harness should DEFAULT to, and since the
+        2026-08-03 factory flip it resolves to the YAML engine (today ``rust``) rather
+        than to ``python``. It was the difference between a harness that merely
+        tolerated the flip and one the flip actually reached — the flip was one edit in
+        `champion_factory` and no caller had to be touched again. The resolved literal
+        is still passed explicitly, so what the harness resolved and what the factory
+        builds can never disagree.
 
     FAIL-SAFE, exactly like `play_harness.resolve_parallel_workers`: any failure to
     read the YAML resolves to python + sequential rather than exploding a game. An

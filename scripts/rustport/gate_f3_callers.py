@@ -260,7 +260,10 @@ def gate_bench_champion(n_rows: int = 6) -> dict:
         agent = CF.make_production_champion(
             "fair", game=Game(enable_legal_moves_cache=True), seed=101, sims=SIMS,
             k_dets=K_DETS, exact_endgame=True, verify=False,
-            **({} if backend == "python" else {"backend": "rust"}))
+            # PINNED in BOTH directions (2026-08-03): the factory default is now
+            # "auto", so an omitted kwarg on the python leg would build a Rust agent
+            # and this gate would compare rust against rust.
+            backend=backend)
         acts, t0 = [], time.perf_counter()
         for i, row in enumerate(rows):
             _g, board = BC.replay(Game, row)

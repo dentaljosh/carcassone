@@ -81,6 +81,57 @@ def test_fair_manifest_matches_intent():
     assert m["search"]["reuse_tree_effective"] is False
 
 
+def test_the_factory_default_reads_the_yaml_backend():
+    """⚠️ THE 2026-08-03 FLIP. `make_production_champion`'s `backend` default is now
+    `"auto"`, so a caller that says NOTHING gets the engine
+    `governance/PRODUCTION.yaml` names — today `rust`, on G4/G6 behaviour-identity.
+
+    The precondition was F11: every one of the six call sites now drives the mirror
+    protocol (`seat`/`advance`/`reseat`) or pins `backend="python"` explicitly
+    (measurement/rustport_p6/BACKEND_BYPASS_AUDIT_20260801.md §1 was the blocker).
+
+    ⚠️ PER-MODE. The yaml key is `champion.fair_deploy.backend` — the FAIR deploy's
+    engine. The clairvoyant ruler is NOT covered by it and fails closed to python;
+    `test_clairvoyant_agent_uses_reuse_tree` below is that assertion."""
+    import inspect
+
+    assert (inspect.signature(cf.make_production_champion).parameters["backend"].default
+            == "auto")
+    spec = cf.load_production_spec()
+    assert cf.resolve_auto_backend("fair", spec) == spec.backend
+    assert cf.resolve_auto_backend("clairvoyant", spec) == "python"
+    # A request that names a capability carc_rs does not carry is NOT the champion of
+    # record, so the yaml's champion backend does not speak for it: auto -> python.
+    for cap in ("meeple_dedup", "intra_reuse", "parallel_workers"):
+        assert cf.resolve_auto_backend("fair", spec, python_only=(cap,)) == "python"
+
+    # The THIN BUILDERS deliberately did NOT move: eval_fair_puct (every elo row) and
+    # the measurement_infra probes reach the agent through them without naming a
+    # backend, including on their explicit --backend python legs.
+    for fn in (cf.build_fair_champion, cf.build_clairvoyant_champion):
+        assert inspect.signature(fn).parameters["backend"].default == "python"
+    assert (inspect.signature(cf.resolved_manifest).parameters["backend"].default
+            == "python")
+
+
+def test_default_and_explicit_yaml_backend_build_the_same_agent():
+    """The default must be EXACTLY `backend=<the yaml value>` — same class, same
+    manifest bytes — or the flip would be a third, untested configuration."""
+    from carcassonne_ai.game_wrapper import Game
+
+    engine = cf.resolve_auto_backend("fair")
+    a = cf.make_production_champion("fair", game=Game(enable_legal_moves_cache=True),
+                                    seed=1, sims=8, k_dets=1, verify=False)
+    b = cf.make_production_champion("fair", game=Game(enable_legal_moves_cache=True),
+                                    seed=1, sims=8, k_dets=1, verify=False,
+                                    backend=engine)
+    assert type(a) is type(b)
+    assert type(a).__name__ == ("RustFairAgent" if engine == "rust"
+                                else "FairHeuristicPriorAgent")
+    assert json.dumps(a.manifest, sort_keys=True) == json.dumps(b.manifest,
+                                                                sort_keys=True)
+
+
 def test_manifest_byte_stable_across_two_constructions():
     a = cf.make_production_champion("fair", seed=1).manifest
     b = cf.make_production_champion("fair", seed=2).manifest
@@ -121,19 +172,49 @@ def test_leaf_value_panel_is_the_golden():
 
 def test_meeple_dedup_off_leaves_the_manifest_byte_identical():
     """The flag-gated MEEPLE-DEDUP search must be INVISIBLE when off: no manifest key,
-    therefore no config_hash / leaf_hash drift and no re-review of the champion."""
+    therefore no config_hash / leaf_hash drift and no re-review of the champion.
+
+    ⚠️ The reference manifest is now `backend="auto"` — `resolved_manifest`'s own
+    default stayed `"python"` while the AGENT factory's flipped (2026-08-03), so the
+    comparison has to name the same engine or it would be testing the flip, not dedup."""
     agent = cf.make_production_champion("fair", seed=1)
     assert "meeple_dedup" not in agent.manifest
     assert getattr(agent, "meeple_dedup", None) is None      # = inherit the env flag
     assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
-        cf.resolved_manifest("fair"), sort_keys=True)
+        cf.resolved_manifest("fair", backend="auto"), sort_keys=True)
+
+
+def test_a_python_only_variant_degrades_the_auto_default_to_python():
+    """⚠️ THE FLIP'S OTHER HALF (2026-08-03). `meeple_dedup` / `intra_reuse` /
+    `parallel_workers` have NO carc_rs implementation. A caller that asks for one is
+    therefore not asking for the champion of record, and the yaml's CHAMPION backend
+    does not speak for it: `auto` resolves to python — the engine that request has
+    always run on, and the one G4/G6 prove is behaviour-identical to the other.
+
+    The unsafe direction is python -> rust behind a caller's back; this is the safe one.
+    An EXPLICIT `backend="rust"` still RAISES on the same set, because there the caller
+    named the engine and a silently dropped knob would be a wrong answer, not a slow
+    one — `test_rust_backend_rejects_the_wrong_modes_and_knobs` (tests/rustport) owns
+    that half."""
+    for kw in ({"meeple_dedup": True}, {"intra_reuse": True}, {"parallel_workers": 2}):
+        agent = cf.make_production_champion("fair", seed=1, sims=8, k_dets=2,
+                                            verify=False, **kw)
+        assert type(agent).__name__ == "FairHeuristicPriorAgent", kw
+        with pytest.raises(ValueError, match="python-only|parallel_workers"):
+            cf.make_production_champion("fair", seed=1, sims=8, k_dets=2, verify=False,
+                                        backend="rust", **kw)
 
 
 def test_meeple_dedup_on_is_stamped_without_moving_any_hash():
     """When on it MUST be visible in the manifest — and it must still not perturb the
-    leaf/config hashes, which describe the leaf and the config, not the search mask."""
-    off = cf.make_production_champion("fair", seed=1)
-    on = cf.make_production_champion("fair", seed=1, meeple_dedup=True)
+    leaf/config hashes, which describe the leaf and the config, not the search mask.
+
+    ⚠️ Both legs pin `backend="python"` (2026-08-03): dedup is a python-only variant, so
+    the ON leg can only ever be python, and an `auto` OFF leg would be the yaml engine —
+    a two-variable contrast. The degrade itself is asserted one test up."""
+    off = cf.make_production_champion("fair", seed=1, backend="python")
+    on = cf.make_production_champion("fair", seed=1, meeple_dedup=True,
+                                     backend="python")
     assert on.manifest["meeple_dedup"]["enabled"] is True
     assert on.manifest["meeple_dedup"]["source"] == "kwarg"
     assert on.meeple_dedup is True
@@ -151,15 +232,18 @@ def test_intra_turn_reuse_off_leaves_the_manifest_byte_identical():
     assert "intra_turn_reuse" not in agent.manifest
     assert getattr(agent, "intra_reuse", None) is None       # = inherit the env flag
     assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
-        cf.resolved_manifest("fair"), sort_keys=True)
+        cf.resolved_manifest("fair", backend="auto"), sort_keys=True)
 
 
 def test_intra_turn_reuse_on_is_stamped_without_moving_any_hash():
     """When on it MUST be visible in the manifest — including the budget semantics, since
     ON does more total work per turn at equal nominal sims and a reader of the manifest
-    must not mistake the cell for an equal-work comparison."""
-    off = cf.make_production_champion("fair", seed=1)
-    on = cf.make_production_champion("fair", seed=1, intra_reuse=True)
+    must not mistake the cell for an equal-work comparison.
+
+    ⚠️ Both legs pin `backend="python"` for the reason given on the dedup twin."""
+    off = cf.make_production_champion("fair", seed=1, backend="python")
+    on = cf.make_production_champion("fair", seed=1, intra_reuse=True,
+                                     backend="python")
     assert on.manifest["intra_turn_reuse"]["enabled"] is True
     assert on.manifest["intra_turn_reuse"]["source"] == "kwarg"
     assert "equal-WALL-CLOCK" in on.manifest["intra_turn_reuse"]["budget_semantics"]
@@ -180,10 +264,14 @@ def test_exact_budget_omitted_keeps_the_agent_default():
 
     agent = cf.make_production_champion("fair", seed=1)
     assert DEFAULT_EXACT_BUDGET == 2_000_000       # the figure the memo measured against
+    # BOTH engines read the same default (RustFairAgent points at fair_agent for it
+    # rather than copying), so the flip cannot move the on-device bound.
     assert agent._exact_budget == 2_000_000
+    assert cf.make_production_champion(
+        "fair", seed=1, backend="python")._exact_budget == 2_000_000
     assert "exact_budget" not in agent.manifest
     assert json.dumps(agent.manifest, sort_keys=True) == json.dumps(
-        cf.resolved_manifest("fair"), sort_keys=True)
+        cf.resolved_manifest("fair", backend="auto"), sort_keys=True)
 
 
 def test_exact_budget_reaches_the_solver_config():
@@ -262,16 +350,32 @@ def test_verify_raises_on_wrong_curve_and_caps():
 
 
 def test_fair_agent_is_the_production_shape():
+    """⚠️ The class name now follows the yaml engine (2026-08-03 flip). The production
+    SHAPE — budget, exact-K, endgame — is asserted on whichever agent the default
+    builds, and identically on the python one, because the two are behaviour-identical
+    by gate and must stay identically configured."""
     agent = cf.make_production_champion("fair", seed=101)
-    assert type(agent).__name__ == "FairHeuristicPriorAgent"
-    assert agent._sims == 1376 and agent._k_dets == 8 and agent._exact_max_k == 2
-    assert agent._exact_endgame is True
-    assert hasattr(agent, "manifest")
+    assert type(agent).__name__ == ("RustFairAgent"
+                                    if cf.resolve_auto_backend("fair") == "rust"
+                                    else "FairHeuristicPriorAgent")
+    py = cf.make_production_champion("fair", seed=101, backend="python")
+    assert type(py).__name__ == "FairHeuristicPriorAgent"
+    for a in (agent, py):
+        assert a._sims == 1376 and a._k_dets == 8 and a._exact_max_k == 2
+        assert a._exact_endgame is True
+        assert hasattr(a, "manifest")
 
 
 def test_clairvoyant_agent_uses_reuse_tree():
+    """⚠️ ALSO the clairvoyant half of the 2026-08-03 default flip: with `backend="auto"`
+    the default, this construction USED TO RAISE ("backend='rust' is a FAIR-mode
+    capability"). It resolves to python instead — fail closed — because the yaml key is
+    `champion.fair_deploy.backend`, the FAIR deploy's engine, and three items are open
+    on the Rust ruler's default path (profile-blind mirror, no auto_advance here, Gap 3).
+    A python agent therefore carries NO backend stamp."""
     agent = cf.make_production_champion("clairvoyant", seed=5)
     assert type(agent).__name__ == "HeuristicPriorAgent"
+    assert "backend" not in agent.manifest
     # A sims-less clairvoyant build derives its budget as k_dets * sims_per_det, so the
     # 2026-07-29 fair-deploy promotion moved this default 2752 -> 11008. Every REAL
     # clairvoyant caller (oracle_score_pilot, gate_b_depth_transfer, eval_fair_puct's
