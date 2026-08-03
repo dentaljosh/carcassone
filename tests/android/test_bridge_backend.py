@@ -553,6 +553,88 @@ def test_the_mirror_plays_the_same_grid_as_the_engine(grid_rule):
 
 
 # --------------------------------------------------------------------------- #
+# 3b. the mirror under the rest of the fixed_v1 bundle (2026-08-03)             #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("cloister_rule", ["fixed", "drifting"])
+@pytest.mark.parametrize("draw_rule", ["redraw", "engine"])
+def test_the_mirror_plays_the_same_a2_and_a3_rules(cloister_rule, draw_rule):
+    """A2 and A3 have no signature on ply one, which is what makes them worth a
+    full-game check rather than a constructor assertion.
+
+    A mirror left on the OTHER cloister scan scores a cloister on a different ply
+    and hands its meeple back on a different ply; one left on the other draw rule
+    diverges the first time a tile cannot be placed, because a different player
+    owes the next decision and a different tile is drawn. Both show up as a repr
+    divergence, and `_assert_mirror` runs inside `apply()` under
+    CARC_RS_RECONCILE — so a full clean game IS the assertion.
+    """
+    import random
+
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(B, "_RS_RECONCILE", True)
+    try:
+        st = _j(B.new_game(json.dumps({
+            "seed": 17, "opponent": "tier1", "backend": "rust",
+            "cloister_rule": cloister_rule, "draw_rule": draw_rule,
+        })))
+        assert st["backend"] == "rust", st["backend_note"]
+        s = B._S
+        assert s.rs is not None, s.rs_note
+        assert s.game.cloister_scan_fix is (cloister_rule == "fixed")
+        assert s.game.redraw_unplaceable is (draw_rule == "redraw")
+        assert s.game.string_representation(s.board) == s.rs.string_repr()
+
+        rng = random.Random(99)
+        plies = 0
+        while not st["is_terminated"]:
+            plies += 1
+            assert plies <= 400, "game did not terminate"
+            st = _j(B.apply_action(rng.choice(st["legal"]["action_ids"])))
+        assert plies > 100, f"probe degenerate: only {plies} plies"
+        assert s.game.string_representation(s.board) == s.rs.string_repr()
+        assert list(s.rs.scores()) == list(st["scores"])
+    finally:
+        monkey.undo()
+
+
+def test_the_mirror_is_on_the_same_farm_data_as_the_python_engine():
+    """The fifth lever, which no `Game` and no `FairAgentRs` argument can carry.
+
+    Both engines read `CARCASSONNE_FIX_R9` — the Python one when `base_deck` was
+    imported, the Rust one into a `OnceLock` the first time its registry is asked
+    for — so agreement is an ORDERING property, not a wiring one. `carc_rs` is the
+    only place the Rust half of it can be read back."""
+    from wingedsheep.carcassonne.tile_sets import base_deck
+
+    py = B.FARM_RULE_R9 if base_deck.R9_FIELD_ON_CITY_EDGE_FIX else B.FARM_RULE_ENGINE
+    rs = B.FARM_RULE_R9 if carc_rs.r9_enabled() else B.FARM_RULE_ENGINE
+    assert py == rs == B.FARM_RULE_LATCHED, (
+        f"python={py} rust={rs} bridge={B.FARM_RULE_LATCHED} — the two engines "
+        "would decompose farms differently")
+
+
+def test_a_rust_registry_on_the_other_farm_rule_degrades_instead_of_diverging():
+    """The safety net for the one process where the ordering CAN fail (an
+    instrumented-test process, where another test class may build a Rust game
+    before this module is imported). Simulated by lying about the latch."""
+    monkey = pytest.MonkeyPatch()
+    other = (B.FARM_RULE_ENGINE if B.FARM_RULE_LATCHED == B.FARM_RULE_R9
+             else B.FARM_RULE_R9)
+    monkey.setattr(carc_rs, "r9_enabled", lambda: other == B.FARM_RULE_R9)
+    try:
+        st = _j(B.new_game(json.dumps({
+            "seed": 3, "opponent": "tier1", "backend": "rust",
+        })))
+        assert st["ok"] is True, st
+        assert st["backend"] == "python", "a farm-rule split must not stay on rust"
+        assert B._S.rs is None
+        note = st["backend_note"] or B._S.rs_note or ""
+        assert "farm_rule" in note and B.R9_ENV_VAR in note, note
+    finally:
+        monkey.undo()
+
+
+# --------------------------------------------------------------------------- #
 # 4. the two safety nets (REVIEW.md C-a / C-i, CONFIRMED 2026-08-02)            #
 # --------------------------------------------------------------------------- #
 def _panic_type() -> type:
