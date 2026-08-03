@@ -1,5 +1,12 @@
 # F9 — Rules-fix program: build spec
 
+> **STATUS 2026-08-03 (afternoon) — ✅ PROGRAM COMPLETE, ALL PHASES.** Phase A (5 flags built+gated) + wall
+> probe (W2 by data) + Phase B (CL-075 transfer bound) + adoption (`rules_profile: fixed_v1`, PRODUCTION.yaml)
+> + caps/curve re-sweep (ALL-NULL — absolutes ungated) + D0/D1 JCZ oracle (43/43) + **Phase C descriptives
+> ([../measurement/f9_phase_c/PHASE_C_DESCRIPTIVES.md](../measurement/f9_phase_c/PHASE_C_DESCRIPTIVES.md))**.
+> Named unfunded residue: the seat-swap paired luck archive (§3's ICC half) · the E4 phone flip (next APK).
+> DECISIONS 2026-08-03 (afternoon). *(Original draft banner below for the record.)*
+>
 > **STATUS 2026-08-02 — DRAFT, AWAITING JOSHUA. Spec only: no code written, no engine touched, no band
 > claimed, no `governance/PRODUCTION.yaml` change, no `experiments/results.csv` row.** Committed before the
 > first line of implementation (house pre-registration style, the

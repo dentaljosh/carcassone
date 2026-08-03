@@ -1,0 +1,501 @@
+{
+ "schema": "carcassonne-f9-decision-density/v1",
+ "generated_utc": "2026-08-03T17:57:22+00:00",
+ "label": "walled449",
+ "note": "",
+ "corpus": {
+  "path": "measurement/champ_action_logs/champ_games.jsonl",
+  "kind": "games_jsonl",
+  "n_games": 449
+ },
+ "rules_profile": {
+  "name": "walled",
+  "source": "--rules-profile (corpus manifest predates F9 A0 stamping)",
+  "r9_env": false,
+  "resolved": {
+   "name": "walled",
+   "grid_rule": "engine6",
+   "start_row": 6,
+   "start_col": 15,
+   "board_rows": 35,
+   "board_cols": 35,
+   "start_rule": "engine",
+   "window_size": 25,
+   "cloister_scan": "drifting",
+   "unplaceable_tile": "next_player",
+   "note": "the engine of record \u2014 every elo ever measured is a walled number",
+   "r9_env_expected": false,
+   "fixed_start_tile": false,
+   "recentred": false,
+   "r9_env_var": "CARCASSONNE_FIX_R9",
+   "r9_env_observed": false,
+   "r9_env_ok": true
+  },
+  "game_kwargs": {}
+ },
+ "definitions": {
+  "replay": "Pure (deck_seed, actions) replay via scripts/measurement_infra/root_replay under the corpus's own rules profile. No search, no leaf eval, no net.",
+  "ply": "One recorded action. A turn is a TILES ply followed (usually) by a MEEPLES ply.",
+  "decision": "A ply at which the agent had to choose. `searched` = >=2 legal actions (the search actually ran over alternatives); `forced` = exactly 1 legal action (no choice existed, whatever the agent spent on it).",
+  "tile_pass_ply": "A TILES-phase ply whose played action is the tile-phase PassAction \u2014 the engine's unplaceable-tile path (A3's subject matter). Counted separately from placements.",
+  "legal_actions": "int(get_valid_moves(board).sum()) at the ply, i.e. the branching factor the agent faced, in the window-relative action space.",
+  "tercile": "early/mid/late by thirds of THIS game's TILE-ply count (tiles placed). A meeple ply inherits the tercile of the tile ply it follows. Matches scripts/analyzer/replay_stats.tercile's convention (thirds of the game's own length), keyed on tiles rather than turns so the two corpora are comparable when one of them redraws.",
+  "meeple_commit": "A MEEPLES-phase ply whose action is not the meeple-phase pass: `normal` (city/road side), `monk` (CENTER = cloister) or `farmer` (one of the four corner slots).",
+  "meeples_free": "state.meeples[player] \u2014 the supply still in hand, summed over both seats (14 at the start of a 2-player game).",
+  "replay_scores_match": "The replayed terminal scores equal the scores recorded by the generator. False anywhere means format/profile drift \u2014 the run fails loudly rather than reporting."
+ },
+ "per_game": {
+  "n_plies": {
+   "n": 449,
+   "mean": 143.89755011135858,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 144.0,
+   "p10": 143.0,
+   "p90": 144.0,
+   "min": 143.0,
+   "max": 144.0
+  },
+  "n_tile_plies": {
+   "n": 449,
+   "mean": 72.0,
+   "sd": 0.0,
+   "sem": 0.0,
+   "median": 72.0,
+   "p10": 72.0,
+   "p90": 72.0,
+   "min": 72.0,
+   "max": 72.0
+  },
+  "n_meeple_plies": {
+   "n": 449,
+   "mean": 71.89755011135857,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 72.0,
+   "p10": 71.0,
+   "p90": 72.0,
+   "min": 71.0,
+   "max": 72.0
+  },
+  "n_tiles_placed": {
+   "n": 449,
+   "mean": 71.89755011135857,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 72.0,
+   "p10": 71.0,
+   "p90": 72.0,
+   "min": 71.0,
+   "max": 72.0
+  },
+  "tile_pass_plies": {
+   "n": 449,
+   "mean": 0.10244988864142539,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 0.0,
+   "p10": 0.0,
+   "p90": 1.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  "decisions": {
+   "n": 449,
+   "mean": 143.89755011135858,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 144.0,
+   "p10": 143.0,
+   "p90": 144.0,
+   "min": 143.0,
+   "max": 144.0
+  },
+  "searched": {
+   "n": 449,
+   "mean": 128.45211581291758,
+   "sd": 7.514087806771966,
+   "sem": 0.354611728344486,
+   "median": 129.0,
+   "p10": 118.0,
+   "p90": 137.0,
+   "min": 101.0,
+   "max": 142.0
+  },
+  "forced_total": {
+   "n": 449,
+   "mean": 15.44543429844098,
+   "sd": 7.499207551351312,
+   "sem": 0.35390948567330377,
+   "median": 15.0,
+   "p10": 7.0,
+   "p90": 26.0,
+   "min": 2.0,
+   "max": 43.0
+  },
+  "tile_decisions": {
+   "n": 449,
+   "mean": 72.0,
+   "sd": 0.0,
+   "sem": 0.0,
+   "median": 72.0,
+   "p10": 72.0,
+   "p90": 72.0,
+   "min": 72.0,
+   "max": 72.0
+  },
+  "tile_searched": {
+   "n": 449,
+   "mean": 70.88418708240535,
+   "sd": 0.32688626263163506,
+   "sem": 0.015426716528306269,
+   "median": 71.0,
+   "p10": 70.0,
+   "p90": 71.0,
+   "min": 69.0,
+   "max": 71.0
+  },
+  "tile_forced": {
+   "n": 449,
+   "mean": 1.1158129175946547,
+   "sd": 0.32688626263163506,
+   "sem": 0.015426716528306269,
+   "median": 1.0,
+   "p10": 1.0,
+   "p90": 2.0,
+   "min": 1.0,
+   "max": 3.0
+  },
+  "meeple_decisions": {
+   "n": 449,
+   "mean": 71.89755011135857,
+   "sd": 0.3032390294120876,
+   "sem": 0.014310734594345969,
+   "median": 72.0,
+   "p10": 71.0,
+   "p90": 72.0,
+   "min": 71.0,
+   "max": 72.0
+  },
+  "meeple_searched": {
+   "n": 449,
+   "mean": 57.56792873051225,
+   "sd": 7.508596138899954,
+   "sem": 0.3543525605139167,
+   "median": 58.0,
+   "p10": 47.0,
+   "p90": 66.0,
+   "min": 30.0,
+   "max": 71.0
+  },
+  "meeple_forced": {
+   "n": 449,
+   "mean": 14.329621380846325,
+   "sd": 7.506080094610925,
+   "sem": 0.3542338210425574,
+   "median": 13.0,
+   "p10": 5.800000000000004,
+   "p90": 25.0,
+   "min": 1.0,
+   "max": 42.0
+  },
+  "tile_branching_mean": {
+   "n": 449,
+   "mean": 27.80601954961643,
+   "sd": 2.523377433946083,
+   "sem": 0.11908554386477242,
+   "median": 27.569444444444443,
+   "p10": 24.68611111111111,
+   "p90": 31.21388888888889,
+   "min": 22.125,
+   "max": 37.72222222222222
+  },
+  "tile_branching_mean_searched": {
+   "n": 449,
+   "mean": 28.228375891058562,
+   "sd": 2.5628862509194685,
+   "sem": 0.1209500802172957,
+   "median": 28.014285714285716,
+   "p10": 25.03943661971831,
+   "p90": 31.656338028169014,
+   "min": 22.422535211267604,
+   "max": 38.23943661971831
+  },
+  "meeple_branching_mean": {
+   "n": 449,
+   "mean": 3.473248672933418,
+   "sd": 0.3269202570182988,
+   "sem": 0.015428320822602374,
+   "median": 3.507042253521127,
+   "p10": 3.013888888888889,
+   "p90": 3.8472222222222223,
+   "min": 2.4027777777777777,
+   "max": 4.166666666666667
+  },
+  "meeple_branching_mean_searched": {
+   "n": 449,
+   "mean": 4.092909306099346,
+   "sd": 0.1705843498782878,
+   "sem": 0.008050373204894318,
+   "median": 4.081967213114754,
+   "p10": 3.892027972027972,
+   "p90": 4.321010553245923,
+   "min": 3.4680851063829787,
+   "max": 4.7560975609756095
+  },
+  "meeples_committed": {
+   "n": 449,
+   "mean": 32.639198218262806,
+   "sd": 3.286453979296974,
+   "sem": 0.15509735255858997,
+   "median": 33.0,
+   "p10": 28.0,
+   "p90": 36.19999999999999,
+   "min": 19.0,
+   "max": 42.0
+  },
+  "farmers_committed": {
+   "n": 449,
+   "mean": 6.859688195991091,
+   "sd": 1.4999334479277935,
+   "sem": 0.07078623594097702,
+   "median": 7.0,
+   "p10": 5.0,
+   "p90": 9.0,
+   "min": 3.0,
+   "max": 12.0
+  },
+  "meeples_free_end": {
+   "n": 449,
+   "mean": 0.89086859688196,
+   "sd": 0.9243700813641654,
+   "sem": 0.043623721283515146,
+   "median": 1.0,
+   "p10": 0.0,
+   "p90": 2.0,
+   "min": 0.0,
+   "max": 5.0
+  },
+  "margin": {
+   "n": 449,
+   "mean": -0.5389755011135857,
+   "sd": 17.74940432694962,
+   "sem": 0.8376461797255272,
+   "median": -1.0,
+   "p10": -23.0,
+   "p90": 22.0,
+   "min": -65.0,
+   "max": 50.0
+  }
+ },
+ "branching": {
+  "tile": {
+   "all": {
+    "n": 32328,
+    "mean": 27.806019549616433,
+    "sd": 13.776233156914799,
+    "sem": 0.07661980911957351,
+    "median": 27.0,
+    "p10": 11.0,
+    "p90": 45.0,
+    "min": 1.0,
+    "max": 112.0,
+    "forced_plies": 501,
+    "forced_frac": 0.015497401633259094,
+    "searched_plies": 31827,
+    "mean_searched": 28.227982530555817
+   },
+   "early": {
+    "n": 10817,
+    "mean": 15.687991125080892,
+    "sd": 8.220306954808883,
+    "sem": 0.07903775936888248,
+    "median": 15.0,
+    "p10": 6.0,
+    "p90": 26.0,
+    "min": 1.0,
+    "max": 64.0,
+    "forced_plies": 496,
+    "forced_frac": 0.045853748728852735,
+    "searched_plies": 10321,
+    "mean_searched": 16.393857184381357
+   },
+   "mid": {
+    "n": 10779,
+    "mean": 29.842193153353744,
+    "sd": 10.138655444370961,
+    "sem": 0.09765424532497803,
+    "median": 29.0,
+    "p10": 18.0,
+    "p90": 42.0,
+    "min": 1.0,
+    "max": 100.0,
+    "forced_plies": 3,
+    "forced_frac": 0.00027831895352073476,
+    "searched_plies": 10776,
+    "mean_searched": 29.850222717149222
+   },
+   "late": {
+    "n": 10732,
+    "mean": 37.97493477450615,
+    "sd": 12.031469860368835,
+    "sem": 0.11613907305495297,
+    "median": 37.0,
+    "p10": 24.0,
+    "p90": 53.0,
+    "min": 1.0,
+    "max": 112.0,
+    "forced_plies": 2,
+    "forced_frac": 0.00018635855385762206,
+    "searched_plies": 10730,
+    "mean_searched": 37.98182665424045
+   }
+  },
+  "meeple": {
+   "all": {
+    "n": 32282,
+    "mean": 3.4732668360076824,
+    "sd": 1.9018529019547998,
+    "sem": 0.010585142451204054,
+    "median": 3.0,
+    "p10": 1.0,
+    "p90": 6.0,
+    "min": 1.0,
+    "max": 9.0,
+    "forced_plies": 6434,
+    "forced_frac": 0.19930611486277183,
+    "searched_plies": 25848,
+    "mean_searched": 4.0889043639740015
+   },
+   "early": {
+    "n": 10327,
+    "mean": 3.915076982666796,
+    "sd": 1.6990739197964821,
+    "sem": 0.01671957312812074,
+    "median": 4.0,
+    "p10": 2.0,
+    "p90": 6.0,
+    "min": 1.0,
+    "max": 9.0,
+    "forced_plies": 504,
+    "forced_frac": 0.048804105742229105,
+    "searched_plies": 9823,
+    "mean_searched": 4.064644202382165
+   },
+   "mid": {
+    "n": 10776,
+    "mean": 3.5464922048997773,
+    "sd": 1.8513500412549628,
+    "sem": 0.01783445115605597,
+    "median": 3.0,
+    "p10": 1.0,
+    "p90": 6.0,
+    "min": 1.0,
+    "max": 9.0,
+    "forced_plies": 1662,
+    "forced_frac": 0.15423162583518932,
+    "searched_plies": 9114,
+    "mean_searched": 4.010862409479921
+   },
+   "late": {
+    "n": 11179,
+    "mean": 2.9945433401914303,
+    "sd": 2.014853758713039,
+    "sem": 0.019056452283859715,
+    "median": 3.0,
+    "p10": 1.0,
+    "p90": 6.0,
+    "min": 1.0,
+    "max": 9.0,
+    "forced_plies": 4268,
+    "forced_frac": 0.38178727972090526,
+    "searched_plies": 6911,
+    "mean_searched": 4.226305889162205
+   }
+  }
+ },
+ "meeple_commits_by_band": {
+  "early": {
+   "normal": 4077,
+   "monk": 817,
+   "farmer": 1655,
+   "pass": 3778,
+   "per_game": {
+    "normal": 9.080178173719377,
+    "monk": 1.8195991091314032,
+    "farmer": 3.685968819599109,
+    "pass": 8.414253897550111
+   }
+  },
+  "mid": {
+   "normal": 3042,
+   "monk": 607,
+   "farmer": 783,
+   "pass": 6344,
+   "per_game": {
+    "normal": 6.775055679287306,
+    "monk": 1.3518930957683741,
+    "farmer": 1.7438752783964366,
+    "pass": 14.129175946547884
+   }
+  },
+  "late": {
+   "normal": 2622,
+   "monk": 410,
+   "farmer": 642,
+   "pass": 7505,
+   "per_game": {
+    "normal": 5.839643652561247,
+    "monk": 0.9131403118040089,
+    "farmer": 1.4298440979955456,
+    "pass": 16.714922048997774
+   }
+  }
+ },
+ "meeples_free_mean_by_band": {
+  "early": {
+   "n": 449,
+   "mean": 7.903764670110095,
+   "sd": 0.7101344328446458,
+   "sem": 0.033513315929183066,
+   "median": 7.854166666666667,
+   "p10": 7.0212765957446805,
+   "p90": 8.791489361702126,
+   "min": 6.212765957446808,
+   "max": 10.106382978723405
+  },
+  "mid": {
+   "n": 449,
+   "mean": 3.1072347090283774,
+   "sd": 0.9140157986304379,
+   "sem": 0.043135072469394894,
+   "median": 3.0833333333333335,
+   "p10": 1.8958333333333333,
+   "p90": 4.3125,
+   "min": 0.4166666666666667,
+   "max": 6.833333333333333
+  },
+  "late": {
+   "n": 449,
+   "mean": 1.7146131494345358,
+   "sd": 0.8275534938937829,
+   "sem": 0.03905466402757705,
+   "median": 1.6808510638297873,
+   "p10": 0.6285714285714287,
+   "p90": 2.795918367346939,
+   "min": 0.0,
+   "max": 3.9183673469387754
+  }
+ },
+ "integrity": {
+  "replay_scores_match": 449,
+  "replay_scores_mismatch": 0,
+  "replay_scores_unchecked": 0,
+  "mismatch_game_ids": []
+ },
+ "timing": {
+  "replay_seconds": 6.1,
+  "workers": 4,
+  "seconds_per_game": 0.013
+ }
+}
