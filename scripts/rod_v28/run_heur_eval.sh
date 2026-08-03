@@ -9,6 +9,18 @@
 #
 # Usage: OW_LOCAL=24 OW_LAPTOP=8 N=200 HSIMS=3200 bash scripts/rod_v28/run_heur_eval.sh <iter> <seed>
 set -uo pipefail
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 SHARE_LOCAL=/mnt/c/carc-shared; SHARE_REMOTE=/mnt/carc-shared
 REPO=/home/doctor/projects/carcassone; LAPTOP_SSH=${LAPTOP_SSH:-laptop-wsl}
 PY=$REPO/.venv/bin/python

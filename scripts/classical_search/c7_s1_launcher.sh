@@ -33,6 +33,18 @@
 #   --cells "flip050 ..."   subset/static split; default = all 3 (R-first priority: flip050 flip025 flip100)
 #   --dry-run               print the per-cell harness commands and exit (no compute)
 set -u
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 WORKERS="${1:?usage: c7_s1_launcher.sh <WORKERS> <BOX_TAG local|laptop> [--cells \"id ...\"] [--dry-run]}"
 BOX_TAG="${2:?BOX_TAG required: local|primary or laptop|helper}"
 shift 2

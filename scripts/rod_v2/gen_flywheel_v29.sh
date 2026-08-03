@@ -15,6 +15,18 @@
 #
 # Env: SHARE REPO HOST WARM OUT [SCALE=0.25] [WORKERS=14] [GAMES=400] [SIMS=200] [BRANCH=rod_v2_flywheel]
 set -uo pipefail
+
+# ---- CLOCK-SKEW GUARD (shared) — scripts/measurement_infra/clock_skew_guard.sh ----------
+# A box whose clock is fast sees every sibling's LIVE --shared-claim claim as stale and steals
+# it (claim.py:is_stale compares SERVER mtime to CLIENT time.time()), silently collapsing the
+# cluster to one box's throughput. Refuse to start rather than run at half speed all night.
+_CSG="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+while [ ! -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] && [ "$_CSG" != / ]; do _CSG=$(dirname "$_CSG"); done
+[ -f "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" ] || _CSG="${REPO:-/home/doctor/projects/carcassone}"
+. "$_CSG/scripts/measurement_infra/clock_skew_guard.sh" || { echo "FATAL: clock_skew_guard.sh not found from $0"; exit 3; }
+carc_clock_skew_guard
+# ----------------------------------------------------------------------------------------
+
 SHARE="${SHARE:?}"; REPO="${REPO:?}"; HOST="${HOST:?}"; WARM="${WARM:?}"; OUT="${OUT:?}"
 SCALE="${SCALE:-0.25}"; WORKERS="${WORKERS:-14}"; GAMES="${GAMES:-400}"; SIMS="${SIMS:-200}"
 SEED_START="${SEED_START:-0}"
