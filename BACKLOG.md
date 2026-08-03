@@ -605,3 +605,15 @@ ENGINE change → needs a bit-exactness gate); plus soften the two "never mutate
 (`fair_agent.py:449/:893` also warm `board._str_repr_cache`). Same disease class as the
 conftest DEFAULT_CONFIG import-order note. Full report: triage agent 2026-08-02 (session
 transcript); introducing commit b9431de, test 67470f1.
+
+## 2026-08-02 — two small tickets from the F7b build (agent-found, deferred)
+- **Test-isolation failure (pre-existing):** `tests/test_puct_priors_opponent_backend.py` fails
+  with `PicklingError: _play_one is not the same object` when run in the same pytest session as
+  `test_c5_leaf_ab.py` (module reload aliasing); passes in isolation; reproduced on the unmodified
+  main tree. Same disease family as the conftest import-order note and the Tile._turn_cache
+  order-dependence (BACKLOG 2026-08-02 above). Fix candidate: spawn-target import hygiene.
+- **`gate_eval_puct_priors_backend.py` sets no leaf env** — the 2026-08-02 port-1 G6 artifact
+  almost certainly graded the curve100 DEFAULT leaf, not the champion a36d2e15 (identity still
+  valid — both legs same leaf — but the label reads stronger than it is). F7b's gate re-ran under
+  the launcher's champion env explicitly; patch the gate script to install the champion env (or
+  stamp the resolved leaf hash in its artifact) next time it's touched.
