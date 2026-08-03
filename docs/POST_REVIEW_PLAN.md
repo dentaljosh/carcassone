@@ -1,6 +1,18 @@
 # POST_REVIEW_PLAN — reconciling the fresh-look review (2026-07-01) with live state
 
-**Status:** DRAFT / execution plan · **Created:** 2026-07-01 · **Branch:** `rod_v2_flywheel`
+> **✅ STATUS 2026-07-03 — FULLY EXECUTED; HISTORICAL. Every action in this plan has read out.**
+> **S1 FLIPPED** 2026-07-02 (deep-classical v2.9 + exact endgame promoted, CL-041) · **S2 CLOSED** ·
+> **M1 KILL** (the deepteacher +53.7 was band noise) · **M3 FIRES then the FPU axis CLOSES** (Gate-B
+> refuted as a law; FPU recovers to parity, not exceeding) · **M2 KILL, FINAL 2026-07-03** (solver-τ
+> 0.02 vs the leaf's 0.615; CL-042, CL-039 → earned scoped closure). Autopsy:
+> [AZ_VALUE_ROUTE_AUTOPSY_2026-07-01.md](AZ_VALUE_ROUTE_AUTOPSY_2026-07-01.md) (FINAL). **The through-line
+> fix survives and is standing practice — every offline value/ranking gate scores against the exact
+> solver, not h6400** (it is the ruler CL-064/CL-065/CL-073 all use). The live queue moved to
+> [PROGRAM_ROADMAP_2026-07-07.md](PROGRAM_ROADMAP_2026-07-07.md) on 2026-07-07; the §7 sequence and
+> §"Open decisions for Joshua" below are point-in-time and superseded by
+> [DECISION_QUEUE_20260802.md](DECISION_QUEUE_20260802.md). *(Original header follows.)*
+
+**Status (as written):** DRAFT / execution plan · **Created:** 2026-07-01 · **Branch:** `rod_v2_flywheel`
 **Trigger:** `fresh_look_review_20260701` (blind-first external review). The reviewer's own output docs
 (REVIEW.md / PHASE1_DIAGNOSIS.md / PHASE2_COLLISION.md) are **not on disk** — the authoritative finding-set
 is the reconciliation brief pasted into the 2026-07-01 session (findings F1–F10). This doc distills that brief,
