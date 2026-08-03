@@ -73,6 +73,8 @@ def _run_leg(backend: str, args, root: Path):
            "--backend", backend,
            "--out-root", str(root), "--out-subdir", "leg",
            "--no-results-csv"]
+    if args.cand_leaf_json:
+        cmd += ["--cand-leaf-json", args.cand_leaf_json]
     print(f"\n[{backend}] {' '.join(cmd[2:])}", flush=True)
     t0 = time.perf_counter()
     p = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True)
@@ -103,6 +105,11 @@ def main(argv=None) -> int:
                          "measurement; it writes no results.csv row and claims no "
                          "band in governance/BAND_REGISTRY.csv")
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--cand-leaf-json", default=None,
+                    help="candidate LeafConfig override, passed to BOTH legs "
+                         "unchanged (F7b: run the gate on a farm-knockout candidate, "
+                         "so the identity claim covers the leaf the cell will play, "
+                         "not just the champion leaf)")
     ap.add_argument("--scratch", default="/tmp/gate_eval_puct_priors")
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args(argv)
@@ -157,7 +164,8 @@ def main(argv=None) -> int:
                    "candidate": "puct", "opponent": "puct",
                    "cand_sims": args.cand_sims, "opp_sims": args.opp_sims,
                    "exact_k": args.exact_k, "seed_start": args.seed_start,
-                   "workers": args.workers},
+                   "workers": args.workers,
+                   "cand_leaf_json": args.cand_leaf_json},
         "identity_fields": list(IDENTITY_FIELDS),
         "excluded": "every timing field (elapsed_s, *_secs) — those are meant to "
                     "differ",

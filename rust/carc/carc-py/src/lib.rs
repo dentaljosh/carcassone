@@ -85,6 +85,8 @@ impl PyLeafConfig {
         bag_close = false,
         tile_counting_closure = false,
         closure_continuous_slack = 0.0,
+        farm_base_off = false,
+        farm_growth_off = false,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -100,6 +102,8 @@ impl PyLeafConfig {
         bag_close: bool,
         tile_counting_closure: bool,
         closure_continuous_slack: f64,
+        farm_base_off: bool,
+        farm_growth_off: bool,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -115,6 +119,8 @@ impl PyLeafConfig {
                 bag_close,
                 tile_counting_closure,
                 closure_continuous_slack,
+                farm_base_off,
+                farm_growth_off,
             },
         }
     }

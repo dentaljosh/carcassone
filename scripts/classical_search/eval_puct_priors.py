@@ -1667,6 +1667,13 @@ def main(argv=None) -> int:
                "cand_leaf_hash": _leaf_hash(leaf_cfg),
                "champ_leaf_cfg": _leaf_dict(champ_leaf_cfg),
                "champ_leaf_hash": _leaf_hash(champ_leaf_cfg),
+               # Writer-local runtime knobs (added 2026-08-02, F7b). ⚠️ Under
+               # --shared-claim EVERY box writes this file (overwrite=True), so this
+               # block describes whichever box wrote LAST — it is a per-writer record,
+               # NOT the run's aggregate worker count. Per-thread pins live in `env`.
+               "writer": {"workers": args.workers,
+                          "shared_claim": bool(args.shared_claim),
+                          "claim_host": args.claim_host},
                "env": {k: os.environ.get(k) for k in _CANON_ENV}}
     # Track-F Gate A oracle-prior provenance — added ONLY when the probe is ON, so
     # a plain (OFF) manifest stays byte-identical to the pre-change harness output.
@@ -1791,11 +1798,29 @@ def main(argv=None) -> int:
                         "opponent": opp_block,
                         "champ_sims": opp_sims})
         del man_cfg["champion"]   # replaced by the resolved "opponent" block
+
+    # Resolved BEFORE the manifest write so `writer.workers` records the number this
+    # process will actually run at, not the raw flag. (The primary's final AGGREGATE
+    # pass has no --workers and plays 0 games; it rewrites the manifest, so recording
+    # the raw flag there would blank out the W the games were actually played at.)
+    todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
+    workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
+    man_cfg["writer"].update({"workers": workers, "workers_flag": args.workers,
+                              "games_to_play": len(todo)})
+    if not todo:
+        # A 0-game pass (the primary's aggregate, or a fully cached rerun) knows
+        # nothing about the W the games were played at — carry the previous writer
+        # block forward instead of stamping this process's idle default over it.
+        try:
+            _prev = json.loads((Path(out) / "manifest.json").read_text())
+            _pw = _prev.get("config", {}).get("writer")
+            if _pw and _pw.get("games_to_play"):
+                man_cfg["writer"] = {**_pw, "last_aggregate_pass": True}
+        except (OSError, ValueError, KeyError):
+            pass
     write_manifest(out, kind="eval_puct_priors", game=game_tag(Game()),
                    config=man_cfg, overwrite=True)
 
-    todo = [t for t in tasks if not _result_path(out, t[1], t[2]).exists()]
-    workers = args.workers or min(os.cpu_count() or 1, len(todo) or 1)
     print(f"puct-priors[{tag}]: n={args.n} paired={args.paired} | "
           f"{len(tasks)-len(todo)} cached, {len(todo)} to play, {workers} workers, out={out}")
     sys.stdout.flush()

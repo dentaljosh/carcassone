@@ -115,6 +115,10 @@ _FROZEN_HASH_DEFAULT_OFF = {
     # the frozen substrate (7fc930b8) + champion (158f17ff/6dfffd57) hashes hold.
     "soft_cap_slope": 0.0,
     "opp_soft_cap_slope": 0.0,
+    # F7b farm knockouts (roadmap F7b, 2026-08-02): default-off candidate-only
+    # ablation knobs. Excluded on the same grounds as F6.
+    "farm_base_off": False,
+    "farm_growth_off": False,
 }
 
 

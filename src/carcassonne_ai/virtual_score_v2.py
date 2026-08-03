@@ -177,6 +177,33 @@ class LeafConfig:
     # candidate that SETS a slope shifts the hash (it is a different leaf — as intended).
     soft_cap_slope: float = 0.0
     opp_soft_cap_slope: float = 0.0
+    # --- F7b FARM-TERM KNOCKOUTS (measurement-only ablation, roadmap F7b) ----------
+    # The farm contribution enters the leaf in TWO structurally separate places, and
+    # neither had a knob before this (which is exactly why the F7 ablation deferred
+    # the farm cells). These two default-OFF fields sever them independently:
+    #   farm_base_off:   drop farm scoring from the BASE term — `_final_scores` stops
+    #     awarding `3 x #finished-adjacent-cities` to the field majority. The leaf's
+    #     base becomes "cities + roads + cloisters" only.
+    #   farm_growth_off: drop the FARM-GROWTH block of the closure-anticipation bonus
+    #     — the leaf stops crediting `P(closure) x 3` for incomplete cities adjacent
+    #     to the player's fields. City-closure and cloister anticipation are untouched.
+    # ⚠️ SCOPE: these knock the term out of the LEAF only. `flat_base_score` called
+    # WITHOUT the flag (its default) is unchanged, so the exact endgame solver's
+    # terminal evaluation — the TRUE final score, `endgame_solver` line "Leaf value =
+    # the REAL final score differential" — keeps full farm scoring on both sides of an
+    # ablation cell. That is deliberate: F7b ablates the heuristic, not the rules.
+    # ⚠️ FLAT PATH ONLY. `flat_leaf.py` and the Rust leaf implement them; the object
+    # (engine) path does NOT and fails loud rather than silently dropping the knockout,
+    # and `flat_leaf_cy.pyx` deliberately does NOT implement them (F7b decision: the
+    # cells run `--backend rust`, where no Python leaf is computed at all), so a SET
+    # knob routes OFF the cy fast path to the bit-exact pure-Python flat leaf.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg recipe
+    # (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE False, so
+    # the champion's 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    # A candidate that SETS one shifts the hash (it is a different leaf — as intended).
+    farm_base_off: bool = False
+    farm_growth_off: bool = False
 
 
 def _config_from_env() -> LeafConfig:
@@ -673,6 +700,14 @@ def virtual_score_v2(
         # on the fast flat path — flat_virtual_score_v2 applies them bit-exactly.
         # Only the object-only v2.9 terms (util_tanh/punish/farm_access) fall through.
         return flat_leaf.flat_virtual_score_v2(state, player, cfg)
+    if getattr(cfg, "farm_base_off", False) or getattr(cfg, "farm_growth_off", False):
+        # F7b farm knockouts are flat-path ONLY (see LeafConfig) — fail loudly rather
+        # than silently scoring an INTACT farm term here, which would read as "the
+        # knockout is worth nothing" instead of "the knockout never ran".
+        raise NotImplementedError(
+            "LeafConfig.farm_base_off / farm_growth_off (F7b) require the flat leaf "
+            "path (set CARCASSONNE_USE_FLAT_LEAF=1 and use a flat-eligible LeafConfig)"
+        )
     if flat_leaf.V210_BAG_CLOSE or getattr(cfg, "bag_close", False):
         # v2.10 bag-aware closure gate is flat-path ONLY (docs/V210_LEAF_SPEC
         # Track B) — fail loudly rather than silently dropping the gate on the

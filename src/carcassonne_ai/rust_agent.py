@@ -109,6 +109,8 @@ def leaf_config_rs(leaf_cfg):
         bool(getattr(leaf_cfg, "bag_close", False)),
         bool(leaf_cfg.tile_counting_closure),
         float(leaf_cfg.closure_continuous_slack),
+        bool(getattr(leaf_cfg, "farm_base_off", False)),
+        bool(getattr(leaf_cfg, "farm_growth_off", False)),
     )
 
 

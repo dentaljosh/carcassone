@@ -7,8 +7,8 @@
     "machine": "x86_64",
     "python": "3.12.3",
     "python_impl": "CPython",
-    "git_rev": "087d8c4",
-    "utc": "2026-08-03T00:38:08Z",
+    "git_rev": "087d8c4-dirty",
+    "utc": "2026-08-03T00:40:22Z",
     "numpy": "2.4.4",
     "carc_rs": "0.1.0",
     "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
@@ -18,7 +18,7 @@
     "corpus": [
       "all"
     ],
-    "configs": "all",
+    "configs": "farmoff",
     "limit": null,
     "stride": 8,
     "workers": 16,
@@ -49,18 +49,13 @@
     "source": "governance/PRODUCTION.yaml champion.leaf_config"
   },
   "configs": [
-    "bag-close",
-    "c7-F0.5",
-    "c7-R1.0",
-    "c7-both",
-    "f6-soft0.5/0.25",
-    "f6-soft1.0",
-    "pre-v2.7",
+    "farmbaseoff",
+    "farmbothoff",
+    "farmgrowthoff",
     "prod-curve125",
     "v27",
     "v28",
-    "v29",
-    "weird"
+    "v29"
   ],
   "legs": [
     "carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
@@ -89,63 +84,48 @@
     "distill": {
       "positions": 28403,
       "plies": 215887,
-      "values_compared": 1590568,
+      "values_compared": 1022508,
       "disk_values_compared": 0,
       "by_config": {
         "prod-curve125": 113612,
         "v27": 113612,
         "v28": 113612,
         "v29": 113612,
-        "pre-v2.7": 113612,
-        "weird": 113612,
-        "c7-R1.0": 113612,
-        "c7-F0.5": 113612,
-        "c7-both": 113612,
-        "f6-soft0.5/0.25": 113612,
-        "f6-soft1.0": 113612,
-        "bag-close": 113612
+        "farmbaseoff": 113612,
+        "farmgrowthoff": 113612,
+        "farmbothoff": 113612
       },
       "mismatches": 0
     },
     "e4": {
       "positions": 290,
       "plies": 288,
-      "values_compared": 16240,
+      "values_compared": 10440,
       "disk_values_compared": 0,
       "by_config": {
         "prod-curve125": 1160,
         "v27": 1160,
         "v28": 1160,
         "v29": 1160,
-        "pre-v2.7": 1160,
-        "weird": 1160,
-        "c7-R1.0": 1160,
-        "c7-F0.5": 1160,
-        "c7-both": 1160,
-        "f6-soft0.5/0.25": 1160,
-        "f6-soft1.0": 1160,
-        "bag-close": 1160
+        "farmbaseoff": 1160,
+        "farmgrowthoff": 1160,
+        "farmbothoff": 1160
       },
       "mismatches": 0
     },
     "golden": {
       "positions": 1737,
       "plies": 1725,
-      "values_compared": 97272,
+      "values_compared": 62532,
       "disk_values_compared": 0,
       "by_config": {
         "prod-curve125": 6948,
         "v27": 6948,
         "v28": 6948,
         "v29": 6948,
-        "pre-v2.7": 6948,
-        "weird": 6948,
-        "c7-R1.0": 6948,
-        "c7-F0.5": 6948,
-        "c7-both": 6948,
-        "f6-soft0.5/0.25": 6948,
-        "f6-soft1.0": 6948,
-        "bag-close": 6948
+        "farmbaseoff": 6948,
+        "farmgrowthoff": 6948,
+        "farmbothoff": 6948
       },
       "mismatches": 0
     },
@@ -164,42 +144,32 @@
     "k3": {
       "positions": 354,
       "plies": 48815,
-      "values_compared": 19824,
+      "values_compared": 12744,
       "disk_values_compared": 0,
       "by_config": {
         "prod-curve125": 1416,
         "v27": 1416,
         "v28": 1416,
         "v29": 1416,
-        "pre-v2.7": 1416,
-        "weird": 1416,
-        "c7-R1.0": 1416,
-        "c7-F0.5": 1416,
-        "c7-both": 1416,
-        "f6-soft0.5/0.25": 1416,
-        "f6-soft1.0": 1416,
-        "bag-close": 1416
+        "farmbaseoff": 1416,
+        "farmgrowthoff": 1416,
+        "farmbothoff": 1416
       },
       "mismatches": 0
     },
     "midgame": {
       "positions": 1000,
       "plies": 85528,
-      "values_compared": 56000,
+      "values_compared": 36000,
       "disk_values_compared": 0,
       "by_config": {
         "prod-curve125": 4000,
         "v27": 4000,
         "v28": 4000,
         "v29": 4000,
-        "pre-v2.7": 4000,
-        "weird": 4000,
-        "c7-R1.0": 4000,
-        "c7-F0.5": 4000,
-        "c7-both": 4000,
-        "f6-soft0.5/0.25": 4000,
-        "f6-soft1.0": 4000,
-        "bag-close": 4000
+        "farmbaseoff": 4000,
+        "farmgrowthoff": 4000,
+        "farmbothoff": 4000
       },
       "mismatches": 0
     },
@@ -212,10 +182,30 @@
       "mismatches": 0
     }
   },
-  "cy_unsupported_configs": [],
-  "knockout_bites": {},
-  "total_values_compared": 3341772,
+  "cy_unsupported_configs": [
+    "farmbaseoff",
+    "farmbothoff",
+    "farmgrowthoff"
+  ],
+  "knockout_bites": {
+    "farmbaseoff": {
+      "values_compared": 63568,
+      "values_changed_vs_champion": 41750,
+      "frac_changed": 0.6568
+    },
+    "farmgrowthoff": {
+      "values_compared": 63568,
+      "values_changed_vs_champion": 48797,
+      "frac_changed": 0.7676
+    },
+    "farmbothoff": {
+      "values_compared": 63568,
+      "values_changed_vs_champion": 53714,
+      "frac_changed": 0.845
+    }
+  },
+  "total_values_compared": 2706092,
   "mismatch_count": 0,
   "mismatches": [],
-  "wallclock_s": 132.66852109500905
+  "wallclock_s": 121.65387438499602
 }

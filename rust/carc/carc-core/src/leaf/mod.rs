@@ -130,6 +130,12 @@ pub struct LeafConfig {
     pub bag_close: bool,
     pub tile_counting_closure: bool,
     pub closure_continuous_slack: f64,
+    /// F7b: drop farm scoring from the BASE term (`final_scores` awards no field
+    /// points). Default `false` == the champion leaf, bit-for-bit.
+    pub farm_base_off: bool,
+    /// F7b: drop the FARM-GROWTH block of the closure-anticipation bonus.
+    /// Default `false` == the champion leaf, bit-for-bit.
+    pub farm_growth_off: bool,
 }
 
 impl LeafConfig {
@@ -153,6 +159,8 @@ impl LeafConfig {
             bag_close: false,
             tile_counting_closure: false,
             closure_continuous_slack: 0.0,
+            farm_base_off: false,
+            farm_growth_off: false,
         }
     }
 
@@ -247,7 +255,10 @@ fn cloister_points(state: &GameState, r: i32, c: i32) -> i64 {
 }
 
 /// `flat_leaf._final_scores` — the points `count_final_scores` would ADD.
-fn final_scores(state: &GameState, d: &Decomp) -> [i64; 2] {
+///
+/// `farm_off` (F7b, `flat_leaf._final_scores(..., farm_off)`) drops the farm award
+/// entirely. Default route is `false` — see [`flat_base_score`].
+fn final_scores(state: &GameState, d: &Decomp, farm_off: bool) -> [i64; 2] {
     // root -> per-player weighted meeple counts, in first-touch order
     let mut city_counts: Vec<(u32, [i64; 2])> = Vec::new();
     let mut road_counts: Vec<(u32, [i64; 2])> = Vec::new();
@@ -319,15 +330,17 @@ fn final_scores(state: &GameState, d: &Decomp) -> [i64; 2] {
             }
         }
     }
-    for &(root, counts) in &farm_counts {
-        let w = winners(counts);
-        if !w[0] && !w[1] {
-            continue;
-        }
-        let pts = 3 * d.farm_root_finished_cities[root as usize] as i64;
-        for p in 0..2 {
-            if w[p] {
-                final_pts[p] += pts;
+    if !farm_off {
+        for &(root, counts) in &farm_counts {
+            let w = winners(counts);
+            if !w[0] && !w[1] {
+                continue;
+            }
+            let pts = 3 * d.farm_root_finished_cities[root as usize] as i64;
+            for p in 0..2 {
+                if w[p] {
+                    final_pts[p] += pts;
+                }
             }
         }
     }
@@ -345,7 +358,15 @@ fn final_scores(state: &GameState, d: &Decomp) -> [i64; 2] {
 /// asserts they agree on every position, which is a free cross-check of the
 /// whole decomposition.
 pub fn flat_base_score(state: &GameState, player: usize, d: &Decomp) -> i64 {
-    let f = final_scores(state, d);
+    flat_base_score_farm(state, player, d, false)
+}
+
+/// [`flat_base_score`] with the F7b `farm_base_off` knockout — the analogue of
+/// `flat_leaf.flat_base_score(state, player, decomp, farm_off)`. Only the leaf's own
+/// base term passes `true`; every other route (the exact solver's terminal, the P1/P2
+/// cross-checks) keeps full farm scoring.
+pub fn flat_base_score_farm(state: &GameState, player: usize, d: &Decomp, farm_off: bool) -> i64 {
+    let f = final_scores(state, d, farm_off);
     let opp = 1 - player;
     let running = state.scores[player] - state.scores[opp];
     running + (f[player] - f[opp])
@@ -540,25 +561,29 @@ pub fn closure_bonus(
     }
 
     // Farm growth: incomplete cities adjacent to the player's fields.
-    let mut growth_roots: Vec<u32> = Vec::new();
-    for &froot in &farm_roots {
-        for croot in d.farm_adj_city_roots(froot) {
-            if !growth_roots.contains(&croot) {
-                growth_roots.push(croot);
+    // F7b `farm_growth_off` severs exactly this block (default false == unchanged);
+    // `contribs` is fsum-reduced, so dropping members is order-independent.
+    if !cfg.farm_growth_off {
+        let mut growth_roots: Vec<u32> = Vec::new();
+        for &froot in &farm_roots {
+            for croot in d.farm_adj_city_roots(froot) {
+                if !growth_roots.contains(&croot) {
+                    growth_roots.push(croot);
+                }
             }
         }
-    }
-    for &croot in &growth_roots {
-        if d.city_root_finished[croot as usize] {
-            continue;
-        }
-        let open_n = d.city_root_open_n[croot as usize] as i32;
-        if open_n <= 0 {
-            continue;
-        }
-        let p = cfg.close_prob(open_n);
-        if p > 0.0 && (bag.is_none() || bag_ok(croot, &mut faces_memo)) {
-            contribs.push(p * 3.0);
+        for &croot in &growth_roots {
+            if d.city_root_finished[croot as usize] {
+                continue;
+            }
+            let open_n = d.city_root_open_n[croot as usize] as i32;
+            if open_n <= 0 {
+                continue;
+            }
+            let p = cfg.close_prob(open_n);
+            if p > 0.0 && (bag.is_none() || bag_ok(croot, &mut faces_memo)) {
+                contribs.push(p * 3.0);
+            }
         }
     }
 
@@ -808,7 +833,7 @@ pub fn leaf_terms_with(
     };
     let bag_ref = bag.as_ref();
 
-    let base = flat_base_score(state, player, d);
+    let base = flat_base_score_farm(state, player, d, cfg.farm_base_off);
     let bonus_self_raw = closure_bonus(state, player, d, cfg, bag_ref)?;
     let bonus_opp_raw = closure_bonus(state, opp, d, cfg, bag_ref)?;
     let bonus_self = soft_capped(bonus_self_raw, cfg.bonus_cap, cfg.soft_cap_slope);

@@ -59,7 +59,7 @@ def _midgame_states(n_seeds=24, plies=70, every=6, seed_base=7):
 # Default-off knobs excluded from the frozen-cfg recipe so 7fc930b8 / 158f17ff stay
 # stable across additive default-off fields (bag_close; C7 Term R/F). Mirrors
 # scripts/measurement_infra/snapshot.py::_FROZEN_HASH_DEFAULT_OFF.
-_FROZEN_HASH_DEFAULT_OFF = {"bag_close": False, "v29_meeple_return_k": 0.0, "v29_farm_flip_k": 0.0, "soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0}
+_FROZEN_HASH_DEFAULT_OFF = {"bag_close": False, "v29_meeple_return_k": 0.0, "v29_farm_flip_k": 0.0, "soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0, "farm_base_off": False, "farm_growth_off": False}
 
 
 def _cfg_hash(cfg):

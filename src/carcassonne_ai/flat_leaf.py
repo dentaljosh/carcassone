@@ -496,9 +496,14 @@ def _cloister_points(r: int, c: int, board, H: int, W: int) -> int:
     return pts
 
 
-def _final_scores(state: "CarcassonneGameState", decomp: Decomp) -> list:
+def _final_scores(state: "CarcassonneGameState", decomp: Decomp,
+                  farm_off: bool = False) -> list:
     """The per-player points `count_final_scores` would ADD (cities + roads +
     farms + cloisters that carry a meeple). Pure int; no mutation, no deepcopy.
+
+    `farm_off` (F7b knockout, default False == unchanged): drop the farm award
+    entirely — fields score 0 for everyone. Only the leaf's base term passes it;
+    the exact solver's terminal `flat_base_score` never does.
 
     Mirrors count_final_scores: it iterates placed MEEPLES, so an unmeepled
     feature scores nothing — equivalent to iterating components and awarding only
@@ -564,19 +569,21 @@ def _final_scores(state: "CarcassonneGameState", decomp: Decomp) -> list:
         pts = _road_points(decomp.road_root_coords[root], decomp.road_root_finished[root], board)
         for wpl in winners:
             final[wpl] += pts
-    for root, counts in farm_counts.items():
-        winners = _winners(counts)
-        if not winners:
-            continue
-        pts = 3 * decomp.farm_root_finished_cities[root]
-        for wpl in winners:
-            final[wpl] += pts
+    if not farm_off:
+        for root, counts in farm_counts.items():
+            winners = _winners(counts)
+            if not winners:
+                continue
+            pts = 3 * decomp.farm_root_finished_cities[root]
+            for wpl in winners:
+                final[wpl] += pts
     for (player, pts) in cloister_awards:
         final[player] += pts
     return final
 
 
-def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp | None = None) -> int:
+def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp | None = None,
+                    farm_off: bool = False) -> int:
     """== virtual_score(state, player): the end-of-game score differential
     `scores[player] - scores[opp]`, computed flat (no deepcopy, no
     count_final_scores). Pure integer.
@@ -595,11 +602,18 @@ def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp |
     has already paid for the decomposition and expects THAT one to be scored — the
     cy entry point takes only `(state, player)` and would both redo the work and
     silently ignore the argument. The v2 leaf's pure-Python fallback is such a
-    caller, so its path is untouched."""
+    caller, so its path is untouched.
+
+    `farm_off` (F7b knockout, default False == unchanged) drops farm scoring from
+    the base term. It ALSO suppresses the cy redirect: `flat_base_score_cy` does not
+    implement the knockout (deliberately — see LeafConfig.farm_base_off) and would
+    silently return the INTACT score. Callers that leave it False — every caller in
+    the tree except the flat leaf's own base term, notably `endgame_solver`'s exact
+    terminal — reach the identical code path they did before this argument existed."""
     if state.players != 2:
         raise ValueError(f"flat_base_score is 2-player only; got {state.players}")
     if decomp is None:
-        if USE_CY_LEAF:
+        if USE_CY_LEAF and not farm_off:
             global _CY_BASE  # noqa: PLW0603
             if _CY_BASE is None:
                 try:
@@ -613,7 +627,7 @@ def flat_base_score(state: "CarcassonneGameState", player: int, decomp: Decomp |
             if _CY_BASE:
                 return _CY_BASE(state, player)
         decomp = decompose(state)
-    final = _final_scores(state, decomp)
+    final = _final_scores(state, decomp, farm_off)
     opp = 1 - player
     running = int(state.scores[player]) - int(state.scores[opp])
     return running + (final[player] - final[opp])
@@ -789,18 +803,21 @@ def flat_closure_bonus(state, player: int, decomp: Decomp, cfg, bag: tuple | Non
 
     # Farm growth: incomplete cities adjacent to the player's fields, deduped
     # across all the player's farms by city component (== counted_growth_cities).
-    growth_roots: set = set()
-    for froot in farm_roots:
-        growth_roots |= decomp.farm_root_adj_city_roots[froot]
-    for croot in growth_roots:
-        if decomp.city_root_finished[croot]:
-            continue
-        open_n = decomp.city_root_open_n[croot]
-        if open_n <= 0:
-            continue
-        p = closure_p.get(open_n, 0.0)
-        if p > 0 and (bag is None or _bag_ok(croot)):
-            contribs.append(p * 3)
+    # F7b `farm_growth_off` severs exactly this block (default False == unchanged);
+    # `contribs` is fsum-reduced, so dropping members is order-independent.
+    if not getattr(cfg, "farm_growth_off", False):
+        growth_roots: set = set()
+        for froot in farm_roots:
+            growth_roots |= decomp.farm_root_adj_city_roots[froot]
+        for croot in growth_roots:
+            if decomp.city_root_finished[croot]:
+                continue
+            open_n = decomp.city_root_open_n[croot]
+            if open_n <= 0:
+                continue
+            p = closure_p.get(open_n, 0.0)
+            if p > 0 and (bag is None or _bag_ok(croot)):
+                contribs.append(p * 3)
 
     return math.fsum(contribs)
 
@@ -974,6 +991,20 @@ def _soft_cap_off(cfg) -> bool:
             and getattr(cfg, "opp_soft_cap_slope", 0.0) == 0.0)
 
 
+def _farm_knockout_off(cfg) -> bool:
+    """True iff both F7b farm knockouts are OFF — then the cy route is bit-exact.
+
+    Unlike the other capability gates in this file there is no `SUPPORTS_*` flag to
+    consult: `flat_leaf_cy.pyx` DELIBERATELY does not implement the knockouts (F7b
+    decision — the ablation cells run `--backend rust`, where no Python leaf is
+    computed at all, and the exact-K tail scores the TRUE final score with farms
+    intact by design). So a SET knob ALWAYS leaves the cy fast path for the
+    pure-Python flat leaf: bit-exact (gated by scripts/rustport/reconcile_leaf.py
+    `--configs farmoff` against Rust) but ~12.5x slower per leaf."""
+    return (not getattr(cfg, "farm_base_off", False)
+            and not getattr(cfg, "farm_growth_off", False))
+
+
 def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     """== virtual_score_v2(state, player, cfg) under CANONICAL_BONUS_SUM, computed
     entirely flat (no deepcopy, no count_final_scores, no engine Farm/City BFS).
@@ -1022,14 +1053,15 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
         if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
-                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)):
+                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
+                and _farm_knockout_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
         raise ValueError(f"flat_virtual_score_v2 is 2-player only; got {state.players}")
     decomp = decompose(state)
     opp = 1 - player
     bag = _bag_stats(state) if bag_close else None
-    base = flat_base_score(state, player, decomp)
+    base = flat_base_score(state, player, decomp, getattr(cfg, "farm_base_off", False))
     # F6 soft cap (slope 0.0 default -> hard `_capped`, bit-identical); per-side slopes.
     bonus_self = _soft_capped(flat_closure_bonus(state, player, decomp, cfg, bag),
                               cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))
@@ -1098,7 +1130,8 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         if (_CY_FLAT_V2_FLOAT and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
-                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)):
+                and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
+                and _farm_knockout_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
     if state.players != 2:
@@ -1106,7 +1139,7 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
     decomp = decompose(state)
     opp = 1 - player
     bag = _bag_stats(state) if bag_close else None
-    base = flat_base_score(state, player, decomp)
+    base = flat_base_score(state, player, decomp, getattr(cfg, "farm_base_off", False))
     # F6 soft cap (slope 0.0 default -> hard `_capped`, bit-identical); per-side slopes.
     bonus_self = _soft_capped(flat_closure_bonus(state, player, decomp, cfg, bag),
                               cfg.bonus_cap, getattr(cfg, "soft_cap_slope", 0.0))

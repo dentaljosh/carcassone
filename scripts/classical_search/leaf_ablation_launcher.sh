@@ -29,25 +29,45 @@
 #    measurement/leaf_ablation_20260730/ABL_PROGRESS.tsv.
 # =========================================================================================
 #
+# ================================ F7b ADDENDUM (2026-08-02) ==============================
+# The two FARM cells F7 deferred (`farmbaseoff`, `farmgrowthoff`) are now runnable: the
+# knockouts exist as default-off LeafConfig fields implemented in the Rust leaf + the Python
+# reference (commit "F7b: default-off FARM-TERM KNOCKOUT knobs ..."), gated 0-mismatch by
+# scripts/rustport/reconcile_leaf.py (`--configs all` = knobs-off, `--configs farmoff` =
+# knobs-on py-vs-rust). Two launcher changes, both back-compatible:
+#   * `--backend {python,rust}`, DEFAULT rust (port-1/G6 wiring, 2026-08-02). The F7 cells
+#     ran the python route; passing `--backend python` reproduces them byte-for-byte.
+#   * WORKERS accepts `auto` -> 32 local / 24 laptop (Joshua 2026-08-02: assume W* ~= threads
+#     for the eval class; F7d measured W*=30/22, within the settle band — do NOT re-sweep).
+# ⚠️ The farm knockouts have NO Cython implementation by design, so `--backend python` would
+# run the candidate on the ~12.5x-slower pure-Python flat leaf. F7b cells run rust.
+# Prereg: measurement/leaf_ablation_20260730/F7B_PREREG.md (its own FRESH band; F7's 9.60e10
+# is RETIRED). Run them explicitly: --cells "farmbaseoff farmgrowthoff" --band <F7b band>.
+# =========================================================================================
+#
 # Usage:
-#   local  (primary): nice -n 19 bash scripts/classical_search/leaf_ablation_launcher.sh 16 local
-#   laptop (helper):  nice -n 19 bash scripts/classical_search/leaf_ablation_launcher.sh 16 laptop
+#   local  (primary): nice -n 19 bash scripts/classical_search/leaf_ablation_launcher.sh auto local
+#   laptop (helper):  nice -n 19 bash scripts/classical_search/leaf_ablation_launcher.sh auto laptop
 # Optional:
-#   --cells "meepleoff ..."  subset/static split; default = all 6 in PRIORITY order
+#   --cells "meepleoff ..."  subset/static split; default = the 6 F7 cells in PRIORITY order
 #   --n 400                  override game count (smoke only)
 #   --band 96000000000       override seed band (smoke only)
+#   --backend rust|python    search engine for BOTH prefixes (default rust)
 #   --out-sub-prefix abl_    out-subdir prefix (smoke uses a distinct prefix)
+#   --smoke                  suppress the primary aggregate's results.csv row (throwaway runs)
 #   --dry-run                print the per-cell harness commands and exit (no compute)
 set -u
-WORKERS="${1:?usage: leaf_ablation_launcher.sh <WORKERS> <BOX_TAG local|laptop> [opts]}"
+WORKERS="${1:?usage: leaf_ablation_launcher.sh <WORKERS|auto> <BOX_TAG local|laptop> [opts]}"
 BOX_TAG="${2:?BOX_TAG required: local|primary or laptop|helper}"
 shift 2
 
-REPO=/home/doctor/projects/carcassone
-PY=$REPO/.venv/bin/python
+# ABL_REPO / ABL_PY exist so a git-worktree SMOKE can point the launcher at unmerged
+# code without editing it (worktree-isolation rule). Defaults == the main tree.
+REPO="${ABL_REPO:-/home/doctor/projects/carcassone}"
+PY="${ABL_PY:-$REPO/.venv/bin/python}"
 HARNESS=$REPO/scripts/classical_search/eval_puct_priors.py
 CELL_DIR=$REPO/measurement/leaf_ablation_20260730/cells
-PROG=$REPO/measurement/leaf_ablation_20260730/ABL_PROGRESS.tsv
+PROG=$REPO/measurement/leaf_ablation_20260730/ABL_PROGRESS.tsv   # --smoke redirects this
 
 # ---- pre-registered knobs (PREREG.md "Cell configuration") ----
 N=400                      # deck-paired: 200 decks x 2 seats
@@ -57,28 +77,42 @@ CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits; SIMS=2750   # champion-sibling A/B
 
 # PRIORITY ORDER (PREREG.md "Priority"). Cells run left-to-right; n=400 completes per-cell
 # rather than spreading thin, so a partial night yields whole verdicts, not partial ones.
-CELLS_ALL="meepleoff oppanticoff anticoff selfanticoff meepleflat capoff"
+CELLS_F7="meepleoff oppanticoff anticoff selfanticoff meepleflat capoff"
+CELLS_F7B="farmbaseoff farmgrowthoff"          # run these explicitly via --cells
+CELLS_ALL="$CELLS_F7 $CELLS_F7B"               # the VALID id set
 
 case "$BOX_TAG" in
-  local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared ;;
-  laptop|helper)  ROLE=helper;  SHARE=/mnt/carc-shared ;;
+  local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared; W_AUTO=32 ;;
+  laptop|helper)  ROLE=helper;  SHARE=/mnt/carc-shared;   W_AUTO=24 ;;
   *) echo "bad BOX_TAG '$BOX_TAG' (local|primary|laptop|helper)"; exit 1 ;;
 esac
+[ "$WORKERS" = auto ] && WORKERS=$W_AUTO
 OUT_ROOT="${ABL_OUT_ROOT:-$SHARE/leaf_ablation}"
 
-CELLS="$CELLS_ALL"; DRYRUN=0; SUBPREFIX=abl_
+CELLS="$CELLS_F7"; DRYRUN=0; SUBPREFIX=abl_; BACKEND=rust; SMOKE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --cells)   CELLS="${2:?--cells needs a quoted id list}"; shift 2 ;;
     --n)       N="${2:?--n needs a count}"; shift 2 ;;
     --band)    BAND="${2:?--band needs a seed}"; shift 2 ;;
+    --backend) BACKEND="${2:?--backend needs python|rust}"; shift 2 ;;
     --out-sub-prefix) SUBPREFIX="${2:?}"; shift 2 ;;
+    --smoke)   SMOKE=1; shift ;;
     --dry-run) DRYRUN=1; shift ;;
     *) echo "unknown arg '$1'"; exit 1 ;;
   esac
 done
+case "$BACKEND" in python|rust) ;; *) echo "bad --backend '$BACKEND' (python|rust)"; exit 1 ;; esac
+# A smoke must not append to the REAL run's progress record (its rows carry a
+# throwaway band and an under-powered n, and would read as run history).
+[ "$SMOKE" = 1 ] && PROG="${PROG%.tsv}_SMOKE.tsv"
 for c in $CELLS; do
   case " $CELLS_ALL " in *" $c "*) ;; *) echo "unknown cell id '$c' (valid: $CELLS_ALL)"; exit 1 ;; esac
+  # F7b farm knockouts have no Cython leaf by design (see the F7b addendum): on the
+  # python backend the candidate would run the ~12.5x-slower pure-Python flat leaf.
+  case " $CELLS_F7B " in
+    *" $c "*) [ "$BACKEND" = python ] && echo "[abl] WARNING: cell '$c' (F7b farm knockout) on --backend python runs the pure-Python flat leaf (~12.5x slower per leaf)" ;;
+  esac
   [ -f "$CELL_DIR/abl_${c}_vs_puctchamp2750_k2.json" ] || { echo "missing cell json for '$c'"; exit 1; }
 done
 
@@ -152,7 +186,7 @@ PYEOF
 }
 
 [ "$DRYRUN" = 0 ] && { [ -f "$PROG" ] || echo -e "cell\tstatus\tn\tW\tD\tL\telo\tsigma\tpaired_z\tms_ratio\tsecs\ttimestamp" > "$PROG"; }
-echo "[abl $ROLE $HOST $(ts)] start: W=$WORKERS out_root=$OUT_ROOT band=$BAND n=$N cells=[$CELLS]"
+echo "[abl $ROLE $HOST $(ts)] start: W=$WORKERS backend=$BACKEND out_root=$OUT_ROOT band=$BAND n=$N cells=[$CELLS]"
 
 for c in $CELLS; do
   exp="abl_${c}_vs_puctchamp2750_k2"
@@ -161,9 +195,15 @@ for c in $CELLS; do
   dir="$OUT_ROOT/$sub"
   base_args=(--candidate puct --opponent puct
              --c-puct $CPUCT --tau-p $TAU --leaf-quantize $QUANT --final-select $SELECT
-             --cand-sims $SIMS --exact-k $K --n $N --paired
+             --cand-sims $SIMS --exact-k $K --n $N --paired --backend "$BACKEND"
              --cand-leaf-json "$cell_json" --exp-id "$exp"
              --seed-start $BAND --out-root "$OUT_ROOT" --out-subdir "$sub")
+  # The per-wave harness calls always pass --no-results-csv; only the primary's
+  # AGGREGATE call writes the row. --smoke suppresses that too — otherwise a smoke
+  # through this launcher banks a real results.csv row for the real exp_id off a
+  # throwaway band, which is exactly the disorganisation results.csv exists to stop.
+  agg_args=("${base_args[@]}")
+  [ "$SMOKE" = 1 ] && agg_args+=(--no-results-csv)
   if [ "$DRYRUN" = 1 ]; then
     echo "[dry-run] $exp -> nice -n 19 $PY $HARNESS ${base_args[*]} --workers $WORKERS" \
          "--shared-claim --claim-host abl-$ROLE-$HOST --claim-stale-secs 300 --no-results-csv"
@@ -177,7 +217,7 @@ for c in $CELLS; do
   if cell_complete "$dir"; then
     if [ "$ROLE" = primary ] && ! grep -q "^$exp," "$REPO/experiments/results.csv"; then
       echo "[abl $(ts)] $exp complete but results.csv row missing -> re-aggregate"
-      nice -n 19 $PY "$HARNESS" "${base_args[@]}" > "/tmp/abl_agg_${c}.log" 2>&1
+      nice -n 19 $PY "$HARNESS" "${agg_args[@]}" > "/tmp/abl_agg_${c}.log" 2>&1
     fi
     tsv_line "$c" cached "$dir/summary.json" 0
     echo "[abl $ROLE $(ts)] cell $exp CACHED ($(count_results "$dir")/$N) -> skip"
@@ -203,7 +243,7 @@ for c in $CELLS; do
     continue
   fi
   if [ "$ROLE" = primary ]; then
-    nice -n 19 $PY "$HARNESS" "${base_args[@]}" > "/tmp/abl_agg_${c}.log" 2>&1
+    nice -n 19 $PY "$HARNESS" "${agg_args[@]}" > "/tmp/abl_agg_${c}.log" 2>&1
     tsv_line "$c" DONE "$dir/summary.json" "$secs"
     echo "[abl primary $(ts)] cell $exp DONE in ${secs}s -> $(tail -1 "$PROG")"
   else

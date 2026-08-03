@@ -35,7 +35,9 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # so they stay in the dict; F6 postdates it and must be dropped to preserve the hash. A
 # candidate that SETS a slope is a different leaf and DOES shift the hash (as intended).
 # Mirror in alphabeta_agent._leaf_hash + tests/test_t3_optuna's inline recipe.
-_LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0}
+# F7b farm knockouts (2026-08-02) postdate a36d2e15 too, so they follow the F6 rule.
+_LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
+                                 "farm_base_off": False, "farm_growth_off": False}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -143,3 +145,20 @@ def _assert_cy_float_path(cfg) -> None:
                                  "compiled cy leaf lacks SUPPORTS_F6_SOFT_CAP (rebuild flat_leaf_cy)")
         except ImportError as e:
             raise ValueError("--cand-leaf-json: soft-cap slope set but flat_leaf_cy is not built") from e
+    # F7b farm knockouts: the ONE knob family that deliberately has no cy implementation
+    # (roadmap F7b — the cells run `--backend rust`, where no Python leaf is computed).
+    # A set knob therefore ALWAYS leaves the cy fast path for the pure-Python flat leaf,
+    # which is bit-exact (scripts/rustport/reconcile_leaf.py --configs farmoff) but
+    # ~12.5x slower per leaf. That is a SPEED fact, not a correctness one — exactly like
+    # every clause above, all of which also fall back to a correct pure-Python leaf — so
+    # this WARNS instead of raising: raising would make the intended `--backend rust`
+    # cells unlaunchable, and a `--backend python` leg (the wiring gate's reference leg)
+    # must stay runnable.
+    if getattr(cfg, "farm_base_off", False) or getattr(cfg, "farm_growth_off", False):
+        import sys as _sys
+        print("[leaf-override] WARNING: F7b farm knockout set (farm_base_off="
+              f"{getattr(cfg, 'farm_base_off', False)}, farm_growth_off="
+              f"{getattr(cfg, 'farm_growth_off', False)}) — the candidate leaf leaves the "
+              "Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower "
+              "per leaf). Intended only with --backend rust, where no Python leaf runs.",
+              file=_sys.stderr)
