@@ -1,0 +1,60 @@
+{
+  "args": {
+    "budget": 4000000,
+    "from_rows": null,
+    "leg": [
+      "synth"
+    ],
+    "max_k": 6,
+    "max_k_clair": 2,
+    "max_k_clair_noprune": 2,
+    "max_k_marg": 2,
+    "max_mismatch_report": 200,
+    "out": null,
+    "per_k": 25,
+    "plan_only": false,
+    "rules_profile": null,
+    "solve_timeout_s": 180,
+    "synth_max_k": 2,
+    "synth_n": 10,
+    "synth_seed_base": 880000,
+    "tag": "synth_fixedv1",
+    "workers": 1
+  },
+  "carc_rs_version": "0.1.0",
+  "cells": {
+    "k1:clairvoyant": 10,
+    "k1:clairvoyant+ab": 10,
+    "k1:marginalized": 10,
+    "k2:clairvoyant": 10,
+    "k2:clairvoyant+ab": 10,
+    "k2:marginalized": 10
+  },
+  "checks": 60,
+  "elapsed_s": 146.9,
+  "gate": "G7/exact_solver",
+  "generated": "2026-08-03T13:05:32",
+  "mismatches": [],
+  "n_mismatches": 0,
+  "per_leg": {
+    "synth": {
+      "cells": {
+        "k1:clairvoyant": 10,
+        "k1:clairvoyant+ab": 10,
+        "k1:marginalized": 10,
+        "k2:clairvoyant": 10,
+        "k2:clairvoyant+ab": 10,
+        "k2:marginalized": 10
+      },
+      "checks": 60,
+      "n_mismatches": 0,
+      "positions": 20,
+      "skipped": 0
+    }
+  },
+  "positions": 20,
+  "r9_enabled": true,
+  "rules_profile": "fixed_v1",
+  "skipped_budget": 0,
+  "verdict": "PASS"
+}

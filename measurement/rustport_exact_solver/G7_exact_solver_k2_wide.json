@@ -1,0 +1,54 @@
+{
+  "args": {
+    "budget": 4000000,
+    "from_rows": null,
+    "leg": [
+      "l23"
+    ],
+    "max_k": 2,
+    "max_k_clair": 2,
+    "max_k_clair_noprune": 2,
+    "max_k_marg": 2,
+    "max_mismatch_report": 200,
+    "out": null,
+    "per_k": 40,
+    "plan_only": false,
+    "rules_profile": null,
+    "solve_timeout_s": 180,
+    "synth_max_k": 3,
+    "synth_n": 6,
+    "synth_seed_base": 880000,
+    "tag": "k2_wide",
+    "workers": 1
+  },
+  "carc_rs_version": "0.1.0",
+  "cells": {
+    "k2:clairvoyant": 40,
+    "k2:clairvoyant+ab": 40,
+    "k2:marginalized": 40
+  },
+  "checks": 120,
+  "elapsed_s": 1077.7,
+  "gate": "G7/exact_solver",
+  "generated": "2026-08-03T13:25:07",
+  "mismatches": [],
+  "n_mismatches": 0,
+  "per_leg": {
+    "l23": {
+      "cells": {
+        "k2:clairvoyant": 40,
+        "k2:clairvoyant+ab": 40,
+        "k2:marginalized": 40
+      },
+      "checks": 120,
+      "n_mismatches": 0,
+      "positions": 40,
+      "skipped": 0
+    }
+  },
+  "positions": 40,
+  "r9_enabled": false,
+  "rules_profile": "walled",
+  "skipped_budget": 0,
+  "verdict": "PASS"
+}

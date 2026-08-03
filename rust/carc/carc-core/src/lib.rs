@@ -13,6 +13,7 @@
 
 pub mod action_space;
 pub mod compat;
+pub mod endgame;
 pub mod engine;
 pub mod eval;
 pub mod fair;

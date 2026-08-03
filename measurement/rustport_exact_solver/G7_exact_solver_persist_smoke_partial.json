@@ -1,0 +1,46 @@
+{
+  "carc_rs_version": "0.1.0",
+  "cells": {
+    "frozen_marginalized": 14,
+    "live_marginalized": 14,
+    "py_clair_vs_marg": 12,
+    "rs_clair_vs_marg": 12,
+    "v2_clairvoyant": 12,
+    "v2_marginalized": 12
+  },
+  "checks": 76,
+  "gate": "G7/exact_solver",
+  "generated": "2026-08-03T10:58:21",
+  "jobs_recorded": 26,
+  "mismatches": [],
+  "n_mismatches": 0,
+  "partial": true,
+  "per_leg": {
+    "golden": {
+      "cells": {
+        "frozen_marginalized": 14,
+        "live_marginalized": 14
+      },
+      "checks": 28,
+      "n_mismatches": 0,
+      "positions": 14,
+      "skipped": 0
+    },
+    "v2": {
+      "cells": {
+        "py_clair_vs_marg": 12,
+        "rs_clair_vs_marg": 12,
+        "v2_clairvoyant": 12,
+        "v2_marginalized": 12
+      },
+      "checks": 48,
+      "n_mismatches": 0,
+      "positions": 12,
+      "skipped": 0
+    }
+  },
+  "positions": 26,
+  "rebuilt_from": "measurement/rustport_exact_solver/G7_exact_solver_persist_smoke_rows.jsonl",
+  "skipped_budget": 0,
+  "verdict": "PASS"
+}
