@@ -3875,3 +3875,23 @@ change; the map's "one more cell may be justified by the pooled read" option is 
 call (morning brief), not run tonight.** CL-074's farm-growth row reads: "component ≈
 0 to −27 (screen-inflated); champion-better-without NOT confirmed." Band 1.01e11 retired.
 results.csv row abl_farmgrowthoff_confirm_vs_puctchamp2750_k2.
+
+## 2026-08-03 (early) — JCZ oracle spike: GO, edition-exact, and the tile-data diff already found R9 (a real farm-adjacency bug on the RCr tile kind)
+
+The feasibility spike (measurement/jcz_spike_20260803/SPIKE_REPORT.md, 8ac58da) retired
+both J6 risks: JCZ's `basic:2` tile set IS our exact C3 edition (32/32 kinds, 72/72
+tiles), its farm model is our model (8 half-edges + adjacent cities, straight relabel
+NL..WR ↔ TLT..TLL, no reflection), and the 5.x Engine.jar is a headless line-JSON
+protocol whose ForcedDrawTilePack takes our deck order verbatim — no RNG matching
+needed. **FINDING (R9): `city_top_straight_road` declares TLT+TRT — field half-edges on
+its CITY edge** — so two RCr placed city-to-city merge under-city field strips into one
+farm (reproduced two-tile board + control; JCZ keeps them separate; the ONLY kind in the
+deck with this defect). Trigger ≤3.3% of random games (ceiling, not verdict); symmetric
+⇒ the recorded A/Bs survive; fix is one line of DATA but moves farm scoring ⇒ flag-gated
+in the F9 family + feedback_bug_fix_shifts_optima applies (v2.7 farm caps were tuned
+against the bug). Deliverables re-scoped: D0 = promote the tile diff to a pytest (lands
+BEFORE any rules adoption — would have caught this the day the data was typed); D1 =
+the replay harness at 1–1.5 agent-days, gated on Phase A (per-ply legality diffs will
+light up on walled/start-tile/redraw divergences by design). Unverified, named: the
+meeple-slot mapping (D1's main unknown) and whether flat_leaf/rust reproduce the merge
+(argued from shared data, not measured — D0's flag build must gate it).
