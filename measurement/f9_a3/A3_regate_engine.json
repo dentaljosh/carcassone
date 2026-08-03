@@ -1,0 +1,48 @@
+{
+  "gate": "G1/engine",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "b00f090-dirty",
+    "utc": "2026-08-03T04:59:16Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aecf13dedc1262e07/.rsshadow/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": "champ",
+    "limit": 60,
+    "workers": 4,
+    "bench": 0,
+    "out": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aecf13dedc1262e07/measurement/f9_a3/A3_regate_engine.json"
+  },
+  "per_corpus": {
+    "champ": {
+      "games": 60,
+      "plies": 8633,
+      "positions_compared": 8693,
+      "frozen_positions_checked": 0,
+      "mismatches": 0
+    }
+  },
+  "total_games": 60,
+  "total_plies": 8633,
+  "total_positions_compared": 8693,
+  "total_frozen_positions_checked": 0,
+  "per_ply_checks": [
+    "string_representation(bytes)",
+    "legal_mask_sha256",
+    "scores",
+    "flat_base_score[p0]",
+    "flat_base_score[p1]",
+    "state_scalars"
+  ],
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 9.21040358504979
+}

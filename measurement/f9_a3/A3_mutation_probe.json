@@ -1,0 +1,142 @@
+{
+  "gate": "F9/A3 mutation probe",
+  "verdict": "PASS",
+  "games_per_gate": 14,
+  "control": {
+    "parity": {
+      "violations": 0,
+      "checked": 14
+    },
+    "bag": {
+      "violations": 0,
+      "checked": 14
+    },
+    "conservation": {
+      "violations": 0,
+      "checked": 14
+    },
+    "solver_order": {
+      "violations": 0,
+      "checked": 10
+    },
+    "lockstep": {
+      "violations": 0,
+      "checked": 14
+    }
+  },
+  "mutations": {
+    "ignore_the_flag": {
+      "parity": {
+        "violations": 1,
+        "checked": 14
+      },
+      "bag": {
+        "violations": 0,
+        "checked": 14
+      },
+      "conservation": {
+        "violations": 0,
+        "checked": 14
+      },
+      "solver_order": {
+        "violations": 0,
+        "checked": 10
+      },
+      "lockstep": {
+        "violations": 14,
+        "checked": 14
+      }
+    },
+    "no_remarginalize": {
+      "parity": {
+        "violations": 0,
+        "checked": 14
+      },
+      "bag": {
+        "violations": 0,
+        "checked": 14
+      },
+      "conservation": {
+        "violations": 0,
+        "checked": 14
+      },
+      "solver_order": {
+        "violations": 5,
+        "checked": 10
+      },
+      "lockstep": {
+        "violations": 0,
+        "checked": 14
+      }
+    },
+    "no_total_tiles_decr": {
+      "parity": {
+        "violations": 0,
+        "checked": 14
+      },
+      "bag": {
+        "violations": 14,
+        "checked": 14
+      },
+      "conservation": {
+        "violations": 0,
+        "checked": 14
+      },
+      "solver_order": {
+        "violations": 0,
+        "checked": 10
+      },
+      "lockstep": {
+        "violations": 14,
+        "checked": 14
+      }
+    },
+    "tile_returns_to_bag": {
+      "parity": {
+        "violations": 0,
+        "checked": 14
+      },
+      "bag": {
+        "violations": 14,
+        "checked": 14
+      },
+      "conservation": {
+        "violations": 14,
+        "checked": 14
+      },
+      "solver_order": {
+        "violations": -1,
+        "checked": 0,
+        "error": "RecursionError: maximum recursion depth exceeded"
+      },
+      "lockstep": {
+        "violations": 14,
+        "checked": 14
+      }
+    },
+    "no_recursion": {
+      "parity": {
+        "violations": 0,
+        "checked": 14
+      },
+      "bag": {
+        "violations": 0,
+        "checked": 14
+      },
+      "conservation": {
+        "violations": 0,
+        "checked": 14
+      },
+      "solver_order": {
+        "violations": 0,
+        "checked": 10
+      },
+      "lockstep": {
+        "violations": 4,
+        "checked": 14
+      }
+    }
+  },
+  "discriminated": "5/5",
+  "wallclock_s": 123.3
+}
