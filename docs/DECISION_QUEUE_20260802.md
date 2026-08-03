@@ -24,7 +24,7 @@
    The go/no-go: reach CUDA-Graph from Rust via ort IOBinding; if batch-8 ≥ ~0.18 ms, stop.
    This REOPENS (on new grounds, desktop-only) what the ANE post-mortem closed — it does
    not contradict 3: the ANE r-bar stays failed. → docs/RUST_NET_EVAL_DESIGN_20260802.md,
-   LEVER_INDEX 16–17. Fund/park.
+   LEVER_INDEX 16–17. ✅ SPIKE RAN 2026-08-03 (funded): **STOP** — CUDA-Graph reached from Rust (0.152 ms b8, 4.4% off torch, faithfulness clean) but the census-clean denominator is 1.55× faster than the memo's loaded-box figure ⇒ cost_ratio 3.06, outside break-even; even the memo's torch row recomputes dead (2.95). SHELVED with working code; reopen: ≤0.11 ms b8 on target hardware or a ≥64-leaves-in-flight design. Durable rider: box-state moves search_ms_per_sim 2.1× — every r-shaped claim needs a census-clean denominator (LEVER_INDEX 18a). CLOSED.
 3c. **NEW — backend default flip readiness (F11 done):** all four desktop callers wired +
    injection-proven; remaining pre-flip blockers (port-3 list): (i) factory must resolve
    per-mode or clairvoyant builds raise — top item; (ii) tests/release/test_factory_manifest
