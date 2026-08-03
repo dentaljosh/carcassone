@@ -439,6 +439,24 @@ class Game:
         # the action space are all window-relative and completely unaffected, so a
         # checkpoint trained on random-start plays a fixed-start game with no
         # shape or semantic change (only a hair of distribution shift).
+        # F9 A0 (2026-08-02): the ONE place the process-wide `rules_profile`
+        # becomes geometry. The profile fills in ONLY what the caller left
+        # unsaid — an explicit kwarg always wins — and under the default
+        # `walled` profile it fills in NOTHING (game_kwargs() is empty), so this
+        # block is a no-op on every pre-F9 call and the constructed state is the
+        # same object graph it always was. That is Gate A0's identity, held
+        # structurally rather than by assertion. Resolution is env-backed so a
+        # spawn worker cannot disagree with the manifest.
+        # See src/carcassonne_ai/rules_profile.py.
+        from . import rules_profile as _rp
+
+        _prof_kw = _rp.active().game_kwargs()
+        if start_row is None and start_col is None and "start_row" in _prof_kw:
+            start_row, start_col = _prof_kw["start_row"], _prof_kw["start_col"]
+        if not fixed_start_tile and _prof_kw.get("fixed_start_tile"):
+            fixed_start_tile = True
+        if window_size == DEFAULT_WINDOW_SIZE and "window_size" in _prof_kw:
+            self.window_size = int(_prof_kw["window_size"])
         self.fixed_start_tile = bool(fixed_start_tile)
         # Where the start tile sits on the 35x35 grid. `None` means "say nothing
         # to the engine", which is what makes the default path byte-identical:

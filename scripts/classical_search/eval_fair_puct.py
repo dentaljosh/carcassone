@@ -333,6 +333,7 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
 )
 from carcassonne_ai.mcts import DEFAULT_C, HeuristicMCTS  # noqa: E402
 from carcassonne_ai.rule_based_player import RuleBasedPlayer  # noqa: E402
+from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
 from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 
@@ -2415,7 +2416,14 @@ def main(argv=None) -> int:
                     help="do not append to experiments/results.csv (this eval NEVER writes it; "
                          "flag kept for launcher symmetry / explicit intent)")
     ap.add_argument("--smoke", action="store_true")
+    _rules_profile.add_argument(ap)          # F9 A0
     args = ap.parse_args(argv)
+    # F9 A0 — resolve the rules profile ONCE, before any Game() is constructed,
+    # and publish it to the environment so every spawn worker inherits the same
+    # one. `walled` (the default) adds no argument to any Game(...) call, so this
+    # line is inert for every existing cell; it is what makes a non-walled cell
+    # expressible at all, and what puts the profile in manifest.json.
+    _rules_profile.activate(args.rules_profile)
     if args.games is not None:
         args.n = args.games
     if args.k_dets < 1:
