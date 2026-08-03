@@ -195,7 +195,9 @@ def main(argv=None) -> int:
                               num_workers=args.num_workers,
                               persistent_workers=False,
                               pin_memory=(device.type == "cuda"))
-    val_loader = DataLoader(val_ds, batch_size=256,
+    # Validation runs in fp32 (no autocast) so its numbers are comparable to the
+    # published baseline's; use the same micro-batch so tf_large cannot OOM here.
+    val_loader = DataLoader(val_ds, batch_size=args.micro_batch,
                             num_workers=args.num_workers,
                             persistent_workers=(args.num_workers > 0),
                             pin_memory=(device.type == "cuda"))
