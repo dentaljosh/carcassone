@@ -1,9 +1,11 @@
-# F7b — FARM-TERM KNOCKOUT ABLATION — PRE-REGISTRATION (DRAFT)
+# F7b — FARM-TERM KNOCKOUT ABLATION — PRE-REGISTRATION
 
-> **STATUS: 📝 DRAFT, NOT LAUNCHED, NOT AUTHORIZED.** Built + gated 2026-08-02 by the F7b
-> build agent. Awaiting: orchestrator review → **band claim in `governance/BAND_REGISTRY.csv`**
-> (the band below is *proposed*, verified free, and deliberately NOT registered here) →
-> commit of this file **before the first game** (house rule) → launch.
+> **STATUS: ✅ AUTHORIZED 2026-08-02 (Joshua: "lets do the farm knockout cells"; orchestrator
+> ratified the farm-sighted-tail design call — the tail is the RULES, not a heuristic leaf,
+> and the toward-null leak is documented in §design). Band `1.00e11` REGISTERED in
+> `governance/BAND_REGISTRY.csv` in this same commit, before game 1. Launched two-box
+> work-stealing immediately after this commit; W = local 32 / laptop 24 (the 2026-08-02
+> W≈threads heuristic, no re-sweep).**
 > Launcher: [`scripts/classical_search/leaf_ablation_launcher.sh`](../../scripts/classical_search/leaf_ablation_launcher.sh)
 > (F7b addendum: `--backend`, `auto` workers). Cell configs: [`cells/`](cells/).
 > Parent run + conventions: [PREREG.md](PREREG.md) (F7, CL-074).
