@@ -1,20 +1,20 @@
 {
   "carc_rs_version": "0.1.0",
   "cells": {
-    "clairvoyant": 33,
-    "clairvoyant+ab": 67,
+    "clairvoyant": 40,
+    "clairvoyant+ab": 89,
     "frozen_marginalized": 14,
     "live_marginalized": 14,
-    "marginalized": 42,
+    "marginalized": 51,
     "py_clair_vs_marg": 12,
     "rs_clair_vs_marg": 12,
     "v2_clairvoyant": 12,
     "v2_marginalized": 12
   },
-  "checks": 218,
+  "checks": 256,
   "gate": "G7/exact_solver",
-  "generated": "2026-08-03T12:12:50",
-  "jobs_recorded": 99,
+  "generated": "2026-08-03T13:06:43",
+  "jobs_recorded": 152,
   "mismatches": [],
   "n_mismatches": 0,
   "partial": true,
@@ -31,14 +31,14 @@
     },
     "l23": {
       "cells": {
-        "clairvoyant": 33,
-        "clairvoyant+ab": 67,
-        "marginalized": 42
+        "clairvoyant": 40,
+        "clairvoyant+ab": 89,
+        "marginalized": 51
       },
-      "checks": 142,
+      "checks": 180,
       "n_mismatches": 0,
-      "positions": 97,
-      "skipped": 50
+      "positions": 155,
+      "skipped": 95
     },
     "v2": {
       "cells": {
@@ -53,8 +53,8 @@
       "skipped": 0
     }
   },
-  "positions": 123,
+  "positions": 181,
   "rebuilt_from": "measurement/rustport_exact_solver/G7_exact_solver_main_rows.jsonl",
-  "skipped_budget": 50,
+  "skipped_budget": 95,
   "verdict": "PASS"
 }
