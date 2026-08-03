@@ -22,7 +22,8 @@ class CarcassonneGameState:
             supplementary_rules: [SupplementaryRule] = (SupplementaryRule.FARMERS, SupplementaryRule.ABBOTS),
             players: int = 2,
             board_size: (int, int) = (35, 35),
-            starting_position: Coordinate = Coordinate(6, 15)
+            starting_position: Coordinate = Coordinate(6, 15),
+            cloister_scan_fix: bool = False
     ):
         self.deck = self.initialize_deck(tile_sets=tile_sets)
         self.supplementary_rules: [SupplementaryRule] = supplementary_rules
@@ -48,6 +49,16 @@ class CarcassonneGameState:
         # so string_representation can iterate ~80 coords instead of walking
         # the full 1225-cell board. Maintained by StateUpdater.play_tile.
         self.placed_coords: set = set()
+        # Patched (vendored fork, 2026-08-03, F9-A2): OPT-IN, DEFAULT OFF fix for
+        # the RF-D-1 cloister-completion scan drift. Read by
+        # PointsCollector.remove_meeples_and_collect_points; carried on the state
+        # because that is the only object the scorer sees. DEFAULT FALSE keeps
+        # every recorded measurement, checkpoint and gate byte-identical.
+        self.cloister_scan_fix: bool = bool(cloister_scan_fix)
+        # Event counter, incremented ONLY when the fix is on: completions scored
+        # at their true ply that the drifting scan would not have visited (an
+        # upper bound on monk-pins avoided). Manifest observable for the F9 gate.
+        self.cloister_completions_accelerated: int = 0
 
     def __deepcopy__(self, memo):
         # Patched (vendored fork, 2026-05-13): bypass the default recursive
@@ -75,6 +86,11 @@ class CarcassonneGameState:
         new.current_player = self.current_player
         new.last_tile_action = self.last_tile_action
         new.next_tile = self.next_tile
+        # F9-A2 rules flag + its event counter. Both are plain scalars; the flag
+        # MUST travel with the copy or an MCTS rollout would silently score under
+        # the other convention.
+        new.cloister_scan_fix = self.cloister_scan_fix
+        new.cloister_completions_accelerated = self.cloister_completions_accelerated
 
         # Lists/sets of immutable refs — shallow copy the container only.
         new.deck = self.deck[:]

@@ -74,20 +74,47 @@ class PointsCollector:
                 MeepleUtil.remove_meeples(game_state=game_state, meeples=meeples)
 
         # Points for finished chapels
+        #
+        # RF-D-1 ("cloister rebinding", audit 2026-08-02).  Upstream writes both
+        # the loop bound and the cell under inspection to the SAME name
+        # `coordinate`: the outer `range` is evaluated once from the true
+        # placement, but the inner `range` is re-evaluated per outer iteration
+        # from the REBOUND value, so scan rows 2 and 3 drift to wherever the last
+        # non-empty cell of the previous row was.  ~9.6% of completed cloisters
+        # fall outside the drifted window: points are only deferred
+        # (count_final_scores still awards 9) but the MONK IS PINNED for the rest
+        # of the game, because a completed 3x3 can never be revisited.
+        #
+        # The fix is the rename — `anchor` is the loop bound, `scan` is the cell.
+        # OPT-IN, DEFAULT OFF (`cloister_scan_fix`): the drift is load-bearing for
+        # every measurement, checkpoint and gate recorded to date, and the Rust
+        # port carries it verbatim (mutation-proven at G1).  With the flag off
+        # `anchor` is rebound exactly where upstream rebinds `coordinate`, so the
+        # legacy walk is reproduced cell-for-cell.
+        fix = getattr(game_state, "cloister_scan_fix", False)
+        legacy_visited = cls._legacy_scan_cells(game_state, coordinate) if fix else None
+        anchor: Coordinate = coordinate
         for row in range(coordinate.row - 1, coordinate.row + 2):
-            for column in range(coordinate.column - 1, coordinate.column + 2):
+            for column in range(anchor.column - 1, anchor.column + 2):
                 tile: Tile = game_state.get_tile(row, column)
 
                 if tile is None:
                     continue
 
-                coordinate = Coordinate(row=row, column=column)
-                coordinate_with_side = CoordinateWithSide(coordinate=coordinate, side=Side.CENTER)
+                scan = Coordinate(row=row, column=column)
+                if not fix:
+                    anchor = scan          # LEGACY: the rebinding quirk (RF-D-1)
+                coordinate_with_side = CoordinateWithSide(coordinate=scan, side=Side.CENTER)
                 meeple_of_player = MeepleUtil.position_contains_meeple(game_state=game_state,
                                                                              coordinate_with_side=coordinate_with_side)
                 if (tile.chapel or tile.flowers) and meeple_of_player is not None:
-                    points = cls.chapel_or_flowers_points(game_state=game_state, coordinate=coordinate)
+                    points = cls.chapel_or_flowers_points(game_state=game_state, coordinate=scan)
                     if points == 9:
+                        if legacy_visited is not None and (row, column) not in legacy_visited:
+                            # A completion the drifting scan would NOT have seen
+                            # this ply — i.e. a monk it would have pinned.
+                            game_state.cloister_completions_accelerated = getattr(
+                                game_state, "cloister_completions_accelerated", 0) + 1
                         _log("Chapel or flowers finished for player", str(meeple_of_player))
                         _log(points, "points for player", meeple_of_player)
                         game_state.scores[meeple_of_player] += points
@@ -101,6 +128,30 @@ class PointsCollector:
                                 meeples_per_player[meeple_of_player].append(meeple_position)
 
                         MeepleUtil.remove_meeples(game_state=game_state, meeples=meeples_per_player)
+
+    @staticmethod
+    def _legacy_scan_cells(game_state: CarcassonneGameState, coordinate: Coordinate) -> set:
+        """The cells the LEGACY (drifting) cloister scan would visit this ply.
+
+        Pure enumeration — no scoring, no mutation — used only when
+        `cloister_scan_fix` is ON, to count the completions the drift would have
+        missed (`state.cloister_completions_accelerated`).  Never called on the
+        default path, so the flags-off walk is untouched.
+
+        The count is an UPPER bound on monk-pins avoided: the same drift that
+        misses a completion can also visit cells outside the true 3x3, so the
+        legacy scan occasionally self-heals an earlier miss from a later
+        placement (audit RF-D-1, "partial, unreliable self-heal").
+        """
+        visited = set()
+        anchor = coordinate
+        for row in range(coordinate.row - 1, coordinate.row + 2):
+            for column in range(anchor.column - 1, anchor.column + 2):
+                if game_state.get_tile(row, column) is None:
+                    continue
+                anchor = Coordinate(row=row, column=column)
+                visited.add((row, column))
+        return visited
 
     @staticmethod
     def get_winning_players(meeple_counts_per_player: [int]):

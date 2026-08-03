@@ -394,6 +394,7 @@ class Game:
         fixed_start_tile: bool = False,
         start_row: int | None = None,
         start_col: int | None = None,
+        cloister_scan_fix: bool = False,
     ):
         if players != 2:
             raise NotImplementedError("Phase 1 wrapper is 2-player only")
@@ -450,6 +451,16 @@ class Game:
         check_start_position(self.start_row, self.start_col)
         self.recentred = (self.start_row, self.start_col) != (
             ENGINE_START_ROW, ENGINE_START_COL)
+        # F9-A2 (2026-08-03): fix the RF-D-1 cloister-completion scan drift.
+        # OPT-IN, DEFAULT OFF. On, a cloister scores the moment its 3x3 is full
+        # and its monk returns to supply; off, ~9.6% of completions are deferred
+        # to count_final_scores and the monk is pinned for the rest of the game.
+        # Final TOTALS are the same either way (the endgame pass awards the same
+        # 9) — what changes is the PLY and the meeple supply, which is why this
+        # is a re-baselining rules change and not a bug fix to apply silently.
+        # Like `start_row`, it is passed to the engine ONLY when asked for, so the
+        # default path is the same constructor call it has always been.
+        self.cloister_scan_fix = bool(cloister_scan_fix)
         # Legal-moves cache. Off by default; MCTS turns it on per search and
         # calls clear_caches() between root moves. See DECISIONS.md
         # ("Phase 4 prerequisite: get_valid_moves performance strategy").
@@ -493,6 +504,8 @@ class Game:
             from wingedsheep.carcassonne.objects.coordinate import Coordinate
 
             extra["starting_position"] = Coordinate(self.start_row, self.start_col)
+        if self.cloister_scan_fix:
+            extra["cloister_scan_fix"] = True
         state = CarcassonneGameState(
             players=self.players,
             tile_sets=list(self.tile_sets),
