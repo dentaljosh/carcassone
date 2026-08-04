@@ -1,10 +1,11 @@
 # Marginalized-solver frontier read — "is fair K=5/6 an option?"
 
-> **STATUS: DRAFT — clean local re-run in flight (2026-08-04 overnight).** The laptop run
-> below is confounded (W18 farm co-tenant 19:09→00:05) and serves as feasibility
-> corroboration only; the verdict table comes from `marg_bench_20260804_local`
-> (same positions — `pick_positions` seed 4242 — same W4 / 3600 s-cap protocol, on the
-> deployment-relevant desktop box, exclusive tenant). Fill §3 and flip this banner on close-out.
+> **STATUS: VERDICT IN (2026-08-04 morning). Fair K=5 is NOT a practical option (~26%
+> under a 1 h cap, clean); fair K=4 is the offline-labeling frontier (75–80% under 1 h);
+> no K≥4 marg is a play candidate. K6 probe re-running (WSL teardown ate the original).**
+> §3 is the verdict table (clean desktop run, exclusive tenant); §2 is the confounded
+> laptop run, kept as corroboration — notably the clean run REPRODUCES it, so the
+> contention turned out not to bias the answer.
 
 **Question (Joshua 2026-08-03):** "sounds like we might as well try fair play k. is 6 an
 option? only 5?" — i.e. can the *fair* (marginalized) exact solver run at K=5 or K=6 at
@@ -53,19 +54,39 @@ before the clean run.
 
 ## 3. Clean local run (2026-08-04, desktop box) — THE VERDICT TABLE
 
-*(fill on close-out from `/mnt/c/carc-shared/marg_bench_20260804_local/`)*
+Exclusive tenant, W4, 3600 s caps, same seeded positions as §2. Ran 00:02→06:39; the WSL
+VM was torn down between 06:39 and 08:37 (host event; [reference_local_box_dirty_reboots]
+pattern), killing the last two in-flight jobs: **one K5 position (censored — 19/20 stands)
+and the K6 probe (re-fired standalone 08:58, 1 job, ≤1 h)**. 39/41 rows survived; jsonl
+authoritative.
 
 | cell | ok / n | timeouts | ok wall s (min/med/p90/max) | rss_peak MB (med/max) | nodes med |
 |---|---|---|---|---|---|
-| marg K4 | | | | | |
-| marg K5 | | | | | |
-| marg K6 probe | | | | | |
+| marg K4 | 15/20 | 5 | 8 / 457 / 2135 / 3101 | 183 / 1233 | 2,577,291 |
+| marg K5 | 5/19 | 14 | 316 / 1706 / 1931 / 1931 | 633 / 633 | 9,831,203 |
+| marg K6 probe | *(re-run in flight)* | | | | |
+
+**The clean run reproduces the contended run** (K4 15/20 vs 16/20; K5 5/19 vs 5/20; ok
+medians within noise). The §2 confound was real but not binding — the K5 timeouts were
+"too slow", not "starved".
 
 ## 4. Verdict
 
-*(fill: is K5 an option, is K6 an option, for what use — offline labeling vs play; fold
-into DECISIONS + the LEVER_INDEX exact:K row; note the RSS column vs the W4-was-conservative
-question — rust RSS is ~19× smaller than the python-era rules that motivated low W.)*
+- **Fair K=5: NOT an option.** ~26% of positions solve under a 1 h cap on the clean
+  desktop run, and the completions themselves are expensive (med ~28 min). A usable cell
+  would need multi-hour caps with an unmeasured tail — that is not labeling economics,
+  it's a lottery. (Per-position node medians: K5 ≈ 3.8× K4.)
+- **Fair K=6: no** (probe result pending, but it is bounded below by K5's 3.8× step;
+  the 300 s desktop probe already put marg K5 strictly over its cap).
+- **Fair K=4 is the frontier, with a caveat.** 75–80% under 1 h, ok-median ~8 min — but
+  the pre-stated ≥~80% bar is only *grazed*, and the 20–25% timeout tail means any K4
+  labeling campaign needs the F13-style K−1 fallback (conservative censoring) or bigger
+  caps. For *play*, nothing changes: no K≥4 marg is remotely interactive; the in-game
+  latch stays K≤2.
+- **W4 was over-conservative for throughput** (the python-era RAM rules that motivated it
+  are dead: rust rss_peak max is 1.23 GB, not 1–2 GB/worker × python's 19× multiplier),
+  but W4 remains correct for *timing* cells — the two uses now have different W defaults
+  (see §5; the RAM guard puts local W ≤ 12, laptop W ≤ 5 at the measured max).
 
 ## 5. W sweep (teed up 2026-08-04) — NOT FIRED
 
@@ -90,21 +111,23 @@ swept):**
 ```bash
 # local desktop box (5900XT, 16C/32T)
 .venv/bin/python scripts/rustport/wsweep_exact_solver.py \
-    --k 4 --mode marginalized --w-points 4 12 30 --n 20 --timeout-s 3600 \
-    --ram-cap-mb 24000 --rss-max-mb <TO-BE-FILLED> \
+    --k 4 --mode marginalized --w-points 4 8 12 --n 20 --timeout-s 3600 \
+    --ram-cap-mb 24000 --rss-max-mb 1233 \
     --out measurement/rust_solver_bench_20260803/wsweep_k4_local
 
 # laptop (12 GB WSL VM)
 .venv/bin/python scripts/rustport/wsweep_exact_solver.py \
-    --k 4 --mode marginalized --w-points 4 8 16 --n 20 --timeout-s 3600 \
-    --ram-cap-mb 11000 --rss-max-mb <TO-BE-FILLED> \
+    --k 4 --mode marginalized --w-points 2 4 5 --n 20 --timeout-s 3600 \
+    --ram-cap-mb 11000 --rss-max-mb 1233 \
     --out measurement/rust_solver_bench_20260803/wsweep_k4_laptop
 ```
 
-The RAM guard is what makes the ladders provisional: at §2's laptop-measured K4 max of
-1237 MB, local W30 wants 55.7 GB (refused, rc=3) and the laptop tops out below W6. Those
-ladders assume the clean run's max lands near ~500 MB (local W30 ⇒ ≤533 MB, laptop
-W16 ⇒ ≤458 MB); if §3 comes in high, trim the top rung rather than raising the cap.
+Ladders finalized 2026-08-04 from §3's measured K4 `rss_peak` max (1233 MB): the guard
+(`W × 1233 × 1.5 ≤ cap`) allows local W ≤ 12 and laptop W ≤ 5, so the original 4/12/30 and
+4/8/16 ladders lost their top rungs (trimmed, caps NOT raised — the tail multiplier is
+there because timeouts' RSS at kill was never observed). Both ladders now peak at their
+RAM ceiling, so a peak at the top rung is expected and the "endpoint — extend" note does
+not apply upward; it would mean "buy RAM", a Joshua call.
 
 **Gating:** fires only after the frontier verdict AND a funded consumer of the labels
 (Joshua's call); sweep the K tier the verdict supports.

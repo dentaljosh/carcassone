@@ -11,7 +11,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [STATUS.md](STATUS.md) (live state; the 06-02 correction plan is an executed historical artifact).
 
 **2026-06 — correction era (current)**
-- 2026-08-03 (midnight) (**CL-074 COMPONENT TABLE REMEASURED UNDER fixed_v1 — IT TRANSFERS.** All 8 knockout cells n=400 deck-paired, band 1.05e11 (retired), both sides fixed_v1+R9 rust: same rank order, same nulls, every Δ-vs-walled inside CL-068 cross-band humility. The anticipation pair's balance-not-information null REPLICATES (Joshua's remeasure rider DISCHARGED); farm-growth reads suggestive-positive a THIRD time (+42.8 → +10.4 → +25.2, none ≥2σ) and stays UNPROMOTED. ⚠️ its artifacts are misnamed `F7C_*` — unrelated to the F7c skew-guard item.) *(index line backfilled 2026-08-04)*
+- 2026-08-04 (morning) (**FAIR-K FRONTIER PRICED — marg K5 is NOT an option (~26% under a 1 h cap, clean), K6 no; marg K4 is the offline-labeling frontier (75–80% under 1 h, K−1 fallback needed for the tail).** Clean desktop verdict run REPRODUCES the confounded laptop run (K4 15/20 vs 16/20; K5 5/19 vs 5/20) ⇒ the CL-074-farm co-location contaminated the instrument but not the answer. Play latch unchanged at K≤2 — no K≥4 marg is interactive. W4-for-timing stands; W-for-throughput now RAM-guarded at local ≤12 / laptop ≤5 from measured rss (1.23 GB max); `wsweep_exact_solver.py` teed, gated on a funded label consumer. WSL teardown ate the last 2 jobs (1 K5 censored; K6 probe re-fired). Full entry at file end.) (**CL-074 COMPONENT TABLE REMEASURED UNDER fixed_v1 — IT TRANSFERS.** All 8 knockout cells n=400 deck-paired, band 1.05e11 (retired), both sides fixed_v1+R9 rust: same rank order, same nulls, every Δ-vs-walled inside CL-068 cross-band humility. The anticipation pair's balance-not-information null REPLICATES (Joshua's remeasure rider DISCHARGED); farm-growth reads suggestive-positive a THIRD time (+42.8 → +10.4 → +25.2, none ≥2σ) and stays UNPROMOTED. ⚠️ its artifacts are misnamed `F7C_*` — unrelated to the F7c skew-guard item.) *(index line backfilled 2026-08-04)*
 - 2026-08-03 (night) (**PAPER G2 TRANSFORMER CONTROL CLOSED — pre-registered verdict C_GRAY, quote both halves in order.** Three scratch arms (resnet 7.51M / tf_match 7.73M / tf_large 28.06M), 16 passes, identical solver ruler: (i) the referee objection is ANSWERED — the matched-parameter transformer is ruler-identical to the conv-ResNet, no tested architecture escapes; (ii) it is NOT a generalisation result — all three failed the §4.2 fit gate, so no scratch arm ever showed the *prediction* half. Branch B did not fire; blocker #2 neither reopened nor further closed. New datum D5: the heuristic WARM START was load-bearing for outcome prediction itself.) *(index line backfilled 2026-08-04)*
 - 2026-08-03 (evening) (**JOSHUA'S DIRECTIVE BATCH — eight rulings, all executed same evening.** APK rebuild + E4 rules flip to fixed_v1 FUNDED → delivered and device-verified (13/13 on the Pixel; E4 games from here are played under fixed_v1) · ANE n≈2150 CLOSED UNFUNDED · CL-074 component remeasure FUNDED · F7c skew-guard hoist LAUNCHED · G1 pondering and G3 per-move cost MOOT · WC tie-break flag approved-but-unscheduled · **FIRST PUSH** of `android-app` to origin. Standing policy banked: default W for rust workloads = cpu threads − 2 absent a measured W\*.) *(index line backfilled 2026-08-04)*
 - 2026-08-03 (late afternoon) (**THE fixed_v1 SEAT-SWAP LUCK ARCHIVE — Phase C's named residue MEASURED same-day.** 200 decks × 2 seatings champion-vs-champion, fixed_v1+R9 at k8×1376, ~50 min two-box: deck-luck ICC ~0.19 · σ_game 20.4 · σ_pair 12.8 · seat_adv +3.1 pts · seat-swap pairing factor ~0.79 ⇒ **E4 sizing: a true-wr-0.55 edge needs ~193 seat-swap paired games** (vs 381 naive; 0.60 → 48). Recommendation: run the E4 human protocol as seat-swap deck-pairs. Bug caught before it could bite: `luck_floor` read an unrecognized win-field spelling as a LOSS.) *(index line backfilled 2026-08-04)*
@@ -4262,4 +4262,39 @@ skew-guard item; this entry is the disambiguation of record.
 
 **Reversal cost:** items 1/3/4 are builds/measurements (reversible; no production change until their
 own close-outs); 2/5/6/7 are bookkeeping state; 8 is public (origin now has the branch).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-04 (morning) — Fair-K frontier priced: marg K5 NOT an option, K4 is the offline-labeling frontier
+
+**Question (Joshua, 2026-08-03):** "sounds like we might as well try fair play k. is 6 an option? only 5?"
+
+**Answer: neither, for anything practical.** Verdict table = the clean desktop run
+(`marg_bench_20260804_local`, exclusive tenant, W4, 3600 s caps, seeded positions):
+marg **K4 15/20 ok** (ok med ~8 min, p90 ~36 min, rss max 1.23 GB) · marg **K5 5/19 ok**
+(ok med ~28 min — the completions themselves are near the cap) · K6 probe pending
+(bounded below by K5's ~3.8× node step; the 300 s desktop probe already put K5 over cap).
+So: **K5/K6 closed for practicality; K4 is the fair-label frontier**, and only with an
+F13-style K−1 fallback for its 20–25% timeout tail. The in-game latch stays K≤2 —
+no K≥4 marg is within orders of magnitude of interactive.
+
+**The confound resolved honestly:** the laptop run (W18 CL-074 farm co-tenant 19:09→00:05)
+turned out unbiased — the clean run reproduces it (K4 16/20→15/20, K5 5/20→5/19). The
+timing-instrument-exclusive-tenant rule stands (we could not have KNOWN without the clean
+run), but the K5 timeouts were "too slow", not "starved".
+
+**Ops footnotes:** (a) the stale-wheel trap fired TWICE more (laptop first launch + local
+first launch — the venv had a pre-`solve_endgame` carc_rs; BACKLOG has the preflight
+capability assert, and `wsweep_exact_solver.py` ships with it built in); (b) the laptop
+driver crashed post-rows in aggregation (jsonl authoritative); (c) the local run lost its
+last 2 jobs to a WSL teardown between 06:39 and 08:37 (1 K5 position censored at 19/20;
+K6 probe re-fired standalone 08:58).
+
+**Consequences:** LEVER_INDEX exact:K row updated; the specialized-endgame-net sequencing
+is unchanged (it waits on the F13 clairvoyant ladder, not on fair-K cost); the W sweep
+(teed, `9f559ec`) fires only behind a funded consumer of K4 fair labels. W-for-throughput
+is RAM-guarded at local ≤12 / laptop ≤5 from the measured rss max.
+
+**Reversal cost:** none (cost measurement only; PRODUCTION.yaml untouched).
 **Phase:** measurement-first
