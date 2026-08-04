@@ -1,8 +1,9 @@
 # Marginalized-solver frontier read — "is fair K=5/6 an option?"
 
-> **STATUS: VERDICT IN (2026-08-04 morning). Fair K=5 is NOT a practical option (~26%
-> under a 1 h cap, clean); fair K=4 is the offline-labeling frontier (75–80% under 1 h);
-> no K≥4 marg is a play candidate. K6 probe re-running (WSL teardown ate the original).**
+> **STATUS: CLOSED (2026-08-04). Fair K=5 is NOT a practical option (~26% under a 1 h
+> cap, clean); fair K=6 closed by inference (probe attempts lost to host crashes, not
+> re-fired); fair K=4 is the offline-labeling frontier (75–80% under 1 h); no K≥4 marg
+> is a play candidate.**
 > §3 is the verdict table (clean desktop run, exclusive tenant); §2 is the confounded
 > laptop run, kept as corroboration — notably the clean run REPRODUCES it, so the
 > contention turned out not to bias the answer.
@@ -66,7 +67,7 @@ so the verdict reproduces from the repo after the share is cleaned.
 |---|---|---|---|---|---|
 | marg K4 | 15/20 | 5 | 8 / 457 / 2135 / 3101 | 183 / 1233 | 2,577,291 |
 | marg K5 | 5/19 | 14 | 316 / 1706 / 1931 / 1931 | 633 / 633 | 9,831,203 |
-| marg K6 probe | *(re-run in flight)* | | | | |
+| marg K6 probe | *not measured — bounded by K5* | | | | |
 
 **The clean run reproduces the contended run** (K4 15/20 vs 16/20; K5 5/19 vs 5/20; ok
 medians within noise). The §2 confound was real but not binding — the K5 timeouts were
@@ -78,8 +79,11 @@ medians within noise). The §2 confound was real but not binding — the K5 time
   desktop run, and the completions themselves are expensive (med ~28 min). A usable cell
   would need multi-hour caps with an unmeasured tail — that is not labeling economics,
   it's a lottery. (Per-position node medians: K5 ≈ 3.8× K4.)
-- **Fair K=6: no** (probe result pending, but it is bounded below by K5's 3.8× step;
-  the 300 s desktop probe already put marg K5 strictly over its cap).
+- **Fair K=6: no — closed WITHOUT a measured row, by inference** (kol sheken: K5's
+  ~26%-under-cap verdict + the ~3.8× node step per K + the 300 s desktop probe already
+  putting marg K5 strictly over cap). Two 1-job probe attempts were both killed mid-solve
+  by host dirty crashes (08:50, 11:10 — the box crashed 3× on 2026-08-04 alone) and a
+  third attempt was judged not worth the row it would fill.
 - **Fair K=4 is the frontier, with a caveat.** 75–80% under 1 h, ok-median ~8 min — but
   the pre-stated ≥~80% bar is only *grazed*, and the 20–25% timeout tail means any K4
   labeling campaign needs the F13-style K−1 fallback (conservative censoring) or bigger
