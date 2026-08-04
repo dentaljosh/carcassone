@@ -58,7 +58,9 @@ Exclusive tenant, W4, 3600 s caps, same seeded positions as §2. Ran 00:02→06:
 VM was torn down between 06:39 and 08:37 (host event; [reference_local_box_dirty_reboots]
 pattern), killing the last two in-flight jobs: **one K5 position (censored — 19/20 stands)
 and the K6 probe (re-fired standalone 08:58, 1 job, ≤1 h)**. 39/41 rows survived; jsonl
-authoritative.
+authoritative. Both runs' rows jsonls are committed beside this doc
+(`BENCH_marg_frontier_rows_laptop.jsonl` / `BENCH_marg_frontier_localclean_rows.jsonl`)
+so the verdict reproduces from the repo after the share is cleaned.
 
 | cell | ok / n | timeouts | ok wall s (min/med/p90/max) | rss_peak MB (med/max) | nodes med |
 |---|---|---|---|---|---|
