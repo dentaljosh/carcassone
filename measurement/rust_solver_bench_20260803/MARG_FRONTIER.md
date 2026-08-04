@@ -32,17 +32,24 @@ one-sided (a contended completion would only be faster clean), so ok-counts are 
 Also: the first launch ran against a stale wheel (no `solve_endgame`) → 41 instant
 EXCEPTION rows in the jsonl; ignore `status=="EXCEPTION"` (the relaunch appended the real rows).
 
-Interim (as of ~00:45, 36/41 real jobs done):
+Final (run exited ~01:55; `render_marg_frontier.py` over the rows jsonl — 41 EXCEPTION
+rows dropped):
 
-| cell | ok / done | timeouts | ok wall s (min/med/max) | rss_peak MB (med/max) |
-|---|---|---|---|---|
-| marg K4 | 16/20 | 4 (1 clean, 3 ambiguous) | 9 / 474 / 2662 | 187 / 1237 |
-| marg K5 | 4/16 | 12 (all ambiguous) | 1486 / 2798 / 3226 | 637 / 637 |
-| marg K6 probe | 0/0 | — | — | — |
+| cell | ok / n | timeouts | ok wall s (min/med/p90/max) | rss_peak MB (med/max) | nodes med |
+|---|---|---|---|---|---|
+| marg K4 | 16/20 | 4 (1 clean, 3 ambiguous) | 9 / 474 / 1841 / 2662 | 187 / 1237 | 2,634,691 |
+| marg K5 | 5/20 | 15 (all ambiguous) | 278 / 2380 / 3226 / 3226 | 637 / 637 | 9,831,203 |
+| marg K6 probe | — | — | — | — | — |
 
-Floor read: K4 marg ≥80% under 1 h **even contended**; K5 marg ≥25% contended, with clean
-completions already hugging the cap (med ~47 min) — K5 looks marginal-at-best before the
-clean run.
+Two closing footnotes: (a) **the K6 probe never re-ran after the wheel fix** — its only row
+is the stale-wheel EXCEPTION, so the laptop contributes nothing on K6 (§3's local run covers
+it); (b) **the driver crashed in its final aggregation** (JSONDecodeError) *after* writing
+all 40 real rows — the rows jsonl is clean (0 bad lines) and authoritative; ignore the
+run's summary JSON.
+
+Floor read: K4 marg ≥80% under 1 h **even contended**; K5 marg ≥25% contended, with
+completions hugging the cap (med ~40 min, max at the cap) — K5 looks marginal-at-best
+before the clean run.
 
 ## 3. Clean local run (2026-08-04, desktop box) — THE VERDICT TABLE
 
