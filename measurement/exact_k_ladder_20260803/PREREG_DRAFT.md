@@ -53,7 +53,27 @@ W-wide (rust solves are ~100–250 MB/worker — cores-bound, not RAM-bound):
 schedule K=6 overnight. ⚠️ Bench-then-commit rider: run 10 games of the K=6 arm first
 and check the realized cap-hit rate before launching the full rung.
 
-## Decision map (pre-registered)
+## ⚠️ Amendment 2026-08-04 (BEFORE any cell ran): the ladder runs at the A/B screen budget, not the deploy budget
+
+The cells run at **SIMS=2750**, the standing "champion-sibling A/B knobs (C5/C7)" used by the
+CL-074 component table and every leaf-ablation cell — **not** the champion's deploy budget
+k8×1376 = 11008. Both arms share it, so every contrast is matched; but the question as worded
+("at today's champion") is answered at a *weaker sibling* of today's champion, and that changes
+what each branch of the decision map is allowed to conclude. Stated now, before results exist:
+
+- **A NULL at 2750 is the STRONGER conclusion, and it transfers.** A weaker prefix search is
+  worse in the endgame, so an exact tail has *more* room to help here than at 11008. If deeper
+  exactness cannot beat a 2750-sim search, it will not beat an 11008-sim one. Branch 1 therefore
+  fires as written.
+- **A POSITIVE at 2750 does NOT transfer and does NOT by itself fund anything.** It is the
+  known low-sims inflation pattern (memory `feedback_sims_washout_net_eval`: +82.8/z3.48 at
+  sims200 → +8/z0.34 at sims800, same nets). Branch 2 is therefore **amended**: a K≥5 rung at
+  ≥+2σ buys a **confirm cell at the deploy budget 11008 on fresh decks of a new band**, and only
+  a confirm that survives funds the endgame net.
+
+Rationale for not simply running at 11008: 4× the budget on the two expensive rungs, against a
+prior (the June ladder + the F3 fair-optimum ceiling) that strongly favours the null — the cheap
+screen answers the likely outcome, and the expensive confirm is bought only if the screen surprises.
 
 1. **All rungs' paired-margin z < +2 and the trend slope z < +2** → the June null
    generalizes, powered, modern-era: exact:K row gets its final stamp; the endgame-net
