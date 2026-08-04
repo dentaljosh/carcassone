@@ -59,3 +59,45 @@ clean run.
 *(fill: is K5 an option, is K6 an option, for what use — offline labeling vs play; fold
 into DECISIONS + the LEVER_INDEX exact:K row; note the RSS column vs the W4-was-conservative
 question — rust RSS is ~19× smaller than the python-era rules that motivated low W.)*
+
+## 5. W sweep (teed up 2026-08-04) — NOT FIRED
+
+The feasibility bench prices *one solve*. The follow-on question is throughput: **W4 was
+inherited from the python-era RAM rules, and rust RSS is ~19× smaller** — so how many
+workers should a labeling batch actually carry? Driver built and tested, not launched:
+`scripts/rustport/wsweep_exact_solver.py` (+ `tests/test_wsweep_exact_solver.py`, 20 tests).
+It runs the W points sequentially, one cell per point (the empty-flag trick suppresses
+`bench_exact_solver.py`'s seven default cells), and emits `WSWEEP_SUMMARY.md` with
+solved/h per W plus the house recommendation — **smallest W within 10% of peak, never the
+argmax**, with an "extend before adopting" note if the peak lands on a ladder endpoint.
+
+Guards, all fail-loud before any wall clock is spent: exclusive-tenant census (rc=2 — a
+throughput bench beside another job measures the other job; this is exactly the confound
+that voided §2), RAM `W × rss_max × 1.5 ≤ cap` (rc=3), and a `solve_endgame` capability
+probe on `sys.executable` (rc=4 — the stale-wheel trap that produced §2's 41 instant
+EXCEPTION rows). EXCEPTION rows in a point's jsonl abort the sweep (rc=5).
+
+**Ready to fire (fill `--rss-max-mb` from §3's measured `rss_peak MB max` for the K being
+swept):**
+
+```bash
+# local desktop box (5900XT, 16C/32T)
+.venv/bin/python scripts/rustport/wsweep_exact_solver.py \
+    --k 4 --mode marginalized --w-points 4 12 30 --n 20 --timeout-s 3600 \
+    --ram-cap-mb 24000 --rss-max-mb <TO-BE-FILLED> \
+    --out measurement/rust_solver_bench_20260803/wsweep_k4_local
+
+# laptop (12 GB WSL VM)
+.venv/bin/python scripts/rustport/wsweep_exact_solver.py \
+    --k 4 --mode marginalized --w-points 4 8 16 --n 20 --timeout-s 3600 \
+    --ram-cap-mb 11000 --rss-max-mb <TO-BE-FILLED> \
+    --out measurement/rust_solver_bench_20260803/wsweep_k4_laptop
+```
+
+The RAM guard is what makes the ladders provisional: at §2's laptop-measured K4 max of
+1237 MB, local W30 wants 55.7 GB (refused, rc=3) and the laptop tops out below W6. Those
+ladders assume the clean run's max lands near ~500 MB (local W30 ⇒ ≤533 MB, laptop
+W16 ⇒ ≤458 MB); if §3 comes in high, trim the top rung rather than raising the cap.
+
+**Gating:** fires only after the frontier verdict AND a funded consumer of the labels
+(Joshua's call); sweep the K tier the verdict supports.
