@@ -1,10 +1,14 @@
 # F13 — Modern exact-K winrate ladder under fixed_v1 (PREREG DRAFT)
 
-> **STATUS: 📝 DRAFT — NOT AUTHORIZED, NOT FUNDED, no band claimed, nothing launched.**
-> Written 2026-08-03 while the rust solver bench was fresh, so that funding the ladder
-> (roadmap F13, Joshua's call) is a launch, not a design session. Open choices for
-> Joshua are marked ⚖️. Charter: DECISIONS 2026-08-03 (afternoon) solver-port entry;
-> cost basis: [../rust_solver_bench_20260803/BENCH.md](../rust_solver_bench_20260803/BENCH.md).
+> **STATUS: ✅ FUNDED 2026-08-04 (Joshua: "ok, f13 it is") — harness build in flight;
+> no band claimed yet, nothing launched.** Launch order: identity smoke (K4-vs-K4 ×20,
+> 100% action identity) → 10-game K6 bench-then-commit smoke (cap-hit rate + RSS + wall
+> at the measured eval W\*) → rungs K2/K3/K5 daytime, K6 overnight, per-iter checkpointed
+> (the local box's dirty-reboot cadence assumed). ⚖️ K3 rung RESOLVED: ADDED (the
+> within-band trend is the primary statistic; a fifth point costs ~1–2 h).
+> Original draft context: written 2026-08-03 while the rust solver bench was fresh.
+> Charter: DECISIONS 2026-08-03 (afternoon) solver-port entry; cost basis:
+> [../rust_solver_bench_20260803/BENCH.md](../rust_solver_bench_20260803/BENCH.md).
 
 ## Question
 
