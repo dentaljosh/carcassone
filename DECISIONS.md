@@ -4212,6 +4212,33 @@ instrument), no PRODUCTION.yaml touch, band-free.
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
 
+## 2026-08-03 (midnight) — CL-074 component table REMEASURED under fixed_v1: it TRANSFERS — the anticipation-pair null replicates under the adopted rules; farm-growth leans deletable a THIRD suggestive time (measurement)
+
+**The run** (Joshua "anticipation remeasure, go for it"): all 8 knockout cells n=400 deck-paired vs
+the intact champion leaf, band 1.05e11 (fresh, now retired), both sides fixed_v1+R9 rust, unchanged
+optima (legitimated by the same-day all-null re-sweep). Laptop W18 from 19:09 (bench co-tenant −4),
+local W30 joined 23:34 post-ruler; ~4.6 h wall; launcher gained `--rules-profile` + a VOID-PROFILE
+guard (agent commit `e399210`); rows `abl_*_fixed_v1_vs_puctchamp2750_k2` ×8.
+
+**The table (fixed_v1 elo vs walled CL-074):** meepleoff **−310.0** (walled −299.6) · meepleflat
+**−136.0** (−177.2) · oppanticoff **−125.0** (−153.4) · selfanticoff **−82.3** (−88.7) · anticoff
+**−22.6, z −1.61 ≈ NULL** (−7.8 ≈ null) · capoff **+9.6, z +1.23 null** (−13.6 null) · farmbaseoff
+**−132.9** (−142.1) · farmgrowthoff **+25.2, z +1.85** (+42.8 screen / +10.4 confirm).
+
+**Decision (INTERPRETATION):** the CL-074 structure TRANSFERS to the adopted rules — same rank
+order, same nulls, every Δ-vs-walled within cross-band humility (CL-068: inflate σ 1.5–2× across
+bands). Specifically: **the anticipation pair's balance-not-information finding REPLICATES under
+fixed_v1** (either half alone catastrophic, both-off statistically nothing) — Joshua's remeasure
+rider is DISCHARGED. **farm-growth deletion reads suggestive-positive a THIRD time** (+42.8 → +10.4
+→ +25.2; three independent bands, all non-negative, none ≥2σ): stays UNPROMOTED per the standing
+no-third-cell ruling; the 3-band sign consistency is banked as an observation for the next time the
+leaf is retuned, not a promotion trigger. CL-074 amended; band retired; BACKLOG rider closed.
+⚠️ Artifact naming: the run's prereg/logs say `F7C_*` — a collision with the (unrelated) F7c
+skew-guard item; this entry is the disambiguation of record.
+
+**Reversal cost:** none (measurement only; leaf/PRODUCTION.yaml untouched).
+**Phase:** measurement-first
+
 **Reversal cost:** items 1/3/4 are builds/measurements (reversible; no production change until their
 own close-outs); 2/5/6/7 are bookkeeping state; 8 is public (origin now has the branch).
 **Phase:** measurement-first
