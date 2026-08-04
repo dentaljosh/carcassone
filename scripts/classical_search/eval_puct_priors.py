@@ -128,10 +128,16 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
 )
 from carcassonne_ai.mcts import HeuristicMCTS  # noqa: E402
 from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
-from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
+from carcassonne_ai.run_manifest import (  # noqa: E402
+    code_rev, game_tag, patch_manifest, write_manifest,
+)
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 
 import endgame_solver as S  # noqa: E402
+
+# F13 exact-K ladder machinery (per-arm K, per-solve wall caps, fallback ladder).
+# Sibling module so pytest can exercise the mechanics without importing the harness.
+import exact_tail as _et  # noqa: E402
 
 # C5 candidate-leaf override helpers — SHARED with eval_fair_puct.py (see
 # c5_leaf_override.py); imported (not copy-pasted) so the two harnesses can never
@@ -201,51 +207,120 @@ class _ExactHandoff:
 
     `prefix` is any object exposing `.move(board) -> int` (candidate or champion).
     Latching + timeout-fallback semantics match eval_hybrid_handoff._ExactAgent:
-    on BudgetExceeded the prefix plays THAT move (stays latched, retries next ply)."""
+    on BudgetExceeded the prefix plays THAT move (stays latched, retries next ply).
 
-    def __init__(self, prefix, game_plain, K: int, budget: int = EXACT_BUDGET):
+    F13 (measurement/exact_k_ladder_20260803/PREREG_DRAFT.md) adds three things, ALL
+    default-OFF so a legacy cell is byte-identical to the pre-F13 harness:
+      * `caps` — a per-SOLVE-SIZE wall-cap map (`{5: 300.0, 6: 600.0}`). With no map,
+        `wall_cap_call` runs the solve INLINE (no fork), i.e. today's exact code path.
+      * the downward fallback ladder on a cap hit — see `exact_tail.ExactTailState`,
+        which documents why "the K-1 solve of the same position" is not constructible
+        and what the faithful implementation is.
+      * `solver="rust"` — route the tail through `carc_rs.MirrorState.solve_endgame`
+        instead of the Python `endgame_solver`. Requires a mirror-carrying prefix
+        (`--backend rust`); the CLI fails closed rather than silently demoting.
+    """
+
+    def __init__(self, prefix, game_plain, K: int, budget: int = EXACT_BUDGET,
+                 *, caps: dict | None = None, solver: str = "python",
+                 k_floor: int = 0, tt_cap: int = 0, mirror_agent=None):
         self._prefix = prefix
         self._game = game_plain
         self._K = K
         self._budget = budget
+        self._solver = solver
+        self._tt_cap = int(tt_cap)
+        self._mirror_agent = mirror_agent
+        if solver == "rust" and K > 0 and not hasattr(mirror_agent, "mirror"):
+            raise ValueError(
+                "--exact-solver rust needs a mirror-carrying prefix (RustClairvoyantAgent); "
+                f"got {type(mirror_agent).__name__}. Run with --backend rust (the CLI "
+                "refuses the combination up front).")
+        self.tail = _et.ExactTailState(K, caps=caps, k_floor=k_floor)
         self._latched = False
         self.latch_k = None
         self.prefix_moves = 0
         self.exact_moves = 0
         self.n_timeouts = 0
+        self.n_cap_hits = 0          # convenience alias of tail.cap_hits
         self.solver_secs = 0.0
         self.solver_nodes = 0
         self.max_solve_secs = 0.0
         self.prefix_secs = 0.0
 
+    # -- lifecycle (mirror protocol; no-ops on the Python tail) --------------- #
+    def _solve_fn(self, board):
+        """A PURE-FUNCTION-OF-THE-POSITION solve returning a JSON-able dict.
+
+        Purity is what makes the fork wall cap state-safe (exact_tail module doc):
+        `solve_endgame` takes `&self` and `endgame_solver.solve` never mutates the
+        board, so a SIGKILLed attempt has nothing to lose and nothing to corrupt."""
+        if self._solver == "rust":
+            ms = self._mirror_agent.mirror()
+            budget, tt = self._budget, self._tt_cap
+
+            def _f():
+                r = ms.solve_endgame(mode="clairvoyant", budget=budget,
+                                     alphabeta=True, tt_cap=tt)
+                if r is None:                       # BudgetExceeded, on the wire
+                    return {"status": "budget"}
+                return {"status": "ok", "action": int(min(r["optimal_actions"])),
+                        "nodes": int(r["nodes"])}
+            return _f
+
+        game, budget = self._game, self._budget
+
+        def _f():
+            try:
+                res = S.solve(game, board, mode="clairvoyant",
+                              budget=budget, alphabeta=True)
+            except S.BudgetExceeded:
+                return {"status": "budget"}
+            return {"status": "ok", "action": int(min(res.optimal_actions)),
+                    "nodes": int(res.nodes)}
+        return _f
+
+    def _prefix_move(self, board) -> int:
+        t = time.perf_counter()
+        mv = int(self._prefix.move(board))
+        self.prefix_secs += time.perf_counter() - t
+        self.prefix_moves += 1
+        return mv
+
     def move(self, board) -> int:
-        if not self._latched and _should_latch(board.state, self._K):
+        if not self._latched and _should_latch(board.state, self.tail.eff_k):
             self._latched = True
             self.latch_k = k_remaining(board.state)
         if not self._latched:
-            t0 = time.perf_counter()
-            mv = int(self._prefix.move(board))
-            self.prefix_secs += time.perf_counter() - t0
-            self.prefix_moves += 1
-            return mv
+            return self._prefix_move(board)
+        k = k_remaining(board.state)
+        if k > self.tail.eff_k:
+            # The ladder has stepped the threshold BELOW this position's size: play
+            # exactly what the K-1 arm would play here (the prefix search), never a
+            # raw leaf. Next ply is one tile smaller and gets solved.
+            return self._prefix_move(board)
+        cap = self.tail.note_attempt(k)
+        if self._solver == "rust":
+            # One digest per solve: a mirror that drifted would otherwise be solved
+            # instead of the referee's position, silently. Free next to a capped solve.
+            self._mirror_agent.check_sync(board, "exact_tail")
         t0 = time.perf_counter()
         try:
-            res = S.solve(self._game, board, mode="clairvoyant",
-                          budget=self._budget, alphabeta=True)
-            dt = time.perf_counter() - t0
-            self.solver_secs += dt
-            self.max_solve_secs = max(self.max_solve_secs, dt)
-            self.solver_nodes += res.nodes
-            self.exact_moves += 1
-            return int(min(res.optimal_actions))
-        except S.BudgetExceeded:
+            res = _et.wall_cap_call(self._solve_fn(board), cap, k=k)
+        except _et.WallCapExceeded:
             self.solver_secs += time.perf_counter() - t0
+            self.tail.note_cap_hit(k)
+            self.n_cap_hits = self.tail.cap_hits
+            return self._prefix_move(board)
+        dt = time.perf_counter() - t0
+        self.solver_secs += dt
+        if res["status"] == "budget":
             self.n_timeouts += 1
-            t1 = time.perf_counter()
-            mv = int(self._prefix.move(board))
-            self.prefix_secs += time.perf_counter() - t1
-            self.prefix_moves += 1
-            return mv
+            return self._prefix_move(board)
+        self.max_solve_secs = max(self.max_solve_secs, dt)
+        self.solver_nodes += int(res["nodes"])
+        self.exact_moves += 1
+        return int(res["action"])
 
 
 class _ChampPrefix:
@@ -737,6 +812,25 @@ class GameResult:
     oracle_mainsearch_secs: float = 0.0
     oracle_presearch_leaf_calls: int = 0
     oracle_mainsearch_leaf_calls: int = 0
+    # F13 exact-K ladder per-game telemetry — the numerator/denominator of the
+    # pre-registered >20%-censored rule, per side. OMITTED from the serialized JSON
+    # unless the run actually engaged the ladder (_W["f13"]), so every legacy cell
+    # stays byte-identical to today's schema; _try_load re-fills from the defaults.
+    f13_on: bool = False
+    cand_tail_k: int = 0
+    champ_tail_k: int = 0
+    cand_latch_solves: int = 0
+    champ_latch_solves: int = 0
+    cand_capped_attempts: int = 0
+    champ_capped_attempts: int = 0
+    cand_cap_hits: int = 0
+    champ_cap_hits: int = 0
+    cand_fallback_depth: int = 0
+    champ_fallback_depth: int = 0
+    cand_eff_k_final: int = 0
+    champ_eff_k_final: int = 0
+    cand_max_solve_secs: float = 0.0
+    champ_max_solve_secs: float = 0.0
 
 
 def _result_path(out: Path, seed: int, a_seat: int) -> Path:
@@ -771,6 +865,32 @@ _ORACLE_RESULT_FIELDS = (
     "oracle_presearch_leaf_calls", "oracle_mainsearch_leaf_calls",
 )
 
+# F13 exact-K ladder fields — OMITTED for every non-F13 cell (the `f13_on` gate), so
+# a legacy cell's per-game JSON is byte-identical to the pre-F13 schema.
+_F13_RESULT_FIELDS = (
+    "f13_on", "cand_tail_k", "champ_tail_k", "cand_latch_solves", "champ_latch_solves",
+    "cand_capped_attempts", "champ_capped_attempts", "cand_cap_hits", "champ_cap_hits",
+    "cand_fallback_depth", "champ_fallback_depth", "cand_eff_k_final",
+    "champ_eff_k_final", "cand_max_solve_secs", "champ_max_solve_secs",
+)
+
+
+def _f13_telemetry(cand, champ, on: bool) -> dict:
+    """Per-game F13 counters read off the two _ExactHandoff tails (empty when OFF)."""
+    if not on:
+        return {}
+    c, h = cand.tail, champ.tail
+    return {"f13_on": True, "cand_tail_k": c.k0, "champ_tail_k": h.k0,
+            "cand_latch_solves": c.latch_solves, "champ_latch_solves": h.latch_solves,
+            "cand_capped_attempts": c.capped_attempts,
+            "champ_capped_attempts": h.capped_attempts,
+            "cand_cap_hits": c.cap_hits, "champ_cap_hits": h.cap_hits,
+            "cand_fallback_depth": c.fallback_depth,
+            "champ_fallback_depth": h.fallback_depth,
+            "cand_eff_k_final": c.eff_k, "champ_eff_k_final": h.eff_k,
+            "cand_max_solve_secs": round(cand.max_solve_secs, 3),
+            "champ_max_solve_secs": round(champ.max_solve_secs, 3)}
+
 
 def _save(p: Path, r: GameResult):
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -780,6 +900,9 @@ def _save(p: Path, r: GameResult):
             d.pop(k, None)
     if not d.get("oracle_prior_moves"):     # non-oracle cell -> omit oracle keys (schema-identical)
         for k in _ORACLE_RESULT_FIELDS:
+            d.pop(k, None)
+    if not d.get("f13_on"):                 # non-F13 cell -> omit ladder keys (schema-identical)
+        for k in _F13_RESULT_FIELDS:
             d.pop(k, None)
     tmp = p.with_name(f".{p.stem}.{socket.gethostname()}.{os.getpid()}.partial.json")
     json.dump(d, open(tmp, "w"))
@@ -816,7 +939,15 @@ def _worker_init(cand_cfg_dict, cand_sims, champ_sims, exact_k,
                  cand_leaf_cfg=None, ab_cfg_dict=None, opp_reuse=False,
                  opp_pin_champion=False, oracle_prior_mult=None,
                  oracle_prior_eps_coef=1e-3,
-                 backend="python"):
+                 backend="python",
+                 wall_caps=None, opp_exact_k=None, exact_solver="python",
+                 exact_k_floor=0, f13=False):
+    # F13 tail knobs (all inert at their defaults; see the --exact-* flags).
+    _W["wall_caps"] = dict(wall_caps or {})
+    _W["opp_exact_k"] = exact_k if opp_exact_k is None else int(opp_exact_k)
+    _W["exact_solver"] = exact_solver
+    _W["exact_k_floor"] = int(exact_k_floor)
+    _W["f13"] = bool(f13)
     _W["cand_cfg_dict"] = cand_cfg_dict
     # ENGINE (rustport P6). ⚠️ FARM RULE: this is a GAME-PARALLEL pool, and the
     # clairvoyant Rust ruler is single-threaded by construction (search_single takes
@@ -953,13 +1084,20 @@ def _play_one(args) -> GameResult | None:
         else:
             champ_prefix = _PuctPrefix(Game(enable_legal_moves_cache=True), opp_cfg,
                                        _W["opp_sims"], seed + 1)
-        opp_K = K
+        opp_K = _W.get("opp_exact_k", K)
     else:
         champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), _W["opp_sims"],
                                     seed + 1, DEFAULT_CONFIG)
-        opp_K = K
-    cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), K)
-    champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
+        opp_K = _W.get("opp_exact_k", K)
+    # F13: per-ARM tail K (candidate = the rung, opponent = the K<=4 incumbent), one
+    # shared per-solve-size wall-cap map (inert on the incumbent, which never reaches a
+    # capped size), one shared fallback floor. All defaults reproduce the old two-liner.
+    _tail_kw = dict(caps=_W.get("wall_caps"), solver=_W.get("exact_solver", "python"),
+                    k_floor=_W.get("exact_k_floor", 0))
+    cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), K,
+                         mirror_agent=cand_prefix, **_tail_kw)
+    champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K,
+                          mirror_agent=champ_prefix, **_tail_kw)
     # Seat EVERY Rust mirror (candidate and/or opponent) on the real initial board.
     # Both mirrors see EVERY applied action of BOTH seats -- a mirror that only saw its
     # own moves would answer from a frozen board, which `check_sync` turns into a hard
@@ -1011,6 +1149,7 @@ def _play_one(args) -> GameResult | None:
         champ_timeouts=champ.n_timeouts, latch_k=latch_k, game_timeout=game_timed_out,
         **(_ab_telemetry(cand_prefix) if cand_kind == "ab" else {}),
         **_oracle_telemetry(cand_prefix),
+        **_f13_telemetry(cand, champ, _W.get("f13", False)),
     )
     _save(p, r)
     return r
@@ -1132,6 +1271,21 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
               f"(total {oracle_summary['oracle_total_ms_per_move']:.0f}, "
               f"{oracle_summary['oracle_cost_multiple']:.2f}x main-only; "
               f"leaf ratio {oracle_summary['oracle_leaf_ratio']:.2f}x)")
+    # F13 exact-K ladder aggregation: the per-cell cap-hit totals + the pre-registered
+    # censored-rate. Empty (absent) for every non-F13 cell.
+    f13_summary = {}
+    f13_block = f13_cell_block(results)
+    if f13_block:
+        f13_summary = {"f13": f13_block}
+        c = f13_block["candidate"]
+        print(f"F13 tail: cand K={c['exact_k']} (eff_k floor reached {c['eff_k_min']}) — "
+              f"{c['latch_solves']} latch solves ({c['capped_attempts']} capped), "
+              f"{c['cap_hits']} cap hits, fallback steps {c['fallback_depth']} — "
+              f"censored_rate {f13_block['censored_rate']:.3f}"
+              + (f"  {f13_block['banner']}" if f13_block["censored"] else ""))
+        if f13_block["opponent_cap_hits_alarm"]:
+            print("  ⚠️ INSTRUMENT ALARM: the INCUMBENT arm hit a wall cap — its K<=4 "
+                  "tail is supposed to be uncapped. Halt and audit before interpreting.")
     return {
         "n": n, "W": w, "D": d, "L": losses, "winrate": wr, "winrate_z": wr_z,
         "elo": elo, "elo_sig_1sigma": elo_sig, "avg_diff": avg,
@@ -1141,7 +1295,49 @@ def _summary(results, cand_sims, champ_sims, cand_label=None, opp_label=None):
         "game_timeouts": game_timeouts,
         **ab_summary,
         **oracle_summary,
+        **f13_summary,
     }
+
+
+def _patch_f13_manifest(out, summ: dict) -> None:
+    """Land the per-CELL F13 cap-hit totals + censored-rate in the manifest.
+
+    The manifest is (correctly) written BEFORE game 1, so the counters can only be
+    merged in afterwards — `patch_manifest` is the atomic single-key merge built for
+    exactly this. Absent for non-F13 cells, so nothing about a legacy manifest moves.
+    """
+    if summ.get("f13"):
+        patch_manifest(out, "f13", summ["f13"])
+
+
+def f13_cell_block(results) -> dict:
+    """Per-CELL F13 totals + the pre-registered censoring verdict, or {} if not an
+    F13 cell. Sums the per-game counters (which are the per-arm, per-game numerator
+    and denominator of the >20% rule) across every game in the cell.
+
+    ⚠️ Includes watchdog-abandoned games deliberately: a game abandoned mid-tail still
+    spent its cap hits, and censoring is a statement about the SOLVER's behaviour, not
+    about the strength sample."""
+    rs = [r for r in results if getattr(r, "f13_on", False)]
+    if not rs:
+        return {}
+
+    def _side(pfx: str) -> dict:
+        return {
+            "exact_k": max(getattr(r, f"{pfx}_tail_k", 0) for r in rs),
+            "eff_k_min": min(getattr(r, f"{pfx}_eff_k_final", 0) for r in rs),
+            "latch_solves": sum(getattr(r, f"{pfx}_latch_solves", 0) for r in rs),
+            "capped_attempts": sum(getattr(r, f"{pfx}_capped_attempts", 0) for r in rs),
+            "cap_hits": sum(getattr(r, f"{pfx}_cap_hits", 0) for r in rs),
+            "fallback_depth": sum(getattr(r, f"{pfx}_fallback_depth", 0) for r in rs),
+            "games_with_cap_hit": sum(1 for r in rs
+                                      if getattr(r, f"{pfx}_cap_hits", 0) > 0),
+            "max_solve_secs": max((getattr(r, f"{pfx}_max_solve_secs", 0.0)
+                                   for r in rs), default=0.0),
+        }
+    block = _et.censoring_block(_side("cand"), _side("champ"))
+    block["games"] = len(rs)
+    return block
 
 
 def _build_work(seed_start, n, paired):
@@ -1252,7 +1448,8 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         else:
             cand_prefix = HeuristicPriorAgent(Game(enable_legal_moves_cache=True), cfg,
                                               simulations=args.cand_sims, seed=seed)
-        opp_K = args.exact_k
+        opp_K = (args.exact_k if getattr(args, "opp_exact_k", None) is None
+                 else int(args.opp_exact_k))
         if opp_kind == "net":
             farm = net_ns > 10
             gf = Game(enable_legal_moves_cache=True, include_farm_scalars=farm)
@@ -1272,8 +1469,13 @@ def _smoke(args, cand_kind="puct", opp_kind="heur", opp_sims=None, net_ckpt=None
         else:
             champ_prefix = _ChampPrefix(Game(enable_legal_moves_cache=True), opp_sims,
                                         seed + 1, DEFAULT_CONFIG)
-        cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), args.exact_k)
-        champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K)
+        _tail_kw = dict(caps=_et.parse_wall_caps(getattr(args, "exact_wall_caps", "")),
+                        solver=getattr(args, "exact_solver", "python"),
+                        k_floor=getattr(args, "exact_k_floor", 0))
+        cand = _ExactHandoff(cand_prefix, Game(enable_legal_moves_cache=True), args.exact_k,
+                             mirror_agent=cand_prefix, **_tail_kw)
+        champ = _ExactHandoff(champ_prefix, Game(enable_legal_moves_cache=True), opp_K,
+                              mirror_agent=champ_prefix, **_tail_kw)
         # Same mirror protocol as _play_one (see the comment there).
         mirrors = [p for p in (cand_prefix, champ_prefix) if hasattr(p, "advance")]
         for m in mirrors:
@@ -1443,6 +1645,27 @@ def main(argv=None) -> int:
                          "champion OF RECORD; C6 Stage-2 confirm). Default OFF = the "
                          "flag-OFF sibling used by the Stage-1 screen (byte-for-byte today).")
     ap.add_argument("--exact-k", type=int, default=4, help="exact clairvoyant endgame handoff at k_remaining<=K")
+    # --- F13 exact-K ladder (measurement/exact_k_ladder_20260803/PREREG_DRAFT.md) ---
+    # ALL default-OFF: with none of these passed the tail is byte-identical to the
+    # pre-F13 harness (no fork, no per-arm split, no extra per-game JSON keys).
+    ap.add_argument("--opp-exact-k", type=int, default=None,
+                    help="OPPONENT-side exact tail K (default: same as --exact-k). F13 "
+                         "runs the candidate at the rung's K against the K=4 incumbent.")
+    ap.add_argument("--exact-wall-caps", default="",
+                    help="per-SOLVE-SIZE wall caps, 'K:SECS,...' (F13 prereg: "
+                         "'5:300,6:600'; 'default' spells that map). Keyed on "
+                         "k_remaining AT THE SOLVED POSITION, not on the arm's nominal "
+                         "K. Empty (default) = uncapped everywhere = today's path.")
+    ap.add_argument("--exact-k-floor", type=int, default=0,
+                    help="floor for the cap-hit fallback ladder (F13: 4 == the "
+                         "incumbent's tail, so a capped candidate degrades TOWARD the "
+                         "incumbent and never below it). Default 0 = pre-F13.")
+    ap.add_argument("--exact-solver", choices=("python", "rust"), default="python",
+                    help="which solver runs the exact tail. `rust` = "
+                         "carc_rs.MirrorState.solve_endgame on the prefix's live "
+                         "mirror (needs --backend rust; ~20x the python solver, which "
+                         "is what makes K=5/6 affordable at all). Default python == "
+                         "every cell before F13.")
     # --- ENGINE (rustport P6, wired 2026-08-02) ---
     ap.add_argument("--backend", choices=("python", "rust", "auto"), default="python",
                     help="which ENGINE runs the CLAIRVOYANT PUCT prefixes -- BOTH "
@@ -1539,6 +1762,32 @@ def main(argv=None) -> int:
         # --opp-pin-champion is EXPRESSIBLE and therefore allowed: it only swaps the
         # shared c_puct/tau_p/leaf_quantize axes for the champion constants, all three
         # of which SearchConfigRs carries. No refusal needed.
+    # --- F13: resolve the tail knobs ONCE (workers + manifest cannot disagree) ---
+    try:
+        _wall_caps = _et.parse_wall_caps(args.exact_wall_caps)
+    except ValueError as e:
+        ap.error(f"--exact-wall-caps: {e}")
+    _opp_exact_k = args.exact_k if args.opp_exact_k is None else int(args.opp_exact_k)
+    if args.exact_solver == "rust":
+        # The tail's mirror IS the prefix's mirror (no second seating to drift), so a
+        # rust tail requires rust prefixes. Fail closed: a silently-python tail under a
+        # manifest that says rust is exactly the Class-A6 bypass this harness was
+        # audited for.
+        if _backend != "rust":
+            ap.error("--exact-solver rust requires --backend rust (the tail solves on "
+                     "the PREFIX's live MirrorState; a python prefix carries none)")
+        if opp_kind not in ("puct",) and _opp_exact_k > 0:
+            ap.error("--exact-solver rust needs BOTH sides mirror-carrying; use "
+                     "--opponent puct (or set --opp-exact-k 0)")
+    if args.exact_k_floor < 0:
+        ap.error("--exact-k-floor must be >= 0")
+    if args.exact_k_floor > max(args.exact_k, _opp_exact_k):
+        ap.error(f"--exact-k-floor {args.exact_k_floor} exceeds both arms' tail K "
+                 f"({args.exact_k}/{_opp_exact_k}) — the ladder could never run")
+    # Per-game F13 telemetry is emitted ONLY when the run actually uses the ladder, so
+    # every legacy/non-F13 cell's per-game JSON stays byte-identical to today's schema.
+    _f13_on = bool(_wall_caps or args.opp_exact_k is not None
+                   or args.exact_solver != "python" or args.exact_k_floor)
     if args.shm_eval_server and opp_kind != "net":
         ap.error("--shm-eval-server requires --opponent net:<ckpt.pt>")
     if cand_kind == "ab" and (args.cand_ab_steps is None or args.cand_ab_steps <= 0):
@@ -1648,6 +1897,7 @@ def main(argv=None) -> int:
         if results:
             summ = _summary(results, args.cand_sims, args.champ_sims, cand_label, opp_label)
             json.dump(summ, open(out / "summary.json", "w"), indent=2)
+            _patch_f13_manifest(out, summ)
         else:
             print("no cached results yet")
         return 0
@@ -1660,6 +1910,27 @@ def main(argv=None) -> int:
                             "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
                "exact_k": args.exact_k, "exact_mode": "clairvoyant",
                "exact_budget": EXACT_BUDGET,
+               # F13 exact-K ladder: the RESOLVED tail config, per arm. Recorded
+               # unconditionally (cheap, and a cell that ran the ladder must be
+               # distinguishable from one that did not without dirname archaeology).
+               "exact_tail": {"cand_exact_k": args.exact_k,
+                              "opp_exact_k": _opp_exact_k,
+                              "wall_caps": {str(k): v for k, v in sorted(_wall_caps.items())},
+                              "wall_caps_spec": _et.fmt_wall_caps(_wall_caps),
+                              "k_floor": args.exact_k_floor,
+                              "solver": args.exact_solver,
+                              "solver_impl": ("carc_rs.MirrorState.solve_endgame"
+                                              if args.exact_solver == "rust"
+                                              else "scripts/level2/endgame_solver.solve"),
+                              "cap_mechanism": ("fork+SIGKILL at the deadline (pure "
+                                                "function of the position; see "
+                                                "scripts/classical_search/exact_tail.py)"
+                                                if _wall_caps else "none (uncapped)"),
+                              "fallback": "K-1 threshold ladder, floored at k_floor; "
+                                          "prefix search plays the capped ply (never a leaf)",
+                              "censor_threshold": _et.CENSOR_THRESHOLD,
+                              "ladder_engaged": _f13_on,
+                              "prereg": "measurement/exact_k_ladder_20260803/PREREG_DRAFT.md"},
                "game_wall_secs": GAME_WALL_SECS,
                "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS"),
                "exp_id": args.exp_id or tag,
@@ -1851,7 +2122,9 @@ def main(argv=None) -> int:
                             args.shm_eval_server or "", id_q, cand_leaf_cfg,
                             ab_cfg_dict, args.opp_reuse_tree,
                             args.opp_pin_champion, args.oracle_prior_mult,
-                            args.oracle_prior_eps_coef, _backend)) as pool:
+                            args.oracle_prior_eps_coef, _backend,
+                            _wall_caps, _opp_exact_k, args.exact_solver,
+                            args.exact_k_floor, _f13_on)) as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
                 if r is None:
@@ -1874,6 +2147,7 @@ def main(argv=None) -> int:
         return 0
     summ = _summary(results, args.cand_sims, args.champ_sims, cand_label, opp_label)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
+    _patch_f13_manifest(out, summ)
 
     if not args.no_results_csv:
         if not new_mode:

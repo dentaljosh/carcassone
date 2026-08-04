@@ -923,6 +923,19 @@ class RustClairvoyantAgent:
             f"  python: {want[:400]}\n  rust  : {got[:400]}")
 
     # --- read-off ----------------------------------------------------------- #
+    def mirror(self):
+        """The live `MirrorState`, for callers that need a NON-search Rust surface.
+
+        Added for the F13 exact-K tail (scripts/classical_search/exact_tail.py), which
+        runs `MirrorState.solve_endgame` on the position this agent is already
+        mirroring rather than standing up a second, independently-seated mirror that
+        could drift. READ-ONLY by contract: `solve_endgame` takes `&self`, and callers
+        must NOT `advance()` through this handle — the mirror protocol's single choke
+        point stays `advance()` on the agent, driven by the harness for BOTH seats."""
+        if self._ms is None:
+            raise RuntimeError("mirror() before start_game()")
+        return self._ms
+
     def last_search(self) -> dict:
         """The last search's raw surface (floats as raw f64 BITS) — the G3 shape."""
         return dict(self._last)
