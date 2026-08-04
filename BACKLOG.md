@@ -690,3 +690,14 @@ that reach the artifact. Fix in `link_signature()`/`content_version()`; note any
 shipped version string once (harmless, but do it at an APK boundary). Workaround until then:
 symlink `.venv` into build worktrees (gitignore's `.venv/` doesn't match a symlink — leave it
 untracked).
+
+## 2026-08-04 — bench_exact_solver: preflight wheel-capability assert (fail fast, unfunded)
+
+The marg-frontier bench burned TWO launches (laptop then local, same night) on a stale installed
+`carc_rs` wheel missing `MirrorState.solve_endgame`: every job died instantly and the run wrote a
+full set of `status=="EXCEPTION"` rows that then pollute the jsonl (later analysis must filter
+them; a first launch's 41 exception rows sat interleaved with the relaunch's real rows). Fix: at
+startup, before forking any worker, assert the imported `carc_rs` exposes every capability the
+requested cells need (`solve_endgame` for marg/clair cells) and abort loudly with the wheel path +
+a "reinstall from rust/carc/target/wheels" hint. One assert + one test. Trigger: next time anyone
+touches `scripts/rustport/bench_exact_solver.py` (do NOT edit while a bench is live).
