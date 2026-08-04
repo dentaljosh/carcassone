@@ -160,6 +160,65 @@ def make_net_ranker(ckpt_path: str):
     return rank
 
 
+def make_g2_ranker(ckpt_path: str):
+    """A paper-G2 architecture-control checkpoint's VALUE head as a ranker.
+
+    G2 (measurement/paper_g2_20260803/PREREG.md) trains transformer-trunk and
+    from-scratch-ResNet arms whose HEADS are identical code to CarcassonneNet's,
+    so the ranker body below is a CHARACTER-FOR-CHARACTER copy of
+    make_net_ranker's: same terminal short-circuit to get_game_ended, same
+    make_single_evaluator, same mover-POV orientation flip on the child's
+    current_player. Only the constructor differs (it dispatches on the
+    checkpoint's `g2_arch.arch`). The instrument's arithmetic is untouched;
+    the v29_leaf/curve125 arms in the same pass are the integrity proof.
+    """
+    import torch
+    from carcassonne_ai.evaluators import make_single_evaluator
+    from carcassonne_ai.game_wrapper import Game
+    from carcassonne_ai.network import CarcassonneNet
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "paper_g2"))
+    from g2_transformer import CarcassonneTransformer
+
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    arch = ck.get("g2_arch")
+    if arch is None:
+        raise ValueError(f"{ckpt_path}: not a G2 checkpoint (no g2_arch)")
+    n_ch = int(ck.get("n_input_channels", 81))
+    n_scalar = int(ck.get("n_scalar_features", 42))
+    sighted = bool(ck.get("sighted", True))
+    if arch.get("arch") == "transformer":
+        net = CarcassonneTransformer(
+            window_size=int(arch.get("window_size", 25)),
+            n_input_channels=n_ch, n_scalar_features=n_scalar,
+            action_size=int(arch.get("action_size", 2511)),
+            d_model=int(arch["d_model"]), depth=int(arch["depth"]),
+            n_heads=int(arch["n_heads"]), ff_mult=int(arch["ff_mult"]),
+            value_global_pool=bool(arch.get("value_global_pool", True)),
+        )
+    elif arch.get("arch") == "resnet":
+        net = CarcassonneNet(
+            n_filters=int(arch["n_filters"]), n_blocks=int(arch["n_blocks"]),
+            n_input_channels=n_ch, n_scalar_features=n_scalar,
+            value_global_pool=bool(arch.get("value_global_pool", True)),
+        )
+    else:
+        raise ValueError(f"{ckpt_path}: unknown g2_arch {arch!r}")
+    net.load_state_dict(ck["model_state"])
+    net.train(False)
+    enc_game = Game(sighted=sighted,
+                    include_farm_scalars=(n_scalar > 10) and not sighted)
+    ev = make_single_evaluator(net, torch.device("cpu"), enc_game)
+
+    def rank(child, root_player, game):
+        ended = game.get_game_ended(child, root_player)
+        if ended != 0:
+            return max(-1.0, min(1.0, float(ended)))
+        _, v_nn = ev(child)
+        return float(v_nn) if child.state.current_player == root_player else -float(v_nn)
+
+    return rank
+
+
 def make_tempo_arm_ranker(ckpt_path: str):
     """A §5A tempo-arm RankNet (step1_train.py --save-model dict) as a ranker —
     the CL-040 fold-in re-adjudication read-out. Returns (label, rank_fn).
@@ -545,6 +604,11 @@ def main(argv=None) -> int:
                          '\'cap12:{"V25_CAP":"12"}\'. Each variant is a v29_leaf-shaped '
                          "ranker under its OWN explicit LeafConfig (no env mutation, no "
                          "cross-contamination); the baseline ranker is untouched.")
+    ap.add_argument("--g2-checkpoint", action="append", default=[], metavar="NAME:PATH",
+                    help="paper-G2 architecture-control checkpoint (repeatable; "
+                         "measurement/paper_g2_20260803/PREREG.md). Dispatches on the "
+                         "checkpoint's g2_arch (transformer or resnet) and scores its VALUE "
+                         "head with the SAME ranker body as --checkpoint. NAME labels the arm.")
     ap.add_argument("--n", type=int, default=0,
                     help="cap #K<=max_k roots to SCORE (0=all). Roots are pre-filtered by the "
                          "records' k_remaining then verified post-replay; --n counts SOLVED roots.")
@@ -563,6 +627,14 @@ def main(argv=None) -> int:
             name = f"{Path(ck).resolve().parent.parent.name}_{name}"
         rankers[name] = make_net_ranker(ck)
         print(f"[ranker] {name} <- {ck} (net value head, CPU)", flush=True)
+    for spec in args.g2_checkpoint:
+        name, sep, path = spec.partition(":")
+        if not sep:
+            name, path = f"g2_{Path(spec).stem}", spec
+        if name in rankers:
+            raise SystemExit(f"--g2-checkpoint: duplicate ranker name {name!r}")
+        rankers[name] = make_g2_ranker(path)
+        print(f"[ranker] {name} <- {path} (G2 arch-control value head, CPU)", flush=True)
     for ck in args.arm_ckpt:
         label, rank = make_tempo_arm_ranker(ck)
         if label in rankers:  # e.g. same arm+seed retrained into two dirs
@@ -653,7 +725,9 @@ def main(argv=None) -> int:
                for n in rankers}
     report = {
         "ranker_baseline": args.ranker, "rankers": list(rankers),
-        "checkpoints": [{"path": c, "sha256": _sha256(c)} for c in args.checkpoint],
+        "checkpoints": [{"path": c, "sha256": _sha256(c)} for c in args.checkpoint]
+        + [{"name": s.partition(":")[0], "path": s.partition(":")[2] or s,
+            "sha256": _sha256(s.partition(":")[2] or s)} for s in args.g2_checkpoint],
         "arm_ckpts": [{"path": c, "sha256": _sha256(c)} for c in args.arm_ckpt],
         "leaf_variants": leaf_variants,
         "max_k": args.max_k, "budget": args.budget,
