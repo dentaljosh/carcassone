@@ -4181,6 +4181,37 @@ Eight rulings in one message, all executed same evening:
 Also banked as standing policy (memory `feedback_worker_count_by_bottleneck`): **default W for rust
 workloads = cpu threads − 2** when no measured W* exists for the workload class.
 
+## 2026-08-03 (night) — Paper G2 transformer control CLOSED: pre-registered verdict C_GRAY — no architecture escapes, but no scratch arm fits, and the WARM START was load-bearing for outcome prediction itself (measurement)
+
+**The run:** three arms from random init (resnet_scratch 7.51M / tf_match 7.73M / tf_large 28.06M),
+16 passes over the CL-073 corpus, scored on the identical solver ruler (1,119 exact K≤2 roots,
+scored=1119/0/0; **integrity gate PASS** — v29_leaf/curve125 reproduce 0.9508/0.6095/0.6153 to 4 dp).
+Prereg `ffd9319` BEFORE the first step; ~10.9 GPU-h; survived a dirty reboot mid-arm-1.
+
+**Verdict = C_GRAY, quote BOTH halves in order:** (i) the referee objection is ANSWERED — the
+matched-parameter transformer is ruler-identical to the conv-ResNet (pre-declared paired contrast
+sign-z −0.94 vs a |z|≥2 bar; capacity leg −0.16), and all six checkpoints sit at ~2× the leaf's
+regret / τ ~0.01 vs 0.6153, sign-z −18.0..−19.3, indistinguishable from the published
+value_unlock_v1 — **no tested architecture escapes**; (ii) it is NOT a generalisation result —
+all three arms failed the §4.2 fit gate (held-out value↔outcome r 0.23/0.37/0.38, best-ever
+0.417–0.437, vs the 0.55 bar), so no scratch arm ever exhibited the *prediction* half of the
+dissociation, and per the prereg its poor ruler score is not Branch-A evidence. **Branch B did not
+fire; no strength flag; blocker #2 neither reopened nor further closed.**
+
+**New datum (CLAIMS_LEDGER D5, supporting-not-load-bearing):** the heuristic warm start was
+load-bearing for OUTCOME PREDICTION itself — the warm-started lineage reads r 0.66/0.68 on the
+same corpus/split while scratch arms memorise (resnet: train-MSE 17× down, held-out UP) or underfit
+(both tf); corroborates CL-066's "value ESS = games (2,280), not positions". Not a rescue: the two
+r≥0.61 warm-started nets still discriminate ~30× worse than the leaf.
+
+**Artifacts:** [READOUT](measurement/paper_g2_20260803/READOUT.md) · PREREG §7 filled · VERDICT.json +
+solver_score_g2.json committed · CLAIMS_LEDGER G2 row CLOSED C_GRAY with a wording lock (both halves,
+in order) + D5 row · OUTLINE §9.3 rewritten · merged `e30dc16`. No results.csv row (offline
+instrument), no PRODUCTION.yaml touch, band-free.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first
+
 **Reversal cost:** items 1/3/4 are builds/measurements (reversible; no production change until their
 own close-outs); 2/5/6/7 are bookkeeping state; 8 is public (origin now has the branch).
 **Phase:** measurement-first
