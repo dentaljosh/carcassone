@@ -373,16 +373,28 @@ review FIRST because it will sharpen §1/§6 framing (advisor §6, weeks 2–5 p
   capacity, not architecture family. Either (a) run the bounded modern-architecture
   control (a transformer-style ranker at the same data budget — advisor: ~1–2 box-days
   + a GPU day, worth ~1 referee objection) or (b) scope the claim "at this scale" in
-  the abstract and here. **RESOLVED 2026-08-03: option (a) was FUNDED and is RUNNING**
-  — the pre-registered transformer control,
-  [measurement/paper_g2_20260803/PREREG.md](../../../measurement/paper_g2_20260803/PREREG.md)
-  + [DESIGN_MEMO.md](../../../measurement/paper_g2_20260803/DESIGN_MEMO.md): three arms
-  from random init at matched parameters (7,731,599 vs 7,509,167) and matched corpus
-  passes (16), plus a 3.74× capacity leg, on the identical solver ruler. **Do not write
-  this paragraph — or the abstract's scope sentence — until the control returns:** the
-  wording is branch-dependent (Branch A ⇒ "conv / MLP / GBDT / ridge *and* transformer
-  families tested"; Branch B ⇒ §§5–6 and the abstract rescope to the tested family, not
-  merely this paragraph). Decision map: CLAIMS_LEDGER.md G2.
+  the abstract and here. **RESOLVED 2026-08-03: option (a) was FUNDED, RAN, and
+  returned `C_GRAY`** — the pre-registered transformer control,
+  [measurement/paper_g2_20260803/READOUT.md](../../../measurement/paper_g2_20260803/READOUT.md)
+  (bars: [PREREG.md](../../../measurement/paper_g2_20260803/PREREG.md), committed
+  `ffd9319` before the first training step; design:
+  [DESIGN_MEMO.md](../../../measurement/paper_g2_20260803/DESIGN_MEMO.md)). **This
+  paragraph must state BOTH halves, in this order, or it misreports the control:**
+  (i) a transformer trunk at matched parameters (7,731,599 vs 7,509,167), matched
+  corpus passes (16), identical heads and a strictly larger receptive field is
+  **indistinguishable from the conv-ResNet** on the solver ruler — pre-declared paired
+  contrast sign-z **−0.943** against a |z| ≥ 2 bar, with a 3.74× capacity leg equally
+  flat (−0.158) — and every arm sits ~2× the leaf's regret at sign-z −18.0 to −19.3;
+  (ii) **no from-scratch arm cleared the pre-registered outcome-prediction fit gate**
+  (held-out r 0.23/0.37/0.38, best-ever 0.42/0.44/0.42, against a 0.55 bar), so the
+  control shows *no architecture advantage* but does **not** establish that the
+  dissociation itself generalises across architecture class. Do not write "the
+  dissociation generalises"; the honest sentence is "no tested architecture escapes,
+  and architecture-generalisation of the dissociation is unresolved because no
+  from-scratch arm achieved outcome competence at this data scale". The abstract's
+  scope sentence (A9) is unchanged — it already carries "≤10M-parameter networks" and
+  should now read as covering the tested families, transformer included. Full decision
+  map and the wording constraint: CLAIMS_LEDGER.md G2.
 - **9.4 Single domain.** One game, one rule set, one incumbent heuristic. The
   mechanism argument (§6) is general; the measurement is not.
 - **9.5 Endgame-weighted discrimination ruler.** The 1,119 exact roots are all K=2;
