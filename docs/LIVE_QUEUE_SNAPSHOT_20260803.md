@@ -11,8 +11,8 @@
 
 | What | Where | Source |
 |---|---|---|
-| **paper-G2 ruler pass** (all 3 arms trained 16/16; ⚠️ all three FAILED the §4.2 fit gate — r 0.23/0.37/0.38 vs 0.55 bar — so Branch A cannot fire; ruler still owed for the FAILED-TO-FIT record + integrity gate + Branch B formality; `analyze_g2` on exit) | local box, W16, exit ~20:00–20:30 | G2 RUNBOOK.md (in the unmerged G2 worktree — merges with the verdict); DECISIONS pending close-out |
-| **CL-074 component-table remeasure under `fixed_v1`** — 8 knockout cells n=400 deck-paired, band 1.05e11, both sides fixed_v1+R9 rust | laptop W18 (cell 1 running); local joins W30 after the ruler; done ~late evening | [F7C_PREREG](../measurement/leaf_ablation_20260730/F7C_PREREG.md) *(misnamed F7C — it is the CL-074 remeasure)* |
+| ~~paper-G2~~ — **✅ CLOSED C_GRAY 2026-08-03 night** (no architecture escapes / no scratch arm fits — both halves per the ledger wording lock; D5 warm-start datum) | merged `e30dc16` | [READOUT](../measurement/paper_g2_20260803/READOUT.md); DECISIONS 2026-08-03 night |
+| **CL-074 component-table remeasure under `fixed_v1`** — 7/8 cells LANDED, **table TRANSFERS incl. the anticipation-pair null**; final cell (farmgrowthoff) finishing; close-out owed on exit (rows check → CL-074 amendment → band retire → DECISIONS) | both boxes, minutes out | [F7C_PREREG](../measurement/leaf_ablation_20260730/F7C_PREREG.md) *(misnamed F7C — it is the CL-074 remeasure)*; STATUS night block |
 | **Marginalized solver frontier bench** — fair K=4/5 n=20 + K=6 probes, 1 h caps (answers "is fair K=5/6 an option?") | laptop W4, overnight worst-case | `/mnt/carc-shared/marg_bench_20260803/`; DECISIONS 2026-08-03 solver entry |
 
 ## (b) Awaiting Joshua's hands or word
