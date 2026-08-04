@@ -1,9 +1,13 @@
 # G2 TRANSFORMER CONTROL — PRE-REGISTRATION
 
-> **STATUS: 🔒 PRE-REGISTERED 2026-08-03, BEFORE THE FIRST TRAINING STEP.**
-> This file is committed before any G2 arm is trained and before the ruler is
-> run. Nothing below may be edited after training starts except to record
-> outcomes in §7; any change to §§1–6 after that point must be a new dated
+> **STATUS: ✅ CLOSED 2026-08-03 — verdict `C_GRAY` (§7). Outcomes are in §7 ONLY;
+> §§1–6 stand verbatim as committed in `ffd9319`, before the first training step.**
+> Read-out: [READOUT.md](READOUT.md).
+>
+> *(original banner, retained)* **🔒 PRE-REGISTERED 2026-08-03, BEFORE THE FIRST
+> TRAINING STEP.** This file is committed before any G2 arm is trained and before
+> the ruler is run. Nothing below may be edited after training starts except to
+> record outcomes in §7; any change to §§1–6 after that point must be a new dated
 > section with the reason, not an overwrite.
 >
 > Design rationale: [DESIGN_MEMO.md](DESIGN_MEMO.md). Measurement only — no
@@ -182,4 +186,72 @@ confirmatory rerun, whose design would be Joshua's call.
 
 ## 7. Outcomes (filled in AFTER the fact; this section only)
 
-*(empty at pre-registration)*
+**Filled 2026-08-03 after the ruler ran. §§1–6 are unchanged from `ffd9319`.**
+Full read-out: [READOUT.md](READOUT.md). Evidence: `solver_score_g2.json`,
+`VERDICT.json`.
+
+### 7.1 §4.3 instrument-integrity gate — **PASS**
+
+`v29_leaf` and `curve125` both reproduce regret **0.9508** / top-1 **0.6095** / τ
+**0.6153** to four decimals (fourth independent reproduction: 2026-07-03, 07-23,
+07-30, 08-03). Ruler pass: `scored=1119 skipped=0 errors=0`, all K=2 marginalized.
+Continuity check: `iter_03` vs `value_unlock_v1` picked-child agreement = 0.277,
+matching the published 27.7%.
+
+### 7.2 §4.1 convergence — **all three arms CONVERGED** (no extension triggered)
+
+Relative improvement of the best held-out value MSE over the final quarter vs the
+first 12 epochs: `resnet_scratch` −0.261, `tf_match` −0.073, `tf_large` −0.032
+(negative = the final quarter was *worse*); held-out policy CE likewise. Plateaued,
+not truncated.
+
+### 7.3 §4.2 did-it-fit gate — **ALL THREE ARMS FAILED** (r-leg)
+
+| arm | train MSE halved | held-out r ≥ 0.55 | entropy ≥ 0.8002 | VALID CONTROL |
+|---|---|---|---|---|
+| `resnet_scratch` | ✅ 0.4709→0.0279 | ❌ 0.2303 (best 0.4227) | ✅ 1.6047 | **❌** |
+| `tf_match` | ❌ 0.4505→0.3406 | ❌ 0.3698 (best 0.4370) | ✅ 1.6349 | **❌** |
+| `tf_large` | ❌ 0.4486→0.3560 | ❌ 0.3834 (best 0.4169) | ✅ 1.6865 | **❌** |
+
+The r-leg fails under both readings (final-epoch and best-ever-epoch), so the gate
+outcome does not depend on which epoch's diagnostic is used. Per §4.2, **a failed-fit
+arm's poor ruler score is not evidence for Branch A.**
+
+### 7.4 §5 adjudication — headline `g2_tf_match_best` = **`C_GRAY`**
+
+Regret **1.9830** vs `curve125` 0.9508; paired **70 better / 551 worse / 498 tie,
+sign-z −19.302**; τ **0.0082 ± 0.0051** vs 0.6153 ± 0.0121 (Δτ −0.6052, dτ-z −48.6);
+top-1 0.0474 vs 0.6095. Branch A is blocked by §4.2 (invalid control) and by the
+r ≥ 0.61 condition; Branch B is not approached (wrong sign, |z| 19 the wrong way);
+B-partial is not reached (τ 0.0082 ≪ 0.30). **All six adjudicated arms return
+`C_GRAY`** — `g2_resnet_scratch` best/final (sign-z −18.55 / −18.19), `g2_tf_match`
+best/final (−19.30 / −18.64), `g2_tf_large` best/final (−19.08 / −18.01).
+
+**Branch B did NOT fire. No strength-program flag is raised.**
+
+### 7.5 The pre-declared architecture contrast — **indistinguishable**
+
+`g2_tf_match_best` vs `g2_resnet_scratch_best`: 173 better / 191 worse / 755 tie,
+**sign-z −0.943**, mean Δregret −0.0223. The bar was |z| ≥ 2; not met. The capacity
+leg is likewise flat vs the ResNet (sign-z −0.158). Every G2 arm is also
+indistinguishable from the published `value_unlock_v1` (|sign-z| 0.25–1.88, all < 2).
+
+### 7.6 The unplanned finding (recorded, not pre-registered as a hypothesis)
+
+Without the warm start, **no architecture reached even r = 0.55 outcome competence in
+16 corpus passes**, while the warm-started lineage nets on the identical corpus and
+split read 0.6564 and 0.6795. The ResNet memorised (train MSE 17× down, held-out MSE
+*up*, 19× gap); both transformers underfit (train MSE down only 21–24%). Consistent
+with CL-066's mechanism (value effective sample size = *games*, ~2,280 here, not
+positions). **Not a rescue of the learned-value route** — discrimination stayed ~30×
+worse than the leaf in every arm, including the two that do clear r ≥ 0.61.
+
+### 7.7 Disposition
+
+G2 closes as **`C_GRAY`**. The "you only tested convnets" objection is answered in the
+gray form (no tested architecture escapes; matched-parameter transformer ≡ ResNet on
+the ruler at sign-z −0.94), while architecture-*generalisation of the dissociation*
+remains formally unresolved because no from-scratch arm achieved outcome competence.
+Per §5 Branch C: no promotion, no claim change beyond OUTLINE §9.3 naming the control
+and its inconclusive form. No `results.csv` row, no `PRODUCTION.yaml` touch, nothing
+merged from this worktree by this agent.

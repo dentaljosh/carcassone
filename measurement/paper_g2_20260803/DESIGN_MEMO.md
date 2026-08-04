@@ -1,8 +1,18 @@
 # G2 — the TRANSFORMER CONTROL for "Outcome Prediction Is Not Move Discrimination"
 
-> **STATUS: 🔵 DESIGN + PRE-REGISTERED, TRAINING PENDING (2026-08-03).** Funded by
-> Joshua 2026-08-03. This memo is the *design rationale*; the binding bars live in
-> [PREREG.md](PREREG.md), which is committed **before the first training step**.
+> **STATUS: ✅ CLOSED 2026-08-03 — verdict `C_GRAY`.** All three arms trained
+> (≈10.9 GPU-h), the ruler pass ran clean (`scored=1119 skipped=0 errors=0`,
+> integrity gate PASS), and every arm returned `C_GRAY`: the transformer lands
+> indistinguishably from the ResNet (paired sign-z −0.94) and ~2× worse than the
+> champion leaf, **but no from-scratch arm cleared the pre-registered
+> outcome-prediction fit gate**, so this does not establish Branch A. Verdict and
+> the warm-start finding: **[READOUT.md](READOUT.md)**; adjudication: PREREG §7.
+> The design below is unchanged and is what ran.
+>
+> *(original banner, retained)* **🔵 DESIGN + PRE-REGISTERED, TRAINING PENDING
+> (2026-08-03).** Funded by Joshua 2026-08-03. This memo is the *design rationale*;
+> the binding bars live in [PREREG.md](PREREG.md), which is committed **before the
+> first training step**.
 > Measurement only — no `governance/PRODUCTION.yaml` touch, no `experiments/results.csv`
 > row (offline instrument; the paper ledger + this directory carry it), no champion change.
 

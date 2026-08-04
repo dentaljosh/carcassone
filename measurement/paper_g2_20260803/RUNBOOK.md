@@ -1,8 +1,14 @@
 # G2 — RUNBOOK / resumption note
 
-> **STATUS: 🟡 TRAINING IN FLIGHT (launched 2026-08-03).** This file exists so a
-> fresh session can pick the run up without reconstructing anything. Bars:
+> **STATUS: ✅ SPENT 2026-08-03 — all three arms trained, ruler pass complete,
+> verdict `C_GRAY`.** Steps 1–5 below all ran; nothing here is live. Kept for the
+> reproduction path and the resume machinery (both would be reused if the control
+> is ever extended). Verdict: **[READOUT.md](READOUT.md)** · bars + adjudication:
 > [PREREG.md](PREREG.md) · rationale: [DESIGN_MEMO.md](DESIGN_MEMO.md).
+>
+> *(original banner, retained)* **🟡 TRAINING IN FLIGHT (launched 2026-08-03).**
+> This file exists so a fresh session can pick the run up without reconstructing
+> anything.
 
 ## Where everything is
 
