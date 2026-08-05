@@ -115,6 +115,75 @@ on identical positions (per-game pairs: 130.1s/1346.6s, 81.3s/322.7s, 71.2s/354.
 the direct confirmation that the pre-F13 harness silently ran the python solver under
 `--backend rust` — the defect that would have made the K5/K6 rungs infeasible.
 
+## Analysis (pre-registered 2026-08-04)
+
+**The analysis script was written and committed BEFORE any cell ran** — that is the point
+of putting it here. It is [`scripts/classical_search/analyze_f13_ladder.py`](../../scripts/classical_search/analyze_f13_ladder.py),
+tested by [`tests/test_analyze_f13_ladder.py`](../../tests/test_analyze_f13_ladder.py)
+(23 tests). The exact invocation, fixed now:
+
+```bash
+python3 scripts/classical_search/analyze_f13_ladder.py \
+    --out-root /mnt/c/carc-shared/exact_k_ladder --band 106000000000 \
+    --verdict-json measurement/exact_k_ladder_20260803/VERDICT.json
+```
+
+(`--band` is what keeps the throwaway smoke bands out; substitute the band actually
+registered at launch. It emits the markdown table on stdout and `VERDICT.json` beside it.)
+
+What it does, all fixed in advance:
+
+- **Recomputes every per-rung statistic from the per-game records** (`seed<012d>_a<seat>.json`)
+  — n / W-D-L / winrate, elo ± 1σ, deck-paired seat-balanced margin + paired z, cap-hit
+  counters — and then **cross-checks against `summary.json`**, surfacing any disagreement
+  as a warning rather than silently preferring one.
+- **Censoring comes from `exact_tail`'s own functions** (`censored_rate` /
+  `censored_rate_capped` / `is_censored`), never a second copy. Any rung above
+  `CENSOR_THRESHOLD` is stamped **⚠️ NOT-A-VERDICT regardless of z**, and is excluded
+  from the deciding trend fit (a statistic a not-a-verdict rung feeds inherits the banner;
+  the all-rungs fit is still printed, labelled diagnostic-only).
+- **Primary statistic = the within-band, deck-matched trend.** For each deck shared by all
+  entering rungs it takes the within-deck OLS slope of the seat-balanced margin against K,
+  and reports mean ± sd/√S. If the decks are *not* shared across rungs — or the rungs span
+  more than one band — it **refuses to report a trend** rather than substituting an
+  across-cell regression that ignores the CRN structure the design rests on.
+- **Decision map, in the pre-registered precedence.** Branch 4 (K=2 control > +2σ, or the
+  incumbent arm hitting a wall cap) is checked FIRST and suppresses every other conclusion.
+  Then branch 2 (K≥5 uncensored ≥ +2σ, or trend z ≥ +2 — which per the 2026-08-04 amendment
+  buys an **11008-budget confirm on a fresh band**, not the endgame net), then branch 3
+  (censored-positive), then branch 1 (the powered null). If the trend is unavailable or any
+  rung is unreadable/censored, it prints **INCOMPLETE** instead of claiming branch 1.
+- **Power beside every estimate** — realised 1σ and the 2σ MDE per rung, plus the standing
+  n=400-paired ≈ ±12 elo figure — so a null is never over-read as "no effect".
+
+**Prereg defects found while implementing it** (flagged here rather than after results):
+
+1. **Which rungs enter the trend was not specified.** Decided now: all *uncensored* rungs,
+   K=2 control included (it is a legitimate ladder point, and excluding it would discard
+   the design's own anchor).
+2. **Whether the K=4 identity enters the fit was not specified.** Decided now: **NO** by
+   default (`--include-identity-anchor` exists but is off) — K=4 is an identity, not a
+   measured cell, and a zero-variance anchor would shrink the SE of a slope no data supports.
+3. **Branch precedence when several branches fire was not specified** (e.g. one uncensored
+   K≥5 positive *and* one censored K≥5 positive). Decided now: 4 → 2 → 3 → 1, with branch 3
+   still reported as an additional action on the censored rung.
+4. **"z" was not defined as one- or two-sided.** Decided now: the ≥ +2σ triggers are
+   **one-sided on a signed statistic**, positive = deeper exactness helps. A large *negative*
+   read is not branch 2 and is not branch 4 either — it is a null for the funding question.
+5. **The prereg says "+2σ" for the rungs but "trend slope z ≥ +2" for the trend**; treated
+   as the same threshold (`Z_FIRE = 2.0`).
+
+**Emitter facts that differ from what the prereg assumes** (parser is written to the emitter,
+not to the prose):
+
+- `manifest.json → config.candidate.exact_k` and `config.opponent.exact_k` **both stamp the
+  CANDIDATE's K**. The incumbent's K is only correct in `config.exact_tail.opp_exact_k`, which
+  is what the analysis reads. (Cosmetic-but-misleading manifest defect in `eval_puct_priors`.)
+- `manifest.json → config.backend.unconverted` still asserts the exact-K tail "stays Python on
+  both sides" — pre-F13 prose, now false under `--exact-solver rust`. Stale, not load-bearing.
+- The strength stats exclude watchdog-abandoned games (`game_timeout`) while the censoring
+  counters deliberately **include** them; the analysis mirrors that split exactly.
+
 ## Falsifiers / guards
 
 - Identity smoke before the ladder: K=4-vs-K=4, 20 games, must be 100% identical actions.
