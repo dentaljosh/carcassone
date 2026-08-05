@@ -81,6 +81,22 @@ a different instrument from ΔQ and are never pooled with it.
 not by uniformly worse play. The human's agree rate (the search's own best action) is 0.51 /
 0.45 against the champion's 0.73 / 0.73.
 
+**Is the gap distinguishable from noise? Marginally, and it replicates.** Computed from
+`summary.<seat>.mean_delta_q` and `.delta_q_dist.sd` / `.n_rated` (unpaired across seats within
+a game — plies are not paired, so this is the honest, not the tightest, comparator):
+
+| game | human − champion | se | z |
+|---|---:|---:|---:|
+| g1 | +0.01680 | 0.00720 | **+2.33** |
+| g2 | +0.02612 | 0.01052 | **+2.48** |
+
+Each game clears 2σ on its own and the two are independent games, which is why the ~3× is
+reported at all. But **z≈2.3–2.5 is a screen, not a verdict** by house standards, and the ratio
+itself is far less stable than the two matching values suggest — 3.03 and 2.99 agreeing to two
+decimals across games with these error bars is a coincidence, not a replicated constant. Read
+the finding as "the human seat's per-move disagreement cost is materially higher, ~2–4×",
+never as "3.0×".
+
 Do NOT read the ~3× as "three times worse a player". It is three times the per-move
 disagreement-cost *as priced by the champion's own 2752-sim search*, with confound 1 pushing
 the champion seat's figure down by construction.
