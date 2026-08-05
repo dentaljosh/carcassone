@@ -1,0 +1,57 @@
+{
+  "mode": "concurrency",
+  "concurrency": 12,
+  "knobs": {
+    "sims": 688,
+    "k_dets": 4,
+    "budget": 2752,
+    "moves": 2
+  },
+  "points": [
+    {
+      "batch_size": 8,
+      "wall_s": 18.08,
+      "total_moves": 24,
+      "throughput_moves_per_s": 1.327,
+      "per_agent_ms_per_move": 7994.3,
+      "effective_ms_per_move": 753.3,
+      "gpu": {
+        "util_pct_mean": 48.8,
+        "util_pct_max": 69.0,
+        "power_w_mean": 55.5,
+        "power_w_max": 69.7,
+        "n_samples": 32
+      }
+    },
+    {
+      "batch_size": 16,
+      "wall_s": 16.72,
+      "total_moves": 24,
+      "throughput_moves_per_s": 1.435,
+      "per_agent_ms_per_move": 7162.5,
+      "effective_ms_per_move": 696.8,
+      "gpu": {
+        "util_pct_mean": 53.1,
+        "util_pct_max": 68.0,
+        "power_w_mean": 60.2,
+        "power_w_max": 70.4,
+        "n_samples": 30
+      }
+    },
+    {
+      "batch_size": 32,
+      "wall_s": 16.09,
+      "total_moves": 24,
+      "throughput_moves_per_s": 1.492,
+      "per_agent_ms_per_move": 6888.0,
+      "effective_ms_per_move": 670.4,
+      "gpu": {
+        "util_pct_mean": 53.8,
+        "util_pct_max": 70.0,
+        "power_w_mean": 61.8,
+        "power_w_max": 71.8,
+        "n_samples": 28
+      }
+    }
+  ]
+}

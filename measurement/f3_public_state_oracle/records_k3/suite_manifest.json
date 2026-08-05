@@ -1,0 +1,14 @@
+{
+  "roots_file": "/home/doctor/projects/carcassone/measurement/f3_public_state_oracle/roots_k3_suite.jsonl",
+  "n_roots": 354,
+  "budget": 2000000,
+  "wall_cap_s": 600,
+  "k_dets": 4,
+  "sims_per_det": 688,
+  "total_sims": 2752,
+  "agent_seed": 101,
+  "decided_eps": 0.5,
+  "fusion_thresh": 0.5,
+  "tt_cap": "1500000",
+  "champion_config_hash": "e1ef44425aeaf9ac"
+}

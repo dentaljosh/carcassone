@@ -1,0 +1,42 @@
+[load] 314911 rows / 10067 groups  obs=(81,25,25) n_scalar=44  (memmap, low-RAM)
+[drop-bag] zeroed 32 bag scalars (mode -> farm-only)
+[split] train/val/test groups = 7033/1490/1544
+[leaf-alone TEST] overall regret=0.0263 top1=0.477 (n=1544)
+    [V4_listwise] ep1/30 train=3.3137 val=3.3092 (159s) *
+    [V4_listwise] ep2/30 train=3.3121 val=3.3092 (136s) *
+    [V4_listwise] ep3/30 train=3.3120 val=3.3092 (128s) *
+    [V4_listwise] ep4/30 train=3.3119 val=3.3091 (127s) *
+    [V4_listwise] ep5/30 train=3.3114 val=3.3085 (126s) *
+    [V4_listwise] ep6/30 train=3.3113 val=3.3091 (126s)
+    [V4_listwise] ep7/30 train=3.3105 val=3.3072 (126s) *
+    [V4_listwise] ep8/30 train=3.3085 val=3.3036 (126s) *
+    [V4_listwise] ep9/30 train=3.3058 val=3.3029 (126s) *
+    [V4_listwise] ep10/30 train=3.3051 val=3.3016 (126s) *
+    [V4_listwise] ep11/30 train=3.3038 val=3.3010 (126s) *
+    [V4_listwise] ep12/30 train=3.3034 val=3.3003 (126s) *
+    [V4_listwise] ep13/30 train=3.3026 val=3.2999 (127s) *
+    [V4_listwise] ep14/30 train=3.3019 val=3.3007 (126s)
+    [V4_listwise] ep15/30 train=3.3016 val=3.2995 (125s) *
+    [V4_listwise] ep16/30 train=3.3012 val=3.2993 (126s) *
+    [V4_listwise] ep17/30 train=3.3006 val=3.2994 (126s)
+    [V4_listwise] ep18/30 train=3.3003 val=3.2991 (125s) *
+    [V4_listwise] ep19/30 train=3.2999 val=3.2988 (125s) *
+    [V4_listwise] ep20/30 train=3.2998 val=3.2989 (126s)
+    [V4_listwise] ep21/30 train=3.2992 val=3.2988 (126s)
+    [V4_listwise] ep22/30 train=3.2986 val=3.2982 (125s) *
+    [V4_listwise] ep23/30 train=3.2981 val=3.2992 (126s)
+    [V4_listwise] ep24/30 train=3.2973 val=3.2979 (126s) *
+    [V4_listwise] ep25/30 train=3.2967 val=3.2986 (127s)
+    [V4_listwise] ep26/30 train=3.2964 val=3.2981 (126s)
+    [V4_listwise] ep27/30 train=3.2959 val=3.2978 (126s) *
+    [V4_listwise] ep28/30 train=3.2958 val=3.2978 (126s)
+    [V4_listwise] ep29/30 train=3.2955 val=3.2998 (126s)
+    [V4_listwise] ep30/30 train=3.2948 val=3.2983 (126s)
+  [V4_listwise       ] dumped per_group.npz: 1544 TEST groups @best_alpha=0.05 (mean delta=+0.005086, mean leaf_regret=0.026314)
+  [V4_listwise       ] net-alone tau=+0.202 top1=0.273 | combined a*=0.05 regret 0.0263->0.0212 (+19.3%) beats_leaf=True
+    (V4_listwise done in 3856s)
+
+==== STEP-1 GATE (mode=both) ====
+leaf-alone TEST regret=0.0263  best net-alone tau=+0.202
+ANY variant beats leaf (leaf+a*net < leaf): True
+-> measurement/feature_planes_gate/probe_farm/stage5_offline_gate.json

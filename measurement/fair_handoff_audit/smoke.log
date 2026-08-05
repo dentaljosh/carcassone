@@ -1,0 +1,259 @@
+[audit] 4 fair games @ sims=120 K=4 (prod v2.9 Bmild_cap8 leaf) vs clairvoyant champion | W4
+[audit] 4 games complete in 7.2 min
+[audit] probing 25 harvested positions for order-invariance...
+{
+  "config": {
+    "games": 4,
+    "sims": 120,
+    "k_dets": 4,
+    "leaf": "v2.9 Bmild_cap8",
+    "opponent": "clairvoyant champion",
+    "EXACT_MAX_K": null,
+    "fair_EXACT_MAX_K": 2
+  },
+  "runtime_min": 7.2,
+  "A_path_by_k": {
+    "1": {
+      "exact_marginalized": 4
+    },
+    "2": {
+      "exact_marginalized": 4
+    },
+    "3": {
+      "pimc": 4
+    },
+    "4": {
+      "pimc": 4
+    },
+    "5": {
+      "pimc": 4
+    },
+    "6": {
+      "pimc": 4
+    },
+    "7": {
+      "pimc": 4
+    },
+    "8": {
+      "pimc": 4
+    },
+    "9": {
+      "pimc": 4
+    },
+    "10": {
+      "pimc": 4
+    },
+    "11": {
+      "pimc": 4
+    },
+    "12": {
+      "pimc": 4
+    },
+    "13": {
+      "pimc": 4
+    },
+    "14": {
+      "pimc": 4
+    },
+    "15": {
+      "pimc": 4
+    },
+    "16": {
+      "pimc": 4
+    },
+    "17": {
+      "pimc": 4
+    },
+    "18": {
+      "pimc": 4
+    },
+    "19": {
+      "pimc": 4
+    },
+    "20": {
+      "pimc": 4
+    },
+    "21": {
+      "pimc": 4
+    },
+    "22": {
+      "pimc": 4
+    },
+    "23": {
+      "pimc": 4
+    },
+    "24": {
+      "pimc": 4
+    },
+    "25": {
+      "pimc": 4
+    },
+    "26": {
+      "pimc": 4
+    },
+    "27": {
+      "pimc": 4
+    },
+    "28": {
+      "pimc": 4
+    },
+    "29": {
+      "pimc": 4
+    },
+    "30": {
+      "pimc": 4
+    },
+    "31": {
+      "pimc": 4
+    },
+    "32": {
+      "pimc": 4
+    },
+    "33": {
+      "pimc": 4
+    },
+    "34": {
+      "pimc": 4
+    },
+    "35": {
+      "pimc": 4
+    },
+    "36": {
+      "pimc": 4
+    },
+    "37": {
+      "pimc": 4
+    },
+    "38": {
+      "pimc": 4
+    },
+    "39": {
+      "pimc": 4
+    },
+    "40": {
+      "pimc": 4
+    },
+    "41": {
+      "pimc": 4
+    },
+    "42": {
+      "pimc": 4
+    },
+    "43": {
+      "pimc": 4
+    },
+    "44": {
+      "pimc": 4
+    },
+    "45": {
+      "pimc": 4
+    },
+    "46": {
+      "pimc": 4
+    },
+    "47": {
+      "pimc": 4
+    },
+    "48": {
+      "pimc": 4
+    },
+    "49": {
+      "pimc": 4
+    },
+    "50": {
+      "pimc": 4
+    },
+    "51": {
+      "pimc": 4
+    },
+    "52": {
+      "pimc": 4
+    },
+    "53": {
+      "pimc": 4
+    },
+    "54": {
+      "pimc": 4
+    },
+    "55": {
+      "pimc": 4
+    },
+    "56": {
+      "pimc": 4
+    },
+    "57": {
+      "pimc": 4
+    },
+    "58": {
+      "pimc": 4
+    },
+    "59": {
+      "pimc": 4
+    },
+    "60": {
+      "pimc": 4
+    },
+    "61": {
+      "pimc": 4
+    },
+    "62": {
+      "pimc": 4
+    },
+    "63": {
+      "pimc": 4
+    },
+    "64": {
+      "pimc": 4
+    },
+    "65": {
+      "pimc": 4
+    },
+    "66": {
+      "pimc": 4
+    },
+    "67": {
+      "pimc": 4
+    },
+    "68": {
+      "pimc": 4
+    },
+    "69": {
+      "pimc": 4
+    },
+    "70": {
+      "pimc": 4
+    },
+    "71": {
+      "pimc": 4
+    },
+    "72": {
+      "pimc": 4
+    }
+  },
+  "A_latch_k_distribution": {
+    "2": 2,
+    "1": 2
+  },
+  "B_solve_modes": {
+    "marginalized|ab=False": 8
+  },
+  "B_clairvoyant_or_alphabeta_solves": 0,
+  "B_solve_k_distribution": {
+    "1": 4,
+    "2": 4
+  },
+  "C_solver_invariance": {
+    "n": 4,
+    "n_checked": 4,
+    "n_skipped_budget": 0,
+    "all_invariant": true,
+    "n_violations": 0
+  },
+  "C_pimc_order_sensitivity": {
+    "n_positions": 15,
+    "n_with_any_flip": 5,
+    "total_perm_trials": 45,
+    "total_flips": 8
+  }
+}
+[audit] wrote /home/doctor/projects/carcassone/measurement/fair_handoff_audit/audit_summary.json

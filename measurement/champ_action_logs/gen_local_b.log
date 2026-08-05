@@ -1,0 +1,1 @@
+gen_fair_distill: games=250 k_dets=4 sims=688 (budget=2752) exact_endgame=True exact_max_k=2 sighted=False batch_size=1 rep=78ch/10sc leaf_hash=6dfffd57051690f2 net_mode=net-free (champion) | 0 cached, 250 to play, 8 workers, out=/mnt/c/carc-shared/champ_action_logs_20260721_b

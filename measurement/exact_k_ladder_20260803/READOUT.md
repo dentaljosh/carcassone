@@ -1,10 +1,15 @@
 # F13 READ-OUT — the modern exact-K ladder: deeper-than-production exact play SATURATES
 
-> **STATUS: MEASUREMENT COMPLETE 2026-08-05.** All four rungs landed, none censored, the
-> negative control is healthy. The pre-registered map fires **branch 2 (screen-positive)**;
-> the *scientific* content is a **saturation curve that flattens exactly at the incumbent's
-> K=4**, and a **flat winrate at every rung**. The one open item is Joshua's funding call on
-> the amended branch-2 confirm (see §5).
+> **STATUS: ✅ CLOSED 2026-08-05 (Joshua: "close").** All four rungs landed, none censored,
+> the negative control healthy. The pre-registered map fires **branch 2 (screen-positive) on
+> MARGIN**, but the question it was built to answer — *wins* — reads **null at every rung**,
+> and the *scientific* content is a **saturation curve that flattens exactly at the
+> incumbent's K=4**. **The amended branch-2 confirm was NOT bought** (§5): it would have
+> priced whether a ~0.1 pts/deck, winrate-null effect survives a 4× budget increase, which
+> the low-sims inflation pattern predicts it does not.
+> **Consequence: the endgame-exactness question is CLOSED, and the specialized endgame net
+> is STILLBORN on a ceiling argument** — its value cannot exceed the value of the exact play
+> it distils, which is measured here at approximately nothing.
 > Prereg (incl. the pre-results amendments): [PREREG_DRAFT.md](PREREG_DRAFT.md) ·
 > analysis: `scripts/classical_search/analyze_f13_ladder.py` (committed before any cell ran) ·
 > machine verdict: [VERDICT.json](VERDICT.json) · rows: `experiments/results.csv f13_exactk*`.
@@ -80,11 +85,16 @@ production is ~+0.1 pts/deck, saturated, with no detectable winrate effect. The 
 endgame net's ceiling is the value of the exact play it would distill, so this bounds that
 lever at approximately nothing.
 
-**OPEN — Joshua's call:** buy the amended branch-2 confirm (deploy budget 11008, fresh band,
-~half a box-day) — or record the ceiling and close the endgame-exactness question.
-Standing recommendation: **close it.** A confirm would be asking whether a ~0.1 pts/deck,
-winrate-null effect survives a 4× budget increase, and the low-sims inflation pattern
-(`feedback_sims_washout_net_eval`) predicts it shrinks rather than grows.
+**RESOLVED 2026-08-05 — Joshua: "close". The confirm was NOT bought.** The endgame-exactness
+question closes here, on the ceiling argument rather than on a null: deeper-than-production
+exact play is *real* (margin z +2.7/+2.8, uncensored) and *worthless* (~0.1 pts/deck,
+saturated by K6, winrate flat against a ±35 elo floor). The specialized endgame net is
+**STILLBORN** — the ceiling above it is the value of exact play, now measured.
+
+**Reopen bar** (so a future reader knows what would revive this): a *deploy-budget* cell
+showing the K≥5 margin effect GROWING rather than shrinking with search budget, plus a
+mechanism by which margin-without-wins converts to wins. Absent both, deeper exact endgame
+play is a closed lever.
 
 ## 6. Caveats
 

@@ -1,0 +1,61 @@
+planb waiter start 2026-07-19 00:29:37 SHARE=/mnt/c/carc-shared OW=12
+chain drained @ 2026-07-19 03:09:09 — launching PROD-DEPTH washout (it16 k4x688 n200)
+[fair-nvn-orch] CAND iter_16.pt: 81ch/42sc (sighted)
+[fair-nvn-orch] OPP  iter_02.pt: 78ch/12sc (non-sighted)
+[fair-nvn-orch] exporting -> TorchScript (parity-gated)
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt on cuda
+[export] tracing... (n_ch=81, n_scalar=42)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=8.28e-05  max|dvalue|=5.45e-04  OK
+[export] OK -> /tmp/carc_fairnvnC_Doctor.ts.pt  (n_scalar=42, C=81, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[export] torch.jit.script unavailable (RuntimeError); tracing instead
+[export] loading /mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt on cuda
+[export] tracing... (n_ch=78, n_scalar=12)
+[export] fp-parity vs eager Python eval path:
+  k=  1: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  3: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k=  8: max|dpriors|=0.00e+00  max|dvalue|=0.00e+00  OK
+  k= 37: max|dpriors|=4.00e-05  max|dvalue|=2.68e-07  OK
+[export] OK -> /tmp/carc_fairnvnO_Doctor.ts.pt  (n_scalar=12, C=78, device=cuda)
+[export] Note: load this on the SAME device family in Rust (cuda).
+[fair-nvn-orch] start carc-orch CAND (W=12 fwd=2 max_batch=16) shm=fairnvnCDoctor n_ch=81 n_scalar=42
+[fair-nvn-orch] start carc-orch OPP  (W=12 fwd=2 max_batch=16) shm=fairnvnODoctor n_ch=78 n_scalar=12
+[fair-nvn-orch] BOTH servers READY | CAND shm='fairnvnCDoctor' 81ch/42sc | OPP shm='fairnvnODoctor' 78ch/12sc | client W=12
+[head-to-head] opponent=net
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[head-to-head] opp_net=/mnt/c/carc-shared/rod_v2_flywheel/ckpt/iter_02.pt
+[head-to-head] opponent rep=NON-SIGHTED 78ch/12sc (inferred from ITS OWN checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+[fair-netprior] net=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_16.pt
+[fair-netprior] rep=SIGHTED 81ch/42sc (inferred from the checkpoint) | priors=net_policy_head value=frozen_v29_curve125_leaf
+fair-puct[fair_fair-netprior_c1.5_tau5_float_kd4_s688_vs_net-iter_02_k2-leafa36d2e15]: info=fair-netprior n=200 paired=True K=2 k_dets=4 sims=688 | 0 cached, 200 to play, 12 workers, out=/mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter16_vs_rodv2iter02_PROD_DEPTH
+  [orch] candidate SHM eval-server 'fairnvnCDoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnCDoctor (81ch/42-scalar sighted PRIORS)
+  [orch] opponent  SHM eval-server 'fairnvnODoctor': 12 CPU workers attach to /dev/shm/carc_fairnvnODoctor (78ch/12-scalar non-sighted PRIORS)
+  10/200 played (214.3s/game, ~679 min left)
+  20/200 played (124.9s/game, ~375 min left)
+  30/200 played (156.8s/game, ~444 min left)
+  40/200 played (171.4s/game, ~457 min left)
+  50/200 played (178.1s/game, ~445 min left)
+  60/200 played (183.6s/game, ~428 min left)
+  70/200 played (186.9s/game, ~405 min left)
+  80/200 played (176.1s/game, ~352 min left)
+  90/200 played (179.5s/game, ~329 min left)
+  100/200 played (178.5s/game, ~298 min left)
+
+=== FAIR-PUCT[fair-netprior] (K=2, k_dets=4, sims=688, total~2752) vs FAIR NET-PRIOR agent (iter_02.pt, non-sighted rep, curve125 leaf, k4x688) ===
+games: 200   candidate: 100W / 1D / 99L   winrate 0.502 (z=+0.07)
+avg score diff (candidate - opponent): +0.57
+ELO: +1.7  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +0.57   z = +0.41
+prefix ms/move: candidate 14819  opponent 13840  (ratio 1.07x)
+fair endgame: candidate latched 200/200 games, 16.16s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 18.17s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/distill_flywheel_sighted_20260716/eval_iter16_vs_rodv2iter02_PROD_DEPTH/summary.json
+washout eval exit rc=1 @ 2026-07-19 08:42:23

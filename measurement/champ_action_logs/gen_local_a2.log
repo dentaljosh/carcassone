@@ -5,3 +5,4 @@ gen_fair_distill: games=450 k_dets=4 sims=688 (budget=2752) exact_endgame=True e
   40/293 games (82.5s/game, 5755 rows [5595 policy / 160 value-only], ~348 min left)
   50/293 games (83.6s/game, 7195 rows [6995 policy / 200 value-only], ~339 min left)
   60/293 games (80.9s/game, 8635 rows [8395 policy / 240 value-only], ~314 min left)
+[done] 64 games, 9211 rows (8955 policy / 256 value-only), 0 skipped (5286.0s). shards in /mnt/c/carc-shared/champ_action_logs_20260721

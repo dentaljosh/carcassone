@@ -1,0 +1,7 @@
+[chain 2026-07-17 00:12:10] overnight chain START (pid=1617391)
+[chain 2026-07-17 00:12:10] step 1: waiting for sighted stage-1 (pgrep -f 'run_distill_[s]ighted', poll every 120s)
+[chain 2026-07-17 01:32:11] step 1: sighted stage-1 driver has exited
+[chain 2026-07-17 01:32:11] step 1: sanity OK — /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt present (30083965 bytes)
+[chain 2026-07-17 01:32:11] HH1: START -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/logs/hh1_vs_champion.log
+Terminated
+[chain 2026-07-17 07:30:29] [signal] TERM/INT — chain interrupted

@@ -1,0 +1,53 @@
+v29[Bmild_cap8_bcap6] vs [Bmild_cap8]: n=400 sims=800 | 0 cached, 400 to play, 8 workers, out=/mnt/c/carc-shared/v210_gates/cap6_vs_cap8_h800_n400
+  10/400 played (30.8s/game, ~200 min left)
+  20/400 played (24.7s/game, ~156 min left)
+  30/400 played (22.0s/game, ~136 min left)
+  40/400 played (20.9s/game, ~126 min left)
+  50/400 played (22.8s/game, ~133 min left)
+  60/400 played (21.8s/game, ~124 min left)
+  70/400 played (21.4s/game, ~118 min left)
+  80/400 played (20.9s/game, ~111 min left)
+v29[Bmild_cap8_bcap6] vs [Bmild_cap8]: n=400 sims=800 | 88 cached, 312 to play, 24 workers, out=/mnt/c/carc-shared/v210_gates/cap6_vs_cap8_h800_n400
+  10/312 played (25.4s/game, ~128 min left)
+  20/312 played (13.7s/game, ~67 min left)
+  30/312 played (16.7s/game, ~78 min left)
+  40/312 played (13.2s/game, ~60 min left)
+  50/312 played (14.5s/game, ~63 min left)
+  60/312 played (13.1s/game, ~55 min left)
+  70/312 played (11.7s/game, ~47 min left)
+  80/312 played (13.1s/game, ~51 min left)
+  90/312 played (11.9s/game, ~44 min left)
+  100/312 played (12.7s/game, ~45 min left)
+  110/312 played (12.1s/game, ~41 min left)
+  120/312 played (11.9s/game, ~38 min left)
+  130/312 played (12.3s/game, ~37 min left)
+  140/312 played (11.7s/game, ~33 min left)
+  150/312 played (12.2s/game, ~33 min left)
+  160/312 played (11.8s/game, ~30 min left)
+  170/312 played (12.0s/game, ~28 min left)
+  180/312 played (11.8s/game, ~26 min left)
+  190/312 played (11.5s/game, ~23 min left)
+  200/312 played (11.9s/game, ~22 min left)
+  210/312 played (11.6s/game, ~20 min left)
+  220/312 played (11.8s/game, ~18 min left)
+  230/312 played (11.6s/game, ~16 min left)
+  240/312 played (11.5s/game, ~14 min left)
+  250/312 played (11.7s/game, ~12 min left)
+  260/312 played (11.5s/game, ~10 min left)
+  270/312 played (11.8s/game, ~8 min left)
+  280/312 played (11.6s/game, ~6 min left)
+  290/312 played (11.6s/game, ~4 min left)
+  300/312 played (11.6s/game, ~2 min left)
+  310/312 played (11.3s/game, ~0 min left)
+  312/312 played (11.3s/game, ~0 min left)
+
+=== v2.9[Bmild_cap8_bcap6] vs v2.8 @ sims=800 ===
+games:  400   candidate: 200W / 5D / 195L   winrate 0.506
+avg score diff (cand - base): +0.50   paired z(margin): +0.45
+ELO: +4.3  (+/- 17.4 1sigma)
+  pre-endgame split (snapshot at deck<=6):
+    behind         n= 154  wr=0.146  avg_diff=-17.36
+    even           n=  69  wr=0.486  avg_diff=+0.94
+    ahead          n=  88  wr=0.744  avg_diff=+9.95
+    blowout_ahead  n=  89  wr=0.910  avg_diff=+21.73
+  POWER NOTE: |elo|<=35 at n=400 (1σ≈±17); a >=0.53 verdict needs n>=400.

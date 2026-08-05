@@ -11,6 +11,7 @@ Every non-trivial technical decision gets logged here. The bar for "non-trivial"
 > Ctrl-F a date or keyword. Entries below are reverse-chronological. This index is maintained by hand — when you add an entry, add its line here. The current path forward is **not** in any single entry; see [STATUS.md](STATUS.md) (live state; the 06-02 correction plan is an executed historical artifact).
 
 **2026-06 — correction era (current)**
+- 2026-08-05 (**F13 EXACT-K LADDER RAN AND CLOSED — THE CURVE SATURATES EXACTLY AT PRODUCTION, AND THE ENDGAME NET IS STILLBORN.** Four rungs vs the K=4 incumbent, band 1.06e11 (retired), n≈400 deck-paired each, fixed_v1+R9, rust solver, NONE censored: margin/deck K2 −1.07 · K3 −0.76 · K5 +0.11 · K6 +0.10 ⇒ **marginal value per +1 K = +0.31 → +0.76 → +0.11 → −0.01**, the return collapsing ~7× at the incumbent's own K. **Winrate FLAT at every rung** (elo +0.9±17.4 / +3.5±17.5 vs a ±35 elo 2σ floor) ⇒ the June "margin scales with K, winrate does not" REPLICATES powered at every rung. Branch 2 fired on MARGIN while the prereg's question was WINS — a drafting defect recorded, not reinterpreted. Deploy-budget confirm offered and NOT bought. **CL-076 minted; the specialized endgame net dies on the ceiling argument without a line written — the cheap ladder killed the expensive lever, which is what dominance-ordering is for.** Gates first: identity 17/20 games 0 divergences (rust tail vs the pre-F13 PYTHON tail — which also measured the tail at **4–10× faster**, the defect that would have made K5/K6 infeasible), K6 rider cap-hit 0.038. Full entry at file end.)
 - 2026-08-04 (morning) (**FAIR-K FRONTIER PRICED — marg K5 is NOT an option (~26% under a 1 h cap, clean), K6 no; marg K4 is the offline-labeling frontier (75–80% under 1 h, K−1 fallback needed for the tail).** Clean desktop verdict run REPRODUCES the confounded laptop run (K4 15/20 vs 16/20; K5 5/19 vs 5/20) ⇒ the CL-074-farm co-location contaminated the instrument but not the answer. Play latch unchanged at K≤2 — no K≥4 marg is interactive. W4-for-timing stands; W-for-throughput now RAM-guarded at local ≤12 / laptop ≤5 from measured rss (1.23 GB max); `wsweep_exact_solver.py` teed, gated on a funded label consumer. WSL teardown ate the last 2 jobs (1 K5 censored; K6 probe re-fired). Full entry at file end.) (**CL-074 COMPONENT TABLE REMEASURED UNDER fixed_v1 — IT TRANSFERS.** All 8 knockout cells n=400 deck-paired, band 1.05e11 (retired), both sides fixed_v1+R9 rust: same rank order, same nulls, every Δ-vs-walled inside CL-068 cross-band humility. The anticipation pair's balance-not-information null REPLICATES (Joshua's remeasure rider DISCHARGED); farm-growth reads suggestive-positive a THIRD time (+42.8 → +10.4 → +25.2, none ≥2σ) and stays UNPROMOTED. ⚠️ its artifacts are misnamed `F7C_*` — unrelated to the F7c skew-guard item.) *(index line backfilled 2026-08-04)*
 - 2026-08-03 (night) (**PAPER G2 TRANSFORMER CONTROL CLOSED — pre-registered verdict C_GRAY, quote both halves in order.** Three scratch arms (resnet 7.51M / tf_match 7.73M / tf_large 28.06M), 16 passes, identical solver ruler: (i) the referee objection is ANSWERED — the matched-parameter transformer is ruler-identical to the conv-ResNet, no tested architecture escapes; (ii) it is NOT a generalisation result — all three failed the §4.2 fit gate, so no scratch arm ever showed the *prediction* half. Branch B did not fire; blocker #2 neither reopened nor further closed. New datum D5: the heuristic WARM START was load-bearing for outcome prediction itself.) *(index line backfilled 2026-08-04)*
 - 2026-08-03 (evening) (**JOSHUA'S DIRECTIVE BATCH — eight rulings, all executed same evening.** APK rebuild + E4 rules flip to fixed_v1 FUNDED → delivered and device-verified (13/13 on the Pixel; E4 games from here are played under fixed_v1) · ANE n≈2150 CLOSED UNFUNDED · CL-074 component remeasure FUNDED · F7c skew-guard hoist LAUNCHED · G1 pondering and G3 per-move cost MOOT · WC tie-break flag approved-but-unscheduled · **FIRST PUSH** of `android-app` to origin. Standing policy banked: default W for rust workloads = cpu threads − 2 absent a measured W\*.) *(index line backfilled 2026-08-04)*
@@ -4297,4 +4298,67 @@ is unchanged (it waits on the F13 clairvoyant ladder, not on fair-K cost); the W
 is RAM-guarded at local ≤12 / laptop ≤5 from the measured rss max.
 
 **Reversal cost:** none (cost measurement only; PRODUCTION.yaml untouched).
+**Phase:** measurement-first
+
+---
+
+## 2026-08-05 — F13: the exact-K ladder saturates at production; the endgame net is stillborn
+
+**Question (prereg 2026-08-03):** does exact endgame play *deeper than production* buy **wins**
+at the modern champion under the adopted rules? The June null was powered only through K=3,
+era-bound (RoD1/h3200, v2.8, walled), and its winrate ladder 0.526→0.537→0.568 was monotone-up.
+
+**Answer: no — and the shape of the "no" is the finding.** Band 1.06e11 (now retired), four
+rungs vs the production K=4 incumbent, n≈400 deck-paired each on the SAME decks, fixed_v1+R9
+both sides, rust solver, caps 5:300/6:600 with a downward fallback floored at K=4. No rung
+censored (rates 0.000 / 0.000 / 0.082 / 0.129 against a 0.20 threshold).
+
+| rung | wr | elo ±1σ | margin/deck | paired z |
+|---|---|---|---|---|
+| K2 *(control)* | 0.484 | −11.3 ± 17.4 | −1.07 | −8.51 |
+| K3 | 0.484 | −11.3 ± 17.4 | −0.76 | −6.44 |
+| K5 | 0.501 | +0.9 ± 17.4 | +0.11 | +2.72 |
+| K6 | 0.505 | +3.5 ± 17.5 | +0.10 | +2.81 |
+
+**The saturation, which is the durable content:** marginal value per +1 K runs
+**+0.31 → +0.76 → +0.11 → −0.01** pts/deck. The return collapses ~7× exactly at the
+incumbent's K=4 and is gone by K6. **Production sits at the knee of the curve — a threshold
+originally chosen on COST grounds in June (DECISIONS 2026-06-24 stopped at K=4 because the
+winrate ladder went flat), now vindicated on VALUE.** ⚠️ Do not quote the fitted trend slope
+(+0.321/K, z +8.21) on its own: it is a straight line through a saturating curve and is driven
+almost entirely by the two rungs BELOW production.
+
+**Winrate is flat everywhere** (2σ MDE ±35 elo) ⇒ the June result replicates, powered at every
+rung, modern era. The negative control is healthy (K=2, shallower, loses at z −8.51), so
+branch 4 — the instrument alarm — did not fire: the harness measured the game, not its wiring.
+
+**⚠️ A prereg defect of mine, recorded rather than smoothed over.** The question is worded on
+*wins*; every decision-map threshold is written on *paired margin z*. So the map mechanically
+fired **branch 2** (K5 +2.72, K6 +2.81 uncensored) while the question it exists to answer read
+null. The numbers stand exactly as pre-registered; only their sufficiency for further FUNDING
+was at issue. Joshua's call: **"close"** — the amended deploy-budget confirm was NOT bought,
+because it would have priced whether a ~0.1 pts/deck winrate-null effect survives a 4× budget
+increase, and `feedback_sims_washout_net_eval` predicts it shrinks.
+
+**Consequences.** (1) **CL-076** minted (exact endgame depth saturates at K=4; deeper buys
+margin, not wins). (2) **The specialized endgame net is STILLBORN** — its ceiling is the value
+of the exact play it would distil, now measured at ~nothing; killed without a line written,
+which is exactly what dominance-ordering it behind a ~1-box-day ladder was for. (3) The
+LEVER_INDEX exact:K row gets its final stamp. (4) Band 1.06e11 retired (decision-influenced).
+
+**Gates and by-catch worth more than the verdict.** The identity gate compared the NEW rust
+tail against the pre-F13 **python** tail move-for-move — 17/20 games, 0 divergences across
+~2,400 plies — and incidentally measured the rust tail at **4–10× faster**, confirming the
+harness had been silently running the python solver under `--backend rust`; unfixed, that
+alone would have made the K5/K6 rungs infeasible. Also fixed pre-launch: `manifest.json` (and
+the results.csv note strings) stamped the CANDIDATE's exact-K into the OPPONENT's slot, so
+every asymmetric cell misdescribed its own incumbent. Three operational lessons: a 10-game
+pre-flight rider **underestimated the K6 cap-hit rate ~3×** (0.038 vs 0.129 realised — size a
+rider to the decision, not to convenience); the K≤4 incumbent tail is **uncapped by design**,
+so every rung ends with an unbounded straggler tail; and killing redundant stragglers once the
+record count reaches n is provably safe because that count IS the launcher's loop-exit
+condition.
+
+**Reversal cost:** none (measurement only; PRODUCTION.yaml, the champion, and the K≤2
+in-game latch all UNTOUCHED).
 **Phase:** measurement-first

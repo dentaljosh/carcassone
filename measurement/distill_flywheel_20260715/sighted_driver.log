@@ -1,0 +1,48 @@
+=== DISTILL STAGE-1 @ Thu Jul 16 12:06:14 EDT 2026 — TAG=distill_flywheel_sighted_20260716 iters 0..3 games=600 ===
+    teacher: FairHeuristicPriorAgent k_dets=4 x sims=688 (curve125) · window 12 · aux_weight 0
+    boxes (gen): local W16  laptop W12 (use_laptop=1) · orch-OFF (net-free CPU)
+  bundle tip: 54fe12f
+  laptop synced to 54fe12f
+
+########## DISTILL ITER 0 -> iter_00 @ Thu Jul 16 12:06:32 EDT 2026 (warm from warmstart_sighted.pt) ##########
+[it0] gen seed_start=700000000 -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_00 @ Thu Jul 16 12:06:32 EDT 2026
+[it0] gen complete (600 npz) @ Thu Jul 16 15:20:02 EDT 2026
+[it0] train (accumulate iter_00..iter_00, window 12) @ Thu Jul 16 15:20:02 EDT 2026
+[it0] screen @ Thu Jul 16 15:22:36 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it0] probe_metrics @ Thu Jul 16 15:22:36 EDT 2026
+[it0] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 15:22:43 EDT 2026
+
+########## DISTILL ITER 1 -> iter_01 @ Thu Jul 16 15:22:43 EDT 2026 (warm from iter_00.pt) ##########
+[it1] gen seed_start=700100000 -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_01 @ Thu Jul 16 15:22:43 EDT 2026
+[it1] gen complete (600 npz) @ Thu Jul 16 18:35:23 EDT 2026
+[it1] train (accumulate iter_00..iter_01, window 12) @ Thu Jul 16 18:35:23 EDT 2026
+[it1] screen @ Thu Jul 16 18:40:27 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it1] probe_metrics @ Thu Jul 16 18:40:28 EDT 2026
+[it1] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 18:40:34 EDT 2026
+
+########## DISTILL ITER 2 -> iter_02 @ Thu Jul 16 18:40:34 EDT 2026 (warm from iter_01.pt) ##########
+[it2] gen seed_start=700200000 -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_02 @ Thu Jul 16 18:40:34 EDT 2026
+[it2] gen complete (600 npz) @ Thu Jul 16 21:54:37 EDT 2026
+[it2] train (accumulate iter_00..iter_02, window 12) @ Thu Jul 16 21:54:37 EDT 2026
+[it2] screen @ Thu Jul 16 22:02:03 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it2] probe_metrics @ Thu Jul 16 22:02:03 EDT 2026
+[it2] ✅ iter complete (screen HEALTHY) @ Thu Jul 16 22:02:10 EDT 2026
+
+########## DISTILL ITER 3 -> iter_03 @ Thu Jul 16 22:02:10 EDT 2026 (warm from iter_02.pt) ##########
+[it3] gen seed_start=700300000 -> /mnt/c/carc-shared/distill_flywheel_sighted_20260716/iter_03 @ Thu Jul 16 22:02:10 EDT 2026
+[it3] gen complete (600 npz) @ Fri Jul 17 01:20:50 EDT 2026
+[it3] train (accumulate iter_00..iter_03, window 12) @ Fri Jul 17 01:20:50 EDT 2026
+[it3] screen @ Fri Jul 17 01:30:39 EDT 2026
+VERDICT=HEALTHY
+  - all cheap screens nominal
+[it3] probe_metrics @ Fri Jul 17 01:30:39 EDT 2026
+[it3] ✅ iter complete (screen HEALTHY) @ Fri Jul 17 01:30:45 EDT 2026
+
+=== DISTILL STAGE-1 DONE @ Fri Jul 17 01:30:46 EDT 2026 — completed 4 iter(s); latest: /mnt/c/carc-shared/distill_flywheel_sighted_20260716/ckpt/iter_03.pt ===
+=== distill stage-1 exiting @ Fri Jul 17 01:30:46 EDT 2026 (cleaned gen pools on both boxes) ===

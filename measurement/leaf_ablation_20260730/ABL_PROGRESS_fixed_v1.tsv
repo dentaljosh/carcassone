@@ -1,0 +1,9 @@
+cell	status	n	W	D	L	elo	sigma	paired_z	ms_ratio	profile	r9_ok	secs	timestamp
+meepleoff	cached	400	56	3	341	-310.0	24.8	-21.43	1.00	fixed_v1	true	0	2026-08-03_23:34:02
+meepleflat	cached	400	123	5	272	-136.0	18.7	-8.79	1.00	fixed_v1	true	0	2026-08-03_23:34:06
+oppanticoff	cached	400	127	8	265	-125.0	18.5	-8.81	1.12	fixed_v1	true	0	2026-08-03_23:34:10
+selfanticoff	cached	400	151	5	244	-82.3	17.9	-5.43	0.78	fixed_v1	true	0	2026-08-03_23:34:13
+anticoff	cached	400	183	8	209	-22.6	17.4	-1.61	0.99	fixed_v1	true	0	2026-08-03_23:34:17
+capoff	cached	400	200	11	189	9.6	17.4	1.23	1.00	fixed_v1	true	0	2026-08-03_23:34:20
+farmbaseoff	cached	400	122	10	268	-132.9	18.7	-9.59	0.93	fixed_v1	true	0	2026-08-03_23:34:24
+farmgrowthoff	DONE	400	211	7	182	25.2	17.4	1.85	0.96	fixed_v1	true	688	2026-08-03_23:45:57

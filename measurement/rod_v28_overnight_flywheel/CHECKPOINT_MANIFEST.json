@@ -1,0 +1,1376 @@
+{
+  "_meta": {
+    "doc": "RoD v2.8 overnight flywheel \u2014 checkpoint manifest (appended per iter)",
+    "branch": "rod_v28_overnight_flywheel",
+    "status": "MEASUREMENT ONLY \u2014 exploratory; no promotion, PRODUCTION.yaml unchanged, v2.7 frozen, v2.8 opt-in",
+    "leaf": "v2.8 = v2.7 + meeple_k=2.0 (CARCASSONNE_V25_MEEPLE_K=2.0, legacy field, flat fast path)",
+    "lineage": "latest-chain: RoD_iter_01 -> iter_02 -> iter_03 -> ... (warm-from previous iter unless catastrophic)"
+  },
+  "checkpoints": [
+    {
+      "iter": 2,
+      "id": "RoD_iter_02",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_02.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_02.pt",
+      "sha256": "325a53b20b2319026e191fbe929ce1515ef2af775727bd4e98415af8e9494069",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_01",
+      "parent_sha256": "a8b824df0786284cbc5caf8e49d27ea90fb263bc1016eed27c2fe30e6d2a1f4b",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_continuation/ckpt/iter_01.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620200000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1248.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 818030,
+        "n_val_positions": 43116,
+        "total_optimizer_steps": 9590,
+        "train_wallclock_sec_metrics": 1825.7,
+        "train_wallclock_sec_measured": 1870.0,
+        "train_pol_loss": [
+          1.5686,
+          1.5549,
+          1.5482
+        ],
+        "val_pol_loss": [
+          0.2912,
+          0.2911,
+          0.2921
+        ],
+        "train_val_loss": [
+          0.0058,
+          0.0057,
+          0.0056
+        ],
+        "policy_entropy": 1.5505,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.36,
+        "dataset_fingerprint": "a88b08510fdd647c",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it2"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_02 (A) vs RoD_iter_01 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940200000",
+          "n_games": 18,
+          "a_w_l_d": [
+            6,
+            12,
+            0
+          ],
+          "a_winrate": 0.3333,
+          "a_elo_vs_parent": -120.4,
+          "a_elo_sigma": 86.9,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T06:11:33Z"
+    },
+    {
+      "iter": 3,
+      "id": "RoD_iter_03",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_03.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_03.pt",
+      "sha256": "0f16cb3da6ee2b9636771173a2d76563e863415fc6ff71ec0e203400e9eff6a0",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_02",
+      "parent_sha256": "325a53b20b2319026e191fbe929ce1515ef2af775727bd4e98415af8e9494069",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_02.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620300000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1319.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 818751,
+        "n_val_positions": 43186,
+        "total_optimizer_steps": 9597,
+        "train_wallclock_sec_metrics": 1731.0,
+        "train_wallclock_sec_measured": 1775.0,
+        "train_pol_loss": [
+          1.565,
+          1.5488,
+          1.5403
+        ],
+        "val_pol_loss": [
+          0.2564,
+          0.2569,
+          0.2572
+        ],
+        "train_val_loss": [
+          0.0057,
+          0.0056,
+          0.0055
+        ],
+        "policy_entropy": 1.5475,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.3923,
+        "dataset_fingerprint": "805983d37966a0bc",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it3"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_03 (A) vs RoD_iter_02 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940300000",
+          "n_games": 18,
+          "a_w_l_d": [
+            7,
+            11,
+            0
+          ],
+          "a_winrate": 0.3889,
+          "a_elo_vs_parent": -78.5,
+          "a_elo_sigma": 84.0,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T07:06:38Z"
+    },
+    {
+      "iter": 4,
+      "id": "RoD_iter_04",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_04.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_04.pt",
+      "sha256": "45018d6ac4618028f4bdf4e5bd9144d8d308799e5647d5fbcd7f65c3ef6fbefa",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_03",
+      "parent_sha256": "0f16cb3da6ee2b9636771173a2d76563e863415fc6ff71ec0e203400e9eff6a0",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_03.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620400000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1316.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 813701,
+        "n_val_positions": 42830,
+        "total_optimizer_steps": 9537,
+        "train_wallclock_sec_metrics": 1743.3,
+        "train_wallclock_sec_measured": 1787.0,
+        "train_pol_loss": [
+          1.5756,
+          1.5642,
+          1.5521
+        ],
+        "val_pol_loss": [
+          0.276,
+          0.2762,
+          0.2769
+        ],
+        "train_val_loss": [
+          0.0058,
+          0.0058,
+          0.0057
+        ],
+        "policy_entropy": 1.5863,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4487,
+        "dataset_fingerprint": "964bcccb8dd2570d",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it4"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_04 (A) vs RoD_iter_03 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940400000",
+          "n_games": 18,
+          "a_w_l_d": [
+            8,
+            10,
+            0
+          ],
+          "a_winrate": 0.4444,
+          "a_elo_vs_parent": -38.8,
+          "a_elo_sigma": 82.4,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T08:02:12Z"
+    },
+    {
+      "iter": 5,
+      "id": "RoD_iter_05",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_05.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_05.pt",
+      "sha256": "5a144c16a786e6e644c828e419bf152c8c07198714fc558a0a15701e5a4a0bbc",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_04",
+      "parent_sha256": "45018d6ac4618028f4bdf4e5bd9144d8d308799e5647d5fbcd7f65c3ef6fbefa",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_04.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620500000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1248.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 806899,
+        "n_val_positions": 42507,
+        "total_optimizer_steps": 9459,
+        "train_wallclock_sec_metrics": 1716.1,
+        "train_wallclock_sec_measured": 1764.0,
+        "train_pol_loss": [
+          1.5869,
+          1.5713,
+          1.5605
+        ],
+        "val_pol_loss": [
+          0.2325,
+          0.2326,
+          0.2331
+        ],
+        "train_val_loss": [
+          0.006,
+          0.0059,
+          0.0058
+        ],
+        "policy_entropy": 1.5513,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.442,
+        "dataset_fingerprint": "bd5667af628f62b8",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it5"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_05 (A) vs RoD_iter_04 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940500000",
+          "n_games": 18,
+          "a_w_l_d": [
+            8,
+            10,
+            0
+          ],
+          "a_winrate": 0.4444,
+          "a_elo_vs_parent": -38.8,
+          "a_elo_sigma": 82.4,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T08:55:56Z"
+    },
+    {
+      "iter": 6,
+      "id": "RoD_iter_06",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_06.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_06.pt",
+      "sha256": "21e638ea1d40c9ed53ce857e3467fdfeee4270ca5f34e7405836f8d9b574efdb",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_05",
+      "parent_sha256": "5a144c16a786e6e644c828e419bf152c8c07198714fc558a0a15701e5a4a0bbc",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_05.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620600000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1247.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 814771,
+        "n_val_positions": 42285,
+        "total_optimizer_steps": 9550,
+        "train_wallclock_sec_metrics": 1762.4,
+        "train_wallclock_sec_measured": 1805.0,
+        "train_pol_loss": [
+          1.5645,
+          1.5485,
+          1.5419
+        ],
+        "val_pol_loss": [
+          0.2886,
+          0.289,
+          0.2896
+        ],
+        "train_val_loss": [
+          0.0063,
+          0.0062,
+          0.0061
+        ],
+        "policy_entropy": 1.5558,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4333,
+        "dataset_fingerprint": "1b6b414d0e0acbfb",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it6"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_06 (A) vs RoD_iter_05 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940600000",
+          "n_games": 18,
+          "a_w_l_d": [
+            5,
+            12,
+            1
+          ],
+          "a_winrate": 0.3056,
+          "a_elo_vs_parent": -142.6,
+          "a_elo_sigma": 88.9,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T09:50:16Z"
+    },
+    {
+      "iter": 7,
+      "id": "RoD_iter_07",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_07.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_07.pt",
+      "sha256": "ab0a4c8f36c3f9dc21b625085e5f78afcfb49eed051b682d685e5d70a24ef7c2",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_06",
+      "parent_sha256": "21e638ea1d40c9ed53ce857e3467fdfeee4270ca5f34e7405836f8d9b574efdb",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_06.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620700000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1249.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 814339,
+        "n_val_positions": 42910,
+        "total_optimizer_steps": 9546,
+        "train_wallclock_sec_metrics": 1789.4,
+        "train_wallclock_sec_measured": 1834.0,
+        "train_pol_loss": [
+          1.5719,
+          1.5595,
+          1.5513
+        ],
+        "val_pol_loss": [
+          0.2636,
+          0.264,
+          0.2644
+        ],
+        "train_val_loss": [
+          0.0065,
+          0.0064,
+          0.0063
+        ],
+        "policy_entropy": 1.5384,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4103,
+        "dataset_fingerprint": "513283e8ec5b5a50",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it7"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_07 (A) vs RoD_iter_06 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940700000",
+          "n_games": 18,
+          "a_w_l_d": [
+            8,
+            8,
+            2
+          ],
+          "a_winrate": 0.5,
+          "a_elo_vs_parent": 0.0,
+          "a_elo_sigma": 81.9,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T10:45:06Z"
+    },
+    {
+      "iter": 8,
+      "id": "RoD_iter_08",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_08.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_08.pt",
+      "sha256": "5843b3cf0d172f73558d3a9356a4dc195cfdcf79a76064db5275fc545abf1b6b",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_07",
+      "parent_sha256": "ab0a4c8f36c3f9dc21b625085e5f78afcfb49eed051b682d685e5d70a24ef7c2",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_07.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620800000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1318.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 807336,
+        "n_val_positions": 42475,
+        "total_optimizer_steps": 9465,
+        "train_wallclock_sec_metrics": 1746.9,
+        "train_wallclock_sec_measured": 1790.0,
+        "train_pol_loss": [
+          1.5814,
+          1.5697,
+          1.5615
+        ],
+        "val_pol_loss": [
+          0.2685,
+          0.2687,
+          0.2692
+        ],
+        "train_val_loss": [
+          0.0063,
+          0.0061,
+          0.006
+        ],
+        "policy_entropy": 1.5941,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.3969,
+        "dataset_fingerprint": "f2499a61a39b408d",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it8"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_08 (A) vs RoD_iter_07 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940800000",
+          "n_games": 18,
+          "a_w_l_d": [
+            9,
+            7,
+            2
+          ],
+          "a_winrate": 0.5556,
+          "a_elo_vs_parent": 38.8,
+          "a_elo_sigma": 82.4,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T11:40:21Z"
+    },
+    {
+      "iter": 9,
+      "id": "RoD_iter_09",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_09.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_09.pt",
+      "sha256": "58a82fa2dd638a8f6816a4f18317546d6fef6f735672a93276018c7b6ce0a82c",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_08",
+      "parent_sha256": "5843b3cf0d172f73558d3a9356a4dc195cfdcf79a76064db5275fc545abf1b6b",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_08.pt",
+      "code_commit_at_train": "fbada68bfae66ebb0f6dfe86781d7f0e50182b60",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "620900000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1315.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 809429,
+        "n_val_positions": 41826,
+        "total_optimizer_steps": 9488,
+        "train_wallclock_sec_metrics": 1721.4,
+        "train_wallclock_sec_measured": 1765.0,
+        "train_pol_loss": [
+          1.5791,
+          1.566,
+          1.5569
+        ],
+        "val_pol_loss": [
+          0.316,
+          0.3158,
+          0.3172
+        ],
+        "train_val_loss": [
+          0.0068,
+          0.0066,
+          0.0065
+        ],
+        "policy_entropy": 1.5536,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4337,
+        "dataset_fingerprint": "948bdba1e06bc478",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it9"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_09 (A) vs RoD_iter_08 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1940900000",
+          "n_games": 18,
+          "a_w_l_d": [
+            7,
+            11,
+            0
+          ],
+          "a_winrate": 0.3889,
+          "a_elo_vs_parent": -78.5,
+          "a_elo_sigma": 84.0,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T12:35:09Z"
+    },
+    {
+      "iter": 10,
+      "id": "RoD_iter_10",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_10.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_10.pt",
+      "sha256": "559ef777409579eff2be9329ae446ba5bbfa2ff5d3cc51bdb6d30ef4a741946e",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_09",
+      "parent_sha256": "58a82fa2dd638a8f6816a4f18317546d6fef6f735672a93276018c7b6ce0a82c",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_09.pt",
+      "code_commit_at_train": "077b8edd358546aadfbd992c4383c759a24f640d",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621000000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1316.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 811145,
+        "n_val_positions": 42726,
+        "total_optimizer_steps": 9509,
+        "train_wallclock_sec_metrics": 1777.4,
+        "train_wallclock_sec_measured": 1821.0,
+        "train_pol_loss": [
+          1.5704,
+          1.5598,
+          1.5499
+        ],
+        "val_pol_loss": [
+          0.2876,
+          0.2878,
+          0.2883
+        ],
+        "train_val_loss": [
+          0.0066,
+          0.0065,
+          0.0063
+        ],
+        "policy_entropy": 1.5825,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4519,
+        "dataset_fingerprint": "b571473c325a8a69",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it10"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": {
+          "label": "RoD_iter_10 (A) vs RoD_iter_09 (B), v2.8 leaf, paired, sims200",
+          "seed_start": "1941000000",
+          "n_games": 18,
+          "a_w_l_d": [
+            7,
+            10,
+            1
+          ],
+          "a_winrate": 0.4167,
+          "a_elo_vs_parent": -58.5,
+          "a_elo_sigma": 83.1,
+          "DISCLAIMER": "SMOKE ONLY (catastrophe detector) \u2014 n far too small for a strength verdict"
+        }
+      },
+      "stamped_utc": "2026-06-23T13:30:55Z"
+    },
+    {
+      "iter": 11,
+      "id": "RoD_iter_11",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_11.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_11.pt",
+      "sha256": "074697e1d4aed0e20c35f428bda470aa1e5aa4cf32d05af7263b6d4c74885eb1",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_10",
+      "parent_sha256": "559ef777409579eff2be9329ae446ba5bbfa2ff5d3cc51bdb6d30ef4a741946e",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_10.pt",
+      "code_commit_at_train": "bdc6c66081c2c1c78245ece6049b4c0c098207a8",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621100000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1250.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 803904,
+        "n_val_positions": 42390,
+        "total_optimizer_steps": 9424,
+        "train_wallclock_sec_metrics": 1693.8,
+        "train_wallclock_sec_measured": 1737.0,
+        "train_pol_loss": [
+          1.5973,
+          1.5843,
+          1.5758
+        ],
+        "val_pol_loss": [
+          0.2691,
+          0.2689,
+          0.2702
+        ],
+        "train_val_loss": [
+          0.0058,
+          0.0057,
+          0.0056
+        ],
+        "policy_entropy": 1.5605,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4513,
+        "dataset_fingerprint": "6bf3509447d15f88",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it11"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T16:38:48Z"
+    },
+    {
+      "iter": 12,
+      "id": "RoD_iter_12",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_12.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_12.pt",
+      "sha256": "6a77feb969fd95ba292076dda024ef0cb44d7daa54e58978bb7bf7b561ed1022",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_11",
+      "parent_sha256": "074697e1d4aed0e20c35f428bda470aa1e5aa4cf32d05af7263b6d4c74885eb1",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_11.pt",
+      "code_commit_at_train": "bdc6c66081c2c1c78245ece6049b4c0c098207a8",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621200000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1247.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 804621,
+        "n_val_positions": 42160,
+        "total_optimizer_steps": 9433,
+        "train_wallclock_sec_metrics": 1743.7,
+        "train_wallclock_sec_measured": 1786.0,
+        "train_pol_loss": [
+          1.59,
+          1.5744,
+          1.5671
+        ],
+        "val_pol_loss": [
+          0.3194,
+          0.3196,
+          0.3198
+        ],
+        "train_val_loss": [
+          0.0065,
+          0.0064,
+          0.0062
+        ],
+        "policy_entropy": 1.589,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4451,
+        "dataset_fingerprint": "1983d9523a5c0303",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it12"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T17:29:22Z"
+    },
+    {
+      "iter": 13,
+      "id": "RoD_iter_13",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_13.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_13.pt",
+      "sha256": "7d69a398af7467f51eb64a05f30db7b25de3ddd8a2c350db964582c58e214cce",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_12",
+      "parent_sha256": "6a77feb969fd95ba292076dda024ef0cb44d7daa54e58978bb7bf7b561ed1022",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_12.pt",
+      "code_commit_at_train": "d368ef52d544cb30f17344de89512513a8722baa",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621300000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 2.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 806747,
+        "n_val_positions": 42180,
+        "total_optimizer_steps": 9457,
+        "train_wallclock_sec_metrics": 1739.9,
+        "train_wallclock_sec_measured": 1782.0,
+        "train_pol_loss": [
+          1.5888,
+          1.5761,
+          1.5674
+        ],
+        "val_pol_loss": [
+          0.3152,
+          0.3151,
+          0.3177
+        ],
+        "train_val_loss": [
+          0.0064,
+          0.0062,
+          0.0061
+        ],
+        "policy_entropy": 1.5049,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4322,
+        "dataset_fingerprint": "dc30a779dbaf78b7",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it13"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T20:21:36Z"
+    },
+    {
+      "iter": 14,
+      "id": "RoD_iter_14",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_14.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_14.pt",
+      "sha256": "7717648534cea44c1d30585248619511444536af748c790c0d50a95732c7c7a4",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_13",
+      "parent_sha256": "7d69a398af7467f51eb64a05f30db7b25de3ddd8a2c350db964582c58e214cce",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_13.pt",
+      "code_commit_at_train": "d368ef52d544cb30f17344de89512513a8722baa",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621400000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1249.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 823449,
+        "n_val_positions": 43476,
+        "total_optimizer_steps": 9653,
+        "train_wallclock_sec_metrics": 1796.0,
+        "train_wallclock_sec_measured": 1840.0,
+        "train_pol_loss": [
+          1.5388,
+          1.5263,
+          1.5179
+        ],
+        "val_pol_loss": [
+          0.2871,
+          0.2871,
+          0.2881
+        ],
+        "train_val_loss": [
+          0.0071,
+          0.0069,
+          0.0068
+        ],
+        "policy_entropy": 1.5161,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4414,
+        "dataset_fingerprint": "9f75343891f1e60a",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it14"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T21:13:07Z"
+    },
+    {
+      "iter": 15,
+      "id": "RoD_iter_15",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_15.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_15.pt",
+      "sha256": "f4d7fc1f37b740c6992a0ede8e4712f5cf0aa689efd407e1f6031caf878e1e2e",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_14",
+      "parent_sha256": "7717648534cea44c1d30585248619511444536af748c790c0d50a95732c7c7a4",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_14.pt",
+      "code_commit_at_train": "d368ef52d544cb30f17344de89512513a8722baa",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621500000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1248.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 816565,
+        "n_val_positions": 43034,
+        "total_optimizer_steps": 9573,
+        "train_wallclock_sec_metrics": 1741.0,
+        "train_wallclock_sec_measured": 1784.0,
+        "train_pol_loss": [
+          1.5564,
+          1.5449,
+          1.5361
+        ],
+        "val_pol_loss": [
+          0.2772,
+          0.2771,
+          0.2772
+        ],
+        "train_val_loss": [
+          0.0068,
+          0.0067,
+          0.0065
+        ],
+        "policy_entropy": 1.5573,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4877,
+        "dataset_fingerprint": "809bfff7db4e1bcc",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it15"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T22:03:39Z"
+    },
+    {
+      "iter": 16,
+      "id": "RoD_iter_16",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_16.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_16.pt",
+      "sha256": "2c261d2f25ec2c1ed0206a467901b97dac812dc125a90c16c8009832a278938d",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_15",
+      "parent_sha256": "f4d7fc1f37b740c6992a0ede8e4712f5cf0aa689efd407e1f6031caf878e1e2e",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_15.pt",
+      "code_commit_at_train": "d368ef52d544cb30f17344de89512513a8722baa",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621600000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1248.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 812185,
+        "n_val_positions": 43215,
+        "total_optimizer_steps": 9521,
+        "train_wallclock_sec_metrics": 1800.4,
+        "train_wallclock_sec_measured": 1858.0,
+        "train_pol_loss": [
+          1.5658,
+          1.553,
+          1.5396
+        ],
+        "val_pol_loss": [
+          0.2474,
+          0.2477,
+          0.2495
+        ],
+        "train_val_loss": [
+          0.0069,
+          0.0068,
+          0.0066
+        ],
+        "policy_entropy": 1.4908,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.463,
+        "dataset_fingerprint": "b5c3293bbf926471",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it16"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T22:55:25Z"
+    },
+    {
+      "iter": 17,
+      "id": "RoD_iter_17",
+      "path_local": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_17.pt",
+      "path_remote": "/mnt/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_17.pt",
+      "sha256": "3f2a3b4e0602891be7869f58d2bbcd70f9011e680e356e975c7a5640294d3cff",
+      "size_bytes": 29715325,
+      "parent": "RoD_iter_16",
+      "parent_sha256": "2c261d2f25ec2c1ed0206a467901b97dac812dc125a90c16c8009832a278938d",
+      "warm_from": "/mnt/c/carc-shared/rod_v28_overnight_flywheel/ckpt/iter_16.pt",
+      "code_commit_at_train": "d368ef52d544cb30f17344de89512513a8722baa",
+      "arch": {
+        "n_filters": 96,
+        "n_blocks": 6,
+        "value_global_pool": false,
+        "n_scalar_features": 12
+      },
+      "crashes_resumes": "none",
+      "leaf": "v2.8 (v2.7 + meeple_k=2.0; CARCASSONNE_V25_MEEPLE_K=2.0, flat fast path)",
+      "selfplay_gen": {
+        "games_target": 400,
+        "npz_produced": 400,
+        "sims": 200,
+        "c_puct": 3.0,
+        "residual_scale": 0.25,
+        "value_target": "residual",
+        "leaf_eval_flag": "v2_5 (meeple_k from env)",
+        "seed_start": "621700000",
+        "boxes": "5800x orch + laptop orch (carc-orch SHM, shared-claim work-stealing)",
+        "gen_wallclock_sec": 1248.0
+      },
+      "training": {
+        "script": "scripts/train_iter.py",
+        "batch_size": 256,
+        "epochs": 3,
+        "value_loss_weight": 1.5,
+        "lr": 0.001,
+        "weight_decay": 0.0001,
+        "window": 10,
+        "warmstart_mix_fraction": 0.0,
+        "n_train_positions": 825408,
+        "n_val_positions": 42582,
+        "total_optimizer_steps": 9675,
+        "train_wallclock_sec_metrics": 1774.0,
+        "train_wallclock_sec_measured": 1817.0,
+        "train_pol_loss": [
+          1.5451,
+          1.5288,
+          1.5219
+        ],
+        "val_pol_loss": [
+          0.2471,
+          0.2475,
+          0.2477
+        ],
+        "train_val_loss": [
+          0.0066,
+          0.0064,
+          0.0063
+        ],
+        "policy_entropy": 1.5658,
+        "baseline_policy_entropy": 1.7463,
+        "entropy_floor_0p5": 0.8731,
+        "value_outcome_corr": 0.4677,
+        "dataset_fingerprint": "2656f1edab542851",
+        "prov_selfplay_leaf": "v2_8_meeple_k2",
+        "prov_value_target": "residual",
+        "prov_run_tag": "rod_v28_overnight_it17"
+      },
+      "cheap_screen": {
+        "verdict": "HEALTHY",
+        "reasons": [
+          "all cheap screens nominal"
+        ],
+        "smoke": null
+      },
+      "stamped_utc": "2026-06-23T23:46:30Z"
+    }
+  ]
+}

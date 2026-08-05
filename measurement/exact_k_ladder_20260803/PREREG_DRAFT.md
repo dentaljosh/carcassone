@@ -1,6 +1,13 @@
 # F13 — Modern exact-K winrate ladder under fixed_v1 (PREREG DRAFT)
 
-> **STATUS: ✅ FUNDED 2026-08-04 (Joshua: "ok, f13 it is") — harness build in flight;
+> **STATUS: ✅ RUN AND CLOSED 2026-08-05 — verdict in [READOUT.md](READOUT.md).** All four
+> rungs landed uncensored on band 1.06e11; branch 2 fired on margin, the winrate question
+> read null, the confirm was NOT bought, the endgame-net lever is stillborn. ⚠️ Known
+> drafting defect recorded in the readout §5: this document's *question* is worded on WINS
+> while its *decision-map thresholds* are written on paired MARGIN z — they can disagree,
+> and here they did. Historical funding banner follows.
+>
+> **FUNDED 2026-08-04 (Joshua: "ok, f13 it is") — harness build in flight;
 > no band claimed yet, nothing launched.** Launch order: identity smoke (K4-vs-K4 ×20,
 > 100% action identity) → 10-game K6 bench-then-commit smoke (cap-hit rate + RSS + wall
 > at the measured eval W\*) → rungs K2/K3/K5 daytime, K6 overnight, per-iter checkpointed

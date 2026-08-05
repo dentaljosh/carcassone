@@ -1,0 +1,404 @@
+[gate_b_fair] roots=354/354 todo=354 skipped(resume)=0 levels=(200, 344, 688) k_dets=4 workers=8 verify=True
+      s3200000000_p138  27.579s  agree(sh/deep)=True  agreeQ=True
+      s3200000004_p138  33.106s  agree(sh/deep)=True  agreeQ=True
+      s3200000007_p138  36.417s  agree(sh/deep)=False  agreeQ=False
+      s3200000003_p138  40.156s  agree(sh/deep)=True  agreeQ=False
+      s3200000005_p138  48.614s  agree(sh/deep)=True  agreeQ=True
+      s3200000002_p137  50.305s  agree(sh/deep)=True  agreeQ=True
+      s3200000001_p138  60.937s  agree(sh/deep)=True  agreeQ=True
+      s3200000009_p138  33.593s  agree(sh/deep)=True  agreeQ=True
+      s3200000008_p138  64.868s  agree(sh/deep)=True  agreeQ=True
+      s3200000012_p138  43.6s  agree(sh/deep)=True  agreeQ=True
+      s3200000011_p138  49.534s  agree(sh/deep)=True  agreeQ=False
+      s3200000014_p138  37.871s  agree(sh/deep)=True  agreeQ=True
+      s3200000013_p138  40.356s  agree(sh/deep)=True  agreeQ=False
+      s3200000010_p138  59.2s  agree(sh/deep)=True  agreeQ=True
+      s3200000017_p138  31.731s  agree(sh/deep)=True  agreeQ=False
+      s3200000016_p138  39.638s  agree(sh/deep)=True  agreeQ=False
+      s3200000015_p138  49.612s  agree(sh/deep)=True  agreeQ=True
+      s3200000018_p138  38.54s  agree(sh/deep)=True  agreeQ=True
+      s3200000020_p138  37.06s  agree(sh/deep)=True  agreeQ=True
+      s3200000019_p138  43.956s  agree(sh/deep)=True  agreeQ=True
+      s3200000021_p138  47.629s  agree(sh/deep)=True  agreeQ=False
+      s3200000025_p138  40.922s  agree(sh/deep)=True  agreeQ=True
+      s3200000026_p138  32.575s  agree(sh/deep)=True  agreeQ=True
+      s3200000024_p138  51.042s  agree(sh/deep)=True  agreeQ=True
+      s3200000027_p138  28.526s  agree(sh/deep)=True  agreeQ=False
+      s3200000028_p138  33.401s  agree(sh/deep)=True  agreeQ=True
+      s3200000029_p138  38.913s  agree(sh/deep)=True  agreeQ=False
+      s3200000031_p138  30.016s  agree(sh/deep)=True  agreeQ=True
+      s3200000023_p138  86.055s  agree(sh/deep)=False  agreeQ=False
+      s3200000030_p138  46.472s  agree(sh/deep)=True  agreeQ=False
+      s3200000032_p138  42.51s  agree(sh/deep)=True  agreeQ=True
+      s3200000035_p138  34.099s  agree(sh/deep)=False  agreeQ=True
+      s3200000034_p138  46.12s  agree(sh/deep)=True  agreeQ=True
+      s3200000033_p138  49.658s  agree(sh/deep)=True  agreeQ=True
+      s3200000038_p138  44.303s  agree(sh/deep)=False  agreeQ=False
+      s3200000036_p138  56.519s  agree(sh/deep)=True  agreeQ=False
+      s3200000039_p138  52.42s  agree(sh/deep)=True  agreeQ=True
+      s3200000040_p137  53.192s  agree(sh/deep)=True  agreeQ=True
+      s3200000042_p138  43.784s  agree(sh/deep)=True  agreeQ=False
+      s3200000041_p137  53.52s  agree(sh/deep)=True  agreeQ=True
+      s3200000044_p138  53.961s  agree(sh/deep)=True  agreeQ=True
+      s3200000045_p138  40.81s  agree(sh/deep)=True  agreeQ=False
+      s3200000047_p138  32.023s  agree(sh/deep)=True  agreeQ=False
+      s3200000046_p138  41.536s  agree(sh/deep)=True  agreeQ=True
+      s3200000048_p138  37.111s  agree(sh/deep)=True  agreeQ=True
+      s3200000043_p138  82.004s  agree(sh/deep)=True  agreeQ=True
+      s3200000050_p138  40.761s  agree(sh/deep)=True  agreeQ=True
+      s3200000051_p138  39.717s  agree(sh/deep)=True  agreeQ=True
+      s3200000049_p138  64.278s  agree(sh/deep)=True  agreeQ=True
+      s3200000056_p138  34.734s  agree(sh/deep)=True  agreeQ=True
+      s3200000052_p138  45.957s  agree(sh/deep)=True  agreeQ=True
+      s3200000055_p138  44.95s  agree(sh/deep)=True  agreeQ=True
+      s3200000058_p138  28.839s  agree(sh/deep)=False  agreeQ=False
+      s3200000057_p138  41.62s  agree(sh/deep)=True  agreeQ=False
+      s3200000059_p138  46.315s  agree(sh/deep)=True  agreeQ=True
+      s3200000060_p138  50.893s  agree(sh/deep)=True  agreeQ=True
+      s3200000061_p138  41.825s  agree(sh/deep)=True  agreeQ=True
+      s3200000062_p137  43.62s  agree(sh/deep)=True  agreeQ=True
+      s3200000067_p137  20.012s  agree(sh/deep)=True  agreeQ=True
+      s3200000063_p138  49.047s  agree(sh/deep)=True  agreeQ=True
+      s3200000066_p138  37.42s  agree(sh/deep)=False  agreeQ=False
+      s3200000064_p138  44.845s  agree(sh/deep)=True  agreeQ=True
+      s3200000065_p137  46.565s  agree(sh/deep)=False  agreeQ=True
+      s3200000069_p138  35.552s  agree(sh/deep)=True  agreeQ=False
+      s3200000071_p138  40.457s  agree(sh/deep)=True  agreeQ=False
+      s3200000070_p138  43.17s  agree(sh/deep)=True  agreeQ=True
+      s3200000074_p138  38.833s  agree(sh/deep)=False  agreeQ=False
+      s3200000068_p138  50.775s  agree(sh/deep)=False  agreeQ=False
+      s3200000075_p138  39.054s  agree(sh/deep)=True  agreeQ=True
+      s3200000072_p138  48.054s  agree(sh/deep)=True  agreeQ=True
+      s3200000073_p138  63.224s  agree(sh/deep)=False  agreeQ=False
+      s3200000077_p138  50.45s  agree(sh/deep)=False  agreeQ=False
+      s3200000080_p138  55.514s  agree(sh/deep)=True  agreeQ=False
+      s3200000076_p138  75.728s  agree(sh/deep)=False  agreeQ=False
+      s3200000081_p138  66.915s  agree(sh/deep)=True  agreeQ=True
+      s3200000079_p138  70.523s  agree(sh/deep)=False  agreeQ=False
+      s3200000082_p138  67.485s  agree(sh/deep)=True  agreeQ=True
+      s3200000083_p138  54.543s  agree(sh/deep)=True  agreeQ=True
+      s3200000078_p138  83.162s  agree(sh/deep)=True  agreeQ=True
+      s3200000085_p138  40.938s  agree(sh/deep)=True  agreeQ=True
+      s3200000084_p138  54.789s  agree(sh/deep)=True  agreeQ=True
+      s3200000088_p138  46.399s  agree(sh/deep)=True  agreeQ=True
+      s3200000087_p138  48.425s  agree(sh/deep)=True  agreeQ=True
+      s3200000086_p138  57.964s  agree(sh/deep)=False  agreeQ=True
+      s3200000091_p138  48.011s  agree(sh/deep)=True  agreeQ=False
+      s3200000089_p138  59.293s  agree(sh/deep)=True  agreeQ=True
+      s3200000092_p138  48.767s  agree(sh/deep)=True  agreeQ=False
+      s3200000093_p137  47.815s  agree(sh/deep)=True  agreeQ=True
+      s3200000090_p138  83.636s  agree(sh/deep)=True  agreeQ=False
+      s3200000094_p138  47.51s  agree(sh/deep)=True  agreeQ=False
+      s3200000096_p138  48.156s  agree(sh/deep)=True  agreeQ=True
+      s3200000097_p138  44.55s  agree(sh/deep)=False  agreeQ=True
+      s3200000098_p138  46.405s  agree(sh/deep)=True  agreeQ=True
+      s3200000095_p138  71.74s  agree(sh/deep)=False  agreeQ=False
+      s3200000100_p138  62.946s  agree(sh/deep)=True  agreeQ=True
+      s3200000099_p138  67.85s  agree(sh/deep)=True  agreeQ=True
+      s3200000103_p138  47.74s  agree(sh/deep)=True  agreeQ=True
+      s3200000101_p138  62.008s  agree(sh/deep)=True  agreeQ=True
+      s3200000104_p137  54.499s  agree(sh/deep)=False  agreeQ=False
+      s3200000106_p138  40.164s  agree(sh/deep)=True  agreeQ=True
+      s3200000105_p138  55.156s  agree(sh/deep)=False  agreeQ=False
+      s3200000102_p138  79.753s  agree(sh/deep)=False  agreeQ=False
+      s3200000107_p138  37.099s  agree(sh/deep)=True  agreeQ=True
+      s3200000109_p138  39.222s  agree(sh/deep)=True  agreeQ=True
+      s3200000112_p138  37.079s  agree(sh/deep)=True  agreeQ=True
+      s3200000111_p138  41.648s  agree(sh/deep)=True  agreeQ=True
+      s3200000110_p138  52.6s  agree(sh/deep)=True  agreeQ=False
+      s3200000113_p138  45.825s  agree(sh/deep)=True  agreeQ=False
+      s3200000115_p138  38.48s  agree(sh/deep)=True  agreeQ=False
+      s3200000116_p138  49.97s  agree(sh/deep)=True  agreeQ=True
+      s3200000114_p137  63.125s  agree(sh/deep)=True  agreeQ=True
+      s3200000119_p138  37.063s  agree(sh/deep)=True  agreeQ=True
+      s3200000117_p138  57.983s  agree(sh/deep)=True  agreeQ=True
+      s3200000118_p138  47.846s  agree(sh/deep)=False  agreeQ=False
+      s3200000120_p138  47.612s  agree(sh/deep)=True  agreeQ=True
+      s3200000121_p138  52.118s  agree(sh/deep)=True  agreeQ=True
+      s3200000125_p138  36.346s  agree(sh/deep)=True  agreeQ=True
+      s3200000124_p138  46.469s  agree(sh/deep)=True  agreeQ=True
+      s3200000122_p138  65.824s  agree(sh/deep)=True  agreeQ=True
+      s3200000128_p138  40.491s  agree(sh/deep)=True  agreeQ=True
+      s3200000123_p138  59.671s  agree(sh/deep)=True  agreeQ=True
+      s3200000126_p138  49.047s  agree(sh/deep)=True  agreeQ=True
+      s3200000130_p138  41.122s  agree(sh/deep)=True  agreeQ=True
+      s3200000127_p138  74.68s  agree(sh/deep)=True  agreeQ=False
+      s3200000132_p138  42.881s  agree(sh/deep)=False  agreeQ=False
+      s3200000133_p138  38.163s  agree(sh/deep)=True  agreeQ=False
+      s3200000131_p138  54.038s  agree(sh/deep)=True  agreeQ=True
+      s3200000129_p138  74.736s  agree(sh/deep)=False  agreeQ=False
+      s3200000135_p138  43.27s  agree(sh/deep)=True  agreeQ=True
+      s3200000134_p138  50.289s  agree(sh/deep)=True  agreeQ=True
+      s3200000136_p138  45.781s  agree(sh/deep)=False  agreeQ=True
+      s3200000137_p138  45.663s  agree(sh/deep)=True  agreeQ=False
+      s3200000139_p138  43.23s  agree(sh/deep)=True  agreeQ=True
+      s3200000138_p138  50.458s  agree(sh/deep)=True  agreeQ=True
+      s3200000142_p138  41.617s  agree(sh/deep)=True  agreeQ=True
+      s3200000140_p137  46.955s  agree(sh/deep)=True  agreeQ=True
+      s3200000143_p138  44.131s  agree(sh/deep)=True  agreeQ=True
+      s3200000141_p138  53.651s  agree(sh/deep)=True  agreeQ=True
+      s3200000145_p138  41.222s  agree(sh/deep)=True  agreeQ=True
+      s3200000144_p138  57.304s  agree(sh/deep)=True  agreeQ=True
+      s3200000148_p138  40.907s  agree(sh/deep)=True  agreeQ=True
+      s3200000146_p138  58.761s  agree(sh/deep)=True  agreeQ=False
+      s3200000149_p137  54.497s  agree(sh/deep)=True  agreeQ=True
+      s3200000147_p138  61.734s  agree(sh/deep)=True  agreeQ=True
+      s3400000000_p138  51.949s  agree(sh/deep)=True  agreeQ=True
+      s3400000001_p138  52.035s  agree(sh/deep)=False  agreeQ=True
+      s3400000002_p137  48.259s  agree(sh/deep)=True  agreeQ=True
+      s3400000004_p138  37.932s  agree(sh/deep)=False  agreeQ=False
+      s3400000006_p138  41.559s  agree(sh/deep)=True  agreeQ=True
+      s3400000003_p138  60.998s  agree(sh/deep)=True  agreeQ=True
+      s3400000008_p138  46.208s  agree(sh/deep)=True  agreeQ=True
+      s3400000005_p138  54.279s  agree(sh/deep)=True  agreeQ=False
+      s3400000007_p138  55.331s  agree(sh/deep)=False  agreeQ=False
+      s3400000009_p138  56.306s  agree(sh/deep)=True  agreeQ=False
+      s3400000010_p137  45.6s  agree(sh/deep)=True  agreeQ=True
+      s3400000011_p137  52.314s  agree(sh/deep)=True  agreeQ=True
+      s3400000012_p138  44.702s  agree(sh/deep)=True  agreeQ=True
+      s3400000015_p138  49.043s  agree(sh/deep)=True  agreeQ=False
+      s3400000016_p138  43.713s  agree(sh/deep)=False  agreeQ=True
+      s3400000013_p138  62.789s  agree(sh/deep)=True  agreeQ=True
+      s3400000014_p138  56.904s  agree(sh/deep)=True  agreeQ=True
+      s3400000019_p138  44.133s  agree(sh/deep)=True  agreeQ=True
+      s3400000020_p138  39.862s  agree(sh/deep)=True  agreeQ=False
+      s3400000018_p138  63.434s  agree(sh/deep)=False  agreeQ=False
+      s3400000021_p137  54.218s  agree(sh/deep)=True  agreeQ=True
+      s3400000022_p138  44.044s  agree(sh/deep)=True  agreeQ=True
+      s3400000024_p138  40.84s  agree(sh/deep)=True  agreeQ=True
+      s3400000025_p138  56.409s  agree(sh/deep)=True  agreeQ=True
+      s3400000028_p138  39.998s  agree(sh/deep)=False  agreeQ=False
+      s3400000026_p138  58.416s  agree(sh/deep)=True  agreeQ=True
+      s3400000027_p138  55.707s  agree(sh/deep)=True  agreeQ=False
+      s3400000029_p138  31.867s  agree(sh/deep)=True  agreeQ=True
+      s3400000023_p138  76.496s  agree(sh/deep)=True  agreeQ=True
+      s3400000030_p138  52.228s  agree(sh/deep)=True  agreeQ=True
+      s3400000036_p138  31.509s  agree(sh/deep)=True  agreeQ=True
+      s3400000032_p138  49.784s  agree(sh/deep)=False  agreeQ=True
+      s3400000035_p138  46.333s  agree(sh/deep)=True  agreeQ=False
+      s3400000037_p138  41.764s  agree(sh/deep)=True  agreeQ=False
+      s3400000033_p138  53.818s  agree(sh/deep)=True  agreeQ=True
+      s3400000034_p138  57.429s  agree(sh/deep)=True  agreeQ=True
+      s3400000031_p138  86.41s  agree(sh/deep)=False  agreeQ=False
+      s3400000039_p135  38.274s  agree(sh/deep)=True  agreeQ=True
+      s3400000038_p138  58.861s  agree(sh/deep)=True  agreeQ=True
+      s3400000040_p137  48.462s  agree(sh/deep)=True  agreeQ=True
+      s3400000041_p138  56.245s  agree(sh/deep)=True  agreeQ=False
+      s3400000043_p138  56.963s  agree(sh/deep)=True  agreeQ=True
+      s3400000045_p138  50.394s  agree(sh/deep)=True  agreeQ=False
+      s3400000046_p137  48.493s  agree(sh/deep)=False  agreeQ=True
+      s3400000044_p138  71.755s  agree(sh/deep)=False  agreeQ=False
+      s3400000049_p136  34.313s  agree(sh/deep)=False  agreeQ=False
+      s3400000042_p138  89.87s  agree(sh/deep)=True  agreeQ=True
+      s3400000047_p137  58.315s  agree(sh/deep)=True  agreeQ=True
+      s3400000048_p138  60.453s  agree(sh/deep)=True  agreeQ=True
+      s3400000051_p138  38.101s  agree(sh/deep)=True  agreeQ=True
+      s3400000054_p138  30.304s  agree(sh/deep)=False  agreeQ=False
+      s3400000050_p138  54.381s  agree(sh/deep)=True  agreeQ=True
+      s3400000056_p137  27.585s  agree(sh/deep)=False  agreeQ=False
+      s3400000055_p138  40.323s  agree(sh/deep)=True  agreeQ=True
+      s3400000053_p138  70.517s  agree(sh/deep)=True  agreeQ=True
+      s3400000061_p138  34.423s  agree(sh/deep)=True  agreeQ=False
+      s3400000057_p138  54.69s  agree(sh/deep)=True  agreeQ=True
+      s3400000058_p138  46.226s  agree(sh/deep)=False  agreeQ=False
+      s3400000062_p136  33.584s  agree(sh/deep)=True  agreeQ=False
+      s3400000060_p138  43.217s  agree(sh/deep)=True  agreeQ=True
+      s3400000059_p138  56.584s  agree(sh/deep)=True  agreeQ=True
+      s3400000067_p138  26.84s  agree(sh/deep)=True  agreeQ=True
+      s3400000063_p137  51.039s  agree(sh/deep)=False  agreeQ=False
+      s3400000064_p138  45.438s  agree(sh/deep)=True  agreeQ=False
+      s3400000069_p138  45.625s  agree(sh/deep)=True  agreeQ=True
+      s3400000068_p138  46.896s  agree(sh/deep)=False  agreeQ=False
+      s3400000065_p138  57.482s  agree(sh/deep)=True  agreeQ=False
+      s3400000066_p138  59.994s  agree(sh/deep)=True  agreeQ=True
+      s3400000071_p138  33.701s  agree(sh/deep)=False  agreeQ=True
+      s3400000072_p138  54.374s  agree(sh/deep)=True  agreeQ=True
+      s3400000073_p138  51.193s  agree(sh/deep)=True  agreeQ=True
+      s3400000078_p138  37.988s  agree(sh/deep)=True  agreeQ=False
+      s3400000070_p138  87.51s  agree(sh/deep)=True  agreeQ=True
+      s3400000076_p138  52.548s  agree(sh/deep)=True  agreeQ=False
+      s3400000079_p138  47.721s  agree(sh/deep)=True  agreeQ=False
+      s3400000077_p138  55.534s  agree(sh/deep)=False  agreeQ=False
+      s3400000075_p138  62.524s  agree(sh/deep)=True  agreeQ=True
+      s3400000080_p138  43.999s  agree(sh/deep)=True  agreeQ=True
+      s3400000081_p137  43.182s  agree(sh/deep)=False  agreeQ=False
+      s3400000085_p138  35.745s  agree(sh/deep)=True  agreeQ=True
+      s3400000088_p138  37.313s  agree(sh/deep)=False  agreeQ=False
+      s3400000082_p138  53.445s  agree(sh/deep)=True  agreeQ=True
+      s3400000086_p138  51.627s  agree(sh/deep)=True  agreeQ=True
+      s3400000087_p138  62.586s  agree(sh/deep)=True  agreeQ=True
+      s3400000084_p138  75.786s  agree(sh/deep)=True  agreeQ=True
+      s3400000092_p138  28.67s  agree(sh/deep)=True  agreeQ=False
+      s3400000089_p138  56.061s  agree(sh/deep)=False  agreeQ=False
+      s3400000091_p138  50.443s  agree(sh/deep)=True  agreeQ=True
+      s3400000090_p138  55.509s  agree(sh/deep)=True  agreeQ=True
+      s3400000094_p138  38.706s  agree(sh/deep)=False  agreeQ=False
+      s3400000093_p138  49.451s  agree(sh/deep)=True  agreeQ=True
+      s3400000095_p138  53.434s  agree(sh/deep)=True  agreeQ=True
+      s3400000096_p138  54.158s  agree(sh/deep)=True  agreeQ=True
+      s3400000097_p138  52.454s  agree(sh/deep)=True  agreeQ=True
+      s3400000100_p138  49.537s  agree(sh/deep)=False  agreeQ=False
+      s3400000101_p138  47.762s  agree(sh/deep)=True  agreeQ=False
+      s3400000099_p138  57.951s  agree(sh/deep)=True  agreeQ=False
+      s3400000098_p138  82.84s  agree(sh/deep)=True  agreeQ=True
+      s3400000104_p138  44.029s  agree(sh/deep)=True  agreeQ=True
+      s3400000103_p138  53.184s  agree(sh/deep)=True  agreeQ=False
+      s3400000105_p138  53.582s  agree(sh/deep)=False  agreeQ=False
+      s3400000108_p138  41.467s  agree(sh/deep)=True  agreeQ=True
+      s3400000107_p138  45.146s  agree(sh/deep)=False  agreeQ=True
+      s3400000106_p138  53.509s  agree(sh/deep)=True  agreeQ=False
+      s3400000102_p138  95.519s  agree(sh/deep)=True  agreeQ=True
+      s3400000111_p138  55.663s  agree(sh/deep)=True  agreeQ=True
+      s3400000112_p138  48.069s  agree(sh/deep)=True  agreeQ=True
+      s3400000113_p138  44.707s  agree(sh/deep)=True  agreeQ=True
+      s3400000109_p138  65.18s  agree(sh/deep)=False  agreeQ=False
+      s3400000114_p138  58.966s  agree(sh/deep)=True  agreeQ=True
+      s3400000117_p138  51.479s  agree(sh/deep)=True  agreeQ=True
+      s3400000115_p138  57.452s  agree(sh/deep)=True  agreeQ=False
+      s3400000119_p138  28.094s  agree(sh/deep)=False  agreeQ=True
+      s3400000116_p138  77.043s  agree(sh/deep)=True  agreeQ=True
+      s3400000118_p138  49.391s  agree(sh/deep)=True  agreeQ=True
+      s3400000121_p138  43.516s  agree(sh/deep)=True  agreeQ=False
+      s3400000122_p138  48.785s  agree(sh/deep)=True  agreeQ=True
+      s3400000120_p138  73.147s  agree(sh/deep)=True  agreeQ=False
+      s3400000125_p138  46.462s  agree(sh/deep)=True  agreeQ=True
+      s3400000127_p138  39.778s  agree(sh/deep)=True  agreeQ=True
+      s3400000123_p138  61.804s  agree(sh/deep)=True  agreeQ=True
+      s3400000128_p138  34.737s  agree(sh/deep)=True  agreeQ=True
+      s3400000124_p138  72.523s  agree(sh/deep)=True  agreeQ=True
+      s3400000129_p138  61.1s  agree(sh/deep)=True  agreeQ=True
+      s3400000131_p138  42.73s  agree(sh/deep)=False  agreeQ=True
+      s3400000133_p138  37.729s  agree(sh/deep)=True  agreeQ=True
+      s3400000130_p138  58.547s  agree(sh/deep)=True  agreeQ=True
+      s3400000135_p138  50.153s  agree(sh/deep)=True  agreeQ=True
+      s3400000132_p138  64.291s  agree(sh/deep)=True  agreeQ=True
+      s3400000138_p138  29.848s  agree(sh/deep)=True  agreeQ=True
+      s3400000137_p138  47.976s  agree(sh/deep)=False  agreeQ=False
+      s3400000136_p138  66.919s  agree(sh/deep)=True  agreeQ=True
+      s3400000139_p137  48.813s  agree(sh/deep)=True  agreeQ=True
+      s3400000140_p138  47.996s  agree(sh/deep)=True  agreeQ=True
+      s3400000141_p138  48.222s  agree(sh/deep)=True  agreeQ=True
+      s3400000142_p138  47.977s  agree(sh/deep)=True  agreeQ=False
+      s3400000146_p138  43.087s  agree(sh/deep)=True  agreeQ=True
+      s3400000144_p138  54.594s  agree(sh/deep)=True  agreeQ=True
+      s3400000143_p138  61.118s  agree(sh/deep)=True  agreeQ=True
+      s3400000148_p138  35.175s  agree(sh/deep)=True  agreeQ=True
+      s3400000145_p138  68.033s  agree(sh/deep)=True  agreeQ=False
+      s3400000147_p138  54.482s  agree(sh/deep)=True  agreeQ=True
+      s3400000152_p138  43.51s  agree(sh/deep)=False  agreeQ=False
+      s3400000151_p138  47.365s  agree(sh/deep)=True  agreeQ=True
+      s3400000150_p138  63.807s  agree(sh/deep)=True  agreeQ=True
+      s3400000153_p138  45.665s  agree(sh/deep)=True  agreeQ=True
+      s3400000155_p138  38.635s  agree(sh/deep)=True  agreeQ=True
+      s3400000154_p138  49.979s  agree(sh/deep)=True  agreeQ=True
+      s3400000156_p138  39.342s  agree(sh/deep)=True  agreeQ=True
+      s3400000157_p138  27.516s  agree(sh/deep)=True  agreeQ=False
+      s3400000149_p138  100.801s  agree(sh/deep)=True  agreeQ=True
+      s3400000159_p138  47.768s  agree(sh/deep)=True  agreeQ=True
+      s3400000160_p138  47.975s  agree(sh/deep)=True  agreeQ=True
+      s3400000158_p138  59.383s  agree(sh/deep)=True  agreeQ=True
+      s3400000164_p138  36.413s  agree(sh/deep)=True  agreeQ=True
+      s3400000161_p138  56.293s  agree(sh/deep)=True  agreeQ=True
+      s3400000162_p138  52.225s  agree(sh/deep)=True  agreeQ=False
+      s3400000163_p138  60.799s  agree(sh/deep)=True  agreeQ=True
+      s3400000165_p138  52.624s  agree(sh/deep)=True  agreeQ=True
+      s3400000170_p138  37.298s  agree(sh/deep)=False  agreeQ=True
+      s3400000169_p138  40.307s  agree(sh/deep)=True  agreeQ=False
+      s3400000167_p137  56.334s  agree(sh/deep)=True  agreeQ=True
+      s3400000171_p138  43.431s  agree(sh/deep)=True  agreeQ=True
+      s3400000168_p138  61.096s  agree(sh/deep)=False  agreeQ=False
+      s3400000173_p138  46.46s  agree(sh/deep)=False  agreeQ=False
+      s3400000172_p138  66.805s  agree(sh/deep)=True  agreeQ=True
+      s3400000175_p136  40.174s  agree(sh/deep)=True  agreeQ=True
+      s3400000178_p138  39.736s  agree(sh/deep)=True  agreeQ=True
+      s3400000176_p138  53.656s  agree(sh/deep)=True  agreeQ=True
+      s3400000179_p138  51.624s  agree(sh/deep)=True  agreeQ=True
+      s3400000181_p137  44.098s  agree(sh/deep)=True  agreeQ=True
+      s3400000180_p138  56.234s  agree(sh/deep)=True  agreeQ=True
+      s3400000182_p137  44.201s  agree(sh/deep)=True  agreeQ=True
+      s3400000183_p137  37.508s  agree(sh/deep)=True  agreeQ=True
+      s3400000174_p138  90.952s  agree(sh/deep)=True  agreeQ=True
+      s3400000185_p138  48.388s  agree(sh/deep)=True  agreeQ=False
+      s3400000186_p138  50.34s  agree(sh/deep)=True  agreeQ=True
+      s3400000187_p138  39.359s  agree(sh/deep)=False  agreeQ=True
+      s3400000189_p138  37.093s  agree(sh/deep)=False  agreeQ=True
+      s3400000184_p138  70.33s  agree(sh/deep)=True  agreeQ=True
+      s3400000188_p138  49.262s  agree(sh/deep)=True  agreeQ=False
+      s3400000190_p138  44.416s  agree(sh/deep)=True  agreeQ=True
+      s3400000191_p138  43.448s  agree(sh/deep)=True  agreeQ=False
+      s3400000193_p138  34.393s  agree(sh/deep)=True  agreeQ=False
+      s3400000192_p138  52.329s  agree(sh/deep)=True  agreeQ=True
+      s3400000195_p138  45.678s  agree(sh/deep)=False  agreeQ=False
+      s3400000197_p138  46.65s  agree(sh/deep)=False  agreeQ=False
+      s3400000194_p138  61.558s  agree(sh/deep)=True  agreeQ=False
+      s3400000199_p138  49.908s  agree(sh/deep)=True  agreeQ=True
+      s3400000198_p138  52.341s  agree(sh/deep)=True  agreeQ=True
+      s3400000196_p138  58.902s  agree(sh/deep)=True  agreeQ=True
+      s3400000202_p137  38.836s  agree(sh/deep)=True  agreeQ=False
+      s3400000201_p138  48.962s  agree(sh/deep)=True  agreeQ=True
+      s3400000200_p138  64.966s  agree(sh/deep)=False  agreeQ=True
+      s3400000204_p138  46.668s  agree(sh/deep)=True  agreeQ=True
+      s3400000206_p138  46.305s  agree(sh/deep)=True  agreeQ=False
+      s3400000208_p138  47.777s  agree(sh/deep)=True  agreeQ=True
+      s3400000203_p138  58.25s  agree(sh/deep)=True  agreeQ=True
+      s3400000209_p138  47.383s  agree(sh/deep)=False  agreeQ=True
+      s3400000205_p138  79.457s  agree(sh/deep)=True  agreeQ=False
+      s3400000210_p138  47.233s  agree(sh/deep)=True  agreeQ=True
+      s3400000212_p138  33.9s  agree(sh/deep)=True  agreeQ=True
+      s3400000213_p138  31.82s  agree(sh/deep)=True  agreeQ=True
+      s3400000211_p138  58.98s  agree(sh/deep)=True  agreeQ=True
+      s3400000215_p138  50.824s  agree(sh/deep)=True  agreeQ=False
+      s3400000214_p138  61.773s  agree(sh/deep)=True  agreeQ=True
+      s3400000216_p138  47.861s  agree(sh/deep)=True  agreeQ=True
+      s3400000217_p137  47.121s  agree(sh/deep)=True  agreeQ=True
+      s3400000218_p138  47.316s  agree(sh/deep)=True  agreeQ=True
+      s3400000219_p138  83.186s  agree(sh/deep)=False  agreeQ=False
+[gate_b_fair] SUMMARY: {
+  "n_records": 354,
+  "n_ok": 354,
+  "levels": [
+    200,
+    344,
+    688
+  ],
+  "k_dets": 4,
+  "regime": "fair_pimc",
+  "agree_shallowest_vs_deepest": 0.822,
+  "agree_shallowest_vs_deepest_q": 0.6864,
+  "all_agree_frac": 0.8079,
+  "all_agree_frac_q": 0.6469,
+  "prior_survival_by_level": {
+    "200": 0.8531,
+    "344": 0.8249,
+    "688": 0.7373
+  },
+  "prior_survival_q_by_level": {
+    "200": 0.7006,
+    "344": 0.6554,
+    "688": 0.5763
+  },
+  "played_eq_q_argmax_by_level": {
+    "200": 0.8164,
+    "344": 0.7712,
+    "688": 0.7599
+  },
+  "mean_top2_q_gap_by_level": {
+    "200": 0.05953,
+    "344": 0.06587,
+    "688": 0.07496
+  },
+  "mean_top2_q_gap_eligible_by_level": {
+    "200": 0.05953,
+    "344": 0.06578,
+    "688": 0.07496
+  },
+  "mean_played_visit_share_by_level": {
+    "200": 0.48449,
+    "344": 0.46575,
+    "688": 0.44184
+  },
+  "n_exact_latch": 0,
+  "prior_worlds_identical_frac": 1.0,
+  "bit_exact_within_world_all_match": true,
+  "n_bit_exact_checked": 354
+}
