@@ -701,3 +701,20 @@ startup, before forking any worker, assert the imported `carc_rs` exposes every 
 requested cells need (`solve_endgame` for marg/clair cells) and abort loudly with the wheel path +
 a "reinstall from rust/carc/target/wheels" hint. One assert + one test. Trigger: next time anyone
 touches `scripts/rustport/bench_exact_solver.py` (do NOT edit while a bench is live).
+
+## 2026-08-04 — `exact_tail.opp_exact_k` overstates a NET opponent's tail K
+
+`eval_puct_priors.py` stamps `config.exact_tail.opp_exact_k = _opp_exact_k` (which defaults
+to the candidate's `--exact-k`, e.g. 4) even when the opponent is a bare net, where
+`_play_one` forces `opp_K = 0`. So a net-opponent cell's `exact_tail` block claims a tail the
+opponent never ran. `config.opponent.exact_k` already records the truthful `0`, so the defect
+is confined to the one field the F13 analyser treats as authoritative.
+
+**Why deferred:** found hours before the F13 ladder launch, during the fix of the sibling
+defect (the opponent block stamping the candidate's K, fixed in `8c99d83`). F13 never uses a
+net opponent, so it cannot affect this run; and the field is exactly the one
+`analyze_f13_ladder.py` reads as its source of truth, with no cheap end-to-end test for the
+net path (it needs a checkpoint). Deliberately not touched mid-launch.
+
+**Fix when actioned:** stamp `0 if opp_kind == "net" else _opp_exact_k` into `exact_tail`,
+leaving the value handed to the workers untouched, and add a net-path manifest test.
