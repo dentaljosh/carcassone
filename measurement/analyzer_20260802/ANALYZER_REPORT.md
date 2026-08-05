@@ -213,13 +213,39 @@ emitted as specified; the distinction only earns its keep on a corpus where game
   estimate of Joshua's play. The mid-game-farmer pattern showing up in both is suggestive
   and nothing more.
 
-# Next slice
+# Next slice (F12) — open ideas, updated 2026-08-05
 
-The obvious follow-ons, in order of what this slice makes cheap:
+Slice 1 remains the only analyzer work landed. Updated context since 2026-08-02: the rust
+port shipped (full k8×1376 champion at ~1.55 s/move on the Pixel), the strength program's
+compute queue is empty (F13 closed 2026-08-05, CL-076), and the boxes are idle — so F12 is
+the natural next build if Joshua funds it. Candidates, cheapest-informative-first:
 
-1. **Per-move EV loss** (ORIGINAL_PROMPT Phase 5 task 2) — the actual move grader. This
-   catalog is its baseline: "farmer on turn 30" now has a reference distribution.
-2. **Phase-6 Track A folk claims** are now one query away from testable descriptively —
-   "first farmer in a field usually wins it" needs farm-ownership-over-time, which the
-   meeple ledger already carries.
-3. **More E4 games.** The binding constraint is sample size, exactly as BACKLOG predicted.
+1. **Per-move EV loss grader, offline** (ORIGINAL_PROMPT Phase 5 task 2 — the actual move
+   grader). Replay an E4 archive, run the champion's search at each human ply,
+   Δ = Q(best) − Q(played) in expected-margin points. This catalog is its baseline
+   ("farmer on turn 30" now has a reference distribution), and CL-070 is its mandatory
+   noise floor: the champion self-disagrees ~26–30% at fixed budget, so "not the top move"
+   is never a blunder signal — bucket by Δ magnitude (agree / within-noise / inaccuracy /
+   blunder). Cost: ~70 searched plies per game on desktop = minutes per archive. This is
+   the slice the report's own findings ask for (game 2's during-play deficit says *where*
+   points were lost; a grader says *which moves*).
+2. **Coach mode, on-device** (BACKLOG 2026-07-30 sketch) — the same grader made real-time
+   in the app. Materially cheaper than when sketched: the rust core grades at champion
+   budget in ~1.5 s. Needs `grade_last_move()` in the bridge, a UI badge, and the
+   `coached: true` archive flag from day one. **The gating question the roadmap carries:**
+   coached games measure the learning curve, not the rating — so shipping coach mode
+   before a body of *uncoached* E4 games exists contaminates the E4 rating stream.
+   Recommendation: land slice-2a (offline grader) first, collect uncoached E4 games,
+   gate the coach-mode flip on Joshua's explicit call alongside the APK rebuild.
+3. **A k8×1376 reference corpus.** The grading-epoch caveat above is now live: any archive
+   from the post-2026-08-01 build (fixed_v1, k8×1376) cannot be diffed against this
+   k4×688 corpus. A fixed_v1 champion self-play corpus at deploy budget is a box-day-scale
+   run (price before funding) and also refreshes the percentile baselines for slice 1.
+4. **Phase-6 Track A folk claims** — one query away descriptively ("first farmer in a
+   field usually wins it" needs farm-ownership-over-time, which the meeple ledger already
+   carries). Descriptive only; causal versions need the paired-constraint machinery.
+5. **More E4 games.** Still the binding constraint (n = 2), exactly as BACKLOG predicted —
+   and upstream of it sits the open APK-rebuild + E4-rules call.
+
+Phase 5 stays downstream of the strength milestones (2026-05-28 goal change) — all of the
+above is opt-in analysis/coaching value, not a strength lever.
