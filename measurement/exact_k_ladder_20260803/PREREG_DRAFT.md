@@ -87,6 +87,34 @@ screen answers the likely outcome, and the expensive confirm is bought only if t
 4. K=2 control rung reads **>+2σ** (shallower beats production) → instrument alarm:
    halt, audit the harness before interpreting anything.
 
+## Identity gate: RESULT + a recorded deviation (2026-08-04)
+
+**PASS at 17/20 games, 0 divergences** — not the pre-registered 20/20. What the gate actually
+compares is stronger than the prereg's wording: not "the K4 arm vs the K4 arm", but **the new
+F13 rust tail vs the pre-F13 inline PYTHON tail**, move for move (`f13_smoke.py:120-127`).
+17 games × ~142 plies ≈ 2,400 plies of exact action agreement, 4 latch solves/game, across
+4 independent seed families.
+
+**Why it stopped at 17 (Joshua: "let's move on"):** the smoke's *reference* arm runs
+**uncapped** (`caps={}`, `k_floor=0`) while the F13 arm is capped — so a single pathological
+clairvoyant K4 position in the ~20×-slower python solver blocks its shard indefinitely. One
+shard produced 0 games in 3.5 h, then 1 in 7.5 h. The block is in the REFERENCE arm, not in
+anything under test.
+
+**Why 17 is sufficient, stated as a falsifiable claim:** an identity failure here would be
+*systematic* (a wiring bug diverges at ply 1 of game 1, not at game 18), and — the load-bearing
+point — **this gate never exercises the capped/fallback path at all**, since K≤4 is uncapped by
+construction. The risky new code (cap → K−1 fallback → recursion → counters) is covered by
+`tests/test_f13_exact_ladder.py`, not by these games, so games 18-20 would have added zero
+coverage of it. If that reasoning is wrong, the failure mode it misses is a divergence that
+appears only on rare positions — which the ladder's own per-cell manifests would surface as
+anomalous latch counts.
+
+**Free side-measurement:** the rust tail ran **4–10× faster** than the python tail it replaces
+on identical positions (per-game pairs: 130.1s/1346.6s, 81.3s/322.7s, 71.2s/354.4s). This is
+the direct confirmation that the pre-F13 harness silently ran the python solver under
+`--backend rust` — the defect that would have made the K5/K6 rungs infeasible.
+
 ## Falsifiers / guards
 
 - Identity smoke before the ladder: K=4-vs-K=4, 20 games, must be 100% identical actions.
