@@ -9,9 +9,11 @@ The fixtures reproduce the REAL emitter's on-disk shape (verified against
     seed / a_seat / diff (cand - opponent) / won_by_cand / drew / game_timeout and
     the `f13_*` counter block;
   * a per-cell ``manifest.json`` whose AUTHORITATIVE per-arm K lives at
-    ``config.exact_tail.{cand_exact_k,opp_exact_k}`` — the round-robin
-    candidate/opponent blocks both stamp the CANDIDATE's `exact_k`, which is an
-    emitter defect the parser must not fall for (`test_incumbent_k_not_read_from_...`).
+    ``config.exact_tail.{cand_exact_k,opp_exact_k}``. Two manifest generations exist:
+    OLD cells (pre 2026-08-04) stamp the CANDIDATE's `exact_k` into the round-robin
+    ``config.opponent`` block too (emitter defect, fixed in eval_puct_priors), NEW cells
+    stamp the opponent's own K there. The parser sources exact_tail and must yield the
+    SAME incumbent K for both (`TestIncumbentK`).
 
 Covered, in the order the brief names them:
   * per-rung stat math against hand-computed values;
@@ -52,8 +54,12 @@ def write_cell(root: Path, name: str, cand_k: int, decks: dict, *, band: int = B
                champ_cap_hits: int = 0, n_planned: int | None = None,
                cand_sims: int = 2750, rules_profile: str = "fixed_v1",
                r9_env_ok: bool = True, timeouts: set | None = None,
-               write_summary: bool = True) -> Path:
-    """`decks` maps deck seed -> (diff_at_seat0, diff_at_seat1)."""
+               write_summary: bool = True, legacy_opp_block: bool = False) -> Path:
+    """`decks` maps deck seed -> (diff_at_seat0, diff_at_seat1).
+
+    `legacy_opp_block=True` reproduces a PRE-2026-08-04 manifest, whose
+    ``config.opponent.exact_k`` carries the CANDIDATE's K (the emitter defect).
+    """
     d = root / name
     d.mkdir(parents=True, exist_ok=True)
     timeouts = timeouts or set()
@@ -93,12 +99,14 @@ def write_cell(root: Path, name: str, cand_k: int, decks: dict, *, band: int = B
             "seed_start": band, "n": n_planned if n_planned is not None else len(games),
             "paired": True, "exp_id": f"f13_exactk{cand_k}_fixed_v1_vs_champk{opp_k}",
             "cand_sims": cand_sims, "champ_sims": cand_sims,
-            # ⚠️ EMITTER DEFECT reproduced on purpose: both round-robin blocks stamp the
-            # CANDIDATE's exact_k, so the incumbent's K is WRONG here. The parser must
-            # read config.exact_tail instead.
+            # Legacy pre-F13 top-level field = the CANDIDATE's K on both generations.
             "exact_k": cand_k,
             "candidate": {"kind": "puct", "exact_k": cand_k},
-            "opponent": {"kind": "puct", "exact_k": cand_k},
+            # NEW (default): the opponent block carries the OPPONENT's K.
+            # legacy_opp_block=True: the pre-2026-08-04 emitter defect, where it
+            # carried the candidate's K. The parser must not read either one.
+            "opponent": {"kind": "puct",
+                         "exact_k": cand_k if legacy_opp_block else opp_k},
             "exact_tail": {
                 "cand_exact_k": cand_k, "opp_exact_k": opp_k,
                 "wall_caps": {"5": 300.0, "6": 600.0},
@@ -176,15 +184,50 @@ class TestRungStats:
         assert r["latch_solves"] == 32 and r["cap_hits"] == 8
         assert r["censored_rate"] == pytest.approx(0.25)
 
-    def test_incumbent_k_not_read_from_the_defective_block(self, tmp_path):
-        """config.candidate/opponent both stamp the CANDIDATE's exact_k (emitter
-        defect). The parser must take the incumbent K from config.exact_tail."""
+
+# =========================================================================== #
+# 1b. per-arm K provenance: BOTH manifest generations must parse identically  #
+# =========================================================================== #
+class TestIncumbentK:
+    """`config.exact_tail` is the authoritative per-arm K.
+
+    The emitter's round-robin `config.opponent` block used to stamp the CANDIDATE's
+    `exact_k` (fixed 2026-08-04 -> it now stamps `_opp_exact_k`), so cells written on
+    either side of that fix are on disk. The parser reads exact_tail and must return
+    the same incumbent K for both.
+    """
+
+    def test_new_manifest_opponent_block_reports_the_opponents_k(self, tmp_path):
         d = write_cell(tmp_path, "f13_fixed_v1_k6", 6, {BAND: (1, 1)}, opp_k=4)
+        man = json.loads((d / "manifest.json").read_text())["config"]
+        assert man["candidate"]["exact_k"] == 6
+        assert man["opponent"]["exact_k"] == 4       # fixed emitter: the incumbent's K
+        c = az.load_cell(d)
+        assert (c["cand_k"], c["opp_k"]) == (6, 4)
+
+    def test_old_defective_manifest_still_parses_to_the_right_incumbent_k(self, tmp_path):
+        """Back-compat: a pre-fix cell lies in config.opponent; exact_tail does not."""
+        d = write_cell(tmp_path, "f13_fixed_v1_k6", 6, {BAND: (1, 1)}, opp_k=4,
+                       legacy_opp_block=True)
+        man = json.loads((d / "manifest.json").read_text())["config"]
+        assert man["opponent"]["exact_k"] == 6       # the old defect, on purpose
         c = az.load_cell(d)
         assert c["cand_k"] == 6
-        assert c["opp_k"] == 4                       # NOT 6
-        assert json.loads((d / "manifest.json").read_text())[
-            "config"]["opponent"]["exact_k"] == 6    # the defect is really there
+        assert c["opp_k"] == 4                       # NOT 6 — read from exact_tail
+
+    def test_both_generations_agree(self, tmp_path):
+        new = az.load_cell(write_cell(tmp_path / "new", "f13_fixed_v1_k6", 6,
+                                      {BAND: (1, 1)}, opp_k=4))
+        old = az.load_cell(write_cell(tmp_path / "old", "f13_fixed_v1_k6", 6,
+                                      {BAND: (1, 1)}, opp_k=4, legacy_opp_block=True))
+        assert (new["cand_k"], new["opp_k"]) == (old["cand_k"], old["opp_k"]) == (6, 4)
+
+    def test_symmetric_cell_reports_the_same_k_on_both_arms(self, tmp_path):
+        d = write_cell(tmp_path, "f13_fixed_v1_k4", 4, {BAND: (1, 1)}, opp_k=4)
+        man = json.loads((d / "manifest.json").read_text())["config"]
+        assert man["candidate"]["exact_k"] == man["opponent"]["exact_k"] == 4
+        c = az.load_cell(d)
+        assert (c["cand_k"], c["opp_k"]) == (4, 4)
 
 
 # =========================================================================== #

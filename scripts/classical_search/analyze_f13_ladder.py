@@ -106,9 +106,15 @@ def load_cell(d: Path) -> dict:
     tail = cfg.get("exact_tail") or {}
     rp = manifest.get("rules_profile") or {}
 
-    # The AUTHORITATIVE per-arm K is config.exact_tail (the block F13 added). The
-    # round-robin candidate/opponent blocks both stamp `exact_k: args.exact_k`, i.e.
-    # the CANDIDATE's K on BOTH sides — do not read the incumbent's K from there.
+    # The AUTHORITATIVE per-arm K is config.exact_tail (the block F13 added) — for BOTH
+    # manifest generations, which is why it stays the source of truth here:
+    #   * OLD manifests (emitted before 2026-08-04) stamp the CANDIDATE's `exact_k` into
+    #     the round-robin `config.opponent` block as well, so the incumbent's K reads
+    #     WRONG there. Those cells are on disk and immutable.
+    #   * NEW manifests stamp the opponent's resolved `_opp_exact_k` correctly.
+    # Reading exact_tail parses both generations identically; reading config.opponent
+    # would silently mis-report every pre-fix cell. Do NOT "upgrade" this to the
+    # candidate/opponent blocks (tests/test_analyze_f13_ladder.py pins both generations).
     cand_k = tail.get("cand_exact_k")
     opp_k = tail.get("opp_exact_k")
     if cand_k is None and games:

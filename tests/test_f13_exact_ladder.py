@@ -439,6 +439,13 @@ class TestEndToEnd:
         assert tail["k_floor"] == 1
         assert tail["solver"] == "python"
         assert tail["ladder_engaged"] is True
+        # PROVENANCE (fixed 2026-08-04): the round-robin opponent block must carry the
+        # OPPONENT's K, not the candidate's. It used to stamp args.exact_k, so an
+        # asymmetric cell recorded its K=2 incumbent as K=3.
+        assert man["config"]["candidate"]["exact_k"] == 3
+        assert man["config"]["opponent"]["exact_k"] == 2
+        # the legacy top-level field stays the CANDIDATE's K (pre-F13 shape)
+        assert man["config"]["exact_k"] == 3
         assert "fork+SIGKILL" in tail["cap_mechanism"]
         assert tail["censor_threshold"] == et.CENSOR_THRESHOLD
 
@@ -484,6 +491,12 @@ class TestEndToEnd:
         assert "f13" not in man, "a legacy cell's manifest must not be patched"
         assert man["config"]["exact_tail"]["ladder_engaged"] is False
         assert man["config"]["exact_tail"]["cap_mechanism"] == "none (uncapped)"
+        # symmetric cell: BOTH arm blocks report the same (shared) K
+        assert man["config"]["candidate"]["exact_k"] == 2
+        assert man["config"]["opponent"]["exact_k"] == 2
+        # ... and the python-tail provenance string is the one that ran
+        assert man["config"]["backend"]["tail_engine"] == "python"
+        assert "stay Python" in man["config"]["backend"]["unconverted"]
         for g in games:
             for k in epp._F13_RESULT_FIELDS:
                 assert k not in g, f"legacy per-game JSON grew an F13 key: {k}"
@@ -501,6 +514,41 @@ class TestEndToEnd:
         with pytest.raises(SystemExit):
             _run_cell(tmp_path, ["--exact-k", "3", "--opp-exact-k", "2",
                                  "--exact-k-floor", "6"])
+
+
+# =========================================================================== #
+# 6b. backend provenance: the "unconverted" prose follows the RESOLVED tail    #
+# =========================================================================== #
+class TestBackendUnconvertedProvenance:
+    """`config.backend.unconverted` used to hardcode "the exact-K clairvoyant tail on
+    BOTH sides ... stay Python". True pre-F13, FALSE under --exact-solver rust. It is
+    now derived from the resolved solver (eval_puct_priors._backend_unconverted)."""
+
+    def test_python_tail_is_listed_as_unconverted(self):
+        s = epp._backend_unconverted("python")
+        assert "exact-K clairvoyant tail on BOTH sides" in s
+        assert "stay Python" in s
+        assert "same Python solver on both sides" in s
+        assert "CONVERTED" not in s
+
+    def test_rust_tail_is_not_claimed_to_be_python(self):
+        s = epp._backend_unconverted("rust")
+        assert "carc_rs.MirrorState.solve_endgame" in s
+        assert "CONVERTED on both sides" in s
+        # the tail must NOT appear in the unconverted list any more
+        assert "exact-K clairvoyant tail on BOTH sides" not in s
+        # the two non-tail unconverted items survive either way
+        for s2 in (s, epp._backend_unconverted("python")):
+            assert "HeuristicMCTS opponent" in s2 and "net arm" in s2
+
+    def test_the_two_solvers_produce_different_prose(self):
+        assert epp._backend_unconverted("rust") != epp._backend_unconverted("python")
+
+    def test_no_stale_python_tail_sentence_left_in_the_source(self):
+        src = SCRIPT.read_text()
+        assert "The tail is shared\n" not in src
+        assert "The EXACT tail stays Python for" not in src, \
+            "the _play_one inline comment still asserts a Python-only tail"
 
 
 # =========================================================================== #

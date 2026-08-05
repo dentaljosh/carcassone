@@ -875,6 +875,36 @@ _F13_RESULT_FIELDS = (
 )
 
 
+def _backend_unconverted(exact_solver: str) -> str:
+    """`config.backend.unconverted` — DERIVED from the resolved tail solver.
+
+    Pre-F13 this was a hardcoded sentence claiming the exact-K clairvoyant tail
+    "stays Python for both sides". That is FALSE under ``--exact-solver rust``
+    (F13 added `carc_rs.MirrorState.solve_endgame`, the true-deck clairvoyant
+    endgame solve on the prefix's live mirror — a different entry point from
+    `FairAgentRs.solve_marginalized`). The provenance record must say what
+    actually ran, so the tail clause is now a function of the resolved config.
+    """
+    parts = ["the h<sims> HeuristicMCTS opponent (frozen ruler, no Rust port)",
+             "every net arm (Gap 3: the Rust core carries no evaluator)"]
+    if exact_solver == "rust":
+        tail = ("The exact-K clairvoyant tail is CONVERTED on both sides "
+                "(--exact-solver rust -> carc_rs.MirrorState.solve_endgame on the "
+                "prefix's live MirrorState; the CLI refuses a rust tail without a "
+                "rust prefix on both arms). Both sides run the SAME solver "
+                "implementation, so the conversion cannot bias the A/B; the two "
+                "arms' tail DEPTHS may still differ by design "
+                "(config.exact_tail.{cand_exact_k,opp_exact_k}).")
+    else:
+        parts.append("the exact-K clairvoyant tail on BOTH sides (carc_rs exposes "
+                     "MirrorState.solve_endgame only under --exact-solver rust; "
+                     "FairAgentRs.solve_marginalized is the FAIR marginalized "
+                     "solve, not this harness's true-deck clairvoyant solve)")
+        tail = ("The tail runs the same Python solver on both sides, so leaving it "
+                "Python cannot bias the A/B -- it only caps the realised speedup.")
+    return f"{', '.join(parts)} stay Python. {tail}"
+
+
 def _f13_telemetry(cand, champ, on: bool) -> dict:
     """Per-game F13 counters read off the two _ExactHandoff tails (empty when OFF)."""
     if not on:
@@ -1101,10 +1131,12 @@ def _play_one(args) -> GameResult | None:
     # Seat EVERY Rust mirror (candidate and/or opponent) on the real initial board.
     # Both mirrors see EVERY applied action of BOTH seats -- a mirror that only saw its
     # own moves would answer from a frozen board, which `check_sync` turns into a hard
-    # MirrorDesync rather than a silently wrong move. The EXACT tail stays Python for
-    # both sides: FairAgentRs.solve_marginalized is the FAIR marginalized solve, not
-    # this harness's clairvoyant exact-K solve, and both sides share the tail
-    # identically -- so leaving it Python cannot bias the A/B.
+    # MirrorDesync rather than a silently wrong move. The EXACT tail's engine follows
+    # `--exact-solver` (_tail_kw above), the SAME choice on both sides: `python` (the
+    # default) runs scripts/level2/endgame_solver.solve -- FairAgentRs.solve_marginalized
+    # is the FAIR marginalized solve, not this harness's clairvoyant exact-K solve --
+    # while `rust` (F13) runs carc_rs.MirrorState.solve_endgame on the live mirror above.
+    # Either way both sides run the same solver, so the choice cannot bias the A/B.
     _mirrors = [p for p in (cand_prefix, champ_prefix) if hasattr(p, "advance")]
     for _m in _mirrors:
         _m.start_game(board)
@@ -1908,6 +1940,8 @@ def main(argv=None) -> int:
                "cand_sims": args.cand_sims, "champ_sims": args.champ_sims,
                "champion": {"agent": "HeuristicMCTS", "heur_leaf": "v2_7",
                             "c": CHAMP_C, "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)"},
+               # Legacy pre-F13 field: the CANDIDATE's tail K (both arms shared it
+               # before --opp-exact-k existed). Per-arm truth = exact_tail below.
                "exact_k": args.exact_k, "exact_mode": "clairvoyant",
                "exact_budget": EXACT_BUDGET,
                # F13 exact-K ladder: the RESOLVED tail config, per arm. Recorded
@@ -1981,14 +2015,10 @@ def main(argv=None) -> int:
         "opponent_engine": _opp_engine,
         "applies_to": "the CLAIRVOYANT PUCT search on either side "
                       "(RustClairvoyantAgent over MirrorState.search_single)",
-        "unconverted": "the h<sims> HeuristicMCTS opponent (frozen ruler, no Rust "
-                       "port), every net arm (Gap 3: the Rust core carries no "
-                       "evaluator), and the exact-K clairvoyant tail on BOTH sides "
-                       "(carc_rs exposes only FairAgentRs.solve_marginalized, the "
-                       "FAIR marginalized solve, not this harness's true-deck "
-                       "clairvoyant solve) stay Python. The tail is shared "
-                       "identically by both sides, so leaving it Python cannot bias "
-                       "the A/B -- it only caps the realised speedup.",
+        # Derived from the RESOLVED tail solver (F13): the old hardcoded sentence
+        # asserted a Python tail unconditionally, which --exact-solver rust falsifies.
+        "unconverted": _backend_unconverted(args.exact_solver),
+        "tail_engine": ("rust" if args.exact_solver == "rust" else "python"),
         "candidate_agent_class": ("RustClairvoyantAgent" if _cand_engine == "rust"
                                   else "HeuristicPriorAgent"),
         "opponent_agent_class": ("RustClairvoyantAgent" if _opp_engine == "rust"
@@ -2028,11 +2058,16 @@ def main(argv=None) -> int:
                           "exact_k": args.exact_k,
                           "c_puct": None, "tau_p": None, "leaf_quantize": None,
                           "final_select": None, "value_norm": None}
+        # ⚠️ The opponent block's `exact_k` is the OPPONENT's RESOLVED tail K
+        # (_opp_exact_k), NOT the candidate's --exact-k. Before 2026-08-04 both branches
+        # below stamped args.exact_k, so an asymmetric F13 cell recorded a K=4 incumbent
+        # as K=6. The AUTHORITATIVE per-arm record is (and stays) config.exact_tail —
+        # readers must keep sourcing it from there so old manifests still parse.
         if opp_kind == "heur":
             opp_block = {"kind": "heur", "agent": "HeuristicMCTS", "heur_leaf": "v2_7",
                          "c": CHAMP_C, "sims": opp_sims,
                          "leaf": "v2.9 Bmild_cap8 (DEFAULT_CONFIG)",
-                         "exact_k": args.exact_k}
+                         "exact_k": _opp_exact_k}
         elif opp_kind == "puct":
             # flag-OFF champion PUCT sibling (shares c_puct/tau_p/leaf_quantize; variant
             # knobs forced to champion). --opp-reuse-tree -> the champion OF RECORD
@@ -2040,7 +2075,7 @@ def main(argv=None) -> int:
             opp_block = {"kind": "puct", "agent": "HeuristicPriorAgent",
                          "role": ("champion of record (reuse_tree ON)"
                                   if args.opp_reuse_tree else "champion (variant flags OFF)"),
-                         "sims": opp_sims, "exact_k": args.exact_k,
+                         "sims": opp_sims, "exact_k": _opp_exact_k,
                          "reuse_tree": bool(args.opp_reuse_tree),
                          # T3 --opp-pin-champion (§3/§5a): whether the shared c/τ/quant axes
                          # were pinned to the champion constants (True) or copied from the
@@ -2151,7 +2186,8 @@ def main(argv=None) -> int:
 
     if not args.no_results_csv:
         if not new_mode:
-            note = (f"Phase 1.1 PUCT-heur-priors vs champion (search-only, both exact-K<={args.exact_k}). "
+            note = (f"Phase 1.1 PUCT-heur-priors vs champion (search-only, cand exact-K<="
+                    f"{args.exact_k} / opp exact-K<={_opp_exact_k}). "
                     f"c_puct={args.c_puct} tau_p={args.tau_p} quant={args.leaf_quantize} "
                     f"select={args.final_select}. cand ms/move {summ['cand_prefix_ms_per_move']:.0f} "
                     f"vs champ {summ['champ_prefix_ms_per_move']:.0f}. paired_z={summ['paired_z']}.")
@@ -2175,12 +2211,12 @@ def main(argv=None) -> int:
             else:
                 cand_desc = f"HeuristicMCTS h{args.cand_sims}"
             if opp_kind == "heur":
-                opp_desc = f"HeuristicMCTS h{opp_sims} (exact-K<={args.exact_k})"
+                opp_desc = f"HeuristicMCTS h{opp_sims} (exact-K<={_opp_exact_k})"
             elif opp_kind == "puct":
                 opp_desc = (f"PUCT-heur-priors CHAMPION "
                             f"(select={CHAMP_PUCT_FINAL_SELECT} value_norm={CHAMP_PUCT_VALUE_NORM:g} "
                             f"reuse={'ON' if args.opp_reuse_tree else 'off'}) s{opp_sims} "
-                            f"(exact-K<={args.exact_k})")
+                            f"(exact-K<={_opp_exact_k})")
             else:
                 opp_desc = (f"NeuralMCTS {Path(net_ckpt).stem}@{NET_SIMS} c{NET_CPUCT} "
                             f"rs{NET_RESIDUAL_SCALE} (bare, rod_v2 anchor cfg"
