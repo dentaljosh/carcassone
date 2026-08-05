@@ -596,6 +596,36 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 
 **Why deferred:** the app worktree already carries the unmerged border/start-tile work and the boxes are owned by the leaf ablation overnight; this slots in as the next app work item after the merge window. Needs no new measurement to start — CL-070's data already exists for threshold calibration.
 
+## 2026-08-05 — Server-side champion ("thin-client APK"): stop shipping the algorithm with the app
+
+**Context:** Joshua asked what a server version would take, motivated by IP — today anyone with the APK has the champion. **The concern is correct and the exposure is larger than "a compiled binary you could reverse-engineer":**
+
+- `android/tools/sync_python.py` bundles **plain `.py` source** of `src/carcassonne_ai` and `engine/wingedsheep`, plus `endgame_solver.py`, `c5_leaf_override.py`, `snapshot.py`. `.pyc` is in `EXCLUDE_SUFFIXES` (:96) — so it is *source*, not even bytecode.
+- It also bundles **`governance/PRODUCTION.yaml`** as `carcassonne_ai/data/PRODUCTION.yaml` — the champion of record with every tuned knob (`c_puct 1.5`, curve125, cap8, k8×1376, exact K≤2, leaf hash) **and the inline commentary explaining why each value was chosen**. For a *classical* agent with no trained weights, that config IS the secret; there is nothing else to protect.
+- Only the Rust core (`carc_rs`) ships compiled — and `rust_agent.py` documents its interface in the clear.
+
+**Why the architecture is unusually ready for this.** The FFI boundary is already an RPC-shaped protocol: `start_game_from_deck(deck)` / `advance(action)` / `choose_action(move_idx)`, mirror-state-advanced-by-action-ints, called at the bridge's **single choke point**. Swapping the local `carc_rs` call for a network call is close to a drop-in — the same wire contract that makes every replay fixture double as an FFI test makes it double as a request body.
+
+**The natural split is favourable:** the *engine* (rules, legality, UI) must stay on-device for a responsive UI — and it is the **least** secret part (vendored open-source wingedsheep + our patches). The *agent* (leaf + search + config) is the secret part and is exactly what moves cleanly server-side.
+
+**Benefits beyond IP:**
+- **Latency probably improves.** Phone = 1.551 s/move (mobile profile, rust_threads 4); desktop Rust threads=8 = **0.305 s/move** at the same k8×1376. A round trip plausibly still beats on-device.
+- **E4 archive integrity.** Server-authoritative play makes archives tamper-evident and centralises them, which is strictly better for the E4 rating stream than trusting phone-written files.
+- **Kills the ARM↔x86 parity burden** for the agent leg (the engine leg remains).
+
+**⚠️ The honest limit — a server protects the IMPLEMENTATION, not the POLICY.** Anyone with query access can distil the champion from its own moves; that is precisely the distillation this project already knows how to do internally (the 2026-07 flywheel). Against casual APK extraction a server is decisive; against a determined adversary with API access it buys obfuscation and cost, not secrecy. Rate-limiting/auth is therefore not optional — an open endpoint is a free strong Carcassonne engine.
+
+**⚠️ Tension with the publications track.** The advisor's 90-day go/no-go and the P1 paper are about *deliberately* publishing the algorithm. Code secrecy has a defined shelf life; decide what stays proprietary (tuned constants) vs what is published (method) before building for secrecy.
+
+**Costs:** offline play dies; availability becomes a dependency (⚠️ the local box dirty-crashed 3× on 2026-08-04); auth + rate limiting + a hosting story; a new failure mode mid-game.
+
+**Cheaper middle options, in order of effort:**
+1. **Narrow the bundle** — ship the Rust core as the only agent path and stop bundling the Python champion + `PRODUCTION.yaml`. Removes most of the leak with **no server at all**. Needs the on-device champion to not depend on the Python leg (the rust port already does the compute; the dependency is orchestration/config).
+2. **Strip the config commentary** and ship a minimal resolved config rather than the governance file with its rationale.
+3. **Server only for tournament/exhibition mode**, local play for casual — keeps offline, protects the interesting case.
+
+**Why deferred:** no decision required yet, and it should not be built for secrecy before the publications scope is settled. Option 1 is the high-value/low-cost move and is worth pricing on its own. **Not a strength lever** — no measurement owed if action identity holds (CL-071 precedent).
+
 ## 2026-07-30 — "Eff Hans": rule-variant exploration to find a better game
 
 **Context:** Joshua, same-night brainstorm: use the apparatus to experiment with RULE changes — road scoring weights, tile-bag composition — and measure whether the variant is a *better game*. Precedent: DeepMind + Kramnik, "Assessing Game Balance with AlphaZero" (2020, chess variants). Our version is far cheaper: the classical champion's search adapts to new rules instantly; only the leaf needs a re-sweep per variant (C5/C7 machinery), no training runs.
