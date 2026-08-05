@@ -186,6 +186,31 @@ not to the prose):
 - The strength stats exclude watchdog-abandoned games (`game_timeout`) while the censoring
   counters deliberately **include** them; the analysis mirrors that split exactly.
 
+## K6 bench-then-commit rider: RESULT — the rung is fundable (2026-08-04)
+
+9 games (of a planned 10) of the K=6 arm, 5 shards, rust solver, caps 5:300/6:600, floor 4:
+
+| latch solves | capped attempts | cap hits | **rate (prereg denominator)** | rate over capped | peak RSS | wall/game |
+|---|---|---|---|---|---|---|
+| 52 | 16 | 2 | **0.038** | 0.125 | 392 MB | 190–912 s |
+
+**Verdict: NOT censored — launch K6 at the configured W.** 0.038 against a 0.20 threshold.
+
+Two reasons this is decisive despite the missing 10th game and the sharded (contended) measurement:
+1. **The bias is one-sided and points the safe way.** Sharding inflates walls, which inflates
+   cap-hits; the measured rate is therefore an OVER-estimate. Under 0.20 while contended ⇒
+   under 0.20 clean.
+2. **The 10th game cannot flip it.** Worst case — every one of its ~6 latch solves caps out —
+   gives 8/58 = 0.138, still under threshold. The game was killed rather than waited on
+   (Joshua: "do we even care about the last game?"); it could not have changed the decision.
+
+**W sizing (the rider's other job):** peak 392 MB/worker. A capped solve forks a child, so a
+worker slot can transiently hold two resident processes (~784 MB worst case) — but the fork is
+fork-and-WAIT (parent blocks, observed at ~49% CPU while its child computes), so concurrency
+stays bounded at W and does not oversubscribe. At W=30 against 37 GB available, RAM is not
+binding. **No new W sweep: the F7d re-sweep's measured local W\*=30 / laptop W\*=26 stand**
+(they beat the threads−2 policy default, which applies only absent a measured W\*).
+
 ## Falsifiers / guards
 
 - Identity smoke before the ladder: K=4-vs-K=4, 20 games, must be 100% identical actions.
