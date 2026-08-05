@@ -75,6 +75,8 @@ Rationale for not simply running at 11008: 4× the budget on the two expensive r
 prior (the June ladder + the F3 fair-optimum ceiling) that strongly favours the null — the cheap
 screen answers the likely outcome, and the expensive confirm is bought only if the screen surprises.
 
+## Decision map (pre-registered)
+
 1. **All rungs' paired-margin z < +2 and the trend slope z < +2** → the June null
    generalizes, powered, modern-era: exact:K row gets its final stamp; the endgame-net
    lever is STILLBORN (ceiling argument); no further endgame-exactness work.
