@@ -283,6 +283,56 @@ provenance were never in question and are unchanged: `sims_effective 1376` × `k
 = **11008**, `verify: true`, leaf `a36d2e15a3b3d71d`, no `runtime_budget_override` ⇒ Joshua beat
 the champion of record at full strength, under Aug-2 rules rather than the full fixed_v1 bundle.
 
+## 6c. GAMES 4–6 (2026-08-05 evening) — the first fixed_v1-epoch session: 2 L, 1 W (blowout). **The grade-vs-outcome correlation INVERTS.**
+
+Three games on the freshly installed fixed_v1 build (archives self-label `rules_profile:
+fixed_v1` / `farm_rule: r9` — the resolver's priority route 1 fired, `rules_profile_source`
+"explicit stamp"). All graded at k8×1376 = 11008 with calibration; **all three gates PASS**
+(champion mean ΔQ ≤ null p95 in each: 0.0425/0.1609, 0.0232/0.1726, 0.0156/0.0985),
+`replay_scores_match: true` and 0 desyncs on all three. Artifacts `EV_LOSS_1785982194_*.json`,
+`EV_LOSS_1785984310_*.json`, `EV_LOSS_1785986044_*.json`.
+
+| game | result | human ΔQ | champ ΔQ | ratio | z | human blunders | champ |
+|---|---|---:|---:|---:|---:|---:|---:|
+| g4 | **L** 80–87 | 0.06958 | 0.04247 | **1.64×** | +1.19 | 1 | 1 |
+| g5 | **L** 101–107 | 0.08962 | 0.02323 | **3.86×** | +3.21 | **12** | 2 |
+| g6 | **W** 109–65 | 0.05823 | 0.01555 | **3.74×** | +2.13 | 1 | 1 |
+
+**The night's finding: his graded quality and his results point in opposite directions.**
+His *cleanest relative game* (g4, 1.64×, one blunder each, statistically indistinguishable
+seats at z +1.19) he **lost**. His *worst-graded game* (g5, 12 blunder-class moves, z +3.21 —
+the first past-3σ game in the set) he lost **by 6 points** — the contested-farm battle
+(farms 33–30; one ~30-pt farm, 4–5 meeples committed, ownership "kept flipping"). And the
+**109–65 destruction** (g6) he played at 3.74× the champion's per-move loss with the single
+largest ΔQ in any game (0.924, ply 44). Across six graded games, the two he won are among the
+three he played "worst" as priced by the champion's own search.
+
+Mechanically the g5 signature is new: **blunders spread over the whole game** (plies 12→128,
+11 of 12 in the tiles phase; early 0.0859 / late 0.0928 — no late clean-up), unlike g3's
+front-loaded pattern. His meeple placement stays clean everywhere (g5 0.0361, g6 0.0377 vs
+tiles 0.1355 / 0.0715) — across all six games the loss lives in **tile placement**, never in
+meeple placement. Exact tail: **0.0 points, both seats, all three games** — five straight
+games of exact-perfect endgames on both sides.
+
+**Reading.** Two hypotheses survive, now with three more data points each:
+1. **Deck variance dominates single games.** At the measured luck floor (~6% champ-vs-greedy;
+   protocol wr 0.55) single-game outcomes are noisy, and grade-vs-outcome inversion across
+   n=3 is unremarkable. The 6-pt g5 loss despite 12 blunders and the g4 loss despite clean
+   play both fit "the deck decides the close ones".
+2. **The champion's pricing is wrong about his strategy, specifically contested farms.** The
+   external ledger evidence (README): he is **6-for-6 on farms across every archived game**;
+   the champion averages **11.0 farm pts/seat against him vs 20.5 in its own corpus**, and
+   took **0** in g6 (its own p5). If fighting for a big shared farm is systematically
+   mis-priced by the leaf, his farm-war moves grade as blunders while winning the 30 points —
+   which is exactly the g5/g6 shape (high ΔQ concentrated in tile placement, where farm
+   connections are made). ⚠️ The grader CANNOT adjudicate this: it prices moves with the same
+   leaf that is under suspicion. The discriminating instrument is the one already named in §7:
+   score his high-ΔQ moves against an *independent* reference (exact solver where K allows, or
+   oracle-style CRN deck-completion scoring — `oracle_score_pilot.py` exists) and check
+   whether "blunders" in farm wars systematically out-earn the champion's preferred move.
+
+n=6 total, all screens. Neither hypothesis is promoted; both are now concrete enough to test.
+
 ## 7. What this does and does not settle
 
 - It **converts CL-070's "the move changed" into "the move cost N ΔQ"** — the named successor
