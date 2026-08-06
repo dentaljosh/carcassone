@@ -1,0 +1,62 @@
+[pilot] population=16 positions | n=16 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=5
+[pilot] out -> /mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/walled
+[pilot] resume: 0 already done, 16 to go
+[1/16] g1_867966_p136 ok delta=+3.344 crn=True 19.139s
+[2/16] g1_867966_p124 ok delta=+7.125 crn=True 49.389s
+[3/16] g1_867966_p104 ok delta=+0.344 crn=True 87.035s
+[4/16] g1_867966_p1 ok delta=+4.750 crn=True 170.354s
+[5/16] g1_867966_p5 ok delta=-1.812 crn=True 173.389s
+[6/16] g1_867966_p92 ok delta=-1.312 crn=True 109.137s
+[7/16] g1_867966_p24 ok delta=+12.375 crn=True 197.984s
+[8/16] g1_867966_p64 ok delta=+5.938 crn=True 163.483s
+[9/16] g2_161583_p16 ok delta=+6.000 crn=True 193.434s
+[10/16] g2_161583_p41 ok delta=-2.000 crn=True 186.211s
+[11/16] g2_161583_p21 ok delta=-2.219 crn=True 194.041s
+[12/16] g2_161583_p33 ok delta=-2.750 crn=True 190.438s
+[13/16] g2_161583_p56 ok delta=+3.562 crn=True 176.037s
+[14/16] g2_161583_p72 ok delta=-3.688 crn=True 138.272s
+[15/16] g2_161583_p57 ok delta=-0.969 crn=True 163.514s
+[16/16] g2_161583_p64 ok delta=+4.438 crn=True 151.162s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 16,
+  "m_worlds": 32,
+  "sd_delta_positions": 4.537653521278004,
+  "mean_delta_pts": 2.0703125,
+  "se_mean_delta": 1.134413380319501,
+  "z_pilot_observed": 1.8250071234322964,
+  "mean_within_position_var": 402.484122983871,
+  "var_between_positions_est": 8.012670635920696,
+  "sd_delta_projected_by_m": {
+    "8": 7.636961831049345,
+    "16": 5.759160383459783,
+    "32": 4.537653521278004,
+    "64": 3.781730431633603
+  },
+  "median_crn_var_reduction": 1.4634977578475337,
+  "n_positions_perfect_pairing": 1,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.25112482396100644,
+    "N=16_at_M=32": 0.061705901230012745,
+    "N=16_at_M=8": 0.03666379460764269,
+    "N=16_at_M=16": 0.048618198028336834,
+    "N=16_at_M=64": 0.07404017950561531
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "tier1-greedy",
+  "n_attempted": 16,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 16,
+  "wall_secs": 535.6,
+  "manifest": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/walled/manifest.json"
+}

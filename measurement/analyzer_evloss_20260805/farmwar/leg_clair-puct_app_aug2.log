@@ -1,0 +1,52 @@
+[pilot] population=6 positions | n=6 | M=32 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /mnt/c/carc-shared/analyzer_farmwar_20260805/clair-puct/app_aug2
+[pilot] resume: 0 already done, 6 to go
+[1/6] g3_66810_p20 ok delta=-4.500 crn=True 1992.279s
+[2/6] g3_66810_p12 ok delta=-0.875 crn=True 2087.949s
+[3/6] g3_66810_p28 ok delta=-0.031 crn=True 1827.973s
+[4/6] g3_66810_p32 ok delta=-0.844 crn=True 1769.085s
+[5/6] g3_66810_p56 ok delta=+9.781 crn=True 1304.328s
+[6/6] g3_66810_p60 ok delta=+6.375 crn=True 1309.607s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 6,
+  "m_worlds": 32,
+  "sd_delta_positions": 5.323276447397474,
+  "mean_delta_pts": 1.6510416666666667,
+  "se_mean_delta": 2.173218509316565,
+  "z_pilot_observed": 0.7597218869564513,
+  "mean_within_position_var": 388.01965725806446,
+  "var_between_positions_est": 16.211657846102156,
+  "sd_delta_projected_by_m": {
+    "8": 8.044508375491954,
+    "16": 6.361044444486391,
+    "32": 5.323276447397474,
+    "64": 4.719583137392476
+  },
+  "median_crn_var_reduction": 1.3166087252506014,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.21406317199327204,
+    "N=6_at_M=32": 0.03221029072774355,
+    "N=6_at_M=8": 0.021314451299124508,
+    "N=6_at_M=16": 0.02695536613384989,
+    "N=6_at_M=64": 0.036330387028536346
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "clair-puct",
+  "n_attempted": 6,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 6,
+  "wall_secs": 5166.8,
+  "manifest": "/mnt/c/carc-shared/analyzer_farmwar_20260805/clair-puct/app_aug2/manifest.json"
+}

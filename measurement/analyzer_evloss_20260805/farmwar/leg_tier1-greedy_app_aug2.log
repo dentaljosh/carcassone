@@ -1,0 +1,52 @@
+[pilot] population=6 positions | n=6 | M=32 | policy=tier1-greedy | oracle_sims=100 | W=2
+[pilot] out -> /mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/app_aug2
+[pilot] resume: 0 already done, 6 to go
+[1/6] g3_66810_p20 ok delta=-7.094 crn=True 182.035s
+[2/6] g3_66810_p12 ok delta=+0.656 crn=True 187.089s
+[3/6] g3_66810_p28 ok delta=+2.531 crn=True 192.654s
+[4/6] g3_66810_p32 ok delta=-0.781 crn=True 188.233s
+[5/6] g3_66810_p60 ok delta=+1.812 crn=True 149.799s
+[6/6] g3_66810_p56 ok delta=-11.938 crn=True 156.33s
+
+=== ORACLE-SCORE PILOT SUMMARY ===
+{
+  "n_positions": 6,
+  "m_worlds": 32,
+  "sd_delta_positions": 5.779104331555193,
+  "mean_delta_pts": -2.46875,
+  "se_mean_delta": 2.359309463769714,
+  "z_pilot_observed": -1.0463866813196356,
+  "mean_within_position_var": 466.58131720430106,
+  "var_between_positions_est": 18.81738071236559,
+  "sd_delta_projected_by_m": {
+    "8": 8.782940587462905,
+    "16": 6.926666805732351,
+    "32": 5.779104331555193,
+    "64": 5.109570803275242
+  },
+  "median_crn_var_reduction": 1.232688537533539,
+  "n_positions_perfect_pairing": 0,
+  "n_positions_identical_afterstates": 0,
+  "assumed_effect_pts": 0.07,
+  "implied_z_full_run": {
+    "N=265_at_M=32": 0.19717890114995176,
+    "N=6_at_M=32": 0.02966969830577195,
+    "N=6_at_M=8": 0.019522423075430676,
+    "N=6_at_M=16": 0.024754226932486856,
+    "N=6_at_M=64": 0.03355747255423364
+  },
+  "memo_power_fork": {
+    "note": "memo \u00a74.2: sd ~0.5 pts => z ~2.2 (fund the full run); sd ~1.5 pts => z ~0.75 (do not). Read sd_delta_positions against this.",
+    "z_if_sd_0.5": 2.279034883453959,
+    "z_if_sd_1.5": 0.7596782944846531
+  },
+  "caveat": "The pilot's own mean_delta is a 20-position SCREEN, NOT a verdict on whether budget improves the move. The deliverable is the sd.",
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "oracle_policy": "tier1-greedy",
+  "n_attempted": 6,
+  "n_failed": 0,
+  "crn_verified_all": true,
+  "population_disagreements": 6,
+  "wall_secs": 531.1,
+  "manifest": "/mnt/c/carc-shared/analyzer_farmwar_20260805/tier1-greedy/app_aug2/manifest.json"
+}
