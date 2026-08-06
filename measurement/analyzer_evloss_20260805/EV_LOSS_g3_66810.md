@@ -1,17 +1,17 @@
 # Per-move EV loss — `1785975832_66810.json` (`g3_66810`)
 
-**Spec:** `measurement/analyzer_evloss_20260805/EVLOSS_SPEC.md` · schema `carcassonne-analyzer-ev-loss/v1` · generated 2026-08-05T20:39:32  
+**Spec:** `measurement/analyzer_evloss_20260805/EVLOSS_SPEC.md` · schema `carcassonne-analyzer-ev-loss/v1` · generated 2026-08-05T21:01:30  
 **Archive:** human = seat 0 · recorded scores [98, 78] · replayed [98, 78] · replay match `True`  
-**Rules profile:** `fixed_v1` (resolved from the archive's start_rule/grid_rule) · grid `centered18` · start `retail` · R9 expected `True` / observed `True`  
+**Rules profile:** `app_aug2` (no rules_profile stamp => pre-fixed_v1 build; resolved from start_rule/grid_rule among pre-fixed_v1 profiles only) · grid `centered18` · start `retail` · R9 expected `False` / observed `False`  
 **Grading budget:** k8x1376 = 11008/move (archive sims_effective/k_dets_effective) · seed 12345 · calibration seed 777 · rust · leaf `a36d2e15a3b3d71d` (ok `True`)  
 
 ## Acceptance gate
 
 **PASS** — champion seat mean delta_q <= p95 of the calibration null (|delta_q_A - delta_q_B| for the same played action).
 
-- champion seat mean ΔQ = **0.01178** (sem 0.004761)
-- calibration null p95 = **0.07369** (p99 0.1285, mean 0.01349, n 114)
-- human seat mean ΔQ = 0.06349
+- champion seat mean ΔQ = **0.0119** (sem 0.004758)
+- calibration null p95 = **0.07082** (p99 0.1255, mean 0.01285, n 114)
+- human seat mean ΔQ = 0.06098
 
 pass=false => the grader is mis-wired (wrong rules profile, wrong seeding, mirror drift) and NO human number from this artifact is reportable. Runs BEFORE any headline.
 
@@ -48,17 +48,17 @@ pass=false => the grader is mis-wired (wrong rules profile, wrong seeding, mirro
 
 | seat | plies | forced | exact | rated | unrated | agree rate | mean ΔQ | sd | p95 ΔQ | max ΔQ | mean pts (tanh est) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| human (seat 0) | 72 | 19 | 1 | 52 | 0 | 0.4423 | **0.06349** | 0.1147 | 0.2776 | 0.5625 | 1.68 |
-| champion (seat 1) | 70 | 7 | 1 | 62 | 0 | 0.6613 | **0.01178** | 0.03749 | 0.05497 | 0.2569 | 0.2724 |
+| human (seat 0) | 72 | 19 | 1 | 52 | 0 | 0.4423 | **0.06098** | 0.1141 | 0.2776 | 0.5625 | 1.639 |
+| champion (seat 1) | 70 | 7 | 1 | 62 | 0 | 0.629 | **0.0119** | 0.03746 | 0.05497 | 0.2569 | 0.2883 |
 
 ## Bucket census (thresholds MEASURED from the calibration null)
 
-`within_noise` ≤ **0.07369** (null p95) < `inaccuracy` ≤ **0.1285** (null p99) < `blunder`. Null n = 114; the two passes picked the same best action on 0.7895 of shared pimc plies.
+`within_noise` ≤ **0.07082** (null p95) < `inaccuracy` ≤ **0.1255** (null p99) < `blunder`. Null n = 114; the two passes picked the same best action on 0.7895 of shared pimc plies.
 
 | seat | agree | within_noise | inaccuracy | blunder |
 |---|---:|---:|---:|---:|
-| human | 23 (0.4423) | 17 (0.3269) | 3 (0.05769) | 9 (0.1731) |
-| champion | 41 (0.6613) | 19 (0.3065) | 1 (0.01613) | 1 (0.01613) |
+| human | 23 (0.4423) | 18 (0.3462) | 2 (0.03846) | 9 (0.1731) |
+| champion | 39 (0.629) | 21 (0.3387) | 1 (0.01613) | 1 (0.01613) |
 
 ## Exact tail (k_remaining ≤ 2 — TRUE final-score points, a different instrument)
 

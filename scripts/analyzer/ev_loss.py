@@ -19,8 +19,10 @@ classes if got wrong:
 
 * **The rules profile is resolved FROM THE ARCHIVE**, not from a flag. A
   pre-2026-08-01 archive (null `start_rule`/`grid_rule`) is a `walled` game and
-  must be graded under `walled`; a `retail`+`centered18` archive is `fixed_v1`.
-  Anything else fails closed. `root_replay.replay_actions` has no rules-profile
+  must be graded under `walled`. An archive that STAMPS `rules_profile` is graded
+  under it; one that does NOT is from a pre-fixed_v1 app build and can never be
+  `fixed_v1` — a `retail`+`centered18` unstamped archive is the 2026-08-02 build,
+  `app_aug2`. Anything else fails closed. `root_replay.replay_actions` has no rules-profile
   seam, so the board walk is built here with `Game(**profile.game_kwargs())`.
 * **Alias dedup.** `fair_agent.root_stats_list` dedups root children by node
   identity (rotations of a symmetric tile share one child, lowest action kept),
@@ -135,11 +137,23 @@ DEFINITIONS = {
                              "unrated rate is reported per seat so the size of the hole is "
                              "visible.",
     "rules_profile_epoch": "The rules profile is resolved FROM THE ARCHIVE, never from a "
-                           "flag: (start_rule, grid_rule) = (null/'engine', null/'engine6') "
-                           "=> `walled` (the engine of record: engine6 grid, engine random "
-                           "start tile), ('retail','centered18') => `fixed_v1`, "
-                           "('engine','centered18') => `centered18`, ('retail','engine6') => "
-                           "`retail`. Any other combination FAILS CLOSED. Grading an "
+                           "flag, in PRIORITY ORDER. (1) An archive that stamps an explicit "
+                           "`rules_profile` field is graded under it (validated against the "
+                           "registry). (2) Otherwise the archive predates the fixed_v1 app "
+                           "build — which stamps `rules_profile`/`cloister_rule`/`farm_rule` "
+                           "on every archive it writes, so their ABSENCE is positive evidence "
+                           "of a pre-fixed_v1 build — and it resolves among the "
+                           "pre-fixed_v1-reachable profiles ONLY, NEVER `fixed_v1`: "
+                           "(start_rule, grid_rule) = (null/'engine', null/'engine6') => "
+                           "`walled` (the engine of record), ('retail','centered18') => "
+                           "`app_aug2` (the 2026-08-02 Android build: recentred grid + retail "
+                           "start tile, but drifting cloister scan, `next_player` on an "
+                           "unplaceable tile and R9 OFF). Any other combination FAILS CLOSED. "
+                           "⚠️ THIS RULE EXISTS BECAUSE THE OLD ONE WAS WRONG: keying on "
+                           "(start_rule, grid_rule) alone resolved the Aug-2 archive to "
+                           "`fixed_v1` and graded it with R9 ON + fixed cloister + redraw, "
+                           "i.e. under different farm adjacency than it was played under "
+                           "(EVLOSS_READOUT.md 6b). Grading an "
                            "archive under the wrong profile is a silent wrong answer; "
                            "`integrity.replay_scores_match` is the independent check that "
                            "the profile chosen reproduces the archive's recorded scores. "
@@ -214,21 +228,91 @@ def ubits(x: float) -> int:
 _ARCHIVE_START_DEFAULT = "engine"
 _ARCHIVE_GRID_DEFAULT = "engine6"
 
+# THE DISCRIMINATOR (2026-08-05 retraction). The fixed_v1 Android build stamps
+# `rules_profile` / `cloister_rule` / `farm_rule` into EVERY archive it writes.
+# Their ABSENCE is therefore positive evidence of a PRE-fixed_v1 build, and no
+# such archive may ever resolve to `fixed_v1` — the 2026-08-02 build plays
+# centered18 + retail while keeping drifting cloister scan, `next_player` and R9
+# OFF, so `(start_rule, grid_rule)` alone does NOT identify the rules. Grading
+# the Aug-2 game as fixed_v1 searched it under different farm adjacency than it
+# was played under and voided the numbers.
+_FIXED_V1_STAMP_FIELDS = ("rules_profile", "cloister_rule", "farm_rule")
 
-def resolve_profile_name(start_rule, grid_rule) -> str:
-    """The rules profile an archive was PLAYED under. Raises on anything unknown."""
+# The profiles a PRE-fixed_v1 build can actually have played, keyed by the only
+# two fields such an archive supplies. `app_aug2` is registry-backed provenance,
+# not a candidate (src/carcassonne_ai/rules_profile.py).
+_PRE_FIXED_V1_BY_START_GRID = {
+    ("engine", "engine6"): "walled",      # every pre-2026-08-01 archive
+    ("retail", "centered18"): "app_aug2",  # the 2026-08-02 app build
+}
+
+# Full-tuple keys, used when a pre-fixed_v1 archive happens to supply the A2/A3
+# rules too (no shipped build does today; this is the honest generalisation).
+_PRE_FIXED_V1_BY_TUPLE = {
+    ("engine", "engine6", "drifting", "next_player"): "walled",
+    ("retail", "centered18", "drifting", "next_player"): "app_aug2",
+}
+
+
+def resolve_profile_name(archive) -> str:
+    """The rules profile an archive was PLAYED under. Raises on anything unknown.
+
+    `archive` is the archive dict (or its provenance sub-dict — either works,
+    the fields are read by name). Priority, and it is a priority not a guess:
+
+    1. an EXPLICIT `rules_profile` field wins outright (validated against the
+       registry; an unknown name raises);
+    2. otherwise the archive is from a PRE-fixed_v1 build — the fixed_v1 app
+       stamps its profile on every archive — so it resolves among the
+       pre-fixed_v1-reachable profiles ONLY and can never come out `fixed_v1`;
+    3. anything else raises.
+    """
     from carcassonne_ai import rules_profile
 
-    s = _ARCHIVE_START_DEFAULT if start_rule in (None, "") else str(start_rule)
-    g = _ARCHIVE_GRID_DEFAULT if grid_rule in (None, "") else str(grid_rule)
-    hits = [n for n, p in rules_profile.PROFILES.items()
-            if (p.start_rule, p.grid_rule) == (s, g)]
-    if len(hits) != 1:
+    a = dict(archive or {})
+    # An archive dict from `load_archive` keeps these under `provenance`.
+    prov = a.get("provenance")
+    if isinstance(prov, dict):
+        merged = dict(prov)
+        merged.update({k: v for k, v in a.items() if k != "provenance"})
+        a = merged
+
+    stamped = a.get("rules_profile")
+    if stamped not in (None, ""):
+        name = str(stamped)
+        if name not in rules_profile.PROFILES:
+            raise ValueError(
+                f"archive stamps rules_profile={name!r}, which is not in the registry "
+                f"({rules_profile.known()}). FAILING CLOSED: grading under the wrong "
+                "profile is a silent wrong answer.")
+        return name
+
+    # --- no stamp => PRE-fixed_v1 build => `fixed_v1` is off the table ------- #
+    s = _ARCHIVE_START_DEFAULT if a.get("start_rule") in (None, "") else str(a["start_rule"])
+    g = _ARCHIVE_GRID_DEFAULT if a.get("grid_rule") in (None, "") else str(a["grid_rule"])
+    cl, un = a.get("cloister_rule"), a.get("unplaceable_rule")
+
+    def _fail(why):
         raise ValueError(
-            f"cannot resolve a rules profile for archive (start_rule={start_rule!r}, "
-            f"grid_rule={grid_rule!r}) -> ({s!r}, {g!r}); candidates {hits}. "
-            "FAILING CLOSED: grading under the wrong profile is a silent wrong answer.")
-    return hits[0]
+            f"cannot resolve a rules profile for archive (rules_profile=None, "
+            f"start_rule={a.get('start_rule')!r} -> {s!r}, "
+            f"grid_rule={a.get('grid_rule')!r} -> {g!r}, "
+            f"cloister_rule={cl!r}, unplaceable_rule={un!r}): {why}. "
+            "FAILING CLOSED: grading under the wrong profile is a silent wrong "
+            "answer — the archive carries no `rules_profile` stamp, so it is from a "
+            "PRE-fixed_v1 build and must never be graded as `fixed_v1`.")
+
+    if cl not in (None, "") and un not in (None, ""):
+        hit = _PRE_FIXED_V1_BY_TUPLE.get((s, g, str(cl), str(un)))
+        if hit is None:
+            _fail("no pre-fixed_v1 profile has that full rule tuple")
+        return hit
+
+    hit = _PRE_FIXED_V1_BY_START_GRID.get((s, g))
+    if hit is None:
+        _fail(f"no pre-fixed_v1 profile plays that (start_rule, grid_rule); known: "
+              f"{sorted(_PRE_FIXED_V1_BY_START_GRID)}")
+    return hit
 
 
 def prepare_env(profile_name: str) -> dict:
@@ -272,7 +356,9 @@ def load_archive(path) -> dict:
         "provenance": {k: a.get(k) for k in
                        ("champion_id", "leaf_hash", "sims_effective", "k_dets_effective",
                         "opponent", "opponent_name", "finished_at", "start_rule",
-                        "grid_rule", "budget_note", "verify", "coached")},
+                        "grid_rule", "rules_profile", "cloister_rule",
+                        "unplaceable_rule", "farm_rule",
+                        "budget_note", "verify", "coached")},
     }
 
 
@@ -634,7 +720,12 @@ def build_report(arch, profile_name, plies_a, meta_a, plies_b, meta_b, *,
         "value_norm_pinned": VALUE_NORM,
         "rules_profile": meta_a["rules_profile"],
         "rules_profile_name": profile_name,
-        "rules_profile_source": "resolved from the archive's start_rule/grid_rule",
+        "rules_profile_source": (
+            "archive's explicit rules_profile stamp"
+            if arch["provenance"].get("rules_profile") not in (None, "")
+            else "no rules_profile stamp => pre-fixed_v1 build; resolved from "
+                 "start_rule/grid_rule among pre-fixed_v1 profiles only"),
+        "rules_profile_stamped_in_archive": arch["provenance"].get("rules_profile"),
         "env": env_stamp,
         "execution": meta_a["execution"],
         "min_pooled_visits": meta_a["min_pooled_visits"],
@@ -824,8 +915,7 @@ def main():
     args = ap.parse_args()
 
     arch = load_archive(args.archive)
-    profile_name = resolve_profile_name(arch["provenance"].get("start_rule"),
-                                        arch["provenance"].get("grid_rule"))
+    profile_name = resolve_profile_name(arch["provenance"])
     env_stamp = dict(prepare_env(profile_name),
                      **{"prod_leaf_env": env_preamble.RESOLVED})
 

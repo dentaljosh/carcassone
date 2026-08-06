@@ -187,30 +187,115 @@ def test_best_action_rule_is_the_production_pooled_q_argmax():
 # D. epoch -> rules profile (D4.2), fail closed
 # --------------------------------------------------------------------------- #
 
+AUG2_ARCHIVE = E4_DIR / "1785975832_66810.json"
+PRE_0801_ARCHIVES = ("1785205383_867966.json", "1785466497_161583.json")
+
+
 def test_archive_epoch_resolves_to_a_rules_profile():
     """A pre-2026-08-01 archive carries NO start_rule/grid_rule; those games were
     played on the engine of record and must be graded under `walled`."""
-    assert EV.resolve_profile_name(None, None) == "walled"
-    assert EV.resolve_profile_name("engine", "engine6") == "walled"
-    assert EV.resolve_profile_name("retail", "centered18") == "fixed_v1"
-    assert EV.resolve_profile_name("engine", "centered18") == "centered18"
-    assert EV.resolve_profile_name("retail", "engine6") == "retail"
+    assert EV.resolve_profile_name({}) == "walled"
+    assert EV.resolve_profile_name({"start_rule": None, "grid_rule": None}) == "walled"
+    assert EV.resolve_profile_name({"start_rule": "engine", "grid_rule": "engine6"}) == "walled"
+    # The 2026-08-02 Android build. NOT fixed_v1 — see the retraction below.
+    assert EV.resolve_profile_name(
+        {"start_rule": "retail", "grid_rule": "centered18"}) == "app_aug2"
+
+
+def test_explicit_rules_profile_stamp_wins():
+    """The fixed_v1 app stamps its profile; a stamp is authoritative."""
+    assert EV.resolve_profile_name(
+        {"rules_profile": "fixed_v1", "start_rule": "retail",
+         "grid_rule": "centered18"}) == "fixed_v1"
+    assert EV.resolve_profile_name({"rules_profile": "walled"}) == "walled"
+    # ...and it is validated against the registry, not trusted blindly.
+    with pytest.raises(ValueError):
+        EV.resolve_profile_name({"rules_profile": "not_a_profile"})
+
+
+def test_unstamped_retail_centered18_is_never_fixed_v1():
+    """THE REGRESSION that voided the 2026-08-05 grading of game 3.
+
+    `(retail, centered18)` hits `fixed_v1` uniquely on (start_rule, grid_rule)
+    alone, but the 2026-08-02 app build plays that pair while keeping drifting
+    cloister scan, `next_player` and R9 OFF. Absence of the `rules_profile`
+    stamp is positive evidence of a pre-fixed_v1 build."""
+    for extra in ({}, {"cloister_rule": None, "farm_rule": None},
+                  {"cloister_rule": "drifting", "unplaceable_rule": "next_player"}):
+        got = EV.resolve_profile_name(
+            dict({"start_rule": "retail", "grid_rule": "centered18"}, **extra))
+        assert got != "fixed_v1"
+        assert got == "app_aug2"
 
 
 def test_unknown_epoch_fails_closed():
     with pytest.raises(ValueError):
-        EV.resolve_profile_name("retail", "centered42")
+        EV.resolve_profile_name({"start_rule": "retail", "grid_rule": "centered42"})
     with pytest.raises(ValueError):
-        EV.resolve_profile_name("lobster", None)
+        EV.resolve_profile_name({"start_rule": "lobster"})
+    # A pre-fixed_v1 build cannot have played centered18 with the ENGINE start
+    # tile, nor retail on the engine6 grid — no such app exists, so refuse.
+    with pytest.raises(ValueError):
+        EV.resolve_profile_name({"start_rule": "engine", "grid_rule": "centered18"})
+    with pytest.raises(ValueError):
+        EV.resolve_profile_name({"start_rule": "retail", "grid_rule": "engine6"})
+    # A full rule tuple no pre-fixed_v1 build plays (this is fixed_v1's tuple,
+    # unstamped) must raise rather than resolve to fixed_v1 by the back door.
+    with pytest.raises(ValueError):
+        EV.resolve_profile_name({"start_rule": "retail", "grid_rule": "centered18",
+                                 "cloister_rule": "fixed", "unplaceable_rule": "redraw"})
 
 
-def test_both_shipped_archives_are_walled_epoch():
-    archives = sorted(E4_DIR.glob("*.json"))
-    if not archives:
-        pytest.skip("no E4 archives")
-    for p in archives:
+def test_pre_0801_archives_are_still_walled_epoch():
+    """The two pre-2026-08-01 archives must not move — their shipped artifacts
+    were graded under `walled` and stay valid."""
+    for name in PRE_0801_ARCHIVES:
+        p = E4_DIR / name
+        if not p.exists():
+            pytest.skip(f"{name} absent")
         a = json.loads(p.read_text())
-        assert EV.resolve_profile_name(a.get("start_rule"), a.get("grid_rule")) == "walled"
+        assert EV.resolve_profile_name(a) == "walled"
+
+
+def test_the_aug2_archive_resolves_to_app_aug2_not_fixed_v1():
+    """Pinned against the REAL archive — this is the regression that caused the
+    2026-08-05 retraction (EVLOSS_READOUT.md 6b)."""
+    if not AUG2_ARCHIVE.exists():
+        pytest.skip("aug-2 archive absent")
+    a = json.loads(AUG2_ARCHIVE.read_text())
+    # The discriminator itself: the fixed_v1 app stamps these; this build did not.
+    assert a.get("start_rule") == "retail" and a.get("grid_rule") == "centered18"
+    for f in ("rules_profile", "cloister_rule", "farm_rule"):
+        assert a.get(f) in (None, ""), f"{f} present => this is NOT a pre-fixed_v1 archive"
+    assert EV.resolve_profile_name(a) == "app_aug2"
+    # ...and through `load_archive`'s provenance dict, the production path.
+    assert EV.resolve_profile_name(
+        EV.load_archive(AUG2_ARCHIVE)["provenance"]) == "app_aug2"
+
+
+def test_app_aug2_profile_tuple_is_pinned_field_by_field():
+    """A future registry edit must not silently change what past archives grade
+    as. Every field of `app_aug2` is pinned here."""
+    from carcassonne_ai import rules_profile
+
+    p = rules_profile.PROFILES["app_aug2"]
+    assert p.name == "app_aug2"
+    assert p.grid_rule == "centered18"
+    assert p.start_row == 18
+    assert p.start_col == 15
+    assert p.start_rule == "retail"
+    assert p.cloister_scan == "drifting"       # NOT fixed — the A2 lever is absent
+    assert p.unplaceable_tile == "next_player"  # NOT redraw — the A3 lever is absent
+    assert p.r9_env_expected is False           # R9 OFF on the 2026-08-02 build
+    assert (p.board_rows, p.board_cols) == (35, 35)
+    assert p.window_size == rules_profile.PROFILES["walled"].window_size
+    assert p.is_walled is False and p.fixed_start_tile is True and p.recentred is True
+    # It differs from fixed_v1 in exactly the three levers fixed_v1 adds.
+    fv = rules_profile.PROFILES["fixed_v1"]
+    assert (fv.cloister_scan, fv.unplaceable_tile, fv.r9_env_expected) == (
+        "fixed", "redraw", True)
+    assert (p.grid_rule, p.start_row, p.start_rule) == (
+        fv.grid_rule, fv.start_row, fv.start_rule)
 
 
 # --------------------------------------------------------------------------- #
@@ -225,8 +310,7 @@ def graded():
     if not _has_rust():
         pytest.skip("carc_rs (rust champion) not built")
     arch = EV.load_archive(archives[0])
-    name = EV.resolve_profile_name(arch["provenance"].get("start_rule"),
-                                   arch["provenance"].get("grid_rule"))
+    name = EV.resolve_profile_name(arch["provenance"])
     EV.prepare_env(name)
     plies, meta = EV.grade_pass(
         arch, name, seed=12345, sims=int(arch["sims_effective"]),

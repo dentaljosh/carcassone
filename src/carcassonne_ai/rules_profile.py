@@ -189,6 +189,36 @@ PROFILES: dict[str, RulesProfile] = {
         note="A4 candidate (spec A1/A4) — retail fixed 'D' start tile; costs CRN deck pairing",
     ),
     # ----------------------------------------------------------------------- #
+    # APP PROVENANCE, not a candidate. `app_aug2` is the rules the 2026-08-02  #
+    # Android build actually plays — it exists so pre-fixed_v1 phone archives   #
+    # can be graded honestly, and for nothing else.                             #
+    # ----------------------------------------------------------------------- #
+    "app_aug2": replace(
+        _WALLED, name="app_aug2",
+        grid_rule="centered18", start_row=18,     # W2 / A1 — the app recentring
+        start_rule="retail",                      # A4 — the retail 'D' start tile
+        # ...and NOTHING else: drifting cloister scan, next_player on an
+        # unplaceable tile, R9 off — all inherited from `_WALLED` on purpose.
+        note=(
+            "APP PROVENANCE (added 2026-08-05) — the rules the 2026-08-02 Android "
+            "build actually plays: centered18 grid + retail start tile ONLY, "
+            "WITHOUT the A2 (fixed cloister scan), A3 (redraw) and R9 levers, which "
+            "that build does not carry. It is NOT a candidate and ADOPTS NOTHING: no "
+            "elo, no eval leg and no default has ever run on it, and none may. It "
+            "exists for exactly one reason — an archive from a pre-fixed_v1 phone "
+            "build stamps (start_rule=retail, grid_rule=centered18) and NOTHING else, "
+            "which used to resolve uniquely to `fixed_v1` and graded such a game with "
+            "R9 ON + fixed cloister + redraw, i.e. under different farm adjacency than "
+            "it was played under (the 2026-08-05 EV-loss retraction). The registry's "
+            "key space could not express a build that exists; this row makes it able "
+            "to. The DISCRIMINATOR is the archive's own stamp: the fixed_v1 app build "
+            "writes `rules_profile`/`cloister_rule`/`farm_rule` into every archive, so "
+            "their ABSENCE means a pre-fixed_v1 build and MUST NOT resolve to "
+            "`fixed_v1`. Being non-walled it also refuses a results.csv row unless the "
+            "exp_id names it, which is the correct behaviour for a provenance profile."
+        ),
+    ),
+    # ----------------------------------------------------------------------- #
     # THE PHASE-B BUNDLE. All four rules levers at once; adopts nothing.       #
     # ----------------------------------------------------------------------- #
     "fixed_v1": replace(

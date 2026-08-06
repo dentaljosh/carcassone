@@ -170,78 +170,102 @@ and is the clearest case in this document of why D1 forbids quoting it as points
 three worst human moves are all in the 44–53 ply window (k 49→45), i.e. one bad mid-game
 stretch rather than a spread.
 
-## 6b. GAME 3 (2026-08-05) — the first human WIN. ⚠️ **GRADING VOID — RUN UNDER THE WRONG RULES PROFILE. Do not cite the numbers in this section.**
+## 6b. GAME 3 (2026-08-05) — the first human WIN, graded under `app_aug2`. **He won the game he played worst.**
 
-> **RETRACTED 2026-08-05 night, same session, before anything downstream used it.** The grader
-> resolved this archive to **`fixed_v1`** from `start_rule: retail` + `grid_rule: centered18`.
-> That resolution is **wrong**: the phone was running the **2026-08-02 app build**, verified two
-> ways — the installed APK's sha256 `54a08d51…` is byte-identical to
+> **HISTORICAL NOTE — this section was graded WRONG once and retracted the same night, before
+> anything downstream used it.** The first grading resolved the archive to **`fixed_v1`** from
+> `start_rule: retail` + `grid_rule: centered18` alone. That was wrong: the phone was running the
+> **2026-08-02 app build**, verified two ways — the installed APK's sha256
+> `54a08d51314b3635f5933561dbf266cafcf8674ebe601b38f603575886e6c40b` is byte-identical to
 > `android/app/build/outputs/apk/debug/app-debug.apk` (built 2026-08-02) and **differs** from the
-> staged `app-debug-fixedv1-20260803.apk` (`b8f2cef6…`); and the archive has **no
-> `rules_profile` / `cloister_rule` / `farm_rule` fields**, which the fixed_v1 build stamps on
-> every archive. The Aug-2 build plays **centered18 + retail** but keeps **drifting cloister
-> scan, `next_player` on an unplaceable tile, and R9 OFF** — so grading it as `fixed_v1` ran the
-> search with **R9 ON, fixed cloister scan and redraw**, i.e. different farm adjacency from the
-> game actually played. Farms were live in this game (15–9), so the ΔQ values are not
-> trustworthy.
->
-> **Why the fail-closed guard did not fire:** `resolve_profile_name` keys only on
-> `(start_rule, grid_rule)`, and within the registry that pair *does* hit `fixed_v1` uniquely.
-> The registry has **no profile for the Aug-2 app combination** (centered18 + retail + drifting
-> + next_player + R9 off), so a real-world build exists that the key space cannot express. The
-> subagent's survey claim that "the four registry profiles partition that key space uniquely" is
-> true of the registry and **false of reality**. `replay_scores_match: true` did not catch it —
-> R9 flips the legal mask in only ~1/200 games and cloister/redraw are rare, so a matching
-> replay is weak evidence here, not proof.
->
-> **What survives unaffected:** the win itself and its provenance. `played_sims_effective 1376`
-> × `played_k_dets_effective 8` = **11008**, `played_backend: rust`, `verify: true`, leaf
-> `a36d2e15a3b3d71d`, no `runtime_budget_override`, no `resume_note` ⇒ **Joshua beat the
-> champion of record at full strength**, under Aug-2 rules rather than the full fixed_v1 bundle.
-> The score breakdown (during-play 41–43, unfinished 42–26, farms 15–9) is read off the archive
-> and the phone's own ledger, not from the grader.
->
-> **Owed:** a registry profile for the Aug-2 app rules, a resolver that fails closed instead of
-> guessing (require the archive's explicit `rules_profile`; absent ⇒ pre-fixed_v1 ⇒ never
-> `fixed_v1`), then a re-grade. Until then this section is void.
+> staged `app-debug-fixedv1-20260803.apk`
+> (`b8f2cef6185ebce82a66da698ddc678043884475035b621b0af610199915a343`); and the archive carries
+> **no `rules_profile` / `cloister_rule` / `farm_rule` fields**, which the fixed_v1 build stamps
+> on every archive it writes. The Aug-2 build plays centered18 + retail but keeps **drifting
+> cloister scan, `next_player` on an unplaceable tile, and R9 OFF**, so grading it as `fixed_v1`
+> re-ran the search with **R9 ON + fixed cloister scan + redraw** — different farm adjacency than
+> the game was played under, and farms were live (15–9).
+> **Why the fail-closed guard could not fire:** `resolve_profile_name` keyed only on
+> `(start_rule, grid_rule)`, and within the registry that pair *did* hit `fixed_v1` uniquely — the
+> registry had **no row for the Aug-2 combination**, so a build that exists in the world was
+> outside the key space, and "the four profiles partition that key space uniquely" was true of the
+> registry and false of reality. `replay_scores_match: true` did not catch it: R9 flips the legal
+> mask in only ~1/200 games and cloister/redraw are rare, so a matching replay is weak evidence
+> here, not proof.
+> **Fixed 2026-08-05 night:** registry row `app_aug2` added (app provenance, adopts nothing) and
+> `resolve_profile_name` rewritten to a priority contract — an explicit `rules_profile` stamp
+> wins; **absent ⇒ pre-fixed_v1 build ⇒ never `fixed_v1`**; anything else raises. Pinned by
+> `tests/test_analyzer_evloss.py` against this very archive. **Everything below is the re-grade
+> under `app_aug2`.** (The void numbers are not repeated; they are in git at `6919245`.)
 
-## 6b-VOID (original text, retained for the record). **He won the game he played worst.**
+Archive `1785975832_66810.json` (98–78 W), graded at **its own budget k8×1376 = 11008**
+(`budget.total_sims_per_move`, `budget.source: "archive sims_effective/k_dets_effective"`) under
+**`app_aug2`** — `integrity.rules_profile_name`, resolved by
+`integrity.rules_profile_source: "no rules_profile stamp => pre-fixed_v1 build; resolved from
+start_rule/grid_rule among pre-fixed_v1 profiles only"`. The profile actually applied is stamped
+in `integrity.rules_profile`: grid `centered18`, start `retail`, cloister scan `drifting`,
+unplaceable tile `next_player`, `r9_env_expected false` / `r9_env_observed false` /
+`r9_env_ok true` — i.e. the Aug-2 phone rules, not the fixed_v1 bundle.
+`EV_LOSS_g3_66810.json`.
 
-Archive `1785975832_66810.json` (98–78 W), graded at **its own budget k8×1376 = 11008** under
-**`fixed_v1`** (resolved from `start_rule retail` + `grid_rule centered18`; `r9_env_ok: true`).
-`EV_LOSS_g3_66810.json`. **Gate PASS:** champion mean ΔQ 0.01178 (sem 0.00476) vs null p95
-0.07369 — again below the null *mean* (0.01349). `replay_scores_match: true` ([98,78]),
-`mirror_desync_events: 0`, `n_unrated_pimc: 0`.
+**Gate PASS** (`acceptance_gate.pass`): champion-seat mean ΔQ **0.011904**
+(`acceptance_gate.champion_mean_delta_q`, sem **0.004758**) vs calibration null p95 **0.070818**
+(`acceptance_gate.null_p95`) — again below the null *mean* (**0.012853**,
+`acceptance_gate.null_mean`, n 114). Supporting integrity: `replay_scores_match: true`
+(`final_scores_replayed [98, 78]` == `recorded_scores [98, 78]` — and note the desktop reproduces
+the phone's score **under `app_aug2`** too), `mirror_desync_events: 0`, `n_unrated_pimc: 0`,
+`n_plies_graded: 114` of `n_plies_total: 142` (`n_forced_skipped: 26`, `n_latched_exact: 2`),
+`leaf_hash_ok: true`, `pool_total_visits_always_full_budget: true`.
 
 | seat | rated | agree | mean ΔQ | sd | p50 | max | **blunders** |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| human | 52 | 0.4423 | **0.06349** | 0.11474 | 0.00791 | 0.5625 | **9** |
-| champion | 62 | 0.6613 | **0.01178** | 0.03749 | 0.0 | 0.2569 | 1 |
+| human (seat 0) | 52 | 0.4423 | **0.06098** | 0.11413 | 0.00791 | 0.5625 | **9** |
+| champion (seat 1) | 62 | 0.6290 | **0.01190** | 0.03746 | 0.0 | 0.2569 | 1 |
 
-**Human − champion = +0.05172 ± 0.01661, z +3.11, ratio 5.39×** — the largest paired gap of
-the three games, and the only one past 3σ. ⚠️ **Absolute ΔQ is NOT comparable across games
-here** (this one is graded at 11008 on `fixed_v1`; g1/g2 at 2752 on `walled`). The *within-game
-ratio* is the comparable statistic: 3.03 / 2.99 / **5.39**.
+(`summary.<seat>.n_rated / agree_rate / mean_delta_q / sd_delta_q / delta_q_dist.p50 /
+delta_q_dist.max / buckets.blunder`. Bucket cut points, MEASURED: `within_noise` ≤
+**0.070818** (null p95) < `inaccuracy` ≤ **0.125503** (null p99) < `blunder` —
+`buckets.thresholds`, calibration seed 777. Neither seat has a single unrated ply.)
 
-**Instrument validation, free:** the champion's agree rate falls to 0.661 here from 0.727/0.730
-in the 2752 games — the direction and rough size CL-070 predicts from self-disagreement growing
-with budget (D_same 0.2272 → 0.2997 between 2752 and 11008). An independent check that the
-grader behaves as the budget axis says it should.
+**Human − champion = +0.04908 ± 0.01653, z +2.97, ratio 5.12×** — still the largest paired gap
+of the three games, and still the largest z, but it now sits **just under 3σ**, not past it.
+⚠️ **Absolute ΔQ is NOT comparable across games** (this one is graded at 11008 on `app_aug2`;
+g1/g2 at 2752 on `walled`). The comparable statistic is the *within-game ratio*: 3.03 / 2.99 /
+**5.12**.
 
-**The damage is entirely front-loaded.** All 9 blunder-class human moves fall in plies 12–60
-(k_remaining 64→40); **zero** after ply 60. Split by half, with the champion seat as the control:
+**Instrument validation, free:** the champion's agree rate is **0.629** here versus 0.727/0.730
+in the two 2752 games (`summary.champion.agree_rate` across the three artifacts) — the direction
+and rough size CL-070 predicts from self-disagreement growing with budget (D_same 0.2272 → 0.2997
+between 2752 and 11008). An independent check that the grader behaves as the budget axis says it
+should; the re-grade moved it further in the predicted direction, not less.
+
+**The damage is entirely front-loaded.** All **9** blunder-class human moves fall in plies
+**12–60** (k_remaining 64→40: plies 12, 20, 28, 37, 40, 44, 52, 56, 60); **zero** after ply 60.
+Split by half, with the champion seat as the control (from `plies[]`, `bucket` and `delta_q`):
 
 | seat | plies ≤60 | plies >60 | compression |
 |---|---:|---:|---:|
-| human | 0.1076 (n 28, 9 blunders) | **0.0121** (n 24, 0 blunders) | 8.9× |
-| champion | 0.0200 (n 29, 1 blunder) | 0.0046 (n 33, 0) | 4.3× |
+| human | 0.1029 (n 28, 9 blunders) | **0.0121** (n 24, 0 blunders) | 8.5× |
+| champion | 0.0200 (n 29, 1 blunder) | 0.0048 (n 33, 0) | 4.2× |
 
-⚠️ **Both seats compress late, so "he tightened up" is only half the story** — a decided
-position shrinks sibling differences for everyone, and the control proves that effect is real
-(4.3× on an agent whose policy did not change). What survives the control: the human/champion
-ratio falls **5.38× early → 2.63× late**, so he *did* narrow relative to the instrument's own
-drift, but not to parity. By phase, the loss is in **tile placement (mean 0.0850, n 35), not
-meeple placement (0.0193, n 17)**.
+⚠️ **Both seats compress late, so "he tightened up" is only half the story** — a decided position
+shrinks sibling differences for everyone, and the control proves that effect is real (4.2× on an
+agent whose policy did not change). What survives the control: the human/champion ratio falls
+**5.15× early → 2.52× late**, so he *did* narrow relative to the instrument's own drift, but not
+to parity. By phase, the loss is in **tile placement (mean 0.0812, n 35), not meeple placement
+(0.0193, n 17)** — the champion's own split is 0.0186 (n 34) tiles / 0.0037 (n 28) meeples, so
+tiles are the noisier phase for both seats and the human's tile excess (4.4×) is larger than his
+meeple excess (5.2× on a much smaller base).
+
+Worst human moves (`top_losses.human`): ply 56 (k 42, tiles, 37 legal, played 950 vs best 1450,
+ΔQ **0.5625**), ply 40 (k 50, tiles, played 1138 vs 1452, ΔQ 0.3497), ply 60 (k 40, tiles, played
+1550 vs 1453, ΔQ 0.3040). The champion's single blunder is ply 50 (k 45, tiles, ΔQ 0.2569).
+⚠️ `delta_points_tanh_est` for ply 56 is 14.59 — deep in the atanh blow-up region; D1 forbids
+quoting that as points.
+
+**Exact tail** (`exact_tail`): one latched ply per seat — human ply 140 (k_remaining 0, 21 legal)
+and champion ply 138 (k_remaining 1, 28 legal), **both `played_is_optimal: true`, regret 0.0
+points for both seats**. His endgame was exact-perfect.
 
 **Reading, honestly.** The scoreline says a 20-point win; the grader says his roughest game of
 the three. The win was built on the endgame ledger (unfinished features +16, farms +6) after an
@@ -249,11 +273,15 @@ opening the champion's search rates poorly. Two explanations fit and **n=1 canno
 them**: (a) the deck and the banking strategy bailed out a bad start, or (b) the champion's leaf
 under-prices the incomplete-feature banking he was playing for, so moves toward it grade as
 losses while earning points. (b) is a *lead, not a finding* — testing it means grading the same
-game against a stronger reader, or checking whether his high-ΔQ moves are systematically the
-ones that later paid as unfinished features. Neither is funded here.
+game against a stronger reader, or checking whether his high-ΔQ moves are systematically the ones
+that later paid as unfinished features. Neither is funded here.
 
-The exact tail cost **0.0 points** for both seats (1 ply each, both optimal) — his endgame was
-exact-perfect.
+⚠️ **What this section does NOT say:** nothing here is a strength claim, `governance/PRODUCTION.yaml`
+is untouched, and `app_aug2` adopts nothing — it is a provenance row so that a pre-fixed_v1 phone
+archive can be graded under the rules it was actually played under. The win itself and its
+provenance were never in question and are unchanged: `sims_effective 1376` × `k_dets_effective 8`
+= **11008**, `verify: true`, leaf `a36d2e15a3b3d71d`, no `runtime_budget_override` ⇒ Joshua beat
+the champion of record at full strength, under Aug-2 rules rather than the full fixed_v1 bundle.
 
 ## 7. What this does and does not settle
 
