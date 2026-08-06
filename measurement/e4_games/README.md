@@ -24,9 +24,13 @@ cross-platform (ARM/Pixel → x86/WSL) deterministic.
 |---|---|---|---|
 | `1785205383_867966.json` | 2026-07-27 | **111–113 L** | Joshua's 2nd-ever game; 2-pt loss |
 | `1785466497_161583.json` | 2026-07-30 | **73–108 L** | the invisible-border game (top-row wall); farms won 27–3, during-play lost 44–89 |
+| `1785975832_66810.json` | 2026-08-05 | **98–78 W** | 🏆 **FIRST HUMAN WIN, and it is against the CHAMPION OF RECORD at full strength** — `sims_effective 1376` × `k_dets_effective 8` = **11008**, `start_rule retail` + `grid_rule centered18` (fixed_v1), `verify: true`, leaf `a36d2e15a3b3d71d`, and **no `runtime_budget_override`** = the full-strength marker. Won on the *endgame ledger*, not during play: during-play 41–43 (−2), **unfinished features 42–26 (+16)**, farms 15–9 (+6). That is the exact pattern the slice-1 analyzer said was missing from the two losses (incomplete_pts 2 and ~20 vs a corpus mean of 23.0 — meeples recycled instead of banked). 142 actions, 72 tiles. |
 
-Joshua's overall E4 record: 0–3 (game 1 predates the archiving feature — unrecorded by
-design, not an archive bug).
+Joshua's overall E4 record: **1–3** (game 1 predates the archiving feature — unrecorded by
+design, not an archive bug). ⚠️ **n=4 and the luck floor is real** — champion-vs-greedy
+paired-deck winrate leaves ~6.25% pooled luck in the base game, and the E4 protocol prices
+the champion at wr 0.55 against a strong opponent, so **one win is not a rating claim**.
+It is a milestone and a datum, not evidence of parity.
 
 ## ⚠️ Grading-epoch boundary at 2026-08-01 (the rust-port flips)
 
