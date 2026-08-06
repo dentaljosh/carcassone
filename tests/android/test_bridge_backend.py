@@ -234,7 +234,16 @@ def test_pre_flip_e4_archives_still_restore_under_the_new_default():
     archives = sorted((REPO / "measurement" / "e4_games").glob("*.json"))
     if not archives:
         pytest.skip("no E4 archives in this checkout")
-    for path in archives:
+    # SELECT the pre-flip archives, don't assume every archive is one. Post-flip
+    # games (2026-08-02 build onward) legitimately carry `start_rule`/`grid_rule`
+    # and the k8x1376 budget; asserting 'engine' + (4, 688) over them tests the
+    # opposite of this test's contract. Added 2026-08-05, when the first post-flip
+    # archive (the 98-78 win) landed and turned this glob red.
+    pre_flip = [p for p in archives
+                if not json.loads(p.read_text()).get("start_rule")]
+    if not pre_flip:
+        pytest.skip("no PRE-flip E4 archives in this checkout")
+    for path in pre_flip:
         blob = json.loads(path.read_text())
         r = _j(B.restore_game(json.dumps(blob)))
         assert B._S.start_rule == B.START_RULE_ENGINE, \
