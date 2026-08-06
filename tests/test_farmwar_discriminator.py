@@ -289,3 +289,34 @@ class TestClusterRobustSe:
         assert AN.per_epoch(rows)["_epochs_agree_in_sign"] is True
         rows[1]["delta"] = -2.0
         assert AN.per_epoch(rows)["_epochs_agree_in_sign"] is False
+
+
+class TestWorkerSplit:
+    """The driver's epoch legs run CONCURRENTLY with a proportional worker split.
+
+    The first version ran them sequentially, and because the pilot caps its pool at
+    `min(--workers, len(todo))` the 6-position `app_aug2` epoch pinned 8 of 14 workers
+    idle for its whole leg. These pin the fix.
+    """
+
+    RF = _load("run_farmwar", "scripts/analyzer/run_farmwar.py")
+    REAL = {"app_aug2": 6, "walled": 16, "fixed_v1": 20}
+
+    def test_shares_sum_to_the_budget(self):
+        s = self.RF.split_workers(self.REAL, 14)
+        assert sum(s.values()) == 14
+        assert all(v >= 1 for v in s.values())
+
+    def test_rounds_are_equalised_across_legs(self):
+        """Proportional shares mean n_i/w_i is ~equal, so no leg is left as a long pole."""
+        s = self.RF.split_workers(self.REAL, 14)
+        rounds = [self.REAL[p] / s[p] for p in s]
+        assert max(rounds) - min(rounds) < 1.0
+
+    def test_no_leg_gets_more_workers_than_positions(self):
+        s = self.RF.split_workers({"a": 1, "b": 1}, 14)
+        assert s == {"a": 1, "b": 1}
+
+    def test_tiny_budget_still_gives_every_leg_a_worker(self):
+        s = self.RF.split_workers(self.REAL, 1)
+        assert set(s) == set(self.REAL) and all(v >= 1 for v in s.values())

@@ -51,6 +51,44 @@ def r9_for(profile: str) -> str:
     return "1" if rules_profile.resolve(profile).r9_env_expected else "0"
 
 
+def split_workers(counts: dict, total: int) -> dict:
+    """Divide `total` workers across concurrent epoch legs IN PROPORTION to their position
+    counts, with at least 1 each.
+
+    Why proportional and not equal: the pilot caps its own pool at
+    ``min(--workers, len(todo))``, so an epoch with 6 positions cannot use more than 6 no
+    matter what it is handed. Running the epochs SEQUENTIALLY (the first version of this
+    driver) therefore idled 8 of 14 workers for the whole app_aug2 leg. Proportional
+    shares also equalise the number of ROUNDS each leg needs (n_i / w_i is the same for
+    every i), so the legs finish together instead of leaving one long pole running alone
+    at the end.
+
+    Largest-remainder apportionment, so the shares sum to `total` exactly.
+    """
+    profs = sorted(counts)
+    n_tot = sum(counts[p] for p in profs)
+    if n_tot <= 0:
+        return {p: 1 for p in profs}
+    total = max(len(profs), int(total))         # at least one worker each
+    exact = {p: total * counts[p] / n_tot for p in profs}
+    # never hand a leg more workers than it has positions — the pilot would cap it anyway
+    # (`min(--workers, len(todo))`) and the unusable surplus would be invisible in the log.
+    share = {p: min(counts[p], max(1, int(exact[p]))) for p in profs}
+    # hand out what integer truncation left over, largest fractional remainder first
+    left = total - sum(share.values())
+    order = sorted(profs, key=lambda p: (-(exact[p] - int(exact[p])), p))
+    i = 0
+    while left > 0 and order:
+        p = order[i % len(order)]
+        if share[p] < counts[p]:                # never exceed the leg's own cap
+            share[p] += 1
+            left -= 1
+        elif all(share[q] >= counts[q] for q in profs):
+            break
+        i += 1
+    return share
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--strata", default=str(FW / "STRATA.json"))
@@ -70,14 +108,25 @@ def main(argv=None) -> int:
     print(f"[run] FARM n={strata['n_farm']} CONTROL n={strata['n_control']} "
           f"across {len(files)} epochs | M={a.m} | W={a.workers} | salt={WORLD_SEED_SALT}")
 
+    counts = {prof: sum(1 for line in Path(p).read_text().splitlines() if line.strip())
+              for prof, p in files.items()}
+    shares = split_workers(counts, a.workers)
+    print(f"[run] epoch legs run CONCURRENTLY (one process per epoch is forced anyway — "
+          f"R9 is import-latched); worker split {shares} of {a.workers} "
+          f"over positions {counts}")
+
     legs, t0 = [], time.time()
     for judge in a.judges:
+        # All epochs of one judge at once; the judges stay sequential so the box is never
+        # oversubscribed and the Tier-1 leg cannot steal width from the primary.
+        procs = []
         for profile, pos in sorted(files.items()):
             sub = f"{judge}/{profile}"
             env = dict(os.environ)
             env["CARCASSONNE_FIX_R9"] = r9_for(profile)
             env.setdefault("OPENBLAS_NUM_THREADS", "1")
             env.setdefault("OMP_NUM_THREADS", "1")
+            log = FW / f"leg_{judge}_{profile}.log"
             cmd = [sys.executable, str(PILOT),
                    "--positions-jsonl", pos,
                    "--rules-profile", profile,
@@ -85,18 +134,29 @@ def main(argv=None) -> int:
                    "--m", str(a.m),
                    "--oracle-sims", str(a.oracle_sims),
                    "--world-seed-salt", WORLD_SEED_SALT,
-                   "--workers", str(a.workers),
+                   "--workers", str(shares[profile]),
                    "--out-root", a.out_root, "--out-subdir", sub,
                    "--resume"]
-            print(f"\n[run] ===== {sub} (R9={env['CARCASSONNE_FIX_R9']}) =====", flush=True)
-            t = time.time()
-            rc = subprocess.run(cmd, cwd=str(REPO), env=env).returncode
-            legs.append({"judge": judge, "profile": profile, "rc": rc,
+            print(f"[run] ===== launch {sub} (R9={env['CARCASSONNE_FIX_R9']}, "
+                  f"W={shares[profile]}, n={counts[profile]}) -> {log.name}", flush=True)
+            fh = log.open("w")
+            procs.append((judge, profile, sub, time.time(), fh,
+                          subprocess.Popen(cmd, cwd=str(REPO), env=env,
+                                           stdout=fh, stderr=subprocess.STDOUT)))
+        for judge_, profile, sub, t, fh, pr in procs:
+            rc = pr.wait()
+            fh.close()
+            legs.append({"judge": judge_, "profile": profile, "rc": rc,
+                         "workers": shares[profile], "n_positions": counts[profile],
                          "out": f"{a.out_root}/{sub}",
+                         "log": str(FW / f"leg_{judge_}_{profile}.log"),
                          "wall_secs": round(time.time() - t, 1)})
-            if rc != 0:
-                print(f"[run] leg {sub} exited {rc} — STOPPING", file=sys.stderr)
-                break
+            print(f"[run] ===== done {sub} rc={rc} "
+                  f"({legs[-1]['wall_secs']}s)", flush=True)
+        if any(l["rc"] != 0 for l in legs if l["judge"] == judge):
+            print(f"[run] a {judge} leg failed — STOPPING before the next judge",
+                  file=sys.stderr)
+            break
     manifest = {
         "driver": "run_farmwar",
         "prereg": "measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
