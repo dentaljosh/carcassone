@@ -596,6 +596,16 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 
 **Why deferred:** the app worktree already carries the unmerged border/start-tile work and the boxes are owned by the leaf ablation overnight; this slots in as the next app work item after the merge window. Needs no new measurement to start — CL-070's data already exists for threshold calibration.
 
+## 2026-08-05 — Slice-1 analyzer has NO rules-profile seam (latent, found while retracting the game-3 grading)
+
+**Context:** the EV-loss grader was caught grading a 2026-08-02-build archive as `fixed_v1` (readout §6b retraction). The **same class of defect is latent in slice 1**: `scripts/analyzer/replay_stats.py:179,189` constructs a **bare walled `Game(enable_legal_moves_cache=True, include_farm_scalars=False)`** with no rules kwargs, and `corpus_stats.py`/`e4_diff.py` inherit it. `e4_diff.py` *echoes* `start_rule`/`grid_rule` in its header (:222) and warns the reader to compare them against the corpus (:202) — but it never **uses** them to build the Game. An echo is not a guard.
+
+**Blast radius:** the two pre-2026-08-01 archives are genuinely `walled`, so every slice-1 number published to date is unaffected. But re-running `e4_diff.py` on **any post-2026-08-01 archive** (tonight's 98–78 game included) replays a retail + centered18 game under walled rules — wrong start tile, wrong grid origin. Likely LOUD rather than silent (the action sequence should fail or mismatch, and `integrity.replay_scores_match` would flip false), but "probably crashes" is not a contract.
+
+**Fix when touched:** give `replay_game_stats` a rules-profile seam (accept a profile name / `game_kwargs()`), resolve it from the archive with the same fail-closed rule the grader now uses (explicit `rules_profile` wins; absent ⇒ pre-fixed_v1 ⇒ never `fixed_v1`), and stamp the resolved profile into the artifact. Add the pinning test alongside the grader's.
+
+**Why deferred:** nothing currently consumes it — no slice-1 rerun is queued, and the grader (which does have the seam) is the tool being used on new archives. Do it the next time slice-1 output is regenerated, before publishing any number from a post-2026-08-01 game.
+
 ## 2026-08-05 — Server-side champion ("thin-client APK"): stop shipping the algorithm with the app
 
 **Context:** Joshua asked what a server version would take, motivated by IP — today anyone with the APK has the champion. **The concern is correct and the exposure is larger than "a compiled binary you could reverse-engineer":**
