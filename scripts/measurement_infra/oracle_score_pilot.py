@@ -389,6 +389,55 @@ def load_disagreements(records_dir, level_a: int, level_b: int,
     return out
 
 
+def load_positions_jsonl(path) -> list:
+    """The `--positions-jsonl` adapter: an EXPLICIT (position, arm A, arm B) list.
+
+    Added 2026-08-05 for the farm-war discriminator, whose population is EV-loss plies
+    (`measurement/analyzer_evloss_20260805/EV_LOSS_*.json`) rather than banked CL-070
+    disagreements. It touches NOTHING downstream: the rows it returns are the same shape
+    `_process` already consumes, so world sampling, CRN seed derivation, the playout and
+    the terminal-score read stay one shared code path — the same discipline the
+    `--oracle-policy` flag was built under.
+
+    Required per line: `rid`, `deck_seed`, `ply`, `pick_a`, `pick_b`, `root_player`, and
+    the move sequence either inline as `actions` or by reference as `archive_path` (an E4
+    phone archive; its `actions` are read once here, not in the workers). `root_id`
+    defaults to `rid`. Every other field rides through untouched.
+
+    Sign contract, restated because it is the whole deliverable: `position_delta` returns
+    ``mean(V_B - V_A)``, so putting the CHAMPION's pick in `pick_a` and the HUMAN's in
+    `pick_b` makes the reported `delta` literally the pre-registered
+    ``Δ = V(played) − V(best)``.
+    """
+    out, seen = [], set()
+    for ln, line in enumerate(Path(path).read_text().splitlines(), 1):
+        if not line.strip():
+            continue
+        o = json.loads(line)
+        missing = [k for k in ("rid", "deck_seed", "ply", "pick_a", "pick_b", "root_player")
+                   if o.get(k) is None]
+        if missing:
+            raise ValueError(f"{path}:{ln}: position is missing {missing}")
+        if o.get("actions") is None:
+            ap_ = o.get("archive_path")
+            if not ap_:
+                raise ValueError(f"{path}:{ln}: needs either `actions` or `archive_path`")
+            o["actions"] = [int(a) for a in json.loads(Path(ap_).read_text())["actions"]]
+        o["actions"] = [int(a) for a in o["actions"]]
+        o.setdefault("root_id", o["rid"])
+        o.setdefault("checksum", None)
+        o.setdefault("salt", 0)
+        for k in ("game_phase", "phase_bucket", "h200_top2_q_gap"):
+            o.setdefault(k, None)
+        o.setdefault("solver_region", False)
+        if o["rid"] in seen:
+            raise ValueError(f"{path}:{ln}: duplicate rid {o['rid']!r} — rids key both the "
+                             "on-disk record and the CRN world seeds and must be unique")
+        seen.add(o["rid"])
+        out.append(o)
+    return sorted(out, key=lambda r: (str(r["root_id"]), int(r["salt"]), str(r["rid"])))
+
+
 def sample_positions(population: list, n: int, seed: int) -> list:
     """Deterministic seeded sample, returned in the population's own sorted order.
 
@@ -658,10 +707,20 @@ def _playout_value(game, world_board, action: int, root_player: int,
 def _process(item: dict) -> dict:
     """Score ONE banked disagreement position under M CRN-shared deck completions."""
     rid = item["rid"]
-    rec = {k: item[k] for k in (
+    # `.get` rather than `item[k]`: identical for every banked CL-070 record (which
+    # carries all of these), but it lets an ALTERNATIVE input mode — `--positions-jsonl`,
+    # whose rows are EV-loss plies and have no `salt`/`h200_top2_q_gap` — reuse this same
+    # code path instead of forking it.
+    rec = {k: item.get(k) for k in (
         "rid", "root_id", "deck_seed", "ply", "salt", "pick_a", "pick_b",
         "root_player", "k_remaining", "game_phase", "phase_bucket", "n_legal",
         "h200_top2_q_gap", "solver_region")}
+    # Stratum/epoch/grade metadata rides through untouched so the analyser reads one file
+    # per position. Absent on the CL-070 path -> the record is unchanged there.
+    for k in ("stratum", "rules_profile", "game_label", "bucket", "phase", "delta_q",
+              "abs_delta_q", "action_played", "action_best", "stratifier_rule"):
+        if k in item:
+            rec[k] = item[k]
     rec.update({
         "schema": SCHEMA,
         "level_a": _G["level_a"], "level_b": _G["level_b"],
@@ -678,7 +737,11 @@ def _process(item: dict) -> dict:
     old = signal.signal(signal.SIGALRM, _on_alarm)
     signal.alarm(int(_G["wall_cap"]))
     try:
-        game, board = RR.replay_actions(item["deck_seed"], item["actions"], item["ply"])
+        # `game_kwargs` is EMPTY on every pre-existing path (and on `walled`, whose
+        # `game_kwargs()` is `{}` by construction), so the call below is byte-identical
+        # to `RR.replay_actions(deck_seed, actions, ply)` for every banked record.
+        game, board = RR.replay_actions(item["deck_seed"], item["actions"], item["ply"],
+                                        game_kwargs=(_G.get("game_kwargs") or None))
         cks = game.string_representation(board)
         rec["checksum_ok"] = bool(item.get("checksum") is None or cks == item["checksum"])
         if not rec["checksum_ok"]:
@@ -860,12 +923,23 @@ def build_manifest(args, population_n: int, chosen: list) -> dict:
                        "for every world (crn_verified)",
             "strict": bool(args.strict_crn),
         },
-        "source": {
+        "source": ({
+            "mode": "positions-jsonl",
+            "positions_jsonl": str(getattr(args, "positions_jsonl", None)),
+            "claim": "farm-war discriminator — "
+                     "measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+            "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+            "arm_b": "pick_b = the HUMAN's played move (action_played)",
+            "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), "
+                              "engine points, root_player's seat",
+        } if getattr(args, "positions_jsonl", None) else {
             "run_dir": str(args.run_dir),
             "records_dir": str(args.records_dir),
             "roots": str(args.roots),
             "claim": "CL-070 / measurement/classical_search/MOVE_AGREEMENT_PREREG.md",
-        },
+        }),
+        "rules_profile": getattr(args, "rules_profile_manifest", None),
+        "replay_game_kwargs": dict(getattr(args, "game_kwargs", None) or {}),
         "levels": {
             # `level_*` are the KEYS read out of each record's `q_pick_by_level`. What they
             # MEAN is the arm's allocation: sims-per-det at k4 for the CL-070 bank (the
@@ -937,6 +1011,26 @@ def main(argv=None) -> int:
                          "champion. tier1-greedy = the OUT-OF-FAMILY Tier-1 greedy "
                          "RuleBasedPlayer discriminator (SIGN CHECK ONLY).")
     ap.add_argument("--world-seed-salt", default="oracle-pilot-v1")
+    # --- ALTERNATIVE INPUT MODE (farm-war discriminator, 2026-08-05) ------------ #
+    # The default path (--run-dir bank of CL-070 disagreement records) is untouched and
+    # is what runs when this flag is absent; `tests/test_farmwar_discriminator.py`
+    # re-scores two banked positions with default flags and diffs every value field
+    # against the banked records, the same way the --oracle-policy flag was proven.
+    ap.add_argument("--positions-jsonl", default=None,
+                    help="score an EXPLICIT position list instead of the CL-070 "
+                         "disagreement bank. One JSON object per line with at least "
+                         "{rid, root_id, deck_seed, actions|archive_path, ply, pick_a, "
+                         "pick_b, root_player}; pick_a/pick_b are the two arms and the "
+                         "reported delta is V(pick_b) - V(pick_a). Every other field "
+                         "rides through into the record. Used by the farm-war "
+                         "discriminator (measurement/analyzer_evloss_20260805/).")
+    ap.add_argument("--rules-profile", default=None,
+                    help="replay the positions under this named rules profile "
+                         "(carcassonne_ai.rules_profile). Absent = the engine of record, "
+                         "byte-identical to every banked run. CARCASSONNE_FIX_R9 is "
+                         "import-latched, so this VERIFIES the latch and refuses to run "
+                         "under the wrong one — export it before launch, one process "
+                         "per epoch.")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--wall-cap", type=int, default=7200, help="per-position seconds")
     ap.add_argument("--max-plies", type=int, default=400)
@@ -975,41 +1069,75 @@ def main(argv=None) -> int:
     roots_path = Path(args.roots) if args.roots else run_dir / "roots.jsonl"
     args.records_dir, args.roots = records_dir, roots_path
 
+    # The rules profile is resolved (and its import-latched half VERIFIED) before any
+    # position is built, so a wrong-epoch launch dies at once rather than producing
+    # plausible numbers under the wrong farm adjacency.
+    args.game_kwargs, args.rules_profile_manifest = {}, None
+    if args.rules_profile:
+        from carcassonne_ai import rules_profile as _RP
+        prof = _RP.activate(args.rules_profile)
+        if _RP.r9_env_on() != prof.r9_env_expected:
+            print(f"[fatal] profile {prof.name!r} expects {_RP.R9_ENV_VAR}="
+                  f"{int(prof.r9_env_expected)} but this process is latched at "
+                  f"{int(_RP.r9_env_on())}. It is an import-time latch: export it in the "
+                  "launcher and use ONE PROCESS PER EPOCH.", file=sys.stderr)
+            return 2
+        args.game_kwargs = prof.game_kwargs()
+        args.rules_profile_manifest = prof.as_manifest()
+
     out_dir = Path(args.out_root) / args.out_subdir
     (out_dir / "records").mkdir(parents=True, exist_ok=True)
 
-    pop = load_disagreements(records_dir, args.level_a, args.level_b,
-                             args.include_solver_region)
-    if not pop:
-        print("[fatal] no disagreement records found — check --records-dir / --level-*",
-              file=sys.stderr)
-        return 2
-    chosen = sample_positions(pop, args.n, args.sample_seed)
-    if int(args.head) > 0:
-        chosen = chosen[:int(args.head)]
-
-    # Join the sampled positions back to their replay sequences.
-    roots = {}
-    for line in roots_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        o = json.loads(line)
-        roots[f"s{int(o['deck_seed'])}_p{int(o['ply'])}"] = o
-    items = []
-    for c in chosen:
-        r = roots.get(c["root_id"])
-        if r is None:
-            print(f"[fatal] root {c['root_id']} missing from {roots_path}", file=sys.stderr)
+    if args.positions_jsonl:
+        items, pop = load_positions_jsonl(args.positions_jsonl), None
+        if not items:
+            print(f"[fatal] no positions in {args.positions_jsonl}", file=sys.stderr)
             return 2
-        it = dict(c)
-        it["actions"] = [int(a) for a in r["actions"]]
-        it["checksum"] = r.get("checksum")
-        items.append(it)
+        if args.rules_profile:
+            bad = sorted({r.get("rules_profile") for r in items
+                          if r.get("rules_profile") not in (None, args.rules_profile)})
+            if bad:
+                print(f"[fatal] positions stamped for profiles {bad} but this process is "
+                      f"running {args.rules_profile!r}", file=sys.stderr)
+                return 2
+        chosen = items
+        population_n = len(items)
+    else:
+        pop = load_disagreements(records_dir, args.level_a, args.level_b,
+                                 args.include_solver_region)
+        if not pop:
+            print("[fatal] no disagreement records found — check --records-dir / --level-*",
+                  file=sys.stderr)
+            return 2
+        chosen = sample_positions(pop, args.n, args.sample_seed)
+        if int(args.head) > 0:
+            chosen = chosen[:int(args.head)]
 
-    manifest = build_manifest(args, len(pop), chosen)
+        # Join the sampled positions back to their replay sequences.
+        roots = {}
+        for line in roots_path.read_text().splitlines():
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            roots[f"s{int(o['deck_seed'])}_p{int(o['ply'])}"] = o
+        items = []
+        for c in chosen:
+            r = roots.get(c["root_id"])
+            if r is None:
+                print(f"[fatal] root {c['root_id']} missing from {roots_path}",
+                      file=sys.stderr)
+                return 2
+            it = dict(c)
+            it["actions"] = [int(a) for a in r["actions"]]
+            it["checksum"] = r.get("checksum")
+            items.append(it)
+        population_n = len(pop)
+
+    manifest = build_manifest(args, population_n, chosen)
     (out_dir / "manifest.json").write_text(
         json.dumps(json_safe(manifest), indent=2, allow_nan=False))
-    print(f"[pilot] population={len(pop)} disagreements | sampled n={len(items)} "
+    print(f"[pilot] population={population_n} "
+          f"{'positions' if args.positions_jsonl else 'disagreements'} | n={len(items)} "
           f"| M={args.m} | policy={args.oracle_policy} "
           f"| oracle_sims={args.oracle_sims} | W={args.workers}")
     print(f"[pilot] out -> {out_dir}")
@@ -1029,6 +1157,7 @@ def main(argv=None) -> int:
                   oracle_policy=str(args.oracle_policy),
                   wall_cap=int(args.wall_cap), max_plies=int(args.max_plies),
                   strict_crn=bool(args.strict_crn),
+                  game_kwargs=dict(args.game_kwargs or {}),
                   backend=str(args.resolved_backend))
 
     t0 = time.time()
@@ -1057,14 +1186,14 @@ def main(argv=None) -> int:
             rows.append(json.loads(p.read_text()))
 
     summary = summarize(rows, m=int(args.m), assumed_effect=float(args.assumed_effect),
-                        full_n_bank=len(pop))
+                        full_n_bank=population_n)
     summary.update({
         "schema": SCHEMA,
         "oracle_policy": str(args.oracle_policy),
         "n_attempted": len(items),
         "n_failed": sum(1 for r in rows if not r.get("ok")),
         "crn_verified_all": all(r.get("crn_verified") for r in rows if r.get("ok")),
-        "population_disagreements": len(pop),
+        "population_disagreements": population_n,
         "wall_secs": round(time.time() - t0, 1),
         "manifest": str(out_dir / "manifest.json"),
     })

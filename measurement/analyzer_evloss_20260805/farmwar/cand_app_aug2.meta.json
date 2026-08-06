@@ -1,0 +1,38 @@
+{
+  "profile": "app_aug2",
+  "rules_profile_manifest": {
+    "name": "app_aug2",
+    "grid_rule": "centered18",
+    "start_row": 18,
+    "start_col": 15,
+    "board_rows": 35,
+    "board_cols": 35,
+    "start_rule": "retail",
+    "window_size": 25,
+    "cloister_scan": "drifting",
+    "unplaceable_tile": "next_player",
+    "note": "APP PROVENANCE (added 2026-08-05) \u2014 the rules the 2026-08-02 Android build actually plays: centered18 grid + retail start tile ONLY, WITHOUT the A2 (fixed cloister scan), A3 (redraw) and R9 levers, which that build does not carry. It is NOT a candidate and ADOPTS NOTHING: no elo, no eval leg and no default has ever run on it, and none may. It exists for exactly one reason \u2014 an archive from a pre-fixed_v1 phone build stamps (start_rule=retail, grid_rule=centered18) and NOTHING else, which used to resolve uniquely to `fixed_v1` and graded such a game with R9 ON + fixed cloister + redraw, i.e. under different farm adjacency than it was played under (the 2026-08-05 EV-loss retraction). The registry's key space could not express a build that exists; this row makes it able to. The DISCRIMINATOR is the archive's own stamp: the fixed_v1 app build writes `rules_profile`/`cloister_rule`/`farm_rule` into every archive, so their ABSENCE means a pre-fixed_v1 build and MUST NOT resolve to `fixed_v1`. Being non-walled it also refuses a results.csv row unless the exp_id names it, which is the correct behaviour for a provenance profile.",
+    "r9_env_expected": false,
+    "fixed_start_tile": true,
+    "recentred": true,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "r9_env_observed": false,
+    "r9_env_ok": true
+  },
+  "r9_env": {
+    "CARCASSONNE_FIX_R9": "0",
+    "r9_env_expected": false,
+    "r9_env_observed": false
+  },
+  "artifacts": [
+    "measurement/analyzer_evloss_20260805/EV_LOSS_g3_66810.json"
+  ],
+  "n_candidates": 11,
+  "n_kept": 10,
+  "n_dropped_degenerate": 1,
+  "n_farm_driven": 3,
+  "stratifier_rule": "primary",
+  "leaf_cfg_hash": null,
+  "v29_farm_flip_k": 0.0,
+  "wall_secs": 0.08
+}

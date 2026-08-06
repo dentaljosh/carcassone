@@ -1,0 +1,3 @@
+[gate] $ --n 100 --head 2 --workers 2 --out-root /tmp/farmwar_gate_r35yw5tf --out-subdir leg1
+[pilot] population=628 disagreements | sampled n=2 | M=32 | policy=clair-puct | oracle_sims=100 | W=2
+[pilot] out -> /tmp/farmwar_gate_r35yw5tf/leg1

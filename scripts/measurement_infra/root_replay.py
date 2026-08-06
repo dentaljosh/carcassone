@@ -48,10 +48,20 @@ class RootRef:
         return replay_actions(self.deck_seed, self.actions, self.ply, include_farm_scalars)
 
 
-def replay_actions(deck_seed: int, actions, ply: int, include_farm_scalars: bool = True):
-    """Reconstruct (game, board) at move index `ply`. Lossless for any policy (see module docstring)."""
+def replay_actions(deck_seed: int, actions, ply: int, include_farm_scalars: bool = True,
+                   game_kwargs: dict | None = None):
+    """Reconstruct (game, board) at move index `ply`. Lossless for any policy (see module docstring).
+
+    ``game_kwargs`` threads a `rules_profile.RulesProfile.game_kwargs()` through to the
+    `Game(...)` construction, for callers replaying archives from a NON-`walled` epoch
+    (the E4 phone games: `app_aug2`, `fixed_v1`). ``None`` — and `walled`, whose
+    `game_kwargs()` is `{}` by construction — build EXACTLY the call this function has
+    always made, so every existing caller is byte-identical. R9 is import-latched and is
+    NOT expressible here; the caller owns it (see `analyzer/ev_loss.prepare_env`).
+    """
     random.seed(int(deck_seed))
-    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars)
+    game = Game(enable_legal_moves_cache=True, include_farm_scalars=include_farm_scalars,
+                **(game_kwargs or {}))
     board = game.get_init_board()
     for a in actions[:ply]:
         board, _ = game.get_next_state(board, int(a))
