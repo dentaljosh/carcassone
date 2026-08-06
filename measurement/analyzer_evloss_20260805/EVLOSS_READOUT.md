@@ -170,6 +170,56 @@ and is the clearest case in this document of why D1 forbids quoting it as points
 three worst human moves are all in the 44–53 ply window (k 49→45), i.e. one bad mid-game
 stretch rather than a spread.
 
+## 6b. GAME 3 (2026-08-05) — the first human WIN, graded. **He won the game he played worst.**
+
+Archive `1785975832_66810.json` (98–78 W), graded at **its own budget k8×1376 = 11008** under
+**`fixed_v1`** (resolved from `start_rule retail` + `grid_rule centered18`; `r9_env_ok: true`).
+`EV_LOSS_g3_66810.json`. **Gate PASS:** champion mean ΔQ 0.01178 (sem 0.00476) vs null p95
+0.07369 — again below the null *mean* (0.01349). `replay_scores_match: true` ([98,78]),
+`mirror_desync_events: 0`, `n_unrated_pimc: 0`.
+
+| seat | rated | agree | mean ΔQ | sd | p50 | max | **blunders** |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| human | 52 | 0.4423 | **0.06349** | 0.11474 | 0.00791 | 0.5625 | **9** |
+| champion | 62 | 0.6613 | **0.01178** | 0.03749 | 0.0 | 0.2569 | 1 |
+
+**Human − champion = +0.05172 ± 0.01661, z +3.11, ratio 5.39×** — the largest paired gap of
+the three games, and the only one past 3σ. ⚠️ **Absolute ΔQ is NOT comparable across games
+here** (this one is graded at 11008 on `fixed_v1`; g1/g2 at 2752 on `walled`). The *within-game
+ratio* is the comparable statistic: 3.03 / 2.99 / **5.39**.
+
+**Instrument validation, free:** the champion's agree rate falls to 0.661 here from 0.727/0.730
+in the 2752 games — the direction and rough size CL-070 predicts from self-disagreement growing
+with budget (D_same 0.2272 → 0.2997 between 2752 and 11008). An independent check that the
+grader behaves as the budget axis says it should.
+
+**The damage is entirely front-loaded.** All 9 blunder-class human moves fall in plies 12–60
+(k_remaining 64→40); **zero** after ply 60. Split by half, with the champion seat as the control:
+
+| seat | plies ≤60 | plies >60 | compression |
+|---|---:|---:|---:|
+| human | 0.1076 (n 28, 9 blunders) | **0.0121** (n 24, 0 blunders) | 8.9× |
+| champion | 0.0200 (n 29, 1 blunder) | 0.0046 (n 33, 0) | 4.3× |
+
+⚠️ **Both seats compress late, so "he tightened up" is only half the story** — a decided
+position shrinks sibling differences for everyone, and the control proves that effect is real
+(4.3× on an agent whose policy did not change). What survives the control: the human/champion
+ratio falls **5.38× early → 2.63× late**, so he *did* narrow relative to the instrument's own
+drift, but not to parity. By phase, the loss is in **tile placement (mean 0.0850, n 35), not
+meeple placement (0.0193, n 17)**.
+
+**Reading, honestly.** The scoreline says a 20-point win; the grader says his roughest game of
+the three. The win was built on the endgame ledger (unfinished features +16, farms +6) after an
+opening the champion's search rates poorly. Two explanations fit and **n=1 cannot separate
+them**: (a) the deck and the banking strategy bailed out a bad start, or (b) the champion's leaf
+under-prices the incomplete-feature banking he was playing for, so moves toward it grade as
+losses while earning points. (b) is a *lead, not a finding* — testing it means grading the same
+game against a stronger reader, or checking whether his high-ΔQ moves are systematically the
+ones that later paid as unfinished features. Neither is funded here.
+
+The exact tail cost **0.0 points** for both seats (1 ply each, both optimal) — his endgame was
+exact-perfect.
+
 ## 7. What this does and does not settle
 
 - It **converts CL-070's "the move changed" into "the move cost N ΔQ"** — the named successor
