@@ -596,6 +596,18 @@ All are **replay-only**: computable from (deck_seed, action_sequence) via `root_
 
 **Why deferred:** the app worktree already carries the unmerged border/start-tile work and the boxes are owned by the leaf ablation overnight; this slots in as the next app work item after the merge window. Needs no new measurement to start — CL-070's data already exists for threshold calibration.
 
+## 2026-08-05 — Archives should self-identify the BUILD, not just the rules (the fix that prevents today's retraction recurring)
+
+**Context:** tonight's game-3 grading was run under the wrong rules profile and retracted. The root cause was **provenance ambiguity**: the archive carried `start_rule: retail` + `grid_rule: centered18`, and *two different app builds* produce that pair — the 2026-08-02 build (app-only recentring + retail, but drifting cloister / `next_player` / R9 OFF) and the fixed_v1 build (all four levers). Nothing in the payload distinguished them. It took an `adb` APK **sha256** comparison against the staged file to settle it, which is not a check any future reader will think to run.
+
+The fixed_v1 build does stamp `rules_profile`/`cloister_rule`/`farm_rule`, so *its* archives are self-describing — but that only works going forward, and it identifies the RULES, not the BUILD. A build can change the champion, the leaf, the rust wheel, or a bug fix without touching any rules field.
+
+**Proposal:** stamp unambiguous build provenance into every archive at write time — `app_build` (the APK's own version/build id), `code_rev` (the repo commit the bundle was synced from — `sync_python.py` already runs at build time and knows it), and the rust wheel version. `code_rev` is the single most valuable one: it makes any archive reproducible against an exact tree, and makes "which build was this?" a field lookup instead of a forensic exercise.
+
+**Why it matters beyond convenience:** every E4 strength number is conditioned on the build that produced it. Today the conditioning was *recoverable* only because the old APK still existed on disk to hash. If Joshua had rebuilt or cleaned, the epoch of the first human win would be unrecoverable.
+
+**Why deferred:** app change, and the E4 stream is small enough that the manual check is survivable today. Do it with the next APK build — it is a few lines in the archive writer. **Until it lands, the standing rule is: identify an app build by APK hash, never by rules fields.**
+
 ## 2026-08-05 — Slice-1 analyzer has NO rules-profile seam (latent, found while retracting the game-3 grading)
 
 **Context:** the EV-loss grader was caught grading a 2026-08-02-build archive as `fixed_v1` (readout §6b retraction). The **same class of defect is latent in slice 1**: `scripts/analyzer/replay_stats.py:179,189` constructs a **bare walled `Game(enable_legal_moves_cache=True, include_farm_scalars=False)`** with no rules kwargs, and `corpus_stats.py`/`e4_diff.py` inherit it. `e4_diff.py` *echoes* `start_rule`/`grid_rule` in its header (:222) and warns the reader to compare them against the corpus (:202) — but it never **uses** them to build the Game. An echo is not a guard.
