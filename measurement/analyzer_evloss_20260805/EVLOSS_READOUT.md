@@ -170,7 +170,42 @@ and is the clearest case in this document of why D1 forbids quoting it as points
 three worst human moves are all in the 44–53 ply window (k 49→45), i.e. one bad mid-game
 stretch rather than a spread.
 
-## 6b. GAME 3 (2026-08-05) — the first human WIN, graded. **He won the game he played worst.**
+## 6b. GAME 3 (2026-08-05) — the first human WIN. ⚠️ **GRADING VOID — RUN UNDER THE WRONG RULES PROFILE. Do not cite the numbers in this section.**
+
+> **RETRACTED 2026-08-05 night, same session, before anything downstream used it.** The grader
+> resolved this archive to **`fixed_v1`** from `start_rule: retail` + `grid_rule: centered18`.
+> That resolution is **wrong**: the phone was running the **2026-08-02 app build**, verified two
+> ways — the installed APK's sha256 `54a08d51…` is byte-identical to
+> `android/app/build/outputs/apk/debug/app-debug.apk` (built 2026-08-02) and **differs** from the
+> staged `app-debug-fixedv1-20260803.apk` (`b8f2cef6…`); and the archive has **no
+> `rules_profile` / `cloister_rule` / `farm_rule` fields**, which the fixed_v1 build stamps on
+> every archive. The Aug-2 build plays **centered18 + retail** but keeps **drifting cloister
+> scan, `next_player` on an unplaceable tile, and R9 OFF** — so grading it as `fixed_v1` ran the
+> search with **R9 ON, fixed cloister scan and redraw**, i.e. different farm adjacency from the
+> game actually played. Farms were live in this game (15–9), so the ΔQ values are not
+> trustworthy.
+>
+> **Why the fail-closed guard did not fire:** `resolve_profile_name` keys only on
+> `(start_rule, grid_rule)`, and within the registry that pair *does* hit `fixed_v1` uniquely.
+> The registry has **no profile for the Aug-2 app combination** (centered18 + retail + drifting
+> + next_player + R9 off), so a real-world build exists that the key space cannot express. The
+> subagent's survey claim that "the four registry profiles partition that key space uniquely" is
+> true of the registry and **false of reality**. `replay_scores_match: true` did not catch it —
+> R9 flips the legal mask in only ~1/200 games and cloister/redraw are rare, so a matching
+> replay is weak evidence here, not proof.
+>
+> **What survives unaffected:** the win itself and its provenance. `played_sims_effective 1376`
+> × `played_k_dets_effective 8` = **11008**, `played_backend: rust`, `verify: true`, leaf
+> `a36d2e15a3b3d71d`, no `runtime_budget_override`, no `resume_note` ⇒ **Joshua beat the
+> champion of record at full strength**, under Aug-2 rules rather than the full fixed_v1 bundle.
+> The score breakdown (during-play 41–43, unfinished 42–26, farms 15–9) is read off the archive
+> and the phone's own ledger, not from the grader.
+>
+> **Owed:** a registry profile for the Aug-2 app rules, a resolver that fails closed instead of
+> guessing (require the archive's explicit `rules_profile`; absent ⇒ pre-fixed_v1 ⇒ never
+> `fixed_v1`), then a re-grade. Until then this section is void.
+
+## 6b-VOID (original text, retained for the record). **He won the game he played worst.**
 
 Archive `1785975832_66810.json` (98–78 W), graded at **its own budget k8×1376 = 11008** under
 **`fixed_v1`** (resolved from `start_rule retail` + `grid_rule centered18`; `r9_env_ok: true`).
