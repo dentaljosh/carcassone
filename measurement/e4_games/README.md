@@ -30,7 +30,28 @@ cross-platform (ARM/Pixel → x86/WSL) deterministic.
 | `1785984310_1698417952.json` | 2026-08-05 | **101–107 L** | close; farms 33–30 — the contested-farm battle game (Joshua: one ~30-pt farm, 4–5 meeples, "kept flipping"). |
 | `1785986044_1911511187.json` | 2026-08-05 | **109–65 W** | second human win, the blowout: during-play 71–50 AND farms **30–0** (champion at 0 farm pts ≈ its own p5). |
 
-Joshua's overall E4 record: **2–5** (game 1 predates the archiving feature — unrecorded by
+## ⚠️ The farm-starvation claim was a 3-game artifact — CORRECTED 2026-08-07
+
+Between 2026-08-05 and 08-06 this file and STATUS carried "the champion averages **11.0** farm
+pts/seat against Joshua vs **20.5** in its own corpus", and that asymmetry was the stated
+motivation for funding the farm-war discriminator. **With all six fixed_v1 games in it is
+19.5 vs 20.5 — i.e. normal.** The 11.0 came from the first three games only (9 / 30 / 0), and
+the 0 was one blowout. Joshua does take more farm points than the corpus norm (26.5 vs 20.5)
+and is 5-for-6 on farms this epoch — but **the champion is not being starved of farms**, and
+"it is bad at contested farm wars" no longer has the ledger support it was funded on. (The
+discriminator itself returned INCONCLUSIVE — [FARMWAR_READOUT](../analyzer_evloss_20260805/FARMWAR_READOUT.md)
+— so nothing downstream rests on the wrong figure.)
+
+## The fixed_v1 epoch: 2–4 on games, DEAD EVEN on points
+
+Six games under the current rules. Margins (Joshua − champion): **−7, −6, +44, −10, −14, +3**.
+**Mean +1.67, sd 21.49, se 8.77, z +0.19** — indistinguishable from parity, while the *winrate*
+is 0.33. The gap between those two statistics is the +44 blowout: he loses more games than he
+wins yet is even on aggregate points. ⚠️ n=6, unpaired, one seat, no seat-swap deck pairing —
+a description, not a rating. Proper sizing (Phase C luck floor): **193 seat-swap deck-paired
+games at true wr 0.55, 48 at 0.60**.
+
+Joshua's overall E4 record: **3–6** (game 1 predates the archiving feature — unrecorded by
 design, not an archive bug). **Farms are 6-for-6 Joshua across every archived game** (27–15,
 27–3, 15–9, 18–9, 33–30, 30–0): the champion averages **11.0 farm pts/seat against him vs
 20.5 in its own self-play corpus** (`CORPUS_STATS_champ449.json score_flow_dist.farm_pts`),
