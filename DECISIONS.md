@@ -4370,6 +4370,55 @@ in-game latch all UNTOUCHED).
 
 ---
 
+## 2026-08-09 (late morning) — The first out-of-lineage rating: the champion is +111.4 elo over JCloisterZone's AI, and the n=20 "LEVEL" call is retracted (measurement)
+
+**Decision:** record the n=400 deck-paired match against JCloisterZone's `LegacyAiPlayer` as the
+program's first **absolute** strength anchor, and retract the n=20 smoke's "the two are LEVEL"
+headline. Nothing is promoted; `PRODUCTION.yaml` is untouched.
+
+**Result** (band 1.08e11, 200 decks x 2 seat-swapped, `fixed_v1` + `CARCASSONNE_FIX_R9=1`,
+champion k8x1376 = 11,008 rust, JCZ rev `29a1561`, tile set `basic:2`):
+wr **0.6550** (258W/8D/134L) = **+111.4 elo +/- 17.4**; deck-paired margin **+6.50 +/- 0.86 pts,
+z 7.55**; 0 voids; **0 REAL divergences**; final scores agree **400/400 across 56,777 plies**.
+Classified-only: `UNPLACEABLE_REDRAW` x23 (benign -- both engines redraw, and this *confirms* the
+A3 redraw lever against an independent implementation) and `WALL_LEGALITY` x2 (the bounded 25x25
+action window, non-score-moving, now **measured** at 0.5% of games -- VALIDATION_REPORT §5's
+"not proved empty" finally given a rate).
+
+**Why the smoke was wrong, precisely.** The n=20 smoke read wr 0.525 / paired +4.60 +/- 2.23 and
+was written up as LEVEL. At n=400 the paired margin moved only 0.85 sigma (+4.60 -> +6.50) --
+**it was telling the truth all along** -- while the win rate moved 0.13 (0.525 -> 0.655), about
+1.2 sigma at n=20's +/-0.11. The error was quoting a win rate at n=20 at all. This is exactly the
+`feedback_trend_beats_underpowered_steps` / deck-paired-is-the-robust-class discipline, and it
+failed in the direction of a *more interesting* headline, which is the direction to distrust.
+
+**What survives and what it buys.** The saturation prior (BACKLOG/LEVER_INDEX: JCZ's AI "may
+saturate instantly, then it's a floor marker, not a ruler") is still **refuted** -- wr 0.655 is
+comfortably off both rails. So structural blocker #1 is **dented, not closed**: we now hold a
+reference that is genuinely outside the lineage (independent leaf, search, engine, and a rules
+implementation certified ply-by-ply) and that **cannot drift with our training**, but which sits
+~111 elo *below* the champion and is therefore a floor-anchor, not the superhuman yardstick.
+Its three uses: catch absolute regression, price a lever against an opponent with no correlated
+blind spots, and host the disagreement mining that TERM_ARCHAEOLOGY step 1 needs.
+
+**The finding to sit with.** 11,008 sims of PIMC plus an exact endgame latch, at ~1,329 ms/move,
+beat a **static one-turn evaluator** at 38.1 ms/move (~35x cheaper) by 6.5 points a deck. That is
+a real edge and a *modest* one for that compute ratio -- the same shape blocker #2 predicts, now
+visible against an implementation that shares nothing with us. It does not by itself prove the
+leaf is the binding constraint; a budget ladder against **this** opponent would.
+
+**Riders.** (i) R9 is ON and is **not** the PRODUCTION default (built, not adopted); it is forced
+because it is the only configuration in which the two engines are provably rules-identical
+(oracle leg D), so **+111.4 is NOT comparable to walled-era elo**. (ii) `LegacyAiPlayer` has **no
+configuration knobs** -- no depth, budget, temperature or seed -- so there is no stronger JCZ to
+try; the rating is against this specific agent. (iii) One band, one deck draw. (iv) Ownership is
+not diffed at feature level, only partitions and scores.
+
+→ [CONFIRM_READOUT](measurement/jcz_match_20260809/CONFIRM_READOUT.md) ·
+[TERM_ARCHAEOLOGY](measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md) ·
+`experiments/results.csv` `jcz_legacyai_vs_champ_fixed_v1_r9_n400` · harness `scripts/jcz_match/`
+· band 1.08e11 RETIRED (1.07e11 = the smoke, stays unretired).
+
 ## 2026-08-09 (evening) — The §7 tightener RAN: the price of a top-of-ladder disagreement is +0.0673, not the assumed 0.511 — pre-registered BRANCH 2 fires POWERED and the +54 elo headroom bound collapses to ≈ +7 (measurement)
 
 **Context.** The morning's desk assembly ([MEMO](measurement/budget_headroom_bound_20260809/MEMO.md))
