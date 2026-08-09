@@ -583,6 +583,30 @@ against the phase-arm ladder's first claim.
   VM down, and `dmesg` is empty so it looks like nothing happened (memory:
   `reference_wsl2_host_memory_teardown`).
 
+### Launch sequence (the whole handoff, in order)
+
+Extraction and stratification are **already done and committed** — `CANDIDATES.jsonl`,
+`STRATA.json`, `POSITIONS.jsonl`, `POSITIONS_AB.jsonl` are in the repo, so the sampling frame is
+fixed and auditable and nothing about it re-runs at launch. Two commands remain:
+
+```bash
+# 0. (optional, ~3 min) backfill the context-only third column, §2.1
+python3 scripts/jcz_mining/mine_disagreements.py search-pick     --strata    measurement/jcz_mining_20260809/mining/STRATA.json     --positions measurement/jcz_mining_20260809/mining/POSITIONS.jsonl
+
+# 1. score  —  PREFERRED: the laptop at W=22 (~3.7 h), run FROM the local box
+bash scripts/jcz_mining/launch_mining_laptop.sh          # add --dry-run to preview
+
+#    or, if the local box is free instead (~6 h at W=14)
+bash scripts/jcz_mining/launch_mining.sh
+
+# 2. analyse (seconds)
+python3 scripts/jcz_mining/analyze_mining.py     --strata            measurement/jcz_mining_20260809/mining/STRATA.json     --primary-records   <out-root>/clair-puct/records     --secondary-records <out-root>/tier1-greedy/records     --out               measurement/jcz_mining_20260809/mining/VERDICT.json
+```
+
+Both launchers **refuse to start** against their own box's blocked-process list, print the W
+rationale and the ETA, and are `--dry-run`-able. Nothing needs babysitting: the run is per-position
+checkpointed, so killing it for box priority costs nothing and `--resume` picks it up.
+
 **Governance.** Measurement only. `governance/PRODUCTION.yaml` is untouched. A claim id is minted
 only on **G2** or on a **CONVICT**; G1 and EXONERATE are recorded in the readout, `LEVER_INDEX`, and
 `results.csv` without a claim. The readout is `MINING_READOUT.md` in this directory and lands with
