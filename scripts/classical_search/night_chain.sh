@@ -107,7 +107,8 @@ assert getattr(carc_rs, 'SUPPORTS_V29_PHASE', False), 'rebuilt carc_rs lacks SUP
   : > "$DIR/PHASE_ARM_BLOCKED"; exit 4; }
 
 echo "[night $(ts)] launching the Part C beta ladder (local only)"
-nice -n 19 bash $REPO/scripts/classical_search/curvephase_ladder_launcher.sh 30 local \
+# W=14 (was 30): Joshua is working on the box (2026-08-09 afternoon) — leave headroom.
+nice -n 19 bash $REPO/scripts/classical_search/curvephase_ladder_launcher.sh 14 local \
     > "$LOGS/cp_local.log" 2>&1
 echo "[night $(ts)] Part C launcher returned rc=$?"
 
