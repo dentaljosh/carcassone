@@ -238,17 +238,56 @@ def analyze(jsonl_path, archive_dir=None, profile="fixed_v1") -> dict:
     }
 
 
+def markdown(res: dict) -> str:
+    """The readout tables, generated from the analysis (so no number is hand-typed)."""
+    e = res["estimates"]
+    ds = res["deck_spread"]
+    L = []
+    L.append("| deck_seed | archive | d̂ (deck value) ± se | K | self-play margins |"
+             " Joshua's margin | terrain |")
+    L.append("|---|---|---|---|---|---|---|")
+    for r in res["per_deck"]:
+        L.append(f"| `{r['deck_seed']}` | `{r['archive_file']}` | "
+                 f"**{r['deck_value']:+.2f}** ± {r['deck_value_se']:.2f} | {r['k_replicates']} | "
+                 f"{', '.join(f'{x:+d}' for x in r['selfplay_margins'])} | "
+                 f"**{r['human_margin']:+d}** | {r['terrain']} |")
+    L.append("")
+    L.append("| estimate | β | point estimate | se | realized var ratio |")
+    L.append("|---|---|---|---|---|")
+    L.append(f"| unadjusted | — | {e['unadjusted']['estimate']:+.3f} | "
+             f"**{e['unadjusted']['se']:.3f}** | 1.000 (reference) |")
+    L.append(f"| β = 1 (naive) | 1.000 | {e['beta1']['estimate']:+.3f} | "
+             f"{e['beta1']['se']:.3f} | {e['var_ratio_beta1']:.3f} |")
+    L.append(f"| β̂ (control variate) | {e['beta_hat']['beta']:+.3f} ± "
+             f"{e['beta_hat']['se_beta']:.3f} | {e['beta_hat']['estimate']:+.3f} | "
+             f"**{e['beta_hat']['se']:.3f}** | {e['var_ratio_beta_hat']:.3f} |")
+    L.append("")
+    L.append(f"- headline (pre-registered = smaller se): **{e['headline']}**, "
+             f"se {e['headline_se']:.3f}; adjustment helped = **{e['adjustment_helped']}**")
+    L.append(f"- corr(d̂, m) = **{e['corr_m_d']:+.3f}** (R² {e['r_squared']:.3f}), n = {e['n']}")
+    L.append(f"- deck-value spread: sd(d̂) = {ds['sd_deck_values_observed']:.2f}, "
+             f"within-deck sd = {ds['sd_within_deck']:.2f}, "
+             f"est. true deck-effect sd = {ds['sd_deck_effect_est']:.2f}, "
+             f"self-play ICC = {ds['icc_selfplay']:.3f}")
+    L.append(f"- supplementary (NOT headline): mean(d̂) = {e['mean_deck_value']:+.2f}; "
+             f"uncentred mean(m − d̂) = {e['uncentred_beta1_estimate']:+.2f}")
+    return "\n".join(L)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--jsonl", required=True)
     ap.add_argument("--archives", default=None)
     ap.add_argument("--profile", default="fixed_v1")
     ap.add_argument("--json", default=None, help="write the full analysis here")
+    ap.add_argument("--markdown", default=None, help="write the readout tables here")
     args = ap.parse_args(argv)
 
     res = analyze(args.jsonl, args.archives, args.profile)
     if args.json:
         Path(args.json).write_text(json.dumps(res, indent=1))
+    if args.markdown:
+        Path(args.markdown).write_text(markdown(res) + "\n")
     e = res["estimates"]
     print(f"n_decks={res['n_decks']}  games={res['n_selfplay_games']}  "
           f"({res['sign_convention']})")
