@@ -59,6 +59,22 @@ the fields by more than enough to pay for it. The farm component is the only one
 (BACKLOG 2026-07-30 assists entry) — a description of twelve games, NOT a rating. Phase-C
 sizing for a real read: **193 seat-swap deck-paired games at true wr 0.55, 48 at 0.60.**
 
+### Deck luck priced out of that −0.17 (2026-08-08)
+
+The champion self-played each of these 12 decks 8× at the full 11008 budget under `fixed_v1`,
+to estimate what each deck is intrinsically worth to seat 0 and read his margin against it as
+a control variate → [e4_deck_baseline_20260807/READOUT.md](../e4_deck_baseline_20260807/READOUT.md).
+**Result: the adjustment bought 4.2% on the se — `−0.17 ± 6.76` vs `−0.17 ± 7.06` — and by
+construction could not move the point estimate at all** (the adjustment is centred). His 12
+decks were collectively neutral (mean deck value **+0.23**), and deck luck is smaller here than
+Phase C priced it: self-play deck-effect sd **7.16** vs within-deck game sd **21.49**, i.e.
+**ICC 0.100** (ANOVA F(11,84) = 1.887, p = 0.053), against Phase C's 0.19.
+**The lasting output is the per-deck ledger, not the error bar:** the **−38** loss (`703591`)
+came on a *neutral* deck and is genuinely his worst game; the **116–78** win (`627623`) was
+earned on a neutral deck; the **109–65** blowout (`1911511187`) came on the most seat-0-favourable
+deck of the twelve (**+20.25**, ~half the margin); and the **74–71** win (`1621601234`) is the one
+result the deck carried (deck **+17.50**, he took **+3**). No strength claim, no claim id.
+
 ## ⚠️ Champion farm points against Joshua — an estimate that will not sit still
 
 | n | champion farm pts/seat vs Joshua |

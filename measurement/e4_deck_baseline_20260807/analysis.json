@@ -1,0 +1,396 @@
+{
+ "schema": "carcassonne-e4-deck-baseline-analysis/v1",
+ "jsonl": "measurement/e4_deck_baseline_20260807/selfplay.jsonl",
+ "profile": "fixed_v1",
+ "sign_convention": "positive = seat 0 = Joshua ahead (scores[0] - scores[1])",
+ "n_selfplay_games": 96,
+ "n_decks": 12,
+ "missing_decks": [],
+ "per_deck": [
+  {
+   "deck_seed": 1382293676,
+   "archive_file": "1786243458_1382293676.json",
+   "human_scores": [
+    97,
+    75
+   ],
+   "human_margin": 22,
+   "deck_value": -11.75,
+   "deck_value_se": 8.754080681112583,
+   "deck_value_sd": 24.760279250675435,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -51,
+    -42,
+    -12,
+    -9,
+    -8,
+    -6,
+    9,
+    25
+   ],
+   "terrain": "uphill",
+   "adj_beta1": 33.979166666666664,
+   "adj_beta_hat": 33.41413669320186
+  },
+  {
+   "deck_seed": 338139,
+   "archive_file": "1786045035_338139.json",
+   "human_scores": [
+    105,
+    115
+   ],
+   "human_margin": -10,
+   "deck_value": -11.5,
+   "deck_value_se": 2.598076211353316,
+   "deck_value_sd": 7.3484692283495345,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -23,
+    -18,
+    -17,
+    -10,
+    -9,
+    -8,
+    -7,
+    0
+   ],
+   "terrain": "uphill",
+   "adj_beta1": 1.729166666666666,
+   "adj_beta_hat": 1.175928623082866
+  },
+  {
+   "deck_seed": 134510,
+   "archive_file": "1786116818_134510.json",
+   "human_scores": [
+    76,
+    104
+   ],
+   "human_margin": -28,
+   "deck_value": -9.75,
+   "deck_value_se": 9.135390366199855,
+   "deck_value_sd": 25.838785906904704,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -32,
+    -28,
+    -26,
+    -22,
+    -18,
+    -6,
+    9,
+    45
+   ],
+   "terrain": "uphill",
+   "adj_beta1": -18.020833333333336,
+   "adj_beta_hat": -18.4915278677501
+  },
+  {
+   "deck_seed": 705585,
+   "archive_file": "1785982194_705585.json",
+   "human_scores": [
+    80,
+    87
+   ],
+   "human_margin": -7,
+   "deck_value": -8.5,
+   "deck_value_se": 6.606274074155351,
+   "deck_value_sd": 18.68536478484852,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -32,
+    -14,
+    -13,
+    -13,
+    -12,
+    -10,
+    -8,
+    34
+   ],
+   "terrain": "uphill",
+   "adj_beta1": 1.729166666666666,
+   "adj_beta_hat": 1.3174317816549213
+  },
+  {
+   "deck_seed": 935815,
+   "archive_file": "1786074812_935815.json",
+   "human_scores": [
+    90,
+    104
+   ],
+   "human_margin": -14,
+   "deck_value": -2.375,
+   "deck_value_se": 9.03354364102403,
+   "deck_value_sd": 25.55071986685083,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -36,
+    -34,
+    -14,
+    -8,
+    7,
+    11,
+    17,
+    38
+   ],
+   "terrain": "uphill",
+   "adj_beta1": -11.395833333333334,
+   "adj_beta_hat": -11.518665936260465
+  },
+  {
+   "deck_seed": 2116173857,
+   "archive_file": "1786076853_2116173857.json",
+   "human_scores": [
+    90,
+    87
+   ],
+   "human_margin": 3,
+   "deck_value": -0.25,
+   "deck_value_se": 6.675514961409344,
+   "deck_value_sd": 18.881207588499205,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -33,
+    -14,
+    -7,
+    -4,
+    -1,
+    13,
+    20,
+    24
+   ],
+   "terrain": "uphill",
+   "adj_beta1": 3.4791666666666665,
+   "adj_beta_hat": 3.4565654677280744
+  },
+  {
+   "deck_seed": 703591,
+   "archive_file": "1786142936_703591.json",
+   "human_scores": [
+    74,
+    112
+   ],
+   "human_margin": -38,
+   "deck_value": -0.25,
+   "deck_value_se": 6.215619725452045,
+   "deck_value_sd": 17.580427428576034,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -26,
+    -23,
+    -8,
+    2,
+    5,
+    11,
+    13,
+    24
+   ],
+   "terrain": "uphill",
+   "adj_beta1": -37.520833333333336,
+   "adj_beta_hat": -37.543434532271924
+  },
+  {
+   "deck_seed": 627623,
+   "archive_file": "1786113542_627623.json",
+   "human_scores": [
+    116,
+    78
+   ],
+   "human_margin": 38,
+   "deck_value": 0.875,
+   "deck_value_se": 5.8322915736441026,
+   "deck_value_sd": 16.496211686323623,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -21,
+    -20,
+    -7,
+    -2,
+    6,
+    9,
+    18,
+    24
+   ],
+   "terrain": "downhill",
+   "adj_beta1": 37.354166666666664,
+   "adj_beta_hat": 37.384629152192595
+  },
+  {
+   "deck_seed": 1698417952,
+   "archive_file": "1785984310_1698417952.json",
+   "human_scores": [
+    101,
+    107
+   ],
+   "human_margin": -6,
+   "deck_value": 3.25,
+   "deck_value_se": 6.046693311223913,
+   "deck_value_sd": 17.10263137648707,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -21,
+    -14,
+    -10,
+    5,
+    6,
+    11,
+    22,
+    27
+   ],
+   "terrain": "downhill",
+   "adj_beta1": -9.020833333333334,
+   "adj_beta_hat": -8.878347513937861
+  },
+  {
+   "deck_seed": 49628,
+   "archive_file": "1786242001_49628.json",
+   "human_scores": [
+    86,
+    95
+   ],
+   "human_margin": -9,
+   "deck_value": 5.25,
+   "deck_value_se": 7.947933244381388,
+   "deck_value_sd": 22.48014997408031,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -20,
+    -16,
+    -5,
+    -2,
+    2,
+    13,
+    20,
+    50
+   ],
+   "terrain": "downhill",
+   "adj_beta1": -14.020833333333332,
+   "adj_beta_hat": -13.784012074889823
+  },
+  {
+   "deck_seed": 1621601234,
+   "archive_file": "1786118143_1621601234.json",
+   "human_scores": [
+    74,
+    71
+   ],
+   "human_margin": 3,
+   "deck_value": 17.5,
+   "deck_value_se": 11.269427669584644,
+   "deck_value_sd": 31.874754901018456,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -24,
+    -20,
+    -11,
+    19,
+    36,
+    38,
+    42,
+    60
+   ],
+   "terrain": "downhill",
+   "adj_beta1": -14.270833333333332,
+   "adj_beta_hat": -13.456207510720596
+  },
+  {
+   "deck_seed": 1911511187,
+   "archive_file": "1785986044_1911511187.json",
+   "human_scores": [
+    109,
+    65
+   ],
+   "human_margin": 44,
+   "deck_value": 20.25,
+   "deck_value_se": 7.5136780036715125,
+   "deck_value_sd": 21.251890672193312,
+   "k_replicates": 8,
+   "selfplay_margins": [
+    -3,
+    1,
+    6,
+    10,
+    24,
+    26,
+    38,
+    60
+   ],
+   "terrain": "downhill",
+   "adj_beta1": 23.979166666666668,
+   "adj_beta_hat": 24.923503717970455
+  }
+ ],
+ "deck_spread": {
+  "sd_deck_values_observed": 10.435793046776633,
+  "var_deck_values_observed": 108.9057765151515,
+  "mean_within_deck_var": 461.6577380952381,
+  "sd_within_deck": 21.486222052637316,
+  "var_deck_effect_est": 51.19855925324675,
+  "sd_deck_effect_est": 7.15531685205112,
+  "icc_selfplay": 0.09983022440778849,
+  "note": "var_deck_effect_est <= 0 means the observed spread of deck means is no larger than replicate noise alone: these decks are INDISTINGUISHABLE at this K."
+ },
+ "estimates": {
+  "n": 12,
+  "unadjusted": {
+   "estimate": -0.16666666666666666,
+   "se": 7.055873690433634,
+   "sd": 24.44226344723914
+  },
+  "beta1": {
+   "beta": 1.0,
+   "estimate": -0.16666666666666738,
+   "se": 6.447170827525274,
+   "sd": 22.333654876699313,
+   "adjusted": [
+    1.729166666666666,
+    -9.020833333333334,
+    23.979166666666668,
+    1.729166666666666,
+    -11.395833333333334,
+    3.4791666666666665,
+    37.354166666666664,
+    -18.020833333333336,
+    -14.270833333333332,
+    -37.520833333333336,
+    -14.020833333333332,
+    33.979166666666664
+   ]
+  },
+  "beta_hat": {
+   "beta": 0.9528322804759815,
+   "se_beta": 0.676595080605696,
+   "estimate": -0.16666666666666638,
+   "se": 6.760207294558574,
+   "se_ddof1": 6.445604750906758,
+   "sd": 22.328229828155685,
+   "adjusted": [
+    1.3174317816549213,
+    -8.878347513937861,
+    24.923503717970455,
+    1.175928623082866,
+    -11.518665936260465,
+    3.4565654677280744,
+    37.384629152192595,
+    -18.4915278677501,
+    -13.456207510720596,
+    -37.543434532271924,
+    -13.784012074889823,
+    33.41413669320186
+   ]
+  },
+  "corr_m_d": 0.40681831732972085,
+  "r_squared": 0.16550114331498544,
+  "var_ratio_beta1": 0.8349044192239408,
+  "var_ratio_beta_hat": 0.9179487423535159,
+  "mean_deck_value": 0.22916666666666666,
+  "uncentred_beta1_estimate": -0.3958333333333333,
+  "headline": "beta_hat",
+  "headline_se": 6.760207294558574,
+  "adjustment_helped": true
+ },
+ "selfplay_cost": {
+  "mean_secs_per_move": 1.2257177083333335,
+  "n": 96
+ }
+}

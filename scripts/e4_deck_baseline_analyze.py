@@ -152,10 +152,13 @@ def deck_effect_icc(decks: dict) -> dict:
     dh = [v["mean"] for v in decks.values()]
     within = [v["sd"] ** 2 for v in decks.values() if v["sd"] == v["sd"]]
     ses = [v["se"] ** 2 for v in decks.values() if v["se"] == v["se"]]
+    # `within` is empty when every deck has K=1 (a partial/interrupted run): no
+    # within-deck variance is estimable, so the ICC is undefined rather than 1.0.
     s2_within = mean(within) if within else float("nan")
     v_dhat = var(dh)
     s2_deck = v_dhat - (mean(ses) if ses else 0.0)
-    icc = (s2_deck / (s2_deck + s2_within)) if (s2_deck + s2_within) > 0 else float("nan")
+    denom = s2_deck + s2_within
+    icc = (s2_deck / denom) if (denom == denom and denom > 0) else float("nan")
     return {
         "sd_deck_values_observed": sd(dh),
         "var_deck_values_observed": v_dhat,
