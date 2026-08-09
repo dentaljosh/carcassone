@@ -40,7 +40,11 @@ echo "[night $(ts)] waiting for the boxes to go quiet before the phase-seam gate
 while [ "$(ps -eo args | grep -c '[e]val_fair_puct')" -gt 0 ]; do sleep 30; done
 echo "[night $(ts)] quiet. Running phase-seam gate (d)."
 
-nice -n 19 bash $REPO/scripts/classical_search/phase_seam_gate.sh > "$LOGS/phase_gate.log" 2>&1
+# If a verdict already exists (e.g. the gate ran on ANOTHER box after the local one kept
+# dirty-crashing mid-suite — 2026-08-09, crashes #4 and #5 both killed it), don't re-run 3h.
+if [ ! -f "$GATE_OUT/VERDICT" ]; then
+  nice -n 19 bash $REPO/scripts/classical_search/phase_seam_gate.sh > "$LOGS/phase_gate.log" 2>&1
+fi
 V=$(cat "$GATE_OUT/VERDICT" 2>/dev/null || echo MISSING)
 echo "[night $(ts)] phase-seam gate verdict: $V"
 
