@@ -136,6 +136,33 @@ pub struct LeafConfig {
     /// F7b: drop the FARM-GROWTH block of the closure-anticipation bonus.
     /// Default `false` == the champion leaf, bit-for-bit.
     pub farm_growth_off: bool,
+    /// Part C phase multiplier on the meeple curve
+    /// (`measurement/curve_shape_scope_20260809/PREREG_DRAFT.md` §4). `0.0` (default)
+    /// == no phase dependence == the champion leaf, bit-for-bit (early branch, NOT a
+    /// multiply by 1.0). `== virtual_score_v2.LeafConfig.v29_phase_beta`.
+    pub v29_phase_beta: f64,
+    /// The RUN-LEVEL `E[f]` renormalizer, so `E[f_eff] = 1` over a game's empirical
+    /// k-distribution (`scripts/classical_search/compute_phase_norm.py`). Supplied by
+    /// the caller: the leaf must stay a pure function of `(state, cfg)`.
+    pub v29_phase_norm: f64,
+}
+
+/// `flat_leaf._PHASE_K0` — mid-deck, frozen by the prereg.
+pub const PHASE_K0: f64 = 35.0;
+
+/// `flat_leaf._phase_mult`: `clip(1 + beta*(k - K0)/K0, 0.0, 2.0) / norm`, with
+/// `k = state.deck_len() + state.next_tile.is_some()` — the `fair_agent.k_remaining`
+/// definition of record (NOT `bag_stats`' phase-conditional count).
+#[inline]
+fn phase_mult(state: &GameState, beta: f64, norm: f64) -> f64 {
+    let k = state.deck_len() + usize::from(state.next_tile.is_some());
+    let mut f = 1.0 + beta * (k as f64 - PHASE_K0) / PHASE_K0;
+    if f < 0.0 {
+        f = 0.0;
+    } else if f > 2.0 {
+        f = 2.0;
+    }
+    f / norm
 }
 
 impl LeafConfig {
@@ -161,6 +188,8 @@ impl LeafConfig {
             closure_continuous_slack: 0.0,
             farm_base_off: false,
             farm_growth_off: false,
+            v29_phase_beta: 0.0,
+            v29_phase_norm: 1.0,
         }
     }
 
@@ -844,7 +873,17 @@ pub fn leaf_terms_with(
 
     let meeple_term = match &cfg.v29_meeple_curve {
         Some(curve) => {
-            curve_lookup(curve, state.meeples[player]) - curve_lookup(curve, state.meeples[opp])
+            // Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression
+            // via an early branch — never a multiply by 1.0 — so the default is
+            // bit-identical, not merely equal.
+            if cfg.v29_phase_beta == 0.0 {
+                curve_lookup(curve, state.meeples[player])
+                    - curve_lookup(curve, state.meeples[opp])
+            } else {
+                phase_mult(state, cfg.v29_phase_beta, cfg.v29_phase_norm)
+                    * (curve_lookup(curve, state.meeples[player])
+                        - curve_lookup(curve, state.meeples[opp]))
+            }
         }
         None => {
             if cfg.meeple_k > 0.0 {

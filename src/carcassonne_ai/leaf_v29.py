@@ -59,11 +59,21 @@ def _curve_lookup(curve, n: int) -> float:
     return float(curve[n])
 
 
-def _meeple_curve_term(state, player: int, opp: int, curve) -> float:
+def _meeple_curve_term(state, player: int, opp: int, curve,
+                       phase_beta: float = 0.0, phase_norm: float = 1.0) -> float:
     """Symmetric differential of the liquidity curve. REPLACES the flat
     meeple_k*(m_self - m_opp) term (the caller omits the flat term when a curve
-    is set). `state.meeples[i]` = free/unplaced meeples (start 7)."""
-    return _curve_lookup(curve, state.meeples[player]) - _curve_lookup(curve, state.meeples[opp])
+    is set). `state.meeples[i]` = free/unplaced meeples (start 7).
+
+    Part C: when `phase_beta != 0.0` the differential is scaled by
+    `flat_leaf._phase_mult` (the mean-1-renormalized tiles-remaining weight). beta ==
+    0.0 takes an EARLY BRANCH through the unmodified expression, so the default/
+    champion object path stays byte-identical."""
+    if phase_beta == 0.0:
+        return _curve_lookup(curve, state.meeples[player]) - _curve_lookup(curve, state.meeples[opp])
+    from .flat_leaf import _phase_mult
+    return _phase_mult(state, phase_beta, phase_norm) * (
+        _curve_lookup(curve, state.meeples[player]) - _curve_lookup(curve, state.meeples[opp]))
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +336,8 @@ def apply_v29(state, player: int, opp: int, cfg: "LeafConfig", score: float) -> 
     Called from `virtual_score_v2` only when `_v29_active(cfg)`. The caller has
     already omitted the flat meeple_k term iff a curve is set."""
     if cfg.v29_meeple_curve is not None:          # B (replaces flat meeple)
-        score += _meeple_curve_term(state, player, opp, cfg.v29_meeple_curve)
+        score += _meeple_curve_term(state, player, opp, cfg.v29_meeple_curve,
+                                    cfg.v29_phase_beta, cfg.v29_phase_norm)
     # C7 Term R then Term F — two SEPARATE gated adds in this fixed order (float add
     # is non-associative; matches the flat/cy sites exactly for 3-way bit-exactness).
     if cfg.v29_meeple_return_k != 0.0:            # R (meeple-return liquidity)
@@ -381,7 +392,8 @@ def decompose_v29(state, player: int, cfg: "LeafConfig") -> dict:
     m_self, m_opp = state.meeples[player], state.meeples[opp]
     meeple_flat = cfg.meeple_k * (m_self - m_opp) if cfg.meeple_k > 0.0 else 0.0
     if cfg.v29_meeple_curve is not None:
-        curve_term = _meeple_curve_term(state, player, opp, cfg.v29_meeple_curve)
+        curve_term = _meeple_curve_term(state, player, opp, cfg.v29_meeple_curve,
+                                        cfg.v29_phase_beta, cfg.v29_phase_norm)
         meeple_curve_delta = curve_term - meeple_flat
         meeple_contribution = curve_term
     else:

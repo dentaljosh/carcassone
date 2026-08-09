@@ -47,7 +47,12 @@ Config matrix (`--configs`): `core` = the production curve125 leaf + the three
 fixture dialects; `all` adds the off-production stressors that
 `scripts/reconcile_cy_leaf.py` uses (pre-v2.7 caps, a weird schedule, the two C7
 wave-2 terms, the F6 soft caps, the v2.10 bag-close gate); `farmoff` = `core` plus
-the three **F7b farm knockouts** (`farm_base_off`, `farm_growth_off`, both).
+the three **F7b farm knockouts** (`farm_base_off`, `farm_growth_off`, both); `phase`
+= `core` plus seven **Part C phase-multiplier** cells (`v29_phase_beta` /
+`v29_phase_norm`, prereg `measurement/curve_shape_scope_20260809/PREREG_DRAFT.md` §4)
+including a beta=0 identity control and two betas large enough to exercise the
+`clip(., 0, 2)` clamp at both deck ends. `phase` is a full THREE-leg family
+(py == cy == rust) — unlike `farmoff`, the Cython leaf implements it.
 
 ⚠️ The `farmoff` configs are the ONE family compared on **two** legs, not three:
 `flat_leaf_cy.pyx` deliberately does not implement them (roadmap F7b — the ablation
@@ -140,6 +145,26 @@ def _cfgs(which: str) -> dict[str, LeafConfig]:
     }
     if which == "core":
         return core
+    if which == "phase":
+        # Part C phase multiplier (prereg curve_shape_scope_20260809 §4). Built on the
+        # champion leaf so the ONLY difference from `prod-curve125` is the phase weight.
+        # Betas are the pre-registered ladder's rungs; two cells carry a NON-1.0 norm so
+        # the divide is exercised too. `phase-b0-norm1` is the IDENTITY control — it must
+        # reproduce `prod-curve125` exactly on every leg.
+        prodp = dict(closure_p=dict(_CLOSURE), bonus_cap=8.0, opp_bonus_cap=8.0,
+                     meeple_k=2.0, v29_meeple_curve=_CURVE125)
+        core.update({
+            "phase-b0-norm1": LeafConfig(**prodp, v29_phase_beta=0.0, v29_phase_norm=1.0),
+            "phase-b+0.3": LeafConfig(**prodp, v29_phase_beta=0.3, v29_phase_norm=1.0),
+            "phase-b-0.3": LeafConfig(**prodp, v29_phase_beta=-0.3, v29_phase_norm=1.0),
+            "phase-b+0.6-n1.07": LeafConfig(**prodp, v29_phase_beta=0.6, v29_phase_norm=1.0723),
+            "phase-b-0.6-n0.93": LeafConfig(**prodp, v29_phase_beta=-0.6, v29_phase_norm=0.9277),
+            # beta big enough that clip(.,0,2) BITES at both deck ends (k=0 -> 1-3 < 0,
+            # k=71 -> 1+3.09 > 2), so the clamp is covered by the 3-way gate as well.
+            "phase-b+3.0-clip": LeafConfig(**prodp, v29_phase_beta=3.0, v29_phase_norm=1.0),
+            "phase-b-3.0-clip": LeafConfig(**prodp, v29_phase_beta=-3.0, v29_phase_norm=1.0),
+        })
+        return core
     if which == "farmoff":
         # The two F7b cells, plus both-off (the joint knockout: a farm-blind leaf).
         # Built on the champion leaf so the ONLY difference from `prod-curve125` is
@@ -211,6 +236,8 @@ def _to_rs(cfg: LeafConfig):
         float(cfg.closure_continuous_slack),
         bool(getattr(cfg, "farm_base_off", False)),
         bool(getattr(cfg, "farm_growth_off", False)),
+        float(getattr(cfg, "v29_phase_beta", 0.0)),
+        float(getattr(cfg, "v29_phase_norm", 1.0)),
     )
 
 
@@ -588,7 +615,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", action="append", default=None,
                     choices=CORPORA + ["all"])
-    ap.add_argument("--configs", default="all", choices=["core", "all", "farmoff"])
+    ap.add_argument("--configs", default="all", choices=["core", "all", "farmoff", "phase"])
     ap.add_argument("--limit", type=int, default=None,
                     help="cap records per corpus (screening only)")
     ap.add_argument("--stride", type=int, default=8,
@@ -667,8 +694,8 @@ def main(argv=None) -> int:
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     tag = "_".join(corpora) if len(corpora) < len(CORPORA) else "all"
-    if args.configs == "farmoff":       # never overwrite the standing G2 artifact
-        tag = f"farmoff_{tag}"
+    if args.configs in ("farmoff", "phase"):   # never overwrite the standing G2 artifact
+        tag = f"{args.configs}_{tag}"
     out = Path(args.out) if args.out else OUTDIR / f"G2_leaf_{tag}.json"
     out.write_text(json.dumps(payload, indent=2, default=str))
 

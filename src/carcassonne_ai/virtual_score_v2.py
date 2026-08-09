@@ -204,6 +204,29 @@ class LeafConfig:
     # A candidate that SETS one shifts the hash (it is a different leaf — as intended).
     farm_base_off: bool = False
     farm_growth_off: bool = False
+    # --- Part C PHASE MULTIPLIER on the v2.9 meeple curve (prereg
+    # measurement/curve_shape_scope_20260809/PREREG_DRAFT.md §4) -------------------
+    # Multiply the meeple-economy differential `curve[m_self] - curve[m_opp]` by a
+    # mean-1-renormalized linear function of tiles-remaining, so meeple value can
+    # depend on game PHASE without changing the term's mean MAGNITUDE:
+    #     f(k; beta) = clip(1 + beta*(k - 35)/35, 0.0, 2.0) / v29_phase_norm
+    # with k = `fair_agent.k_remaining(state)` = len(deck) + (next_tile is not None).
+    # `v29_phase_norm` is a RUN-LEVEL SCALAR (E[f] over the empirical k-distribution
+    # of a game, `scripts/classical_search/compute_phase_norm.py`) supplied by the
+    # caller — deliberately NOT computed inside the leaf, which must stay a pure
+    # deterministic function of (state, cfg) for hashing and py/cy/rust reconciliation.
+    # The renormalization is the methodological point: without it beta moves the term's
+    # SCALE, which is the confound that invalidated the 2026-06-22
+    # `v28_meeple_recovery_t0` kill. (Do NOT confuse the two — v28 is a different,
+    # confounded, object-path-only lever.)
+    # ⚠️ beta == 0.0 takes an EARLY BRANCH through the unmodified expression (not a
+    # multiply by 1.0), so default traffic is byte-identical, not merely equal.
+    # ⚠️ Adding these fields CHANGES dataclasses.asdict(cfg). BOTH the frozen-cfg recipe
+    # (snapshot._frozen_config_hash + its mirrors) AND the harness _leaf_hash
+    # (c5_leaf_override._leaf_dict, the a36d2e15 dialect) EXCLUDE them WHILE at their
+    # defaults, so 6dfffd57 / 158f17ff / 7fc930b8 / a36d2e15 all recompute UNCHANGED.
+    v29_phase_beta: float = 0.0
+    v29_phase_norm: float = 1.0
 
 
 def _config_from_env() -> LeafConfig:
@@ -251,6 +274,10 @@ def _config_from_env() -> LeafConfig:
         # env flag here keeps the env-global gate working through virtual_score_v2,
         # which always forwards a (non-None) cfg to flat_virtual_score_v2.
         bag_close=(os.environ.get("CARCASSONNE_V210_BAG_CLOSE") == "1"),
+        # Part C phase multiplier — default 0.0/1.0 == no phase dependence == the
+        # unmodified champion expression (early branch, not a multiply by 1.0).
+        v29_phase_beta=float(os.environ.get("CARCASSONNE_V29_PHASE_BETA", "0.0")),
+        v29_phase_norm=float(os.environ.get("CARCASSONNE_V29_PHASE_NORM", "1.0")),
     )
 
 

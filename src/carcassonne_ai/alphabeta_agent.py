@@ -91,7 +91,8 @@ class BudgetExceeded(Exception):
 # while default so the champion a36d2e15 dialect stays byte-stable across the additive
 # field (see that module for the a36d2e15-baseline asymmetry rationale).
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
-                                 "farm_base_off": False, "farm_growth_off": False}
+                                 "farm_base_off": False, "farm_growth_off": False,
+                                 "v29_phase_beta": 0.0, "v29_phase_norm": 1.0}
 
 
 def _leaf_hash(cfg) -> str:

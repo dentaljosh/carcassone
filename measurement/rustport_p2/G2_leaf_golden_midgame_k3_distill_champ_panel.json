@@ -1,0 +1,205 @@
+{
+  "gate": "G2/leaf",
+  "verdict": "PASS",
+  "env": {
+    "host": "Doctor",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "python_impl": "CPython",
+    "git_rev": "c336f2b-dirty",
+    "utc": "2026-08-09T06:30:44Z",
+    "numpy": "2.4.4",
+    "carc_rs": "0.1.0",
+    "carc_rs_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad/rspath/carc_rs/__init__.py",
+    "libc": "glibc 2.39"
+  },
+  "args": {
+    "corpus": [
+      "golden",
+      "midgame",
+      "k3",
+      "distill",
+      "champ",
+      "panel"
+    ],
+    "configs": "all",
+    "limit": null,
+    "stride": 8,
+    "workers": 6,
+    "bench": 0,
+    "bench_repeats": 200,
+    "out": null
+  },
+  "leaf_of_record": {
+    "leaf": "v2_9_2_Bmild_cap8_curve125",
+    "leaf_hash": "a36d2e15a3b3d71d",
+    "curve125": [
+      -10.0,
+      -5.0,
+      -1.25,
+      0.0,
+      2.5,
+      3.75,
+      5.0,
+      6.25
+    ],
+    "bonus_cap": 8.0,
+    "opp_bonus_cap": 8.0,
+    "closure_p": {
+      "1": 0.5,
+      "2": 0.2,
+      "3": 0.05
+    },
+    "source": "governance/PRODUCTION.yaml champion.leaf_config"
+  },
+  "configs": [
+    "bag-close",
+    "c7-F0.5",
+    "c7-R1.0",
+    "c7-both",
+    "f6-soft0.5/0.25",
+    "f6-soft1.0",
+    "pre-v2.7",
+    "prod-curve125",
+    "v27",
+    "v28",
+    "v29",
+    "weird"
+  ],
+  "legs": [
+    "carcassonne_ai.flat_leaf (USE_CY_LEAF=False)",
+    "carcassonne_ai.flat_leaf_cy (direct)",
+    "carc_rs.MirrorState.leaf_value{,_float}"
+  ],
+  "checks_per_position": [
+    "flat_base_score x4 routes",
+    "leaf int (py|cy|rust)",
+    "leaf float bit-exact (py|cy|rust)"
+  ],
+  "per_corpus": {
+    "champ": {
+      "positions": 65059,
+      "plies": 64610,
+      "values_compared": 1561416,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 260236,
+        "v27": 260236,
+        "v28": 260236,
+        "v29": 260236
+      },
+      "mismatches": 0
+    },
+    "distill": {
+      "positions": 28403,
+      "plies": 215887,
+      "values_compared": 1590568,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 113612,
+        "v27": 113612,
+        "v28": 113612,
+        "v29": 113612,
+        "pre-v2.7": 113612,
+        "weird": 113612,
+        "c7-R1.0": 113612,
+        "c7-F0.5": 113612,
+        "c7-both": 113612,
+        "f6-soft0.5/0.25": 113612,
+        "f6-soft1.0": 113612,
+        "bag-close": 113612
+      },
+      "mismatches": 0
+    },
+    "golden": {
+      "positions": 1737,
+      "plies": 1725,
+      "values_compared": 97272,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 6948,
+        "v27": 6948,
+        "v28": 6948,
+        "v29": 6948,
+        "pre-v2.7": 6948,
+        "weird": 6948,
+        "c7-R1.0": 6948,
+        "c7-F0.5": 6948,
+        "c7-both": 6948,
+        "f6-soft0.5/0.25": 6948,
+        "f6-soft1.0": 6948,
+        "bag-close": 6948
+      },
+      "mismatches": 0
+    },
+    "golden_disk": {
+      "positions": 56,
+      "plies": 1725,
+      "values_compared": 0,
+      "disk_values_compared": 448,
+      "by_config": {
+        "v27": 112,
+        "v28": 112,
+        "v29": 112
+      },
+      "mismatches": 0
+    },
+    "k3": {
+      "positions": 354,
+      "plies": 48815,
+      "values_compared": 19824,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 1416,
+        "v27": 1416,
+        "v28": 1416,
+        "v29": 1416,
+        "pre-v2.7": 1416,
+        "weird": 1416,
+        "c7-R1.0": 1416,
+        "c7-F0.5": 1416,
+        "c7-both": 1416,
+        "f6-soft0.5/0.25": 1416,
+        "f6-soft1.0": 1416,
+        "bag-close": 1416
+      },
+      "mismatches": 0
+    },
+    "midgame": {
+      "positions": 1000,
+      "plies": 85528,
+      "values_compared": 56000,
+      "disk_values_compared": 0,
+      "by_config": {
+        "prod-curve125": 4000,
+        "v27": 4000,
+        "v28": 4000,
+        "v29": 4000,
+        "pre-v2.7": 4000,
+        "weird": 4000,
+        "c7-R1.0": 4000,
+        "c7-F0.5": 4000,
+        "c7-both": 4000,
+        "f6-soft0.5/0.25": 4000,
+        "f6-soft1.0": 4000,
+        "bag-close": 4000
+      },
+      "mismatches": 0
+    },
+    "panel": {
+      "positions": 4,
+      "plies": 0,
+      "values_compared": 0,
+      "disk_values_compared": 4,
+      "by_config": {},
+      "mismatches": 0
+    }
+  },
+  "cy_unsupported_configs": [],
+  "knockout_bites": {},
+  "total_values_compared": 3325532,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "wallclock_s": 292.92395616101567
+}
