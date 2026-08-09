@@ -303,6 +303,7 @@ import socket
 import sys
 import time
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -334,7 +335,9 @@ from carcassonne_ai.heuristic_prior_mcts import (  # noqa: E402
 from carcassonne_ai.mcts import DEFAULT_C, HeuristicMCTS  # noqa: E402
 from carcassonne_ai.rule_based_player import RuleBasedPlayer  # noqa: E402
 from carcassonne_ai import rules_profile as _rules_profile  # noqa: E402
-from carcassonne_ai.run_manifest import code_rev, game_tag, write_manifest  # noqa: E402
+from carcassonne_ai.run_manifest import (  # noqa: E402
+    code_rev, game_tag, patch_manifest, write_manifest,
+)
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG  # noqa: E402
 
 # C5 candidate-leaf override helpers — SHARED with eval_puct_priors.py (see
@@ -514,6 +517,48 @@ def _assert_netprior_leaf(cand_cfg, strict=True, side="candidate", tag="fair-net
         print("[warn] " + msg, file=sys.stderr)
         prov["hash_drift_allowed"] = True
     return prov
+
+
+def _stamp_cand_leaf(cand_cfg, tag="head-to-head"):
+    """CANDIDATE-SIDE ONLY, --allow-cand-curve-drift: a PRE-REGISTERED leaf-SHAPE cell.
+
+    Deliberately does NOT require curve125 — the whole point of a curve-shape cell is a
+    candidate curve that differs from the champion's. It is a sibling of (never a branch
+    inside) `_assert_netprior_leaf`, so that function's promise — "the SAME check runs
+    for both sides" — stays literally true for the OPPONENT arm, which is still pinned
+    to curve125 and still goes through the unmodified assert.
+
+    Still fails loud on a curve that is not a well-formed 8-entry finite float tuple:
+    a null/short/NaN curve is a mis-specified cell, not a shape hypothesis."""
+    curve = cand_cfg.v29_meeple_curve
+    if curve is None:
+        raise SystemExit(
+            f"[{tag}] FATAL: --allow-cand-curve-drift requires an EXPLICIT candidate "
+            "meeple curve, but the candidate leaf has v29_meeple_curve=None (curve OFF). "
+            "A leaf-shape cell must name the shape it is testing.")
+    try:
+        vals = tuple(float(x) for x in curve)
+    except (TypeError, ValueError) as e:
+        raise SystemExit(f"[{tag}] FATAL: candidate v29_meeple_curve is not numeric: "
+                         f"{curve!r} ({e})")
+    if len(vals) != 8 or not all(math.isfinite(v) for v in vals):
+        raise SystemExit(
+            f"[{tag}] FATAL: candidate v29_meeple_curve must be 8 finite floats; got "
+            f"{curve!r} (len={len(vals)}).")
+    return {
+        "curve": ("PRE-REGISTERED candidate curve shape (NOT curve125) — "
+                  "--allow-cand-curve-drift"),
+        "curve_values": list(vals),
+        "cand_curve_drift_allowed": True,
+        "leaf_hash": _leaf_hash(cand_cfg),
+        "frozen_config_hash_champ_dialect": _frozen_hash_champ_dialect(cand_cfg),
+        "curve125_reference": {"curve": list(CURVE125),
+                               "leaf_hash": CURVE125_LEAF_HASH,
+                               "frozen_config_hash": CURVE125_FROZEN_HASH},
+        "note": ("ONLY the CANDIDATE arm may drift. The opponent arm is pinned to "
+                 "curve125 and still passes the unmodified _assert_netprior_leaf, so "
+                 "this cell is a curve-SHAPE contrast against the shipped champion."),
+    }
 
 
 def _assert_rung_is_ruler(tag="fair-netprior", who="h800 RUNG's"):
@@ -2411,6 +2456,17 @@ def main(argv=None) -> int:
                          "warning (the curve-VALUES check still hard-fails). Only for a known "
                          "additive LeafConfig field change that reshapes the hash — see the "
                          "158f17ff precedent in scripts/distill_flywheel/champ_env.sh.")
+    ap.add_argument("--allow-cand-curve-drift", action="store_true",
+                    help="PRE-REGISTERED LEAF-SHAPE CELLS ONLY (--info fair --opponent "
+                         "fair-champion): let the CANDIDATE's --cand-leaf-json carry a "
+                         "v29_meeple_curve that differs from the champion's curve125, "
+                         "instead of hard-exiting. The OPPONENT arm stays PINNED to "
+                         "curve125 (unchanged assert) — this is a curve-SHAPE contrast "
+                         "against the shipped champion, never a both-sides move. The "
+                         "candidate's resolved curve and leaf hash are stamped in "
+                         "manifest.json (cand_leaf_cfg / cand_leaf_hash / "
+                         "champion.netprior_leaf), along with cand_curve_drift_allowed. "
+                         "The curve must still be 8 finite floats.")
     ap.add_argument("--summary-only", action="store_true")
     ap.add_argument("--no-results-csv", action="store_true",
                     help="do not append to experiments/results.csv (this eval NEVER writes it; "
@@ -2562,6 +2618,20 @@ def main(argv=None) -> int:
     except (OSError, json.JSONDecodeError) as e:
         ap.error(f"--cand-leaf-json: {e}")
 
+    # --allow-cand-curve-drift is scoped to the ONE pre-registered cell shape it was
+    # built for: the symmetric fair-vs-fair-champion head-to-head. Everywhere else the
+    # curve125 pin is load-bearing for a DIFFERENT reason (the nets were distilled
+    # against curve125; the bare-net anchor is an identity; greedy is the shipped
+    # champion's deck-luck floor), so refuse rather than quietly weaken it.
+    if args.allow_cand_curve_drift and not (args.info == "fair"
+                                            and args.opponent == "fair-champion"):
+        ap.error("--allow-cand-curve-drift applies ONLY to a pre-registered leaf-SHAPE "
+                 "cell: --info fair --opponent fair-champion (got "
+                 f"--info {args.info} --opponent {args.opponent}). Every other arm pins "
+                 "curve125 for a reason that is not about leaf shape (distill parity for "
+                 "fair-netprior / net, the rod_v2 anchor identity for bare-net, the "
+                 "shipped-champion claim for greedy and the h800 ruler cells).")
+
     # ---- FROZEN curve125 leaf injection. Two triggers, one mechanism:
     #   * --info fair-netprior : the CANDIDATE's frozen leaf must be the production
     #     curve125 champion (that is what the nets were distilled against), while the
@@ -2605,9 +2675,20 @@ def main(argv=None) -> int:
         if cand_leaf_cfg is None:
             cand_leaf_cfg = _curve125_leaf_cfg()
             _assert_cy_float_path(cand_leaf_cfg)
-        netprior_leaf_prov = _assert_netprior_leaf(
-            cand_leaf_cfg, strict=not args.allow_leaf_hash_drift, side="candidate",
-            tag=(args.info if args.info == "fair-netprior" else "head-to-head"))
+        if args.allow_cand_curve_drift:
+            # Pre-registered leaf-SHAPE cell: STAMP the candidate curve instead of
+            # asserting curve125. Gated above to --info fair + --opponent fair-champion,
+            # so this branch is unreachable for every other arm. The OPPONENT block
+            # below is untouched and still runs the unmodified curve125 assert.
+            netprior_leaf_prov = _stamp_cand_leaf(cand_leaf_cfg, tag="head-to-head")
+        else:
+            netprior_leaf_prov = _assert_netprior_leaf(
+                cand_leaf_cfg, strict=not args.allow_leaf_hash_drift, side="candidate",
+                tag=(args.info if args.info == "fair-netprior" else "head-to-head"))
+        # label for the head-to-head banner; literally "curve125" unless drift is on, so
+        # an unset-flag run's stdout is byte-identical to before.
+        _cand_curve_desc = ("PRE-REGISTERED SHAPE (NOT curve125)"
+                            if args.allow_cand_curve_drift else "curve125")
         if _h2h:
             # The OPPONENT is the production champion (or a second production-config
             # net): ALWAYS curve125, never the user's --cand-leaf-json (which is a
@@ -2650,7 +2731,7 @@ def main(argv=None) -> int:
                   f"opponent BARE (no tail) — one-sided by design", flush=True)
         elif _h2h:
             print(f"[head-to-head] opponent={args.opponent}\n"
-                  f"[head-to-head] candidate frozen leaf: curve125 "
+                  f"[head-to-head] candidate frozen leaf: {_cand_curve_desc} "
                   f"leaf_hash={netprior_leaf_prov['leaf_hash']} "
                   f"frozen_config_hash="
                   f"{netprior_leaf_prov['frozen_config_hash_champ_dialect']} (champ_env dialect)\n"
@@ -3114,6 +3195,18 @@ def main(argv=None) -> int:
                   "provenance": "CL-022 ruler (CLAIRVOYANCE_GAP_VERDICT.md, h800 v2.7)"}
                  if args.opponent == "h800" else None),
         "n": args.n, "paired": args.paired, "seed_start": args.seed_start,
+        # explicit aliases/derivations so a cell is readable without knowing the
+        # harness's conventions (n is GAMES; a paired cell plays each deck twice).
+        "band_seed_start": args.seed_start,
+        "n_decks": (args.n // 2 if args.paired else args.n),
+        "seatings_per_deck": (2 if args.paired else 1),
+        # False for every historical cell; True ONLY for a pre-registered leaf-SHAPE
+        # cell (--allow-cand-curve-drift), where the CANDIDATE curve deliberately
+        # differs from the opponent's pinned curve125. The literal 8-entry curves are
+        # already in champion.leaf_cfg.v29_meeple_curve / opp_leaf_cfg.v29_meeple_curve
+        # (and cand_leaf_cfg here), so they are not duplicated.
+        "cand_curve_drift_allowed": bool(args.allow_cand_curve_drift),
+        "cand_curve_drift": (netprior_leaf_prov if args.allow_cand_curve_drift else None),
         "leaf_hash": _leaf_hash(leaf_cfg), "code_rev": code_rev(),
         # C5 Stage-3 per-side leaf provenance (Trap 1: a worker missing the env exports
         # silently runs the wrong leaf — the per-side leaf_hash is the mitigation). The
@@ -3465,6 +3558,11 @@ def main(argv=None) -> int:
                     opp_k_dets=args.opp_k_dets, opp_sims=args.opp_sims)
     json.dump(summ, open(out / "summary.json", "w"), indent=2)
     print(f"[summary.json] wrote {out/'summary.json'}")
+    # END timestamp: the manifest's `utc` is written BEFORE the first game, so a cell's
+    # wall-clock span was previously unrecoverable. Single-key merge (never a rewrite),
+    # so a racing --shared-claim peer can at worst lose its own stamp.
+    patch_manifest(out, "utc_end",
+                   datetime.now(timezone.utc).isoformat(timespec="seconds"))
     return 0
 
 
