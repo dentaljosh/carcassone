@@ -69,14 +69,23 @@ class JczEngine:
         # that point would deadlock. A file lets JczError quote the trace.
         self._err = tempfile.NamedTemporaryFile(  # noqa: SIM115 — closed in close()
             prefix="jcz_stderr_", suffix=".log", mode="w+", delete=False)
+        self.cmd = self._launch_cmd(java)
         self._p = subprocess.Popen(
-            [java, "-jar", str(self.jar)],
+            self.cmd,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self._err,
             text=True, bufsize=1,
         )
         self._send_raw(f"%load {self.tiles}")
 
     # --- plumbing ---------------------------------------------------------- #
+    def _launch_cmd(self, java: str) -> list[str]:
+        """The JVM command line. A SEAM, added 2026-08-08 for the D2 match driver:
+        ``scripts/jcz_match/ai_engine.py`` needs the classpath form
+        (``java -cp Engine.jar:<ai classes> com.jcloisterzone.ai.AiEngine``) and
+        overrides this. Behaviour here is unchanged — the shaded jar's manifest
+        main class is the same ``com.jcloisterzone.engine.Engine`` as before."""
+        return [java, "-jar", str(self.jar)]
+
     def _send_raw(self, line: str) -> None:
         assert self._p.stdin is not None
         self._p.stdin.write(line + "\n")
