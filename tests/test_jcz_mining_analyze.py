@@ -404,6 +404,45 @@ class TestWorkerClamp:
 
 
 # --------------------------------------------------------------------------- #
+# 5b. per-box worker cap (run_mining.py) -- resolve_box / clamp_workers        #
+# --------------------------------------------------------------------------- #
+class TestPerBoxWorkerCap:
+    def test_resolve_box_explicit_override_bypasses_hostname(self):
+        assert RM.resolve_box("local") == "local"
+        assert RM.resolve_box("laptop") == "laptop"
+
+    def test_resolve_box_auto_from_known_hostnames(self):
+        assert RM.resolve_box("auto", hostname="Doctor") == "local"
+        assert RM.resolve_box("auto", hostname="laptop-wsl") == "laptop"
+
+    def test_resolve_box_auto_unknown_hostname_fails_safe_to_local(self):
+        """An unrecognised hostname must fail SAFE to the TIGHTER cap (local,
+        W=14), never silently assume the looser, unverified-for-this-workload
+        laptop W=22."""
+        assert RM.resolve_box("auto", hostname="some-cloud-box-9f3a") == "local"
+
+    def test_resolve_box_rejects_garbage(self):
+        with pytest.raises(ValueError):
+            RM.resolve_box("cloud9")
+
+    def test_max_workers_for_box(self):
+        assert RM.max_workers_for("local") == 14
+        assert RM.max_workers_for("laptop") == 22
+
+    @pytest.mark.parametrize("requested,box,expected", [
+        (14, "local", 14), (16, "local", 14), (32, "local", 14), (8, "local", 8),
+        (22, "laptop", 22), (30, "laptop", 22), (10, "laptop", 10),
+    ])
+    def test_clamp_workers_per_box(self, requested, box, expected):
+        assert RM.clamp_workers(requested, box) == expected
+
+    def test_clamp_workers_default_box_is_local(self):
+        """Backward compatibility: an unspecified box clamps at the LOCAL
+        (tighter) cap, matching the original single-box behaviour."""
+        assert RM.clamp_workers(16) == 14
+
+
+# --------------------------------------------------------------------------- #
 # 6. launcher gate                                                              #
 # --------------------------------------------------------------------------- #
 LAUNCHER = JCZ / "launch_mining.sh"
@@ -505,3 +544,168 @@ class TestLauncherGate:
                            capture_output=True, text=True)
         assert r.returncode != 0
         assert "does not exist" in (r.stdout + r.stderr)
+
+
+# --------------------------------------------------------------------------- #
+# 7. per-box process gate (launch_mining.sh) -- the blocked-pattern list is    #
+#    now PER BOX, not a single shared list. Kept in sync BY HAND with the      #
+#    bash script's BLOCKED_PATTERNS arrays -- if those change, update here.    #
+# --------------------------------------------------------------------------- #
+LOCAL_BLOCKED_PATTERNS = ("eval_fair_puct.py", "curvephase_ladder_launcher.sh",
+                          "phase_seam_gate", "night_chain", "pull_and_chain.sh",
+                          "oracle_score_pilot.py")
+LAPTOP_BLOCKED_PATTERNS = ("phase_seam_gate_chunked.sh", "run_gate_laptop.sh",
+                          "pytest", "oracle_score_pilot.py")
+
+
+def _fixture_strata(tmp_path) -> Path:
+    strata = tmp_path / "STRATA.json"
+    strata.write_text(json.dumps({
+        "schema": "carcassonne-jcz-mining-strata/v1",
+        "gate_ok": True, "min_n_gate": 25, "k_late": 14, "rows": [],
+    }))
+    return strata
+
+
+class TestLauncherPerBoxGuard:
+    """The SAME real environment must be read differently by the two boxes'
+    pattern lists -- proves the box-specific list is actually wired into
+    --box, not a single list silently shared between them."""
+
+    def test_pytest_blocks_laptop_but_not_local(self, tmp_path):
+        """'pytest' is in the laptop list and NOT the local list -- and this
+        very test is always running under pytest while it executes, so the
+        laptop half is unconditionally reproducible (no decoy needed)."""
+        strata = _fixture_strata(tmp_path)
+        r_laptop = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "laptop",
+                                   "--strata", str(strata)],
+                                  capture_output=True, text=True)
+        assert r_laptop.returncode != 0
+        assert "pytest" in (r_laptop.stdout + r_laptop.stderr)
+
+        if _BLOCKED_ALREADY_RUNNING:
+            pytest.skip("a real LOCAL-blocked process is already running on this box "
+                        "-- can't isolate the local-box half of this comparison")
+        r_local = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "local",
+                                  "--strata", str(strata)],
+                                 capture_output=True, text=True)
+        assert r_local.returncode == 0, f"stdout={r_local.stdout!r} stderr={r_local.stderr!r}"
+
+    def test_laptop_only_pattern_blocks_laptop_not_local(self, tmp_path):
+        """A decoy matching a LAPTOP-ONLY pattern (run_gate_laptop.sh, absent
+        from local's list) must block --box laptop but leave --box local
+        unaffected -- the mirror case of the pytest test above."""
+        strata = _fixture_strata(tmp_path)
+        decoy = tmp_path / "run_gate_laptop.sh"
+        decoy.write_text("#!/bin/bash\nsleep 30\n")
+        decoy.chmod(0o755)
+        proc = subprocess.Popen(["bash", str(decoy)])
+        try:
+            for _ in range(20):
+                if subprocess.run(["pgrep", "-f", "run_gate_laptop.sh"],
+                                  capture_output=True).returncode == 0:
+                    break
+                time.sleep(0.1)
+            r_laptop = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "laptop",
+                                       "--strata", str(strata)],
+                                      capture_output=True, text=True)
+            assert r_laptop.returncode != 0
+            assert "run_gate_laptop.sh" in (r_laptop.stdout + r_laptop.stderr)
+
+            if _BLOCKED_ALREADY_RUNNING:
+                pytest.skip("a real LOCAL-blocked process is already running on this "
+                            "box -- can't isolate the local-box half of this comparison")
+            r_local = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "local",
+                                      "--strata", str(strata)],
+                                     capture_output=True, text=True)
+            assert r_local.returncode == 0, f"stdout={r_local.stdout!r} stderr={r_local.stderr!r}"
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                pass
+            subprocess.run(["pkill", "-f", "run_gate_laptop.sh"], check=False)
+
+    def test_unknown_box_value_rejected(self, tmp_path):
+        strata = _fixture_strata(tmp_path)
+        r = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "cloud9",
+                            "--strata", str(strata)], capture_output=True, text=True)
+        assert r.returncode != 0
+        assert "cloud9" in (r.stdout + r.stderr)
+
+    def test_out_root_follows_box(self, tmp_path):
+        """local -> /mnt/c/carc-shared/..., laptop -> /mnt/carc-shared/... (the
+        standing share-path trap). Printed BEFORE the process gate, so it is
+        visible even when the box in question is currently blocked."""
+        strata = _fixture_strata(tmp_path)
+        if not _BLOCKED_ALREADY_RUNNING:
+            r_local = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "local",
+                                      "--strata", str(strata)],
+                                     capture_output=True, text=True)
+            assert "/mnt/c/carc-shared/jcz_mining_20260809" in r_local.stdout
+        r_laptop = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "laptop",
+                                   "--strata", str(strata)],
+                                  capture_output=True, text=True)
+        assert "/mnt/carc-shared/jcz_mining_20260809" in r_laptop.stdout
+
+    def test_laptop_w22_provenance_caveat_is_printed(self, tmp_path):
+        """The unverified-extrapolation caveat must be visible in the
+        rationale, not buried -- printed before the process gate so it shows
+        even while the laptop is (as it always is under this test) blocked."""
+        strata = _fixture_strata(tmp_path)
+        r = subprocess.run(["bash", str(LAUNCHER), "--dry-run", "--box", "laptop",
+                            "--strata", str(strata)], capture_output=True, text=True)
+        out = r.stdout + r.stderr
+        assert "WSWEEP_F7D_laptop.tsv" in out
+        assert "PYTHON" in out.upper() or "python" in out
+
+
+# --------------------------------------------------------------------------- #
+# 8. launch_mining_laptop.sh -- the local-box-drives-the-laptop orchestrator   #
+# --------------------------------------------------------------------------- #
+LAPTOP_ORCH = JCZ / "launch_mining_laptop.sh"
+
+
+class TestLaunchMiningLaptopScript:
+    def test_bash_syntax_ok(self):
+        subprocess.run(["bash", "-n", str(LAPTOP_ORCH)], check=True)
+
+    def test_dry_run_is_fast_side_effect_free_and_prints_the_plan(self):
+        """--dry-run must never touch the network or the filesystem beyond
+        read-only local git introspection -- bounded by an outer timeout well
+        under the script's own SSH launch timeout, so a stray real ssh/network
+        attempt fails the test instead of hanging the suite."""
+        t0 = time.time()
+        r = subprocess.run(["bash", str(LAPTOP_ORCH), "--dry-run"],
+                           capture_output=True, text=True, cwd=str(REPO), timeout=15)
+        elapsed = time.time() - t0
+        assert r.returncode == 0, f"stdout={r.stdout!r} stderr={r.stderr!r}"
+        assert elapsed < 10, ("dry-run took too long -- may have attempted a real "
+                              "ssh/network call instead of stopping before one")
+        assert "bundle create" in r.stdout
+        assert "ssh laptop-wsl" in r.stdout
+        assert "launch_mining.sh --box laptop" in r.stdout
+        assert "stopping before any bundle/ssh/launch side effect" in r.stdout
+        # never claims a launch happened, or refers to rc=124 handling, under --dry-run
+        assert "rc=124" not in r.stdout
+
+    def test_dry_run_never_creates_a_bundle_file(self):
+        """A stronger check than parsing stdout: the real sync dir (the
+        script hardcodes LOCAL_SHARE=/mnt/c/carc-shared, not a test fixture
+        point) must gain no new bundle file as a result of a --dry-run call."""
+        share = Path("/mnt/c/carc-shared/jcz_mining_20260809/sync")
+        before = set(share.glob("sync_*.bundle")) if share.exists() else set()
+        subprocess.run(["bash", str(LAPTOP_ORCH), "--dry-run"],
+                       capture_output=True, text=True, cwd=str(REPO), timeout=15)
+        after = set(share.glob("sync_*.bundle")) if share.exists() else set()
+        assert after == before
+
+    def test_workers_m_oracle_sims_flags_thread_into_the_plan(self):
+        r = subprocess.run(["bash", str(LAPTOP_ORCH), "--dry-run",
+                            "--workers", "16", "--m", "8", "--oracle-sims", "50"],
+                           capture_output=True, text=True, cwd=str(REPO), timeout=15)
+        assert r.returncode == 0
+        assert "--workers 16" in r.stdout
+        assert "--m 8" in r.stdout
+        assert "--oracle-sims 50" in r.stdout
