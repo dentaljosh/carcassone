@@ -86,14 +86,25 @@ echo "[night $(ts)] merged. HEAD=$(git -C $REPO rev-parse --short HEAD)"
 # size of Part A's, so single-box is affordable; correctness beats wall-clock here.
 echo "[night $(ts)] rebuilding the local cython + carc_rs for the merged seam"
 ( cd "$REPO" && nice -n 19 $PY setup_flat_leaf_cy.py build_ext --inplace ) >> "$LOGS/phase_build.log" 2>&1
-( cd "$REPO" && nice -n 19 maturin develop --release -m rust/carc/carc-py/Cargo.toml ) >> "$LOGS/phase_build.log" 2>&1
+# Absolute maturin path: a detached launch does NOT inherit the venv PATH, and a bare
+# `maturin` exits 127 — after which the ladder would sweep beta against a STALE carc_rs
+# (phase multiplier absent from the substrate) and produce a silent null. Found 2026-08-09.
+( cd "$REPO" && nice -n 19 "$REPO/.venv/bin/maturin" develop --release -m rust/carc/carc-py/Cargo.toml ) >> "$LOGS/phase_build.log" 2>&1
 BUILD_RC=$?
 echo "[night $(ts)] build rc=$BUILD_RC"
+if [ "$BUILD_RC" -ne 0 ]; then
+  echo "[night $(ts)] FATAL: carc_rs rebuild failed (rc=$BUILD_RC); Part C would run on a stale substrate. STOPPING."
+  : > "$DIR/PHASE_ARM_BLOCKED"
+  exit 4
+fi
 $PY -c "
 import carc_rs, carcassonne_ai
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG as c
 import scripts.classical_search.c5_leaf_override as o
-" >> "$LOGS/phase_build.log" 2>&1
+assert getattr(carc_rs, 'SUPPORTS_V29_PHASE', False), 'rebuilt carc_rs lacks SUPPORTS_V29_PHASE - stale substrate'
+" >> "$LOGS/phase_build.log" 2>&1 || {
+  echo "[night $(ts)] FATAL: post-build import/capability check failed. STOPPING."
+  : > "$DIR/PHASE_ARM_BLOCKED"; exit 4; }
 
 echo "[night $(ts)] launching the Part C beta ladder (local only)"
 nice -n 19 bash $REPO/scripts/classical_search/curvephase_ladder_launcher.sh 30 local \
