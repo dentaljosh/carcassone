@@ -1,0 +1,213 @@
+{
+  "schema": "carcassonne-jcz-mining-verdict/v1",
+  "prereg": "measurement/jcz_mining_20260809/MINING_PREREG.md",
+  "statistic": "delta = mean(V_B - V_A) = V(JCZ pick) - V(our pick); pick_a = ours, pick_b = JCZ's; delta > 0 means JCZ's pick was better",
+  "min_n_gate": 25,
+  "k_late": 14,
+  "n_target": 40,
+  "join": {
+    "primary_unmatched_rids": [],
+    "secondary_unmatched_rids": []
+  },
+  "A": {
+    "stratum": "A",
+    "n": 40,
+    "mean_delta_pts": -0.028125,
+    "sd_pts": 3.125503164620264,
+    "se_naive": 0.4941854417132116,
+    "se_cluster_root": 0.49418544171321155,
+    "n_root_clusters": 40,
+    "root_design_effect": 0.9999999999999998,
+    "se_cluster_game": 0.49418544171321155,
+    "n_game_clusters": 40,
+    "game_design_effect": 0.9999999999999998,
+    "cluster_consistency_ok": true,
+    "z_two_sided": -0.05691183435614369,
+    "z_bonf_threshold": 2.2414,
+    "passes_bonferroni2": false,
+    "ci95_lo": -0.9967106674419127,
+    "ci95_hi": 0.9404606674419128,
+    "ci95_covers_zero": true,
+    "n_positive": 17,
+    "n_negative": 22,
+    "n_zero": 1
+  },
+  "B": {
+    "stratum": "B",
+    "n": 40,
+    "mean_delta_pts": -0.90390625,
+    "sd_pts": 3.2905232782205354,
+    "se_naive": 0.5202774126490409,
+    "se_cluster_root": 0.5202774126490409,
+    "n_root_clusters": 40,
+    "root_design_effect": 1.0,
+    "se_cluster_game": 0.5202774126490409,
+    "n_game_clusters": 40,
+    "game_design_effect": 1.0,
+    "cluster_consistency_ok": true,
+    "z_two_sided": -1.73735439598978,
+    "z_bonf_threshold": 2.2414,
+    "passes_bonferroni2": false,
+    "ci95_lo": -1.9236312407618041,
+    "ci95_hi": 0.1158187407618042,
+    "ci95_covers_zero": true,
+    "n_positive": 16,
+    "n_negative": 22,
+    "n_zero": 2
+  },
+  "C": {
+    "stratum": "C",
+    "n": 80,
+    "mean_delta_pts": -0.903125,
+    "sd_pts": 3.0811423999750565,
+    "se_naive": 0.3444821927350536,
+    "se_cluster_root": 0.3444821927350536,
+    "n_root_clusters": 80,
+    "root_design_effect": 1.0,
+    "se_cluster_game": 0.3444821927350536,
+    "n_game_clusters": 80,
+    "game_design_effect": 1.0,
+    "cluster_consistency_ok": true,
+    "z_two_sided": -2.621688490860852,
+    "z_bonf_threshold": 2.2414,
+    "passes_bonferroni2": true,
+    "ci95_lo": -1.5782976910760904,
+    "ci95_hi": -0.2279523089239095,
+    "ci95_covers_zero": false,
+    "n_positive": 29,
+    "n_negative": 50,
+    "n_zero": 1
+  },
+  "decision": {
+    "global_branch": "G3",
+    "verdict": "LOCALISED \u2014 A=INCONCLUSIVE, B=INCONCLUSIVE.",
+    "predicates": {
+      "gate_A_ok": true,
+      "gate_B_ok": true,
+      "gate_C_ok": true,
+      "z_A": -0.05691183435614369,
+      "z_B": -1.73735439598978,
+      "z_C": -2.621688490860852,
+      "mean_A": -0.028125,
+      "mean_B": -0.90390625,
+      "mean_C": -0.903125,
+      "g1_all_wash": false,
+      "g2_not_localised": false,
+      "A_mean_gt_0": false,
+      "A_abs_z_ge_gate": false,
+      "A_convict_sub_control_ci_covers_zero": false,
+      "A_convict_sub_control_mean_lt_half": true,
+      "A_convict_raw": false,
+      "A_exonerate_raw": false,
+      "B_mean_gt_0": false,
+      "B_abs_z_ge_gate": false,
+      "B_convict_sub_control_ci_covers_zero": false,
+      "B_convict_sub_control_mean_lt_half": true,
+      "B_convict_raw": false,
+      "B_exonerate_raw": false,
+      "global_branch": "G3"
+    },
+    "per_stratum": {
+      "A": "INCONCLUSIVE",
+      "B": "INCONCLUSIVE",
+      "C": "CONTROL \u2014 no independent verdict",
+      "S3": "NOT TESTED BY THIS DESIGN"
+    },
+    "candidate_mapping": {},
+    "mints_claim_id": false,
+    "z_gate": 2.0,
+    "z_bonf_threshold": 2.2414
+  },
+  "tier1_sign_check": {
+    "note": "SIGN ONLY \u2014 the Tier-1 judge is out-of-family and noisier; its MAGNITUDE is never compared to the primary's. 'secondary_mean_sign' below is the sign of the secondary's own per-stratum mean, not its size.",
+    "A": {
+      "n_shared": 40,
+      "n_scored": 39,
+      "n_agree": 23,
+      "agreement_rate": 0.5897435897435898,
+      "binomial_p_two_sided": 0.3367836351899314,
+      "primary_mean": -0.028125,
+      "secondary_mean_SIGN_ONLY": -0.11484375
+    },
+    "B": {
+      "n_shared": 40,
+      "n_scored": 38,
+      "n_agree": 32,
+      "agreement_rate": 0.8421052631578947,
+      "binomial_p_two_sided": 2.4342560209333897e-05,
+      "primary_mean": -0.90390625,
+      "secondary_mean_SIGN_ONLY": -0.30234375
+    },
+    "secondary_mean_sign": {
+      "A": -1,
+      "B": -1
+    }
+  },
+  "reported_not_decisive": {
+    "ply_class": {
+      "A": {
+        "TILE": {
+          "n": 22,
+          "mean_delta_pts": -0.4034090909090909
+        },
+        "MEEPLE": {
+          "n": 18,
+          "mean_delta_pts": 0.4305555555555556
+        },
+        "class_dominated": false
+      },
+      "B": {
+        "TILE": {
+          "n": 26,
+          "mean_delta_pts": -2.157451923076923
+        },
+        "MEEPLE": {
+          "n": 14,
+          "mean_delta_pts": 1.4241071428571428
+        },
+        "class_dominated": false
+      },
+      "C": {
+        "TILE": {
+          "n": 48,
+          "mean_delta_pts": -1.2688802083333333
+        },
+        "MEEPLE": {
+          "n": 32,
+          "mean_delta_pts": -0.3544921875
+        },
+        "class_dominated": false
+      }
+    },
+    "disagreement_rate": null,
+    "disagreement_rate_source": null,
+    "pearson_r_leaf_gap_vs_delta": -0.40828837260461226,
+    "n_leaf_gap_pairs": 160,
+    "fraction_search_pick_eq_pick_b": null,
+    "n_search_pick_rows": 0
+  },
+  "scoring_health": {
+    "primary": {
+      "n_attempted": 160,
+      "n_ok": 160,
+      "n_failed": 0,
+      "failures": [],
+      "crn_verified_all": true,
+      "distinct_afterstates_min": 0,
+      "m_worlds": [
+        32
+      ]
+    },
+    "secondary": {
+      "n_attempted": 80,
+      "n_ok": 80,
+      "n_failed": 0,
+      "failures": [],
+      "crn_verified_all": true,
+      "distinct_afterstates_min": 0,
+      "m_worlds": [
+        32
+      ]
+    }
+  }
+}

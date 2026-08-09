@@ -1,5 +1,8 @@
 # JCZ disagreement mining — PRE-REGISTRATION
 
+> **STATUS: ✅ RAN AND CLOSED 2026-08-09 evening — branch G3, NO CONVICTION, STAGE-2 (native term build) NOT FUNDED.**
+> Laptop W=22, 160+80 records in 1.95 h, 0 failures. **A (commitment, S1+S4): mean −0.028 pts/ply, z −0.06 — flat null** (81% power at +2.0 ⇒ a ≥2 pts/ply advantage is excluded; +1.4 was coin-flip power and the raw mean isn't even positive). **B (late-deck closure, S2): −0.904, z −1.74 — but the phase-matched control C reads −0.903 (z −2.62), so B's lean is exactly the background disagreement effect, zero closure-specific signal** (the amendment-7 phase-matching is what made this readable). **The control's own story: on generic evaluator disagreements, JCZ's pick is ~0.9 pts/ply WORSE than ours** — consistent with the +111.4 match. No claim minted, nothing promoted, no results.csv row (no games played). Verdict artifact: [mining/VERDICT.json](mining/VERDICT.json). Power extension to n=74 (80% at +1.4) is priced in §6 but unpromising given A's sign.
+
 > **Status: PRE-REGISTERED 2026-08-09, FUNDED by Joshua ("build it, don't launch it — the box is
 > mine today and the phase ladder has first claim tonight").** Written and committed **BEFORE any
 > extraction or scoring code ran against `confirm.jsonl`.** Nothing here may be edited after the

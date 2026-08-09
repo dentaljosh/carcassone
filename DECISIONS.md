@@ -4596,3 +4596,22 @@ a price that is no longer the binding uncertainty.
 
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
+
+## 2026-08-09 (evening) — JCZ disagreement mining RAN: G3, no conviction, steal pipeline closed at Stage 1
+
+The pre-registered leaf-vs-leaf mining over the n=400 corpus ran on the laptop (W=22, 160 primary
++ 80 secondary records, 1.95 h, 0 failures, M=32 CRN). Verdict per MINING_PREREG decision map:
+**branch G3, no stratum convicts.** A (commitment / S1+S4): mean −0.028 pts/ply, z −0.06 — a flat
+null with 81% power at +2.0 pts/ply, so a ≥2 pts/ply advantage for JCZ's committed-meeple pricing
+is excluded; the raw mean is not even positive. B (late-deck closure / S2): −0.904, z −1.74 —
+indistinguishable from its phase-matched control C (−0.903, z −2.62), i.e. the lean is entirely
+the background disagreement effect (the amendment-7 phase-matching is what made this readable;
+the un-matched design would have manufactured a spurious B signal). The control's own reading —
+JCZ's pick ~0.9 pts/ply WORSE than ours where the evaluators disagree — is the mining-level
+corroboration of the +111.4 match. **Per the prereg's kill-gate: no conviction ⇒ the native
+term build + C5 gate (Stage 2/3) are NOT funded.** No claim minted, no results.csv row (no games
+played — measurement precedent per the oracle pilot), PRODUCTION.yaml untouched. Ops by-catch,
+both memorialized: laptop `systemd-run --user` scopes die with the last ssh session unless
+`loginctl enable-linger` (enabled, durable); in-session launches on the local box are swept by
+harness teardown (3 kills) — long local drivers now run from a cron-armed self-healing guard
+(`/home/doctor/gate_ops/gate_cron_guard.sh`).
