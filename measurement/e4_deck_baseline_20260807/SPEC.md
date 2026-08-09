@@ -72,6 +72,22 @@ and `β̂` has the smaller realized se.** That is the only defensible criterion 
 variate is judged on realized variance reduction, nothing else. β=1 is reported for
 completeness and is never the headline.
 
+**Two clarifications added 2026-08-08, still BEFORE any self-play game existed:**
+
+- **The adjustment is CENTERED, so the point estimate cannot move.**
+  `mean_i(m_i − β(d̂_i − d̄)) = mean_i(m_i)` for *any* β, because the centred term sums
+  to zero. All three "estimates" therefore share one point estimate and differ **only in
+  their se**. That is not a defect — precision is the entire deliverable — but the
+  readout must say it in those words rather than presenting three numbers that look
+  like three different answers.
+- **se convention.** `unadjusted` and `β=1` use `sd/√n` with `ddof=1`. The `β̂` se uses
+  **`ddof=2`**, paying for the estimated β. This is the conservative choice and is the se
+  used in the headline comparison.
+- **Supplementary, explicitly NOT the headline:** `mean(d̂)` itself — were his 12 decks
+  *collectively* tilted for or against seat 0? — and the uncentred `mean_i(m_i − d̂_i)`,
+  which is the "how did he do relative to what the champion scores on these same decks"
+  read. Reported as description; the pre-registered headline stays the centred form.
+
 **β̂ at n=12 is itself noisy** (its own se is roughly `sd(resid)/(√n · sd(d̂))`, and the
 adjusted se understates by the ~1/(n−2) cost of estimating β). We report β̂ with its se
 and do **not** treat a β̂ that differs from 0 or 1 by less than ~2 se as informative.
