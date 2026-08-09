@@ -101,7 +101,10 @@ trap 'rm -f "$SYNC_SCRIPT" "$LAUNCH_SCRIPT"' EXIT
 # the verdict). So the quiet check must come BEFORE the sync, not just inside
 # the remote launcher.
 echo "[launch_laptop] === 0. laptop quiet check (the sync itself must not touch a live tree) ==="
-GATE_PROCS="$(ssh "$LAPTOP_HOST" "pgrep -af 'phase_seam_gate_chunked|run_gate_laptop|pytest' || true")"
+# Bracketed first letters so the pgrep can never match its own remote wrapper
+# (the literal pattern appears in the ssh bash -c cmdline -- the standing
+# self-match trap, memory feedback_wsl_ssh_launch_pkill_traps).
+GATE_PROCS="$(ssh "$LAPTOP_HOST" "pgrep -af '[p]hase_seam_gate_chunked|[r]un_gate_laptop|[p]ytest' || true")"
 if [ -n "$GATE_PROCS" ]; then
   echo "[launch_laptop] REFUSING: gate/pytest processes are LIVE on the laptop -- syncing" >&2
   echo "[launch_laptop]   code now would fast-forward the tree mid-gate. Wait for the" >&2
