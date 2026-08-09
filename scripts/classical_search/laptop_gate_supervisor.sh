@@ -40,9 +40,10 @@ while true; do
   STATE=$(ssh -o ConnectTimeout=30 -o BatchMode=yes laptop-wsl 'bash -s' <<'EOF' 2>/dev/null
 OUT=/home/doctor/projects/carcassone/measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE
 N=$(ls "$OUT"/chunks/*/*.json 2>/dev/null | wc -l)
+E=$(bash /home/doctor/gate_ops/phase_seam_gate_chunked.sh --plan 2>/dev/null | wc -l); E=$((E * 2))
 if [ -f "$OUT/VERDICT" ]; then V=$(cat "$OUT/VERDICT"); else V=none; fi
 if pgrep -f phase_seam_gate_chunked.sh > /dev/null 2>&1; then R=running; else R=stopped; fi
-echo "$R $N $V"
+echo "$R $N $V $E"
 EOF
 )
   if [ -z "$STATE" ]; then
@@ -50,8 +51,8 @@ EOF
     sleep "$EVERY"; continue   # allow-sleep (detached daemon)
   fi
   set -- $STATE
-  RUN=$1; NART=$2; VERD=$3
-  echo "$(ts) laptop: gate=$RUN artifacts=$NART/34 verdict=$VERD" >> "$LOG"
+  RUN=$1; NART=$2; VERD=$3; NEXP=${4:-?}
+  echo "$(ts) laptop: gate=$RUN artifacts=$NART/$NEXP verdict=$VERD" >> "$LOG"
 
   if [ "$RUN" != running ]; then
     echo "$(ts) relaunching the gate on the laptop (resumes from $NART artifacts)" >> "$LOG"

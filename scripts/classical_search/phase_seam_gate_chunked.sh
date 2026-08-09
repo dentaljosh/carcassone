@@ -112,8 +112,21 @@ CHUNKS=(
 "12_exact_solver|tests/test_analyze_f13_ladder.py tests/test_endgame_solver.py tests/test_f13_exact_ladder.py tests/test_rustport_endgame_solver.py tests/test_solver_score_agent.py tests/test_solver_score_variants.py tests/test_wsweep_exact_solver.py"
 "13_mcts|tests/test_ameneyro_mcts.py tests/test_heuristic_prior_mcts.py tests/test_mcts.py tests/test_mcts_transposition_c2.py tests/test_neural_mcts.py tests/test_neural_mcts_selfplay_extensions.py tests/test_neural_mcts_virtual_loss.py"
 "14_selfplay|tests/test_anchor_fraction_selfplay.py tests/test_gen_fair_distill.py tests/test_run_phase4_smoke.py tests/test_selfplay.py tests/test_selfplay_claim.py"
-"15_fair_puct|tests/test_fair_agent.py tests/test_fair_cand_curve_drift.py tests/test_fair_info_gate_zero.py tests/test_fair_oracle_prior.py tests/test_fair_puct_agent.py tests/test_fair_puct_opponent.py tests/test_puct_priors_opponent_backend.py tests/test_puct_priors_watchdog.py"
-"16_match_ab|tests/test_alphabeta_agent.py tests/test_intra_reuse.py tests/test_jcz_match.py tests/test_jcz_replay_oracle.py tests/test_jcz_tile_oracle.py tests/test_kparallel.py tests/test_luck_floor_pairs.py"
+"15a_fair_agent|tests/test_fair_agent.py"
+"15b_fair_cand_curve_drift|tests/test_fair_cand_curve_drift.py"
+"15c_fair_info_gate_zero|tests/test_fair_info_gate_zero.py"
+"15d_fair_oracle_prior|tests/test_fair_oracle_prior.py"
+"15e_fair_puct_agent|tests/test_fair_puct_agent.py"
+"15f_fair_puct_opponent|tests/test_fair_puct_opponent.py"
+"15g_puct_priors_opponent_backend|tests/test_puct_priors_opponent_backend.py"
+"15h_puct_priors_watchdog|tests/test_puct_priors_watchdog.py"
+"16a_alphabeta_agent|tests/test_alphabeta_agent.py"
+"16b_intra_reuse|tests/test_intra_reuse.py"
+"16c_jcz_match|tests/test_jcz_match.py"
+"16d_jcz_replay_oracle|tests/test_jcz_replay_oracle.py"
+"16e_jcz_tile_oracle|tests/test_jcz_tile_oracle.py"
+"16f_kparallel|tests/test_kparallel.py"
+"16g_luck_floor_pairs|tests/test_luck_floor_pairs.py"
 "17_rustport|tests/rustport"
 )
 
@@ -221,14 +234,42 @@ except Exception as e: print('carc_rs import failed:', e)
 # Wrap in a cgroup memory scope when one is available. MemoryHigh throttles and
 # forces reclaim well before MemoryMax kills, so the exact-solver chunk degrades
 # to "slow" rather than "SIGKILL", which would read as a crash.
-CAP=()
+CAP_OK=0
 if systemd-run --user --scope -p MemoryMax="$MEM_MAX" true >/dev/null 2>&1; then
-  CAP=(systemd-run --user --quiet --scope
-       -p MemoryHigh="$MEM_HIGH" -p MemoryMax="$MEM_MAX" -p MemorySwapMax=0)
-  log "per-chunk memory scope ACTIVE (High=$MEM_HIGH Max=$MEM_MAX Swap=0)"
+  CAP_OK=1
+  log "per-chunk memory scope ACTIVE (default High=$MEM_HIGH Max=$MEM_MAX Swap=0)"
 else
   log "WARNING: systemd-run --user --scope unavailable; chunks run uncapped"
 fi
+
+# PER-CHUNK ALLOWANCES -- added 2026-08-09 after the seam/15_fair_puct incident.
+#
+# The default MemoryHigh=5G is a THROTTLE, not a kill: at the ceiling the cgroup
+# forces reclaim and the process crawls instead of dying. The fair_puct tests
+# legitimately build >5G of state, so the throttle turned a working chunk into a
+# 63%-CPU crawl in uninterruptible reclaim (D state) that then blew the 3600 s
+# budget and got SIGKILLed by `timeout`. Read from the outside that is
+# indistinguishable from instability -- two attempts were lost that way, and NEITHER
+# was a box problem. This is the ugliest failure shape a memory cap has: not a
+# crash, but a silent slowdown that expires a deadline.
+#
+# Fix has two halves, because either alone is insufficient:
+#   * the big-state families (fair_puct/puct_priors, and the alphabeta/jcz/kparallel
+#     family that looks like its sibling) are split to ONE FILE PER CHUNK, so peak
+#     RSS is bounded by the largest single module instead of their sum -- and if one
+#     module is still too big, the artifact names say exactly which;
+#   * those chunks get MemoryHigh=7G (headroom before throttling) with MemoryMax
+#     held at 8G (the VM is 11G -- the hard cap is what stops a guest balloon from
+#     killing the whole VM, and it stays), plus a 7200 s budget.
+# A chunk that genuinely wants >8G now gets OOM-KILLED, which the time -v witness
+# reports as a crash. That is the intended degradation: a loud, attributable death
+# beats a silent stall.
+chunk_limits() {  # $1=chunk name -> "MemoryHigh MemoryMax timeout_s"
+  case "$1" in
+    15[a-z]_*|16[a-z]_*) echo "7G 8G 7200" ;;
+    *)                   echo "$MEM_HIGH $MEM_MAX $CHUNK_TIMEOUT" ;;
+  esac
+}
 
 # /usr/bin/time -v is BOTH the peak-RSS instrument and the completion witness
 # (see run_chunk). Without it the gate still works, on a weaker witness.
@@ -257,6 +298,17 @@ run_chunk() {  # $1=tree-label  $2=tree-path  $3=pp-prefix  $4=chunk-name  $5=pa
   fi
   paths="$kept"
 
+  local c_high c_max c_to
+  read -r c_high c_max c_to <<< "$(chunk_limits "$name")"
+  local CAP=()
+  if [ "$CAP_OK" = 1 ]; then
+    CAP=(systemd-run --user --quiet --scope
+         -p MemoryHigh="$c_high" -p MemoryMax="$c_max" -p MemorySwapMax=0)
+  fi
+  if [ "$c_to" != "$CHUNK_TIMEOUT" ]; then
+    log "  [$label/$name] raised allowance: High=$c_high Max=$c_max timeout=${c_to}s"
+  fi
+
   local attempt=1
   while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
     local t0 t1 rc dur
@@ -267,7 +319,7 @@ run_chunk() {  # $1=tree-label  $2=tree-path  $3=pp-prefix  $4=chunk-name  $5=pa
     (
       cd "$tree" || exit 97
       if [ -n "$pp" ]; then export PYTHONPATH="$pp"; fi
-      exec "${CAP[@]}" timeout -s KILL "$CHUNK_TIMEOUT" \
+      exec "${CAP[@]}" timeout -s KILL "$c_to" \
         $TIMEV nice -n 19 "$PY" -m pytest $paths -q -p no:randomly -p no:cacheprovider -rf --durations=10
     ) > "$txt" 2>&1
     rc=$?
