@@ -473,11 +473,26 @@ corroborated one.
 
 ## 8. Cost, launch discipline, and governance
 
-**ETA:** ≤160 positions × M=32 on the primary judge, plus ≤80 on Tier-1. Scaled from the farm-war
-run's measured 42 positions × 2 judges in ~1–1.5 h at W16 (≈14.3 worker-minutes per position-judge
-cell), and marked up for longer playouts from earlier-game roots: **≈4–6 h at W=14**, with the
-**primary judge complete at ≈3–4 h** (judges run sequentially, primary first, so the deciding
-statistic lands before the sign check).
+**ETA — ≈6 h at W=14, and the range is 5.5–8 h.** ⚠️ **Corrected 2026-08-09 from the ETA first
+written here (4–6 h), which was ~40% optimistic** because it divided farm-war's wall-clock by its
+*positions* without accounting for its three epoch legs having run **concurrently** across one
+shared pool of 14 workers. Re-derived from that run's actual `RUN_MANIFEST.json` instead of from
+its readout prose:
+
+| judge | farm-war measured | unit cost | this run | at W=14 |
+|---|---|---:|---:|---:|
+| `clair-puct` | 42 positions, 14 workers, 86.1 min wall | **28.7 worker-min/position** | 160 positions | **≈5.5 h** |
+| `tier1-greedy` | 42 positions, 14 workers, 9.1 min wall | **3.0 worker-min/position** | 80 positions | **≈0.3 h** |
+
+So **≈5.8 h for both judges**, and the deciding statistic (primary, run first) is itself the long
+pole at ≈5.5 h — the sign check is nearly free. Budget **6–8 h** to cover the fact that this frame's
+roots sit earlier in the deck than farm-war's (mean `k_remaining` ≈ 31 across the 160 positions, so
+playouts to game end run longer).
+
+This is an overnight-shaped run. It is **per-position checkpointed and `--resume`-able**, so it does
+not need an uninterrupted 6-hour window — it can be killed the moment the box is wanted and picked
+up later without losing a scored cell. That property, not the total, is what makes it schedulable
+against the phase-arm ladder's first claim.
 
 **Hard operational constraints, enforced by the launcher, not by discipline:**
 
