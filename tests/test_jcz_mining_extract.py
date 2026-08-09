@@ -187,14 +187,20 @@ class TestStratumPredicates:
 # --------------------------------------------------------------------------- #
 # 3. CONTROL matching (PREREG §3.3)                                             #
 # --------------------------------------------------------------------------- #
-def _mrow(rid, gap, cls="TILE", game=None, ply=0):
+def _mrow(rid, gap, cls="TILE", game=None, ply=0, phase="EARLY"):
     return {"rid": rid, "root_id": game or rid, "ply": ply,
-            "ply_class": cls, "our_leaf_gap": gap}
+            "ply_class": cls, "phase_bucket": phase, "our_leaf_gap": gap}
 
 
 class TestControlMatching:
     """Catches: the control silently becoming a different question — a class
-    contrast, a severity contrast, or an n inflated by reuse."""
+    contrast, a PHASE contrast, a severity contrast, or an n inflated by reuse.
+
+    The two exact-match fields are pinned the same way because they fail the same
+    way: a stratum drawing its control from the wrong cell produces a perfectly
+    plausible number that answers a different question. STRAT-B is the live case —
+    it is late-deck by construction, so an unbucketed control lands mid-game.
+    """
 
     def test_nearest_neighbour_without_replacement_in_descending_target_order(self):
         targets = [_mrow("t1", 0.50), _mrow("t2", 0.10)]
@@ -211,6 +217,48 @@ class TestControlMatching:
         pool = [_mrow("m_exact", 0.50, "MEEPLE"), _mrow("t_far", 0.90, "TILE")]
         got = M.match_control(targets, pool)
         assert [c["rid"] for c in got] == ["t_far"]
+
+    def test_exactness_on_phase_bucket_beats_a_closer_gap(self):
+        """The STRAT-B confound, pinned: an EARLY pool member sitting exactly on a
+        LATE target's gap must still be refused, or the B-minus-C contrast reads
+        late-deck-vs-mid-game instead of "their deck-graded closure pricing"."""
+        targets = [_mrow("t_late", 0.50, phase="LATE")]
+        pool = [_mrow("e_exact", 0.50, phase="EARLY"),
+                _mrow("l_far", 0.90, phase="LATE")]
+        got = M.match_control(targets, pool)
+        assert [c["rid"] for c in got] == ["l_far"]
+
+    def test_exactness_on_phase_bucket_holds_in_the_other_direction(self):
+        """Symmetric: an EARLY target must not take a LATE member either, so A
+        (mostly EARLY) gets an early-game control rather than borrowing B's."""
+        targets = [_mrow("t_early", 0.50, phase="EARLY")]
+        pool = [_mrow("l_exact", 0.50, phase="LATE"),
+                _mrow("e_far", 0.90, phase="EARLY")]
+        got = M.match_control(targets, pool)
+        assert [c["rid"] for c in got] == ["e_far"]
+
+    def test_both_exact_fields_apply_together(self):
+        """Only the member matching on BOTH is eligible, even when each of the
+        three near-misses is closer on `our_leaf_gap` than the eligible one."""
+        targets = [_mrow("t", 0.50, cls="TILE", phase="LATE")]
+        pool = [_mrow("wrong_class", 0.50, cls="MEEPLE", phase="LATE"),
+                _mrow("wrong_phase", 0.51, cls="TILE", phase="EARLY"),
+                _mrow("wrong_both", 0.52, cls="MEEPLE", phase="EARLY"),
+                _mrow("right", 0.90, cls="TILE", phase="LATE")]
+        got = M.match_control(targets, pool)
+        assert [c["rid"] for c in got] == ["right"]
+
+    def test_match_key_is_the_documented_pair(self):
+        """`STRATA.json` reports `MATCH_KEY` verbatim; if the constant and the
+        matcher drifted apart the readout would misdescribe how C was built."""
+        assert M.MATCH_KEY == ("ply_class", "phase_bucket")
+
+    def test_phase_bucket_boundary_matches_strat_b_gate(self):
+        """The bucket is not a new axis — it is B's own gate, same threshold, same
+        inclusive boundary. If they drifted, B's own members could bucket EARLY."""
+        assert M.phase_bucket({"k_remaining": 13}, 14) == "LATE"
+        assert M.phase_bucket({"k_remaining": 14}, 14) == "LATE"
+        assert M.phase_bucket({"k_remaining": 15}, 14) == "EARLY"
 
     def test_a_target_with_no_same_class_partner_is_skipped_not_cross_matched(self):
         targets = [_mrow("t_meeple", 0.5, "MEEPLE"), _mrow("t_tile", 0.4, "TILE")]
@@ -271,7 +319,9 @@ def _b(rid, game, ply, **kw):
 
 
 def _pool(rid, game, ply, **kw):
-    kw.setdefault("k", 30)
+    # k defaults LATE so the synthetic pool can actually supply controls for the
+    # synthetic (LATE) targets — the matcher is exact on `phase_bucket`.
+    kw.setdefault("k", 10)
     return _cand(rid, game, ply, **kw)
 
 
@@ -330,6 +380,28 @@ class TestSamplingClaimsGamesInOrder:
         assert {r["stratum"] for r in ab} <= {M.STRAT_A, M.STRAT_B}
         assert M.STRAT_C in {r["stratum"] for r in allrows}
         assert len(ab) < len(allrows)
+
+    def test_phase_bucket_is_stamped_and_reported(self, tmp_path, capsys):
+        """`phase_bucket` is a function of `k_late`, an `assign` parameter — so it
+        must be stamped at assign time and travel on every emitted row, or the
+        readout cannot say what C was matched on."""
+        rows = [_a("a1", "G1", 1, k=5), _a("a2", "G2", 1, k=30),
+                _pool("p1", "G3", 1, k=5), _pool("p2", "G4", 1, k=30)]
+        st = self._assign(tmp_path, rows)
+        for r in st["rows"][M.STRAT_A] + st["rows"][M.STRAT_C]:
+            assert r["phase_bucket"] == ("LATE" if r["k_remaining"] <= 14 else "EARLY")
+        assert st["control_match"]["match_key"] == ["ply_class", "phase_bucket"]
+        assert st["strata"][M.STRAT_A]["by_phase_bucket"] == {"LATE": 1, "EARLY": 1}
+
+    def test_control_is_phase_matched_to_its_target(self, tmp_path, capsys):
+        """The end-to-end version of the STRAT-B confound: a LATE stratum must draw
+        a LATE control even when an EARLY pool member has a much closer gap."""
+        rows = [_b("b1", "G1", 1, k=5, gap=1.0),
+                _pool("near_early", "G2", 1, k=30, gap=1.0),
+                _pool("far_late", "G3", 1, k=6, gap=9.0)]
+        st = self._assign(tmp_path, rows)
+        assert [r["rid"] for r in st["rows"][M.STRAT_C]] == ["far_late"]
+        assert st["strata"][M.STRAT_C]["by_phase_bucket"] == {"LATE": 1}
 
     def test_seat_balance_is_within_one_when_the_pool_allows(self, tmp_path, capsys):
         rows = [_a(f"a{i}", f"G{i}", 1, seat=i % 2) for i in range(8)]

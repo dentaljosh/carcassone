@@ -91,6 +91,17 @@ PREREG AMBIGUITIES AND WHAT WAS CHOSEN (stated here, not buried)
    simply stale, and this is precisely the silent invalidation the read-from-cfg
    mandate exists to prevent. The resolved table is stamped in the meta as
    ``closure_p`` so the readout reports the schedule it actually ran under.
+7. ⚠️ **The CONTROL match is exact on ``(ply_class, phase_bucket)``, where §3.3
+   says ``ply_class`` alone.** This is a DELIBERATE AMENDMENT, taken 2026-08-09
+   from the full-corpus dry run's PLY COUNTS ALONE — before any world was drawn,
+   any deck completed, or any Δ computed — and therefore a decision on the
+   sampling frame that cannot bias the effect estimate, exactly as §3.2's
+   pre-registered widening ladder is. The reason: STRAT-B is late-deck by
+   construction (its gate IS ``k_remaining <= K_LATE``; measured median 9) while
+   its unbucketed nearest-neighbour control landed mid-game (median 36, 2 of 80
+   at ``k_remaining <= 14``), so the pre-registered B-minus-C contrast was
+   confounded with game phase and B could only ever EXONERATE or be
+   uninterpretable. See `phase_bucket`. The PREREG carries a stamped note.
 
 Modes
 -----
@@ -105,7 +116,8 @@ Modes
   assign  --candidates cand.jsonl --out STRATA.json --positions positions.jsonl
         Pure stdlib. Precedence A > B > pool, ≤1 scored position per game,
         CONTROL by nearest-neighbour ``our_leaf_gap`` matching without
-        replacement (exact on ``ply_class``), then the n≥25 gate.
+        replacement (exact on ``ply_class`` AND ``phase_bucket`` — see
+        amendment 7), then the n≥25 gate.
 """
 from __future__ import annotations
 
@@ -156,6 +168,11 @@ MEEPLE_CLASSES = ("FIELD", "ROAD", "CITY", "CLOISTER")
 GAP_EPS = 1e-9
 
 STRAT_A, STRAT_B, STRAT_C = "STRAT_A", "STRAT_B", "STRAT_C"
+
+#: The CONTROL match is EXACT on these fields and nearest on `our_leaf_gap`. Named
+#: as data so `STRATA.json` reports how C was actually built and a readout can never
+#: misdescribe it. See `phase_bucket` for why the second field is here.
+MATCH_KEY = ("ply_class", "phase_bucket")
 
 
 # --------------------------------------------------------------------------- #
@@ -248,6 +265,25 @@ def dead_vecs_differ(a, b) -> bool:
 
 def live_vecs_differ(a, b) -> bool:
     return _norm_live(a) != _norm_live(b)
+
+
+def phase_bucket(row: dict, k_late: int) -> str:
+    """``"LATE"`` iff ``k_remaining <= k_late``, else ``"EARLY"``. Same threshold and
+    the same inclusive boundary as STRAT-B's own gate, so the bucket is not a new
+    axis — it is B's defining axis, made available to the matcher.
+
+    Added 2026-08-09, from PLY COUNTS ALONE, before any world was drawn or any Δ
+    computed. The full-corpus dry run showed STRAT-B is late-deck BY CONSTRUCTION
+    (median `k_remaining` 9) while its nearest-neighbour control landed mid-game
+    (median 36, only 2 of 80 at `k_remaining <= 14`). That makes the B-minus-C
+    contrast confounded with game phase: if per-ply Δ is systematically larger late
+    — plausible, since fewer tiles left means more decisive positions — B could
+    clear CONVICT for phase reasons that have nothing to do with S2's deck-graded
+    closure probability, so as built B could only ever EXONERATE or be
+    uninterpretable. Matching exactly on the bucket costs no extra positions and no
+    extra compute, and because A is mostly EARLY and B is entirely LATE it
+    phase-matches BOTH primary strata instead of neither."""
+    return "LATE" if int(row["k_remaining"]) <= int(k_late) else "EARLY"
 
 
 def stratum_for(row: dict, k_late: int):
@@ -776,6 +812,7 @@ def count_frame(rows: list, k_late: int) -> dict:
     most one scored position per game (PREREG §4)."""
     buckets = {STRAT_A: [], STRAT_B: [], "POOL": []}
     for r in rows:
+        r = dict(r, phase_bucket=phase_bucket(r, k_late))
         buckets[stratum_for(r, k_late) or "POOL"].append(r)
     out = {
         "k_late": int(k_late),
@@ -788,6 +825,11 @@ def count_frame(rows: list, k_late: int) -> dict:
             "n": len(rs),
             "n_distinct_games": len({r["root_id"] for r in rs}),
             "by_ply_class": dict(Counter(r["ply_class"] for r in rs)),
+            "by_phase_bucket": dict(Counter(r["phase_bucket"] for r in rs)),
+            # The CONTROL match is exact on this pair, so the pool's supply per
+            # cell is what actually gates C's n — report it, not just the totals.
+            "by_match_key": dict(Counter(
+                f"{r['ply_class']}/{r['phase_bucket']}" for r in rs)),
             "by_jcz_seat": dict(Counter(str(r["jcz_seat"]) for r in rs)),
         }
     # The pre-registered widening ladder, readable in one shot: STRAT-B steps
@@ -820,7 +862,8 @@ def counts(candidates: Path, k_late: int, as_json: bool) -> dict:
     for name in (STRAT_A, STRAT_B, "POOL"):
         s = frame["strata"][name]
         print(f"[counts] {name:<8} n={s['n']:>4}  distinct_games={s['n_distinct_games']:>4}"
-              f"  {sorted(s['by_ply_class'].items())}  seats={sorted(s['by_jcz_seat'].items())}")
+              f"  {sorted(s['by_match_key'].items())}  "
+              f"seats={sorted(s['by_jcz_seat'].items())}")
     print(f"[counts] STRAT-B widening ladder (distinct games is the binding constraint):")
     for k in ("14", "20", "28"):
         L = frame["strat_b_ladder"][k]
@@ -873,30 +916,39 @@ def _pick_balanced(ordered: list, claimed: set, n_target: int) -> list:
     return chosen
 
 
+def _match_key(row: dict) -> tuple:
+    return tuple(row[f] for f in MATCH_KEY)
+
+
 def match_control(targets: list, pool: list, claimed: set | None = None) -> list:
     """Nearest-neighbour CONTROL matching on `our_leaf_gap`, WITHOUT replacement,
-    EXACT on `ply_class` (PREREG §3.3).
+    EXACT on `MATCH_KEY` = `(ply_class, phase_bucket)` (PREREG §3.3).
 
     Ordering discipline mirrors `farmwar_stratify.match_control` exactly: targets
     are consumed in DESCENDING `our_leaf_gap` (ties broken by `(root_id, ply,
-    rid)`), and each takes the still-unused pool member of the SAME `ply_class`
+    rid)`), and each takes the still-unused pool member with the SAME match key
     minimising `|gap_target - gap_pool|` (same tie-break). Descending order gives
     the hardest-to-match targets first pick, which is what makes the matched
     distributions closest; taking them last would strand them.
 
-    Exactness on `ply_class` is load-bearing, not tidiness: without it a stratum
-    could be all-MEEPLE and its control all-TILE and the A-minus-C contrast would
-    silently be a class contrast. A target with no same-class pool member left is
-    SKIPPED (truncation), never matched across class and never given a reused
-    partner. `claimed` (games already holding a scored position) is honoured, and
-    each pick claims its own game — the ≤1-per-game rule holds inside C too."""
+    Both exact fields are load-bearing, and for the same reason — each blocks a way
+    for the A/B-minus-C contrast to silently become a contrast about something
+    else. Without `ply_class`, a stratum could be all-MEEPLE and its control
+    all-TILE and the contrast would read TILE-vs-MEEPLE. Without `phase_bucket`,
+    STRAT-B (late-deck by construction) would draw a mid-game control and the
+    contrast would read late-vs-mid-game; see `phase_bucket` for the measured
+    numbers that forced this. A target with no same-key pool member left is SKIPPED
+    (truncation), never matched across the key and never given a reused partner.
+    `claimed` (games already holding a scored position) is honoured, and each pick
+    claims its own game — the ≤1-per-game rule holds inside C too."""
     used = set(claimed or ())
     remaining = sorted(pool, key=lambda r: (str(r["root_id"]), int(r["ply"]), str(r["rid"])))
     picked: list = []
     for t in sorted(targets, key=lambda r: (-float(r["our_leaf_gap"]), str(r["root_id"]),
                                             int(r["ply"]), str(r["rid"]))):
+        want = _match_key(t)
         cands = [i for i, r in enumerate(remaining)
-                 if r["ply_class"] == t["ply_class"] and r["root_id"] not in used]
+                 if _match_key(r) == want and r["root_id"] not in used]
         if not cands:
             continue
         j = min(cands, key=lambda i: (abs(float(remaining[i]["our_leaf_gap"])
@@ -920,6 +972,9 @@ def _profile(rows: list) -> dict:
     return {
         "n": len(rows),
         "by_ply_class": dict(Counter(r["ply_class"] for r in rows)),
+        "by_phase_bucket": dict(Counter(r.get("phase_bucket") for r in rows)),
+        "by_ply_class_x_phase": dict(Counter(
+            f"{r['ply_class']}/{r.get('phase_bucket')}" for r in rows)),
         "by_jcz_seat": dict(Counter(str(r["jcz_seat"]) for r in rows)),
         "mean_our_leaf_gap": _mean(r["our_leaf_gap"] for r in rows),
         "mean_k_remaining": _mean(r["k_remaining"] for r in rows),
@@ -934,6 +989,10 @@ def assign(candidates: Path, out_path: Path, positions_path: Path, *,
     rows = load_candidates(candidates)
     for r in rows:
         r["stratum"] = None
+        # `phase_bucket` is a function of `k_late`, which is an `assign` parameter,
+        # so it is stamped HERE (not at extract time) and travels on every emitted
+        # row — the matcher reads it, and the readout can see what C was matched on.
+        r["phase_bucket"] = phase_bucket(r, k_late)
 
     eligible = {STRAT_A: [], STRAT_B: [], "POOL": []}
     for r in rows:
@@ -975,6 +1034,8 @@ def assign(candidates: Path, out_path: Path, positions_path: Path, *,
         "strata": {STRAT_A: _profile(a_rows), STRAT_B: _profile(b_rows),
                    STRAT_C: _profile(c_rows)},
         "control_match": {
+            "match_key": list(MATCH_KEY),
+            "match_nearest_on": "our_leaf_gap",
             "n_targets": n_targets,
             "n_matched": len(c_rows),
             "truncated": bool(len(c_rows) < n_targets),
@@ -1007,6 +1068,12 @@ def assign(candidates: Path, out_path: Path, positions_path: Path, *,
 
     print(f"[assign] A n={len(a_rows)} | B n={len(b_rows)} | C n={len(c_rows)} "
           f"(pool {len(pool)}, k_late {k_late})")
+    print(f"[assign] control match key {list(MATCH_KEY)} (nearest on our_leaf_gap)")
+    for name in (STRAT_A, STRAT_B, STRAT_C):
+        p = strata["strata"][name]
+        print(f"[assign] {name:<8} n={p['n']:>3}  "
+              f"{sorted(p['by_ply_class_x_phase'].items())}  "
+              f"games={p['n_distinct_games']:>3}  seats={sorted(p['by_jcz_seat'].items())}")
     print(f"[assign] mean our_leaf_gap: targets "
           f"{strata['control_match']['mean_gap_targets']} vs control "
           f"{strata['control_match']['mean_gap_control']} "
