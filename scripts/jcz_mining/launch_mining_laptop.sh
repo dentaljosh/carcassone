@@ -95,6 +95,22 @@ SYNC_SCRIPT="$(mktemp)"
 LAUNCH_SCRIPT="$(mktemp)"
 trap 'rm -f "$SYNC_SCRIPT" "$LAUNCH_SCRIPT"' EXIT
 
+# The remote launch_mining.sh gate refuses the LAUNCH while gate/pytest processes
+# run -- but step 2's ff-sync would already have moved the laptop tree under a
+# LIVE gate by then (chunk N+1 re-imports from disk => mixed-rev chunks poison
+# the verdict). So the quiet check must come BEFORE the sync, not just inside
+# the remote launcher.
+echo "[launch_laptop] === 0. laptop quiet check (the sync itself must not touch a live tree) ==="
+GATE_PROCS="$(ssh "$LAPTOP_HOST" "pgrep -af 'phase_seam_gate_chunked|run_gate_laptop|pytest' || true")"
+if [ -n "$GATE_PROCS" ]; then
+  echo "[launch_laptop] REFUSING: gate/pytest processes are LIVE on the laptop -- syncing" >&2
+  echo "[launch_laptop]   code now would fast-forward the tree mid-gate. Wait for the" >&2
+  echo "[launch_laptop]   VERDICT, then re-run. Live processes:" >&2
+  echo "$GATE_PROCS" >&2
+  exit 1
+fi
+echo "[launch_laptop] laptop is quiet."
+
 echo "[launch_laptop] === 1. bundling ==="
 mkdir -p "$LOCAL_SHARE/$SYNC_SUBDIR"
 git bundle create "$LOCAL_BUNDLE" "$BRANCH"
