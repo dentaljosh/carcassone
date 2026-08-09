@@ -308,6 +308,39 @@ across positions. Then `se(n) ≈ 4.3/√n`:
 **What n = 40 buys: 2σ on a +1.4 pt/ply effect, and nothing smaller.** A +0.5 pt/ply effect would
 need n ≈ 300 and is out of reach at this budget — pre-registered as unresolvable, not as absent.
 
+### Measured power of the actual decision map
+
+The `2σ` line above is the *detection threshold*, not the *power*, and the two are routinely
+confused. Since the CONVICT branch is a compound predicate (its own z **and** a condition on the
+control), the honest number can only come from simulating the shipped `decide()`. Done — 4,000 draws
+per cell, per-position sd = 4.3 pts, feeding synthetic strata straight through
+`analyze_mining.stratum_stats` → `analyze_mining.decide`:
+
+| n per primary stratum | positions scored | power at **+1.0** | **+1.4** | **+2.0** | **+3.0** |
+|---:|---:|---:|---:|---:|---:|
+| **40 (SHIPPED)** | **160** | 30% | **53%** | **81%** | 99% |
+| 55 | 220 | 40% | 67% | 92% | 100% |
+| 74 | 296 | 49% | 78% | 97% | 100% |
+| 100 | 400 | 63% | 90% | 99% | 100% |
+
+**Read the shipped design as: well powered (81%) for a ≥2 pts/ply effect, a coin flip (53%) at
+1.4, and underpowered (30%) at 1.0.** That is the right size for this question, because an effect
+below ~1 pt/ply on a *leaf-greedy* comparison has essentially no chance of surviving the
+sims-washout into a play gate (rider R2), so buying power there would buy findings we could not
+convert. n=40 is therefore chosen deliberately, not by budget alone — but the cost of that choice is
+stated rather than hidden.
+
+**This sharpens what branch G1 means, which matters because G1 is the likeliest outcome.** When A
+truly carries a +1.4 effect, **G1 ("all wash") still fires 41% of the time.** So a G1 verdict
+licenses *"no effect ≥2 pts/ply survives"* and **must not** be written up as *"the evaluators are
+equivalent"* — the readout is required to quote this table alongside any G1.
+
+**Measured familywise error, replacing the estimate in rider R8:** under the global null the map
+returns G1 85.7% of the time, and false convictions run **2.3% (A) + 2.7% (B) ≈ 4.9% familywise** —
+*better* than the naive ~9% two-test figure, because the CONVICT predicate also requires the control
+to be null or less than half the size, which suppresses the coincidences that a bare two-sided z
+would wave through.
+
 **Is +1.4 pts/ply a plausible size for a real steal?** Yes, and the arithmetic is not the naive one.
 JCZ loses the *game* by 6.50 pts/deck, which might seem to cap any per-ply advantage — but these are
 **selected disagreement plies**, and more importantly **our leaf-greedy pick is not what we play**.
@@ -449,9 +482,12 @@ corroborated one.
    against precisely this one-turn enumeration. A win localises to *"their pricing of this decision
    class, under their own decision procedure"* — not to a specific line of their source, and not to
    a term that will necessarily behave the same inside our leaf.
-8. **Multiplicity.** Two primary strata, two-sided, at `|z| ≥ 2` ⇒ familywise false-positive ≈ 9%
-   under the global null. Reported, and priced: the Bonferroni-2 threshold accompanies every primary
-   z, and the real error control is that a conviction buys a **gate**, not an adoption.
+8. **Multiplicity.** Two primary strata, two-sided, at `|z| ≥ 2`. The naive two-test figure would be
+   ≈9% familywise, but the shipped `decide()` was **simulated rather than estimated** (§4): the
+   measured familywise false-conviction rate under the global null is **≈4.9%** (A 2.3% + B 2.7%),
+   because CONVICT also requires the control to be null or less than half the size. Reported, and
+   priced: the Bonferroni-2 threshold accompanies every primary z, and the real error control is that
+   a conviction buys a **gate**, not an adoption.
 9. **Ties in the leaf argmax — and they are not rare.** Our pick is `argmax` over a float leaf;
    exact ties are resolved by lowest action index, deterministically. A ply whose top-2 leaf gap is
    exactly 0.0 is recorded with `leaf_tie = true` and **excluded from the candidate pool** — at such
