@@ -232,6 +232,123 @@ class TestClusterSE:
 
 
 # --------------------------------------------------------------------------- #
+# 3b. STRATA.json join — shapes, label normalisation, and the loud-failure     #
+#     path. This is the gap that let a real TypeError through: the extractor's #
+#     ACTUAL STRATA.json is a dict-of-lists keyed "STRAT_A"/"STRAT_B"/"STRAT_C" #
+#     (not a flat list of "A"/"B"/"C" rows), and index_strata_rows() originally #
+#     assumed the flat-list shape -- it iterated the dict's KEYS (strings) and  #
+#     died with `TypeError: string indices must be integers`.                  #
+# --------------------------------------------------------------------------- #
+class TestIndexStrataRowsShapesAndLabels:
+    def test_flat_list_shape(self):
+        strata = {"rows": [{"rid": "r1", "stratum": "A"},
+                           {"rid": "r2", "stratum": "STRAT_B"}]}
+        idx = AN.index_strata_rows(strata)
+        assert idx["r1"]["stratum"] == "A"
+        assert idx["r2"]["stratum"] == "B"
+
+    def test_dict_of_lists_shape(self):
+        """The REAL extractor shape: rows keyed by stratum, not a flat list."""
+        strata = {"rows": {"STRAT_A": [{"rid": "r1", "stratum": "STRAT_A"}],
+                           "STRAT_B": [{"rid": "r2", "stratum": "STRAT_B"}],
+                           "STRAT_C": [{"rid": "r3", "stratum": "STRAT_C"}]}}
+        idx = AN.index_strata_rows(strata)
+        assert set(idx) == {"r1", "r2", "r3"}
+        assert idx["r1"]["stratum"] == "A"
+        assert idx["r2"]["stratum"] == "B"
+        assert idx["r3"]["stratum"] == "C"
+
+    def test_index_never_mutates_the_input(self):
+        raw_rows = {"STRAT_A": [{"rid": "r1", "stratum": "STRAT_A"}]}
+        strata = {"rows": raw_rows}
+        AN.index_strata_rows(strata)
+        assert raw_rows["STRAT_A"][0]["stratum"] == "STRAT_A"
+
+    @pytest.mark.parametrize("label,expected", [
+        ("A", "A"), ("B", "B"), ("C", "C"),
+        ("STRAT_A", "A"), ("STRAT_B", "B"), ("STRAT_C", "C"),
+        ("strat_a", "A"), ("strat_c", "C"), ("a", "A"), ("  b  ", "B"),
+    ])
+    def test_normalize_stratum_label(self, label, expected):
+        assert AN.normalize_stratum_label(label) == expected
+
+    def test_normalize_stratum_label_raises_on_unknown(self):
+        with pytest.raises(AN.UnknownStratumLabelError):
+            AN.normalize_stratum_label("STRAT_D")
+
+    def test_normalize_stratum_label_raises_on_none(self):
+        with pytest.raises(AN.UnknownStratumLabelError):
+            AN.normalize_stratum_label(None)
+
+    def test_missing_join_raises_loudly(self, tmp_path):
+        """A record whose rid has no matching strata row must fail LOUDLY via
+        main() end-to-end, never silently drop into a smaller-n gate-failure
+        read that is indistinguishable from a real one."""
+        strata_path = tmp_path / "STRATA.json"
+        strata_path.write_text(json.dumps({
+            "schema": "carcassonne-jcz-mining-strata/v1", "gate_ok": True,
+            "min_n_gate": 25, "k_late": 14,
+            "rows": [{"rid": "r1", "stratum": "A", "root_id": "root1"}],
+        }))
+        records_dir = tmp_path / "records"
+        records_dir.mkdir()
+        (records_dir / "orphan.json").write_text(json.dumps(
+            {"rid": "orphan", "ok": True, "delta": 1.0, "root_id": "x"}))
+        out = tmp_path / "verdict.json"
+        with pytest.raises(AN.UnmatchedRecordsError):
+            AN.main(["--strata", str(strata_path),
+                    "--primary-records", str(records_dir),
+                    "--out", str(out)])
+
+    def test_assert_full_join_passes_silently_when_nothing_unmatched(self):
+        AN.assert_full_join([], "primary")   # must not raise
+
+
+STRATA_PATH = REPO / "measurement/jcz_mining_20260809/mining/STRATA.json"
+
+
+@pytest.mark.skipif(not STRATA_PATH.exists(), reason="real extractor output not present")
+class TestRealStrataContract:
+    """The wiring check that catches a shape/label mismatch BEFORE ~5h of real
+    scoring compute -- the gap a unit test alone (synthetic stratum_stats
+    dicts) cannot close, because it never touches the real STRATA.json shape."""
+
+    def test_end_to_end_wiring_against_real_strata(self, tmp_path):
+        strata = json.loads(STRATA_PATH.read_text())
+        strata_rows = AN.index_strata_rows(strata)
+        assert strata_rows, "no rows recovered from the real STRATA.json"
+        assert set(r["stratum"] for r in strata_rows.values()) <= {"A", "B", "C"}
+
+        by_stratum: dict = {}
+        for row in strata_rows.values():
+            by_stratum[row["stratum"]] = by_stratum.get(row["stratum"], 0) + 1
+
+        records_dir = tmp_path / "records"
+        records_dir.mkdir()
+        for i, (rid, row) in enumerate(strata_rows.items()):
+            rec = {
+                "rid": rid, "ok": True,
+                "delta": ((i % 7) - 3) * 0.1,
+                "m": 32, "crn_verified": True, "distinct_afterstates": 2,
+                "root_id": row.get("root_id", rid),
+                "game_label": row.get("game_label", row.get("root_id", rid)),
+            }
+            (records_dir / f"{rid}.json").write_text(json.dumps(rec))
+
+        out = tmp_path / "verdict.json"
+        rc = AN.main(["--strata", str(STRATA_PATH),
+                     "--primary-records", str(records_dir),
+                     "--out", str(out)])
+        assert rc == 0
+        verdict = json.loads(out.read_text())
+        assert verdict["A"]["n"] == by_stratum.get("A", 0)
+        assert verdict["B"]["n"] == by_stratum.get("B", 0)
+        assert verdict["C"]["n"] == by_stratum.get("C", 0)
+        assert verdict["scoring_health"]["primary"]["n_failed"] == 0
+        assert not verdict["join"]["primary_unmatched_rids"]
+
+
+# --------------------------------------------------------------------------- #
 # 4. CONVICTED_UNCORROBORATED labelling                                        #
 # --------------------------------------------------------------------------- #
 class TestConvictedUncorroborated:

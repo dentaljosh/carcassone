@@ -193,15 +193,66 @@ _JOIN_KEYS = ("stratum", "ply_class", "our_leaf_gap", "k_remaining", "search_pic
              "rules_profile")
 
 
+#: Every spelling the extractor (or a future revision of it) might use for a
+#: stratum label, mapped to this module's internal "A"/"B"/"C". The real
+#: STRATA.json (2026-08-09 extraction) uses "STRAT_A"/"STRAT_B"/"STRAT_C"
+#: throughout (both `rows[*]["stratum"]` and the `strata["strata"]` summary
+#: block keys) — matched case-insensitively so "A", "STRAT_A" and "strat_a"
+#: all land the same place.
+_LABEL_MAP = {"A": "A", "B": "B", "C": "C",
+             "STRAT_A": "A", "STRAT_B": "B", "STRAT_C": "C"}
+
+
+class UnknownStratumLabelError(ValueError):
+    """A stratum label was seen that this module cannot map to A/B/C. Raised
+    rather than silently dropped: a silently-dropped row reads as a smaller n
+    and is indistinguishable from a real min_n_gate failure."""
+
+
+def normalize_stratum_label(label) -> str:
+    if label is None:
+        raise UnknownStratumLabelError("stratum label is None")
+    key = str(label).strip().upper()
+    if key in _LABEL_MAP:
+        return _LABEL_MAP[key]
+    raise UnknownStratumLabelError(
+        f"unrecognized stratum label {label!r} — expected one of "
+        f"{sorted(_LABEL_MAP)} (case-insensitive)")
+
+
+class UnmatchedRecordsError(RuntimeError):
+    """One or more `ok` oracle_score_pilot records could not be joined to a
+    STRATA.json row by rid. A partial join is the same silent-failure class as
+    a stratum being incorrectly gated — it must never pass quietly (a missing
+    row makes a stratum's n look smaller than it really is, indistinguishable
+    from a real min_n_gate failure)."""
+
+
 def index_strata_rows(strata: dict) -> dict:
-    return {r["rid"]: r for r in strata.get("rows", [])}
+    """rid -> row, from STRATA.json['rows'] in EITHER shape the extractor might
+    emit: a flat list of rows, or a dict-of-lists keyed by stratum (as the real
+    2026-08-09 extraction does: {"STRAT_A": [...], "STRAT_B": [...], "STRAT_C":
+    [...]}). Every row's own `stratum` field is normalised in place (on a COPY —
+    the input dict/list is never mutated) to this module's "A"/"B"/"C", so every
+    downstream consumer sees one spelling regardless of the extractor's."""
+    raw = strata.get("rows", [])
+    flat = ([row for rows in raw.values() for row in rows]
+           if isinstance(raw, dict) else list(raw))
+    out = {}
+    for row in flat:
+        r = dict(row)
+        if r.get("stratum") is not None:
+            r["stratum"] = normalize_stratum_label(r["stratum"])
+        out[r["rid"]] = r
+    return out
 
 
 def join_records(records: list, strata_rows: dict) -> tuple[list, list]:
     """Keep `ok` records and stamp the STRATA.json metadata onto them. A record
     whose rid is missing from strata['rows'] is DROPPED and reported by rid,
     never silently included with an undefined stratum — that would put it
-    nowhere and would be invisible in every stratum's n."""
+    nowhere and would be invisible in every stratum's n. Callers MUST check the
+    returned unmatched list (`assert_full_join`) rather than ignore it."""
     joined, unmatched = [], []
     for r in records:
         if not r.get("ok"):
@@ -216,6 +267,16 @@ def join_records(records: list, strata_rows: dict) -> tuple[list, list]:
                 j[k] = srow[k]
         joined.append(j)
     return joined, unmatched
+
+
+def assert_full_join(unmatched: list, label: str) -> None:
+    """Fail LOUDLY on a partial join — see UnmatchedRecordsError."""
+    if unmatched:
+        raise UnmatchedRecordsError(
+            f"{len(unmatched)} {label} record(s) with ok=true had no matching "
+            "STRATA.json row (by rid). A partial join is indistinguishable "
+            "from a real min_n_gate failure and must not pass silently. "
+            f"Unmatched rids (up to 10 shown): {unmatched[:10]}")
 
 
 # --------------------------------------------------------------------------- #
@@ -462,6 +523,8 @@ def main(argv=None) -> int:
 
     primary, primary_unmatched = join_records(primary_all, strata_rows)
     secondary, secondary_unmatched = join_records(secondary_all, strata_rows)
+    assert_full_join(primary_unmatched, "primary")
+    assert_full_join(secondary_unmatched, "secondary")
 
     strat_stats = {L: stratum_stats([r for r in primary if r.get("stratum") == L], L)
                   for L in STRATA_LETTERS}
