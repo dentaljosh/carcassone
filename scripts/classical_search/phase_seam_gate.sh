@@ -27,8 +27,16 @@ set -u
 REPO=/home/doctor/projects/carcassone
 WT=$REPO/.claude/worktrees/agent-a195cbd889c3187bf
 PY=$REPO/.venv/bin/python
-SCRATCH=/tmp/claude-1000/-home-doctor-projects-carcassone/c0b61ee1-6d62-430c-ba1e-fd232f3cbd5a/scratchpad
-WHEEL=$SCRATCH/wheels/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl
+# Wheel lives under the measurement dir, NOT /tmp — the 2026-08-09 06:51 dirty reboot wiped
+# the session scratchpad mid-chain and the gate false-blocked on the missing artifact.
+WHEEL_DIR=/home/doctor/projects/carcassone/measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE/wheels
+WHEEL=$WHEEL_DIR/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl
+if [ ! -f "$WHEEL" ]; then
+  echo "[gate $(ts)] seam wheel absent; rebuilding from the seam worktree (maturin build, release)"
+  /home/doctor/projects/carcassone/.venv/bin/maturin build --release \
+    -m /home/doctor/projects/carcassone/.claude/worktrees/agent-a195cbd889c3187bf/rust/carc/carc-py/Cargo.toml \
+    -o "$WHEEL_DIR" || { echo "[gate $(ts)] FATAL: wheel rebuild failed"; exit 2; }
+fi
 SHADOW=$SCRATCH/carc_rs_shadow
 OUT=$REPO/measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE
 mkdir -p "$OUT"
