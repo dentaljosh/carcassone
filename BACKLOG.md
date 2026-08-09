@@ -13,6 +13,54 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-08-09 — External-AI matches: play other implementations' AIs (Joshua: "challenge their devs")
+
+**Context:** Joshua, after the n=12 dead-even E4 read: other Carcassonne apps claim good AI —
+challenge their developers. **This is an attack on structural blocker #1** (no external
+non-saturated reference): every reference we have ever used is in-lineage or saturated, and an
+independent implementation's AI is by construction outside our lineage on leaf, search, AND
+engine quirks. Four concrete forms, cheapest-tractable first:
+
+1. **JCloisterZone's AI (automatable TODAY, and the pieces are already validated).** The D0/D1
+   spike proved JCZ 5.x runs headless (`com.jcloisterzone.engine.Engine`, line-delimited JSON,
+   ~2 min build on the pre-installed JDK 17) and — the decisive part — **`ForcedDrawTilePack`
+   takes our deck order verbatim, so deck-paired external matches have NO RNG-matching problem**
+   (the historical cost driver, already de-risked for the rules-oracle use). JCZ ships an AI
+   (the "legacy AI" plugin lineage). ⚠️ Honest priors: JCZ's AI is believed simple-heuristic
+   tier — it may saturate immediately (wr ≥0.9), in which case it joins Tier-1 as a floor
+   marker, not a ruler. Even then it has referee value: any legality/scoring disagreement
+   mid-match is a free rules-fidelity finding (D1's purpose), and a fully-independent fixed
+   point is worth having on the elo map. Cost: D1 harness build (~days, was DE-RISKED NOT
+   BUILT) + n=400 paired = box-hours.
+2. **The official Asmodee Digital app** ("hard" AI = the most-played commercial reference). No
+   API; matches mean manual relay through the phone UI (E4-pace, ~n≤tens) or the social route.
+   ToS risk on any automation; treat as manual-only.
+3. **Academic engines** from the 2020-22 Carcassonne-AI literature (the attempts CLAUDE.md
+   says stalled) — code sometimes on GitHub; same shape as JCZ (automatable if runnable), with
+   the bonus that beating a *published* agent is a citable external anchor for the papers
+   track.
+4. **The literal dev challenge (the social form).** Fun and possibly the only way to reach
+   closed-source AIs, but ⚠️ **a handful of exhibition games is an anecdote at the luck floor**
+   (~6% floor; n=12 resolves nothing — see the E4 record itself). If ever done, insist on the
+   E4 protocol: seat-swap deck-pairs, archived `(deck_seed, actions)`, n≥48 for a coarse read.
+   Side benefit: devs who engage might expose an engine API, converting form 2 into form 1.
+
+**Why this beats more E4 games for the REFERENCE question:** an external AI plays at machine
+pace (n=400 overnight, not months) and does not learn mid-series (the non-stationary-human
+confound is absent). Why it does NOT replace E4: no external AI is known-strong; the pro-human
+reference remains the only ground truth for "superhuman", and BGA-style play against rated
+humans is ToS-fraught and slow.
+
+**Rules-fidelity rider (load-bearing):** any cross-engine match must first pin the OTHER
+engine's rules edition against ours (the D0 oracle showed JCZ `basic:2` == our tile data 31/32
+kinds with the 1 divergence being our own R9 fix; the five structural divergences the walled
+era carried are exactly the kind of thing that silently corrupts a cross-engine result). A
+match under mismatched editions measures rules, not strength.
+
+**Why deferred:** D1 (the replay/turn harness) is the build prerequisite and is gated on F9
+Phase A per its own row; the JCZ-AI match adds an opponent-driver on top. Needs Joshua's
+funding call on the D1+driver build. LEVER_INDEX row added under "external-AI reference match".
+
 ## 2026-08-02 — Differential rules oracle (JCloisterZone as external referee) — ✅ BUILT + VALIDATED 2026-08-03 (F9/D1)
 
 > ✅ **DONE — this is no longer a backlog item.** Built as roadmap **F9/D1** and validated the same
