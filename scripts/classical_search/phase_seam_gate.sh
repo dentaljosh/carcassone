@@ -37,7 +37,7 @@ if [ ! -f "$WHEEL" ]; then
     -m /home/doctor/projects/carcassone/.claude/worktrees/agent-a195cbd889c3187bf/rust/carc/carc-py/Cargo.toml \
     -o "$WHEEL_DIR" || { echo "[gate $(ts)] FATAL: wheel rebuild failed"; exit 2; }
 fi
-SHADOW=$SCRATCH/carc_rs_shadow
+SHADOW=$WHEEL_DIR/carc_rs_shadow
 OUT=$REPO/measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE
 mkdir -p "$OUT"
 ts() { date +%F_%T; }
