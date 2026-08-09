@@ -135,12 +135,32 @@ see it coming back or paying off. Read straight off `flat_leaf`:
 |---|---|---|
 | **FIELD** (farmer) | **always** | farms never close; the leaf's farm-growth block credits the adjacent *city*, never the farmer's return |
 | **ROAD** | **always** | open and closed road points are equal ⇒ Δ = 0; roads are absent from `flat_closure_bonus` **by design** |
-| **CITY** | `city_root_finished` or `city_root_open_n <= 0` or `cfg.closure_p.get(open_n, 0.0) == 0.0` | the production schedule is `{1: 0.5, 2: 0.2}` ⇒ **`open_n >= 3` is exactly 0** (the v2.7 `DROP_THREE_OPEN` decision) |
-| **CLOISTER** | `needed = 8 - _surrounding_count(...)`; `needed <= 0` or `cfg.closure_p.get(needed, 0.0) == 0.0` | same schedule ⇒ **`needed >= 3` is exactly 0** |
+| **CITY** | `city_root_finished` or `city_root_open_n <= 0` or `cfg.closure_p.get(open_n, 0.0) == 0.0` | the schedule's last nonzero entry sets the boundary — see the correction note below |
+| **CLOISTER** | `needed = 8 - _surrounding_count(...)`; `needed <= 0` or `cfg.closure_p.get(needed, 0.0) == 0.0` | same schedule |
 
 The `closure_p` table is **read from the loaded production config**, never hardcoded, so a leaf
-change cannot silently invalidate the stratifier. Every boundary (`open_n` 2 vs 3, `needed` 2 vs 3,
-`open_n <= 0`, farmer, road) is pinned in `tests/test_jcz_mining.py`.
+change cannot silently invalidate the stratifier. Every boundary is pinned in
+`tests/test_jcz_mining_extract.py`, including a test that feeds a modified schedule and proves the
+classifier's boundary moves with it.
+
+> **⚠️ CORRECTION, stamped 2026-08-09 BEFORE any scoring cell ran (extraction only had been run;
+> no world drawn, no Δ computed).** The prose above originally asserted the production schedule is
+> `{1: 0.5, 2: 0.2}` so that `open_n >= 3` is exactly 0. **That is wrong.** The shipped production
+> leaf resolves to **`closure_p = {1: 0.5, 2: 0.2, 3: 0.05}`** — `CARCASSONNE_V25_DROP_THREE_OPEN`
+> is an **opt-in env flag, default OFF** (`virtual_score_v2.py:221-224`), and nothing in the
+> production env sets it. So the real DEAD boundary is **`open_n >= 4`** (and `needed >= 4` for
+> cloisters), not `>= 3`; a 3-open city carries a real, if small, anticipation credit.
+> The inherited claim in
+> [TERM_ARCHAEOLOGY.md](../jcz_match_20260809/TERM_ARCHAEOLOGY.md) §2 and §3c ("≥3 open ⇒ 0
+> exactly") is stale for the same reason and has been annotated there.
+>
+> **Nothing about the design changes.** The `DEAD` predicate was specified as *"the leaf assigns
+> closure-anticipation probability exactly zero"* and mandated to read `closure_p` from the loaded
+> cfg — that rule is what surfaced the error, and the implementation was correct throughout. Only
+> this worked example was stale. The consequence is that the DEAD/LIVE split sits one step further
+> out than the prose described, which makes STRAT-A slightly *narrower* and STRAT-B's `live_vec`
+> slightly *wider* than a reader of the original text would have guessed. The resolved table is
+> stamped into the extractor's `.meta.json` and must be quoted in the readout.
 
 `DEAD` is precisely the set our leaf is blind to and JCZ prices with two extra resolutions —
 **which feature class** (S4) and **how dead** (S1). It is the located hole, made computable.
