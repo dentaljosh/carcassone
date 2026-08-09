@@ -146,11 +146,25 @@ s = json.load(open(path))
 pz = s.get("paired_z"); pz = float("nan") if pz is None else float(pz)
 mz = s.get("margin_z", s.get("paired_margin_z")); mz = float("nan") if mz is None else float(mz)
 prof, r9, ch, co = "?", "?", "?", "?"
+def dig(d, *path_):
+    for k in path_:
+        if not isinstance(d, dict):
+            return None
+        d = d.get(k)
+    return d
 if man_path != "-" and os.path.exists(man_path):
     m = json.load(open(man_path))
     rp = m.get("rules_profile") or {}
     prof = rp.get("name", "?"); r9 = str(rp.get("r9_env_ok", "?")).lower()
-    ch = str(m.get("cand_leaf_hash", "?"))[:16]; co = str(m.get("opp_leaf_hash", "?"))[:16]
+    # candidate hash lives under cand_curve_drift for a drift cell and under the
+    # netprior/curve125 provenance for the identity cell -- try both, don't guess.
+    cand = (dig(m, "config", "cand_curve_drift", "leaf_hash")
+            or dig(m, "config", "champion", "netprior_leaf", "leaf_hash")
+            or dig(m, "config", "champion", "curve125_leaf_provenance", "leaf_hash")
+            or dig(m, "config", "champion", "leaf_hash"))
+    opp = (dig(m, "config", "opponent", "leaf_hash")
+           or dig(m, "config", "opponent", "curve125_leaf_provenance", "leaf_hash"))
+    ch = str(cand or "?")[:16]; co = str(opp or "?")[:16]
 print(f"{cell}\t{status}\t{s.get('n','?')}\t{s.get('W','?')}\t{s.get('D','?')}\t{s.get('L','?')}\t"
       f"{s.get('elo',float('nan')):.1f}\t{s.get('elo_sig_1sigma',float('nan')):.1f}\t"
       f"{mz:.2f}\t{pz:.2f}\t{prof}\t{r9}\t{ch}\t{co}\t{secs}\t{time.strftime('%F_%T')}")
