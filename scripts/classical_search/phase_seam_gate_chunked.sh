@@ -83,7 +83,7 @@ SHADOW=$WHEEL_DIR/carc_rs_shadow
 CHUNKDIR=$OUT/chunks
 MAX_ATTEMPTS=${GATE_MAX_ATTEMPTS:-3}
 CHUNK_TIMEOUT=${GATE_CHUNK_TIMEOUT:-3600}
-MEM_HIGH=${GATE_MEM_HIGH:-5G}
+MEM_HIGH=${GATE_MEM_HIGH:-7G}   # just under MEM_MAX on purpose -- see chunk_limits
 MEM_MAX=${GATE_MEM_MAX:-8G}
 
 ts() { date +%F_%T; }
@@ -280,6 +280,23 @@ fi
 # A chunk that genuinely wants >8G now gets OOM-KILLED, which the time -v witness
 # reports as a crash. That is the intended degradation: a loud, attributable death
 # beats a silent stall.
+# GATE_ONLY / GATE_DEFER / GATE_EXCLUDE are pipe-separated GLOB lists. They must be
+# matched through this helper, never by interpolating the whole string into a `case`
+# pattern: bash does NOT re-parse `|` as alternation when the pattern comes from a
+# variable, so `case $n in ${VAR})` with VAR="a*|b*" silently matches NOTHING.
+# Single-pattern knobs happened to work, which is exactly what kept the bug hidden.
+# Failure direction was safe for EXCLUDE (cells just run) but NOT for DEFER -- a
+# multi-pattern defer would have quietly attempted the cell it was meant to hold back.
+matches_any() {  # $1=name  $2=pipe-separated glob list -> 0 if any matches
+  local name="$1" pats="${2:-}" pat
+  [ -z "$pats" ] && return 1
+  local IFS='|'
+  for pat in $pats; do
+    case "$name" in $pat) return 0 ;; esac
+  done
+  return 1
+}
+
 chunk_limits() {  # $1=chunk name -> "MemoryHigh MemoryMax timeout_s"
   case "$1" in
     # 15e07 is the one genuinely large cell in the suite: test_puct_exact_max_k_
@@ -293,7 +310,7 @@ chunk_limits() {  # $1=chunk name -> "MemoryHigh MemoryMax timeout_s"
     # GB/min, so the ceiling was moved once, to 24 GB, on a 41 GB box. If a run
     # ever OOMs at 24 GB, STOP and report the cell as unbounded -- do not raise
     # again; the local VM dies around 34 GB (reference_wsl2_host_memory_teardown).
-    15e07_*) echo "20G 24G 14400" ;;
+    15e07_*) echo "24G 24G 14400" ;;
     15*|16*) echo "7G 8G 7200" ;;
     *)                   echo "$MEM_HIGH $MEM_MAX $CHUNK_TIMEOUT" ;;
   esac
@@ -433,7 +450,7 @@ run_tree() {  # $1=label $2=tree $3=pp-prefix
     # a real gate: a filtered run reaches the verdict block with chunks missing and
     # would be withheld as INCONCLUSIVE, which is the intended safety behaviour.
     if [ -n "${GATE_ONLY:-}" ]; then
-      case "${c%%|*}" in ${GATE_ONLY}) ;; *) continue ;; esac
+      matches_any "${c%%|*}" "${GATE_ONLY}" || continue
     fi
     # GATE_DEFER: skip a chunk WITHOUT attempting it. For a chunk under active
     # debugging, so the other 45 can make progress meanwhile instead of the whole
@@ -441,9 +458,19 @@ run_tree() {  # $1=label $2=tree $3=pp-prefix
     # the completeness guard keeps the verdict INCOMPLETE -- deferring can never
     # produce a verdict, only postpone one. Clear it before the final run.
     if [ -n "${GATE_DEFER:-}" ]; then
-      case "${c%%|*}" in
-        ${GATE_DEFER}) log "  [$label/${c%%|*}] DEFERRED by GATE_DEFER"; continue ;;
-      esac
+      if matches_any "${c%%|*}" "${GATE_DEFER}"; then
+        log "  [$label/${c%%|*}] DEFERRED by GATE_DEFER"; continue
+      fi
+    fi
+    # GATE_EXCLUDE: drop a cell from the gate ENTIRELY, on BOTH legs, and admit it
+    # in the output. Unlike GATE_DEFER (which postpones and keeps the verdict
+    # INCOMPLETE), this lets a verdict be reached with a hole in it -- so it is
+    # only ever correct with the hole reported. Applied here, in the one loop that
+    # runs both legs, so the exclusion cannot be asymmetric.
+    if [ -n "${GATE_EXCLUDE:-}" ]; then
+      if matches_any "${c%%|*}" "${GATE_EXCLUDE}"; then
+        log "  [$label/${c%%|*}] EXCLUDED (coverage gap, both legs)"; continue
+      fi
     fi
     run_chunk "$label" "$2" "$3" "${c%%|*}" "${c#*|}" || poison=1
   done
@@ -452,6 +479,16 @@ run_tree() {  # $1=label $2=tree $3=pp-prefix
 
 run_tree seam "$WT" "$SHADOW"; seam_poison=$?
 run_tree main "$REPO" ""; main_poison=$?
+
+NEXCL=0
+EXCLUDED_NAMES=""
+if [ -n "${GATE_EXCLUDE:-}" ]; then
+  for c in "${CHUNKS[@]}"; do
+    if matches_any "${c%%|*}" "${GATE_EXCLUDE}"; then
+      NEXCL=$((NEXCL + 1)); EXCLUDED_NAMES="$EXCLUDED_NAMES ${c%%|*}"
+    fi
+  done
+fi
 
 # ------------------------------- the verdict -------------------------------
 collect() {  # $1=label -> sorted unique failing ids
@@ -476,6 +513,14 @@ NN=$(grep -c . "$OUT/novel_failures.txt")
   echo "seam tree : $WT  ($(git -C "$WT" rev-parse --short HEAD 2>/dev/null))"
   echo "main tree : $REPO ($(git -C "$REPO" rev-parse --short HEAD 2>/dev/null))"
   echo "chunks    : ${#CHUNKS[@]} per tree"
+  if [ "$NEXCL" = 0 ]; then
+    echo "BRANCH    : FULL -- every cell ran on both trees, no coverage gap"
+  else
+    echo "BRANCH    : PARTIAL -- $NEXCL cell(s) EXCLUDED from BOTH legs (coverage gap)"
+    echo "excluded  :$EXCLUDED_NAMES"
+    echo "  These cells were not run on either tree, so the gate makes NO claim"
+    echo "  about them. The verdict below covers the remaining cells only."
+  fi
   echo "failing on seam : $NS"
   echo "failing on main : $NM"
   echo "NOVEL to seam   : $NN"
@@ -486,7 +531,7 @@ cat "$OUT/gate_summary.txt" | sed 's/^/[gate] /'
 # Without this, a GATE_ONLY-filtered smoke run (or any interrupted run whose caller
 # jumped straight to the verdict block) would compute "0 novel" from a handful of
 # chunks and write GREEN. Absence of evidence is not evidence of absence.
-EXPECT=$((${#CHUNKS[@]} * 2))
+EXPECT=$(( (${#CHUNKS[@]} - NEXCL) * 2 ))
 HAVE=$(ls "$CHUNKDIR"/seam/*.json "$CHUNKDIR"/main/*.json 2>/dev/null | wc -l)
 if [ "$HAVE" != "$EXPECT" ]; then
   log "VERDICT WITHHELD: $HAVE/$EXPECT chunk artifacts present. Rerun to resume."
@@ -500,7 +545,43 @@ if [ "$seam_poison" != 0 ] || [ "$main_poison" != 0 ]; then
   exit 4
 fi
 
-if [ "$NN" = 0 ]; then
+if [ "$NEXCL" != 0 ]; then
+  {
+    echo "COVERAGE GAP — this gate did NOT cover every cell."
+    echo "VERDICT is GREEN_WITH_GAP: the merge is HELD for owner review, by design."
+    echo "excluded from BOTH legs:$EXCLUDED_NAMES"
+    echo
+    echo "Why: the cell could not be run within a memory ceiling that is safe on"
+    echo "any available box. The ceiling was not raised further because the cap"
+    echo "lives inside the WSL VM that the work itself runs in, so cap creep risks"
+    echo "the session, not just the cell."
+    echo
+    echo "Residual risk argument (why a verdict is still worth having): the seam"
+    echo "under test is a DEFAULT-OFF leaf phase multiplier; the excluded cell is"
+    echo "an exact_max_k latch test; and its test file is byte-identical across the"
+    echo "two trees. So the excluded cell is unlikely to be where a seam-induced"
+    echo "regression would show. That is an argument for accepting a KNOWN gap --"
+    echo "it is not evidence the cell passes."
+    echo
+    echo "WHAT HAPPENS NEXT: night_chain refuses any verdict that is not exactly"
+    echo "GREEN, so it stamps PHASE_ARM_BLOCKED and stops before the merge. In THIS"
+    echo "case that marker means HELD-FOR-REVIEW, not seam-failed -- the diff over"
+    echo "the cells that DID run was clean. Joshua decides whether to accept the gap"
+    echo "and merge, or to close it first."
+  } > "$OUT/COVERAGE_GAP.txt"
+  log "COVERAGE GAP recorded:$EXCLUDED_NAMES"
+fi
+
+# The VERDICT file stays a SINGLE bare token -- night_chain.sh reads it as
+# `V=$(cat VERDICT)` and branches on `[ "$V" != "GREEN" ]`, so any extra text would
+# read as a failed gate. The partial branch exploits exactly that: GREEN_WITH_GAP
+# is refused by the EXISTING check, so a known coverage gap can never ride an
+# automatic merge through while the owner is away. No new trust in a new path.
+if [ "$NN" = 0 ] && [ "$NEXCL" != 0 ]; then
+  log "VERDICT: GREEN_WITH_GAP — no novel failures among the cells that ran, but"
+  log "  $NEXCL cell(s) were excluded. Merge HELD for owner review."
+  echo GREEN_WITH_GAP > "$OUT/VERDICT"
+elif [ "$NN" = 0 ]; then
   log "VERDICT: GREEN — every seam-side failure also fails on main (pre-existing)."
   echo GREEN > "$OUT/VERDICT"
 else

@@ -19,8 +19,14 @@ ts() { date +%F_%T; }
 # Operator knobs (GATE_DEFER, GATE_MAX_ATTEMPTS, ...) without editing this file,
 # so they survive a supervisor-driven relaunch too.
 if [ -f /home/doctor/gate_ops/gate.env ]; then
+  # `set -a` exports EVERYTHING the file assigns. The previous version listed the
+  # knobs explicitly and the list went stale the moment a new one was added:
+  # GATE_EXCLUDE was set but never exported, so the gate did not see it and ran the
+  # very cell the file existed to hold back -- on an 11.9 GB VM under a 24 GB cap.
+  # Caught within seconds, but an export whitelist is a footgun by construction.
+  set -a
   . /home/doctor/gate_ops/gate.env
-  export GATE_DEFER GATE_ONLY GATE_MAX_ATTEMPTS 2>/dev/null || true
+  set +a
 fi
 
 exec 9>"$LOCK"
