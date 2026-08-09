@@ -418,6 +418,158 @@ class TestSamplingClaimsGamesInOrder:
 
 
 # --------------------------------------------------------------------------- #
+# 4b. the search-pick backfill (PREREG §2.1 / §3.4, context-only column)          #
+# --------------------------------------------------------------------------- #
+class TestSearchPickBackfill:
+    """Catches: a backfill that silently perturbs the sampling frame.
+
+    `search-pick` rewrites STRATA.json and both positions files IN PLACE after the
+    frame has been assigned and committed. If it reordered a row, coerced an int,
+    or dropped a key, the damage would not look like an error — it would look like
+    a result, because the scorer would simply score a slightly different frame.
+    The engine is stubbed here so these pin the PLUMBING, not the champion.
+    """
+
+    def _build(self, tmp_path):
+        rows = [_a("a1", "G1", 1, gap=3.0), _a("a2", "G2", 1, gap=2.0),
+                _b("b1", "G3", 1, gap=1.5), _pool("p1", "G4", 1, gap=2.5),
+                _pool("p2", "G5", 1, gap=1.4)]
+        cand = _write(tmp_path, rows)
+        M.assign(cand, tmp_path / "S.json", tmp_path / "pos.jsonl",
+                 k_late=14, n_target=5, min_n=1)
+        return tmp_path / "S.json", tmp_path / "pos.jsonl", tmp_path / "pos_AB.jsonl"
+
+    @staticmethod
+    def _stub(picks_by_rid, monkeypatch, err_for=()):
+        def fake(item):
+            rid = item[0]
+            if rid in err_for:
+                return rid, None, "RuntimeError: stubbed failure"
+            return rid, picks_by_rid.get(rid, 999), None
+        monkeypatch.setattr(M, "_sp_cell", fake)
+        monkeypatch.setattr(M, "_sp_init", lambda: None)
+
+    def test_only_the_two_backfill_fields_change(self, tmp_path, monkeypatch, capsys):
+        S, P, AB = self._build(tmp_path)
+        before_rows = [json.loads(x) for x in P.read_text().splitlines() if x.strip()]
+        before_frames = {r["rid"]: M._frame_of(r) for r in before_rows}
+        before_strata = json.loads(S.read_text())
+
+        self._stub({r["rid"]: 4242 for r in before_rows}, monkeypatch)
+        M.search_pick_backfill(S, P, AB, workers=1)
+
+        after_rows = [json.loads(x) for x in P.read_text().splitlines() if x.strip()]
+        assert [r["rid"] for r in after_rows] == [r["rid"] for r in before_rows]
+        for r in after_rows:
+            assert r["search_pick"] == 4242
+            assert M._frame_of(r) == before_frames[r["rid"]]
+        after_strata = json.loads(S.read_text())
+        for k in (M.STRAT_A, M.STRAT_B, M.STRAT_C):
+            for b, a in zip(before_strata["rows"][k], after_strata["rows"][k]):
+                assert M._frame_of(a) == M._frame_of(b)
+        # every non-`rows` key of STRATA.json survives, plus one additive summary
+        assert set(after_strata) - set(before_strata) == {"search_pick_backfill"}
+
+    def test_a_second_run_is_a_no_op(self, tmp_path, monkeypatch, capsys):
+        """Idempotence is what makes this resumable: a run interrupted halfway must
+        be re-runnable without recomputing (or re-deciding) anything already done."""
+        S, P, AB = self._build(tmp_path)
+        self._stub({}, monkeypatch)
+        M.search_pick_backfill(S, P, AB, workers=1)
+        first = (json.loads(S.read_text())["rows"], P.read_bytes(), AB.read_bytes())
+        summary = M.search_pick_backfill(S, P, AB, workers=1)
+        assert summary["n_computed_this_run"] == 0
+        # The ROWS and both positions files are byte-identical. The only thing that
+        # legitimately moves is the run's own bookkeeping in the additive top-level
+        # `search_pick_backfill` block (`n_computed_this_run`, `wall_secs`).
+        assert (json.loads(S.read_text())["rows"], P.read_bytes(), AB.read_bytes()) == first
+
+    def test_a_failing_row_is_recorded_and_retried_not_fatal(self, tmp_path,
+                                                             monkeypatch, capsys):
+        """Best-effort by contract: the column must never be able to block the run.
+        A null pick stays in the todo set, so the next run retries it."""
+        S, P, AB = self._build(tmp_path)
+        rids = [r["rid"] for r in json.loads(S.read_text())["rows"][M.STRAT_A]]
+        self._stub({}, monkeypatch, err_for={rids[0]})
+        summary = M.search_pick_backfill(S, P, AB, workers=1)
+        assert summary["n_errors"] == 1
+        assert summary["n_with_search_pick"] == summary["n_sampled"] - 1
+        bad = next(r for r in json.loads(S.read_text())["rows"][M.STRAT_A]
+                   if r["rid"] == rids[0])
+        assert bad["search_pick"] is None and "stubbed failure" in bad["search_pick_error"]
+        self._stub({rids[0]: 7}, monkeypatch)
+        again = M.search_pick_backfill(S, P, AB, workers=1)
+        assert again["n_computed_this_run"] == 1 and again["n_errors"] == 0
+
+    def test_files_still_load_through_the_scorer_loader(self, tmp_path, monkeypatch,
+                                                        capsys):
+        S, P, AB = self._build(tmp_path)
+        self._stub({}, monkeypatch)
+        M.search_pick_backfill(S, P, AB, workers=1)
+        OSP = _load("oracle_score_pilot", "scripts/measurement_infra/oracle_score_pilot.py")
+        for p in (P, AB):
+            rows = OSP.load_positions_jsonl(p)
+            assert rows and len({r["rid"] for r in rows}) == len(rows)
+
+    def test_ab_path_is_derived_when_not_given(self, tmp_path, monkeypatch, capsys):
+        S, P, AB = self._build(tmp_path)
+        self._stub({}, monkeypatch)
+        summary = M.search_pick_backfill(S, P, None, workers=1)
+        assert [f["path"] for f in summary["positions_files"]] == [str(P), str(AB)]
+
+    def test_frame_guard_fires_on_a_perturbation(self):
+        """The guard itself, in isolation — it is the one thing standing between a
+        buggy rewrite and a silently re-sampled frame."""
+        before = [{"rid": "x", "ply": 3}, {"rid": "y", "ply": 4}]
+        M.assert_frame_unchanged(before, [dict(r) for r in before], "ok")
+        with pytest.raises(AssertionError):
+            M.assert_frame_unchanged(before, [{"rid": "x", "ply": 3}, {"rid": "y", "ply": 5}], "w")
+        with pytest.raises(AssertionError):
+            M.assert_frame_unchanged(before, [{"rid": "x", "ply": 3}], "w")
+        with pytest.raises(AssertionError):
+            M.assert_frame_unchanged(before, [{"rid": "x"}, {"rid": "y", "ply": 4}], "w")
+
+    def test_backfill_fields_are_exactly_the_two(self):
+        assert M.BACKFILL_FIELDS == ("search_pick", "search_pick_error")
+        assert M._frame_of({"a": 1, "search_pick": 2, "search_pick_error": "e"}) == {"a": 1}
+
+
+@pytest.mark.skipif(not CORPUS.exists(), reason="the n=400 JCZ match corpus is not on disk")
+class TestSearchPickRealRoots:
+    """The engine leg, deliberately at FIXTURE SCALE (2 games -> a couple of rows,
+    a few seconds of champion search). Catches: the backfill replaying the root by
+    a different path from `extract`/the scorer, which would silently make the
+    context column describe a different position from the one being scored."""
+
+    def test_backfill_computes_a_real_pick_and_preserves_the_frame(self, tmp_path):
+        out, rows, _meta = _run_extract(tmp_path, 2)
+        M.assign(out, tmp_path / "S.json", tmp_path / "pos.jsonl",
+                 k_late=14, n_target=2, min_n=1)
+        S = tmp_path / "S.json"
+        before = {r["rid"]: M._frame_of(r)
+                  for k in (M.STRAT_A, M.STRAT_B, M.STRAT_C)
+                  for r in json.loads(S.read_text())["rows"][k]}
+        assert 0 < len(before) <= 6, f"fixture scale guard: {len(before)} rows"
+
+        r = subprocess.run(
+            [sys.executable, str(MODULE_PATH), "search-pick", "--strata", str(S),
+             "--positions", str(tmp_path / "pos.jsonl")],
+            capture_output=True, text=True, cwd=str(REPO))
+        assert r.returncode == 0, r.stderr
+
+        strata = json.loads(S.read_text())
+        got = [x for k in (M.STRAT_A, M.STRAT_B, M.STRAT_C) for x in strata["rows"][k]]
+        assert strata["search_pick_backfill"]["n_errors"] == 0, [
+            x["search_pick_error"] for x in got if x.get("search_pick_error")]
+        for x in got:
+            assert isinstance(x["search_pick"], int)
+            assert M._frame_of(x) == before[x["rid"]]
+        s = strata["search_pick_backfill"]
+        assert s["search_agrees_with_ours"] + s["search_agrees_with_theirs"] \
+            + s["search_agrees_with_neither"] == s["n_with_search_pick"]
+
+
+# --------------------------------------------------------------------------- #
 # 5. determinism                                                                #
 # --------------------------------------------------------------------------- #
 class TestDeterminism:

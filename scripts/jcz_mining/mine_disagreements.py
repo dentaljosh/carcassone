@@ -118,6 +118,11 @@ Modes
         CONTROL by nearest-neighbour ``our_leaf_gap`` matching without
         replacement (exact on ``ply_class`` AND ``phase_bucket`` — see
         amendment 7), then the n≥25 gate.
+  search-pick --strata STRATA.json --positions POSITIONS.jsonl [--workers N]
+        Engine work, but over the SAMPLED rows only (160, ~3 min) rather than
+        every candidate (6,800, ~2 h). Backfills the context-only `search_pick`
+        column in place, idempotent + resumable, and asserts the pre-registered
+        sampling frame survived byte-for-byte. Run immediately before the scorer.
 """
 from __future__ import annotations
 
@@ -127,6 +132,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from collections import Counter
@@ -476,6 +482,209 @@ def _search_pick(game, board, deck_seed: int, champ_seat: int, actions, ply: int
     MP.reseat(champ, deck_seed=int(deck_seed), actions=[int(a) for a in actions[:ply]],
               move_idx=int(ply))
     return int(champ.choose_action(board))
+
+
+# --------------------------------------------------------------------------- #
+# search-pick — backfill the context-only third column over SAMPLED rows only    #
+# --------------------------------------------------------------------------- #
+#: The two fields `search-pick` is allowed to write. EVERYTHING else in a sampled
+#: row is a pre-registered, committed sampling frame and is asserted unchanged.
+BACKFILL_FIELDS = ("search_pick", "search_pick_error")
+
+_SP: dict = {}
+
+
+def _frame_of(row: dict) -> dict:
+    """A row minus the two backfill fields — its sampling-frame fingerprint."""
+    return {k: v for k, v in row.items() if k not in BACKFILL_FIELDS}
+
+
+def assert_frame_unchanged(before: list, after: list, where: str) -> None:
+    """Raise unless the ONLY thing the backfill touched is `BACKFILL_FIELDS`.
+
+    Asserted, not trusted, and pulled out as its own function so the guard itself
+    is unit-testable. The sampling frame is pre-registered and committed; a
+    backfill that silently perturbed it — a reordered row, a coerced int, a dropped
+    key — would not look like an error, it would look like a result. That is the
+    worst failure available at this point in the pipeline, so it gets a hard stop."""
+    if len(before) != len(after):
+        raise AssertionError(f"{where}: row count changed {len(before)} -> {len(after)}")
+    for i, (b, a) in enumerate(zip(before, after)):
+        if b != a:
+            keys = sorted(set(b) ^ set(a)) or [k for k in b if b[k] != a.get(k)]
+            raise AssertionError(
+                f"{where}: the backfill changed a NON-{'/'.join(BACKFILL_FIELDS)} "
+                f"field on row {i} (differing keys: {keys}) — the sampling frame is "
+                "pre-registered and must survive this rewrite byte-for-byte. STOP.")
+
+
+def _sp_init() -> None:
+    """Spawn-worker bootstrap: rules env, then leaf env, then the engine."""
+    prepare_env(PROFILE)
+    from carcassonne_ai import rules_profile
+    prof = rules_profile.activate(PROFILE)
+    if not prof.as_manifest().get("r9_env_ok"):
+        raise RuntimeError("CARCASSONNE_FIX_R9 is not on — wrong rules epoch for this corpus")
+    _SP["game_kwargs"] = prof.game_kwargs()
+
+
+def _sp_cell(item: tuple) -> tuple:
+    """One root -> ``(rid, search_pick, error)``. Best-effort by contract: a failure
+    is a null column plus a string, never an exception that reaches the driver."""
+    rid, deck_seed, champ_seat, actions, ply = item
+    try:
+        import root_replay as RR
+        g, board = RR.replay_actions(int(deck_seed), actions, int(ply),
+                                     game_kwargs=_SP["game_kwargs"])
+        return rid, _search_pick(g, board, int(deck_seed), int(champ_seat), actions,
+                                 int(ply)), None
+    except Exception as exc:                                     # noqa: BLE001
+        return rid, None, f"{type(exc).__name__}: {exc}"
+
+
+def _atomic_write_json(path: Path, obj) -> None:
+    tmp = Path(str(path) + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2, sort_keys=False))
+    os.replace(tmp, path)
+
+
+def _atomic_write_jsonl(path: Path, rows: list) -> None:
+    tmp = Path(str(path) + ".tmp")
+    tmp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    os.replace(tmp, path)
+
+
+def _patch_positions(path: Path, picks: dict) -> dict:
+    """Rewrite one positions file in place, touching ONLY the backfill fields.
+
+    The frame is re-asserted per row after patching (not just trusted), because a
+    backfill that silently perturbed the sampling frame — a re-ordered row, a
+    coerced int, a dropped key — would be the worst available failure here: the
+    frame is pre-registered and committed, and a perturbation would not look like
+    an error, it would look like a result."""
+    rows = [json.loads(x) for x in Path(path).read_text().splitlines() if x.strip()]
+    before = [_frame_of(r) for r in rows]
+    n = 0
+    for r in rows:
+        got = picks.get(r["rid"])
+        if got is not None and r.get("search_pick") is None:
+            r["search_pick"], r["search_pick_error"] = got
+            n += 1
+    assert_frame_unchanged(before, [_frame_of(r) for r in rows], str(path))
+    _atomic_write_jsonl(Path(path), rows)
+    return {"path": str(path), "n_rows": len(rows), "n_written": n}
+
+
+def search_pick_backfill(strata_path: Path, positions_path: Path,
+                         positions_ab_path: Path | None = None,
+                         workers: int = 1) -> dict:
+    """Backfill `search_pick` over the SAMPLED rows only (PREREG §2.1 / §3.4).
+
+    WHY A SEPARATE PASS. `extract --with-search-pick` would run the champion over
+    every candidate — 6,800 roots at ~1.1 s each, ~2 h — which is not proportionate
+    for a column that never enters a decision. The sampled frame is 160 roots,
+    ~3 min. So the column is backfilled after `assign`, against the rows that will
+    actually be scored, and the roots are rebuilt through the SAME
+    `root_replay.replay_actions` + `prof.game_kwargs()` path `extract` uses, so the
+    root is bit-identical to the one the scorer will replay.
+
+    WHAT IT BUYS. Rider R2's sims-washout question, cheaply: on the plies where
+    their leaf beat our leaf, did our 11008-sim search already find their move
+    anyway? It is CONTEXT ONLY and enters no predicate in the decision map.
+
+    IDEMPOTENT AND RESUMABLE: a row that already carries a non-null `search_pick`
+    is skipped, so an interrupted run resumes and a second run is a no-op. Writes
+    go through tmp + `os.replace`, so a kill can never leave a half-written frame.
+    """
+    strata_path = Path(strata_path)
+    strata = json.loads(strata_path.read_text())
+    all_rows = [r for k in (STRAT_A, STRAT_B, STRAT_C) for r in strata["rows"].get(k, [])]
+    frame_before = {r["rid"]: _frame_of(r) for r in all_rows}
+    todo = [r for r in all_rows if r.get("search_pick") is None]
+
+    print(f"[search-pick] {len(all_rows)} sampled rows, {len(todo)} to compute, "
+          f"{len(all_rows) - len(todo)} already done (workers={workers})")
+
+    picks: dict = {}
+    t0 = time.time()
+    if todo:
+        items = [(r["rid"], r["deck_seed"], r["champ_seat"], r["actions"], r["ply"])
+                 for r in todo]
+        if int(workers) <= 1:
+            _sp_init()
+            results = [_sp_cell(it) for it in items]
+        else:
+            import multiprocessing as mp
+            ctx = mp.get_context("spawn")
+            with ctx.Pool(int(workers), initializer=_sp_init) as pool:
+                results = pool.map(_sp_cell, items, chunksize=1)
+        for rid, pick, err in results:
+            picks[rid] = (pick, err)
+
+    for r in all_rows:
+        got = picks.get(r["rid"])
+        if got is not None and r.get("search_pick") is None:
+            r["search_pick"], r["search_pick_error"] = got
+
+    # THE guard: the frame is pre-registered and committed. Assert it, do not trust it.
+    assert_frame_unchanged([frame_before[r["rid"]] for r in all_rows],
+                           [_frame_of(r) for r in all_rows], str(strata_path))
+
+    n_ok = sum(1 for r in all_rows if r.get("search_pick") is not None)
+    n_err = sum(1 for r in all_rows if r.get("search_pick_error"))
+    agree_ours = sum(1 for r in all_rows if r.get("search_pick") == r["pick_a"])
+    agree_theirs = sum(1 for r in all_rows if r.get("search_pick") == r["pick_b"])
+    summary = {
+        "n_sampled": len(all_rows),
+        "n_computed_this_run": len(picks),
+        "n_with_search_pick": n_ok,
+        "n_errors": n_err,
+        # The R2 read, per stratum. CONTEXT ONLY — it enters no predicate.
+        "search_agrees_with_ours": agree_ours,
+        "search_agrees_with_theirs": agree_theirs,
+        "search_agrees_with_neither": n_ok - agree_ours - agree_theirs,
+        "by_stratum": {
+            k: {
+                "n": len(strata["rows"].get(k, [])),
+                "with_search_pick": sum(1 for r in strata["rows"].get(k, [])
+                                        if r.get("search_pick") is not None),
+                "agrees_with_ours": sum(1 for r in strata["rows"].get(k, [])
+                                        if r.get("search_pick") == r["pick_a"]),
+                "agrees_with_theirs": sum(1 for r in strata["rows"].get(k, [])
+                                          if r.get("search_pick") == r["pick_b"]),
+            } for k in (STRAT_A, STRAT_B, STRAT_C)
+        },
+        "wall_secs": round(time.time() - t0, 2),
+    }
+    # Additive TOP-LEVEL metadata only. The byte-identical guarantee this pass owes
+    # is about ROWS (the sampling frame); the summary is a new sibling key so a
+    # readout never has to recompute the R2 column from the rows.
+    strata["search_pick_backfill"] = summary
+    _atomic_write_json(strata_path, strata)
+
+    files = [_patch_positions(Path(positions_path), picks)]
+    if positions_ab_path is None:
+        guess = Path(positions_path)
+        guess = guess.with_name(guess.stem + "_AB" + guess.suffix)
+        positions_ab_path = guess if guess.exists() else None
+    if positions_ab_path is not None:
+        files.append(_patch_positions(Path(positions_ab_path), picks))
+    summary["positions_files"] = files
+
+    print(f"[search-pick] wrote {n_ok}/{len(all_rows)} picks ({n_err} errors) in "
+          f"{summary['wall_secs']}s -> {strata_path}")
+    for f in files:
+        print(f"[search-pick]   {f['path']}: {f['n_written']} of {f['n_rows']} rows patched")
+    print(f"[search-pick] R2 read (CONTEXT ONLY): our search picked OURS "
+          f"{agree_ours}, THEIRS {agree_theirs}, neither "
+          f"{n_ok - agree_ours - agree_theirs}")
+    for k in (STRAT_A, STRAT_B, STRAT_C):
+        s = summary["by_stratum"][k]
+        print(f"[search-pick]   {k:<8} n={s['n']:>3}  ours={s['agrees_with_ours']:>3}  "
+              f"theirs={s['agrees_with_theirs']:>3}")
+    print("[search-pick] sampling frame verified UNCHANGED outside "
+          f"{list(BACKFILL_FIELDS)}")
+    return summary
 
 
 # --------------------------------------------------------------------------- #
@@ -1112,12 +1321,25 @@ def main(argv=None) -> int:
     a.add_argument("--n-target", type=int, default=40)
     a.add_argument("--min-n", type=int, default=25)
 
+    s = sub.add_parser("search-pick",
+                       help="backfill the context-only search column over SAMPLED rows")
+    s.add_argument("--strata", required=True)
+    s.add_argument("--positions", required=True)
+    s.add_argument("--positions-ab", default=None,
+                   help="defaults to <positions stem>_AB<suffix> when that file exists")
+    s.add_argument("--workers", type=int, default=1)
+
     args = ap.parse_args(argv)
     if args.mode == "extract":
         extract(Path(args.corpus), Path(args.out), args.limit_games, args.with_search_pick)
         return 0
     if args.mode == "counts":
         counts(Path(args.candidates), args.k_late, args.json)
+        return 0
+    if args.mode == "search-pick":
+        search_pick_backfill(
+            Path(args.strata), Path(args.positions),
+            Path(args.positions_ab) if args.positions_ab else None, args.workers)
         return 0
     st = assign(Path(args.candidates), Path(args.out), Path(args.positions),
                 k_late=args.k_late, n_target=args.n_target, min_n=args.min_n)
