@@ -45,11 +45,21 @@ and the union beats both. The tie is only barren if the knowledge fully overlaps
 distinction is cheaply measurable.
 
 **Design (all machinery exists):**
-1. **Behavioral mining:** step a corpus of real positions through BOTH evaluators (our v2.9.2
-   leaf; JCZ's LegacyRanking via the ported shim — it ranks per-turn action chains, comparable
-   on afterstates); collect disagreements; score both picks over M=32 CRN deck completions
-   (`oracle_score_pilot.py`, the farm-war adapter pattern). Stratify by game aspect (farm /
-   city / meeple / phase) so a win localizes to a TERM, not a vibe.
+1. **Behavioral mining:** ✅ **PRE-REGISTERED + BUILT 2026-08-09, LAUNCH PENDING A FREE BOX →
+   [MINING_PREREG.md](measurement/jcz_mining_20260809/MINING_PREREG.md)**, `scripts/jcz_mining/`.
+   **The screen turned out FREE:** JCZ's `LegacyAiPlayer` is a one-turn BFS + ONE static eval, so
+   its *played* move in the n=400 corpus already IS its evaluator's argmax — no JVM, no re-query,
+   56,777 plies of their answers already on disk; we only compute our own leaf's argmax at the same
+   state. **Leaf-vs-leaf** (search-vs-search is the match, already +111.4), our side made
+   *chain*-argmax over JCZ's own chain space so their BFS gets no free lookahead; TILE/MEEPLE
+   position classes so `oracle_score_pilot.py` is used **unmodified**. Strata from OUR state
+   features, keyed on the `DEAD` primitive (the leaf prices closure at exactly 0): **A** commitment
+   (S1+S4, jointly), **B** late-deck closure (S2), **C** control matched exact-on-(class, phase),
+   nearest-on-leaf-gap. Dry run: 6,800 disagreements, **ground-truth alignment 25,871/25,871**,
+   agreement rates TILE 41.9% / MEEPLE 68.2% given a strict leaf preference. Realised frame
+   A=40 / B=40 / C=80 over 160 distinct games. ⚠️ Power is **simulated, not asserted**: 81% at
+   +2.0 pts/ply, 53% at +1.4, 30% at +1.0 — so a null licenses "no effect ≥2 pts/ply survives",
+   NOT "the evaluators are equivalent".
 2. **Term archaeology:** ✅ **DONE 2026-08-09 →
    [measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md](measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md)**
    (read-only; nothing adopted, nothing measured). LegacyRanking is OPEN SOURCE — read the
