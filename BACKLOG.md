@@ -28,9 +28,21 @@ distinction is cheaply measurable.
    on afterstates); collect disagreements; score both picks over M=32 CRN deck completions
    (`oracle_score_pilot.py`, the farm-war adapter pattern). Stratify by game aspect (farm /
    city / meeple / phase) so a win localizes to a TERM, not a vibe.
-2. **Term archaeology:** LegacyRanking is OPEN SOURCE — read the sub-ratings line by line
-   against our leaf's terms; the mining says WHERE they win, the source says WHAT they price
-   there. No learned opponent could ever offer this.
+2. **Term archaeology:** ✅ **DONE 2026-08-09 →
+   [measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md](measurement/jcz_match_20260809/TERM_ARCHAEOLOGY.md)**
+   (read-only; nothing adopted, nothing measured). LegacyRanking is OPEN SOURCE — read the
+   sub-ratings line by line against our leaf's terms; the mining says WHERE they win, the source
+   says WHAT they price there. No learned opponent could ever offer this. **Headlines:** their
+   ranking IS deck- and phase-aware (closure P derived from the remaining-tile multiset matched by
+   edge pattern, times a `1/nPlayers` factor; plus a `remainingTurns > 7` gate on the stuck-meeple
+   penalty) where **our leaf provably has no `k_remaining` dependence at all**; four steal
+   candidates — **S1 stranded-meeple penalty** and **S4 category-convex lock-up tables** (both on
+   the meeple axis, our −300-elo organ, where our single free-count curve is the lowest-resolution
+   thing we own), **S2 deck-graded closure P** (most novel, most prior null evidence), **S3 city/road
+   merge-flip anticipation** (Term F's never-tried non-farm cousin, and the likeliest sims-washout
+   victim). Verdict = convergent evolution with one genuinely different organ. ⚠️ Steps 1 and 3
+   still gate everything: reading a term says nothing about its value (our own `capoff` ≈ null,
+   `anticoff` ≈ null, Term R −251.9).
 3. Any finding converts via the standard route: implement the missing term NATIVELY as a leaf
    candidate → C5/C7-style swept, play-gated. **NOT a blend** — every value-blend has died at
    the search gate (LEVER_INDEX); the product is a term, not an ensemble.
