@@ -4419,6 +4419,52 @@ not diffed at feature level, only partitions and scores.
 `experiments/results.csv` `jcz_legacyai_vs_champ_fixed_v1_r9_n400` · harness `scripts/jcz_match/`
 · band 1.08e11 RETIRED (1.07e11 = the smoke, stays unretired).
 
+## 2026-08-09 (afternoon) — JCZ disagreement mining: PRE-REGISTERED and BUILT, not launched; the disagreement screen turns out to be FREE (measurement)
+
+**Decision:** fund, pre-register and build step 1 of BACKLOG 2026-08-09 *"JCZ disagreement mining"*
+— locate **where JCloisterZone's evaluator out-earns ours** on real positions from the n=400
+corpus, stratified so a win localises to a TERM. Built and gated only; **nothing launched** (the
+phase-β ladder holds the local box, the chunked seam gate holds the laptop). Nothing promoted,
+`PRODUCTION.yaml` untouched, no claim id minted.
+→ [MINING_PREREG.md](measurement/jcz_mining_20260809/MINING_PREREG.md), `scripts/jcz_mining/`.
+
+**The design choice that made it cheap.** JCZ's `LegacyAiPlayer` is a one-turn BFS ranked by **one**
+static evaluation, so **its played move in the corpus already IS its evaluator's argmax**. The
+disagreement screen therefore needs **no JVM and no re-query** — 56,777 plies of their evaluator's
+answers were already on disk. We only compute our own leaf's argmax at the same state. Comparison is
+**leaf-vs-leaf** (search-vs-search is the match, already measured at +111.4), with our side made
+*chain*-argmax over JCZ's own chain space so their BFS gets no free lookahead. Split into TILE and
+MEEPLE position classes so `oracle_score_pilot.py` is used **unmodified**.
+
+**Dry run (counts only, no outcome).** 400/400 games, 6,800 disagreements, and the free ground-truth
+check **PASSED 25,871/25,871 with zero failures** — every JCZ wire payload, re-inverted in our own
+independently replayed position, returned exactly the action the archive recorded. Agreement rates,
+*conditional on our leaf expressing a strict preference*: **TILE 41.9%, MEEPLE 68.2%**.
+
+**Three findings that fell out of building it, all recorded before any scoring:**
+
+1. **A stale fact in two docs, corrected.** The production leaf's closure schedule is
+   `{1: 0.5, 2: 0.2, **3: 0.05**}`, not `{1: 0.5, 2: 0.2}` — `CARCASSONNE_V25_DROP_THREE_OPEN` is
+   opt-in and **default OFF**. So the leaf's closure anticipation dies at `open_n >= 4`, not `>= 3`.
+   TERM_ARCHAEOLOGY §2 and §3c asserted the wrong version and are annotated. The stratifier was
+   specified to *read the schedule from the loaded cfg*, which is what surfaced it.
+2. **Our leaf cannot discriminate the top tile placement 55% of the time.** 7,817/14,190 TILE plies
+   (and 1,928/11,681 MEEPLE plies) are **exact** top-2 leaf ties. This is CL-073's
+   "prediction ≠ discrimination" appearing as a raw structural fact about the heuristic leaf rather
+   than as a learned-vs-heuristic contrast.
+3. **The shipped decision map was SIMULATED rather than asserted** (4,000 draws through the real
+   `decide()`): power is **81% at +2.0 pts/ply, 53% at +1.4, 30% at +1.0**, and measured familywise
+   false-conviction is **4.9%**, better than the naive ~9%. The load-bearing consequence: when the
+   primary stratum truly carries +1.4, the "all wash" branch **still fires 41% of the time** — so a
+   null licenses *"no effect ≥2 pts/ply survives"* and must never be written up as
+   *"the evaluators are equivalent"*.
+
+**Riders carried into the readout:** the in-family judge biases toward OUR arm, so a positive is
+**conservative**; positions are JCZ-actor plies, a known **one-sided** selection effect, so a
+negative is strong and a positive carries an asterisk; and a conviction funds a native from-scratch
+term build plus a **C5 play gate**, never a promotion — the standing sims-washout pattern says a
+1-ply-evaluator win can vanish under 11,008 PIMC sims.
+
 ## 2026-08-09 (evening) — The §7 tightener RAN: the price of a top-of-ladder disagreement is +0.0673, not the assumed 0.511 — pre-registered BRANCH 2 fires POWERED and the +54 elo headroom bound collapses to ≈ +7 (measurement)
 
 **Context.** The morning's desk assembly ([MEMO](measurement/budget_headroom_bound_20260809/MEMO.md))
