@@ -53,11 +53,15 @@ def load(run_root: Path, cell: str, prefix: str, n_expected: int):
     s = json.loads(s_p.read_text())
     m = json.loads(m_p.read_text()) if m_p.exists() else {}
     rp = m.get("rules_profile") or {}
-    cand = (dig(m, "config", "cand_curve_drift", "leaf_hash")
+    # config.cand_leaf_hash / config.opp_leaf_hash are the CANONICAL keys the harness always
+    # writes; the nested provenance blocks are fallbacks for shapes that predate them.
+    cand = (dig(m, "config", "cand_leaf_hash")
+            or dig(m, "config", "cand_curve_drift", "leaf_hash")
             or dig(m, "config", "champion", "netprior_leaf", "leaf_hash")
             or dig(m, "config", "champion", "curve125_leaf_provenance", "leaf_hash")
             or dig(m, "config", "champion", "leaf_hash"))
-    opp = (dig(m, "config", "opponent", "leaf_hash")
+    opp = (dig(m, "config", "opp_leaf_hash")
+           or dig(m, "config", "opponent", "leaf_hash")
            or dig(m, "config", "opponent", "curve125_leaf_provenance", "leaf_hash"))
     n = int(s.get("n", 0))
     return {
@@ -94,6 +98,16 @@ def verdict(rows):
     problems = []
     if c0["elo"] is None or abs(c0["elo"]) >= 25:
         problems.append(f"identity |elo|={abs(c0['elo']):.1f} >= 25")
+    # ⚠️ MISSING evidence is NOT CONTRADICTING evidence. An unreadable hash means the analyzer
+    # does not know where the harness put it -- that is a defect in THIS script, not proof the
+    # instrument is broken, and calling it INSTRUMENT-BROKEN burns a band for a bug. Report it
+    # as its own state so a human sees "I could not check" rather than "the check failed".
+    if c0["cand_leaf_hash"] is None or c0["opp_leaf_hash"] is None:
+        return "PROVENANCE-UNREADABLE", (
+            f"identity cell leaf hashes could not be located in the manifest "
+            f"(cand={c0['cand_leaf_hash']}, opp={c0['opp_leaf_hash']}). This is an ANALYZER "
+            "path defect, not an instrument verdict: fix the lookup and re-read. The cell's "
+            "games are unaffected and are NOT void."), notes
     if c0["cand_leaf_hash"] != c0["opp_leaf_hash"]:
         problems.append(f"identity leaf hashes differ: {c0['cand_leaf_hash']} vs {c0['opp_leaf_hash']}")
     for r in rows:
