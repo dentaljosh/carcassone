@@ -484,10 +484,11 @@ its readout prose:
 | `clair-puct` | 42 positions, 14 workers, 86.1 min wall | **28.7 worker-min/position** | 160 positions | **≈5.5 h** |
 | `tier1-greedy` | 42 positions, 14 workers, 9.1 min wall | **3.0 worker-min/position** | 80 positions | **≈0.3 h** |
 
-So **≈5.8 h for both judges**, and the deciding statistic (primary, run first) is itself the long
-pole at ≈5.5 h — the sign check is nearly free. Budget **6–8 h** to cover the fact that this frame's
-roots sit earlier in the deck than farm-war's (mean `k_remaining` ≈ 31 across the 160 positions, so
-playouts to game end run longer).
+So **≈5.8 h for both judges at W=14 (local)** and **≈3.7 h at W=22 (laptop)**, and in both cases the
+deciding statistic (primary, run first) is itself the long pole — ≈5.5 h local, ≈3.5 h laptop — while
+the sign check is nearly free. Budget **6–8 h local / 4–5 h laptop** to cover the fact that this
+frame's roots sit earlier in the deck than farm-war's (mean `k_remaining` ≈ 31 across the 160
+positions, so playouts to game end run longer).
 
 This is an overnight-shaped run. It is **per-position checkpointed and `--resume`-able**, so it does
 not need an uninterrupted 6-hour window — it can be killed the moment the box is wanted and picked
@@ -496,16 +497,55 @@ against the phase-arm ladder's first claim.
 
 **Hard operational constraints, enforced by the launcher, not by discipline:**
 
-- **W = 14 HARD CAP.** Not a tuning choice — the box is DRAM-latency-bound (W* ≈ 14–16 regardless of
-  the 16C/32T core count) *and* it is Joshua's interactive machine. All workers `nice -n 19`.
-- **The launcher REFUSES to start** if any of `eval_fair_puct.py`, `curvephase_ladder_launcher.sh`,
-  `phase_seam_gate`, `night_chain` / `pull_and_chain.sh`, or another `oracle_score_pilot.py` is
-  running. The phase-arm ladder has first claim on the box. A timing/throughput tenant beside this
-  run contaminates both (memory: `feedback_no_agent_compute_beside_eval`).
+- **W is PER-BOX, never uniform** (memory: `feedback_worker_count_by_bottleneck`). The launcher
+  resolves the box from hostname (`Doctor` → local, `laptop-wsl` → laptop, **anything unrecognised →
+  local**, i.e. fail safe to the tighter cap) and caps accordingly. All workers `nice -n 19`.
+
+  | box | W | provenance |
+  |---|---:|---|
+  | **local** (`Doctor`, 5900XT 16C/32T) | **14** | **A constraint, not an optimum** — Joshua is working on this machine. It also happens to sit in the DRAM-latency-bound W* ≈ 14–16 band. |
+  | **laptop** (`laptop-wsl`, 24 threads, 12.2 GB) | **22** | `measurement/classical_search/WSWEEP_F7D_laptop.tsv`: `throughput_idx` peaks at W=26 (7.496); W=22 is 7.219, i.e. 3.7% off peak, which is the **smallest W inside the 5% settle band** the standing sweep protocol asks for (W=16 is 10.4% off and does *not* qualify). Matches the "cpu threads − 2" default. |
+
+  ⚠️ **The laptop figure is an extrapolation ACROSS WORKLOAD CLASSES and is labelled as such rather
+  than laundered into a measured number.** The F7d sweep is a **rust-backend** bench;
+  `oracle_score_pilot.py` defaults to **`--backend python`** (its line 1047) and `tier1-greedy` is
+  python-**only** by construction. So W=22 is unverified *for this workload*. Mitigation, which is
+  free because the run is per-position checkpointed: **after the first ~10 records, check aggregate
+  worker RSS against the 12.2 GB ceiling and observed worker-min/position against the 28.7 baseline;
+  if RSS × W exceeds ~60% of the box, kill and `--resume` at W=16.** Nothing scored is lost.
+
+- **The launcher REFUSES to start** against a **per-box** blocked-process list — the guard is about
+  whoever owns *that* box, so it differs by host:
+  - **local** — `eval_fair_puct.py`, `curvephase_ladder_launcher.sh`, `phase_seam_gate`,
+    `night_chain` / `pull_and_chain.sh`, or another `oracle_score_pilot.py`. The phase-β ladder has
+    first claim (Part C is local-only).
+  - **laptop** — `phase_seam_gate_chunked.sh`, `run_gate_laptop.sh`, `pytest`, or another
+    `oracle_score_pilot.py` (the chunked seam gate).
+
+  A timing/throughput tenant beside this run contaminates both (memory:
+  `feedback_no_agent_compute_beside_eval`).
+
+- **Preferred host: the LAPTOP at W=22.** The local box is committed to the phase-β ladder, so
+  putting mining on the laptop removes the contention entirely and finishes sooner (≈3.7 h vs
+  ≈5.8 h). The laptop frees as soon as the chunked seam gate verdicts. Two standing path rules apply
+  and are enforced in `launch_mining_laptop.sh`: **inside `ssh` the share is `/mnt/carc-shared`, not
+  `/mnt/c/carc-shared`**, and **every remote command is a piped script with `cd` on line 1**
+  (`ssh laptop-wsl 'bash -s' < file.sh`) because Claude Code silently strips an inline `cd` from SSH
+  commands (memory: `feedback_remote_ssh_pipe_script_mandatory`). Code and the sampling frame reach
+  the laptop by **git bundle** — the remotes cannot see github (memory:
+  `reference_offline_git_bundle_sync`) — and `STRATA.json` / `POSITIONS*.jsonl` are committed, so the
+  bundle carries the frame with the code.
+
 - **Detached** (`setsid` + `nohup`), per-position atomic checkpoint, `--resume` — so the run can be
-  killed for box priority at any moment and resumed without losing a cell.
-- **Memory:** the run is capped under a `systemd-run --user --scope -p MemoryMax=…` scope; the local
-  box has taken repeated WSL-VM teardowns from unsegmented memory pressure.
+  killed for box priority at any moment and resumed without losing a cell. A detached ssh launch
+  returning **rc=124 from `timeout` means LAUNCHED, not failed — never retry** (a retry stacks pools;
+  memory: `feedback_wsl_ssh_launch_pkill_traps`).
+- **Memory:** the run is capped under a `systemd-run --user --scope -p MemoryMax=…` scope so an
+  overrun kills **the run, not the VM**. Both boxes have taken WSL-VM teardowns from unsegmented
+  memory pressure, and **the laptop's VM was force-exited under exactly this failure earlier on
+  2026-08-09** — the guest page cache balloons `vmmem` past the `.wslconfig` cap, Windows tears the
+  VM down, and `dmesg` is empty so it looks like nothing happened (memory:
+  `reference_wsl2_host_memory_teardown`).
 
 **Governance.** Measurement only. `governance/PRODUCTION.yaml` is untouched. A claim id is minted
 only on **G2** or on a **CONVICT**; G1 and EXONERATE are recorded in the readout, `LEVER_INDEX`, and
