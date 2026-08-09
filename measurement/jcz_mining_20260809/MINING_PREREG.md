@@ -220,10 +220,33 @@ run. It cannot bias the effect estimate; it only sets n.
 ### 3.3 STRAT-C — CONTROL
 
 ```
+phase_bucket(row) := "LATE" if row.k_remaining <= K_LATE else "EARLY"
+
 pool  := disagreement plies that are neither STRAT_A nor STRAT_B
 STRAT_C := nearest-neighbour match of `pool` to A ∪ B, WITHOUT replacement,
-           exact on `ply_class`, nearest on `our_leaf_gap`
+           exact on (`ply_class`, `phase_bucket`), nearest on `our_leaf_gap`
 ```
+
+> **⚠️ AMENDMENT, stamped 2026-08-09, made from PLY COUNTS ALONE — before any world was drawn, any
+> continuation played, or any Δ computed.** The matching key originally read *"exact on `ply_class`,
+> nearest on `our_leaf_gap`"*. The extractor's dry run showed that leaves a **phase confound between
+> STRAT-B and its own control**: STRAT-B is late-deck *by construction* (median `k_remaining` 9, mean
+> 8.05), while a `ply_class`-only match drew C from mid-game (median 36) and put only **2 of 80** C
+> positions at `k_remaining <= 14`. If per-ply Δ runs systematically larger late in the deck — which
+> is plausible on its face, since fewer tiles remain and positions are more decisive — STRAT-B could
+> clear the CONVICT predicate for reasons that have nothing to do with S2's deck-graded closure
+> probability. Left unfixed, **B could only ever EXONERATE**, never convict interpretably.
+>
+> Adding `phase_bucket` to the exact-match key costs **nothing** — no extra positions, no extra
+> compute — and phase-matches *both* primary strata rather than neither, since A is predominantly
+> EARLY and B is entirely LATE. Supply was verified before the change: the control pool holds 200
+> candidates at `k_remaining <= 14` across 154 distinct games (120 TILE-games, 52 MEEPLE-games)
+> against B's requirement of 26 TILE + 14 MEEPLE controls.
+>
+> This is the same class of decision as §3.2's pre-registered `K_LATE` widening ladder — a change to
+> the **sampling frame**, taken from ply counts, with no outcome in view. It cannot bias the effect
+> estimate; it only decides which positions the control is drawn from. `STRATA.json` stamps the
+> exact-match key actually used in `control_match.match_key`, and the readout must quote it.
 
 `our_leaf_gap := leaf(S_ours) - leaf(S_theirs)` under **our** leaf, in leaf points, always ≥ 0 by
 construction — how hard our evaluator disagrees. It is the direct analogue of farm-war's `|ΔQ|`
@@ -429,10 +452,22 @@ corroborated one.
 8. **Multiplicity.** Two primary strata, two-sided, at `|z| ≥ 2` ⇒ familywise false-positive ≈ 9%
    under the global null. Reported, and priced: the Bonferroni-2 threshold accompanies every primary
    z, and the real error control is that a conviction buys a **gate**, not an adoption.
-9. **Ties in the leaf argmax.** Our pick is `argmax` over a float leaf; exact ties are resolved by
-   lowest action index, deterministically. A ply whose top-2 leaf gap is exactly 0.0 is recorded with
-   `leaf_tie = true` and **excluded from the candidate pool** — at such a ply "our preferred move" is
-   not well defined, and admitting it would manufacture disagreements out of tie-break convention.
+9. **Ties in the leaf argmax — and they are not rare.** Our pick is `argmax` over a float leaf;
+   exact ties are resolved by lowest action index, deterministically. A ply whose top-2 leaf gap is
+   exactly 0.0 is recorded with `leaf_tie = true` and **excluded from the candidate pool** — at such
+   a ply "our preferred move" is not well defined, and admitting it would manufacture disagreements
+   out of tie-break convention.
+   **Measured on the full corpus: 7,817 / 14,190 TILE plies (55.1%) and 1,928 / 11,681 MEEPLE plies
+   (16.5%) are exact ties.** The leaf lands on a coarse lattice (integer base + `{0.5, 0.2, 0.05} ×
+   Δ` + curve steps), so with ~40 legal tile placements an exact top-2 tie is the common case, not
+   the exception. Two consequences, both pre-registered:
+   (a) **The frame is conditioned on the leaf being able to discriminate at all**, which is a real
+   restriction on the TILE class in particular — the readout must state that the TILE result speaks
+   only for the 45% of tile plies where our leaf expresses a strict preference.
+   (b) **The tie rate is itself a finding worth reporting**, independent of any Δ: it says our
+   production leaf is indifferent among top tile placements more than half the time, which is the
+   move-discrimination story of CL-073 ("outcome prediction is not move discrimination") showing up
+   as a raw structural fact about the leaf rather than as a learned-vs-heuristic contrast.
 
 ---
 
@@ -465,3 +500,41 @@ the standard six-touch close-out.
 **AGPL rider (inherited from the BACKLOG entry):** ideas and measurements are fair game; **JCZ code
 never gets copied into our leaf.** Every candidate, if convicted, is written from scratch as a native
 `LeafConfig` term.
+
+---
+
+## 9. Extraction dry run — counts only, stamped 2026-08-09 before any scoring
+
+Recorded here because §3.2's `K_LATE` ladder and §3.3's matching key are pre-registered to be
+resolved from these numbers. **No world was drawn, no continuation played, no Δ computed.**
+
+**Ground-truth check — PASSED, 25,871 / 25,871, zero failures.** Every JCZ-actor ply carrying a
+`jcz_message` had that raw wire payload re-inverted, in our own independently replayed position,
+back to exactly the action int the archive recorded. This is the strongest available proof that the
+root the scorer will replay is the same position JCZ was standing in. 400/400 games used, 0 skipped.
+
+| class | inspected | agree | **disagree** | leaf_tie (excluded) | forced | agreement rate |
+|---|---:|---:|---:|---:|---:|---:|
+| TILE | 14,190 | 2,669 | **3,702** | 7,817 | 2 | **41.9%** |
+| MEEPLE | 11,681 | 6,655 | **3,098** | 1,928 | 0 | **68.2%** |
+
+6,800 candidate disagreements in 6.5 min on one niced core. Read the agreement rates as *conditional
+on our leaf expressing a strict preference*: where it does, the two independently-evolved evaluators
+pick the same tile placement only 42% of the time and the same meeple decision 68% of the time.
+Whether that disagreement costs anything is the whole question, and this table cannot answer it.
+
+**Stratum yields (candidates / distinct games — distinct games is the binding constraint, since
+sampling is ≤1 position per game):**
+
+| stratum | candidates | distinct games | verdict |
+|---|---:|---:|---|
+| STRAT-A (commitment) | 3,992 | **400** | oversupplied ~10× |
+| STRAT-B (supply, `K_LATE = 14`) | 387 | **245** | clears the 30-game floor ~8× |
+| control pool | 2,421 | 399 | oversupplied |
+
+**No stratum is starved. `K_LATE` stays at the pre-registered 14 — the widening ladder does NOT
+fire** (it would have offered 303 games at 20 and 352 at 28; neither is needed). Seats are balanced
+in the candidate pool (A: 1,990/2,002; B: 187/200).
+
+Realised design after assignment: **A = 40, B = 40, C = 80, 160 positions over 160 distinct games**
+(every cluster a singleton, design effect 1.0 by construction, exactly as §4 intends).
