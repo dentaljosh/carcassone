@@ -13,6 +13,43 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-08-09 — JCZ disagreement mining: steal the missing terms from the evaluator that tied us
+
+**Context:** Joshua, after the n=20 JCZ smoke came back LEVEL (+4.6 ± 2.2 pts/deck): "is there
+something they have that we can steal? combine with ours?" The tie makes this MORE promising:
+equal aggregate strength ≠ equal knowledge — two independently-evolved evaluators can tie while
+pricing different aspects of the game, in which case each is leaving points the other collects,
+and the union beats both. The tie is only barren if the knowledge fully overlaps — and that
+distinction is cheaply measurable.
+
+**Design (all machinery exists):**
+1. **Behavioral mining:** step a corpus of real positions through BOTH evaluators (our v2.9.2
+   leaf; JCZ's LegacyRanking via the ported shim — it ranks per-turn action chains, comparable
+   on afterstates); collect disagreements; score both picks over M=32 CRN deck completions
+   (`oracle_score_pilot.py`, the farm-war adapter pattern). Stratify by game aspect (farm /
+   city / meeple / phase) so a win localizes to a TERM, not a vibe.
+2. **Term archaeology:** LegacyRanking is OPEN SOURCE — read the sub-ratings line by line
+   against our leaf's terms; the mining says WHERE they win, the source says WHAT they price
+   there. No learned opponent could ever offer this.
+3. Any finding converts via the standard route: implement the missing term NATIVELY as a leaf
+   candidate → C5/C7-style swept, play-gated. **NOT a blend** — every value-blend has died at
+   the search gate (LEVER_INDEX); the product is a term, not an ensemble.
+
+**Three outcomes, all informative:** JCZ wins a disagreement category ⇒ a located leaf hole
+with a counterexample generator attached · we win everywhere ⇒ our leaf term-dominates and the
+tie is search-vs-evaluator bookkeeping · wash ⇒ convergent evolution — two independent
+hand-crafted evaluators, same knowledge, same ceiling (a headline sentence for the papers
+track by itself).
+
+**⚠️ Riders:** AGPL — ideas and measurements are fair game; JCZ CODE never gets copied into
+our leaf. In-family oracle judge caveat applies as always (both leaves are "in family" relative
+to a neutral judge here, which actually HELPS — neither side owns the ruler). Sequencing:
+n=400 match first ("real tie" is an n=20 assumption), and the curve/phase probes decide
+whether this is the next lever or THE next lever.
+
+**Why deferred:** boxes owned by the B/C probes; the full JCZ match should confirm the tie
+first. If B and C come back flat, this is the only live route to leaf improvement on the map.
+
 ## 2026-08-09 — External-AI matches: play other implementations' AIs (Joshua: "challenge their devs")
 
 **Context:** Joshua, after the n=12 dead-even E4 read: other Carcassonne apps claim good AI —
