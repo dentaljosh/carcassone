@@ -16,6 +16,13 @@ LOG=/home/doctor/gate_ops/chunked_gate.log
 LOCK=/home/doctor/gate_ops/.gate.lock
 ts() { date +%F_%T; }
 
+# Operator knobs (GATE_DEFER, GATE_MAX_ATTEMPTS, ...) without editing this file,
+# so they survive a supervisor-driven relaunch too.
+if [ -f /home/doctor/gate_ops/gate.env ]; then
+  . /home/doctor/gate_ops/gate.env
+  export GATE_DEFER GATE_ONLY GATE_MAX_ATTEMPTS 2>/dev/null || true
+fi
+
 exec 9>"$LOCK"
 if ! flock -n 9; then echo "$(ts) another gate driver holds the lock; exiting" >> "$LOG"; exit 0; fi
 
@@ -40,8 +47,20 @@ if [ -f "$OUT/VERDICT" ]; then
 fi
 
 # No verdict. Do NOT publish GATE_DIED just because the process was interrupted --
-# the supervisor will restart us and the chunk artifacts make that free. Only a
-# genuine INCONCLUSIVE (a chunk that will not complete after MAX_ATTEMPTS) is final.
+# the supervisor will restart us and the chunk artifacts make that free.
+#
+# Only INCONCLUSIVE is final: a chunk that would not complete after MAX_ATTEMPTS.
+# INCOMPLETE_n_OF_m is the OPPOSITE -- it means chunks are simply still missing
+# (interrupted, or deliberately deferred), which is a RESUMABLE state. Publishing
+# GATE_DIED for it would make pull_and_chain abort the whole chain over a run that
+# just needed to be restarted. (Bug found 2026-08-09 while deferring a chunk under
+# debug; it would have thrown away 45 good chunks.)
+BLOCKED=$(cat "$OUT/VERDICT_BLOCKED" 2>/dev/null || echo "")
+case "$BLOCKED" in
+  INCOMPLETE_*)
+    echo "$(ts) $BLOCKED -- resumable, NOT publishing GATE_DIED. Supervisor will resume." >> "$LOG"
+    exit 2 ;;
+esac
 if [ -f "$OUT/VERDICT_BLOCKED" ]; then
   cp -a "$LOG" "$OUT/gate_run_laptop.log" 2>/dev/null
   rsync -a --exclude wheels "$OUT/" "$SHARE/" >> "$LOG" 2>&1
