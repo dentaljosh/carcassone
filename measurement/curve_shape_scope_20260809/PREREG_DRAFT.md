@@ -1,10 +1,44 @@
 # MEEPLE-CURVE SHAPE + PHASE SEARCH — PRE-REGISTRATION (DRAFT, CONDITIONAL ON FUNDING)
 
-> **STATUS: 📝 DRAFT — NOT AUTHORIZED, NOT FUNDED, NO BAND CLAIMED, NO GAMES PLAYED.**
+> **STATUS: ✅ PARTS A AND C FUNDED AND AUTHORIZED 2026-08-09. BANDS CLAIMED BEFORE GAME 1.**
+> **Part B (the Optuna sweep) remains UNFUNDED and is gated on Part A's reading, as written.**
 > Written 2026-08-09 alongside [SCOPE.md](SCOPE.md), which carries the rationale, the cost
-> arithmetic and the dominance-order analysis. This file is the *runnable* protocol: it is what
-> gets committed (with bands flipped to `claimed`) **before game 1** if Joshua funds it.
+> arithmetic and the dominance-order analysis. This file is the *runnable* protocol.
 > `governance/PRODUCTION.yaml` is untouched on every branch of this document.
+>
+> Bands `1.10e11` (Part A) and `1.15e11` (Part C) are `claimed` in
+> [BAND_REGISTRY.csv](../../governance/BAND_REGISTRY.csv) as of this commit, verified free
+> against **both** the registry and a `grep seed_start` over the share manifests (highest prior
+> share consumption: `1.095e11`). Launchers:
+> [`curveshape_probe_launcher.sh`](../../scripts/classical_search/curveshape_probe_launcher.sh)
+> (Part A) and the Part C ladder launcher; candidate tables are generated from §4's
+> parametrization by
+> [`gen_curve_shapes.py`](../../scripts/classical_search/gen_curve_shapes.py), not hand-typed.
+>
+> ⚠️ **DESIGN DEVIATION, APPROVED AND RECORDED — §3 WAS NOT RUNNABLE AS WRITTEN.** §3 specifies
+> the candidate arm as "identical in every respect except `v29_meeple_curve`, injected via
+> `eval_fair_puct --cand-leaf-json`". That combination **hard-exited**: `_assert_netprior_leaf`
+> (`eval_fair_puct.py:482-488`) unconditionally requires the candidate curve to be exactly
+> `curve125`, `--allow-leaf-hash-drift` covers only the later *hash* check, and there is no
+> `--opp-leaf-json`. The fix is a new default-OFF flag **`--allow-cand-curve-drift`** (merged
+> `0974ee4`) — i.e. **the seam this pre-registration assumed already existed**, not a change to
+> what is measured. The **opponent arm remains pinned to curve125 through the UNMODIFIED
+> assert** in every case, and the flag is rejected outside `--info fair --opponent
+> fair-champion`. Its gate PASSED before merge with feature-off parity *proven* (identity cell
+> re-run against a pre-change HEAD copy at the same seeds: stdout identical but for timing,
+> `summary.json` identical on every non-timing field, manifest config with zero changed and zero
+> removed keys and exactly five additive ones). **The rejected alternative was `--opponent
+> h800`**, which would have changed the opponent, the plane *and* the `margin_z` definition —
+> a real design change, and therefore not taken.
+>
+> ⚠️ **A SECOND, SMALLER WART, RECORDED BEFORE THE READ (it is a property of §4, not a bug).**
+> `C0_identity` uses the **literal** production table per §4/SCOPE §1.1, while C1/C2/C3 are
+> **generated from the 5-param family**, whose low side is `-10 / -4.444 / -1.111` against the
+> literal `-10 / -5 / -1.25`. So the three off-production cells each carry a small low-side
+> perturbation that is **not** part of the intended top-axis contrast. It is common to all
+> three, it is far smaller than the deliberate moves, and the L1 rescale holds total scale
+> fixed — but any C1/C3 reading is "ρ moved **and** the low side shifted slightly", and the
+> read-out must say so rather than attribute a null purely to ρ.
 >
 > **Funding is staged.** Part A (the curvature probe) and Part C (the β ladder) are ~3 h each and
 > can be authorized independently. **Part B (the Optuna sweep) is authorized only if Part A's
