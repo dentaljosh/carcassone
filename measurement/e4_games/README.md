@@ -30,37 +30,56 @@ cross-platform (ARM/Pixel → x86/WSL) deterministic.
 | `1785984310_1698417952.json` | 2026-08-05 | **101–107 L** | close; farms 33–30 — the contested-farm battle game (Joshua: one ~30-pt farm, 4–5 meeples, "kept flipping"). |
 | `1785986044_1911511187.json` | 2026-08-05 | **109–65 W** | second human win, the blowout: during-play 71–50 AND farms **30–0** (champion at 0 farm pts ≈ its own p5). |
 
-## ⚠️ The farm-starvation claim was a 3-game artifact — CORRECTED 2026-08-07
+| `1786045035_338139.json` | 2026-08-06 | **105–115 L** | farms 39–36 Joshua; lost on unfinished 16–36 |
+| `1786074812_935815.json` | 2026-08-06 | **90–104 L** | **first game Joshua lost the farms** (12–24) |
+| `1786076853_2116173857.json` | 2026-08-07 | **90–87 W** | 3-pt win; champion won during-play 56–48 |
+| `1786113542_627623.json` | 2026-08-07 | **116–78 W** | biggest win; during-play 78–53 **and** farms 33–0 |
+| `1786116818_134510.json` | 2026-08-07 | **76–104 L** | champion's biggest during-play win, 68–26; farms tied 27–27 |
+| `1786118143_1621601234.json` | 2026-08-07 | **74–71 W** | 3-pt win, lowest-scoring game of the set |
+| `1786142936_703591.json` | 2026-08-07 | **74–112 L** | biggest loss (−38); during-play 65–29, farms tied 24–24 |
+| `1786242001_49628.json` | 2026-08-07 | **86–95 L** | farms 39–0 to Joshua and he still lost — during-play 66–40, unfinished 29–7 |
+| `1786243458_1382293676.json` | 2026-08-07 | **97–75 W** | farms 18–0; won during-play too (63–57) |
 
-Between 2026-08-05 and 08-06 this file and STATUS carried "the champion averages **11.0** farm
-pts/seat against Joshua vs **20.5** in its own corpus", and that asymmetry was the stated
-motivation for funding the farm-war discriminator. **With all six fixed_v1 games in it is
-19.5 vs 20.5 — i.e. normal.** The 11.0 came from the first three games only (9 / 30 / 0), and
-the 0 was one blowout. Joshua does take more farm points than the corpus norm (26.5 vs 20.5)
-and is 5-for-6 on farms this epoch — but **the champion is not being starved of farms**, and
-"it is bad at contested farm wars" no longer has the ledger support it was funded on. (The
-discriminator itself returned INCONCLUSIVE — [FARMWAR_READOUT](../analyzer_evloss_20260805/FARMWAR_READOUT.md)
-— so nothing downstream rests on the wrong figure.)
+## The fixed_v1 epoch at n=12: DEAD EVEN on points, and a stable component signature
 
-## The fixed_v1 epoch: 2–4 on games, DEAD EVEN on points
+Twelve games under the current rules (2026-08-05 → 08-07). **W 5 / L 7, winrate 0.417.**
+Margins (Joshua − champion): −7, −6, +44, −10, −14, +3, +38, −28, +3, −38, −9, +22.
 
-Six games under the current rules. Margins (Joshua − champion): **−7, −6, +44, −10, −14, +3**.
-**Mean +1.67, sd 21.49, se 8.77, z +0.19** — indistinguishable from parity, while the *winrate*
-is 0.33. The gap between those two statistics is the +44 blowout: he loses more games than he
-wins yet is even on aggregate points. ⚠️ n=6, unpaired, one seat, no seat-swap deck pairing —
-a description, not a rating. Proper sizing (Phase C luck floor): **193 seat-swap deck-paired
-games at true wr 0.55, 48 at 0.60**.
+| statistic | mean | se | z |
+|---|---:|---:|---:|
+| **TOTAL margin** | **−0.17** | 7.06 | **−0.02** |
+| during play | −8.17 | 6.39 | −1.28 |
+| unfinished features | −3.75 | 3.59 | −1.05 |
+| **farms** | **+11.75** | 4.42 | **+2.66** |
 
-Joshua's overall E4 record: **3–6** (game 1 predates the archiving feature — unrecorded by
-design, not an archive bug). **Farms are 6-for-6 Joshua across every archived game** (27–15,
-27–3, 15–9, 18–9, 33–30, 30–0): the champion averages **11.0 farm pts/seat against him vs
-20.5 in its own self-play corpus** (`CORPUS_STATS_champ449.json score_flow_dist.farm_pts`),
-while Joshua averages 25.0. A specific contested-farm weakness is a live lead
-(opponent-conditioning is the confound); the champion's during-play game remains intact
-(it won both tonight's losses on during-play 68–37 / 67–52). ⚠️ **n=4 and the luck floor is real** — champion-vs-greedy
-paired-deck winrate leaves ~6.25% pooled luck in the base game, and the E4 protocol prices
-the champion at wr 0.55 against a strong opponent, so **one win is not a rating claim**.
-It is a milestone and a datum, not evidence of parity.
+**The total is as close to zero as a number can get**, and it is not one blowout cancelling
+another — it is a *structured* draw: he loses the engine room (during play, unfinished) and wins
+the fields by more than enough to pay for it. The farm component is the only one past 2σ.
+⚠️ **Unpaired, one seat, no deck pairing, and the human is an ASSISTED and IMPROVING player**
+(BACKLOG 2026-07-30 assists entry) — a description of twelve games, NOT a rating. Phase-C
+sizing for a real read: **193 seat-swap deck-paired games at true wr 0.55, 48 at 0.60.**
+
+## ⚠️ Champion farm points against Joshua — an estimate that will not sit still
+
+| n | champion farm pts/seat vs Joshua |
+|---|---|
+| 3 | 11.0 |
+| 6 | 19.5 |
+| **12** | **14.8** (se 3.8; its own self-play corpus = 20.5) |
+
+The 2026-08-05 "the champion is starved of farms (11.0 vs 20.5)" claim was a 3-game artifact and
+was corrected on 08-07 to 19.5; at n=12 it is 14.8, i.e. **~1.5σ below its corpus norm and still
+moving**. Do not quote any single value of this as a fact. What IS stable at n=12 is the *paired*
+farm margin above (+11.75, z +2.66) and one concrete oddity: the champion scores **zero** farm
+points in **4 of 12** games, against a corpus p5 of 0. The farm-war discriminator that this
+motivated returned INCONCLUSIVE ([FARMWAR_READOUT](../analyzer_evloss_20260805/FARMWAR_READOUT.md)),
+so nothing downstream depends on the unstable figure.
+
+Joshua's overall E4 record: **5–10** (game 1 predates the archiving feature — unrecorded by
+design, not an archive bug); the fixed_v1-epoch record is **5–7**. Joshua wins the farms in
+**9 of 12** fixed_v1 games and averages 26.5 farm pts/seat against the corpus norm of 20.5.
+⚠️ **The luck floor is real** — champion-vs-greedy paired-deck play leaves ~6.25% pooled luck
+in the base game — so at n=12 unpaired this is a description, not a rating.
 
 ## ⚠️ Grading-epoch boundary at 2026-08-01 (the rust-port flips)
 
