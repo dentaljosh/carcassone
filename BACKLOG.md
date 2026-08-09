@@ -13,6 +13,28 @@ When something comes out: either it gets promoted to an actual phase, or Joshua 
 
 ## Captured ideas
 
+## 2026-08-09 — 🐛 Rust engine PANICS on 7 fixed_v1 E4 archives in `reconcile_leaf`'s e4 job (pre-existing, found during the phase-seam gates)
+
+**Context:** the leaf phase-seam verification (2026-08-09 overnight) found `reconcile_leaf
+--configs all`'s **e4 corpus RED: 7 of 15 archives panic the rust engine** during
+`MirrorState.advance` — `carc-core/src/engine/mod.rs:411: index out of bounds: the len is 1225
+but the index is 18446744073709551596` (a NEGATIVE coordinate as usize; 1225 = 35×35). **Not
+the seam's fault — proven**: an engine-only replay probe (no leaf involved) under the STOCK
+site-packages `carc_rs` and the rebuilt wheel is byte-identical (`e4: ok=8 bad=7` on both;
+champ 449/449, distill 1500/1500, golden 12/12, midgame 1000/1000 all clean on both).
+
+**Almost certainly:** the 7 panicking archives are the **fixed_v1 phone games (centered18 +
+retail start)** replayed against a mirror that `reconcile_leaf`'s e4 job constructs with
+**default (walled row-6) geometry** — a board drifting past row 6 goes negative in mirror
+coords. Same family as the retracted game-3 grading: a consumer that doesn't resolve the
+archive's rules profile. The fix is the `resolve_profile_name`/`game_kwargs` pattern from
+`scripts/analyzer/ev_loss.py` applied to `reconcile_leaf`'s e4 corpus loader (and an audit for
+OTHER consumers that replay e4 archives with default geometry — grep for e4 loaders).
+
+**Why deferred:** found mid-overnight-run; the gate proceeded on the exact-subtraction of the
+e4 corpus (3,325,532 of 3,341,772 values compared, 0 mismatches), so nothing tonight depends
+on it. Cheap fix + a regression test pinning one fixed_v1 archive through the e4 job.
+
 ## 2026-08-09 — JCZ disagreement mining: steal the missing terms from the evaluator that tied us
 
 **Context:** Joshua, after the n=20 JCZ smoke came back LEVEL (+4.6 ± 2.2 pts/deck): "is there
