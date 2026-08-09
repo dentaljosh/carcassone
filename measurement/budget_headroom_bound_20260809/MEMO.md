@@ -1,14 +1,33 @@
 # THE BUDGET-HEADROOM DECAY BOUND — how much strength is left above 11008?
 
-> **STATUS: ✅ COMPLETE 2026-08-09 — DESK ASSEMBLY ONLY, NO NEW COMPUTE.** Every number
-> below is read off data already on disk; nothing was run. **The deliverable is a BOUND, not
-> a prediction**, and it rests on one assumption that the data *cannot* check at the place it
-> matters most (see §6, the top-of-ladder anomaly). **Headline: the bound converges at
-> measurable confidence when `r` is fitted over the whole ladder (r = 0.675, 95% CI
-> [0.573, 0.796], excludes 1.0), and it DOES NOT converge if `r` is taken from the single
-> adjacent doubling nearest the extrapolation point (r₄ = 1.19 ± 0.40).** Central bound:
-> **≈ +4.3 pts/game ≈ +54 elo of total remaining search-budget headroom above 11008**, bracket
-> **[+7, +181] elo**. No CL id, no `results.csv` row, `governance/PRODUCTION.yaml` untouched.
+> **STATUS: ✅ ASSEMBLED AND TIGHTENED 2026-08-09 — §7'S ONE CHEAP MEASUREMENT WAS FUNDED AND
+> RAN THE SAME DAY. READ [§9](#9-results--the-7-measurement-ran-2026-08-09) BEFORE CITING ANY
+> NUMBER IN §4.3 OR §8.**
+>
+> **⚠️ THE +54 ELO CENTRAL BOUND IS SUPERSEDED. Do not cite it as current.** §7's decision map
+> fired **branch 2 (`price ≪ 0.2`)**, and it fired **POWERED**: the measured price at the
+> top-of-ladder pair 5504-vs-11008 is **+0.0673 pts/disagreement** (n=150, 126 roots,
+> cluster-robust se 0.2041, **z +0.33**, p 0.742, bootstrap 95% CI **[−0.330, +0.467]**) against
+> the memo's own P-constant point prediction of **+0.511** — which would have read z = 2.5 at
+> the realized se, and which sits **outside** the CI's upper bound. Budget-invariant price is
+> **refuted at the extrapolation point**, not merely unconfirmed.
+>
+> **RE-STATED BOUND: ≈ +0.57 pts/game ≈ +7 elo central (+7.7 at σ_game 20.4, fixed_v1), honest
+> bracket ≈ [−35, +49] elo — it now spans zero.**
+>
+> **The mechanism, and the actual finding:** the *rate* of budget-attributable disagreement did
+> NOT keep decaying at the top rung (Δ₄ 0.0173 → Δ₅ 0.0206, r₄ > 1 — that part of §6(iii)'s
+> anomaly is real in the data), but the *price* of a disagreement **collapsed** (+0.7375 over the
+> 2752→11008 composite vs +0.0673 over its top half alone) ⇒ **essentially all of the composite's
+> value came from the 2752→5504 half, and above 5504 the deeper pick MOVES but does not IMPROVE.**
+> The geometric family is not withdrawn — the decay is still there, it just lives in the PRICE
+> rather than the RATE, which is exactly the quantity §3.2 assumed constant and flagged as *"the
+> single largest unbraced lever in the whole assembly."*
+>
+> Everything in §1–§8 was desk assembly off data already on disk. §9 is the one run. Both
+> structural caveats of §6 still point the same way (bound too high), and §6(ii)'s in-family-judge
+> caveat is if anything **sharper** now: a same-family judge should FAVOUR the deeper pick, and it
+> did not. No CL id, no `results.csv` row, `governance/PRODUCTION.yaml` untouched.
 
 ---
 
@@ -200,6 +219,13 @@ plentiful, exactly as non-additivity predicts). Carried as a bracket, not a fix.
 
 ### 4.3 THE BOUND
 
+> **⚠️ SUPERSEDED BY [§9](#9-results--the-7-measurement-ran-2026-08-09) (2026-08-09).** The table
+> below is kept visible because it is the arithmetic of record and §9 re-runs *exactly this chain*
+> with only `P` replaced by the measured top-rung price (feeding the P-constant price 0.51125
+> through it reproduces the +54.1 elo central below, which is how §9's recomputation was
+> validated). **The price is now measured at the extrapolation point and is +0.0673, not the
+> assumed constant ⇒ the central collapses +54 → ≈ +7 elo and the bracket spans zero.** Cite §9.
+
 `H = g_next / (1 − r)` where `g_next = Δ(5504→11008) × r × P × 71.5 / divisor`, i.e. the
 first *unmeasured* doubling (11008 → 22016) and everything above it, summed.
 
@@ -301,13 +327,31 @@ reversed** at deploy and the sum **does not converge**. Two readings, both live:
 
 **This memo cannot distinguish them, and §7 is the cheapest thing that would.**
 
+> **✅ RESOLVED 2026-08-09 — see [§9](#9-results--the-7-measurement-ran-2026-08-09), and the
+> resolution is a THIRD reading neither of the two above anticipated.** Reading 1 (noise) is
+> *wrong* about the rate: Δ₅ > Δ₄ survives as the measurement. Reading 2 (the decay has stopped)
+> is *wrong* about the consequence: the decay has not stopped, it **moved from the rate into the
+> price** — the extra disagreements at the top rung are worth **+0.0673 pts each** (cluster-robust
+> z +0.33), i.e. the deeper pick **moves but does not improve**. The sum still converges; it
+> converges to ≈ +7 elo instead of ≈ +54.
+
 ---
 
 ## 7. WHAT ONE CHEAP MEASUREMENT WOULD MOST TIGHTEN THE BOUND
 
 **Oracle-price the 5504-vs-11008 disagreement set** — i.e. re-run the existing
 `oracle_score_pilot.py` instrument, unchanged, on the adjacent-doubling pair at the TOP of the
-ladder instead of the 2752v11008 composite. **DO NOT RUN — costed for a decision, not launched.**
+ladder instead of the 2752v11008 composite. ~~**DO NOT RUN — costed for a decision, not
+launched.**~~
+
+> **✅ FUNDED AND RAN 2026-08-09 — see [§9](#9-results--the-7-measurement-ran-2026-08-09).**
+> **Branch 2 fired (`price ≪ 0.2`): measured price +0.0673, cluster-robust z +0.33, bootstrap 95%
+> CI [−0.330, +0.467], price ratio 0.091 vs the +0.7375 reference.** The costing below held up:
+> 150 positions, 990.1 s at W16 (16.5 min) on `--backend rust`, against the "plausibly ~20–30 min"
+> rust-era estimate. The rationale for preferring this pair to a low-end pair is vindicated — it
+> converted the weakest link into a measurement, and **the link broke.** The second-cheapest
+> follow-on (M → 64 on the banked 2752v11008 positions) is **moot**: it would tighten a price that
+> is no longer the binding uncertainty.
 
 Why this one and not a low-end pair (688→1376 / 1376→2752, the brief's suggestion):
 
@@ -343,6 +387,14 @@ zero new positions) — it tightens P but tests nothing new.
 
 ## 8. Bottom line
 
+> **⚠️ BULLETS 2 AND 3 SUPERSEDED BY [§9](#9-results--the-7-measurement-ran-2026-08-09)
+> (2026-08-09).** Bullet 1 (the decay is real and geometric-looking on the *rate*) stands
+> unchanged. Bullet 2's **+54 elo / +7 … +181** is superseded by **≈ +7 elo, bracket ≈ [−35, +49]**.
+> Bullet 3's "honest asterisk" is resolved: r₄ = 1.19 is *real*, but it no longer breaks
+> convergence, because the decay relocated into the **price** — which §9 measures at +0.0673
+> (z +0.33) where this memo assumed 0.511. Bullet 4 ("understanding, not a deploy lever") stands,
+> and stands harder.
+
 - The **decay is real and geometric-looking across the measured ladder**: r = 0.675 [0.573, 0.796]
   (all-5 fit), r = 0.579 ± 0.069 (adjacent-3), reproduced independently in the narrow-gap stratum.
   **The sum converges at measurable confidence on that fit.**
@@ -357,6 +409,165 @@ zero new positions) — it tightens P but tests nothing new.
   both still apply: 11008 already runs at ~20.6% of a 15-min clock at `parallel_workers=8`, and
   22016 is the *first* rung this bound says anything about. Nothing here proposes a
   `PRODUCTION.yaml` change.
+
+---
+
+## 9. RESULTS — the §7 measurement RAN (2026-08-09)
+
+**Funded and executed the same day the memo was assembled.** §7's decision map fired
+**branch 2 (`price ≪ 0.2`)**, and it fired powered. The headline is not "the bound got smaller";
+it is **the rate-vs-price relocation** in §9.5, which resolves §6(iii)'s anomaly in a way neither
+of its two readings anticipated.
+
+### 9.1 The command, verbatim
+
+```
+.venv/bin/python -u scripts/measurement_infra/oracle_score_pilot.py \
+  --level-a 1376 --level-b 2752 --n 150 --m 32 --oracle-sims 100 --workers 16 \
+  --out-subdir oracle_score_pilot_5504v11008 --backend rust --resume
+```
+
+Levels are `sims_per_det` at `k_dets = 4`, so `1376 → 5504 total` and `2752 → 11008 total` —
+i.e. the top-of-ladder **adjacent** doubling, exactly the pair §7 pre-registered. **The instrument
+is `oracle_score_pilot.py` UNCHANGED**: no adapter was needed (`--level-a/--level-b` already
+existed and `load_disagreements` keys off `q_pick_by_level`), default `clair-puct` judge, M = 32
+CRN worlds, `--oracle-sims 100`. Same instrument, same knobs, same judge as the +0.7375 reference
+— only the pair differs. That is what makes the two prices comparable.
+
+### 9.2 Backend — the ruler is the same ruler
+
+The run used **`--backend rust`**. That is licensed by the committed identity gate
+`measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json` (**20 positions, 940 field checks, 0
+mismatches**, every non-timing record field compared as raw f64 bit patterns), and the gate was
+**re-verified on the current revision before launch**: **8 positions, 376 field checks, 0
+mismatches, speedup 9.48×**. The committed 20-position record was left in place, not overwritten
+by the smaller re-verification. ⇒ the rust leg is a bit-exact conversion of the python instrument
+that produced +0.7375, not a new ruler. (Scope inherited from the gate: the `clair-puct`
+continuation at these knobs; `tier1-greedy` is out of scope, Gap 3 remains OPEN.)
+
+### 9.3 Run health
+
+| field | value |
+|---|---|
+| `population_disagreements` at the pair | **474** (§7 predicted ~470 from `D_paired₅ 0.181 × ~2618 records`) |
+| n sampled / attempted / failed | 150 / 150 / **0** |
+| distinct roots among the 150 | **126** |
+| `crn_verified_all` | **true** |
+| `wall_secs` | **990.1 s = 16.5 min at W16** (§7's rust-era estimate: ~20–30 min) |
+| `sd_delta_positions` at M=32 | 2.2787 (the 2752v11008 pilot's was 2.406) |
+
+Artifacts: `/mnt/c/carc-shared/classical_search/oracle_score_pilot_5504v11008/`
+(`manifest.json`, `summary.json`, `records/` — 150 files, `price_analysis.json`);
+log `measurement/classical_search/oracle_score_pilot_5504v11008.log`.
+
+### 9.4 The result
+
+Recomputed by `scripts/measurement_infra/analyze_oracle_price.py`, which **reproduces the
+published 2752v11008 numbers exactly as its acceptance test** — so the two columns below are the
+same estimator, not two estimators.
+
+| quantity | **5504 vs 11008 (NEW)** | 2752 vs 11008 (the memo's price) |
+|---|---|---|
+| n positions / roots | **150 / 126** | 100 / 89 |
+| mean Δ pts per disagreement | **+0.0673** | +0.7375 |
+| sd per position (M=32) | 2.2787 | 2.4058 |
+| naive se / z | 0.1861 / +0.362 | 0.2406 / +3.07 |
+| **cluster-robust (root) se / z / p** | **0.2041 / +0.330 / 0.742** | 0.2486 / +2.97 / 0.0030 |
+| root-collapsed mean / z | +0.1141 / +0.588 | +0.5920 / +2.45 |
+| cluster bootstrap 95% CI (roots, 20000 reps, seed 20260809) | **[−0.3300, +0.4668]** | [+0.251, +1.226] |
+| bootstrap P(≤ 0) | 0.365 | 0.0014 |
+| design effect | 1.204 | 1.067 |
+
+**Price ratio vs the +0.7375 reference: 0.091, CI [−0.447, +0.633].**
+
+Cluster-robust z is the primary throughout; the naive z is printed only so the design effect is
+auditable.
+
+### 9.5 Which branch fired, and why it is POWERED
+
+§7's map: `price ≈ 0.5 ⇒ P-constancy holds, the central bound stands, r₄ is noise` ·
+`price ≪ 0.2 ⇒ the price falls faster than the rate, true bound well under +54 (the GOOD outcome,
+headroom closes cheaply)` · `price ≫ 1.0 ⇒ r₄ > 1 is real, the geometric family is the wrong
+family above deploy, WITHDRAW the bound`.
+
+**Branch 2 fired: `price ≪ 0.2`** (measured +0.0673, ratio 0.091).
+
+**And it fired powered — this must be said explicitly, because a z of +0.33 read carelessly looks
+like an underpowered null.** §7's own P-constant point prediction for this cell was
+`Δ₅/D_paired₅ × P = 0.0206/0.181 × 4.466 = 0.511` pts/disagreement. At the **realized**
+cluster-robust se of 0.2041, that predicted effect would have read **z = 2.5**. Measured z is
+**+0.33**. Moreover the bootstrap CI's **upper** bound (+0.4668) sits **below** the 0.511
+prediction ⇒ *"the bound stands"* is **excluded at roughly 95%**, not merely disfavoured. This is
+a **powered refutation of budget-invariant price AT the extrapolation point**, not a failure to
+detect.
+
+### 9.6 The re-stated bound
+
+Identical chain to §4.3 — `P_signal = D_paired₅ × price / Δ₅` with `D_paired₅ = 0.1810`,
+`Δ₅ = 0.0206`; `g_next = Δ₅ × r × P_signal × 71.5 / divisor`; `H = g_next/(1 − r)`; elo via
+`wr = 0.5 + (pts/σ)·φ(0)` — **only `P` is replaced by the measured top-rung price.**
+
+**Sanity check on the recomputation:** feeding §4.3's P-constant price **0.51125** through this
+exact chain reproduces its published **+54.1 elo** central and **4.294 pts/game**. So what follows
+is the memo's own arithmetic with one input measured instead of assumed, not a new arithmetic.
+
+With the measured price (r = 0.675 central, divisor 3.2):
+
+| branch | price | P_signal | g_next (pts/game) | H (pts/game) | elo (σ 22.2) | elo (σ 20.4, fixed_v1) |
+|---|---|---|---|---|---|---|
+| **★ CENTRAL (measured)** | **+0.0673** | 0.591 | +0.1837 | **+0.5652** | **+7.1** | **+7.7** |
+| bootstrap CI lo | −0.3300 | −2.899 | −0.9008 | −2.7717 | −34.7 | −37.8 |
+| bootstrap CI hi | +0.4668 | 4.101 | +1.2742 | +3.9206 | +49.3 | +53.7 |
+
+r-sensitivity at the measured price: **r = 0.573 → +4.6 elo · r = 0.675 → +7.1 elo ·
+r = 0.796 → +13.3 elo.** Note how much **smaller** the r-sensitivity now is than the
+price-sensitivity: **the bound's dominant uncertainty has moved off the decay ratio and onto the
+price**, which is where §3.2 said the unbraced lever was.
+
+⇒ **the central bound collapses from +54 elo to ≈ +7 elo, with an honest bracket now spanning
+zero: roughly [−35, +49] elo.** The +54 figure is **superseded, not merely caveated.**
+
+### 9.7 THE INTERPRETIVE POINT — the decay moved from the RATE into the PRICE
+
+§6(iii) could not distinguish *"r₄ = 1.19 is noise"* from *"the decay really has stopped at
+deploy."* **This measurement resolves it in a third way neither reading anticipated, and that is
+the interesting result:**
+
+- The **RATE** of budget-attributable disagreement did **not** keep decaying at the top rung
+  (Δ₄ = 0.0173 → Δ₅ = 0.0206, r₄ > 1). **That part of the anomaly is real in the data.**
+- But the **PRICE** of a disagreement **collapsed**: **+0.7375** over the 2752→11008 *composite*
+  versus **+0.0673** over its *top half alone* ⇒ **essentially all of the composite's measured
+  value came from the 2752→5504 half.**
+- ⇒ **Above 5504 the deeper pick MOVES but does not IMPROVE.** The search keeps changing its mind
+  at the top of the ladder; it is churning between moves of ~equal value.
+- ⇒ **The geometric family is NOT withdrawn.** The decay is still there — it simply lives in the
+  **price** rather than the **rate**, i.e. in exactly the quantity §3.2 held constant and named
+  *"the single largest unbraced lever in the whole assembly."*
+
+**§5's out-of-sample misses now have a mechanism rather than just a sign.** Both rungs above 11008
+(11008→22016 measured 0.013 vs 0.053 predicted; →110080 measured 0.069 vs 0.106) landed **below**
+the model; "the price above deploy is near zero" is precisely the mechanism that produces that.
+
+**§6's caveats survive and still point the same way.** Caveat (i) cliff-vs-geometric and caveat
+(ii) in-family judge **both** argue the bound is too high — and (ii) is **sharper now, not
+weaker**: a judge sharing the champion's search and its curve125 leaf should *favour* the deeper
+pick, and **it did not**. Whatever residual same-family self-preference exists is working against
+the null we measured.
+
+### 9.8 What is NOT claimed
+
+- **No `results.csv` row — deliberately, not by oversight.** This instrument has **no opponent, no
+  elo and no W/L/D**; the schema has no slot for it. The memo and the `docs/LEVER_INDEX.md` row
+  both already state that this line of work carries no results.csv row, and that stands. Its
+  numbers live in `summary.json`/`price_analysis.json` and in this section.
+- **No CL id minted, `governance/PRODUCTION.yaml` untouched, nothing promoted.** No band-registry
+  involvement either — **no games were played**.
+- **Still understanding, not a deploy lever.** CL-068's clock sentence and CL-071's promotion both
+  still apply; 22016 remains the first rung this bound speaks to, and the bound now says that rung
+  is worth ~nothing.
+- The measurement prices **one** adjacent pair. It refutes P-constancy *at the top of the ladder*;
+  it does not establish the price at any low-end pair, and §3.1's low-end sub-additivity is
+  untouched.
 
 ---
 
@@ -375,5 +586,9 @@ zero new positions) — it tightens P but tests nothing new.
 | direct 2752→11008 elo | +49.85 ± 17.55 | `experiments/results.csv cl060_h2h_k8x1376_vs_deploy_k4x688`; CL-060 |
 | the cliff exemplar | +0.31/+0.76/+0.11/−0.01 pts/deck per K | [F13 READ-OUT](../exact_k_ladder_20260803/READOUT.md); CL-076 |
 | in-family discriminator | +0.626, 80% sign agreement | `measurement/classical_search/oracle_score_pilot_t1greedy.log`; LEVER_INDEX clairvoyant-champion row |
+| **§9 measured price (5504v11008)** | **+0.0673**, sd 2.2787, naive se 0.1861 | `/mnt/c/carc-shared/classical_search/oracle_score_pilot_5504v11008/summary.json` (`mean_delta_pts`, `sd_delta_positions`, `se_mean_delta`) |
+| **§9 cluster-robust + bootstrap** | CR se 0.2041 / z +0.330 / p 0.742; CI [−0.3300, +0.4668]; P(≤0) 0.365; deff 1.204; ratio 0.091 | same dir `price_analysis.json` (20000 reps, seed 20260809); emitted by `scripts/measurement_infra/analyze_oracle_price.py` |
+| **§9 run health** | 150/150 ok, 0 failed, `crn_verified_all` true, 126 roots, 474 population, 990.1 s @W16 | same `summary.json`; log `measurement/classical_search/oracle_score_pilot_5504v11008.log`; config in `manifest.json` |
+| **§9 backend licence** | 20 positions / 940 field checks / 0 mismatches (committed); re-verified at HEAD 8 positions / 376 checks / 0 mismatches, 9.48× | `measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json`; rustport P6 |
 
 Arithmetic is reproducible from the cited fields alone; no intermediate artefact is required.
