@@ -289,7 +289,11 @@ chunk_limits() {  # $1=chunk name -> "MemoryHigh MemoryMax timeout_s"
     # a documented box exception, kept internally valid by moving the seam and main
     # legs together. 16 GB is a deliberate ceiling, not a guess: if the cell needs
     # more than that, it is a finding to report, not a cap to keep raising.
-    15e07_*) echo "12G 16G 10800" ;;
+    # MEASURED 2026-08-09: it passed 8.2 GB at 20 min and was still growing ~0.4
+    # GB/min, so the ceiling was moved once, to 24 GB, on a 41 GB box. If a run
+    # ever OOMs at 24 GB, STOP and report the cell as unbounded -- do not raise
+    # again; the local VM dies around 34 GB (reference_wsl2_host_memory_teardown).
+    15e07_*) echo "20G 24G 14400" ;;
     15*|16*) echo "7G 8G 7200" ;;
     *)                   echo "$MEM_HIGH $MEM_MAX $CHUNK_TIMEOUT" ;;
   esac
