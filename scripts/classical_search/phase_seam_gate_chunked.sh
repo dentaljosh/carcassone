@@ -116,7 +116,19 @@ CHUNKS=(
 "15b_fair_cand_curve_drift|tests/test_fair_cand_curve_drift.py"
 "15c_fair_info_gate_zero|tests/test_fair_info_gate_zero.py"
 "15d_fair_oracle_prior|tests/test_fair_oracle_prior.py"
-"15e_fair_puct_agent|tests/test_fair_puct_agent.py"
+"15e01_puct_deterministic_given_seed|tests/test_fair_puct_agent.py::test_puct_deterministic_given_seed"
+"15e02_puct_seed_derivation_is_move_indexed|tests/test_fair_puct_agent.py::test_puct_seed_derivation_is_move_indexed"
+"15e03_puct_choose_action_never_mutates_caller_boar|tests/test_fair_puct_agent.py::test_puct_choose_action_never_mutates_caller_board"
+"15e04_puct_plays_full_legal_determinized_game|tests/test_fair_puct_agent.py::test_puct_plays_full_legal_determinized_game"
+"15e05_puct_marginalized_handoff_fires_at_k2_and_la|tests/test_fair_puct_agent.py::test_puct_marginalized_handoff_fires_at_k2_and_latches"
+"15e06_puct_no_solver_above_exact_max_k|tests/test_fair_puct_agent.py::test_puct_no_solver_above_exact_max_k"
+"15e07_puct_exact_max_k_configurable_latches_at_k4|tests/test_fair_puct_agent.py::test_puct_exact_max_k_configurable_latches_at_k4"
+"15e08_puct_exact_endgame_flag_gates_the_handoff|tests/test_fair_puct_agent.py::test_puct_exact_endgame_flag_gates_the_handoff"
+"15e09_puct_k_dets_validation|tests/test_fair_puct_agent.py::test_puct_k_dets_validation"
+"15e10_puct_batch_size_validation|tests/test_fair_puct_agent.py::test_puct_batch_size_validation"
+"15e11_default_agent_constructs_neuralmcts_with_ser|tests/test_fair_puct_agent.py::test_default_agent_constructs_neuralmcts_with_serial_defaults"
+"15e12_default_agent_never_enters_the_virtual_loss_|tests/test_fair_puct_agent.py::test_default_agent_never_enters_the_virtual_loss_path"
+"15e13_default_agent_pick_matches_prebatch_golden|tests/test_fair_puct_agent.py::test_default_agent_pick_matches_prebatch_golden"
 "15f_fair_puct_opponent|tests/test_fair_puct_opponent.py"
 "15g_puct_priors_opponent_backend|tests/test_puct_priors_opponent_backend.py"
 "15h_puct_priors_watchdog|tests/test_puct_priors_watchdog.py"
@@ -127,6 +139,8 @@ CHUNKS=(
 "16e_jcz_tile_oracle|tests/test_jcz_tile_oracle.py"
 "16f_kparallel|tests/test_kparallel.py"
 "16g_luck_floor_pairs|tests/test_luck_floor_pairs.py"
+"16h_jcz_mining_analyze|tests/test_jcz_mining_analyze.py"
+"16i_jcz_mining_extract|tests/test_jcz_mining_extract.py"
 "17_rustport|tests/rustport"
 )
 
@@ -179,7 +193,9 @@ fi
 preflight() {  # $1=label  $2=tree
   local label="$1" tree="$2" bad=0
   local listed actual unlisted
-  listed=$(for c in "${CHUNKS[@]}"; do for p in ${c#*|}; do echo "$p"; done; done | grep -v '^tests/rustport$' | sort -u)
+  # A chunk path may be a FILE or a pytest node id (file::test) -- 15e is split per
+  # test because one of its tests alone wants ~6 GB. Compare on the file part only.
+  listed=$(for c in "${CHUNKS[@]}"; do for p in ${c#*|}; do echo "${p%%::*}"; done; done | grep -v '^tests/rustport$' | sort -u)
   actual=$(cd "$tree" && find tests -name 'test_*.py' -not -path 'tests/rustport/*' | sort)
   unlisted=$(comm -13 <(echo "$listed") <(echo "$actual"))
   if [ -n "$unlisted" ]; then
@@ -266,7 +282,15 @@ fi
 # beats a silent stall.
 chunk_limits() {  # $1=chunk name -> "MemoryHigh MemoryMax timeout_s"
   case "$1" in
-    15[a-z]_*|16[a-z]_*) echo "7G 8G 7200" ;;
+    # 15e07 is the one genuinely large cell in the suite: test_puct_exact_max_k_
+    # configurable_latches_at_k4 passed 6.5 GB RSS on its own and was still climbing
+    # ~0.37 GB/min. It does NOT fit the 11.9 GB laptop VM under any cap that still
+    # protects the VM, so this cell runs on the 41 GB local box for BOTH trees --
+    # a documented box exception, kept internally valid by moving the seam and main
+    # legs together. 16 GB is a deliberate ceiling, not a guess: if the cell needs
+    # more than that, it is a finding to report, not a cap to keep raising.
+    15e07_*) echo "12G 16G 10800" ;;
+    15*|16*) echo "7G 8G 7200" ;;
     *)                   echo "$MEM_HIGH $MEM_MAX $CHUNK_TIMEOUT" ;;
   esac
 }
@@ -289,7 +313,7 @@ run_chunk() {  # $1=tree-label  $2=tree-path  $3=pp-prefix  $4=chunk-name  $5=pa
   # Keep only the paths that exist in THIS tree (see the preflight note above).
   local kept="" p
   for p in $paths; do
-    if [ -e "$tree/$p" ]; then kept="$kept $p"; fi
+    if [ -e "$tree/${p%%::*}" ]; then kept="$kept $p"; fi
   done
   if [ -z "$kept" ]; then
     log "  [$label/$name] no paths exist in this tree — recording empty artifact"
@@ -406,6 +430,16 @@ run_tree() {  # $1=label $2=tree $3=pp-prefix
     # would be withheld as INCONCLUSIVE, which is the intended safety behaviour.
     if [ -n "${GATE_ONLY:-}" ]; then
       case "${c%%|*}" in ${GATE_ONLY}) ;; *) continue ;; esac
+    fi
+    # GATE_DEFER: skip a chunk WITHOUT attempting it. For a chunk under active
+    # debugging, so the other 45 can make progress meanwhile instead of the whole
+    # gate sitting behind one broken cell. A deferred chunk writes no artifact, so
+    # the completeness guard keeps the verdict INCOMPLETE -- deferring can never
+    # produce a verdict, only postpone one. Clear it before the final run.
+    if [ -n "${GATE_DEFER:-}" ]; then
+      case "${c%%|*}" in
+        ${GATE_DEFER}) log "  [$label/${c%%|*}] DEFERRED by GATE_DEFER"; continue ;;
+      esac
     fi
     run_chunk "$label" "$2" "$3" "${c%%|*}" "${c#*|}" || poison=1
   done
