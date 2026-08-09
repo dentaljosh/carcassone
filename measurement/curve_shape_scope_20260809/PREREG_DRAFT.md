@@ -1,7 +1,13 @@
 # MEEPLE-CURVE SHAPE + PHASE SEARCH — PRE-REGISTRATION (DRAFT, CONDITIONAL ON FUNDING)
 
-> **STATUS: ✅ PARTS A AND C FUNDED AND AUTHORIZED 2026-08-09. BANDS CLAIMED BEFORE GAME 1.**
-> **Part B (the Optuna sweep) remains UNFUNDED and is gated on Part A's reading, as written.**
+> **STATUS: Part A ✅ RAN AND PARKED 2026-08-09 — pre-registered branch A4_UNRESOLVABLE fired**
+> (identity −21.7±17.4 as instrument zero; no off-production cell clears 2σ vs it; broadlow
+> the largest at elo_vs_c0 −25.5, z≈−1.0; flattop replicates the Wave-2 tie) ⇒ **Part B (the
+> 3.9-box-day sweep) is NOT FUNDED on a sub-2σ signal — the A1/A4 branches say PARK, and they
+> did.** Band 1.10e11 retired decision-influenced. Close-out `65b36fa`.
+> **Part C (phase ladder): gated on the phase-seam suite comparison** — 549c0d1 verified 3/4
+> gates; the full-suite gate runs via `night_chain.sh` (the 06:51 dirty reboot killed the
+> first attempt mid-suite and false-blocked on a /tmp-wiped wheel; fixed + relaunched).
 > Written 2026-08-09 alongside [SCOPE.md](SCOPE.md), which carries the rationale, the cost
 > arithmetic and the dominance-order analysis. This file is the *runnable* protocol.
 > `governance/PRODUCTION.yaml` is untouched on every branch of this document.
