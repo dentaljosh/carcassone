@@ -4700,3 +4700,72 @@ A4_UNRESOLVABLE. `governance/PRODUCTION.yaml` **untouched**; nothing promoted.
 
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
+
+## 2026-08-10 (~10:00) — The β=+0.3 lean is POWERED and does NOT confirm: pre-registered branch **P2**, CL-077's falsifier **DISCHARGED-NEGATIVE**, the phase program is fully closed
+
+**Why it ran.** Part C closed five hours earlier with one live residue: β=+0.3 was the ladder's
+largest single cell (+33.1 elo, deck-paired margin +1.960, z +1.39) and the slope's sign matched
+Joshua's own self-described play evolution. It was recorded as an **unresolved lean, not a signal**,
+with an explicit re-open bar in CL-077 — *n ≥ 800 deck-paired in β ∈ [+0.2,+0.4] on a fresh band*.
+Joshua funded exactly that ("let's power 0.3") the same morning. Pre-registration
+[measurement/curve_shape_scope_20260809/PREREG_POWER03.md](measurement/curve_shape_scope_20260809/PREREG_POWER03.md)
+was written **before game 1** and named P1/P2/P3 with the primary statistic fixed in advance.
+
+**Design — one cell, no pooling, fresh band. Options considered:** (a) a mini-ladder around +0.3;
+(b) the single peak cell at full power; (c) extend the existing n=200 cell to n=800 on the same band.
+**Chose (b)** — +0.3 is already *bracketed* (both 0.0 and +0.6 read lower in attempt 2), so the
+cheap informative test is the peak cell alone: if it confirms, the neighbourhood sweep is the *next*
+experiment; if it nulls, no neighbour was going to rescue it. **(c) was excluded by rule** — pooling
+or extending across the attempt-2 band would have been a cross-band contrast, which CL-068's
+amendment forbids (over-dispersed 1.8–2.2×), and it would also have made the selecting observation
+part of its own confirmation. So: **fresh band 1.17e11**, n=800 deck-paired (400 decks × 2 seats),
+candidate = the production leaf × the E[f]=1-renormalized phase multiplier at β=+0.3 / norm 1.00825
+(`cand_leaf_hash 0283a702b8f5af51`, **bit-identical** to attempt-2's b0p3), opponent = the curve125
+production champion `a36d2e15a3b3d71d`, fair PIMC k8×1376 = 11008 both arms, exact-K2 endgame shared,
+`fixed_v1` + `CARCASSONNE_FIX_R9=1`, rust backend. Every §wiring gate was verified from the manifest
+**before any result number was read**: both leaf hashes, `v29_phase_beta` 0.3, `v29_phase_norm`
+1.00825, `rules_profile` fixed_v1, `r9_env_ok` true, backend rust, `band_seed_start` 117000000000,
+and completion **800/800 = 100%** against the ≥90% VOID bar.
+
+**The result.** W378 / D24 / L398 — winrate 0.4875 (z −0.71), **elo −8.688 ± 12.288**,
+`paired_mean_margin` **−0.4975 pts/deck**, and the pre-registered **primary statistic, the
+deck-paired margin z, reads −0.7845**. Equal wall-clock (1814 ms/move candidate vs 1767 ms/move
+champion prefix). Source
+`/mnt/c/carc-shared/curvephase_ladder/cp3_b0p3/{summary,manifest}.json`; `results.csv` row
+`curvephase_b0p3_power_fixed_v1_vs_champ_n800`.
+
+**Adjudication: P2 — THE LEAN DOES NOT CONFIRM** (|margin z| 0.78 < 2.0). Per the prereg: **CL-077
+stands**, its falsifier is **DISCHARGED-NEGATIVE**, and the phase axis **stays closed**. The
+effect-size floor goes on the record: this instrument resolves **~±1.2 pts/deck ≈ ±20 elo at 2σ**, so
+a phase effect larger than that at β=+0.3 is now excluded on clean, *powered*, *within-band*,
+deck-paired ground — the robust contrast class. ⚠️ It remains a **bounded null**; the mandatory
+wording from AMENDMENT 2 carries over verbatim — **never "the phase axis is dead."**
+
+**The framing that matters more than the number: this is the winner's curse, third confirmed
+instance.** +33.1 elo / margin +1.960 / z +1.39 at n=200 became **a sign-flipped −8.7 / −0.4975 /
+z −0.78 at 4× the sample**. The house rule — *a lone value that beats its parameter-neighbours by
+>1σ is a noise signature, not a peak* — predicted this in advance and is now three-for-three in the
+program's own history: `intrareuse_k4x688` (+40.1 screen → +27.3 → +5.2 → **+16.2 combined with a 95%
+CI including zero**), the distill **it16 "+88.7" crest** (a winner's-curse peak that held anchor tier
+but never grew), and now this. The lean was *correctly* recorded as unresolved rather than
+promotable; the discipline that refused to read +33.1 as a hit is what this entry vindicates.
+
+**Operational note — the program's first two-box work-stealing eval on the seam-merged code.** The
+prereg's design line said "local box W=14 (the only box carrying the merged+built seam substrate;
+laptop deliberately excluded)". In execution the laptop *was* brought in: **local W=30 + laptop W=22
+on a shared claim, ~3.1 h total wall.** That is a **resource-plan deviation, not a statistical one** —
+worker count and host are not terms of the pre-registered contrast, and the laptop was
+**bundle-synced, rebuilt and capability-verified before joining**, so the candidate leaf hash is
+byte-identical across both boxes *by construction of the shared claim* (a single `cand_leaf_json`
+resolved to `0283a702b8f5af51` in every worker's manifest). Zero contamination, and the arm that had
+cost the program a stalled gate and a force-exited VM the day before is now a working second box.
+
+**Consequences.** Band 1.17e11 retired decision-influenced. **CL-077** stays **Supported**, its
+falsifier field flipped to DISCHARGED-NEGATIVE with the n=800 numbers. **The phase program — Part C's
+C-KILL plus this discharge — is now FULLY CLOSED at current instruments**: a re-open needs a **new
+mechanism argument** (a non-linear or thresholded phase form that carries one) **or a finer
+instrument**, *not* more n at this design. Both boxes are free.
+`governance/PRODUCTION.yaml` **untouched**; nothing promoted on any branch.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first

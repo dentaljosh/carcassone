@@ -1,6 +1,18 @@
 # POWERED CONFIRM OF THE β=+0.3 PHASE LEAN — PRE-REGISTRATION
 
-> **STATUS: FUNDED 2026-08-10 morning (Joshua: "let's power 0.3"). Written BEFORE game 1.**
+> **STATUS: ✅ RAN AND CLOSED 2026-08-10 — pre-registered branch **P2** fired: THE LEAN DOES NOT
+> CONFIRM.** n=800 deck-paired on band 1.17e11 (retired): W378/D24/L398, elo **−8.688 ± 12.288**,
+> paired margin **−0.4975 pts/deck**, **primary statistic margin z −0.7845** (|z| < 2.0). All §wiring
+> gates verified from the manifest before any number was read; completion 800/800. ⇒ **CL-077 stands,
+> its falsifier is DISCHARGED-NEGATIVE, the phase axis stays closed; effect-size floor ~±1.2 pts/deck
+> ≈ ±20 elo at 2σ.** The n=200 lean (+33.1 / z +1.39) regressed to a *sign-flipped* null at 4× the
+> sample — the house noise signature, third confirmed instance. `PRODUCTION.yaml` untouched.
+> results.csv `curvephase_b0p3_power_fixed_v1_vs_champ_n800`; DECISIONS 2026-08-10 (~10:00).
+> *Deviation on the record: executed on TWO boxes (local W=30 + laptop W=22 work-stealing, ~3.1 h)
+> rather than the design line's "local W=14, laptop excluded" — a resource-plan change, not a
+> statistical term; the laptop was bundle-synced + capability-verified before joining.*
+>
+> **STATUS (original, at funding): FUNDED 2026-08-10 morning (Joshua: "let's power 0.3"). Written BEFORE game 1.**
 > This is CL-077's own falsifier, exercised: the C-KILL ladder's +0.3 cell read +33.1 elo /
 > paired margin +1.960 (z +1.39) at n=200 — recorded as an UNRESOLVED LEAN (largest single
 > cell, direction of the owner's self-described play policy, but sub-2σ and non-monotone:
