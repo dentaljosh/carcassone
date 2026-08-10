@@ -1,0 +1,64 @@
+{
+  "verdict": "PENDING",
+  "why": "only 0/3 off-production cells complete",
+  "notes": [
+    "n=400 deck-paired resolves ~+/-12 elo at 1 sigma, so the +/-25 elo band is ~2 sigma: a cell reading +20 is UNRESOLVED, not null.",
+    "C1/C2/C3 are family-generated while C0 is the LITERAL production table, so the off-production cells share a small low-side perturbation that is not part of the intended top-axis contrast (PREREG banner, 2nd wart)."
+  ],
+  "cells": [
+    {
+      "cell": "C0_identity",
+      "present": true,
+      "n": 400,
+      "n_expected": 400,
+      "completion": 1.0,
+      "W": 186,
+      "D": 3,
+      "L": 211,
+      "elo": -21.74306492903708,
+      "elo_sig": 17.405808259331593,
+      "paired_z": -1.3330180337585207,
+      "paired_mean_margin": -1.22,
+      "n_paired": 200,
+      "avg_diff": -1.22,
+      "cand_leaf_hash": "a36d2e15a3b3d71d",
+      "opp_leaf_hash": "a36d2e15a3b3d71d",
+      "rules_profile": "fixed_v1",
+      "r9_env_ok": true,
+      "cand_curve": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "opp_curve": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "band_seed_start": 110000000000,
+      "backend": null
+    },
+    {
+      "cell": "C1_flattop",
+      "present": false
+    },
+    {
+      "cell": "C2_broadlow",
+      "present": false
+    },
+    {
+      "cell": "C3_hoard",
+      "present": false
+    }
+  ]
+}

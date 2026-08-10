@@ -1,0 +1,24 @@
+[night 2026-08-09_23:30:12] waiting for the Part-A conductor to exit...
+[night 2026-08-09_23:30:12] Part A conductor has exited.
+[night 2026-08-09_23:30:12] Part A verdict: A4_UNRESOLVABLE
+[night 2026-08-09_23:30:12] waiting for the boxes to go quiet before the phase-seam gate...
+[night 2026-08-09_23:30:12] quiet. Running phase-seam gate (d).
+[night 2026-08-09_23:30:12] phase-seam gate verdict: GREEN_WITH_GAP
+[night 2026-08-09_23:30:12] GREEN_WITH_GAP + owner acceptance on disk -> proceeding as GREEN
+[night 2026-08-09_23:30:12] merging the phase seam (gate green)
+[night 2026-08-09_23:30:12] merged. HEAD=0981bed
+[night 2026-08-09_23:30:12] rebuilding the local cython + carc_rs for the merged seam
+[night 2026-08-09_23:30:30] build rc=0
+[night 2026-08-09_23:30:31] FATAL: post-build import/capability check failed. STOPPING.
+[night 2026-08-09_23:32:04] waiting for the Part-A conductor to exit...
+[night 2026-08-09_23:32:04] Part A conductor has exited.
+[night 2026-08-09_23:32:04] Part A verdict: A4_UNRESOLVABLE
+[night 2026-08-09_23:32:04] waiting for the boxes to go quiet before the phase-seam gate...
+[night 2026-08-09_23:32:04] quiet. Running phase-seam gate (d).
+[night 2026-08-09_23:32:04] phase-seam gate verdict: GREEN_WITH_GAP
+[night 2026-08-09_23:32:04] GREEN_WITH_GAP + owner acceptance on disk -> proceeding as GREEN
+[night 2026-08-09_23:32:04] merging the phase seam (gate green)
+[night 2026-08-09_23:32:04] merged. HEAD=8e69263
+[night 2026-08-09_23:32:04] rebuilding the local cython + carc_rs for the merged seam
+[night 2026-08-09_23:32:05] build rc=0
+[night 2026-08-09_23:32:05] launching the Part C beta ladder (local only)

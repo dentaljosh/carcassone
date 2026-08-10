@@ -1,0 +1,39 @@
+[cs helper laptop-wsl 2026-08-09_04:08:31] clock-skew guard OK (0s)
+[cs helper laptop-wsl 2026-08-09_04:08:31] start: W=22 backend=rust profile=fixed_v1 r9=1
+[cs helper laptop-wsl 2026-08-09_04:08:31] budget=k8x1376=11008 band=110000000000 n=400 cells=[C2_broadlow] out=/mnt/carc-shared/curveshape_probe
+[cs helper laptop-wsl 2026-08-09_04:08:31] === cell C2_broadlow -> /mnt/carc-shared/curveshape_probe/cs_C2_broadlow ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=3a344be3c0aab7d3 frozen_config_hash=d442a1ebc7ca4135 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=22 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf3a344be3]: info=fair n=400 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 400 to play, 22 workers, out=/mnt/carc-shared/curveshape_probe/cs_C2_broadlow
+  10/400 played (23.1s/game, ~150 min left)
+  20/400 played (14.6s/game, ~92 min left)
+  30/400 played (14.1s/game, ~87 min left)
+  40/400 played (12.1s/game, ~72 min left)
+  50/400 played (12.4s/game, ~73 min left)
+  60/400 played (12.2s/game, ~69 min left)
+  70/400 played (12.1s/game, ~67 min left)
+  80/400 played (11.8s/game, ~63 min left)
+  90/400 played (11.7s/game, ~61 min left)
+  100/400 played (11.7s/game, ~59 min left)
+  110/400 played (11.9s/game, ~57 min left)
+  120/400 played (11.3s/game, ~53 min left)
+  130/400 played (11.4s/game, ~51 min left)
+  140/400 played (11.2s/game, ~49 min left)
+  150/400 played (11.3s/game, ~47 min left)
+  160/400 played (11.1s/game, ~44 min left)
+  170/400 played (10.9s/game, ~42 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 399   candidate: 166W / 12D / 221L   winrate 0.431 (z=-2.75)
+avg score diff (candidate - opponent): -1.89
+ELO: -48.2  (+/- 17.6 1sigma)
+PAIRED: 199 decks   mean seat-balanced margin -1.83   z = -2.02
+prefix ms/move: candidate 1660  opponent 1755  (ratio 0.95x)
+fair endgame: candidate latched 399/399 games, 1.00s solver/game, timeouts=0
+fair endgame: opponent  latched 399/399 games, 1.11s solver/game, timeouts=0
+[summary.json] wrote /mnt/carc-shared/curveshape_probe/cs_C2_broadlow/summary.json
+[cs helper laptop-wsl 2026-08-09_04:40:51] cell C2_broadlow done rc=0 in 1940s
+[cs helper laptop-wsl 2026-08-09_04:40:51] launcher finished

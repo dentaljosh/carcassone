@@ -4650,3 +4650,53 @@ amendment statistics, and the remaining night-chain/analyzer path before attempt
 Ops note: the in-flight void run could not be killed from the session (permission classifier);
 it either exits on its own (~05:30) or Joshua kills it. Nothing promoted; PRODUCTION.yaml
 untouched.
+
+## 2026-08-10 (~05:15) — Part C phase-β dose ladder RAN AND CLOSED: **C-KILL**, a *bounded* null on the phase axis
+
+Attempt 2 (band 1.16e11) completed all five cells, and the pre-registered **C-KILL** branch fired.
+The primary statistic — the **fitted within-deck slope** across β ∈ {−0.6,−0.3,0.0,+0.3,+0.6} over
+100 decks × 5 points (500 points) — reads **+1.3167 pts/deck per unit β, se 1.4921, z +0.88**, i.e.
+inside ±2σ. Cells (all n=200 deck-paired, fair PIMC k8×1376 = 11008 both sides, `fixed_v1` +
+`CARCASSONNE_FIX_R9=1`, rust, vs the curve125 champion, every manifest enforced clean): β=−0.6 →
+−26.1 elo / margin −0.515 / z −0.47 · −0.3 → −17.4 / −0.820 / −0.64 · 0.0 → −17.4 / −1.250 / −1.11 ·
++0.3 → +33.1 / +1.960 / +1.39 · +0.6 → +8.7 / +0.070 / +0.05. The identity cell **passed** the
+AMENDMENT-1 gate (|margin z| < 2.0 **and** |elo| < 50). `results.csv` rows
+`curvephase_{bm0p6,bm0p3,b0p0,b0p3,b0p6}_band116_fixed_v1_vs_champ_n200`; readout
+`measurement/curve_shape_scope_20260809/READOUT_partC.json`.
+
+**The conclusion is bounded, and the bounded wording is mandatory (PREREG AMENDMENT 2):
+*no linear phase effect exceeding ~±22 elo at β=±0.6 (endpoint spread ~45 elo) at this instrument's
+resolution.*** It is **not** "the phase axis is dead" — this ladder bounds the linear phase effect,
+it does not exclude phase dependence of other shapes or of smaller size. It is nonetheless
+**materially stronger than the 2026-06-22 `v28_meeple_recovery_t0` kill** (−75 elo, one unbracketed
+endpoint at t0=72, magnitude confounded): this ladder is *signed*, *bracketed* and *E[f]=1
+renormalized*, so a v28-sized effect is now excluded on clean ground. Carried caveat: the norms are
+computed over the **ply-k** distribution while the leaf is read ~one mean-search-depth below the
+root, so the magnitude confound is **partially traded, not removed** (order ≤5–17 elo of monotone
+spread, biased toward the reconfirm direction).
+
+**The one live residue — recorded as an UNRESOLVED LEAN, not a signal.** The slope's sign is
+**positive** (meeples worth *more* early / *less* late) — the direction of Joshua's own
+self-described play policy (`measurement/e4_games/JOSHUA_PLAY_EVOLUTION.md`) — and β=+0.3 is the
+largest single reading of the ladder (+33.1, z +1.39). **Options considered:** (a) read +0.3 as a
+promotable hit; (b) record it as an unresolved lean and set a re-open bar; (c) drop it silently.
+**Chose (b)** — it is sub-2σ *and* non-monotone (β=+0.6 falls back to flat, +8.7 / z +0.05), which is
+exactly the house noise signature (a lone value beating its parameter-neighbours by >1σ), and the
+ladder's own primary statistic is the slope, not any cell. **RE-OPEN BAR: a powered n ≥ 800
+deck-paired re-measure of the β ∈ [+0.2,+0.4] neighbourhood on a fresh band.** Not funded now.
+
+**The history that belongs in the record — this verdict is attempt 2, and a near-miss.** Attempt 1
+(band 1.15e11) was VOIDED when its identity cell fired a kill condition inherited at Part A's n=400
+scale (AMENDMENT 1 rescaled it prospectively). Joshua then asked for fresh eyes after three stumbles
+on this arm; the **adversarial review found a double sign-flip in the analyzer that made the slope
+statistic blind to β, plus a gate that was computed and never propagated — *before* attempt 2's
+readout was taken** (fixed in `f28bb73`, tests added). Had the review not run, a **C-KILL would have
+been minted on a cancelled statistic**. Attempt 2 is the first valid application of the analyzer, and
+the near-miss is the reason the review is now the precedent for this arm.
+
+**Consequences.** Band 1.16e11 retired decision-influenced; claim **CL-077** minted (Supported);
+Part C is CLOSED and the box is free. Part B (the 3.9-box-day shape sweep) stays UNFUNDED on Part A's
+A4_UNRESOLVABLE. `governance/PRODUCTION.yaml` **untouched**; nothing promoted.
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first

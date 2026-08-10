@@ -1,0 +1,198 @@
+[cp primary Doctor 2026-08-10_01:15:24] clock-skew guard OK (0s)
+[cp primary Doctor 2026-08-10_01:15:24] start: W=14 budget=k8x1376 band=116000000000 n=200 cells=[b0p0 bm0p3 b0p3 bm0p6 b0p6]
+[cp primary Doctor 2026-08-10_01:15:24] === cell b0p0 -> /mnt/c/carc-shared/curvephase_ladder/cp_b0p0 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leafa36d2e15]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp_b0p0
+  10/200 played (22.2s/game, ~70 min left)
+  20/200 played (18.3s/game, ~55 min left)
+  30/200 played (16.7s/game, ~47 min left)
+  40/200 played (15.1s/game, ~40 min left)
+  50/200 played (14.6s/game, ~37 min left)
+  60/200 played (14.6s/game, ~34 min left)
+  70/200 played (13.9s/game, ~30 min left)
+  80/200 played (14.1s/game, ~28 min left)
+  90/200 played (13.7s/game, ~25 min left)
+  100/200 played (14.0s/game, ~23 min left)
+  110/200 played (13.9s/game, ~21 min left)
+  120/200 played (13.4s/game, ~18 min left)
+  130/200 played (13.7s/game, ~16 min left)
+  140/200 played (13.7s/game, ~14 min left)
+  150/200 played (13.3s/game, ~11 min left)
+  160/200 played (13.5s/game, ~9 min left)
+  170/200 played (13.6s/game, ~7 min left)
+  180/200 played (13.5s/game, ~4 min left)
+  190/200 played (13.6s/game, ~2 min left)
+  200/200 played (13.4s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 90W / 10D / 100L   winrate 0.475 (z=-0.71)
+avg score diff (candidate - opponent): -1.25
+ELO: -17.4  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -1.25   z = -1.11
+prefix ms/move: candidate 1312  opponent 1318  (ratio 1.00x)
+fair endgame: candidate latched 200/200 games, 0.71s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 0.79s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp_b0p0/summary.json
+[cp primary Doctor 2026-08-10_02:00:07] cell b0p0 done rc=0 in 2683s
+[cp primary Doctor 2026-08-10_02:00:07] === cell bm0p3 -> /mnt/c/carc-shared/curvephase_ladder/cp_bm0p3 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=721398648b145b20 frozen_config_hash=f7460337e517c902 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf72139864]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp_bm0p3
+  10/200 played (18.8s/game, ~59 min left)
+  20/200 played (18.1s/game, ~54 min left)
+  30/200 played (16.6s/game, ~47 min left)
+  40/200 played (14.8s/game, ~40 min left)
+  50/200 played (14.8s/game, ~37 min left)
+  60/200 played (15.0s/game, ~35 min left)
+  70/200 played (14.5s/game, ~31 min left)
+  80/200 played (14.6s/game, ~29 min left)
+  90/200 played (14.7s/game, ~27 min left)
+  100/200 played (14.8s/game, ~25 min left)
+  110/200 played (14.6s/game, ~22 min left)
+  120/200 played (14.4s/game, ~19 min left)
+  130/200 played (14.2s/game, ~17 min left)
+  140/200 played (14.3s/game, ~14 min left)
+  150/200 played (14.4s/game, ~12 min left)
+  160/200 played (14.5s/game, ~10 min left)
+  170/200 played (14.4s/game, ~7 min left)
+  180/200 played (14.3s/game, ~5 min left)
+  190/200 played (14.3s/game, ~2 min left)
+  200/200 played (14.2s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 94W / 2D / 104L   winrate 0.475 (z=-0.71)
+avg score diff (candidate - opponent): -0.82
+ELO: -17.4  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -0.82   z = -0.64
+prefix ms/move: candidate 1394  opponent 1360  (ratio 1.02x)
+fair endgame: candidate latched 200/200 games, 1.17s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 1.27s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp_bm0p3/summary.json
+[cp primary Doctor 2026-08-10_02:47:32] cell bm0p3 done rc=0 in 2845s
+[cp primary Doctor 2026-08-10_02:47:32] === cell b0p3 -> /mnt/c/carc-shared/curvephase_ladder/cp_b0p3 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=0283a702b8f5af51 frozen_config_hash=12e9636cf4ddace6 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf0283a702]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp_b0p3
+  10/200 played (20.8s/game, ~66 min left)
+  20/200 played (17.6s/game, ~53 min left)
+  30/200 played (15.7s/game, ~44 min left)
+  40/200 played (15.2s/game, ~40 min left)
+  50/200 played (14.3s/game, ~36 min left)
+  60/200 played (14.3s/game, ~33 min left)
+  70/200 played (13.8s/game, ~30 min left)
+  80/200 played (14.2s/game, ~28 min left)
+  90/200 played (13.8s/game, ~25 min left)
+  100/200 played (13.7s/game, ~23 min left)
+  110/200 played (13.9s/game, ~21 min left)
+  120/200 played (13.5s/game, ~18 min left)
+  130/200 played (13.7s/game, ~16 min left)
+  140/200 played (13.8s/game, ~14 min left)
+  150/200 played (13.4s/game, ~11 min left)
+  160/200 played (13.5s/game, ~9 min left)
+  170/200 played (13.6s/game, ~7 min left)
+  180/200 played (13.2s/game, ~4 min left)
+  190/200 played (13.4s/game, ~2 min left)
+  200/200 played (13.2s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 106W / 7D / 87L   winrate 0.547 (z=+1.34)
+avg score diff (candidate - opponent): +1.96
+ELO: +33.1  (+/- 24.7 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +1.96   z = +1.39
+prefix ms/move: candidate 1295  opponent 1301  (ratio 1.00x)
+fair endgame: candidate latched 200/200 games, 0.76s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 0.73s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp_b0p3/summary.json
+[cp primary Doctor 2026-08-10_03:31:41] cell b0p3 done rc=0 in 2649s
+[cp primary Doctor 2026-08-10_03:31:41] === cell bm0p6 -> /mnt/c/carc-shared/curvephase_ladder/cp_bm0p6 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=96af82782d4211ed frozen_config_hash=f1cba6557d0d15a3 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf96af8278]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp_bm0p6
+  10/200 played (20.9s/game, ~66 min left)
+  20/200 played (18.2s/game, ~55 min left)
+  30/200 played (16.7s/game, ~47 min left)
+  40/200 played (15.6s/game, ~42 min left)
+  50/200 played (15.5s/game, ~39 min left)
+  60/200 played (14.8s/game, ~35 min left)
+  70/200 played (14.8s/game, ~32 min left)
+  80/200 played (14.7s/game, ~29 min left)
+  90/200 played (14.5s/game, ~27 min left)
+  100/200 played (14.9s/game, ~25 min left)
+  110/200 played (14.8s/game, ~22 min left)
+  120/200 played (14.7s/game, ~20 min left)
+  130/200 played (14.6s/game, ~17 min left)
+  140/200 played (14.6s/game, ~15 min left)
+  150/200 played (14.2s/game, ~12 min left)
+  160/200 played (14.6s/game, ~10 min left)
+  170/200 played (14.5s/game, ~7 min left)
+  180/200 played (14.4s/game, ~5 min left)
+  190/200 played (14.4s/game, ~2 min left)
+  200/200 played (14.4s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 90W / 5D / 105L   winrate 0.463 (z=-1.06)
+avg score diff (candidate - opponent): -0.52
+ELO: -26.1  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin -0.52   z = -0.47
+prefix ms/move: candidate 1410  opponent 1356  (ratio 1.04x)
+fair endgame: candidate latched 200/200 games, 1.18s solver/game, timeouts=0
+fair endgame: opponent  latched 200/200 games, 1.51s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp_bm0p6/summary.json
+[cp primary Doctor 2026-08-10_04:19:41] cell bm0p6 done rc=0 in 2880s
+[cp primary Doctor 2026-08-10_04:19:41] === cell b0p6 -> /mnt/c/carc-shared/curvephase_ladder/cp_b0p6 ===
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=6f95da5b2a6e679f frozen_config_hash=074e88c1649fc4c5 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf6f95da5b]: info=fair n=200 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 200 to play, 14 workers, out=/mnt/c/carc-shared/curvephase_ladder/cp_b0p6
+  10/200 played (18.4s/game, ~58 min left)
+  20/200 played (16.5s/game, ~49 min left)
+  30/200 played (15.7s/game, ~44 min left)
+  40/200 played (14.6s/game, ~39 min left)
+  50/200 played (14.5s/game, ~36 min left)
+  60/200 played (14.1s/game, ~33 min left)
+  70/200 played (13.8s/game, ~30 min left)
+  80/200 played (14.0s/game, ~28 min left)
+  90/200 played (13.6s/game, ~25 min left)
+  100/200 played (13.7s/game, ~23 min left)
+  110/200 played (13.6s/game, ~20 min left)
+  120/200 played (13.4s/game, ~18 min left)
+  130/200 played (13.5s/game, ~16 min left)
+  140/200 played (13.3s/game, ~13 min left)
+  150/200 played (13.2s/game, ~11 min left)
+  160/200 played (13.3s/game, ~9 min left)
+  170/200 played (13.2s/game, ~7 min left)
+  180/200 played (13.1s/game, ~4 min left)
+  190/200 played (13.2s/game, ~2 min left)
+  200/200 played (13.0s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 200   candidate: 101W / 3D / 96L   winrate 0.512 (z=+0.35)
+avg score diff (candidate - opponent): +0.07
+ELO: +8.7  (+/- 24.6 1sigma)
+PAIRED: 100 decks   mean seat-balanced margin +0.07   z = +0.05
+prefix ms/move: candidate 1249  opponent 1306  (ratio 0.96x)
+fair endgame: candidate latched 200/200 games, 0.55s solver/game, timeouts=0
+fair endgame: opponent  latched 199/200 games, 0.67s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=200 (1σ≈±25); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/curvephase_ladder/cp_b0p6/summary.json
+[cp primary Doctor 2026-08-10_05:03:08] cell b0p6 done rc=0 in 2607s
+[cp primary Doctor 2026-08-10_05:03:08] launcher finished

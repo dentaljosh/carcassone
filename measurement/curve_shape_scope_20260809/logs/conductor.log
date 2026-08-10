@@ -1,0 +1,5 @@
+[cond 2026-08-09_03:04:19] waiting for the C0_identity gate cell to complete...
+[cond 2026-08-09_03:30:20] C0 summary present; applying A-gate 0
+[cond 2026-08-09_03:30:20] gate verdict: INSTRUMENT-BROKEN
+[cond 2026-08-09_03:30:20] ABORT — gate failed. No further cell is launched; no cell counts.
+identity leaf hashes differ: None vs a36d2e15a3b3d71d => ABORT, no cell counts

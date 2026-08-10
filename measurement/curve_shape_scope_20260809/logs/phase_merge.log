@@ -1,0 +1,27 @@
+Merge made by the 'ort' strategy.
+ ...leaf_golden_midgame_k3_distill_champ_panel.json | 205 +++++++++++++
+ ...hase_golden_midgame_k3_distill_champ_panel.json | 200 +++++++++++++
+ rust/carc/carc-core/src/leaf/mod.rs                |  41 ++-
+ rust/carc/carc-py/src/lib.rs                       |   6 +
+ scripts/classical_search/c5_leaf_override.py       |  21 +-
+ scripts/classical_search/compute_phase_norm.py     | 201 +++++++++++++
+ scripts/measurement_infra/snapshot.py              |   4 +
+ scripts/rustport/reconcile_leaf.py                 |  35 ++-
+ src/carcassonne_ai/alphabeta_agent.py              |   3 +-
+ src/carcassonne_ai/flat_leaf.py                    |  57 +++-
+ src/carcassonne_ai/flat_leaf_cy.pyx                |  34 ++-
+ src/carcassonne_ai/heuristic_prior_mcts.py         |  16 +-
+ src/carcassonne_ai/leaf_v29.py                     |  22 +-
+ src/carcassonne_ai/rust_agent.py                   |   2 +
+ src/carcassonne_ai/virtual_score_v2.py             |  27 ++
+ tests/golden/golden_fixture.json                   |   8 +-
+ tests/test_frozen_substrates.py                    |   2 +-
+ tests/test_t3_optuna.py                            |   3 +-
+ tests/test_v29_flat_curve.py                       |   2 +-
+ tests/test_v29_phase_multiplier.py                 | 332 +++++++++++++++++++++
+ 20 files changed, 1193 insertions(+), 28 deletions(-)
+ create mode 100644 measurement/rustport_p2/G2_leaf_golden_midgame_k3_distill_champ_panel.json
+ create mode 100644 measurement/rustport_p2/G2_leaf_phase_golden_midgame_k3_distill_champ_panel.json
+ create mode 100644 scripts/classical_search/compute_phase_norm.py
+ create mode 100644 tests/test_v29_phase_multiplier.py
+Already up to date.

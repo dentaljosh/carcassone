@@ -1,6 +1,24 @@
 # MEEPLE-CURVE **SHAPE + PHASE** SEARCH — SCOPING DOCUMENT
 
-> **STATUS: 📋 SCOPE ONLY — NOTHING RUN, NOTHING FUNDED, NO BAND CLAIMED, `PRODUCTION.yaml` UNTOUCHED.**
+> **STATUS: ✅ SCOPING DISCHARGED 2026-08-10 — BOTH FUNDED ARMS HAVE RAN AND CLOSED. This document is
+> now HISTORY (the rationale, cost arithmetic and dominance-order analysis that produced the plan);
+> the verdicts live in [PREREG_DRAFT.md](PREREG_DRAFT.md)'s banner, `READOUT_partA.json` and
+> `READOUT_partC.json`.**
+> · **Part A (curvature probe, §6) → PARKED 2026-08-09**, pre-registered branch `A4_UNRESOLVABLE`:
+> no off-production cell clears 2σ against the −21.7 identity zero ⇒ **Part B (the ~3.9-box-day
+> sweep) is NOT FUNDED**, exactly as this document's headline recommendation anticipated. Band
+> 1.10e11 retired.
+> · **Part C (phase β ladder, §1.3) → C-KILL 2026-08-10**, a **bounded** null: within-deck slope
+> **+1.3167 ± 1.4921 pts/deck per unit β (z +0.88)** over 5 cells × n=200 on band 1.16e11 (retired)
+> ⇒ **no linear phase effect exceeding ~±22 elo at β=±0.6 at this instrument's resolution**.
+> ⚠️ **Never cite as "the phase axis is dead"** — but materially stronger than the confounded
+> 2026-06-22 v28 kill (signed, bracketed, E[f]=1 renormalized). Unresolved residue: the positive
+> +0.3 lean (+33.1, z +1.39, sub-2σ and non-monotone); re-open bar = **n ≥ 800 paired at
+> β ∈ [+0.2,+0.4]**, not funded. Claim **CL-077**.
+> `governance/PRODUCTION.yaml` was untouched on every branch, as promised below.
+>
+> *(Original scoping banner, preserved:)*
+> **📋 SCOPE ONLY — NOTHING RUN, NOTHING FUNDED, NO BAND CLAIMED, `PRODUCTION.yaml` UNTOUCHED.**
 > Written 2026-08-09 from the 2026-08-08 archaeology ([LEVER_INDEX](../../docs/LEVER_INDEX.md) rows
 > "curve SHAPE search" and "turn/phase-indexed meeple value"). No compute was spent producing it.
 > Deliverable = a decision. The runnable protocol conditional on funding is
