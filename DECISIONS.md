@@ -4626,3 +4626,27 @@ night_chain patched to treat GREEN_WITH_GAP as GREEN iff the acceptance file exi
 gate's own verdict text is NOT rewritten. Standing follow-up: if 15e07 ever becomes runnable
 (bigger substrate or test segmentation), run it retroactively; a failure there reopens the seam.
 Authorized: merge 549c0d1 + Part C beta ladder at W=14 local.
+
+## 2026-08-10 (~02:00) — Part C attempt 1 VOIDED by its own wiring gate; gate amended prospectively; attempt 2 staged behind a second-opinion review
+
+The b0p0 identity cell (band 1.15e11) completed n=200 at elo −27.85 (1σ ±24.6, 91W/107L/2D,
+paired margin −0.255 z −0.22) and fired PREREG kill condition §6.1 (|elo| ≥ 25 ⇒ abort, no
+cell counts, restart on a new band). **Options considered:** (a) honor the abort literally;
+(b) let the ladder finish and adjudicate at readout under the robust margin statistic.
+**Chose (a)** — a pre-registered kill condition is not reinterpretable after it fires, even
+when the diagnosis says calibration: the ±25 bar was inherited from Part A's n=400 cells
+(1.44σ there) and sits at 1.01σ for an n=200 cell (~31% false-abort on a true-zero identity).
+The wiring itself is exonerated deterministically, not statistically: the cell manifest shows
+BOTH arms resolved and hash-asserted to leaf `a36d2e15a3b3d71d`, so true elo = 0 by
+construction and the −27.85 is pure sampling noise. AMENDMENT 1 (PREREG_DRAFT.md, written
+before any relaunch) rescales the identity gate for n=200 to |paired margin z| < 2.0 AND
+|elo| < 50; the voided cells are NOT re-read under it (gate-shopping). Band 1.15e11 retired;
+1.16e11 claimed; relaunch script `measurement/curve_shape_scope_20260809/relaunch_partC_band116.sh`
+guards on the old processes being dead (`d30f1c7`). **Joshua then asked for a second opinion**
+("something has been up with the part c thing") after three stumbles on this arm — the 15e07
+coverage gap, the carc_rs-assert false-block, the wiring false-fire — so an adversarial review
+agent is auditing the seam code, the pinned E[f]=1 norms, the launcher env vs PRODUCTION, the
+amendment statistics, and the remaining night-chain/analyzer path before attempt 2 launches.
+Ops note: the in-flight void run could not be killed from the session (permission classifier);
+it either exits on its own (~05:30) or Joshua kills it. Nothing promoted; PRODUCTION.yaml
+untouched.
