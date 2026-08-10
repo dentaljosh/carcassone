@@ -1,0 +1,86 @@
+{
+  "schema": "carcassonne-lever-menu-item6-s3-cut/v1",
+  "prereg": "measurement/jcz_mining_20260809/MINING_PREREG.md",
+  "plan": "docs/LEVER_MENU_PLAN_20260810.md#4.6",
+  "generated_utc": "2026-08-10T18:11:15Z",
+  "governance": "measurement only; governance/PRODUCTION.yaml untouched; plays zero games; mints no claim id unless the decision map says otherwise; band 1.08e11 stays retired from confirmatory use and this reuse does not un-retire it.",
+  "sign_convention": "delta = mean(V(pick_b) - V(pick_a)); pick_a = our leaf-argmax, pick_b = JCZ's played pick. delta > 0 means JCZ's pick was better.",
+  "s3": {
+    "stratum": "S3",
+    "n": 50,
+    "mean_delta_pts": -0.519375,
+    "sd_pts": 3.1361083816172552,
+    "se_naive": 0.443512700635506,
+    "se_cluster_root": 0.443512700635506,
+    "n_root_clusters": 50,
+    "root_design_effect": 1.0,
+    "se_cluster_game": 0.443512700635506,
+    "n_game_clusters": 50,
+    "game_design_effect": 1.0,
+    "cluster_consistency_ok": true,
+    "z_two_sided": -1.171048764231084,
+    "z_bonf_threshold": 2.2414,
+    "passes_bonferroni2": false,
+    "ci95_lo": -1.3886439199316865,
+    "ci95_hi": 0.3498939199316865,
+    "ci95_covers_zero": true,
+    "n_positive": 18,
+    "n_negative": 31,
+    "n_zero": 1,
+    "n_failed": 0,
+    "ply_class_breakdown": {
+      "TILE": {
+        "n": 50,
+        "mean_delta_pts": -0.519375
+      },
+      "MEEPLE": {
+        "n": 0,
+        "mean_delta_pts": NaN
+      },
+      "class_dominated": true
+    },
+    "sizing": "n=50 clears the n>=25 gate but sits BELOW the n=74 re-open bar (80% power at +1.4 pts/ply). Read as a coarse screen, not a powered verdict, per the pre-registered power table."
+  },
+  "control": {
+    "stratum": "S3_CONTROL",
+    "n": 50,
+    "mean_delta_pts": -0.941875,
+    "sd_pts": 2.2202900483038106,
+    "se_naive": 0.3139964298713263,
+    "se_cluster_root": 0.31399642987132637,
+    "n_root_clusters": 50,
+    "root_design_effect": 1.0000000000000004,
+    "se_cluster_game": 0.31399642987132637,
+    "n_game_clusters": 50,
+    "game_design_effect": 1.0000000000000004,
+    "cluster_consistency_ok": true,
+    "z_two_sided": -2.9996360161992097,
+    "z_bonf_threshold": 2.2414,
+    "passes_bonferroni2": true,
+    "ci95_lo": -1.5572966938219563,
+    "ci95_hi": -0.3264533061780436,
+    "ci95_covers_zero": false,
+    "n_positive": 17,
+    "n_negative": 31,
+    "n_zero": 2,
+    "n_failed": 0,
+    "ply_class_breakdown": {
+      "TILE": {
+        "n": 50,
+        "mean_delta_pts": -0.941875
+      },
+      "MEEPLE": {
+        "n": 0,
+        "mean_delta_pts": NaN
+      },
+      "class_dominated": true
+    },
+    "sizing": "n=50 clears the n>=25 gate but sits BELOW the n=74 re-open bar (80% power at +1.4 pts/ply). Read as a coarse screen, not a powered verdict, per the pre-registered power table."
+  },
+  "decision": {
+    "branch": "NO CONVICTION",
+    "detail": "|z_S3| < 2.0 -> the JCZ steal file CLOSES on S3 and the native-term build stays unfunded."
+  },
+  "min_n_gate": 25,
+  "powered_bar_n": 74
+}

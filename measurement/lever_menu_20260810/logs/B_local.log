@@ -1,0 +1,10 @@
+[menu-fair primary Doctor] 2026-08-10_14:06:03 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-10_14:06:03 START sub=b_farmgrowthoff_n1600_b118e9 n=1600 band=118000000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/lever_menu_20260810/cells/menu_farmgrowthoff_fixed_v1_vs_fairchamp11008.json
+[leaf-override] WARNING: F7b farm knockout set (farm_base_off=False, farm_growth_off=True) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=86ecb5375676feae frozen_config_hash=3c4e2dc2fac7d465 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf86ecb537]: info=fair n=1600 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 1600 to play, 14 workers, out=/mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9
+  10/1600 played (18.8s/game, ~498 min left)

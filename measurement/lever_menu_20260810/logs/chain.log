@@ -43,3 +43,15 @@
 0 proc: oracle scorer and/or a previous block's leg) - holding this block
 [chain 2026-08-10_14:03:28] laptop still busy (0
 0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:06:02] === LEVER-MENU CHAIN START ===
+[chain 2026-08-10_14:06:02] plan: docs/LEVER_MENU_PLAN_20260810.md (FUNDED IN FULL 2026-08-10)
+[chain 2026-08-10_14:06:02] local rev cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5 | W_LOCAL=14 W_LAPTOP=22 OW=14/12
+[chain 2026-08-10_14:06:02] laptop rev cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5 (busy python 0)
+[chain 2026-08-10_14:06:02] item-2 wiring gate (2a) verdict: PASS
+[chain 2026-08-10_14:06:03] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_14:06:03] --- BLOCK B: item 2 farm_growth_off n=1600 band=118000000000 -> /mnt/c/carc-shared/lever_menu_20260810/b_farmgrowthoff_n1600_b118e9
+[chain 2026-08-10_14:06:03] BLOCK B: local launcher pid 202074; laptop joiner launch backgrounded
+[chain 2026-08-10_14:06:03] verify[B]: baseline records=0; waiting up to 900s for workers on BOTH boxes
+[chain 2026-08-10_14:06:24] verify[B]: busy python -> local=14 laptop=22 | laptop claims on this cell=22 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_14:06:24] verify[B]: waiting up to 1800s for the record count to grow past 0
+[chain 2026-08-10_14:08:24] verify[B]: PASS - records 0 -> 2, local=14 laptop=22 busy workers
