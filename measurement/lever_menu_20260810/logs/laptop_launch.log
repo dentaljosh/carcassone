@@ -1,2 +1,6 @@
 laptop B launched pid 48653
 [laptop-launch 2026-08-10_14:06:03] _laptop_B.sh ssh rc=0 (124 == launched-and-detached)
+laptop C launched pid 49115
+[laptop-launch 2026-08-10_16:49:46] _laptop_C.sh ssh rc=0 (124 == launched-and-detached)
+laptop D launched pid 49965
+[laptop-launch 2026-08-10_19:07:01] _laptop_D.sh ssh rc=0 (124 == launched-and-detached)

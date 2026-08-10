@@ -1,0 +1,186 @@
+[cc primary Doctor 2026-08-10_16:49:45] clock-skew guard OK (0s vs the share)
+[cc primary Doctor 2026-08-10_16:49:45] start: W=14 backend=rust profile=fixed_v1 r9=1 out_root=/mnt/c/carc-shared/capscurve_resweep band=120000000000 n=800 cells=[cap5 cap12 curve150 curve175]
+[cc primary 2026-08-10_16:49:45] cell capscurve_cap5_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 start (0/800 cached)
+[cc primary 2026-08-10_17:22:17] cell capscurve_cap5_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 DONE in 1943s -> cap5	DONE	800	381	25	394	-5.6	12.3	-1.31	0.93	fixed_v1	true	1943	2026-08-10_17:22:17
+[cc primary 2026-08-10_17:22:18] cell capscurve_cap12_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 start (0/800 cached)
+[cc primary 2026-08-10_17:55:37] cell capscurve_cap12_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 DONE in 1991s -> cap12	DONE	800	388	24	388	0.0	12.3	0.10	1.02	fixed_v1	true	1991	2026-08-10_17:55:37
+[cc primary 2026-08-10_17:55:37] cell capscurve_curve150_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 start (0/800 cached)
+[cc primary 2026-08-10_18:30:15] cell capscurve_curve150_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 DONE in 2069s -> curve150	DONE	800	413	21	366	20.4	12.3	1.44	1.00	fixed_v1	true	2069	2026-08-10_18:30:15
+[cc primary 2026-08-10_18:30:16] cell capscurve_curve175_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 start (0/800 cached)
+[cc primary 2026-08-10_19:07:00] cell capscurve_curve175_fixed_v1_vs_puctchamp2750_k2_n800_b120e9 DONE in 2196s -> curve175	DONE	800	418	22	360	25.2	12.3	0.70	1.00	fixed_v1	true	2196	2026-08-10_19:07:00
+[cc primary Doctor 2026-08-10_19:07:00] ALL CELLS PROCESSED
+=== CAPS/CURVE RE-SWEEP PROGRESS ===
+cell	status	n	W	D	L	elo	sigma	paired_z	ms_ratio	profile	r9_ok	secs	timestamp
+curve100	DONE	200	93	3	104	-19.1	24.6	-1.30	1.00	fixed_v1	true	660	2026-08-03_06:46:56
+curve150	DONE	200	97	1	102	-8.7	24.6	-0.06	1.00	fixed_v1	true	563	2026-08-03_06:56:22
+cap5	DONE	200	94	3	103	-15.6	24.6	-1.27	0.93	fixed_v1	true	589	2026-08-03_07:06:13
+curve100	cached	200	93	3	104	-19.1	24.6	-1.30	1.00	fixed_v1	true	0	2026-08-03_07:33:13
+curve150	cached	200	97	1	102	-8.7	24.6	-0.06	1.00	fixed_v1	true	0	2026-08-03_07:33:14
+cap5	cached	200	94	3	103	-15.6	24.6	-1.27	0.93	fixed_v1	true	0	2026-08-03_07:33:15
+cap12	cached	200	99	6	95	6.9	24.6	0.70	1.02	fixed_v1	true	0	2026-08-03_07:33:17
+oppcap4	DONE	200	84	5	111	-47.2	24.8	-1.52	1.05	fixed_v1	true	408	2026-08-03_07:40:09
+oppcap12	DONE	200	103	1	96	12.2	24.6	-0.88	0.97	fixed_v1	true	591	2026-08-03_07:50:03
+cap5	DONE	800	381	25	394	-5.6	12.3	-1.31	0.93	fixed_v1	true	1943	2026-08-10_17:22:17
+cap12	DONE	800	388	24	388	0.0	12.3	0.10	1.02	fixed_v1	true	1991	2026-08-10_17:55:37
+curve150	DONE	800	413	21	366	20.4	12.3	1.44	1.00	fixed_v1	true	2069	2026-08-10_18:30:15
+curve175	DONE	800	418	22	360	25.2	12.3	0.70	1.00	fixed_v1	true	2196	2026-08-10_19:07:00
+{
+  "label": "item4_capscurve_cap5_n800_b120e9",
+  "dir": "/mnt/c/carc-shared/capscurve_resweep/cc800_cap5",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 381,
+  "D": 25,
+  "L": 394,
+  "elo": -5.646325294001425,
+  "elo_sig_1sigma": 12.285325081349232,
+  "paired_z": -1.3102513380367562,
+  "paired_mean_margin": -0.6175,
+  "cand_prefix_ms_per_move": 422.6407249660172,
+  "champ_prefix_ms_per_move": 455.1127462529678,
+  "ms_ratio_cand_over_opp": 0.9286506001989637,
+  "ms_ratio_caveat": "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a ratio of two arms sharing one process pool is first-order insensitive to contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's cost in this harness -- read the emitter, not the field name.",
+  "wiring": {
+    "code_rev": "d8a25d1-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "0a7b068d229e6f25",
+    "opp_leaf_hash": null,
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/capscurve_resweep_20260803/cells/capscurve_cap5_fixed_v1_vs_puctchamp2750_k2.json",
+    "cand_curve_drift_allowed": null,
+    "cand_k_dets": null,
+    "cand_sims_per_det": null,
+    "cand_total_sims": null,
+    "opp_k_dets": null,
+    "opp_sims_per_det": null,
+    "opp_total_sims": null,
+    "band_seed_start": null,
+    "n_decks": null,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}
+{
+  "label": "item4_capscurve_cap12_n800_b120e9",
+  "dir": "/mnt/c/carc-shared/capscurve_resweep/cc800_cap12",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 388,
+  "D": 24,
+  "L": 388,
+  "elo": 0.0,
+  "elo_sig_1sigma": 12.283702927427509,
+  "paired_z": 0.09666750328624511,
+  "paired_mean_margin": 0.04375,
+  "cand_prefix_ms_per_move": 462.1038763342455,
+  "champ_prefix_ms_per_move": 452.53504177465254,
+  "ms_ratio_cand_over_opp": 1.0211449582380803,
+  "ms_ratio_caveat": "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a ratio of two arms sharing one process pool is first-order insensitive to contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's cost in this harness -- read the emitter, not the field name.",
+  "wiring": {
+    "code_rev": "d8a25d1-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "771fc59803f86ea2",
+    "opp_leaf_hash": null,
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/capscurve_resweep_20260803/cells/capscurve_cap12_fixed_v1_vs_puctchamp2750_k2.json",
+    "cand_curve_drift_allowed": null,
+    "cand_k_dets": null,
+    "cand_sims_per_det": null,
+    "cand_total_sims": null,
+    "opp_k_dets": null,
+    "opp_sims_per_det": null,
+    "opp_total_sims": null,
+    "band_seed_start": null,
+    "n_decks": null,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}
+{
+  "label": "item4_capscurve_curve150_n800_b120e9",
+  "dir": "/mnt/c/carc-shared/capscurve_resweep/cc800_curve150",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 413,
+  "D": 21,
+  "L": 366,
+  "elo": 20.435373652002554,
+  "elo_sig_1sigma": 12.304956947156029,
+  "paired_z": 1.4438391911294577,
+  "paired_mean_margin": 0.79,
+  "cand_prefix_ms_per_move": 457.1854926411948,
+  "champ_prefix_ms_per_move": 457.38581835314585,
+  "ms_ratio_cand_over_opp": 0.9995620202815375,
+  "ms_ratio_caveat": "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a ratio of two arms sharing one process pool is first-order insensitive to contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's cost in this harness -- read the emitter, not the field name.",
+  "wiring": {
+    "code_rev": "d8a25d1-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "165f45134582c7b4",
+    "opp_leaf_hash": null,
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/capscurve_resweep_20260803/cells/capscurve_curve150_fixed_v1_vs_puctchamp2750_k2.json",
+    "cand_curve_drift_allowed": null,
+    "cand_k_dets": null,
+    "cand_sims_per_det": null,
+    "cand_total_sims": null,
+    "opp_k_dets": null,
+    "opp_sims_per_det": null,
+    "opp_total_sims": null,
+    "band_seed_start": null,
+    "n_decks": null,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}
+{
+  "label": "item4_capscurve_curve175_n800_b120e9",
+  "dir": "/mnt/c/carc-shared/capscurve_resweep/cc800_curve175",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 418,
+  "D": 22,
+  "L": 360,
+  "elo": 25.23335302787136,
+  "elo_sig_1sigma": 12.316113860271454,
+  "paired_z": 0.7032011275425507,
+  "paired_mean_margin": 0.37,
+  "cand_prefix_ms_per_move": 466.26308157975825,
+  "champ_prefix_ms_per_move": 468.440940886521,
+  "ms_ratio_cand_over_opp": 0.9953508348295921,
+  "ms_ratio_caveat": "Ratio only. NEVER quote an absolute ms/move from a shared-tenancy run; a ratio of two arms sharing one process pool is first-order insensitive to contention, an absolute is not. Also: `champ_prefix_*` is the CANDIDATE's cost in this harness -- read the emitter, not the field name.",
+  "wiring": {
+    "code_rev": "d8a25d1-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "5c61ce10bd5fc1c7",
+    "opp_leaf_hash": null,
+    "cand_leaf_json": "/home/doctor/projects/carcassone/measurement/capscurve_resweep_20260803/cells/capscurve_curve175_fixed_v1_vs_puctchamp2750_k2.json",
+    "cand_curve_drift_allowed": null,
+    "cand_k_dets": null,
+    "cand_sims_per_det": null,
+    "cand_total_sims": null,
+    "opp_k_dets": null,
+    "opp_sims_per_det": null,
+    "opp_total_sims": null,
+    "band_seed_start": null,
+    "n_decks": null,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true
+}

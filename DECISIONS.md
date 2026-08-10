@@ -4769,3 +4769,157 @@ instrument**, *not* more n at this design. Both boxes are free.
 
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
+
+---
+
+## 2026-08-10 (evening) — Lever-menu blocks B and C RAN AND CLOSED: `farm_growth_off` does **not** confirm at n=1600 (the winner's curse, **fourth** instance), and the caps/curve **scale axis** is null on all four powered cells — the ≤20-elo caveat narrows to **~±17.5 elo**
+
+**Context.** Two items of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md), spec of record) completed
+back-to-back on the two-box work-stealing chain: **block B = item 2** (`farm_growth_off` deploy
+confirm) and **block C = item 4** (capscurve unresolved cells + the ×1.75 rung). Both had their
+designs, primary statistics and branch tables pre-registered in §4.2 and §4.4 *before* game 1.
+Block D (item 3, the CL-060 width H2H) launched immediately after block C and is **running now**;
+block E (item 5) is queued behind it. Nothing in this entry touches either.
+
+### Block B — item 2, `farm_growth_off` n=1600 deploy confirm, band 1.18e11
+
+**Design.** ONE cell, **n=1600 deck-paired (800 decks × 2 seats)** on a **fresh** band 1.18e11;
+candidate = the champion leaf with `farm_growth_off=true` (`cand_leaf_hash 86ecb5375676feae`,
+`--allow-cand-curve-drift` with the curve125 table carried verbatim in the cell JSON) vs the
+**intact** curve125 production champion `a36d2e15a3b3d71d`; fair PIMC **k8×1376 = 11008 both arms**,
+exact-K2 endgame shared, `fixed_v1` + `CARCASSONNE_FIX_R9=1` (`r9_env_ok true`), rust backend.
+Every wiring gate of §4.2/2a verified from the manifest **before any number was read**;
+completion **1600/1600**. This is the **first ever** run of the knob at the deploy budget and
+through the fair PIMC harness — all three prior cells ran at the 2750 ablation instrument.
+
+**Result.** W794 / D27 / L779 — winrate 0.5047 (z +0.375), **elo +3.257 ± 8.686**,
+`paired_mean_margin` **+0.4856 pts/deck**, **primary statistic: deck-paired margin z +1.034**.
+
+**Adjudication: |z| < 2.0 ⇒ THE LEVER DOES NOT CONFIRM.** Per the plan's branch table and the
+standing no-third-cell ruling, the row **CLOSES** and the farm-growth term **stays in the leaf**.
+No adoption, no `PRODUCTION.yaml` change, and the caps/curve re-sweep that a CONFIRM would have
+owed is **moot**.
+
+**The framing: the winner's curse, fourth confirmed instance.** The three prior cells read
+**+42.8** (z +1.866, band 1.00e11) / **+10.4** (z −0.075, band 1.01e11) / **+25.2** (z +1.855,
+band 1.05e11); the recorded 2-cell pool was **+26.6 ± 12.3 elo — elo z +2.16 but margin-pooled
+z ≈ +1.27**, the two statistics disagreeing, disposition PARKED suggestive-unpromoted. At **4×
+the sample, on a fresh band, at the deploy budget** it collapses to **+3.3 ± 8.7**. That is the
+house noise-signature rule firing a fourth time, after `c=3` "+47 elo", `intrareuse_k4x688`
+(+40.1 screen → +16.2 combined, 95% CI including zero) and the **β=+0.3 phase lean that
+sign-flipped under power earlier the same day**. No pooling with any prior cell (different band,
+budget and harness — cross-band pooling forbidden, CL-068 amendment).
+
+**⚠️ A BOUNDED null, not a proof of zero — the bound, stated.** 95% CI on elo ≈ **[−14, +20]**
+(2σ ±17.4 elo; realized deck-paired se 0.4695 pts/deck ⇒ 2σ ±0.94 pts/deck; the plan's
+pre-registered forecast was ±15.7). The **winner's-curse-calibrated residual** of the original
+lean — 0.3–0.4× of +26.6, i.e. **≈ +8 to +11 elo — is NOT excluded**, and was never resolvable at
+this n (z=2 on it needs ~2100 decks). **Never write "the deletion does nothing."**
+
+**Owner's question, and the standing decision it produced.** Joshua asked directly: *"if the farm
+growth term is almost certainly contributing nothing, why are we leaving it in?"*
+**Options considered.**
+- **(a) Delete it now.** *Rejected.* Deletion mints a **new leaf hash**, and `a36d2e15a3b3d71d`
+  is the champion identity in `PRODUCTION.yaml`, is stamped in every eval manifest, is verified
+  on-device in the E4 phone archives, and anchors every historical comparison. A hash change
+  forces re-baselining, a new APK, and three-substrate re-gating (py/cy/rust bit-exactness,
+  golden fixtures, reconcile bars) — a large bill for a **measured effect of zero**.
+- **(b) Keep it indefinitely.** *Rejected as the default.* Four independent bands
+  (+42.8 / +10.4 / +25.2 / **+3.3 at n=1600**) all read **non-negative for deletion**, so nothing
+  on record says the term earns its place.
+- **(c) CHOSEN — bank it as a drop-at-next-re-baseline item.** When a future leaf generation pays
+  the hash-change cost for other reasons, **this term comes out with it, for free**.
+
+Three numbers support (c) rather than (a): **(1)** the null is symmetric and bounded, not a zero —
+the term's own value is **−3.3 elo, 95% CI ≈ [−20, +14]**; *"unresolved within ±17"* is the honest
+statement. **(2)** The speed argument does **not** carry it: deletion is ~4% cheaper on the leaf
+(`ms_ratio` ≈ 0.96 — flagged as **era-sourced from F7b**, since this cell could not emit a ratio),
+sims are budgeted, so 4% cheaper leaves buy ~4% more search, which at CL-068's **+12.2 elo per
+doubling** converts to **≈ +0.7 elo** — far below the ~14 elo of downside risk. **(3)** A genuine
+untested region argues for keeping it until then: the cell is **champion vs champion-minus-term**,
+so **both arms play the champion's own farm policy** and the term's value against a
+**farm-contesting** opponent is **out of distribution** for this eval — and the E4 ledger shows
+exactly one such opponent exists (champion farm pts/seat **20.5** self-play, **31.9** vs JCZ who
+never farms, **14.0** vs Joshua). That is the CL-051 consumer-binding rider in
+*opponent-distribution* form: a **scope limit on the null**, not evidence the term works.
+
+**Riders.** *(i)* **`ms_ratio` could NOT be computed** — for a `--opponent fair-champion` H2H this
+harness emits only `champ_prefix_ms_per_move` (1521.3) and `rung_ms_per_move` (1574.4), not a
+per-arm cand/opp pair, and a cross-cell absolute comparison is forbidden by §2. Recorded as
+not-computed rather than silently omitted. *(ii)* The knockout reaches the **leaf only**; the
+exact-K endgame tail keeps full farm scoring on both arms. *(iii)* **Wall-clock, corrected.** The
+leaf-override harness printed its F7b warning that the candidate leaf *"leaves the Cython fast path
+for the pure-Python flat leaf (~12.5× slower per leaf)"* — but that warning is emitted before the
+backend is resolved, and the run was `--backend rust`, where **by the warning's own text no Python
+leaf runs**. Realized throughput confirms it is **inert**: the local W14 leg settled at
+**13.6–13.7 s/game** against the plan's **14.2 s/game** basis, and the two-box run finished
+1600/1600 in **9701 s = 2.69 h** against a planned **3.0 h**. ⚠️ The **18.8 s/game** figure in
+`measurement/lever_menu_20260810/logs/B_local.log` is the **first-10-games warm-up transient**, not
+the run's rate — it must not be cited as a cost deviation.
+
+### Block C — item 4, capscurve unresolved cells + the ×1.75 rung, 4 cells × n=800, shared band 1.20e11 (CRN)
+
+**Design.** Four cells — **cap5 · cap12 · curve150 · curve175** — each **n=800 deck-paired
+(400 decks × 2 seats)** on ONE **shared fresh** band 1.20e11 with **CRN across all four**
+(`seed_start 120000000000`, verified identical in all four manifests), at the **same 2750 ablation
+instrument** that produced the originals (`eval_puct_priors.py --cand-sims 2750` both sides via
+`capscurve_resweep_launcher.sh`), rust both sides, `fixed_v1`+R9, exact-K≤2, `OPENBLAS_NUM_THREADS=1`
+pinned (the ×1.75 hang lived on this exact axis). Incumbent = cap8 / oppcap8 / curve125.
+All four completed 800/800; wiring gates clean.
+
+| cell | W/D/L | elo ± 1σ | paired margin | **margin z** | verdict |
+|---|---|---|---|---|---|
+| cap5 | 381/25/394 | −5.646 ± 12.285 | −0.6175 | **−1.310** | NULL |
+| cap12 | 388/24/388 | 0.000 ± 12.284 | +0.0438 | **+0.097** | NULL |
+| curve150 | 413/21/366 | +20.435 ± 12.305 | +0.7900 | **+1.444** | NULL |
+| curve175 | 418/22/360 | +25.233 ± 12.316 | +0.3700 | **+0.703** | NULL |
+
+**Adjudication: all four |margin z| < 2.0 ⇒ ALL NULL.**
+
+**What this buys is closure, not elo — and the caveat NARROWS.** `PRODUCTION.yaml` carries verbatim
+*"the screen resolves ~50 elo unpaired / ~35 paired at 2-sigma; a <=20-elo optimum shift is NOT
+excluded"*, written against a screen (2026-08-03, band 1.03e11, n=200) whose **own prereg** recorded
+that it had **no power at all** for curve150, cap5 or cap12. **The narrowed bound, computed from the
+realized σ of these cells:** deck-paired margin se **0.4526–0.5472 pts/deck** ⇒ 2σ **±0.91 to ±1.09
+pts/deck ≈ ±15.8 to ±19.1 elo (median ±17.4)** — i.e. **~±17.5 elo at 2σ paired**; and **±24.6 elo
+at 2σ unpaired** (realized 1σ 12.28–12.32). So the caveat becomes:
+
+> **"a ≤ ~17.5-elo (2σ, deck-paired) optimum shift is NOT excluded"** — and **only for cap5 /
+> cap12 / curve150**. `curve100`, `oppcap4` and `oppcap12` were **not** re-run at n=800 and keep
+> the ~35-elo paired bound.
+
+⚠️ **Narrowed, not deleted** — and **`PRODUCTION.yaml` is deliberately NOT edited by this
+close-out.** The narrowing is recorded here, in `results.csv` and in the claim registry; its
+comment line is now *conservative* rather than wrong, and whether to rewrite it is **Joshua's
+call**.
+
+**Second finding — the ×1.75 rung does NOT transfer.** Its walled-era reading was
+`c5_s2_curve175_n400` = **+77.7 ± 17.7, paired z 4.19** (2026-07-13, post-OpenBLAS-fix),
+statistically tied with curve125's +66.8 on the same axis — which is *why* curve125 and not
+curve175 was adopted (CL-051). Under `fixed_v1` against the curve125 champion it reads **+25.2 elo
+with a FLAT margin (z +0.703)**. ⚠️ The **elo-vs-margin disagreement** is exactly the win-rate noise
+signature the house rule names: the robust statistic is the deck-paired margin, and it is flat.
+curve150's **+20.4 / z +1.444** is likewise sub-2σ.
+
+**⇒ The leaf's meeple-term SCALE axis is now measured null under `fixed_v1` across cap5 / cap12 /
+curve150 / curve175.** Combined with the 2026-08-03 re-sweep (6/6 null) the **scale axis is closed
+at ~±17 elo resolution**. This is a **bounded** null — never *"the caps and curve are dead"*.
+Minted as **CL-078**, whose falsifier is deliberately **not "more n"**: it re-opens on a **joint /
+interaction cell** (every cell on record is single-knob one-at-a-time, and a cap × curve-scale
+ridge is invisible to those), on **any adopted leaf-term change** (the bug-fix-shifts-optima rule
+re-opens the axis by construction), or on a **search/rules-regime change** (the CL-051
+consumer-binding lesson).
+
+### Consequences
+
+Bands **1.18e11** and **1.20e11** retired, decision-influenced. **CL-074**'s farm row amended and
+its F7b reopen path **DISCHARGED-NEGATIVE** with the n=1600 numbers; **CL-078** minted for the
+scale-axis closure. `results.csv`: `abl_farmgrowthoff_deploy_fixed_v1_vs_champ_n1600_b118e9` plus
+the four `capscurve_*_fixed_v1_vs_puctchamp2750_k2_n800_b120e9` rows (the latter were auto-written
+by the harness and were **corrected in place**, not duplicated). Plan items 2 and 4 stamped RAN AND
+CLOSED; items 3 and 5 remain in flight/queued. **`governance/PRODUCTION.yaml` untouched; nothing
+promoted on any branch.**
+
+**Reversal cost:** none (measurement only).
+**Phase:** measurement-first

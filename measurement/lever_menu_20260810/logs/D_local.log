@@ -1,0 +1,17 @@
+[menu-fair primary Doctor] 2026-08-10_19:07:01 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-10_19:07:01 START sub=d_width_k4x2752_vs_champ_n800_b119e9 n=800 band=119000000000 W=14 cand=k4x2752 opp=k8x1376 drift=0 cand_json=none
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[warn] --opp-sims/--opp-k-dets: ASYMMETRIC search budgets — candidate k4x2752 (total 11008) vs opponent fair-champion k8x1376 (total 11008). This is an equal-WALL-CLOCK / whole-config deployability check, NOT the single-variable prior swap the symmetric head-to-head is: the two sides search different budgets. diff/elo stay candidate-minus-opponent.
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd4_s2752_vs_fairchamp-k8x1376_k2-leafa36d2e15]: info=fair n=800 paired=True K=2 k_dets=4 sims=2752 | 0 cached, 800 to play, 14 workers, out=/mnt/c/carc-shared/lever_menu_20260810/d_width_k4x2752_vs_champ_n800_b119e9
+  10/800 played (20.3s/game, ~268 min left)
+  20/800 played (18.5s/game, ~241 min left)
+  30/800 played (16.8s/game, ~216 min left)
+  40/800 played (15.3s/game, ~194 min left)
+  50/800 played (14.9s/game, ~186 min left)
+  60/800 played (14.8s/game, ~183 min left)
+  70/800 played (14.8s/game, ~180 min left)
+  80/800 played (14.4s/game, ~173 min left)

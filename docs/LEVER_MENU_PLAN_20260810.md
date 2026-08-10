@@ -15,6 +15,14 @@
 > re-sweep and park/kill in §6 remains Joshua's call.
 > Execution: [`scripts/classical_search/menu_chain.sh`](../scripts/classical_search/menu_chain.sh)
 > (blocks B→C→D→E, detached); logs and readouts under `measurement/lever_menu_20260810/`.
+>
+> **Live progress (2026-08-10 evening).** Item 1 — readout on disk (`ITEM1_FARM_NORM.{json,md}`) ·
+> **item 2 / block B 🔚 RAN AND CLOSED — does NOT confirm, bounded null (§4.2 banner)** ·
+> **item 4 / block C 🔚 RAN AND CLOSED — all four cells null, caveat narrowed to ~±17.5 elo
+> (§4.4 banner)** · **item 3 / block D 🔄 RUNNING** · item 5 / block E ⏳ queued behind D ·
+> item 6 — readout on disk (`item6_s3/S3_VERDICT.{json,md}`). *(Items 1 and 6 are not closed out by
+> this commit.)* Bands **1.18e11** and **1.20e11** retired; **1.19e11** in use by block D.
+> `PRODUCTION.yaml` still untouched.
 
 > **Reading order:** §1 envelope + cost model → §2 the co-tenancy ruling → §3 the DAG →
 > §4 per-item mini-preregs → §5 the GO sequence → §6 what stays Joshua's → §7 out of scope →
@@ -261,6 +269,20 @@ archive that mints no strength claim — the same licence the JCZ mining reuse w
 
 ### 4.2 — Item 2. `farm_growth_off` n=1600 deploy confirm (the top buy)
 
+> **🔚 RAN AND CLOSED 2026-08-10 (block B) — pre-registered branch `|z| < 2.0` fired: THE LEVER DOES
+> NOT CONFIRM; the row closes and the farm-growth term stays in the leaf.** n=1600 deck-paired,
+> band 1.18e11 (retired), completion 1600/1600, wiring gates clean: **W794/D27/L779 · elo +3.257 ±
+> 8.686 · paired margin +0.4856 pts/deck · primary statistic margin z +1.034.** The pooled 3-band
+> prior (+26.6 ± 12.3, elo z +2.16 / margin-pooled ≈ +1.27, PARKED) collapses at 4× the sample on a
+> fresh band ⇒ **the winner's curse, fourth confirmed instance.** ⚠️ **A bounded null:** 95% CI on
+> elo ≈ **[−14, +20]**, so the curse-calibrated residual (~+8 to +11 elo) is **not** excluded —
+> never *"the deletion does nothing"*. `ms_ratio` **could not be computed** (a fair-champion H2H
+> emits only `champ_prefix_ms_per_move`; a cross-cell absolute is forbidden by §2). Standing
+> decision: **drop the term at the next leaf generation**, not standalone (a hash change costs
+> re-baselining + APK + three-substrate re-gating). No adoption; the owed caps/curve re-sweep is
+> moot; `PRODUCTION.yaml` untouched. → DECISIONS 2026-08-10 (evening); `results.csv`
+> `abl_farmgrowthoff_deploy_fixed_v1_vs_champ_n1600_b118e9`; CL-074 farm row DISCHARGED-NEGATIVE.
+
 **Prior evidence — all three cells, exactly as recorded** ([`results.csv`](../experiments/results.csv), rows `abl_farmgrowthoff*`):
 
 | cell | n | band | elo ± σ | **paired margin z** |
@@ -394,6 +416,21 @@ decomposition and a discharged falsifier.
 ---
 
 ### 4.4 — Item 4. capscurve unresolved cells + the ×1.75 rung
+
+> **🔚 RAN AND CLOSED 2026-08-10 (block C) — ALL FOUR CELLS NULL (|margin z| < 2.0).** 4 cells ×
+> n=800 deck-paired, shared fresh band 1.20e11 with CRN (retired), 800/800 each, gates clean:
+> **cap5 −5.646 ± 12.285 / z −1.310 · cap12 0.000 ± 12.284 / z +0.097 · curve150 +20.435 ± 12.305 /
+> z +1.444 · curve175 +25.233 ± 12.316 / z +0.703.** ⇒ **The caveat NARROWS** (from the realized σ:
+> paired se 0.4526–0.5472 pts/deck ⇒ 2σ ±0.91–±1.09 pts/deck ≈ **±17.5 elo**, and ±24.6 elo
+> unpaired) to *"a ≤ ~17.5-elo optimum shift is NOT excluded"* — **for cap5 / cap12 / curve150
+> only**; curve100 / oppcap4 / oppcap12 were not re-run and keep the ~35-elo bound. ⚠️ **Narrowed,
+> not deleted, and `PRODUCTION.yaml` is NOT edited here** — its comment line is now conservative;
+> rewriting it is Joshua's call. **The ×1.75 rung does NOT transfer** (walled +77.7 / z 4.19 →
+> +25.2 with a FLAT margin, z +0.703 — the elo-vs-margin disagreement is the house win-rate noise
+> signature). ⇒ **the meeple-term SCALE axis is measured null under `fixed_v1`, closed at ~±17 elo
+> resolution** (with the 2026-08-03 6/6 null). Claim **CL-078**; falsifier is an interaction cell /
+> a leaf-term change / a regime change — **not more n**. → DECISIONS 2026-08-10 (evening);
+> `results.csv` `capscurve_*_n800_b120e9`.
 
 **What it buys.** [`PRODUCTION.yaml`](../governance/PRODUCTION.yaml) currently carries, verbatim:
 *"Power caveat: the screen resolves ~50 elo unpaired / ~35 paired at 2-sigma; a <=20-elo optimum
