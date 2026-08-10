@@ -900,3 +900,11 @@ net path (it needs a checkpoint). Deliberately not touched mid-launch.
 
 **Fix when actioned:** stamp `0 if opp_kind == "net" else _opp_exact_k` into `exact_tail`,
 leaving the value handed to the workers untouched, and add a net-path manifest test.
+
+- **2026-08-09 — Android app: rematch silently reuses the deck seed.** `GameViewModel.kt` seeds the
+  new-game form (`seedText = randomSeed()`) once at form-state construction; the state outlives the
+  game, so a same-session second game reuses the SAME `deck_seed` unless the field is hand-edited
+  (observed: E4 games 13+14 both on deck 523563 — Joshua did not choose that). Violates the E4
+  fresh-deck protocol for any same-session rematch. Fix = re-randomize `seedText` on form open (or
+  after every `newGame`), one-liner + rebuild + hash-verified install per the standing APK rule.
+  Stats note: correlated-margin handling for the affected pair is in the e4_games README.
