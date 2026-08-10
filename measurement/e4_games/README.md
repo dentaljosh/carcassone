@@ -94,6 +94,13 @@ so the n=15 se below is **very slightly optimistic** (15 games, not 15 independe
 rigorous per-game read for those two is the **deck-adjusted residual** below, not the raw margin.
 Game 15 (`638286`) is an independent draw — no seed collision.
 
+✅ **The seed-reuse bug is fixed and shipped (2026-08-10).** `27cd337` rerolls the new-game seed
+after every `newGame()`; built from HEAD and installed to the phone as an update
+(apk sha256 `7dfb40b4…`, hash-verified against the on-device `base.apk`; all 16 archives survived).
+**The "restart the app between games" workaround is retired** — games archived from 2026-08-10 on
+draw a fresh deck per rematch by construction. Games 1–15 above are unaffected and keep the
+correlated-pair handling described in this section.
+
 | statistic | mean | se | z |
 |---|---:|---:|---:|
 | **TOTAL margin** | **+9.13** | 7.63 | **+1.20** |

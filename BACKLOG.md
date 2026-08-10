@@ -908,3 +908,13 @@ leaving the value handed to the workers untouched, and add a net-path manifest t
   fresh-deck protocol for any same-session rematch. Fix = re-randomize `seedText` on form open (or
   after every `newGame`), one-liner + rebuild + hash-verified install per the standing APK rule.
   Stats note: correlated-margin handling for the affected pair is in the e4_games README.
+  ✅ **FIXED + INSTALLED 2026-08-10.** Fix committed as `27cd337` (reroll at the *end* of
+  `newGame()`, so the documented no-reroll-on-a-Settings-round-trip behavior is kept). Built from
+  HEAD and installed to the Pixel as an **update** (`adb install -r`, no uninstall):
+  apk sha256 `7dfb40b46802a62aab136356d8ac363d3f53600ea6410d2023d8a44fd242bebe`, verified equal to
+  the pulled on-device `base.apk`. Data survived — 16 archived games before and after,
+  `firstInstallTime` unchanged at 2026-08-05 17:33:39 (`lastUpdateTime` → 2026-08-10 01:14:55).
+  75 JVM unit tests green. **The restart-between-games workaround is no longer needed.** This build
+  also carries the native/bundle state at HEAD (cy + rust wheels rebuilt — the only native delta
+  since the 08-03 `fixed_v1` build is `549c0d1`'s default-OFF phase multiplier), so games archived
+  from 2026-08-10 on are a *build* change but not a rules-epoch change.
