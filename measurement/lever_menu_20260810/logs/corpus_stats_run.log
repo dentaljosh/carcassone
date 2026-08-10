@@ -1,0 +1,8 @@
+[corpus_stats] 400 games from measurement/lever_menu_20260810/jcz_confirm_adapted.jsonl
+  100/400  1s
+  200/400  1s
+  300/400  2s
+  400/400  3s
+[corpus_stats] replayed in 2.7s
+[corpus_stats] wrote measurement/lever_menu_20260810/CORPUS_STATS_jcz_confirm400.json (2.3 MB) and measurement/lever_menu_20260810/CORPUS_STATS_jcz_confirm400.md
+[corpus_stats] integrity: scores match 400, mismatch 0, split_ok 400/400

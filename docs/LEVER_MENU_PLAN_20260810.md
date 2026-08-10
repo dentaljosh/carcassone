@@ -1,12 +1,20 @@
 # LEVER-MENU EXECUTION PLAN — the six-item queue from the 2026-08-10 doc sweeps
 
-> **Status: 📋 PLAN ONLY, 2026-08-10. NOTHING HAS BEEN LAUNCHED. NO BAND IS CLAIMED. `PRODUCTION.yaml` IS UNTOUCHED.**
-> Joshua approved *planning* the full six-item menu and set the resource envelope (laptop fully
-> available; local box capped at **W=14** because he is using it; default = **two-box
-> `--shared-claim` work-stealing**, the pattern proven on the 2026-08-10 `b0p3` powered confirm).
-> Each item's **final** pre-registration and its **band claim** land in the SAME commit, at launch
-> time — per the standing rule in [`governance/BAND_REGISTRY.csv`](../governance/BAND_REGISTRY.csv).
-> This document is the design, the cost model and the order. It authorizes nothing.
+> **Status: ✅ FUNDED IN FULL, 2026-08-10. LAUNCHED.** Joshua: *"its all funded"* (2026-08-10) —
+> **all six items**, including item 5 despite its drop-candidate flag (§5, §6.7). The document
+> below is unchanged as the design of record; this banner converts it from a proposal into the
+> **spec of record for the launch**. Bands claimed in the same commit as this stamp, before game 1:
+> **1.18e11** (item 2, incl. its wiring-gate sub-band 1.189e11) · **1.19e11** (item 3, incl. the
+> pre-registered top-up decks) · **1.20e11** (item 4, shared/CRN across all four cells).
+> **Item 5 draws fresh decks of its already-claimed band 94e9** (the one licensed fresh-band
+> exception, §4.5). **Items 1 and 6 burn no band.**
+> Envelope as planned: laptop fully available (**W=22**); local box capped at **W=14** because
+> Joshua is using it; **two-box `--shared-claim` work-stealing**, the pattern proven on the
+> 2026-08-10 `b0p3` powered confirm; **game-playing evals strictly serial** (§2 ruling).
+> **`PRODUCTION.yaml` IS UNTOUCHED and nothing here promotes anything** (§7) — every adoption,
+> re-sweep and park/kill in §6 remains Joshua's call.
+> Execution: [`scripts/classical_search/menu_chain.sh`](../scripts/classical_search/menu_chain.sh)
+> (blocks B→C→D→E, detached); logs and readouts under `measurement/lever_menu_20260810/`.
 
 > **Reading order:** §1 envelope + cost model → §2 the co-tenancy ruling → §3 the DAG →
 > §4 per-item mini-preregs → §5 the GO sequence → §6 what stays Joshua's → §7 out of scope →

@@ -78,7 +78,14 @@ PROFILE=fixed_v1           # BOTH sides. Not overridable by flag on purpose: a w
 # partial session yields whole cells, not partial ones. The CURVE axis leads: curve125 is the
 # only leaf knob ever PROMOTED (2026-07-13, the first leaf change to the champion), so it is
 # the optimum most likely to have been rules-specific and the most valuable to price first.
-CELLS_ALL="curve100 curve150 cap5 cap12 oppcap4 oppcap12"
+# curve175 ADDED 2026-08-10 for lever-menu item 4 (docs/LEVER_MENU_PLAN_20260810.md §4.4). It is
+# the x1.75 rung of the SAME base curve the other rungs scale (base = curve100 = [-8,-4,-1,0,2,3,
+# 4,5]; curve150 == 1.50x base reproduces the existing cell json byte-for-byte, which is how the
+# 1.75x values were verified). NOT a virgin rung: c5_s2_curve175_n400 already read +77.7 +/- 17.7
+# paired z 4.19 under `walled` (2026-07-13, post-OpenBLAS-fix), statistically tied with curve125's
+# +66.8 -- which is WHY curve125 was adopted (CL-051). The menu cell is a fixed_v1 RE-MEASURE.
+# It is NOT in the default CELLS_ALL run order: pass it explicitly via --cells.
+CELLS_ALL="curve100 curve150 cap5 cap12 oppcap4 oppcap12 curve175"
 
 case "$BOX_TAG" in
   local|primary)  ROLE=primary; SHARE=/mnt/c/carc-shared; W_AUTO=30 ;;   # CLUSTER_OPS 4th profile
@@ -88,12 +95,20 @@ esac
 [ "$WORKERS" = auto ] && WORKERS=$W_AUTO
 OUT_ROOT="${CC_OUT_ROOT:-$SHARE/capscurve_resweep}"
 
-CELLS="$CELLS_ALL"; DRYRUN=0; SUBPREFIX=cc_; BACKEND=rust; SMOKE=0
+CELLS="$CELLS_ALL"; DRYRUN=0; SUBPREFIX=cc_; BACKEND=rust; SMOKE=0; EXP_SUFFIX=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --cells)   CELLS="${2:?--cells needs a quoted id list}"; shift 2 ;;
     --n)       N="${2:?--n needs a count}"; shift 2 ;;
     --band)    BAND="${2:?--band needs a seed}"; shift 2 ;;
+    # --exp-suffix: appended to the results.csv exp_id ONLY (the cell-json filename is
+    # unchanged). Added 2026-08-10 so a RE-RUN of a cell id at a different n/band cannot
+    # append a SECOND row under the exp_id the 2026-08-03 n=200 screen already owns —
+    # results.csv is the source of truth and a duplicated exp_id makes it ambiguous.
+    # ⚠️ The suffix must keep 'fixed_v1' in the exp_id (append, never replace):
+    # scripts/append_result_row.py:check_rules_profile REFUSES a non-walled row whose
+    # exp_id does not name its profile.
+    --exp-suffix) EXP_SUFFIX="${2:?--exp-suffix needs a string}"; shift 2 ;;
     --backend) BACKEND="${2:?--backend needs python|rust}"; shift 2 ;;
     --out-sub-prefix) SUBPREFIX="${2:?}"; shift 2 ;;
     --smoke)   SMOKE=1; shift ;;
@@ -190,8 +205,9 @@ PYEOF
 echo "[cc $ROLE $HOST $(ts)] start: W=$WORKERS backend=$BACKEND profile=$PROFILE r9=$CARCASSONNE_FIX_R9 out_root=$OUT_ROOT band=$BAND n=$N cells=[$CELLS]"
 
 for c in $CELLS; do
-  exp="capscurve_${c}_${PROFILE}_vs_puctchamp2750_k2"
-  cell_json="$CELL_DIR/$exp.json"
+  cell_base="capscurve_${c}_${PROFILE}_vs_puctchamp2750_k2"
+  exp="${cell_base}${EXP_SUFFIX}"
+  cell_json="$CELL_DIR/$cell_base.json"
   sub="${SUBPREFIX}$c"
   dir="$OUT_ROOT/$sub"
   base_args=(--candidate puct --opponent puct
