@@ -122,24 +122,32 @@ laptop_claims() {   # $1 = record-dir GLOB (unquoted at call site)
   find $1 -maxdepth 1 -name 'seed*.claim' -print0 2>/dev/null \
     | xargs -0 -r grep -l -E 'helper|laptop' 2>/dev/null | wc -l
 }
-# Wait for the laptop to be free of the block-A oracle instrument before a game block starts.
-# Plan section 2: items 1 and 6 are CPU-heavy and go in GAPS, not beside a game eval - purely
-# to protect throughput and the ms riders.
+# Wait for the laptop to be free before a game block starts. TWO things are being waited on
+# and both matter:
+#   1. item 6's oracle scorer (block A). Plan section 2: the replay/oracle instruments are
+#      CPU-heavy and go in GAPS, not beside a game eval - purely to protect throughput and
+#      the ms riders.
+#   2. the PREVIOUS block's own laptop leg. The local launcher and the laptop launcher exit on
+#      the same records>=N condition, but not at the same instant: the laptop can still be
+#      mid-harness-pass when local returns. Launching the next block's laptop leg on top of
+#      that would put TWO game evals on one box - the exact co-tenancy the serial ruling
+#      exists to prevent.
+# Bracketed patterns ([t], [s]) so the probe's own cmdline can never match itself.
 wait_laptop_quiet() {
   local dl="${1:-7200}" t0; t0=$(date +%s)
   while [ $(( $(date +%s) - t0 )) -lt "$dl" ]; do
     local busy
     busy=$(timeout 90 ssh -o BatchMode=yes -o ConnectTimeout=20 "$LAPTOP" 'bash -s' 2>/dev/null <<'RQ'
 cd /home/doctor/projects/carcassone || exit 1
-pgrep -fc 'oracle_score_pilo[t]' 2>/dev/null || echo 0
+pgrep -fc 'oracle_score_pilo[t]|eval_fair_puc[t]|eval_puct_prior[s]' 2>/dev/null || echo 0
 RQ
 )
     busy=${busy:-0}
-    if [ "$busy" = "0" ]; then log "laptop is quiet (no oracle_score_pilot) - game block may start"; return 0; fi
-    log "laptop still running item 6's oracle scorer ($busy proc) - holding the game block"
+    if [ "$busy" = "0" ]; then log "laptop is quiet (no oracle scorer, no game harness) - block may start"; return 0; fi
+    log "laptop still busy ($busy proc: oracle scorer and/or a previous block's leg) - holding this block"
     sleep 120
   done
-  log "WARNING: laptop did not go quiet within ${dl}s; proceeding anyway (throughput cost only, not a validity cost - plan section 2)"
+  log "WARNING: laptop did not go quiet within ${dl}s; proceeding anyway (a throughput cost, not a validity cost - plan section 2). verify_two_box still has to see a laptop claim ON THIS CELL."
   return 0
 }
 launch_laptop() {   # $1 = path to a local script file, piped to the laptop. BACKGROUND the CALL.
