@@ -185,6 +185,17 @@ cheap and strictly better-powered.
 (near-neutral). Residuals: **+55.5** (new record, beats `627623`'s +37.12) and **+28.5**. Full
 detail: `measurement/e4_games/README.md` § "Deck-adjusted residual for the two 523563 games".
 
+**2026-08-10 addendum (informal, not folded into the n=12 estimates above):** deck `638286`
+(the 2026-08-10 game `1786337185`, margin **+54**) priced at K=8/11008 on the **laptop**
+(`--k 8 --workers 10 --rust-threads 1`), 2.6 min wall, 8/8 cells finished, provenance identical
+to the n=12 corpus (`champion_leaf_hash a36d2e15a3b3d71d`, `total_sims_of_record 11008`,
+`rules_profile fixed_v1`) — self-play margins +11, −12, −8, +14, +40, +41, +9, −37,
+**d̂ = +7.25 ± 9.29** (sd **26.28**, the widest self-play spread of any deck in the ledger, so
+K=8 prices this one poorly). Residual: **+46.75** — second-largest on record, behind `523563`'s
++55.5 and ahead of `627623`'s +37.12; it stays above +37 even one se up on d̂. Raw games:
+`selfplay_638286.jsonl`. Full detail: `measurement/e4_games/README.md` § "Deck-adjusted residual
+for the 638286 game".
+
 ---
 
 ## 6. Caveats owed (all pre-registered in SPEC §"Caveats owed")
