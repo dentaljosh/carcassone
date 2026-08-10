@@ -104,11 +104,17 @@ if [ "$BUILD_RC" -ne 0 ]; then
   : > "$DIR/PHASE_ARM_BLOCKED"
   exit 4
 fi
+# The phase multiplier's substrate is the CYTHON leaf (flat_leaf binds
+# flat_leaf_cy.SUPPORTS_V29_PHASE; the ladder injects via the C5 leaf-override
+# python/cy path) -- NOT carc_rs, which never carried the flag. The original
+# assert here checked carc_rs and false-blocked the first owner-approved launch
+# (2026-08-09 23:30).
 $PY -c "
 import carc_rs, carcassonne_ai
 from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG as c
 import scripts.classical_search.c5_leaf_override as o
-assert getattr(carc_rs, 'SUPPORTS_V29_PHASE', False), 'rebuilt carc_rs lacks SUPPORTS_V29_PHASE - stale substrate'
+from carcassonne_ai import flat_leaf_cy
+assert getattr(flat_leaf_cy, 'SUPPORTS_V29_PHASE', False), 'rebuilt flat_leaf_cy lacks SUPPORTS_V29_PHASE - stale cython substrate'
 " >> "$LOGS/phase_build.log" 2>&1 || {
   echo "[night $(ts)] FATAL: post-build import/capability check failed. STOPPING."
   : > "$DIR/PHASE_ARM_BLOCKED"; exit 4; }
