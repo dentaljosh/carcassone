@@ -179,6 +179,12 @@ per-deck ledger is now available for every future E4 game at negligible cost. Th
 the control variate grows with n (the β̂ noise shrinks), so re-running this at n=25–30 is
 cheap and strictly better-powered.
 
+**2026-08-09 addendum (informal, not folded into the n=12 estimates above):** deck `523563`
+(the two 2026-08-09 games, `1786325073`/`1786329790`, margins +56/+29) priced at K=8/11008,
+3.3 min wall at W=14 — self-play margins +21,+11,+2,−2,−16,−20,+15,−7, **d̂ = +0.50 ± 5.17**
+(near-neutral). Residuals: **+55.5** (new record, beats `627623`'s +37.12) and **+28.5**. Full
+detail: `measurement/e4_games/README.md` § "Deck-adjusted residual for the two 523563 games".
+
 ---
 
 ## 6. Caveats owed (all pre-registered in SPEC §"Caveats owed")
