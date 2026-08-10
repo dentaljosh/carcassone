@@ -1,0 +1,43 @@
+{
+  "gate": "ITEM2_WIRING_GATE_2a",
+  "verdict": "PASS",
+  "failures": [],
+  "gate_cell": {
+    "cand_leaf_hash": "86ecb5375676feae",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "cand_curve_drift_allowed": true,
+    "code_rev": "952d1e6-dirty",
+    "n": 32,
+    "W": 16,
+    "D": 1,
+    "L": 15,
+    "elo": 10.86089841744591,
+    "paired_z": 0.07786562643498848,
+    "note": "THROWAWAY numbers from a ~32-game wiring smoke on a disjoint sub-band. NOT a result, NOT poolable, NOT quotable."
+  },
+  "control_cell": {
+    "cand_leaf_hash": "b2c20e1452d8e5d4",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "cand_curve_drift_allowed": true,
+    "code_rev": "4e03656-dirty",
+    "n": 64,
+    "W": 22,
+    "D": 0,
+    "L": 42,
+    "elo": -112.3306438302777,
+    "elo_sig_1sigma": 45.71916647678708,
+    "paired_z": -1.5559950620672978
+  }
+}

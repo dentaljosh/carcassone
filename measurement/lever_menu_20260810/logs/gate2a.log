@@ -1,0 +1,103 @@
+[gate2a 2026-08-10_12:24:26] START (local only, W=14)
+[menu-fair primary Doctor] 2026-08-10_12:24:26 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-10_12:24:26 START sub=gate2a_farmgrowthoff n=32 band=118900000000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/lever_menu_20260810/cells/menu_farmgrowthoff_fixed_v1_vs_fairchamp11008.json
+[leaf-override] WARNING: F7b farm knockout set (farm_base_off=False, farm_growth_off=True) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=86ecb5375676feae frozen_config_hash=3c4e2dc2fac7d465 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leaf86ecb537]: info=fair n=32 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 32 to play, 14 workers, out=/mnt/c/carc-shared/lever_menu_20260810/gate2a_farmgrowthoff
+  10/32 played (18.4s/game, ~7 min left)
+  20/32 played (17.0s/game, ~3 min left)
+  30/32 played (15.6s/game, ~1 min left)
+  32/32 played (16.7s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 32   candidate: 16W / 1D / 15L   winrate 0.516 (z=+0.18)
+avg score diff (candidate - opponent): +0.25
+ELO: +10.9  (+/- 61.4 1sigma)
+PAIRED: 16 decks   mean seat-balanced margin +0.25   z = +0.08
+prefix ms/move: candidate 1275  opponent 1280  (ratio 1.00x)
+fair endgame: candidate latched 32/32 games, 0.69s solver/game, timeouts=0
+fair endgame: opponent  latched 32/32 games, 1.31s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=32 (1σ≈±61); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/lever_menu_20260810/gate2a_farmgrowthoff/summary.json
+[menu-fair primary Doctor] 2026-08-10_12:33:22 harness pass 1 rc=0 records=32/32
+[menu-fair primary Doctor] 2026-08-10_12:33:22 END sub=gate2a_farmgrowthoff records=32/32 in 536s after 1 pass(es)
+[gate2a 2026-08-10_12:33:22] farm_growth_off micro-cell rc=0
+[menu-fair primary Doctor] 2026-08-10_12:33:22 clock-skew guard OK (0s)
+[menu-fair primary Doctor] 2026-08-10_12:33:22 START sub=gate2a_farmbaseoff n=64 band=118900001000 W=14 cand=k8x1376 opp=k8x1376 drift=1 cand_json=/home/doctor/projects/carcassone/measurement/lever_menu_20260810/cells/menu_farmbaseoff_fixed_v1_vs_fairchamp11008.json
+[leaf-override] WARNING: F7b farm knockout set (farm_base_off=True, farm_growth_off=False) — the candidate leaf leaves the Cython fast path for the pure-Python flat leaf (bit-exact, ~12.5x slower per leaf). Intended only with --backend rust, where no Python leaf runs.
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: PRE-REGISTERED SHAPE (NOT curve125) leaf_hash=b2c20e1452d8e5d4 frozen_config_hash=0e4f7b6f9ef5ed1d (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: NO | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=a36d2e15a3b3d71d
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=14 [FARM: threads=1 per worker]
+fair-puct[fair_fair_c1.5_tau5_float_kd8_s1376_vs_fairchamp_k2-leafb2c20e14]: info=fair n=64 paired=True K=2 k_dets=8 sims=1376 | 0 cached, 64 to play, 14 workers, out=/mnt/c/carc-shared/lever_menu_20260810/gate2a_farmbaseoff
+  10/64 played (22.8s/game, ~21 min left)
+  20/64 played (18.7s/game, ~14 min left)
+  30/64 played (16.7s/game, ~9 min left)
+  40/64 played (16.2s/game, ~6 min left)
+  50/64 played (16.3s/game, ~4 min left)
+  60/64 played (15.2s/game, ~1 min left)
+  64/64 played (15.6s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=8, sims=1376, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 64   candidate: 22W / 0D / 42L   winrate 0.344 (z=-2.50)
+avg score diff (candidate - opponent): -3.39
+ELO: -112.3  (+/- 45.7 1sigma)
+PAIRED: 32 decks   mean seat-balanced margin -3.39   z = -1.56
+prefix ms/move: candidate 1411  opponent 1353  (ratio 1.04x)
+fair endgame: candidate latched 64/64 games, 1.30s solver/game, timeouts=0
+fair endgame: opponent  latched 64/64 games, 1.04s solver/game, timeouts=0
+[summary.json] wrote /mnt/c/carc-shared/lever_menu_20260810/gate2a_farmbaseoff/summary.json
+[menu-fair primary Doctor] 2026-08-10_12:50:03 harness pass 1 rc=0 records=64/64
+[menu-fair primary Doctor] 2026-08-10_12:50:03 END sub=gate2a_farmbaseoff records=64/64 in 1001s after 1 pass(es)
+[gate2a 2026-08-10_12:50:03] farm_base_off SIGN CONTROL rc=0
+{
+  "gate": "ITEM2_WIRING_GATE_2a",
+  "verdict": "PASS",
+  "failures": [],
+  "gate_cell": {
+    "cand_leaf_hash": "86ecb5375676feae",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "cand_curve_drift_allowed": true,
+    "code_rev": "952d1e6-dirty",
+    "n": 32,
+    "W": 16,
+    "D": 1,
+    "L": 15,
+    "elo": 10.86089841744591,
+    "paired_z": 0.07786562643498848,
+    "note": "THROWAWAY numbers from a ~32-game wiring smoke on a disjoint sub-band. NOT a result, NOT poolable, NOT quotable."
+  },
+  "control_cell": {
+    "cand_leaf_hash": "b2c20e1452d8e5d4",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_k_dets": 8,
+    "cand_sims_per_det": 1376,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "cand_curve_drift_allowed": true,
+    "code_rev": "4e03656-dirty",
+    "n": 64,
+    "W": 22,
+    "D": 0,
+    "L": 42,
+    "elo": -112.3306438302777,
+    "elo_sig_1sigma": 45.71916647678708,
+    "paired_z": -1.5559950620672978
+  }
+}
+
+ITEM 2 WIRING GATE PASS - block B is cleared to launch.
+[gate2a 2026-08-10_12:50:03] gate check rc=0 (0 = PASS, block B cleared)
