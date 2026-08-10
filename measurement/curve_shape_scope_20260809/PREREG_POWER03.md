@@ -10,7 +10,9 @@
 > results.csv `curvephase_b0p3_power_fixed_v1_vs_champ_n800`; DECISIONS 2026-08-10 (~10:00).
 > *Deviation on the record: executed on TWO boxes (local W=30 + laptop W=22 work-stealing, ~3.1 h)
 > rather than the design line's "local W=14, laptop excluded" — a resource-plan change, not a
-> statistical term; the laptop was bundle-synced + capability-verified before joining.*
+> statistical term; the laptop was bundle-synced + capability-verified before joining. The
+> deviation was OWNER-DIRECTED mid-run (Joshua, in-session: "I'm not using the box this
+> morning. and you can work steal on laptop"), not an operator improvisation.*
 >
 > **STATUS (original, at funding): FUNDED 2026-08-10 morning (Joshua: "let's power 0.3"). Written BEFORE game 1.**
 > This is CL-077's own falsifier, exercised: the C-KILL ladder's +0.3 cell read +33.1 elo /
