@@ -91,10 +91,18 @@ def leaf_score_float(state, player: int, cfg) -> float:
     score = base + bonus_self - bonus_opp
     curve = cfg.v29_meeple_curve
     if curve is not None:
-        score += (
-            flat_leaf._flat_curve_lookup(curve, state.meeples[player])
-            - flat_leaf._flat_curve_lookup(curve, state.meeples[opp])
-        )
+        # Part C phase multiplier: beta == 0.0 (default/champion) keeps the
+        # UNMODIFIED expression via an early branch (byte-identical default traffic).
+        if cfg.v29_phase_beta == 0.0:
+            score += (
+                flat_leaf._flat_curve_lookup(curve, state.meeples[player])
+                - flat_leaf._flat_curve_lookup(curve, state.meeples[opp])
+            )
+        else:
+            score += flat_leaf._phase_mult(state, cfg.v29_phase_beta, cfg.v29_phase_norm) * (
+                flat_leaf._flat_curve_lookup(curve, state.meeples[player])
+                - flat_leaf._flat_curve_lookup(curve, state.meeples[opp])
+            )
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     # C7 Term R then Term F — two separate gated adds (fixed order; float add is

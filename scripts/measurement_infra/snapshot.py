@@ -119,6 +119,10 @@ _FROZEN_HASH_DEFAULT_OFF = {
     # ablation knobs. Excluded on the same grounds as F6.
     "farm_base_off": False,
     "farm_growth_off": False,
+    # Part C phase multiplier (prereg curve_shape_scope_20260809, 2026-08-09):
+    # default-off candidate-only knobs. Excluded on the same grounds as F6/F7b.
+    "v29_phase_beta": 0.0,
+    "v29_phase_norm": 1.0,
 }
 
 

@@ -36,8 +36,10 @@ from carcassonne_ai.virtual_score_v2 import DEFAULT_CONFIG
 # candidate that SETS a slope is a different leaf and DOES shift the hash (as intended).
 # Mirror in alphabeta_agent._leaf_hash + tests/test_t3_optuna's inline recipe.
 # F7b farm knockouts (2026-08-02) postdate a36d2e15 too, so they follow the F6 rule.
+# The Part C phase multiplier (2026-08-09) postdates it as well — same rule.
 _LEAF_HASH_EXCLUDE_IF_DEFAULT = {"soft_cap_slope": 0.0, "opp_soft_cap_slope": 0.0,
-                                 "farm_base_off": False, "farm_growth_off": False}
+                                 "farm_base_off": False, "farm_growth_off": False,
+                                 "v29_phase_beta": 0.0, "v29_phase_norm": 1.0}
 
 
 def _leaf_dict(cfg) -> dict:
@@ -145,6 +147,23 @@ def _assert_cy_float_path(cfg) -> None:
                                  "compiled cy leaf lacks SUPPORTS_F6_SOFT_CAP (rebuild flat_leaf_cy)")
         except ImportError as e:
             raise ValueError("--cand-leaf-json: soft-cap slope set but flat_leaf_cy is not built") from e
+    # Part C phase multiplier: a SET beta needs the SUPPORTS_V29_PHASE build, else a
+    # stale .so silently drops the phase dependence (which would read as a false null,
+    # not just a slowdown). beta == 0.0 is bit-exact on any .so (early branch), so skip.
+    if getattr(cfg, "v29_phase_beta", 0.0) != 0.0:
+        if cfg.v29_meeple_curve is None:
+            raise ValueError("--cand-leaf-json: v29_phase_beta requires v29_meeple_curve "
+                             "(the phase multiplier scales the meeple-curve differential)")
+        if getattr(cfg, "v29_phase_norm", 1.0) == 0.0:
+            raise ValueError("--cand-leaf-json: v29_phase_norm must be non-zero "
+                             "(it divides the phase weight; use compute_phase_norm.py)")
+        try:
+            from carcassonne_ai import flat_leaf_cy as _cy
+            if not bool(getattr(_cy, "SUPPORTS_V29_PHASE", False)):
+                raise ValueError("--cand-leaf-json: v29_phase_beta set but the compiled cy leaf "
+                                 "lacks SUPPORTS_V29_PHASE (rebuild flat_leaf_cy)")
+        except ImportError as e:
+            raise ValueError("--cand-leaf-json: v29_phase_beta set but flat_leaf_cy is not built") from e
     # F7b farm knockouts: the ONE knob family that deliberately has no cy implementation
     # (roadmap F7b — the cells run `--backend rust`, where no Python leaf is computed).
     # A set knob therefore ALWAYS leaves the cy fast path for the pure-Python flat leaf,

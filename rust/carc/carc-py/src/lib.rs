@@ -113,6 +113,8 @@ impl PyLeafConfig {
         closure_continuous_slack = 0.0,
         farm_base_off = false,
         farm_growth_off = false,
+        v29_phase_beta = 0.0,
+        v29_phase_norm = 1.0,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -130,6 +132,8 @@ impl PyLeafConfig {
         closure_continuous_slack: f64,
         farm_base_off: bool,
         farm_growth_off: bool,
+        v29_phase_beta: f64,
+        v29_phase_norm: f64,
     ) -> Self {
         PyLeafConfig {
             inner: leaf::LeafConfig {
@@ -147,6 +151,8 @@ impl PyLeafConfig {
                 closure_continuous_slack,
                 farm_base_off,
                 farm_growth_off,
+                v29_phase_beta,
+                v29_phase_norm,
             },
         }
     }

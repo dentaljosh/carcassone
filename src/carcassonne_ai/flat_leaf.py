@@ -66,6 +66,7 @@ _CY_SUPPORTS_CURVE = False  # set from flat_leaf_cy.SUPPORTS_V29_CURVE at bind t
 _CY_SUPPORTS_BAG_CLOSE = False  # set from flat_leaf_cy.SUPPORTS_V210_BAG_CLOSE at bind time
 _CY_SUPPORTS_C7 = False  # set from flat_leaf_cy.SUPPORTS_V29_C7_TERMS at bind time (Term R + Term F)
 _CY_SUPPORTS_SOFT_CAP = False  # set from flat_leaf_cy.SUPPORTS_F6_SOFT_CAP at bind time (F6 soft cap)
+_CY_SUPPORTS_PHASE = False  # set from flat_leaf_cy.SUPPORTS_V29_PHASE at bind time (Part C phase multiplier)
 _CY_BASE = None  # lazily bound flat_leaf_cy.flat_base_score_cy (exact terminal score)
 
 # v2.10 bag-aware closure gate (2026-07-04, docs/V210_LEAF_SPEC_2026-07-04.md Track B;
@@ -846,6 +847,38 @@ def _flat_curve_lookup(curve, n: int) -> float:
     return float(curve[n])
 
 
+# --- Part C PHASE MULTIPLIER on the meeple curve ------------------------------ #
+# K0 = 35 (mid-deck) — frozen by the prereg
+# (measurement/curve_shape_scope_20260809/PREREG_DRAFT.md §4). Module constant, not a
+# LeafConfig field, exactly like _FLIP_BETA/_FLIP_RAMP below.
+_PHASE_K0 = 35.0
+
+
+def _k_remaining(state) -> int:
+    """Tiles left = undrawn deck + the one in hand. THE definition of record for the
+    phase multiplier, byte-identical to `fair_agent.k_remaining` and to the Rust
+    `state.deck_len() + state.next_tile.is_some() as usize`.
+
+    ⚠️ NOT `state.remaining_deck()`, and NOT `_bag_stats`' notion: `_bag_stats`
+    deliberately excludes `next_tile` in the MEEPLES phase (there it is a stale ref to
+    the just-placed tile). This term counts it unconditionally, because it is a
+    game-clock, not a placeability proxy — and because that is what `fair_agent` does,
+    which is what the prereg pinned."""
+    return len(state.deck) + (1 if state.next_tile is not None else 0)
+
+
+def _phase_mult(state, beta: float, norm: float) -> float:
+    """`clip(1 + beta*(k - K0)/K0, 0.0, 2.0) / norm` — the mean-1-renormalized phase
+    weight. `norm` is the run-level E[f] scalar (cfg.v29_phase_norm); computing it here
+    would make the leaf state-history-dependent and break hashing / reconciliation."""
+    f = 1.0 + beta * (_k_remaining(state) - _PHASE_K0) / _PHASE_K0
+    if f < 0.0:
+        f = 0.0
+    elif f > 2.0:
+        f = 2.0
+    return f / norm
+
+
 # --- C7 wave-2 leaf terms (opt-in; default-OFF == bit-identical champion) ------ #
 # Pre-registered module constants (NOT LeafConfig fields — fewer hash-churn keys);
 # a β/ramp sweep is a possible wave-3 only if Term F fires.
@@ -1033,7 +1066,7 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     # capability-flag pattern for the v2.10 bag-close gate (SUPPORTS_V210_BAG_CLOSE).
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP, _CY_SUPPORTS_PHASE  # noqa: PLW0603
         if _CY_FLAT_V2 is None:
             try:
                 from . import flat_leaf_cy as _cy
@@ -1043,6 +1076,7 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
                 _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
                 _CY_SUPPORTS_SOFT_CAP = bool(getattr(_cy, "SUPPORTS_F6_SOFT_CAP", False))
+                _CY_SUPPORTS_PHASE = bool(getattr(_cy, "SUPPORTS_V29_PHASE", False))
             except ImportError:
                 _CY_FLAT_V2 = False  # .so missing on this box -> sentinel; fall through to pure-Python (no crash, no retry)
                 _CY_FLAT_V2_FLOAT = False
@@ -1050,10 +1084,12 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
                 _CY_SUPPORTS_BAG_CLOSE = False
                 _CY_SUPPORTS_C7 = False
                 _CY_SUPPORTS_SOFT_CAP = False
+                _CY_SUPPORTS_PHASE = False
         if (_CY_FLAT_V2 and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
+                and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)):
             return _CY_FLAT_V2(state, player, cfg, bag_close)
     if state.players != 2:
@@ -1071,7 +1107,13 @@ def flat_virtual_score_v2(state, player: int, cfg=None, bag_close=None) -> int:
     if curve is not None:
         # B: nonlinear meeple liquidity curve REPLACES the flat meeple_k term
         # (== leaf_v29._meeple_curve_term; the object path adds it in apply_v29).
-        score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+        # Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression —
+        # an early branch, never a multiply by 1.0, so default traffic is byte-identical.
+        if cfg.v29_phase_beta == 0.0:
+            score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+        else:
+            score += _phase_mult(state, cfg.v29_phase_beta, cfg.v29_phase_norm) * (
+                _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp]))
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     # C7: Term R then Term F, two SEPARATE gated adds in this fixed order (float
@@ -1107,7 +1149,7 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
         bag_close = V210_BAG_CLOSE if cfg_was_none else bool(getattr(cfg, "bag_close", False))
     curve = cfg.v29_meeple_curve
     if USE_CY_LEAF:
-        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP  # noqa: PLW0603
+        global _CY_FLAT_V2, _CY_FLAT_V2_FLOAT, _CY_SUPPORTS_CURVE, _CY_SUPPORTS_BAG_CLOSE, _CY_SUPPORTS_C7, _CY_SUPPORTS_SOFT_CAP, _CY_SUPPORTS_PHASE  # noqa: PLW0603
         if _CY_FLAT_V2_FLOAT is None:
             if _CY_FLAT_V2 is False:
                 _CY_FLAT_V2_FLOAT = False  # .so already known-missing; don't retry
@@ -1120,6 +1162,7 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                     _CY_SUPPORTS_BAG_CLOSE = bool(getattr(_cy, "SUPPORTS_V210_BAG_CLOSE", False))
                     _CY_SUPPORTS_C7 = bool(getattr(_cy, "SUPPORTS_V29_C7_TERMS", False))
                     _CY_SUPPORTS_SOFT_CAP = bool(getattr(_cy, "SUPPORTS_F6_SOFT_CAP", False))
+                    _CY_SUPPORTS_PHASE = bool(getattr(_cy, "SUPPORTS_V29_PHASE", False))
                 except ImportError:
                     _CY_FLAT_V2 = False
                     _CY_FLAT_V2_FLOAT = False
@@ -1127,10 +1170,12 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                     _CY_SUPPORTS_BAG_CLOSE = False
                     _CY_SUPPORTS_C7 = False
                     _CY_SUPPORTS_SOFT_CAP = False
+                    _CY_SUPPORTS_PHASE = False
         if (_CY_FLAT_V2_FLOAT and (curve is None or _CY_SUPPORTS_CURVE)
                 and (not bag_close or _CY_SUPPORTS_BAG_CLOSE)
                 and (_c7_off(cfg) or _CY_SUPPORTS_C7)
                 and (_soft_cap_off(cfg) or _CY_SUPPORTS_SOFT_CAP)
+                and (cfg.v29_phase_beta == 0.0 or _CY_SUPPORTS_PHASE)
                 and _farm_knockout_off(cfg)):
             return float(_CY_FLAT_V2_FLOAT(state, player, cfg, bag_close))
     # pure-Python flat float fallback (== flat_virtual_score_v2 minus the round).
@@ -1147,7 +1192,11 @@ def flat_virtual_score_v2_float(state, player: int, cfg=None, bag_close=None) ->
                              cfg.opp_bonus_cap, getattr(cfg, "opp_soft_cap_slope", 0.0))
     score = base + bonus_self - bonus_opp
     if curve is not None:
-        score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+        if cfg.v29_phase_beta == 0.0:   # Part C: early branch == byte-identical default
+            score += _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp])
+        else:
+            score += _phase_mult(state, cfg.v29_phase_beta, cfg.v29_phase_norm) * (
+                _flat_curve_lookup(curve, state.meeples[player]) - _flat_curve_lookup(curve, state.meeples[opp]))
     elif cfg.meeple_k > 0.0:
         score += cfg.meeple_k * (state.meeples[player] - state.meeples[opp])
     # C7: Term R then Term F (two separate gated adds, fixed order — see the int sibling).

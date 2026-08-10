@@ -19,6 +19,13 @@ SUPPORTS_V29_C7_TERMS = True
 # (soft_cap_slope/opp_soft_cap_slope != 0.0) here only when this flag is present, so a
 # stale .so falls back to the pure-Python flat path instead of silently hard-clamping.
 SUPPORTS_F6_SOFT_CAP = True
+# Same pattern for the Part C PHASE MULTIPLIER on the meeple curve
+# (measurement/curve_shape_scope_20260809/PREREG_DRAFT.md §4): the curve differential
+# scaled by a mean-1-renormalized function of tiles-remaining. flat_leaf.py routes a
+# phase config (v29_phase_beta != 0.0) here only when this flag is present, so a stale
+# .so falls back to the pure-Python flat path instead of silently dropping the phase
+# dependence (which would read as "phase does nothing" — a false null).
+SUPPORTS_V29_PHASE = True
 """Cython port of the production flat leaf (`flat_leaf.flat_virtual_score_v2`).
 
 DEV-ONLY (2026-06-12, stage-b-wiring worktree). Default OFF — nothing imports
@@ -976,6 +983,24 @@ cdef inline double _curve_lookup_c(object curve, long n):
     return <double>curve[n]
 
 
+# Part C phase multiplier. K0 == flat_leaf._PHASE_K0 == 35.0 (prereg-frozen).
+cdef double _PHASE_K0 = 35.0
+
+
+cdef inline double _phase_mult_c(object state, double beta, double norm):
+    """== flat_leaf._phase_mult. k_remaining == fair_agent.k_remaining(state) ==
+    len(deck) + (next_tile is not None) — NOT `_bag_stats`' phase-conditional count."""
+    cdef long k = <long>len(state.deck)
+    if state.next_tile is not None:
+        k += 1
+    cdef double f = 1.0 + beta * (<double>k - _PHASE_K0) / _PHASE_K0
+    if f < 0.0:
+        f = 0.0
+    elif f > 2.0:
+        f = 2.0
+    return f / norm
+
+
 cdef inline double _dcurve_c(object curve, long n):
     """== flat_leaf._flat_dcurve / leaf_v29._dcurve. Marginal value of recovering ONE
     meeple at free count n: curve[min(n+1, L-1)] - curve[min(max(n,0), L-1)]."""
@@ -1220,11 +1245,18 @@ cdef double _flat_score_v2_c(state, int player, cfg, bag_close) except *:
     cdef double score = base + bonus_self - bonus_opp
     cdef double meeple_k = <double>cfg.meeple_k
     cdef object curve = cfg.v29_meeple_curve
+    cdef double phase_beta = <double>cfg.v29_phase_beta
     if curve is not None:
         # v2.9 Candidate B: nonlinear meeple liquidity curve REPLACES the flat
         # meeple_k term (== flat_leaf._flat_curve_lookup / leaf_v29._meeple_curve_term).
         meeples = state.meeples
-        score += _curve_lookup_c(curve, <long>int(meeples[player])) - _curve_lookup_c(curve, <long>int(meeples[opp]))
+        # Part C: beta == 0.0 (default/champion) takes the UNMODIFIED expression via an
+        # early branch — never a multiply by 1.0 — so default traffic is byte-identical.
+        if phase_beta == 0.0:
+            score += _curve_lookup_c(curve, <long>int(meeples[player])) - _curve_lookup_c(curve, <long>int(meeples[opp]))
+        else:
+            score += _phase_mult_c(state, phase_beta, <double>cfg.v29_phase_norm) * (
+                _curve_lookup_c(curve, <long>int(meeples[player])) - _curve_lookup_c(curve, <long>int(meeples[opp])))
     elif meeple_k > 0.0:
         meeples = state.meeples
         score += meeple_k * (<long>int(meeples[player]) - <long>int(meeples[opp]))

@@ -111,6 +111,8 @@ def leaf_config_rs(leaf_cfg):
         float(leaf_cfg.closure_continuous_slack),
         bool(getattr(leaf_cfg, "farm_base_off", False)),
         bool(getattr(leaf_cfg, "farm_growth_off", False)),
+        float(getattr(leaf_cfg, "v29_phase_beta", 0.0)),
+        float(getattr(leaf_cfg, "v29_phase_norm", 1.0)),
     )
 
 
