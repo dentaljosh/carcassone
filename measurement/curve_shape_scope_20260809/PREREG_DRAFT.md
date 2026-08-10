@@ -5,9 +5,15 @@
 > the largest at elo_vs_c0 −25.5, z≈−1.0; flattop replicates the Wave-2 tie) ⇒ **Part B (the
 > 3.9-box-day sweep) is NOT FUNDED on a sub-2σ signal — the A1/A4 branches say PARK, and they
 > did.** Band 1.10e11 retired decision-influenced. Close-out `65b36fa`.
-> **Part C (phase ladder): gated on the phase-seam suite comparison** — 549c0d1 verified 3/4
-> gates; the full-suite gate runs via `night_chain.sh` (the 06:51 dirty reboot killed the
-> first attempt mid-suite and false-blocked on a /tmp-wiped wheel; fixed + relaunched).
+> **Part C ✅ RAN AND KILLED 2026-08-10 — pre-registered branch C-KILL fired (a BOUNDED null):**
+> within-deck slope **+1.32 ± 1.49 pts/deck per unit β (z +0.88)** over 5 cells n=200 each on
+> band 1.16e11 (retired) ⇒ no linear phase effect exceeding ~±22 elo at β=±0.6 at this
+> instrument's resolution. Identity gate OK (margin z −1.11, PREREG AMENDMENT 1 bar). Signed,
+> bracketed, E[f]=1-renormalized — supersedes the confounded v28 kill as the phase-axis record.
+> NEVER cite as "the phase axis is dead"; the bound is linear-form- and resolution-specific.
+> Gate history: seam 549c0d1 passed the chunked suite comparison GREEN_WITH_GAP (zero novel
+> failures, one >24 GB cell excluded symmetrically), Joshua accepted the gap on disk
+> (OWNER_ACCEPTED_GAP, `8ec9ed8`), merged `0981bed`.
 > Written 2026-08-09 alongside [SCOPE.md](SCOPE.md), which carries the rationale, the cost
 > arithmetic and the dominance-order analysis. This file is the *runnable* protocol.
 > `governance/PRODUCTION.yaml` is untouched on every branch of this document.
