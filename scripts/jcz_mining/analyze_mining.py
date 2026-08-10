@@ -175,11 +175,32 @@ def sign_corroborates(sc: dict | None) -> bool:
     return bool(p is not None and p < 0.05 and rate is not None and rate > 0.5)
 
 
+class EmptyRecordsError(RuntimeError):
+    """A records path yielded nothing. Loading zero records must never proceed
+    to a verdict: `Path(dir).glob` on a nonexistent path — or on a FILE, which
+    is how the 2026-08-09 n=0 non-verdict happened — returns an empty iterator,
+    and every downstream gate then reads as INCONCLUSIVE-BY-CONSTRUCTION
+    instead of as the caller error it is."""
+
+
 def load_records(dirs: list) -> list:
     rows = []
     for d in dirs:
-        for p in sorted(Path(d).glob("*.json")):
+        p = Path(d)
+        if p.is_file():
+            if p.suffix != ".json":
+                raise EmptyRecordsError(f"records path {d} is a non-json file")
             rows.append(json.loads(p.read_text()))
+            continue
+        if not p.is_dir():
+            raise EmptyRecordsError(f"records path {d} does not exist")
+        found = sorted(p.glob("*.json"))
+        if not found:
+            raise EmptyRecordsError(f"records dir {d} contains no *.json")
+        for f in found:
+            rows.append(json.loads(f.read_text()))
+    if dirs and not rows:
+        raise EmptyRecordsError(f"no records loaded from {dirs}")
     return rows
 
 

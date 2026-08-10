@@ -709,3 +709,36 @@ class TestLaunchMiningLaptopScript:
         assert "--workers 16" in r.stdout
         assert "--m 8" in r.stdout
         assert "--oracle-sims 50" in r.stdout
+
+
+# --------------------------------------------------------------------------- #
+# load_records refuses to load nothing (the 2026-08-09 n=0 non-verdict)        #
+# --------------------------------------------------------------------------- #
+class TestLoadRecordsRefusesEmpty:
+    def test_nonexistent_path_raises(self, tmp_path):
+        with pytest.raises(AN.EmptyRecordsError):
+            AN.load_records([str(tmp_path / "nope")])
+
+    def test_empty_dir_raises(self, tmp_path):
+        d = tmp_path / "records"
+        d.mkdir()
+        with pytest.raises(AN.EmptyRecordsError):
+            AN.load_records([str(d)])
+
+    def test_file_paths_now_load_instead_of_silently_yielding_zero(self, tmp_path):
+        """Passing record FILES (the misuse that produced the n=0 non-verdict:
+        Path(file).glob('*.json') is empty) must now load them."""
+        f1 = tmp_path / "a.json"; f1.write_text(json.dumps({"rid": "r1", "ok": True}))
+        f2 = tmp_path / "b.json"; f2.write_text(json.dumps({"rid": "r2", "ok": True}))
+        rows = AN.load_records([str(f1), str(f2)])
+        assert [r["rid"] for r in rows] == ["r1", "r2"]
+
+    def test_non_json_file_raises(self, tmp_path):
+        f = tmp_path / "a.txt"; f.write_text("x")
+        with pytest.raises(AN.EmptyRecordsError):
+            AN.load_records([str(f)])
+
+    def test_dir_with_records_still_loads(self, tmp_path):
+        d = tmp_path / "records"; d.mkdir()
+        (d / "a.json").write_text(json.dumps({"rid": "r1", "ok": True}))
+        assert len(AN.load_records([str(d)])) == 1
