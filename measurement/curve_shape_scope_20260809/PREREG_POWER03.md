@@ -8,7 +8,7 @@
 > ≈ ±20 elo at 2σ.** The n=200 lean (+33.1 / z +1.39) regressed to a *sign-flipped* null at 4× the
 > sample — the house noise signature, third confirmed instance. `PRODUCTION.yaml` untouched.
 > results.csv `curvephase_b0p3_power_fixed_v1_vs_champ_n800`; DECISIONS 2026-08-10 (~10:00).
-> *Deviation on the record: executed on TWO boxes (local W=30 + laptop W=22 work-stealing, ~3.1 h)
+> *Deviation on the record: executed on TWO boxes (local W=30 + laptop W=22 work-stealing, 1.24 h wall — an earlier "~3.1 h" here was the prereg W=14 ESTIMATE mis-transcribed as realized; corrected 2026-08-10)
 > rather than the design line's "local W=14, laptop excluded" — a resource-plan change, not a
 > statistical term; the laptop was bundle-synced + capability-verified before joining. The
 > deviation was OWNER-DIRECTED mid-run (Joshua, in-session: "I'm not using the box this

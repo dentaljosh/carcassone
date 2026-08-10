@@ -4753,7 +4753,7 @@ promotable; the discipline that refused to read +33.1 as a hit is what this entr
 **Operational note — the program's first two-box work-stealing eval on the seam-merged code.** The
 prereg's design line said "local box W=14 (the only box carrying the merged+built seam substrate;
 laptop deliberately excluded)". In execution the laptop *was* brought in: **local W=30 + laptop W=22
-on a shared claim, ~3.1 h total wall.** That is a **resource-plan deviation, not a statistical one** —
+on a shared claim, 1.24 h total wall (4462 s; an earlier "~3.1 h" was the prereg estimate mis-transcribed as realized -- corrected same day).** That is a **resource-plan deviation, not a statistical one** —
 worker count and host are not terms of the pre-registered contrast, and the laptop was
 **bundle-synced, rebuilt and capability-verified before joining**, so the candidate leaf hash is
 byte-identical across both boxes *by construction of the shared claim* (a single `cand_leaf_json`

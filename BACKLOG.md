@@ -45,7 +45,7 @@ and the union beats both. The tie is only barren if the knowledge fully overlaps
 distinction is cheaply measurable.
 
 **Design (all machinery exists):**
-1. **Behavioral mining:** ✅ **PRE-REGISTERED + BUILT 2026-08-09, LAUNCH PENDING A FREE BOX →
+1. **Behavioral mining:** ✅ **RAN AND CLOSED 2026-08-09 evening (branch G3, NO CONVICTION — see LEVER_INDEX + DECISIONS; stale "launch pending" corrected 2026-08-10) →
    [MINING_PREREG.md](measurement/jcz_mining_20260809/MINING_PREREG.md)**, `scripts/jcz_mining/`.
    **The screen turned out FREE:** JCZ's `LegacyAiPlayer` is a one-turn BFS + ONE static eval, so
    its *played* move in the n=400 corpus already IS its evaluator's argmax — no JVM, no re-query,
