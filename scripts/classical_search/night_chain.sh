@@ -123,7 +123,10 @@ echo "[night $(ts)] launching the Part C beta ladder (local only)"
 # W=14 (was 30): Joshua is working on the box (2026-08-09 afternoon) — leave headroom.
 nice -n 19 bash $REPO/scripts/classical_search/curvephase_ladder_launcher.sh 14 local \
     > "$LOGS/cp_local.log" 2>&1
-echo "[night $(ts)] Part C launcher returned rc=$?"
+# ⚠️ CAPTURE rc ON ITS OWN LINE. `echo "... $(ts) ... rc=$?"` runs the ts() substitution
+# FIRST, so $? is ts's status (always 0) and a launcher failure reads as a clean run.
+CP_RC=$?
+echo "[night $(ts)] Part C launcher returned rc=$CP_RC"
 
 $PY $REPO/scripts/classical_search/analyze_curvephase.py --n-expected 200 \
     --out "$DIR/READOUT_partC.json" > "$LOGS/readout_partC.txt" 2>&1

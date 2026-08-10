@@ -48,7 +48,10 @@ CELL_DIR=$REPO/measurement/curve_shape_scope_20260809/cells_phase
 PROG=$REPO/measurement/curve_shape_scope_20260809/PROGRESS_phase.tsv
 
 N=200
-BAND=115000000000
+# Band 1.16e11 = Part C ATTEMPT 2. ⚠️ 1.15e11 was VOIDED 2026-08-10 (attempt 1: the
+# retired |elo|<25 wiring gate false-fired at n=200 — PREREG AMENDMENT 1) and must NEVER
+# be reused: a band that influenced a decision retires from confirmatory use.
+BAND=116000000000
 KDETS=8; SIMS=1376; K=2
 CPUCT=1.5; TAU=5; QUANT=float; SELECT=visits
 PROFILE=fixed_v1

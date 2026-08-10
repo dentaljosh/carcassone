@@ -26,7 +26,15 @@ done
 echo "[relaunch $(ts)] launching Part C attempt 2 on band 116000000000, W=14 local"
 nice -n 19 bash $REPO/scripts/classical_search/curvephase_ladder_launcher.sh 14 local \
     --band 116000000000 > "$LOGS/cp_local_band116.log" 2>&1
-echo "[relaunch $(ts)] launcher rc=$?"
+# ⚠️ CAPTURE rc ON ITS OWN LINE. `echo "... $(ts) ... rc=$?"` runs the ts() substitution
+# FIRST, so $? is ts's status (always 0) and a launcher failure reads as a clean run.
+rc=$?
+echo "[relaunch $(ts)] launcher rc=$rc"
+if [ "$rc" -ne 0 ]; then
+  echo "[relaunch $(ts)] FATAL: launcher exited rc=$rc — NOT running the analyzer. A verdict"
+  echo "[relaunch $(ts)] read off a failed/partial ladder is worse than no verdict."
+  exit "$rc"
+fi
 
 $PY $REPO/scripts/classical_search/analyze_curvephase.py --n-expected 200 \
     --out "$DIR/READOUT_partC.json" > "$LOGS/readout_partC.txt" 2>&1

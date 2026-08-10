@@ -323,3 +323,63 @@ elo bound is retained as a gross-wiring backstop at a correctly scaled 2σ. The 
 **No retroactive reading.** The voided band-1.15e11 cells are not re-adjudicated under the
 amended gate — that would be gate-shopping. They stay void; the ladder re-runs in full on
 the next free band (`1.16e11`), same five cells, same order, same knobs, W=14 local.
+
+---
+
+## AMENDMENT 2 — 2026-08-10, pre-attempt-2 review fixes (this commit)
+
+An adversarial review of the Part C arm ran **before** attempt 2 launched. Four findings are
+recorded here because they change what the readout means, not merely how it is produced.
+
+**1. The analyzer's primary statistic was blind to β by construction (BLOCKER, now fixed).**
+`analyze_curvephase.py` applied a *second* sign flip — `diff * (+1 if a_seat==0 else −1)` —
+to a `diff` the harness already emits as **candidate minus opponent**
+(`eval_fair_puct.py`: `diff = (s0 − s1) if a_seat == 0 else (s1 − s0)`; its own manifest
+schema note says so; its `_paired_z` averages the two seatings with no flip). The double flip
+subtracted the candidate's advantage in one seating from its advantage in the other, so every
+deck's seat-balanced margin collapsed toward zero and the **fitted within-deck slope could not
+see β at all**. On the voided `b0p0` records the flawed code read mean **+2.185 / z +1.403**
+against the harness's own **−0.2550 / z −0.2157**; the fixed code reproduces −0.2550 / −0.2157
+exactly. **The bug was found before any valid readout existed** — attempt 1 aborted on the
+wiring gate, so no Part C number was ever computed with it. **Attempt 2's readout is therefore
+the first valid application of this analyzer.** A permanent tripwire now runs before any
+statistic is reported: the analyzer's `mean_margin_recomputed` must equal the cell's
+`summary.json` `paired_mean_margin` within 1e-6, or it hard-errors instead of returning a verdict.
+
+**2. AMENDMENT 1's gate is now implemented in code.** The analyzer enforced the retired
+`|elo| < 25` bar — i.e. the amended gate existed only in this document. It now applies
+`|paired margin z| < 2.0 AND |elo| < 50`, margin z primary. Manifest enforcement of §6.2/§8
+(previously **zero** checks) is likewise in code: `rules_profile: fixed_v1`, `r9_env_ok`,
+`backend: rust`, one shared `band_seed_start`, plus the free positive control that the β=0 cell
+carries the production leaf hash `a36d2e15a3b3d71d` while every β≠0 cell carries a hash distinct
+from production *and* from each other, with `v29_phase_beta` matching the cell. One void
+non-identity cell ⇒ excluded and noted; two ⇒ `ABORT-STAGE`; a void identity cell ⇒
+`INSTRUMENT-BROKEN`.
+
+**3. The magnitude confound is PARTIALLY TRADED, not removed.** `E[f] = 1` is normalized over
+the **ply-k** distribution, while the leaf is evaluated ~one mean-search-depth *below* the root,
+so the leaf-k distribution is shifted down and the realized `E[f]` is off by `−β·d/35`. The
+residue is monotone in β and biased toward the *reconfirm* direction, of order **≤5–17 elo of
+spread across the ladder**. It is smaller than the ~O(10%) confound that invalidated the
+2026-06-22 `v28_meeple_recovery_t0` kill, and it is signed-symmetric so it scales the slope
+rather than flipping it — but it is not zero. **Every write-up of a Part C null must therefore
+use bounded language — "no linear phase effect exceeding ~±22 elo at β = ±0.6" — and never
+"the phase axis is dead."** The analyzer's `C-KILL` text is worded that way; the verdict *code*
+is unchanged.
+
+**4. Measured power, from the voided cells (a legitimate use of void data — it is a variance
+estimate, not a reading).** Per-deck margin sd ≈ **11.8** points (`b0p0` 11.82, `bm0p3` 11.58),
+cross-cell deck correlation **r = 0.14** over the 100 decks the two completed void cells share,
+giving SE(slope) ≈ **1.1 pts/deck per unit β** at the pre-registered 5×n=200 design — so a 2σ
+slope is ≈ **1.4 points of margin at the β = ±0.6 endpoints**, i.e. ≈ **±22 elo at the endpoints**
+(~45 elo of endpoint spread). That number, not "significance", is what a C-KILL bounds.
+(An earlier pass of this arithmetic used r ≈ 0.18 and SE ≈ 1.12 against a partial `bm0p3`;
+the completed-cell numbers above supersede it and do not move the ±22 elo conclusion.)
+
+Also fixed in this commit and recorded for completeness: the launcher's default band moved to
+`1.16e11` (1.15e11 is retired and must never be reused); `rc=$?` is captured on its own line in
+`relaunch_partC_band116.sh` and `night_chain.sh` (a `$(ts)` substitution in the same `echo` had
+been overwriting `$?`, so a launcher failure read as a clean run), and the relaunch script now
+refuses to run the analyzer at all on a non-zero launcher rc; the pinned norms are emitted to
+`norms.json` for provenance; and `tests/test_analyze_curvephase.py` covers the sign convention,
+the amended gate, manifest enforcement and the tripwire.
