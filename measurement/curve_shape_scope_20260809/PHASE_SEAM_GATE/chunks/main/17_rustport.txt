@@ -1,0 +1,87 @@
+........................................................................ [ 23%]
+..................................................................F....F [ 46%]
+........................................................................ [ 69%]
+........................................................................ [ 92%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+________________ test_e4_phone_archives_replay_bit_identically _________________
+
+    def test_e4_phone_archives_replay_bit_identically():
+        """Both archives, per-ply, plus the phone's own recorded final scores."""
+        paths = sorted((REPO / "measurement" / "e4_games").glob("*.json"))
+>       assert len(paths) == 2
+E       AssertionError: assert 15 == 2
+E        +  where 15 = len([PosixPath('/home/doctor/projects/carcassone/measurement/e4_games/1785205383_867966.json'), PosixPath('/home/doctor/pr..._1698417952.json'), PosixPath('/home/doctor/projects/carcassone/measurement/e4_games/1785986044_1911511187.json'), ...])
+
+tests/rustport/test_p1_engine.py:73: AssertionError
+_______________ test_count_final_scores_is_order_invariant_smoke _______________
+
+    def test_count_final_scores_is_order_invariant_smoke():
+        """The P1 escalation trigger, in miniature.  The broad run is
+        `scripts/rustport/property_count_final_scores_order.py`."""
+        import property_count_final_scores_order as prop
+    
+>       rc = prop.main(["--games", "3", "--plies-per-game", "3", "--perms", "3"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/rustport/test_p1_engine.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/rustport/property_count_final_scores_order.py:274: in main
+    PointsCollector.count_final_scores(game_state=ref_state)
+engine/wingedsheep/carcassonne/utils/points_collector.py:308: in count_final_scores
+    meeples: [[MeeplePosition]] = FarmUtil.find_meeples(game_state=game_state, farm=farm)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'wingedsheep.carcassonne.utils.farm_util.FarmUtil'>
+game_state = <wingedsheep.carcassonne.carcassonne_game_state.CarcassonneGameState object at 0x789ed19ff150>
+farm = None
+
+    @classmethod
+    def find_meeples(cls, game_state: CarcassonneGameState, farm: Farm) -> [[MeeplePosition]]:
+        meeples: [[MeeplePosition]] = [[] for _ in range(game_state.players)]
+    
+        farmer_connection_with_coordinate: FarmerConnectionWithCoordinate
+>       for farmer_connection_with_coordinate in farm.farmer_connections_with_coordinate:
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'farmer_connections_with_coordinate'
+
+engine/wingedsheep/carcassonne/utils/farm_util.py:214: AttributeError
+============================= slowest 10 durations =============================
+25.26s call     tests/rustport/test_p4_fair.py::test_full_game_action_identity[7-101-1]
+19.10s call     tests/rustport/test_p4_fair.py::test_full_game_action_identity[23-202-4]
+14.40s call     tests/rustport/test_p4_fair.py::test_solver_matches_the_live_python_oracle
+1.97s call     tests/rustport/test_p2_leaf.py::test_three_legs_agree_on_one_golden_game
+1.40s call     tests/rustport/test_p1_engine.py::test_golden_frozen_positions_reproduce
+1.36s call     tests/rustport/test_p5_flags.py::TestEvenShift::test_the_shift_is_what_makes_the_wall_stop_biting
+0.99s call     tests/rustport/test_p4_fair.py::test_budget_exceeded_is_reported_as_a_fallback_not_an_error
+0.84s call     tests/rustport/test_p3_search.py::test_terminal_endgame_positions_agree
+0.74s call     tests/rustport/test_p1_engine.py::test_champ_sample_replays_bit_identically
+0.58s call     tests/rustport/test_p5_flags.py::TestEvenShift::test_even_shift_property_holds_on_replayed_games[engine]
+=========================== short test summary info ============================
+FAILED tests/rustport/test_p1_engine.py::test_e4_phone_archives_replay_bit_identically
+FAILED tests/rustport/test_p1_engine.py::test_count_final_scores_is_order_invariant_smoke
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/rustport -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 78.42
+	System time (seconds): 0.28
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:18.75
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 110452
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 81227
+	Voluntary context switches: 962
+	Involuntary context switches: 346
+	Swaps: 0
+	File system inputs: 696
+	File system outputs: 1584
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

@@ -1,0 +1,36 @@
+........................................................................ [ 23%]
+........................................................................ [ 46%]
+........................................................................ [ 69%]
+........................................................................ [ 92%]
+.......................                                                  [100%]
+============================= slowest 10 durations =============================
+1.99s call     tests/test_meeple_equiv.py::test_on_expands_one_member_per_group_and_conserves_visits
+1.99s call     tests/test_meeple_equiv.py::test_on_picks_from_the_group_the_off_search_chose
+0.94s call     tests/test_meeple_equiv.py::test_bit_exact_off_matches_pre_change_fixture
+0.01s call     tests/test_meeple_equiv.py::test_android_bridge_reexports_the_same_object
+0.01s call     tests/test_meeple_equiv.py::test_prior_mode_fold_vs_drop
+
+(5 durations < 0.005s hidden.  Use -vv to show these durations.)
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_meeple_equiv.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 7.98
+	System time (seconds): 0.05
+	Percent of CPU this job got: 151%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.31
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 74464
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 14648
+	Voluntary context switches: 32
+	Involuntary context switches: 52
+	Swaps: 0
+	File system inputs: 232
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

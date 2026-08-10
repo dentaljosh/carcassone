@@ -1,0 +1,36 @@
+........................................................................ [ 73%]
+.......................sss                                               [100%]
+============================= slowest 10 durations =============================
+6.16s call     tests/test_gate_b_fair_pimc.py::test_within_world_bit_exactness
+2.99s call     tests/test_gatec_c0.py::test_feature_emitter_fixed_length_and_reconstruction
+1.79s call     tests/test_gate_b_fair_pimc.py::test_parity_with_deployed_fair_agent
+0.89s call     tests/test_gate_b_fair_pimc.py::test_summary_shape
+0.88s call     tests/test_gate_b_fair_pimc.py::test_read_children_nw_matches_pool_root_stats
+0.80s call     tests/test_gatec_c0.py::test_sanity_floor_on_real_cache_if_present
+0.57s call     tests/test_game_wrapper.py::test_random_self_play_100_games_clean[0]
+0.52s call     tests/test_game_wrapper.py::test_random_self_play_100_games_clean[100]
+0.29s setup    tests/test_measurement_infra.py::test_replay_lossless
+0.09s call     tests/test_gatec_c0.py::test_metric_copies_match_harness
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_game_wrapper.py tests/test_gate_b_backend.py tests/test_gate_b_fair_pimc.py tests/test_gatec_c0.py tests/test_global_pool.py tests/test_hybrid_handoff_trigger.py tests/test_invalid_visit_clip.py tests/test_invariants.py tests/test_ladder_asymmetric.py tests/test_leaf_residual_mining.py tests/test_legal_moves_cache.py tests/test_measurement_infra.py tests/test_midgame_disagreement.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 18.34
+	System time (seconds): 0.33
+	Percent of CPU this job got: 112%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:16.65
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 809436
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 150831
+	Voluntary context switches: 1406
+	Involuntary context switches: 131
+	Swaps: 0
+	File system inputs: 141113
+	File system outputs: 256
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,98 @@
+....................s................................................... [ 43%]
+.........F.............................................................. [ 87%]
+........F...........                                                     [100%]
+=================================== FAILURES ===================================
+____________________ test_override_reaches_prior_evaluator _____________________
+
+    def test_override_reaches_prior_evaluator():
+        # the same override reaches the PRODUCTION evaluator (make_heuristic_prior_evaluator
+        # -> flat_virtual_score_v2_float): value/priors differ on at least one board.
+        from carcassonne_ai.heuristic_prior_mcts import (
+            HeuristicPriorConfig, make_heuristic_prior_evaluator,
+        )
+        game = Game(enable_legal_moves_cache=True)
+        ev8 = make_heuristic_prior_evaluator(game, HeuristicPriorConfig(leaf_cfg=DEF))
+        ev5 = make_heuristic_prior_evaluator(
+            game, HeuristicPriorConfig(leaf_cfg=epp._load_cand_leaf_cfg('{"bonus_cap": 5, "opp_bonus_cap": 5}')))
+        # rebuild boards (the evaluator needs a Board, not a bare state)
+        rng = random.Random(9990004321)
+        board = game.get_init_board()
+        changed = False
+        for _ in range(120):
+            if game.get_game_ended(board, 0) != 0.0:
+                break
+            _, val8 = ev8(board)
+            _, val5 = ev5(board)
+            if val8 != val5:
+                changed = True
+                break
+            legal = [a for a, ok in enumerate(game.get_valid_moves(board)) if ok]
+            board, _ = game.get_next_state(board, rng.choice(legal))
+>       assert changed, "override did not change the prior-evaluator value on any board"
+E       AssertionError: override did not change the prior-evaluator value on any board
+E       assert False
+
+tests/test_c5_leaf_ab.py:241: AssertionError
+______________ test_every_shared_claim_launcher_carries_the_guard ______________
+
+    def test_every_shared_claim_launcher_carries_the_guard():
+        missing = []
+        for p in _shared_claim_launchers():
+            rel = p.relative_to(REPO).as_posix()
+            text = p.read_text(encoding="utf-8", errors="replace")
+            if rel in INLINE_DONORS:
+                ok = "CLOCK-SKEW GUARD" in text and "clock skew vs the share" in text
+            else:
+                ok = "clock_skew_guard.sh" in text and "carc_clock_skew_guard" in text
+            if not ok:
+                missing.append(rel)
+>       assert not missing, (
+            "these launchers pass --shared-claim with NO clock-skew guard, so a box with a "
+            "fast clock will steal every sibling's live claim and silently halve the cluster. "
+            "Add the stanza documented at the top of scripts/measurement_infra/clock_skew_guard.sh:"
+            "\n  " + "\n  ".join(missing)
+        )
+E       AssertionError: these launchers pass --shared-claim with NO clock-skew guard, so a box with a fast clock will steal every sibling's live claim and silently halve the cluster. Add the stanza documented at the top of scripts/measurement_infra/clock_skew_guard.sh:
+E           scripts/classical_search/curvephase_ladder_launcher.sh
+E           scripts/classical_search/curveshape_probe_launcher.sh
+E       assert not ['scripts/classical_search/curvephase_ladder_launcher.sh', 'scripts/classical_search/curveshape_probe_launcher.sh']
+
+tests/test_clock_skew_guard.py:232: AssertionError
+============================= slowest 10 durations =============================
+11.33s call     tests/test_c5_leaf_ab.py::test_mirror_champion_verbatim_bit_exact
+7.90s call     tests/test_c_cheap_scaffold.py::test_fair_net_prior_agent_plays_full_legal_game
+7.79s call     tests/test_c_cheap_scaffold.py::test_net_valued_fair_agent_plays_full_legal_game
+7.75s call     tests/test_c5_fair_leaf_ab.py::test_mirror_champion_verbatim_bit_exact
+7.70s call     tests/test_c5_fair_leaf_ab.py::test_candidate_cell_changes_play_and_manifest
+6.67s call     tests/test_c7_leaf_terms.py::test_object_flat_leaf_int_bit_exact
+6.43s call     tests/test_c5_leaf_ab.py::test_mirror_manifest_c7_return_knob_distinct
+6.08s call     tests/test_c5_leaf_ab.py::test_mirror_manifest_records_distinct_hashes_when_leaf_differs
+5.22s call     tests/test_c_cheap_scaffold.py::test_fair_net_prior_agent_batched_search_is_sane_and_legal
+5.05s call     tests/test_bare_net_opponent.py::test_carc_orch_really_serves_the_bare_net_opponent_from_the_GPU
+=========================== short test summary info ============================
+FAILED tests/test_c5_leaf_ab.py::test_override_reaches_prior_evaluator - Asse...
+FAILED tests/test_clock_skew_guard.py::test_every_shared_claim_launcher_carries_the_guard
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_aux_targets.py tests/test_bare_net_opponent.py tests/test_board_repr.py tests/test_board_repr_internal.py tests/test_board_repr_meeples.py tests/test_c5_fair_leaf_ab.py tests/test_c5_leaf_ab.py tests/test_c7_leaf_terms.py tests/test_c_cheap_scaffold.py tests/test_clairvoyance_wrapper.py tests/test_clairvoyant_mirror_rules.py tests/test_clock_skew_guard.py tests/test_cloister_scan_fix.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 50.37
+	System time (seconds): 1.22
+	Percent of CPU this job got: 55%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:32.84
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1486276
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 853
+	Minor (reclaiming a frame) page faults: 665418
+	Voluntary context switches: 5204
+	Involuntary context switches: 424
+	Swaps: 0
+	File system inputs: 1030787
+	File system outputs: 88
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

@@ -1,0 +1,10 @@
+{
+ "chunk": "15f_fair_puct_opponent",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 4,
+ "attempt": 1,
+ "peak_rss_kb": 656128,
+ "n_failing": 0,
+ "failing_ids": []
+}

@@ -1,0 +1,35 @@
+.......................................                                  [100%]
+============================= slowest 10 durations =============================
+12.92s call     tests/test_intra_reuse.py::test_full_game_on_is_legal_and_terminates[3]
+7.10s call     tests/test_intra_reuse.py::test_full_game_on_is_legal_and_terminates[2024]
+0.86s call     tests/test_intra_reuse.py::test_bit_exact_off_matches_pre_change_fixture
+0.04s call     tests/test_intra_reuse.py::test_carry_never_changes_the_move_index_bookkeeping
+0.03s call     tests/test_intra_reuse.py::test_the_meeple_decision_keeps_the_tile_decisions_determinizations
+0.03s call     tests/test_intra_reuse.py::test_match_accepts_the_genuine_continuation
+0.03s call     tests/test_intra_reuse.py::test_choose_action_never_mutates_the_callers_board_when_on
+0.02s call     tests/test_intra_reuse.py::test_reuse_still_fires_with_meeple_dedup[True]
+0.02s call     tests/test_intra_reuse.py::test_fallback_opponent_moved_between
+0.02s call     tests/test_intra_reuse.py::test_fallback_restore_reseated_move_idx
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_intra_reuse.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 24.41
+	System time (seconds): 0.06
+	Percent of CPU this job got: 113%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:21.66
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 96656
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 23600
+	Voluntary context switches: 35
+	Involuntary context switches: 122
+	Swaps: 0
+	File system inputs: 296
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

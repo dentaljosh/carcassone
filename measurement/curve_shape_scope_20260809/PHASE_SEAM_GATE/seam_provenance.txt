@@ -1,0 +1,3 @@
+python: 3.12.3
+carcassonne_ai: /home/doctor/projects/carcassone/.claude/worktrees/agent-a195cbd889c3187bf/src/carcassonne_ai/__init__.py
+carc_rs: /home/doctor/projects/carcassone/measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE/wheels/carc_rs_shadow/carc_rs/__init__.py

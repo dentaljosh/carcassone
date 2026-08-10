@@ -1,0 +1,12 @@
+phase-seam gate (chunked) — 2026-08-09_17:20:08
+host=laptop-wsl  interpreter=Python 3.14.4
+seam tree : /home/doctor/projects/carcassone/.claude/worktrees/agent-a195cbd889c3187bf  (549c0d1)
+main tree : /home/doctor/projects/carcassone (9c4bb50)
+chunks    : 44 per tree
+BRANCH    : PARTIAL -- 1 cell(s) EXCLUDED from BOTH legs (coverage gap)
+excluded  : 15e07_puct_exact_max_k_configurable_latches_at_k4
+  These cells were not run on either tree, so the gate makes NO claim
+  about them. The verdict below covers the remaining cells only.
+failing on seam : 18
+failing on main : 20
+NOVEL to seam   : 0

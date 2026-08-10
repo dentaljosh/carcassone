@@ -1,0 +1,107 @@
+........................................................................ [ 36%]
+........................................................................ [ 72%]
+........................................F..............                  [100%]
+=================================== FAILURES ===================================
+_______________ test_streaming_with_workers_yields_all_positions _______________
+
+synthetic_files = [PosixPath('/tmp/pytest-of-doctor/pytest-11/test_streaming_with_workers_yi0/seed_00000.npz'), PosixPath('/tmp/pytest-o...kers_yi0/seed_00003.npz'), PosixPath('/tmp/pytest-of-doctor/pytest-11/test_streaming_with_workers_yi0/seed_00004.npz')]
+
+    def test_streaming_with_workers_yields_all_positions(synthetic_files: list[Path]) -> None:
+        """With num_workers=2 the dataset must shard files across workers and
+        the union of yields must still be every position exactly once."""
+        ds = make_streaming_dataset(synthetic_files, shuffle_files_each_epoch=False, shuffle_within_file=False)
+        loader = DataLoader(ds, batch_size=1, num_workers=2)
+        rows = []
+>       for board_b, scalar_b, policy_b, value_b, mask_b, own_b, aux_b, group_b in loader:
+                                                                                   ^^^^^^
+
+tests/test_warmstart_streaming.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../.venv/lib/python3.14/site-packages/torch/utils/data/dataloader.py:500: in __iter__
+    return self._get_iterator()
+           ^^^^^^^^^^^^^^^^^^^^
+../../../.venv/lib/python3.14/site-packages/torch/utils/data/dataloader.py:433: in _get_iterator
+    return _MultiProcessingDataLoaderIter(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.venv/lib/python3.14/site-packages/torch/utils/data/dataloader.py:1192: in __init__
+    w.start()
+/usr/lib/python3.14/multiprocessing/process.py:121: in start
+    self._popen = self._Popen(self)
+                  ^^^^^^^^^^^^^^^^^
+/usr/lib/python3.14/multiprocessing/context.py:230: in _Popen
+    return _default_context.get_context().Process._Popen(process_obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.14/multiprocessing/context.py:306: in _Popen
+    return Popen(process_obj)
+           ^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.14/multiprocessing/popen_forkserver.py:35: in __init__
+    super().__init__(process_obj)
+/usr/lib/python3.14/multiprocessing/popen_fork.py:20: in __init__
+    self._launch(process_obj)
+/usr/lib/python3.14/multiprocessing/popen_forkserver.py:47: in _launch
+    reduction.dump(process_obj, buf)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+obj = <Process name='Process-9' parent=6638 initial daemon>
+file = <_io.BytesIO object at 0x72ddaef4d260>, protocol = None
+
+    def dump(obj, file, protocol=None):
+        '''Replacement for pickle.dump() using ForkingPickler.'''
+>       ForkingPickler(file, protocol).dump(obj)
+E       _pickle.PicklingError: Can't pickle local object <class 'carcassonne_ai.warmstart.make_streaming_dataset.<locals>.StreamingWarmstartDataset'>
+E       when serializing carcassonne_ai.warmstart.make_streaming_dataset.<locals>.StreamingWarmstartDataset class
+E       when serializing carcassonne_ai.warmstart.make_streaming_dataset.<locals>.StreamingWarmstartDataset object
+E       when serializing tuple item 1
+E       when serializing dict item '_args'
+E       when serializing multiprocessing.context.Process state
+E       when serializing multiprocessing.context.Process object
+
+/usr/lib/python3.14/multiprocessing/reduction.py:60: PicklingError
+=============================== warnings summary ===============================
+tests/test_t3_optuna.py::test_space_ranges_and_rounding
+tests/test_t3_optuna.py::test_enqueued_anchors_are_champion_and_curve14
+  /home/doctor/projects/carcassone/.claude/worktrees/agent-a195cbd889c3187bf/scripts/classical_search/optuna_knob_sweep.py:383: ExperimentalWarning: Argument ``multivariate`` is an experimental feature. The interface can change in the future.
+    sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=12,
+
+tests/test_warmstart_streaming.py::test_streaming_with_workers_yields_all_positions
+  /home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/torch/utils/data/dataloader.py:433: UserWarning: Got pickle error when attempting to start a worker Process. This might be because the worker Process arguments are not picklable. Python 3.14+ changed the multiprocessing start method in non-Mac POSIX platforms to 'forkserver', which requires the worker Process arguments to be picklable. You can also try multiprocessing.set_start_method('fork').
+    return _MultiProcessingDataLoaderIter(self)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 10 durations =============================
+22.12s call     tests/test_t3_optuna.py::test_pin_mirror_bit_exact_at_champion_knobs
+21.37s call     tests/test_t3_optuna.py::test_pin_vs_leak_manifest_opponent_c_puct
+4.45s call     tests/test_teacher_heuristic_prior.py::test_cli_teacher_heuristic_prior_smoke
+2.10s call     tests/test_unplaceable_redraw.py::TestTurnParity::test_redraw_keeps_the_placements_as_even_as_the_tile_count_allows
+2.10s call     tests/test_unplaceable_redraw.py::TestTurnParity::test_flag_off_a_discard_costs_the_drawer_a_placement
+1.34s call     tests/test_virtual_score_v2.py::test_continuous_ramp_fires_more_than_hard_gate
+1.27s call     tests/test_virtual_score_v2.py::test_tile_counting_gate_fires_in_late_game
+1.10s call     tests/test_v29_variants.py::test_punish_and_farm_terms_fire
+1.04s call     tests/test_v28_variants.py::test_v28_farm_changes_at_least_one_position
+1.03s call     tests/test_v29_variants.py::test_v29_off_is_bit_identical[False]
+=========================== short test summary info ============================
+FAILED tests/test_warmstart_streaming.py::test_streaming_with_workers_yields_all_positions
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_symmetry_aug.py tests/test_t3_optuna.py tests/test_teacher_heuristic_prior.py tests/test_train_provenance.py tests/test_unplaceable_redraw.py tests/test_v210_bag_close.py tests/test_v28_variants.py tests/test_v29_flat_curve.py tests/test_v29_phase_multiplier.py tests/test_v29_variants.py tests/test_value_in_loop_fb1.py tests/test_value_norm.py tests/test_virtual_score.py tests/test_virtual_score_v2.py tests/test_wall_sentinel.py tests/test_warmstart.py tests/test_warmstart_streaming.py tests/test_window_overflow.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 34.35
+	System time (seconds): 0.67
+	Percent of CPU this job got: 45%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:16.30
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 760172
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 375125
+	Voluntary context switches: 1776
+	Involuntary context switches: 160
+	Swaps: 0
+	File system inputs: 9468
+	File system outputs: 144
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

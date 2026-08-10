@@ -1,0 +1,10 @@
+{
+ "chunk": "12_exact_solver",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 58,
+ "attempt": 1,
+ "peak_rss_kb": 748148,
+ "n_failing": 0,
+ "failing_ids": []
+}

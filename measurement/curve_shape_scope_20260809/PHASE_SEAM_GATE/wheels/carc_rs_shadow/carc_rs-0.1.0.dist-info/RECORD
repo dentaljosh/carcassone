@@ -1,0 +1,6 @@
+carc_rs/__init__.py,sha256=vCbgSKmAshjceB-EceJlkQUxrGh7bFk7A_7wqNaYsd4,111
+carc_rs/carc_rs.abi3.so,sha256=ImvH2SDjpxgAbElVngk_ZsUI0FB1v0gYRgTZiCsmpzw,1560752
+carc_rs-0.1.0.dist-info/METADATA,sha256=dWAR2HYe76hSFofNBjtviTF4syoWuIaXfBNgypAkvXA,168
+carc_rs-0.1.0.dist-info/WHEEL,sha256=WPOSoDKfwc1pm1ilpw-ZCrW5kGtt_iEbMIj9BaJ3Ra8,108
+carc_rs-0.1.0.dist-info/sboms/carc-py.cyclonedx.json,sha256=i9g6Ktx4oUqOYTd2dibFGoLlynhwXa-9vI00_h14wRc,24443
+carc_rs-0.1.0.dist-info/RECORD,,

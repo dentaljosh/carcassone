@@ -4615,3 +4615,14 @@ both memorialized: laptop `systemd-run --user` scopes die with the last ssh sess
 `loginctl enable-linger` (enabled, durable); in-session launches on the local box are swept by
 harness teardown (3 kills) — long local drivers now run from a cron-armed self-healing guard
 (`/home/doctor/gate_ops/gate_cron_guard.sh`).
+
+## 2026-08-09 (late night) — Joshua ACCEPTS the 15e07 coverage gap; phase arm proceeds
+
+"ok, let's do the phase arm." The GREEN_WITH_GAP verdict is accepted per the basis in
+`measurement/curve_shape_scope_20260809/PHASE_SEAM_GATE/OWNER_ACCEPTED_GAP` (byte-identical
+test file across trees; default-OFF seam with reconcile-level byte-identity 0/3.3M both knob
+states; the cell provably cannot complete under the 24 GiB safety ceiling on any box).
+night_chain patched to treat GREEN_WITH_GAP as GREEN iff the acceptance file exists — the
+gate's own verdict text is NOT rewritten. Standing follow-up: if 15e07 ever becomes runnable
+(bigger substrate or test segmentation), run it retroactively; a failure there reopens the seam.
+Authorized: merge 549c0d1 + Part C beta ladder at W=14 local.

@@ -1,0 +1,406 @@
+................................F.F.FF.................................. [ 57%]
+.......ssssssss...............FF.FF..................                    [100%]
+=================================== FAILURES ===================================
+_______________________ test_open_positions_starts_empty _______________________
+
+    def test_open_positions_starts_empty() -> None:
+        g = Game()
+        board = g.get_init_board()
+        # Init has no placed tiles; open_positions is empty.
+>       assert board.state.open_positions == set()
+E       assert {<wingedsheep...7c3bc71f2f90>} == set()
+E         
+E         Extra items in the left set:
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f25d0>
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f1190>
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f1310>
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f2f90>
+E         Use -v to get more diff
+
+tests/test_engine_adjacency.py:43: AssertionError
+_______________________ test_placed_coords_starts_empty ________________________
+
+    def test_placed_coords_starts_empty() -> None:
+        g = Game()
+        board = g.get_init_board()
+>       assert board.state.placed_coords == set()
+E       assert {<wingedsheep...7c3bc71f26f0>} == set()
+E         
+E         Extra items in the left set:
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f26f0>
+E         Use -v to get more diff
+
+tests/test_engine_adjacency.py:69: AssertionError
+__________________ test_tile_phase_pass_does_not_leak_meeples __________________
+
+    def test_tile_phase_pass_does_not_leak_meeples() -> None:
+        """Regression for the engine bug found in external review pass 4 (2026-04-28):
+        if the current tile is unplaceable, the engine emits a TILES-phase
+        PassAction. Pre-fix, that switched phase to MEEPLES with a stale
+        last_tile_action — letting the agent place a meeple on the PREVIOUS
+        turn's tile.
+    
+        Post-fix: tile-phase pass should clear last_tile_action, draw a new
+        next_tile, and hand off directly to the next player (no MEEPLES decision).
+        """
+        from wingedsheep.carcassonne.objects.actions.pass_action import PassAction
+        from wingedsheep.carcassonne.objects.coordinate import Coordinate
+        from wingedsheep.carcassonne.objects.actions.tile_action import TileAction
+        from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+        from wingedsheep.carcassonne.utils.state_updater import StateUpdater
+        from wingedsheep.carcassonne.objects.game_phase import GamePhase
+    
+        g = Game()
+        board = g.get_init_board()
+    
+        # Step into a state where last_tile_action is set (after the first
+        # placement). Use the first legal action.
+        legal = np.flatnonzero(g.get_valid_moves(board))
+        board, _ = g.get_next_state(board, int(legal[0]))
+        # We're now in MEEPLES phase with last_tile_action set to the river_start
+        # placement. Skip the meeple decision so we get to the next TILES phase.
+        legal = np.flatnonzero(g.get_valid_moves(board))
+        # Find the meeple-pass index (last index in our action space).
+        pass_idx = g.get_action_size() - 1
+        assert pass_idx in legal
+        board, _ = g.get_next_state(board, pass_idx)
+        # Now in TILES phase, but last_tile_action still references the river_start.
+        assert board.state.phase == GamePhase.TILES
+        prior_last_tile_action = board.state.last_tile_action
+        assert prior_last_tile_action is not None
+    
+        # Construct a TILES-phase PassAction directly and apply it. The engine
+        # should: draw a new next_tile, advance to next player, clear or skip
+        # last_tile_action handling, and STAY in TILES phase (no meeple decision).
+        new_state = StateUpdater.apply_action(
+            game_state=board.state, action=PassAction()
+        )
+        # last_tile_action must be cleared (or otherwise unusable) so that
+        # the next decision can't claim a feature on the previous tile.
+        assert new_state.last_tile_action is None, (
+            "tile-phase pass left last_tile_action stale — meeple-leak bug"
+        )
+        # Phase should be TILES: no meeple decision is owed for a pass.
+        assert new_state.phase == GamePhase.TILES
+        # The current player should have advanced.
+>       assert new_state.current_player != board.state.current_player
+E       assert 1 != 1
+E        +  where 1 = <wingedsheep.carcassonne.carcassonne_game_state.CarcassonneGameState object at 0x7c3bc739e550>.current_player
+E        +  and   1 = <wingedsheep.carcassonne.carcassonne_game_state.CarcassonneGameState object at 0x7c3bc739ce50>.current_player
+E        +    where <wingedsheep.carcassonne.carcassonne_game_state.CarcassonneGameState object at 0x7c3bc739ce50> = Board(state=<wingedsheep.carcassonne.carcassonne_game_state.CarcassonneGameState object at 0x7c3bc739ce50>, total_tiles=72, offset=WindowOffset(origin_row=6, origin_col=3, size=25), sum_row=35, sum_col=30, tile_count=2).state
+
+tests/test_engine_adjacency.py:147: AssertionError
+____________________ test_open_positions_survives_deepcopy _____________________
+
+    def test_open_positions_survives_deepcopy() -> None:
+        """Game.get_next_state internally deepcopies state via the engine's
+        apply_action. The open_positions set must round-trip cleanly."""
+        g = Game()
+        random.seed(7)
+        board = g.get_init_board()
+        legal = np.flatnonzero(g.get_valid_moves(board))
+        board, _ = g.get_next_state(board, int(legal[0]))
+        # First placement: river_start at starting_position. Open positions are its
+        # 4 in-bounds empty neighbors.
+        sp = board.state.starting_position
+        expected_neighbors = {
+            Coordinate(row=sp.row - 1, column=sp.column),
+            Coordinate(row=sp.row + 1, column=sp.column),
+            Coordinate(row=sp.row, column=sp.column - 1),
+            Coordinate(row=sp.row, column=sp.column + 1),
+        }
+>       assert board.state.open_positions == expected_neighbors
+E       assert {<wingedsheep...7c3bc71f2b10>} == {<wingedsheep...7c3bc71f1550>}
+E         
+E         Extra items in the left set:
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f3d70>
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f2b10>
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f3650>
+E         Extra items in the right set:
+E         <wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7c3bc71f1550>
+E         Use -v to get more diff
+
+tests/test_engine_adjacency.py:167: AssertionError
+_____________ test_play_harness_python_and_rust_play_the_same_game _____________
+
+    def test_play_harness_python_and_rust_play_the_same_game():
+        import play_harness as PH
+    
+        legs = {}
+        for backend in ("python", "rust"):
+            ex = MP.resolve_execution(backend, profile=None)
+            g = Game(enable_legal_moves_cache=True)
+>           agents = {s: PH._make_fair_agent(g, SIMS, K, seed=100 + s, execution=ex)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      for s in (0, 1)}
+
+tests/test_f3_caller_backends.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/human_anchor/play_harness.py:167: in _make_fair_agent
+    return make_production_champion("fair", game=game, seed=seed, sims=sims,
+src/carcassonne_ai/champion_factory.py:1119: in make_production_champion
+    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
+src/carcassonne_ai/champion_factory.py:530: in resolved_manifest
+    leaf_prov = verify_leaf(leaf_cfg, spec, backend=backend) if verify else {
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+leaf_cfg = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=5.0, opp_bonus_cap=5.0, meeple_k=0.0, tile_counting_closure=..._slope=0.0, opp_soft_cap_slope=0.0, farm_base_off=False, farm_growth_off=False, v29_phase_beta=0.0, v29_phase_norm=1.0)
+spec = ProductionSpec(champion_id='puct_priors_v29_bmild_cap8', c_puct=1.5, tau_p=5.0, final_select='visits', leaf_quantize='...profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).\n'}}, backend='rust')
+backend = 'python'
+
+    def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None, *,
+                    backend: str = "python") -> dict:
+        """RAISE ``ProvenanceError`` unless ``leaf_cfg`` is the frozen production curve125
+        champion leaf, by BOTH the semantic panel and the three fingerprints. Returns the
+        provenance dict (hashes + panel) for the manifest.
+    
+        ``backend="rust"`` re-runs the VALUE PANEL through ``carc_rs`` as well. The panel is
+        the deepest guard precisely because it evaluates leaf OUTPUTS on real boards rather
+        than reading a label — so when the agent that will actually play computes its leaf in
+        Rust, the panel has to be evaluated THERE too or it proves nothing about that agent.
+        Both panels must equal the golden (rustport G2 gated them bit-equal over 3,341,772
+        values; this is the runtime re-proof at construction)."""
+        spec = spec or load_production_spec()
+    
+        # --- 1. semantic guard (authoritative; robust to LeafConfig dataclass drift) ---
+        curve = tuple(float(x) for x in (leaf_cfg.v29_meeple_curve or ()))
+        if curve != CURVE125:
+            raise ep.ProvenanceError(
+                f"champion leaf curve is {curve!r}, expected the frozen curve125 {CURVE125!r}. "
+                "Did you forget to set the production leaf env (CARCASSONNE_V29_MEEPLE_CURVE / "
+                "CAP / OPP_CAP) before importing carcassonne_ai? DEFAULT_CONFIG is import-frozen."
+            )
+        for field, want in (("bonus_cap", spec.bonus_cap), ("opp_bonus_cap", spec.opp_bonus_cap)):
+            got = float(getattr(leaf_cfg, field))
+            if got != want:
+>               raise ep.ProvenanceError(
+                    f"champion leaf {field}={got} != PRODUCTION.yaml {want}. The production "
+                    "leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import."
+                )
+E               carcassonne_ai.eval_provenance.ProvenanceError: champion leaf bonus_cap=5.0 != PRODUCTION.yaml 8.0. The production leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import.
+
+src/carcassonne_ai/champion_factory.py:414: ProvenanceError
+_____________ test_play_harness_raises_when_the_advance_is_skipped _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7c3bc7003b60>
+
+    def test_play_harness_raises_when_the_advance_is_skipped(monkeypatch):
+        """The pre-F-3 behaviour, injected. It must be LOUD, not silently wrong."""
+        import play_harness as PH
+        from carcassonne_ai.rust_agent import MirrorDesync
+    
+        ex = MP.resolve_execution("rust", profile=None)
+        g = Game(enable_legal_moves_cache=True)
+>       agents = {s: PH._make_fair_agent(g, SIMS, K, seed=100 + s, execution=ex)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  for s in (0, 1)}
+
+tests/test_f3_caller_backends.py:198: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/human_anchor/play_harness.py:167: in _make_fair_agent
+    return make_production_champion("fair", game=game, seed=seed, sims=sims,
+src/carcassonne_ai/champion_factory.py:1119: in make_production_champion
+    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
+src/carcassonne_ai/champion_factory.py:530: in resolved_manifest
+    leaf_prov = verify_leaf(leaf_cfg, spec, backend=backend) if verify else {
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+leaf_cfg = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=5.0, opp_bonus_cap=5.0, meeple_k=0.0, tile_counting_closure=..._slope=0.0, opp_soft_cap_slope=0.0, farm_base_off=False, farm_growth_off=False, v29_phase_beta=0.0, v29_phase_norm=1.0)
+spec = ProductionSpec(champion_id='puct_priors_v29_bmild_cap8', c_puct=1.5, tau_p=5.0, final_select='visits', leaf_quantize='...profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).\n'}}, backend='rust')
+backend = 'rust'
+
+    def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None, *,
+                    backend: str = "python") -> dict:
+        """RAISE ``ProvenanceError`` unless ``leaf_cfg`` is the frozen production curve125
+        champion leaf, by BOTH the semantic panel and the three fingerprints. Returns the
+        provenance dict (hashes + panel) for the manifest.
+    
+        ``backend="rust"`` re-runs the VALUE PANEL through ``carc_rs`` as well. The panel is
+        the deepest guard precisely because it evaluates leaf OUTPUTS on real boards rather
+        than reading a label — so when the agent that will actually play computes its leaf in
+        Rust, the panel has to be evaluated THERE too or it proves nothing about that agent.
+        Both panels must equal the golden (rustport G2 gated them bit-equal over 3,341,772
+        values; this is the runtime re-proof at construction)."""
+        spec = spec or load_production_spec()
+    
+        # --- 1. semantic guard (authoritative; robust to LeafConfig dataclass drift) ---
+        curve = tuple(float(x) for x in (leaf_cfg.v29_meeple_curve or ()))
+        if curve != CURVE125:
+            raise ep.ProvenanceError(
+                f"champion leaf curve is {curve!r}, expected the frozen curve125 {CURVE125!r}. "
+                "Did you forget to set the production leaf env (CARCASSONNE_V29_MEEPLE_CURVE / "
+                "CAP / OPP_CAP) before importing carcassonne_ai? DEFAULT_CONFIG is import-frozen."
+            )
+        for field, want in (("bonus_cap", spec.bonus_cap), ("opp_bonus_cap", spec.opp_bonus_cap)):
+            got = float(getattr(leaf_cfg, field))
+            if got != want:
+>               raise ep.ProvenanceError(
+                    f"champion leaf {field}={got} != PRODUCTION.yaml {want}. The production "
+                    "leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import."
+                )
+E               carcassonne_ai.eval_provenance.ProvenanceError: champion leaf bonus_cap=5.0 != PRODUCTION.yaml 8.0. The production leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import.
+
+src/carcassonne_ai/champion_factory.py:414: ProvenanceError
+_________________ test_gui_python_and_rust_play_the_same_game __________________
+
+    def test_gui_python_and_rust_play_the_same_game():
+        import play_vs_tier1_gui as GUI
+    
+        legs = {}
+        for backend in ("python", "rust"):
+            random.seed(SEED)
+            g = Game(enable_legal_moves_cache=True)
+>           opp = GUI.build_opponent("champion", seed=7, sims=SIMS, k_dets=K,
+                                     verbose=False, backend=backend, profile=None)
+
+tests/test_f3_caller_backends.py:269: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/play_vs_tier1_gui.py:1130: in build_opponent
+    agent = make_production_champion(
+src/carcassonne_ai/champion_factory.py:1119: in make_production_champion
+    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
+src/carcassonne_ai/champion_factory.py:530: in resolved_manifest
+    leaf_prov = verify_leaf(leaf_cfg, spec, backend=backend) if verify else {
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+leaf_cfg = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=5.0, opp_bonus_cap=5.0, meeple_k=0.0, tile_counting_closure=..._slope=0.0, opp_soft_cap_slope=0.0, farm_base_off=False, farm_growth_off=False, v29_phase_beta=0.0, v29_phase_norm=1.0)
+spec = ProductionSpec(champion_id='puct_priors_v29_bmild_cap8', c_puct=1.5, tau_p=5.0, final_select='visits', leaf_quantize='...profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).\n'}}, backend='rust')
+backend = 'python'
+
+    def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None, *,
+                    backend: str = "python") -> dict:
+        """RAISE ``ProvenanceError`` unless ``leaf_cfg`` is the frozen production curve125
+        champion leaf, by BOTH the semantic panel and the three fingerprints. Returns the
+        provenance dict (hashes + panel) for the manifest.
+    
+        ``backend="rust"`` re-runs the VALUE PANEL through ``carc_rs`` as well. The panel is
+        the deepest guard precisely because it evaluates leaf OUTPUTS on real boards rather
+        than reading a label — so when the agent that will actually play computes its leaf in
+        Rust, the panel has to be evaluated THERE too or it proves nothing about that agent.
+        Both panels must equal the golden (rustport G2 gated them bit-equal over 3,341,772
+        values; this is the runtime re-proof at construction)."""
+        spec = spec or load_production_spec()
+    
+        # --- 1. semantic guard (authoritative; robust to LeafConfig dataclass drift) ---
+        curve = tuple(float(x) for x in (leaf_cfg.v29_meeple_curve or ()))
+        if curve != CURVE125:
+            raise ep.ProvenanceError(
+                f"champion leaf curve is {curve!r}, expected the frozen curve125 {CURVE125!r}. "
+                "Did you forget to set the production leaf env (CARCASSONNE_V29_MEEPLE_CURVE / "
+                "CAP / OPP_CAP) before importing carcassonne_ai? DEFAULT_CONFIG is import-frozen."
+            )
+        for field, want in (("bonus_cap", spec.bonus_cap), ("opp_bonus_cap", spec.opp_bonus_cap)):
+            got = float(getattr(leaf_cfg, field))
+            if got != want:
+>               raise ep.ProvenanceError(
+                    f"champion leaf {field}={got} != PRODUCTION.yaml {want}. The production "
+                    "leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import."
+                )
+E               carcassonne_ai.eval_provenance.ProvenanceError: champion leaf bonus_cap=5.0 != PRODUCTION.yaml 8.0. The production leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import.
+
+src/carcassonne_ai/champion_factory.py:414: ProvenanceError
+__________________ test_gui_raises_when_an_advance_is_skipped __________________
+
+    def test_gui_raises_when_an_advance_is_skipped():
+        import play_vs_tier1_gui as GUI
+        from carcassonne_ai.rust_agent import MirrorDesync
+    
+        random.seed(SEED)
+        g = Game(enable_legal_moves_cache=True)
+>       opp = GUI.build_opponent("champion", seed=7, sims=SIMS, k_dets=K, verbose=False,
+                                 backend="rust", profile=None)
+
+tests/test_f3_caller_backends.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/play_vs_tier1_gui.py:1130: in build_opponent
+    agent = make_production_champion(
+src/carcassonne_ai/champion_factory.py:1119: in make_production_champion
+    manifest = resolved_manifest(mode, spec, leaf_cfg, cfg, verify=verify,
+src/carcassonne_ai/champion_factory.py:530: in resolved_manifest
+    leaf_prov = verify_leaf(leaf_cfg, spec, backend=backend) if verify else {
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+leaf_cfg = LeafConfig(closure_p={1: 0.5, 2: 0.2, 3: 0.05}, bonus_cap=5.0, opp_bonus_cap=5.0, meeple_k=0.0, tile_counting_closure=..._slope=0.0, opp_soft_cap_slope=0.0, farm_base_off=False, farm_growth_off=False, v29_phase_beta=0.0, v29_phase_norm=1.0)
+spec = ProductionSpec(champion_id='puct_priors_v29_bmild_cap8', c_puct=1.5, tau_p=5.0, final_select='visits', leaf_quantize='...profile is missing it falls back to its own hardcoded 4×688 constant, never to the fields above).\n'}}, backend='rust')
+backend = 'rust'
+
+    def verify_leaf(leaf_cfg, spec: ProductionSpec | None = None, *,
+                    backend: str = "python") -> dict:
+        """RAISE ``ProvenanceError`` unless ``leaf_cfg`` is the frozen production curve125
+        champion leaf, by BOTH the semantic panel and the three fingerprints. Returns the
+        provenance dict (hashes + panel) for the manifest.
+    
+        ``backend="rust"`` re-runs the VALUE PANEL through ``carc_rs`` as well. The panel is
+        the deepest guard precisely because it evaluates leaf OUTPUTS on real boards rather
+        than reading a label — so when the agent that will actually play computes its leaf in
+        Rust, the panel has to be evaluated THERE too or it proves nothing about that agent.
+        Both panels must equal the golden (rustport G2 gated them bit-equal over 3,341,772
+        values; this is the runtime re-proof at construction)."""
+        spec = spec or load_production_spec()
+    
+        # --- 1. semantic guard (authoritative; robust to LeafConfig dataclass drift) ---
+        curve = tuple(float(x) for x in (leaf_cfg.v29_meeple_curve or ()))
+        if curve != CURVE125:
+            raise ep.ProvenanceError(
+                f"champion leaf curve is {curve!r}, expected the frozen curve125 {CURVE125!r}. "
+                "Did you forget to set the production leaf env (CARCASSONNE_V29_MEEPLE_CURVE / "
+                "CAP / OPP_CAP) before importing carcassonne_ai? DEFAULT_CONFIG is import-frozen."
+            )
+        for field, want in (("bonus_cap", spec.bonus_cap), ("opp_bonus_cap", spec.opp_bonus_cap)):
+            got = float(getattr(leaf_cfg, field))
+            if got != want:
+>               raise ep.ProvenanceError(
+                    f"champion leaf {field}={got} != PRODUCTION.yaml {want}. The production "
+                    "leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import."
+                )
+E               carcassonne_ai.eval_provenance.ProvenanceError: champion leaf bonus_cap=5.0 != PRODUCTION.yaml 8.0. The production leaf env (CARCASSONNE_V25_CAP/OPP_CAP=8) is not set — set it before import.
+
+src/carcassonne_ai/champion_factory.py:414: ProvenanceError
+============================= slowest 10 durations =============================
+413.91s call     tests/test_f3_public_state_oracle.py::test_C_end_to_end_value_invariance_budget_capped
+8.55s call     tests/test_f3_public_state_oracle.py::test_A_marginalization_identity_exact
+4.47s call     tests/test_f3_public_state_oracle.py::test_D_marginalized_equals_clairvoyant_k2
+2.25s call     tests/test_f3_public_state_oracle.py::test_E_regret_nonneg_and_optimal_zero
+2.17s call     tests/test_f3_public_state_oracle.py::test_I_replay_reproduces_checksum
+1.08s call     tests/test_f3_public_state_oracle.py::test_C_no_leak_key_permutation_invariant
+0.68s call     tests/test_compact_leaf.py::test_leaf_int_identical
+0.27s call     tests/test_compact_leaf.py::test_farm_partition_matches_find_farm
+0.16s setup    tests/test_compact_leaf.py::test_farm_partition_matches_find_farm
+0.15s call     tests/test_compact_leaf.py::test_count_final_scores_identical
+=========================== short test summary info ============================
+FAILED tests/test_engine_adjacency.py::test_open_positions_starts_empty - ass...
+FAILED tests/test_engine_adjacency.py::test_placed_coords_starts_empty - asse...
+FAILED tests/test_engine_adjacency.py::test_tile_phase_pass_does_not_leak_meeples
+FAILED tests/test_engine_adjacency.py::test_open_positions_survives_deepcopy
+FAILED tests/test_f3_caller_backends.py::test_play_harness_python_and_rust_play_the_same_game
+FAILED tests/test_f3_caller_backends.py::test_play_harness_raises_when_the_advance_is_skipped
+FAILED tests/test_f3_caller_backends.py::test_gui_python_and_rust_play_the_same_game
+FAILED tests/test_f3_caller_backends.py::test_gui_raises_when_an_advance_is_skipped
+Command exited with non-zero status 1
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/test_compact_leaf.py tests/test_coreml_evaluator.py tests/test_e4_deck_baseline.py tests/test_elo.py tests/test_engine_adjacency.py tests/test_entropy_guard.py tests/test_eval_iter_head_to_head_flags.py tests/test_eval_provenance.py tests/test_eval_server.py tests/test_eval_server_pool.py tests/test_evaluators.py tests/test_f3_caller_backends.py tests/test_f3_public_state_oracle.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 438.38
+	System time (seconds): 1.18
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:16.70
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1968888
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 451119
+	Voluntary context switches: 340
+	Involuntary context switches: 1863
+	Swaps: 0
+	File system inputs: 1
+	File system outputs: 56
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

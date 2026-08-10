@@ -1,0 +1,10 @@
+{
+ "chunk": "15e04_puct_plays_full_legal_determinized_game",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 11,
+ "attempt": 1,
+ "peak_rss_kb": 131388,
+ "n_failing": 0,
+ "failing_ids": []
+}

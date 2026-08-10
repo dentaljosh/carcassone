@@ -1,0 +1,12 @@
+{
+ "chunk": "15e03_puct_choose_action_never_mutates_caller_boar",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 0,
+ "attempt": 1,
+ "peak_rss_kb": 60000,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_fair_puct_agent.py::test_puct_choose_action_never_mutates_caller_board"
+ ]
+}

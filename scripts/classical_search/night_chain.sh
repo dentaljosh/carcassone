@@ -48,6 +48,13 @@ fi
 V=$(cat "$GATE_OUT/VERDICT" 2>/dev/null || echo MISSING)
 echo "[night $(ts)] phase-seam gate verdict: $V"
 
+# GREEN_WITH_GAP proceeds ONLY with an explicit owner acceptance on disk
+# (2026-08-09: Joshua accepted the 15e07 coverage gap — see OWNER_ACCEPTED_GAP).
+if [ "$V" = "GREEN_WITH_GAP" ] && [ -f "$GATE_OUT/OWNER_ACCEPTED_GAP" ]; then
+  echo "[night $(ts)] GREEN_WITH_GAP + owner acceptance on disk -> proceeding as GREEN"
+  V=GREEN
+fi
+
 if [ "$V" != "GREEN" ]; then
   echo "[night $(ts)] PHASE ARM IS A FULL STOP. 549c0d1 stays unmerged; no phase cell runs."
   : > "$DIR/PHASE_ARM_BLOCKED"

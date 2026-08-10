@@ -1,0 +1,10 @@
+{
+ "chunk": "07_light_g",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 12,
+ "attempt": 1,
+ "peak_rss_kb": 758020,
+ "n_failing": 0,
+ "failing_ids": []
+}

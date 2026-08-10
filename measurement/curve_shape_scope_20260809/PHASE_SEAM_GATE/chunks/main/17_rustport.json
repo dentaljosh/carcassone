@@ -1,0 +1,13 @@
+{
+ "chunk": "17_rustport",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 79,
+ "attempt": 1,
+ "peak_rss_kb": 110452,
+ "n_failing": 2,
+ "failing_ids": [
+  "tests/rustport/test_p1_engine.py::test_count_final_scores_is_order_invariant_smoke",
+  "tests/rustport/test_p1_engine.py::test_e4_phone_archives_replay_bit_identically"
+ ]
+}

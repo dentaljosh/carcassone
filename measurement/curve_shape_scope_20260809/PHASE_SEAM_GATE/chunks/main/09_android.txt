@@ -1,0 +1,37 @@
+........................................................................ [ 39%]
+........................................................................ [ 78%]
+...............................s........                                 [100%]
+============================= slowest 10 durations =============================
+5.36s call     tests/android/test_bridge.py::test_events_survive_the_claim_that_scores_instantly
+4.92s call     tests/android/test_bridge.py::test_events_itemise_every_mid_game_payout
+1.81s call     tests/android/test_bridge.py::test_undo_last_tile_then_replacing_matches_never_having_placed_it
+1.66s call     tests/android/test_bridge.py::test_archive_record_is_a_superset_of_the_save_and_replays
+1.37s call     tests/android/test_bridge.py::test_undo_last_tile_leaves_no_trace_in_the_save_or_the_archive
+0.98s call     tests/android/test_bridge.py::test_full_scripted_game_second_seat
+0.98s call     tests/android/test_bridge.py::test_restore_mid_endgame_latches
+0.96s call     tests/android/test_bridge.py::test_undo_last_tile_refuses_outside_its_window
+0.90s call     tests/android/test_bridge.py::test_grid_rule_travels_in_the_save_and_the_archive
+0.87s call     tests/android/test_bridge.py::test_result_breakdown_reconciles_with_the_final_scores
+	Command being timed: "nice -n 19 /home/doctor/projects/carcassone/.venv/bin/python -m pytest tests/android/test_bridge.py tests/android/test_bridge_backend.py tests/android/test_wheel_build_tools.py -q -p no:randomly -p no:cacheprovider -rf --durations=10"
+	User time (seconds): 43.87
+	System time (seconds): 0.40
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:44.38
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 121388
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 9
+	Minor (reclaiming a frame) page faults: 130748
+	Voluntary context switches: 930
+	Involuntary context switches: 217
+	Swaps: 0
+	File system inputs: 12064
+	File system outputs: 16
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

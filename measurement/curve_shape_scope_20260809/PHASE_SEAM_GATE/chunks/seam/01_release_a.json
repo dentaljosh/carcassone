@@ -1,0 +1,10 @@
+{
+ "chunk": "01_release_a",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 5,
+ "attempt": 1,
+ "peak_rss_kb": 74004,
+ "n_failing": 0,
+ "failing_ids": []
+}

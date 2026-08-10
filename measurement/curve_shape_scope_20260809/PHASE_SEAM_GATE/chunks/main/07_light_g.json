@@ -1,0 +1,12 @@
+{
+ "chunk": "07_light_g",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 11,
+ "attempt": 1,
+ "peak_rss_kb": 758440,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_shell_harness_hygiene.py::test_no_command_substitution_clobbers_dollar_question"
+ ]
+}

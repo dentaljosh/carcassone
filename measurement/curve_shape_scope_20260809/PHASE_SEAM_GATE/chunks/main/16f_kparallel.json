@@ -1,0 +1,10 @@
+{
+ "chunk": "16f_kparallel",
+ "tree": "main",
+ "rc": 0,
+ "duration_s": 45,
+ "attempt": 1,
+ "peak_rss_kb": 100092,
+ "n_failing": 0,
+ "failing_ids": []
+}

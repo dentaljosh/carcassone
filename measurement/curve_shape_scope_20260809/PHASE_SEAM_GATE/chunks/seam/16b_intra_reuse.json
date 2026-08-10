@@ -1,0 +1,10 @@
+{
+ "chunk": "16b_intra_reuse",
+ "tree": "seam",
+ "rc": 0,
+ "duration_s": 21,
+ "attempt": 1,
+ "peak_rss_kb": 96928,
+ "n_failing": 0,
+ "failing_ids": []
+}

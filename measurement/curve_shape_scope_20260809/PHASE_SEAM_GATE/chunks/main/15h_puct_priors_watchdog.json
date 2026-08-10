@@ -1,0 +1,12 @@
+{
+ "chunk": "15h_puct_priors_watchdog",
+ "tree": "main",
+ "rc": 1,
+ "duration_s": 30,
+ "attempt": 1,
+ "peak_rss_kb": 56820,
+ "n_failing": 1,
+ "failing_ids": [
+  "tests/test_puct_priors_watchdog.py::test_watchdog_fires_end_to_end"
+ ]
+}
