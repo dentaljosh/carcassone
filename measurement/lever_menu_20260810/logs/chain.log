@@ -1,0 +1,45 @@
+[chain 2026-08-10_12:50:57] === LEVER-MENU CHAIN START ===
+[chain 2026-08-10_12:50:57] plan: docs/LEVER_MENU_PLAN_20260810.md (FUNDED IN FULL 2026-08-10)
+[chain 2026-08-10_12:50:57] local rev d6f9a107fcfa102441b1561517ad0f5838f304a6 | W_LOCAL=14 W_LAPTOP=22 OW=14/12
+[chain 2026-08-10_12:50:57] laptop rev d6f9a107fcfa102441b1561517ad0f5838f304a6 (busy python 16)
+[chain 2026-08-10_12:50:57] item-2 wiring gate (2a) verdict: PASS
+[chain 2026-08-10_12:50:58] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:52:59] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:55:00] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:57:01] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_12:59:01] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:01:02] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:03:03] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:05:03] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:07:04] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:09:05] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:11:06] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:13:07] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:15:08] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:17:09] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:19:10] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:21:11] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:23:11] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:25:12] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:27:13] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:29:14] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:31:15] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:33:16] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:35:17] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:37:18] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:39:19] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:41:20] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:43:20] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:45:21] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:47:22] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:49:23] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:51:23] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:53:24] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:55:25] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:57:26] laptop still busy (17 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_13:59:26] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:01:27] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block
+[chain 2026-08-10_14:03:28] laptop still busy (0
+0 proc: oracle scorer and/or a previous block's leg) - holding this block

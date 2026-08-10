@@ -1,0 +1,241 @@
+{
+  "schema": "carcassonne-oracle-score-pilot/v1",
+  "harness": "oracle_score_pilot",
+  "status": "PILOT \u2014 measures the per-position sd of the CRN-paired oracle delta. Its own mean delta is NOT a verdict.",
+  "execution": {
+    "backend": "python",
+    "backend_resolution": "resolved at launch by rust_world_search.resolve_backend (escape hatch: CARC_PROBE_FORCE_PYTHON=1)",
+    "rust_available": true,
+    "rust_unavailable_reason": null,
+    "continuation_tree_policy": "PERSISTING \u2014 the playout calls best_action(), which never clears NeuralMCTS._nodes, so ONE tree spans every ply to terminal. On the rust backend this is carc_rs.PersistentSearcher via rust_agent.RustCarryClairvoyantAgent, NOT MirrorState.search_single (which is fresh-tree only and would be a different player).",
+    "gap_status": {
+      "gap1_search_seed": "CLOSED \u2014 measurement/rustport_p6/GAP1_SEED_INVARIANCE.json; the continuation's playout_seed is inert on this path",
+      "gap2_reuse_tree": "CLOSED 2026-08-02 (rustport P6) \u2014 and NOT inert here: this harness's continuation is a PERSISTING-TREE search. carc_rs.PersistentSearcher supplies it; measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
+      "gap3_evaluator_injection": "OPEN, enforced \u2014 search_config_rs and RustCarryClairvoyantAgent both raise"
+    },
+    "gap2_status": "CLOSED 2026-08-02 (rustport P6) \u2014 measurement/rustport_p6/GATE_GAP2_PERSISTENT.json",
+    "identity_gate": "measurement/rustport_p6/GATE_ORACLE_PILOT_BACKEND.json \u2014 this harness's own _process record, python vs rust, every non-timing field as raw f64 bits",
+    "evidence": "measurement/rustport_p6/GAP2_ORACLE_CONTINUATION_TREE.json",
+    "audit_item": "A3 (\u00a72) / B1 (\u00a73) \u2014 BACKEND_BYPASS_AUDIT_20260801.md"
+  },
+  "goal": "Convert CL-070's 'the move changed' into 'the move improved' on a 20-position pilot, and measure the world-CRN variance reduction that decides whether the full ~652-position probe is powered.",
+  "oracle": {
+    "definition": "mean over M sampled deck completions of the TERMINAL engine score margin (root-player POV, points) after playing the afterstate out with the continuation policy on both seats",
+    "policy": "clair-puct",
+    "continuation_agent": "HeuristicPriorAgent via champion_factory.build_clairvoyant_champion",
+    "policy_family": "IN-FAMILY with the agents under test (PUCT search + curve125 leaf)",
+    "oracle_sims": 100,
+    "value_units": "engine points (final score differential)",
+    "pilot_only_caveats": [
+      "oracle_sims is far below the champion's own budget \u2014 weak-continuation bias",
+      "shared curve125 leaf with the agent under test (shared-leaf blindness)",
+      "no exact-solver tail; solver_region positions excluded by default"
+    ]
+  },
+  "crn": {
+    "level": "world (deck completion) AND continuation-policy seed",
+    "seed_derivation": "sha256(tag|rid|j|world_seed_salt) -> 31-bit; independent of pick and of budget",
+    "witness": "afterstate deck-order hash asserted equal across the two picks for every world (crn_verified)",
+    "strict": true
+  },
+  "source": {
+    "mode": "positions-jsonl",
+    "positions_jsonl": "/home/doctor/projects/carcassone/measurement/lever_menu_20260810/item6_s3/S3_control.jsonl",
+    "claim": "farm-war discriminator \u2014 measurement/analyzer_evloss_20260805/FARMWAR_PREREG.md",
+    "arm_a": "pick_a = the CHAMPION's search preference (action_best)",
+    "arm_b": "pick_b = the HUMAN's played move (action_played)",
+    "reported_delta": "V(pick_b) - V(pick_a) == V(played) - V(best), engine points, root_player's seat"
+  },
+  "rules_profile": {
+    "name": "fixed_v1",
+    "grid_rule": "centered18",
+    "start_row": 18,
+    "start_col": 15,
+    "board_rows": 35,
+    "board_cols": 35,
+    "start_rule": "retail",
+    "window_size": 25,
+    "cloister_scan": "fixed",
+    "unplaceable_tile": "redraw",
+    "note": "PHASE-B BUNDLE (spec J3) \u2014 the four rules-fidelity levers composed: centered18 grid + retail start tile + fixed cloister scan + redraw on an unplaceable tile. NOT A DEFAULT: every elo of record is a `walled` number and this profile refuses a results.csv row unless the exp_id names it. \u26a0\ufe0f THE BUNDLE IS DELIBERATELY NOT ORTHOGONAL: A3 and A4 interact, and retail ABSORBS ~5.6x of A3's blast radius (A3's own gate measured the redraw rate at 7.8/100 games under the engine start rule vs 1.4/100 under retail \u2014 an unplaceable tile is almost purely a first-move event, so which tile starts the board decides it). Bundling them is the point here; a SINGLE-FLAG attribution ladder must therefore run the A3 cell at a STATED start rule, not against this profile. \u26a0\ufe0f R9 IS NOT IN THIS PROFILE AND CANNOT BE: `base_deck` derives the farm data at import time and the Rust registry latches a OnceLock, so CARCASSONNE_FIX_R9 must be exported in the ENVIRONMENT before the process starts. `r9_env_expected=True` records that a fixed_v1 leg owes that env var; `as_manifest()` stamps r9_env_observed/r9_env_ok so an artifact from a leg that forgot it is detectable after the fact.",
+    "r9_env_expected": true,
+    "fixed_start_tile": true,
+    "recentred": true,
+    "r9_env_var": "CARCASSONNE_FIX_R9",
+    "r9_env_observed": true,
+    "r9_env_ok": true
+  },
+  "replay_game_kwargs": {
+    "start_row": 18,
+    "start_col": 15,
+    "fixed_start_tile": true,
+    "cloister_scan_fix": true,
+    "draw_rule": "redraw"
+  },
+  "levels": {
+    "level_a_key": 688,
+    "level_b_key": 2752,
+    "alloc_a": {
+      "k_dets": 4,
+      "sims_per_det": 688,
+      "total": 2752,
+      "label": null
+    },
+    "alloc_b": {
+      "k_dets": 4,
+      "sims_per_det": 2752,
+      "total": 11008,
+      "label": null
+    },
+    "total_budget_a": 2752,
+    "total_budget_b": 11008,
+    "budget_ratio_b_over_a": 4.0,
+    "decision_rule": "q_argmax_action (pooled_q_argmax) \u2014 the DEPLOYED fair pick"
+  },
+  "sampling": {
+    "population_disagreements": 50,
+    "n_requested": 20,
+    "n_chosen": 50,
+    "head": 0,
+    "sample_seed": 20260728,
+    "include_solver_region": false,
+    "rids": [
+      "108000000000_0_p22",
+      "108000000000_1_p20",
+      "108000000001_1_p60",
+      "108000000002_0_p70",
+      "108000000003_0_p22",
+      "108000000003_1_p88",
+      "108000000004_0_p110",
+      "108000000005_1_p4",
+      "108000000006_0_p130",
+      "108000000007_0_p26",
+      "108000000007_1_p112",
+      "108000000008_0_p18",
+      "108000000008_1_p124",
+      "108000000009_0_p43",
+      "108000000010_1_p16",
+      "108000000011_1_p28",
+      "108000000012_0_p38",
+      "108000000012_1_p108",
+      "108000000014_0_p130",
+      "108000000015_1_p25",
+      "108000000018_1_p48",
+      "108000000022_1_p68",
+      "108000000023_0_p74",
+      "108000000024_1_p100",
+      "108000000026_1_p52",
+      "108000000029_0_p34",
+      "108000000029_1_p96",
+      "108000000030_0_p106",
+      "108000000036_1_p112",
+      "108000000037_1_p104",
+      "108000000039_0_p138",
+      "108000000045_0_p74",
+      "108000000047_0_p110",
+      "108000000048_1_p92",
+      "108000000052_1_p140",
+      "108000000082_0_p102",
+      "108000000082_1_p69",
+      "108000000083_1_p132",
+      "108000000084_0_p131",
+      "108000000085_0_p118",
+      "108000000131_1_p120",
+      "108000000135_1_p48",
+      "108000000142_1_p28",
+      "108000000146_1_p100",
+      "108000000149_0_p98",
+      "108000000159_0_p22",
+      "108000000162_1_p56",
+      "108000000165_1_p20",
+      "108000000182_1_p64",
+      "108000000184_1_p80"
+    ]
+  },
+  "m_worlds": 32,
+  "workers": 16,
+  "wall_cap_secs": 7200,
+  "max_plies": 400,
+  "assumed_effect_pts": 0.07,
+  "env": {
+    "CARCASSONNE_V25_CAP": "8",
+    "CARCASSONNE_V25_OPP_CAP": "8",
+    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
+    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
+    "CARCASSONNE_V25_MEEPLE_K": "2.0",
+    "CARCASSONNE_V25_VALUE_BLEND": "0",
+    "CARCASSONNE_USE_FLAT_LEAF": "1",
+    "CARCASSONNE_USE_CY_LEAF": "1",
+    "CARCASSONNE_USE_CY_REPR": "1",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "src_root": "/home/doctor/projects/carcassone/src",
+  "code_rev": "d6f9a107f",
+  "host": "laptop-wsl",
+  "champion_manifest": {
+    "schema": "carcassonne-champion-factory/v1",
+    "mode": "clairvoyant",
+    "source": "governance/PRODUCTION.yaml",
+    "champion_id": "puct_priors_v29_bmild_cap8",
+    "agent_class": "HeuristicPriorAgent",
+    "reshuffle_semantics": "clairvoyant descent of the true engine deck (dev/ruler only)",
+    "search": {
+      "c_puct": 1.5,
+      "tau_p": 5.0,
+      "leaf_quantize": "float",
+      "final_select": "visits",
+      "value_norm": 15.0,
+      "reuse_tree": true,
+      "reuse_tree_effective": true,
+      "config_hash": "6c8b0dce262825da"
+    },
+    "fair_deploy": {
+      "k_dets": 8,
+      "sims_per_det": 1376,
+      "total_sims": 11008,
+      "exact_max_k": 2,
+      "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+    },
+    "leaf": {
+      "curve125": [
+        -10.0,
+        -5.0,
+        -1.25,
+        0.0,
+        2.5,
+        3.75,
+        5.0,
+        6.25
+      ],
+      "bonus_cap": 8.0,
+      "opp_bonus_cap": 8.0,
+      "value_blend": 0.0,
+      "residual_scale": 0.0
+    },
+    "leaf_hashes": {
+      "harness_leaf_hash": "a36d2e15a3b3d71d",
+      "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+      "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+    },
+    "leaf_value_panel": {
+      "empty_meeples_3v7_float": -6.25,
+      "empty_meeples_7v3_float": 6.25,
+      "empty_meeples_0v7_int": -16,
+      "empty_meeples_5v5_float": 0.0
+    },
+    "code_commit": "d6f9a107fcfa102441b1561517ad0f5838f304a6",
+    "dirty": true,
+    "env_knobs": {
+      "CARCASSONNE_USE_FLAT_LEAF": "1",
+      "CARCASSONNE_USE_CY_LEAF": "1",
+      "CARCASSONNE_USE_CY_REPR": "1"
+    },
+    "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory)."
+  },
+  "started_utc": "2026-08-10T17:06:44Z"
+}

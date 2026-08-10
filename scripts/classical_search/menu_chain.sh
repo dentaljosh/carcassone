@@ -101,14 +101,18 @@ blocked() {   # $1 = block letter, $2... = reason
 # SPAWN children, whose cmdline is `python -c from multiprocessing.spawn import spawn_main`
 # and therefore does NOT contain the harness name - counting by cmdline would report 1
 # worker on a fully saturated box. Count busy python processes instead.
-busy_py_local() { ps -eo pcpu,comm --no-headers | awk '$2 ~ /python/ && $1 > 20.0' | wc -l; }
+# Match on ARGS, not comm. A process's `comm` is truncated and distro-dependent (this is what
+# made a `ps -C python` census read a fully-loaded laptop as idle on 2026-08-10 -- -C wants the
+# exact comm and the venv interpreter is "python3"), whereas the full argv reliably contains the
+# interpreter path for both the harness main and its multiprocessing SPAWN children.
+busy_py_local() { ps -eo pcpu,args --no-headers | awk '$1 > 20.0 && /python/' | wc -l; }
 count_records() {   # $1 = a GLOB of record dirs (unquoted at call site)
   find $1 -maxdepth 1 -name 'seed*.json' 2>/dev/null | wc -l
 }
 laptop_probe() {    # prints "<busy_py> <rev>"; empty on unreachable
   timeout 90 ssh -o BatchMode=yes -o ConnectTimeout=20 "$LAPTOP" 'bash -s' 2>/dev/null <<'RPROBE'
 cd /home/doctor/projects/carcassone || exit 1
-b=$(ps -eo pcpu,comm --no-headers | awk '$2 ~ /python/ && $1 > 20.0' | wc -l)
+b=$(ps -eo pcpu,args --no-headers | awk '$1 > 20.0 && /python/' | wc -l)
 r=$(git -C /home/doctor/projects/carcassone rev-parse HEAD)
 echo "$b $r"
 RPROBE
@@ -137,13 +141,22 @@ wait_laptop_quiet() {
   local dl="${1:-7200}" t0; t0=$(date +%s)
   while [ $(( $(date +%s) - t0 )) -lt "$dl" ]; do
     local busy
+    # ⚠️ NEVER write `pgrep -fc PAT || echo 0`. `pgrep -c` PRINTS "0" **and** exits 1 when
+    # nothing matches, so the `|| echo 0` fires as well and the caller reads a TWO-LINE "0\n0",
+    # which never string-equals "0" -- the hold then never releases. That is the standing
+    # pgrep/pkill exit-code trap ("exits 1 when no process matches, which is EXPECTED") applied
+    # in the wrong direction, and it cost a stuck chain on 2026-08-10. Capture, then default.
     busy=$(timeout 90 ssh -o BatchMode=yes -o ConnectTimeout=20 "$LAPTOP" 'bash -s' 2>/dev/null <<'RQ'
 cd /home/doctor/projects/carcassone || exit 1
-pgrep -fc 'oracle_score_pilo[t]|eval_fair_puc[t]|eval_puct_prior[s]' 2>/dev/null || echo 0
+n=$(pgrep -fc 'oracle_score_pilo[t]|eval_fair_puc[t]|eval_puct_prior[s]' 2>/dev/null)
+echo "${n:-0}"
 RQ
 )
+    # Normalize hard: keep the first line and digits only, so an ssh banner, a stray newline or
+    # an empty result can never be mistaken for "busy" (or for "quiet").
+    busy=$(printf '%s' "$busy" | head -1 | tr -dc '0-9')
     busy=${busy:-0}
-    if [ "$busy" = "0" ]; then log "laptop is quiet (no oracle scorer, no game harness) - block may start"; return 0; fi
+    if [ "$busy" -eq 0 ] 2>/dev/null; then log "laptop is quiet (no oracle scorer, no game harness) - block may start"; return 0; fi
     log "laptop still busy ($busy proc: oracle scorer and/or a previous block's leg) - holding this block"
     sleep 120
   done
