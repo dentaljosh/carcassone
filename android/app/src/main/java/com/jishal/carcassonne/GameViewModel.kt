@@ -345,6 +345,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // decisions, when `thinking` is briefly false). Take the session over.
         takeOver()
         launchNewGame(seat, seed)
+        // A consumed seed must not linger in the form: the activity-scoped form
+        // state outlives the game, so a same-session rematch would replay the
+        // IDENTICAL deck (it did — E4 games 13/14 both drew deck 523563,
+        // 2026-08-09). Reroll only AFTER start, so the documented reason this
+        // state is ViewModel-held (no reroll on a Settings round-trip) is kept.
+        _newGameForm.update { it.copy(seedText = randomSeed().toString()) }
     }
 
     private fun launchNewGame(seat: Seat, seed: Int) = launchOp { e ->
