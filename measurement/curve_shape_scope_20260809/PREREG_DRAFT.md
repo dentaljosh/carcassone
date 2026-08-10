@@ -293,3 +293,33 @@ column (the only in-repo timing record), a DECISIONS index line, a status banner
 - **Noise signature:** a lone trial beating its parameter-neighbours by >1σ is noise, not a peak.
   In a 5-param family a real optimum has a *neighbourhood* that also reads positive — check it.
 - **Nothing here promotes anything.** `governance/PRODUCTION.yaml` is untouched on every branch.
+
+---
+
+## AMENDMENT 1 — 2026-08-10 ~01:50, written BEFORE the fresh-band relaunch
+
+**What happened.** The first Part C attempt (band `1.15e11`, launched 2026-08-09 23:32) fired
+kill condition §6.1 exactly as written: the `b0p0` identity cell completed n=200 and read
+**elo −27.85, 1σ ±24.6** ⇒ `|elo| ≥ 25` ⇒ abort, no cell counts. Per the pre-registration the
+run was stopped mid-`bm0p3` (~50/200), **all band-1.15e11 cells are VOID** (moved to
+`curvephase_ladder_VOID_band115_wiring/` on the share), and band `1.15e11` is retired.
+
+**Why the gate fired — a calibration miss in this document, not evidence of broken wiring.**
+The `|elo| < 25` bar was inherited verbatim from Part A's A-gate 0, where cells are **n=400**
+(1σ ≈ 17.4 ⇒ the bar sits at 1.44σ). Part C cells are **n=200** (1σ ≈ 24.6), so the same
+numeric bar sits at **1.01σ of its own instrument** — a ~31% false-abort probability on a
+TRUE-ZERO identity cell. The fired cell's own robust statistic — the deck-paired margin, the
+statistic every A-reading in §4 uses — read **z −0.22, margin −0.255** (dead flat), and the
+byte-identity of the β=0 branch is separately proven at the reconcile level (0/3,325,532).
+The wiring is almost certainly fine; the bar was mis-scaled. The abort is honored anyway
+because a pre-registered kill condition is not reinterpretable after it fires.
+
+**Amended wiring gate (PROSPECTIVE ONLY — applies to the fresh-band relaunch and later):**
+the identity cell must read **`|paired margin z| < 2.0` AND `|elo| < 50`** (≈2σ at n=200).
+The margin_z criterion is primary (it is the robust within-band statistic of record); the
+elo bound is retained as a gross-wiring backstop at a correctly scaled 2σ. The original
+`|elo| < 25` remains correct for any n=400 cell and is unchanged for Part A/B.
+
+**No retroactive reading.** The voided band-1.15e11 cells are not re-adjudicated under the
+amended gate — that would be gate-shopping. They stay void; the ladder re-runs in full on
+the next free band (`1.16e11`), same five cells, same order, same knobs, W=14 local.
