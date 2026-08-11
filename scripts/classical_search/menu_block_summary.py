@@ -39,9 +39,18 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--topup-trigger", action="store_true",
                     help="item 3 only: also evaluate the pre-registered 1.5<=|z|<2.0 top-up trigger")
+    ap.add_argument("--expected-rules-profile", default="fixed_v1",
+                    help=("the rules_profile.name this cell is REQUIRED to have run under. "
+                          "Defaults to fixed_v1 (current behavior, unchanged for every existing "
+                          "caller). Pass the epoch's actual profile for a cell that is legitimately "
+                          "on a different one -- e.g. CL-072's n->800 extension (block E) runs "
+                          "under `walled` on purpose, to match the ORIGINAL n=400 cell's epoch so "
+                          "the two are poolable; fixed_v1 would be the wrong gate for that cell, "
+                          "not the right default."))
     a = ap.parse_args()
 
     out = {"label": a.label, "dir": a.dir, "adjudicated": False,
+           "expected_rules_profile": a.expected_rules_profile,
            "note": ("Extract only. No verdict, no promotion, no governance touch. "
                     "The orchestrating session reads this and closes out.")}
 
@@ -94,8 +103,13 @@ def main():
         }
         w = out["wiring"]
         gates = []
-        if w["rules_profile"] != "fixed_v1":
-            gates.append(f"rules_profile is {w['rules_profile']!r}, not fixed_v1")
+        # Epoch-aware: compare against the CALLER-DECLARED expected profile, not a hardcoded
+        # "fixed_v1". Most callers want fixed_v1 (the default preserves that), but a cell that
+        # is deliberately pinned to a different epoch (e.g. block E / CL-072's n->800 extension,
+        # which must run under `walled` to match its n=400 sibling's epoch for pooling) needs
+        # its OWN expected value or this gate false-fires on a correct-by-design cell.
+        if w["rules_profile"] != a.expected_rules_profile:
+            gates.append(f"rules_profile is {w['rules_profile']!r}, not {a.expected_rules_profile!r}")
         if w["r9_env_ok"] is not True:
             gates.append(f"r9_env_ok is {w['r9_env_ok']!r}, not true")
         if w["opp_leaf_hash"] not in (None, CHAMP_LEAF_HASH):

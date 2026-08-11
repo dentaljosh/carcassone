@@ -390,8 +390,13 @@ EOF
   E_GOT=$(count_records "$E_ROOT/$E_SUB")
   log "BLOCK E: extension records $E_GOT/$E_N"
   [ "$E_GOT" -lt $(( E_N * 90 / 100 )) ] && blocked E "only $E_GOT/$E_N extension records (<90%) - VOID by the standing rule"
+  # Block E is legitimately run under rules_profile `walled`, not `fixed_v1`: it must match
+  # the ORIGINAL n=400 cell's epoch (also walled) so the two are poolable into n=800 per the
+  # prereg's licensed same-band pooling. Without --expected-rules-profile the gate's fixed_v1
+  # default false-fires on this cell (menu_block_summary.py's own comment explains why).
   $PY "$REPO/scripts/classical_search/menu_block_summary.py" --dir "$E_ROOT/$E_SUB" \
       --label "item5_cl072_ext_n400_b94e9_fresh" --out "$DIR/verdicts/BLOCK_E_item5.json" \
+      --expected-rules-profile walled \
       >> "$LOGS/E_local.log" 2>&1
   : > "$DIR/DONE_E"
   log "BLOCK E COMPLETE -> $DIR/verdicts/BLOCK_E_item5.json"
