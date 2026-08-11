@@ -23,11 +23,16 @@
 > (§4.4 banner)** · **item 3 / block D 🔚 RAN AND CLOSED — bounded null, width axis at 11008
 > unresolvable at affordable n, CL-060 falsifier (1) discharged, no top-up run (§4.3 banner)** ·
 > **item 5 / block E 🔚 RAN AND CLOSED — pooled n=800 z −2.2015, the rodv3 premise vs its own
-> corpus teacher is REFUTED (§4.5 banner)**. Item 1 — readout on disk
-> (`ITEM1_FARM_NORM.{json,md}`) · item 6 — readout on disk (`item6_s3/S3_VERDICT.{json,md}`).
-> *(Items 1 and 6 predate the chain and are still not closed out by this commit — that six-touch
-> pass is separate, unassigned work.)* Bands **1.18e11, 1.19e11, 1.20e11 and 94e9** all retired.
-> `PRODUCTION.yaml` untouched throughout every block. **The parked rodv3 65/300 gen (item 5's
+> corpus teacher is REFUTED (§4.5 banner)** · **item 1 🔚 RAN AND CLOSED — BRANCH B, the
+> farm-scoring collapse against Joshua is human-specific, not a generic non-self-opponent effect
+> (§4.1 banner)** · **item 6 🔚 RAN AND CLOSED — NO CONVICTION on S3; the JCZ steal file is now
+> FULLY CLOSED (§4.6 banner)**.
+>
+> **🏆 SIX-ITEM CAMPAIGN COMPLETE 2026-08-10/11 — every item of the funded menu (1 through 6) has
+> RAN AND CLOSED, the six-touch close-out has been applied to all six, and nothing from this
+> campaign remains open.** Bands **1.18e11, 1.19e11, 1.20e11 and 94e9** all retired (items 1 and 6
+> claimed no band — see their own banners). `PRODUCTION.yaml` untouched throughout every block.
+> **The parked rodv3 65/300 gen (item 5's
 > downstream consequence) is now formally RETIRED — Joshua, in-session same day, verbatim
 > "retire it"; a governance status change only, no artifacts deleted (STATUS.md, DECISIONS.md
 > 2026-08-11 addendum).**
@@ -228,6 +233,24 @@ any number is read**. Band is claimed in the prereg commit, before game 1, and f
 ---
 
 ### 4.1 — Item 1. Farm-norm replay (FREE, runs first)
+
+> **🔚 RAN AND CLOSED 2026-08-10 (replay/decomposition instrument, 0 games played, no band
+> claimed, `governance/PRODUCTION.yaml` untouched) — BRANCH B: the champion's farm-scoring
+> collapse against Joshua is human-specific, not a generic non-self-opponent effect.**
+> Replay of the banked JCZ n=400 confirm corpus (`measurement/jcz_match_20260809/confirm.jsonl`,
+> replay acceptance gate PASS 400/400) through `corpus_stats.py` via a small adapter. Champion-seat
+> `farm_pts` mean over 400 seats: **31.88 ± 0.77** (sd 7.91, 95% CI [31.11, 32.66]) — ABOVE both
+> self-play norms (20.49 walled/2752, 20.81 `fixed_v1`/11008), not between them and not near the
+> ~11–14 vs-Joshua figure (branch A). JCZ's `LegacyAiPlayer` places essentially no farmers (366/400
+> seats placed zero, mean 0.085 farmers/seat; its own farm_pts/seat is **0.61**; its first farm
+> turn ~55.0 vs the champion's ~3.1): a generic non-self opponent **elevates** the champion's farm
+> points rather than suppressing them, so "any non-self opponent produces ~11–14" is excluded —
+> filed as branch B, more strongly than B's own anchor. **§8.1 correction stands as written below**
+> — the sweep's original premise ("the 20.5 norm is undocumented") was wrong (20.49/20.81 are both
+> derived, cited in the table below); the item was redesigned around the number that genuinely
+> didn't exist, farm points **vs a non-self opponent**, and that redesign — not the original sweep
+> framing — is what ran. → DECISIONS 2026-08-10; `measurement/lever_menu_20260810/ITEM1_FARM_NORM.{json,md}`;
+> `docs/LEVER_INDEX.md` "contested-farm-war mis-pricing" row.
 
 **⚠️ The sweep's premise is wrong and the item is redesigned. Read [§8.1](#81-item-1--the-premise-was-wrong) first.**
 
@@ -597,6 +620,21 @@ before trusting the field name.** GPU is exclusive to this item while it runs.
 ---
 
 ### 4.6 — Item 6. JCZ S3 cut
+
+> **🔚 RAN AND CLOSED 2026-08-10 (oracle-replay instrument, 0 games played, no band claimed,
+> `governance/PRODUCTION.yaml` untouched) — NO CONVICTION: the JCZ steal file is now FULLY
+> CLOSED.** S3 (`merge_exposure_differs`, `rateConnections` city/road merge-flip anticipation —
+> the one mined candidate the 2026-08-09 run explicitly excluded, `MINING_PREREG.md` §3.4) scored
+> via `oracle_score_pilot.py` at M=32, n=50/stratum (clears the pre-registered n≥25 gate, sits
+> below the n=74 powered re-open bar — a coarse screen, not a powered verdict). **S3 stratum: mean
+> ΔQ −0.5194 pts/ply, cluster-robust z −1.171** vs its matched control **−0.9419 pts/ply, z
+> −3.000** — the S3 stratum reads *weaker* than its own background, the opposite of what a real S3
+> effect predicts. `|z_S3| < 2.0` ⇒ the pre-registered NO CONVICTION branch fired. With S1/S4 and
+> S2 already dead (2026-08-09 evening, branch G3), **all four mined JCZ candidate terms (S1/S4,
+> S2, S3) are now dead on ground truth** — the native-term build stays unfunded. →
+> DECISIONS 2026-08-10; `measurement/lever_menu_20260810/item6_s3/S3_VERDICT.{json,md}`;
+> `docs/LEVER_INDEX.md` "JCZ disagreement mining" row (already carries this stamp — see its
+> "✅ S3 TESTED 2026-08-10" clause).
 
 **What exists.** The mining extraction is banked:
 `measurement/jcz_mining_20260809/mining/CANDIDATES.jsonl` = **6,800 disagreement rows** over

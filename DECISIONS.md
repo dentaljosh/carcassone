@@ -5099,3 +5099,131 @@ constraint was not lifted.
 argument to reopen (Joshua's discretion) — the underlying data is preserved and nothing was
 destroyed, so a reopen costs no re-generation, only a new authorization.
 **Phase:** measurement-first
+
+## 2026-08-10 — Lever-menu item 1 (farm-norm replay) RAN AND CLOSED, now six-touch closed out: the champion's farm-scoring collapse against Joshua is human-specific, not a generic non-self-opponent effect
+
+**Context.** Item 1 of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.1) — the cheapest item on
+the menu (a replay, 0 games, no band). It and item 6 ran before the B→C→D→E chain and had
+readouts on disk (`ITEM1_FARM_NORM.{json,md}`) but were not carried through the six-touch
+close-out at the time (STATUS.md flagged both as open); this entry and the next close that gap.
+
+**The question.** The E4 ledger shows the champion averaging **11.0 farm pts/seat against Joshua**
+vs **20.5 in its own self-play corpus** — is that collapse a generic "any non-self opponent
+suppresses farm points" effect, or specific to Joshua? §8.1 also corrected the sweep's original
+premise: the 20.5 self-play norm is not undocumented (it is derived, `CORPUS_STATS_champ449.md`
+20.49 sd 10.7 n=898, and reproduces at 20.81 on the `fixed_v1`/11008 corpus,
+`PHASE_C_DESCRIPTIVES.md` §3) — so the item was redesigned around the number that genuinely didn't
+exist: champion farm points **against a non-self opponent**, at the same rules/budget as the E4
+games.
+
+**Design.** Replay the banked JCZ n=400 confirm corpus
+(`measurement/jcz_match_20260809/confirm.jsonl`, `fixed_v1`+R9, champion k8×1376=11008 vs
+JCloisterZone's `LegacyAiPlayer`, band 1.08e11, retired) losslessly (each record carries
+`deck_seed` + full `actions`) through `scripts/analyzer/corpus_stats.py`, via a ~20-line adapter
+(`scripts/analyzer/jcz_confirm_adapter.py`) since `confirm.jsonl` lacks `game_id` and stores
+finals as `scores`. **Acceptance gate: replay must reproduce the archived finals 400/400 before
+any decomposition number is quoted — PASS 400/400** (replay_scores_match 400/400, split_ok
+400/400).
+
+**Result.** Champion-seat `farm_pts` mean ± 95% CI over 400 seats: **31.88 ± 0.77** (sd 7.91, 95%
+CI [31.11, 32.66]). JCZ-seat `farm_pts`: **0.61 ± 0.24** (sd 2.48) — 366/400 JCZ seats placed ZERO
+farmers across the whole game (mean 0.085 farmers/seat vs the champion's always ≥1), and JCZ's own
+first farm turn averages **~55.0** (n=34 non-null) vs the champion's **~3.1**. Full six-field
+decomposition (both seats) is in `ITEM1_FARM_NORM.md`.
+
+**Branch: B, and more strongly than B's own anchor.** The vs-JCZ figure (31.88 ± 0.77) is
+**outside all three pre-registered bands** — not near 11–14 (branch A, zero CI overlap) and it
+*exceeds* the self-play norms by more than 1 sd (+11.07 pts / +1.03 sd above the `fixed_v1`/11008
+norm) rather than landing "near 20" or straddling both anchors (branch C). Filed as branch B on
+decision consequence: a generic non-self opponent does not suppress the champion's farm points, it
+**elevates** them (JCZ contests almost nothing), so the ~11.0-vs-Joshua figure **cannot** be
+explained as "what any non-self opponent produces." The farm-scoring collapse against Joshua
+survives as human-specific.
+
+**Mechanism (context, not a required decomposition field).** With almost no farm contest from
+JCZ, the champion collects farm points close to uncontested — the likely reason the observed value
+*exceeds* the self-play norms (both seats sharing one farmer-timing policy, splitting real estate)
+rather than landing between them.
+
+**Riders, unsoftened.** (i) One opponent, one band (1.08e11, retired), one rules epoch
+(`fixed_v1`+R9) — bounded to this one comparison, not generalized. (ii) `farm_pts` sd ≈ 10.7 in the
+self-play references ⇒ 95% CI at 400 seats ≈ ±1.05 pts, enough to separate 11 from 20 but **not**
+to resolve 14 from 17. (iii) Band 1.08e11 reuse is licensed as an exploratory decomposition of an
+existing archive that mints no strength claim — the same licence the JCZ mining reuse (item 6
+lineage) was granted. **This item plays ZERO games, claims NO band, and mints NO strength claim.**
+
+**Consequences.** Strengthens item 2's `farm_growth_off` scope-limit rider (CL-074) — an argument
+for **funding more E4 games**, Joshua's call, not actioned here. No `results.csv` row (0 games; a
+decomposition of an existing archive, not a new head-to-head — consistent with how the E4 deck
+baseline and budget-headroom bound entries were also not given rows). No `governance/CLAIM_REGISTRY.csv`
+row minted: this is a characterization measurement of an existing rated match, not a new testable
+strength/understanding proposition with its own falsifier — the finding is recorded here and in
+`docs/LEVER_INDEX.md`'s "contested-farm-war mis-pricing" row instead. `governance/PRODUCTION.yaml`
+untouched. Plan §4.1 stamped RAN AND CLOSED.
+
+**Reversal cost:** none — a replay of an already-banked archive; re-running costs nothing, and
+nothing here forecloses funding more E4 games.
+**Phase:** measurement-first
+
+## 2026-08-10 — Lever-menu item 6 (JCZ S3 cut) RAN AND CLOSED, now six-touch closed out: NO CONVICTION — the JCZ steal file is now FULLY CLOSED
+
+**Context.** Item 6 of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.6), like item 1 above,
+ran before the B→C→D→E chain and had a readout on disk
+(`item6_s3/S3_VERDICT.{json,md}`) not yet carried through the six-touch close-out.
+
+**The question.** The 2026-08-09 JCZ disagreement mining run (branch G3, NO CONVICTION) tested
+three of its four candidate terms (S1/S4 commitment, S2 closure) and explicitly excluded the
+fourth — **S3** (`merge_exposure_differs`, `rateConnections`, city/road merge-flip anticipation) —
+`measurement/jcz_mining_20260809/MINING_PREREG.md` §3.4: *"S3 is explicitly NOT tested by this
+design… recorded so a future cut is a query, not a re-run."* This item is that query.
+
+**Design.** Query the banked `CANDIDATES.jsonl` (6,800 disagreement rows over 400/400 games, 1,650
+carrying `merge_exposure_differs: true`) for the S3 stratum plus a matched control, using the
+prereg's own §3.3–3.4 matching discipline (exact on `ply_class`, matched ΔQ/phase covariates,
+deterministic-hash sampled). Score both with `scripts/measurement_infra/oracle_score_pilot.py`
+**unmodified** at M=32, via its `--positions-jsonl` adapter; sign convention `delta = V(pick_b) −
+V(pick_a))`, `pick_b` = JCZ's played pick, so `delta > 0` means JCZ's pick was better than ours.
+50 positions per stratum (100 total) — clears the prereg's `n ≥ 25` gate, sits below its own named
+`n=74` powered re-open bar (80% power at +1.4 pts/ply); read as a coarse screen, not a powered
+verdict, exactly as pre-registered.
+
+**Result.** **S3 stratum: n=50, mean ΔQ −0.5194 pts/ply, cluster-robust z −1.171** (se 0.4435, 95%
+CI [−1.389, 0.350], both ply-class-dominated by TILE, 50/50 ok). **Matched control: n=50, mean ΔQ
+−0.9419 pts/ply, z −3.000** (se 0.3140, 95% CI [−1.557, −0.326]). The S3 stratum is, if anything,
+**weaker** than its own control — the opposite of what a real S3 effect predicts (a real S3 effect
+would read S3 more negative, or less negative, than a matched non-S3 control, not indistinguishable
+from a stronger-negative background).
+
+**Branch: NO CONVICTION.** `|z_S3| < 2.0` ⇒ the pre-registered NO CONVICTION branch fired
+(`z_bonf_threshold` 2.2414 not needed to decide this branch; S3 does not even clear the raw 2.0
+bar). Per the mining decision map, this closes S3 exactly as A (S1/S4) and B (S2) closed on
+2026-08-09 evening.
+
+**⇒ Consequence: the JCZ steal file is now FULLY CLOSED.** All four candidate terms the mining run
+identified — S1 (stranded-meeple penalty), S4 (category-convex lock-up, convicted jointly with S1
+in stratum A), S2 (deck-graded closure P), and now S3 (merge-flip anticipation) — are dead on
+ground truth. The native from-scratch term build stays unfunded; `docs/LEVER_INDEX.md`'s "JCZ
+disagreement mining" row already carries this stamp (its "✅ S3 TESTED 2026-08-10… THE STEAL FILE
+IS NOW FULLY CLOSED" clause) — verified here, not duplicated.
+
+**Riders, unsoftened.** (i) Exploratory by construction — no strength claim, no band claimed; band
+1.08e11 stays retired from confirmatory use and this reuse does not un-retire it. (ii) The oracle
+prices with a reference that is **not** the leaf under suspicion (clairvoyant PUCT continuation on
+the production curve125 leaf) — that is the point; the leaf under suspicion was never substituted
+in. (iii) Sizing honesty: n=50 sits between the prereg's `n≥25` gate and its own `n=74` powered
+re-open bar — a real S3 effect at the pre-registered +1.4 pts/ply size could not be fully excluded
+at this n, but the observed direction (weaker than control) gives no reason to spend the extension.
+
+**Consequences.** No `results.csv` row (0 games). No `governance/CLAIM_REGISTRY.csv` row minted —
+no claim tracks the JCZ mining program itself (the 2026-08-09 G3 close also minted no claim, "no
+claim, no results.csv row" being the established disposition for this instrument), and this item
+extends that same program to its natural conclusion rather than opening a new testable
+proposition; the finding is recorded here and lives permanently in `docs/LEVER_INDEX.md`'s mining
+row. `governance/PRODUCTION.yaml` untouched. Plan §4.6 stamped RAN AND CLOSED. **With items 1 and
+6 both now closed out, the entire six-item 2026-08-10 lever-menu campaign is complete — nothing
+from it remains open.**
+
+**Reversal cost:** none — a query over an already-banked extraction; re-running costs nothing.
+**Phase:** measurement-first
