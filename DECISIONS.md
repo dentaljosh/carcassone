@@ -4998,3 +4998,104 @@ CLOSED. **`governance/PRODUCTION.yaml` untouched; nothing promoted.**
 
 **Reversal cost:** none (measurement only).
 **Phase:** measurement-first
+
+## 2026-08-11 — Lever-menu block E RAN AND CLOSED, LAST BLOCK OF THE CAMPAIGN: CL-072's n→800 extension pools to a PRE-REGISTERED REFUTATION — the rodv3 premise does not hold against its own corpus teacher
+
+**Context.** Item 5 / block E of the funded six-item lever menu
+([docs/LEVER_MENU_PLAN_20260810.md](docs/LEVER_MENU_PLAN_20260810.md) §4.5, spec of record) was
+the last of the six items and the last block of `menu_chain.sh` (B→C→D→E). It is the
+pre-registered n→800 extension of CL-072 (`governance/CLAIM_REGISTRY.csv`, was **Provisional/low
+confidence**), which had leaned negative at n=400 — `−20.87 ± 17.40` elo (z −1.20), deck-paired
+margin `−2.0025` pts/deck (paired_z −1.90) — landing inside the prereg's `[5,25]`
+bracket-narrowing interval and firing its own pre-committed extension
+([`scripts/distill_flywheel/TEACHER_H2H_PREREG.md`](scripts/distill_flywheel/TEACHER_H2H_PREREG.md)).
+
+**The question.** Does the CL-067 distilled net used as policy priors (frozen curve125 leaf,
+value severed) at its own deploy budget `k4×688 = 2752` beat **its own corpus teacher** — the
+production classical champion `FairHeuristicPriorAgent` at the CL-071-promoted `k8×1376 = 11008`?
+This is the direct price of the rodv3 ("Revenge of Demis v3") flywheel premise.
+
+**Design.** Fresh decks of the *already-claimed* band 94e9 (seeds `94000000200..94000000399`) —
+the one licensed fresh-band exception in the plan, because the prereg requires the extension to
+draw from the SAME band as the original cell. Same config throughout: candidate k4×688 net-prior
+policy + frozen curve125 leaf `a36d2e15a3b3d71d`, opponent k8×1376 heuristic-prior champion, same
+leaf both sides, c_puct 1.5, tau_p 5.0, value_norm 15, exact-K≤2 marginalized endgame, n=400
+deck-paired (200 decks × 2 seats). ⚠️ **This cell runs under `rules_profile: walled`, not
+`fixed_v1`** — deliberately, to match the original n=400 cell's epoch so the two pool. Completion
+400/400.
+
+**Result — this cell alone.** W191/D6/L203, elo **−10.4262 ± 17.3796**, paired margin **−1.1325
+pts/deck**, paired_z **−1.1839** — sub-2σ alone, as the prereg anticipated for a single extension
+half.
+
+**Result — the POOLED n=800, 400 decks, THE PRIMARY STATISTIC.** Pooling this cell with the
+original (`teacher_h2h_netprior_k4x688_vs_corpus_teacher_k8x1376_n400_b94e9`, elo −20.8712 ±
+17.4031, margin −2.0025, paired_z −1.8956): **W375/D14/L411 · elo −15.6452 ± 12.2962 · deck-paired
+margin −1.5675 pts/deck · se 0.7120 · PRIMARY STATISTIC margin z −2.2015.** Cost ratio
+candidate/opponent, pooled, **1.1643×** (candidate 15799.42 vs opponent 13570.30 ms/move; the
+`champ_prefix_*` field holds the CANDIDATE's cost despite its name — re-verified against the
+emitter for this row).
+
+**Pre-registered branch (fired before the first game of the original cell).** `z ≤ −2.0` → the
+student does **not** beat its own corpus teacher; the rodv3 premise is **REFUTED**; the parked
+65/300 gen retires (formal kill is Joshua's call). **Pooled z = −2.2015 ⇒ the branch FIRES.**
+
+**⇒ ADJUDICATION: PREMISE REFUTED.**
+
+**Honesty caveats — mandatory, none softened, none omitted.**
+1. **z = −2.20 clears the bar without much room.** Each half is individually sub-2σ (−1.90 and
+   −1.18 on margin); the pooled statistic crosses because doubling n tightens se, not because
+   either half was decisive on its own.
+2. **The effect SHRANK between halves** (−2.0025 → −1.1325 pts/deck) — the same
+   regression-toward-zero signature this campaign has now logged repeatedly (`farm_growth_off`,
+   the phase β=+0.3 lean, `intrareuse_k4x688`, the distill `it16` crest). The prereg itself
+   pre-committed a curse-calibrated reading of −0.6 to −0.8 pts/deck ⇒ z ≈ −0.8 to −1.1 as **"not
+   resolvable."** The realized pooled effect (−1.5675) sits **above** that calibrated band but
+   **below** the face-value −2.00 the prereg also named — a middle reading, not the clean
+   confirmation the face-value number alone would suggest.
+3. **The elo statistic alone does not resolve.** Pooled elo −15.6452 ± 12.2962 ⇒ 2σ interval
+   ≈ **[−40.2, +9.0] includes zero.** The margin resolves where elo does not — points-per-deck
+   uses magnitude, not just win/loss, which is expected and is precisely why the margin was
+   pre-registered as PRIMARY. Do not present the elo as independently confirming the verdict.
+
+**Gate false-fire, recorded as a process lesson.** `menu_block_summary.py`'s wiring gate
+hardcoded `rules_profile != "fixed_v1"`, which false-fired a `READ_BLOCK` on this cell's first
+extract (`measurement/lever_menu_20260810/verdicts/BLOCK_E_item5.json` originally read
+`wiring_gates_clean: false`) even though `walled` is **correct-by-design** here — required to
+match the original cell's epoch for pooling; requiring `fixed_v1` would have made item 5
+impossible outright. E's wiring had already been independently verified field-by-field against
+the original cell's manifest **before any results existed**. Fixed in commit `20e83d3`
+(`--expected-rules-profile`, default `fixed_v1` preserving every other existing caller, +
+`tests/test_menu_block_summary.py`); the verdict extract was regenerated post-fix and now reads
+`wiring_gates_clean: true`, `wiring_gate_failures: []`. **Contrast with the Part C attempt-1
+abort** (this file, 2026-08-10 ~02:00): that fired gate **was pre-registered** and was correctly
+honored as a void — the distinction is whether the gate is *in the prereg* or is a *tool
+default*. A pre-registered gate blocks; a wrong tool default gets fixed and re-run, not honored.
+
+**Consequences.** Band **94000000000** flipped `claimed` → `retired` (`governance/BAND_REGISTRY.csv`,
+per the row's own pre-written instruction: flip exactly when the extension closes). **CL-072**
+moves `Provisional` → **`Refuted`** (`governance/CLAIM_REGISTRY.csv`). `results.csv`
+`cl072_ext_netprior2752_vs_champ11008_n800pooled_b94e9`. Plan §4.5 stamped RAN AND CLOSED; the
+document's top banner stamped complete (this was its last open block). `governance/PRODUCTION.yaml`
+untouched; nothing promoted, as pre-committed in every branch of the prereg.
+
+**⇒ With this, the funded six-item lever menu is fully closed.** Items 2/3/4/5 all ran and
+closed null or refuted (no confirms); items 1 and 6 have readouts on disk from before the menu
+launched and remain open close-out items not covered by this entry.
+
+**ADDENDUM, same day — Joshua authorizes the retirement.** The prereg's own consequence for a
+`z ≤ −2.0` refutation was named as *"formal kill is Joshua's call"*; this close-out surfaced it as
+an open decision without acting on it. Joshua then reviewed the pooled result in-session and
+authorized it, verbatim: **"retire it."** ⇒ **The parked rodv3 turn-1 gen (65/300 games banked,
+`measurement/rodv3_turn1/iter_04`) is formally RETIRED**, dated 2026-08-11, attributed to Joshua's
+explicit in-session authorization — not inferred from the refutation alone. **This is a
+governance status change, not a data-destructive action: no checkpoints, corpora, or `.pt` files
+were deleted or touched** — the 65 banked games and every trained checkpoint remain on disk
+exactly as they were; "retired" means the lever is closed and this generation will not be
+resumed. `governance/PRODUCTION.yaml` remains untouched and unauthorized for edit — that
+constraint was not lifted.
+
+**Reversal cost:** none for the measurement; the retirement itself would need a new mechanism
+argument to reopen (Joshua's discretion) — the underlying data is preserved and nothing was
+destroyed, so a reopen costs no re-generation, only a new authorization.
+**Phase:** measurement-first

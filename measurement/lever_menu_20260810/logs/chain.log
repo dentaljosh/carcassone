@@ -79,3 +79,19 @@
 [chain 2026-08-10_19:07:22] verify[D]: busy python -> local=14 laptop=22 | laptop claims on this cell=22 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
 [chain 2026-08-10_19:07:22] verify[D]: waiting up to 1800s for the record count to grow past 0
 [chain 2026-08-10_19:09:52] verify[D]: PASS - records 0 -> 6, local=14 laptop=22 busy workers
+[chain 2026-08-10_20:28:14] BLOCK D: local launcher exited rc=0
+[chain 2026-08-10_20:28:14] BLOCK D: records 800/800
+[chain 2026-08-10_20:28:14] BLOCK D COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_D_item3.json
+[chain 2026-08-10_20:28:14] laptop is quiet (no oracle scorer, no game harness) - block may start
+[chain 2026-08-10_20:28:14] --- BLOCK E: item 5 CL-072 extension n=400 band=94000000200 -> /mnt/c/carc-shared/teacher_h2h_94e9/n800ext_paired_b94e9 (GPU exclusive)
+[chain 2026-08-10_20:28:14] BLOCK E: local cell pid 273046; laptop joiner launch backgrounded
+[chain 2026-08-10_20:28:14] verify[E]: baseline records=0; waiting up to 1200s for workers on BOTH boxes
+[chain 2026-08-10_20:28:35] verify[E]: busy python -> local=14 laptop=6 | laptop claims on this cell=12 (laptop rev=cd39f5dd9bfff7f672ae3a58c94b5c377f0988a5)
+[chain 2026-08-10_20:28:35] verify[E]: waiting up to 4800s for the record count to grow past 0
+[chain 2026-08-10_20:56:06] verify[E]: PASS - records 0 -> 1, local=14 laptop=6 busy workers
+[chain 2026-08-11_05:19:44] BLOCK E: local cell exited rc=0
+[chain 2026-08-11_05:19:44] BLOCK E: extension records 400/400
+[chain 2026-08-11_05:19:44] BLOCK E COMPLETE -> /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/BLOCK_E_item5.json
+[chain 2026-08-11_05:19:44] === LEVER-MENU CHAIN FINISHED (B/C/D/E) ===
+[chain 2026-08-11_05:19:44] Nothing was promoted. governance/PRODUCTION.yaml untouched. No verdict was adjudicated.
+[chain 2026-08-11_05:19:44] Per-block extracts: /home/doctor/projects/carcassone/measurement/lever_menu_20260810/verdicts/ - the orchestrating session reads and closes out.

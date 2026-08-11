@@ -16,14 +16,21 @@
 > Execution: [`scripts/classical_search/menu_chain.sh`](../scripts/classical_search/menu_chain.sh)
 > (blocks B→C→D→E, detached); logs and readouts under `measurement/lever_menu_20260810/`.
 >
-> **Live progress (2026-08-10 evening).** Item 1 — readout on disk (`ITEM1_FARM_NORM.{json,md}`) ·
+> **🏁 CHAIN COMPLETE 2026-08-11 — all four chained blocks (B→C→D→E) have RAN AND CLOSED; this is
+> the last block, item 5 / block E, and there is nothing left running or queued in `menu_chain.sh`.**
 > **item 2 / block B 🔚 RAN AND CLOSED — does NOT confirm, bounded null (§4.2 banner)** ·
 > **item 4 / block C 🔚 RAN AND CLOSED — all four cells null, caveat narrowed to ~±17.5 elo
 > (§4.4 banner)** · **item 3 / block D 🔚 RAN AND CLOSED — bounded null, width axis at 11008
 > unresolvable at affordable n, CL-060 falsifier (1) discharged, no top-up run (§4.3 banner)** ·
-> item 5 / block E 🔄 RUNNING (queued in behind block D) · item 6 — readout on disk
-> (`item6_s3/S3_VERDICT.{json,md}`). *(Items 1 and 6 are not closed out by this commit.)* Bands
-> **1.18e11**, **1.19e11** and **1.20e11** retired. `PRODUCTION.yaml` still untouched.
+> **item 5 / block E 🔚 RAN AND CLOSED — pooled n=800 z −2.2015, the rodv3 premise vs its own
+> corpus teacher is REFUTED (§4.5 banner)**. Item 1 — readout on disk
+> (`ITEM1_FARM_NORM.{json,md}`) · item 6 — readout on disk (`item6_s3/S3_VERDICT.{json,md}`).
+> *(Items 1 and 6 predate the chain and are still not closed out by this commit — that six-touch
+> pass is separate, unassigned work.)* Bands **1.18e11, 1.19e11, 1.20e11 and 94e9** all retired.
+> `PRODUCTION.yaml` untouched throughout every block. **The parked rodv3 65/300 gen (item 5's
+> downstream consequence) is now formally RETIRED — Joshua, in-session same day, verbatim
+> "retire it"; a governance status change only, no artifacts deleted (STATUS.md, DECISIONS.md
+> 2026-08-11 addendum).**
 
 > **Reading order:** §1 envelope + cost model → §2 the co-tenancy ruling → §3 the DAG →
 > §4 per-item mini-preregs → §5 the GO sequence → §6 what stays Joshua's → §7 out of scope →
@@ -500,6 +507,33 @@ the curve-*scale* axis that C5 closed as a noisy plateau — a Joshua call, not 
 ---
 
 ### 4.5 — Item 5. CL-072 n→800 extension
+
+> **🔚 RAN AND CLOSED 2026-08-11 (block E) — pre-registered branch `z ≤ −2.0` fired: the rodv3
+> premise is REFUTED against its own corpus teacher. THIS WAS THE LAST BLOCK OF THE CAMPAIGN.**
+> n=400 deck-paired extension, band 94e9 (retired), fresh decks `94000000200..94000000399`,
+> completion 400/400, wiring gates clean post-fix (`wiring_gates_clean: true` — see the false-fire
+> note below): **this cell alone — W191/D6/L203 · elo −10.4262 ± 17.3796 · paired margin −1.1325
+> pts/deck · paired_z −1.1839** (sub-2σ alone, as expected). **POOLED with the original n=400 cell,
+> n=800 / 400 decks, THE PRIMARY STATISTIC: W375/D14/L411 · elo −15.6452 ± 12.2962 · deck-paired
+> margin −1.5675 pts/deck · se 0.7120 · margin z −2.2015 ⇒ the branch FIRES ⇒ PREMISE REFUTED.**
+> Pooled cost ratio candidate/opponent **1.1643×** (candidate 15799.42 vs opponent 13570.30
+> ms/move). ⚠️ **Three honesty caveats travel with this verdict, none optional:** (1) z=−2.20
+> clears the bar without much room — each half alone is sub-2σ (−1.90 / −1.18), the pool crosses
+> because n doubled, not because either half was decisive; (2) **the effect SHRANK between halves**
+> (−2.0025 → −1.1325 pts/deck), the same regression-toward-zero signature logged repeatedly this
+> campaign — the realized pooled effect (−1.5675) sits above the prereg's curse-calibrated
+> "not resolvable" band (−0.6 to −0.8) but below its face-value −2.00; (3) **the elo statistic
+> alone does not resolve** — pooled 2σ ≈ [−40.2, +9.0] includes zero; the margin resolves where
+> elo does not, which is why margin was pre-registered PRIMARY. ⚠️ **Gate false-fire on record:**
+> `menu_block_summary.py`'s wiring gate hardcoded `fixed_v1`, false-firing `READ_BLOCK` on this
+> cell (which is REQUIRED to run under `walled` to match the original cell's epoch for pooling) —
+> fixed in `20e83d3` (`--expected-rules-profile`), verdict extract regenerated clean. Contrast
+> with the Part C attempt-1 abort: that gate WAS pre-registered and was correctly honored; this
+> one was a tool default and was fixed, not honored. **CL-072 moves Provisional → Refuted; band
+> 94000000000 flipped claimed → retired. The parked rodv3 65/300 gen is now formally RETIRED**
+> **— Joshua, in-session same day, verbatim "retire it"; a governance status change only, no
+> artifacts deleted.** `PRODUCTION.yaml` untouched; nothing promoted. → DECISIONS
+> 2026-08-11; `results.csv` `cl072_ext_netprior2752_vs_champ11008_n800pooled_b94e9`.
 
 **Status.** [CL-072](../governance/CLAIM_REGISTRY.csv) is **Provisional / low confidence**:
 **−20.87 ± 17.40 elo (z −1.20), deck-paired margin −2.0025 pts/deck, margin z −1.90**, n=400

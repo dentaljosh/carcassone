@@ -15,3 +15,82 @@ fair-puct[fair_fair_c1.5_tau5_float_kd4_s2752_vs_fairchamp-k8x1376_k2-leafa36d2e
   60/800 played (14.8s/game, ~183 min left)
   70/800 played (14.8s/game, ~180 min left)
   80/800 played (14.4s/game, ~173 min left)
+  90/800 played (14.5s/game, ~172 min left)
+  100/800 played (14.5s/game, ~170 min left)
+  110/800 played (14.3s/game, ~165 min left)
+  120/800 played (14.2s/game, ~161 min left)
+  130/800 played (14.2s/game, ~159 min left)
+  140/800 played (14.1s/game, ~156 min left)
+  150/800 played (14.0s/game, ~151 min left)
+  160/800 played (13.9s/game, ~148 min left)
+  170/800 played (13.9s/game, ~146 min left)
+  180/800 played (13.8s/game, ~142 min left)
+  190/800 played (13.7s/game, ~140 min left)
+  200/800 played (13.9s/game, ~139 min left)
+  210/800 played (13.7s/game, ~135 min left)
+  220/800 played (13.7s/game, ~132 min left)
+  230/800 played (13.7s/game, ~131 min left)
+  240/800 played (13.7s/game, ~128 min left)
+  250/800 played (13.6s/game, ~125 min left)
+  260/800 played (13.7s/game, ~124 min left)
+  270/800 played (13.8s/game, ~121 min left)
+  280/800 played (13.8s/game, ~119 min left)
+  290/800 played (13.7s/game, ~116 min left)
+  300/800 played (13.8s/game, ~115 min left)
+  310/800 played (13.7s/game, ~112 min left)
+  320/800 played (13.7s/game, ~110 min left)
+  330/800 played (13.7s/game, ~108 min left)
+  340/800 played (13.7s/game, ~105 min left)
+  350/800 played (13.7s/game, ~102 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=4, sims=2752, total~11008) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k8x1376) ===
+games: 800   candidate: 369W / 17D / 414L   winrate 0.472 (z=-1.59)
+avg score diff (candidate - opponent): -1.01
+ELO: -19.6  (+/- 12.3 1sigma)
+PAIRED: 400 decks   mean seat-balanced margin -1.01   z = -1.49
+prefix ms/move: candidate 1518  opponent 1533  (ratio 0.99x)
+fair endgame: candidate latched 800/800 games, 1.04s solver/game, timeouts=0
+fair endgame: opponent  latched 800/800 games, 1.16s solver/game, timeouts=0
+  POWER NOTE: |elo|<=35 at n=800 (1σ≈±12); a >=35-elo verdict needs n>=400.
+[summary.json] wrote /mnt/c/carc-shared/lever_menu_20260810/d_width_k4x2752_vs_champ_n800_b119e9/summary.json
+[menu-fair primary Doctor] 2026-08-10_20:28:13 harness pass 1 rc=0 records=800/800
+[menu-fair primary Doctor] 2026-08-10_20:28:14 END sub=d_width_k4x2752_vs_champ_n800_b119e9 records=800/800 in 4873s after 1 pass(es)
+{
+  "label": "item3_width_k4x2752_vs_k8x1376_n800_b119e9",
+  "dir": "/mnt/c/carc-shared/lever_menu_20260810/d_width_k4x2752_vs_champ_n800_b119e9",
+  "adjudicated": false,
+  "note": "Extract only. No verdict, no promotion, no governance touch. The orchestrating session reads this and closes out.",
+  "records_on_disk": 800,
+  "n": 800,
+  "n_paired": 400,
+  "W": 369,
+  "D": 17,
+  "L": 414,
+  "elo": -19.56390292820164,
+  "elo_sig_1sigma": 12.303182367155708,
+  "paired_z": -1.487024965470958,
+  "paired_mean_margin": -1.01125,
+  "champ_prefix_ms_per_move": 1517.8577383865297,
+  "wiring": {
+    "code_rev": "cd39f5dd9-dirty",
+    "rules_profile": "fixed_v1",
+    "r9_env_ok": true,
+    "cand_leaf_hash": "a36d2e15a3b3d71d",
+    "opp_leaf_hash": "a36d2e15a3b3d71d",
+    "cand_leaf_json": null,
+    "cand_curve_drift_allowed": false,
+    "cand_k_dets": 4,
+    "cand_sims_per_det": 2752,
+    "cand_total_sims": 11008,
+    "opp_k_dets": 8,
+    "opp_sims_per_det": 1376,
+    "opp_total_sims": 11008,
+    "band_seed_start": 119000000000,
+    "n_decks": 400,
+    "paired": true
+  },
+  "wiring_gate_failures": [],
+  "wiring_gates_clean": true,
+  "topup_triggered": false,
+  "topup_note": "PRE-REGISTERED trigger only (1.5 <= |margin z| < 2.0 => extend item 3 to n=1600 on FRESH decks of band 1.19e11, seeds 119000000400..119000000799). The chain does NOT run it: the +1.5 h spend is Joshua's call (plan section 6.6)."
+}
