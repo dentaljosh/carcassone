@@ -193,6 +193,10 @@ champion:
                                         # are UNLOCKED as-is. Power caveat: the screen resolves ~50 elo unpaired /
                                         # ~35 paired at 2-sigma; a <=20-elo optimum shift is NOT excluded
                                         # (measurement/capscurve_resweep_20260803/PREREG.md, decision-map row 1).
+                                        # NARROWED 2026-08-10 FOR 3 OF THE 6 CELLS ONLY: cap5, cap12 and curve150
+                                        # were re-measured at n=800 deck-paired on band 1.20e11 (all null) => their
+                                        # bound tightens to ~+/-17.5 elo (2-sigma paired); curve100, oppcap4 and
+                                        # oppcap12 were NOT re-measured and keep the ~35 figure. CL-078.
     backend: rust                       # ⭐ THE CHAMPION'S EXECUTION BACKEND OF RECORD (2026-08-01, Joshua "1 yes").
                                         # carc_rs, the rustport core. An ENGINE, not a player: BEHAVIOR-IDENTICAL by
                                         # gate, so NO strength claim moves and no re-eval is owed. Evidence:
